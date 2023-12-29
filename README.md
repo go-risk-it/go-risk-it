@@ -1,1 +1,1 @@
-# go-risk-it
+# GO Risk-It
