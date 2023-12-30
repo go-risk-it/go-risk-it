@@ -3,7 +3,7 @@
 ## Done so far
 
 **Server**
-- Websocket POC.
+- Websockets POC
 - Local dev environment with `sqlc`
 - SQL migrations with `golang-migrate`
 
@@ -12,15 +12,20 @@
 **Front-end**
 - [ ] Understand how to start with frontend
 
-**Server: Package structure**
-- [ ] Figure out how to split code architecture
+**Server: Architecture**
+- [ ] Figure out how to split code in packages
+- [ ] Figure out if we need a dependency injection framework
+- [ ] Figure out how to determine whose turn it is in a game
 
-**Server: SQL and Deserialisation**
-- [ ] Byte-array to JSON conversion
-- [ ] SQL lite to store data, we can then move to something else
+**Server: Deserialization**
+- [ ] Byte-array to JSON conversion and vice-versa
 
 **Server: Logic**
 - [ ] Game logic
 
-**Server: analytics**
+**Server: Analytics**
 - [ ] We could store logs of game events, by sending them somewhere
+
+**Server: Auth**
+- [ ] Figure out TLS for websockets
+- [ ] Figure out where and how to store user credentials
