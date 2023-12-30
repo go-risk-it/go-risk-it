@@ -4,14 +4,16 @@
 
 **Server**
 - Websocket POC.
+- Local dev environment with `sqlc`
+- SQL migrations with `golang-migrate`
 
 ## Things to investigate
 
 **Front-end**
 - [ ] Understand how to start with frontend
 
-**Server: SQL migrations**
-- [x] Docker compose with flyway and postgres
+**Server: Package structure**
+- [ ] Figure out how to split code architecture
 
 **Server: SQL and Deserialisation**
 - [ ] Byte-array to JSON conversion

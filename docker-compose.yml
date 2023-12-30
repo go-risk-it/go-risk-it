@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: risk-it
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/tmp/postgresql/data
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "postgres" ]
+      interval: 2s
+      timeout: 2s
+      retries: 5
+
+  migrate:
+    image: migrate/migrate:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./src/db/migrations:/migrations
+    command: -verbose -path=/migrations/ -database postgresql://postgres:password@postgres:5432/risk-it?sslmode=disable up
+
+  sqlc:
+    image: sqlc/sqlc:latest
+    depends_on:
+      - migrate
+    volumes:
+      - ./:/src
+    working_dir: /src
+    command: generate
+
+  risk-it:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - sqlc
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:

@@ -6,7 +6,7 @@ CREATE TABLE continent
 
 CREATE TABLE game
 (
-    id    BIGSERIAL PRIMARY KEY
+    id BIGSERIAL PRIMARY KEY
 --     phase ENUM('type_value1', 'type_value2')
 );
 
