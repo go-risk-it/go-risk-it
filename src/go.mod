@@ -1,4 +1,4 @@
-module nbio-demo
+module go-risk-it
 
 go 1.21
 
