@@ -6,6 +6,7 @@
 - Websockets POC
 - Local dev environment with `sqlc`
 - SQL migrations with `golang-migrate`
+- Start integrating Uber-FX for dependency injection
 
 ## Things to investigate
 
@@ -14,7 +15,6 @@
 
 **Server: Architecture**
 - [ ] Figure out how to split code in packages
-- [ ] Figure out if we need a dependency injection framework
 - [ ] Figure out how to determine whose turn it is in a game
 
 **Server: Deserialization**
