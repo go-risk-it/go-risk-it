@@ -2,10 +2,10 @@ package main
 
 import (
 	"github.com/lesismal/nbio/nbhttp"
-	"go-risk-it/handlers"
-	"go-risk-it/logging"
-	"go-risk-it/nbio"
-	"go-risk-it/ws"
+	"github.com/tomfran/go-risk-it/internal/handlers"
+	"github.com/tomfran/go-risk-it/internal/logging"
+	"github.com/tomfran/go-risk-it/internal/nbio"
+	"github.com/tomfran/go-risk-it/internal/ws"
 	"go.uber.org/fx"
 )
 

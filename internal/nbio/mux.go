@@ -1,7 +1,7 @@
 package nbio
 
 import (
-	"go-risk-it/handlers"
+	"github.com/tomfran/go-risk-it/internal/handlers"
 	"go.uber.org/zap"
 	"net/http"
 )
