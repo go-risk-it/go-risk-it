@@ -18,7 +18,8 @@
 - [ ] Figure out how to determine whose turn it is in a game
 
 **Server: Deserialization**
-- [ ] Byte-array to JSON conversion and vice-versa
+- [x] Byte-array to JSON conversion and vice-versa
+- [ ] Message handler component with message structs
 
 **Server: Logic**
 - [ ] Game logic
