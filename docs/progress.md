@@ -16,6 +16,7 @@
 **Server: Architecture**
 - [ ] Figure out how to split code in packages
 - [ ] Figure out how to determine whose turn it is in a game
+- [ ] Add a db provider
 
 **Server: Deserialization**
 - [x] Byte-array to JSON conversion and vice-versa
@@ -23,6 +24,7 @@
 
 **Server: Logic**
 - [ ] Game logic
+- [ ] Map validation
 
 **Server: Analytics**
 - [ ] We could store logs of game events, by sending them somewhere

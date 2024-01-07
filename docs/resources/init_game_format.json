@@ -1,0 +1,27 @@
+{
+  "players": [
+    {
+      "id": 1
+    }
+  ],
+  "regions": [
+    {
+      "id": 1,
+      "name": "Brazil",
+      "continent_id": 1
+    }
+  ],
+  "continents": [
+    {
+      "id": 1,
+      "name": "South America",
+      "bonus_troops": 1
+    }
+  ],
+  "borders": [
+    {
+      "first_region_id": 1,
+      "second_region_id": 2
+    }
+  ]
+}

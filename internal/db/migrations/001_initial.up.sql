@@ -37,6 +37,18 @@ CREATE TABLE card
 
 CREATE TABLE mission
 (
-    id BIGSERIAL PRIMARY KEY
+    id BIGSERIAL PRIMARY KEY,
+    player_id    BIGINT NOT NULL,
+    FOREIGN KEY (player_id) REFERENCES player (id)
 --     type       ENUM('type_value1', 'type_value2',...)
 );
+
+-- CREATE TABLE border
+-- (
+--     id               BIGSERIAL PRIMARY KEY,
+--     first_region_id  BIGINT NOT NULL,
+--     second_region_id BIGINT NOT NULL,
+--     FOREIGN KEY (first_region_id) REFERENCES region (id),
+--     FOREIGN KEY (second_region_id) REFERENCES region (id),
+--     CHECK (first_region_id <> second_region_id)
+-- );
