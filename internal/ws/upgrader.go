@@ -52,6 +52,7 @@ func NewUpgrader(logger *zap.SugaredLogger) *websocket.Upgrader {
 		if err != nil {
 			logger.Error("Unable to marshal JSON due to %s", err)
 		}
+
 		c.WriteMessage(messageType, payload)
 	})
 
