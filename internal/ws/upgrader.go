@@ -3,6 +3,7 @@ package ws
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/lesismal/nbio/nbhttp/websocket"
 	"go.uber.org/zap"
 )

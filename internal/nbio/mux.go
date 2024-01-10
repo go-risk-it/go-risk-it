@@ -1,9 +1,10 @@
 package nbio
 
 import (
+	"net/http"
+
 	"github.com/tomfran/go-risk-it/internal/handlers"
 	"go.uber.org/zap"
-	"net/http"
 )
 
 func NewServeMux(wsHandler *handlers.WebSocketHandler, log *zap.SugaredLogger) *http.ServeMux {

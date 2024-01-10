@@ -2,9 +2,10 @@ package logging
 
 import (
 	"context"
+	"log"
+
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"log"
 )
 
 func NewLogger(lc fx.Lifecycle) *zap.SugaredLogger {

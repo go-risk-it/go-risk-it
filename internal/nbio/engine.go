@@ -2,12 +2,13 @@ package nbio
 
 import (
 	"context"
-	"github.com/lesismal/nbio/nbhttp"
-	"go.uber.org/fx"
-	"go.uber.org/zap"
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/lesismal/nbio/nbhttp"
+	"go.uber.org/fx"
+	"go.uber.org/zap"
 )
 
 func NewEngine(lc fx.Lifecycle, config *nbhttp.Config, log *zap.SugaredLogger) *nbhttp.Engine {

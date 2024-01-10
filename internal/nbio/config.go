@@ -1,9 +1,10 @@
 package nbio
 
 import (
+	"net/http"
+
 	"github.com/lesismal/nbio/nbhttp"
 	"go.uber.org/zap"
-	"net/http"
 )
 
 func NewNbioConfig(mux *http.ServeMux, log *zap.SugaredLogger) *nbhttp.Config {

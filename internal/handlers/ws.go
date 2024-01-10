@@ -1,9 +1,10 @@
 package handlers
 
 import (
+	"net/http"
+
 	"github.com/lesismal/nbio/nbhttp/websocket"
 	"go.uber.org/zap"
-	"net/http"
 )
 
 type WebSocketHandler struct {

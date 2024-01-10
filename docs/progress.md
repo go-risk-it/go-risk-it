@@ -13,7 +13,7 @@
 
 **General**
 
-- [ ] Figure out what the fuck is a context?!?
+- [x] Figure out what the fuck is a context?!?
 - [ ] Figure out how to do testing
 - [ ] Figure out how to format code automatically
 - [ ] Figure out fx modules

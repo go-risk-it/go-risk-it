@@ -1,6 +1,9 @@
 package main
 
 import (
+	"context"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lesismal/nbio/nbhttp"
 	"github.com/tomfran/go-risk-it/internal/db"
 	"github.com/tomfran/go-risk-it/internal/game/board"
@@ -36,8 +39,17 @@ func main() {
 			game.NewGameService,
 		),
 		fx.Invoke(func(engine *nbhttp.Engine) {}),
-		fx.Invoke(func(gs *game.Service) {
-			err := gs.CreateGame(&board.Board{
+		fx.Invoke(func(gs *game.Service, di db.DBTX, q *db.Queries) error {
+			ctx := context.TODO()
+			// cast to pgxpool.Pool
+			db := di.(*pgxpool.Pool)
+			tx, err := db.Begin(ctx)
+			if err != nil {
+				return err
+			}
+			defer tx.Rollback(ctx)
+			qtx := q.WithTx(tx)
+			err = gs.CreateGame(ctx, qtx, &board.Board{
 				Regions: []board.Region{
 					{
 						ExternalReference: 1,
@@ -62,6 +74,8 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
+
+			return tx.Commit(ctx)
 		}),
 	).Run()
 }
