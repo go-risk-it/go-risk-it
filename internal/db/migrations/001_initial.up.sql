@@ -1,13 +1,6 @@
-CREATE TABLE continent
-(
-    id           BIGSERIAL PRIMARY KEY,
-    bonus_troops INT
-);
-
 CREATE TABLE game
 (
     id BIGSERIAL PRIMARY KEY
---     phase ENUM('type_value1', 'type_value2')
 );
 
 CREATE TABLE player
@@ -20,12 +13,10 @@ CREATE TABLE player
 
 CREATE TABLE region
 (
-    id           BIGSERIAL PRIMARY KEY,
-    player_id    BIGINT NOT NULL,
-    continent_id BIGINT NOT NULL,
-    troops       INT    NOT NULL,
-    FOREIGN KEY (player_id) REFERENCES player (id),
-    FOREIGN KEY (continent_id) REFERENCES continent (id)
+    id        BIGSERIAL PRIMARY KEY,
+    player_id BIGINT NOT NULL,
+    troops    INT    NOT NULL,
+    FOREIGN KEY (player_id) REFERENCES player (id)
 );
 
 CREATE TABLE card
@@ -37,18 +28,7 @@ CREATE TABLE card
 
 CREATE TABLE mission
 (
-    id BIGSERIAL PRIMARY KEY,
-    player_id    BIGINT NOT NULL,
+    id        BIGSERIAL PRIMARY KEY,
+    player_id BIGINT NOT NULL,
     FOREIGN KEY (player_id) REFERENCES player (id)
---     type       ENUM('type_value1', 'type_value2',...)
 );
-
--- CREATE TABLE border
--- (
---     id               BIGSERIAL PRIMARY KEY,
---     first_region_id  BIGINT NOT NULL,
---     second_region_id BIGINT NOT NULL,
---     FOREIGN KEY (first_region_id) REFERENCES region (id),
---     FOREIGN KEY (second_region_id) REFERENCES region (id),
---     CHECK (first_region_id <> second_region_id)
--- );

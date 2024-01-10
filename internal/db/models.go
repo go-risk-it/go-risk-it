@@ -4,18 +4,11 @@
 
 package db
 
-import (
-	"github.com/jackc/pgx/v5/pgtype"
-)
+import ()
 
 type Card struct {
 	ID       int64
 	PlayerID int64
-}
-
-type Continent struct {
-	ID          int64
-	BonusTroops pgtype.Int4
 }
 
 type Game struct {
@@ -23,7 +16,8 @@ type Game struct {
 }
 
 type Mission struct {
-	ID int64
+	ID       int64
+	PlayerID int64
 }
 
 type Player struct {
@@ -33,8 +27,7 @@ type Player struct {
 }
 
 type Region struct {
-	ID          int64
-	PlayerID    int64
-	ContinentID int64
-	Troops      int32
+	ID       int64
+	PlayerID int64
+	Troops   int32
 }

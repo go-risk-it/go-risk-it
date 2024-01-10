@@ -22,3 +22,8 @@ go.work
 
 # Go land
 .idea
+
+# Executables
+ws-server
+
+typescript-demo

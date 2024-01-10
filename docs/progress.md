@@ -3,6 +3,7 @@
 ## Done so far
 
 **Server**
+
 - Websockets POC
 - Local dev environment with `sqlc`
 - SQL migrations with `golang-migrate`
@@ -10,25 +11,38 @@
 
 ## Things to investigate
 
+**General**
+
+- [ ] Figure out what the fuck is a context?!?
+- [ ] Figure out how to do testing
+- [ ] Figure out how to format code automatically
+- [ ] Figure out fx modules
+
 **Front-end**
+
 - [ ] Understand how to start with frontend
 
 **Server: Architecture**
+
 - [ ] Figure out how to split code in packages
 - [ ] Figure out how to determine whose turn it is in a game
 - [ ] Add a db provider
 
 **Server: Deserialization**
+
 - [x] Byte-array to JSON conversion and vice-versa
 - [ ] Message handler component with message structs
 
 **Server: Logic**
+
 - [ ] Game logic
 - [ ] Map validation
 
 **Server: Analytics**
+
 - [ ] We could store logs of game events, by sending them somewhere
 
 **Server: Auth**
+
 - [ ] Figure out TLS for websockets
 - [ ] Figure out where and how to store user credentials

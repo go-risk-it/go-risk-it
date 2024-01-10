@@ -9,12 +9,12 @@ import (
 	"context"
 )
 
-const getPlayers = `-- name: GetPlayers :many
-SELECT id, game_id, user_id FROM player
+const getPlayersByGameId = `-- name: GetPlayersByGameId :many
+SELECT id, game_id, user_id FROM player WHERE game_id = $1
 `
 
-func (q *Queries) GetPlayers(ctx context.Context) ([]Player, error) {
-	rows, err := q.db.Query(ctx, getPlayers)
+func (q *Queries) GetPlayersByGameId(ctx context.Context, gameID int64) ([]Player, error) {
+	rows, err := q.db.Query(ctx, getPlayersByGameId, gameID)
 	if err != nil {
 		return nil, err
 	}
@@ -31,4 +31,25 @@ func (q *Queries) GetPlayers(ctx context.Context) ([]Player, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const insertGame = `-- name: InsertGame :one
+INSERT INTO game DEFAULT VALUES RETURNING id
+`
+
+func (q *Queries) InsertGame(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, insertGame)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
+type InsertPlayersParams struct {
+	GameID int64
+	UserID string
+}
+
+type InsertRegionsParams struct {
+	PlayerID int64
+	Troops   int32
 }
