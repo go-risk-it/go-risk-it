@@ -9,16 +9,20 @@ import (
 	"go.uber.org/zap"
 )
 
-type Service struct {
+type Service interface {
+	CreateRegions(ctx context.Context, q db.Querier, players []db.Player, regions []board.Region) error
+}
+
+type ServiceImpl struct {
 	log               *zap.SugaredLogger
 	assignmentService *assignment.Service
 }
 
-func NewRegionService(log *zap.SugaredLogger, assignmentService *assignment.Service) *Service {
-	return &Service{log: log, assignmentService: assignmentService}
+func NewRegionService(log *zap.SugaredLogger, assignmentService *assignment.Service) *ServiceImpl {
+	return &ServiceImpl{log: log, assignmentService: assignmentService}
 }
 
-func (s *Service) CreateRegions(ctx context.Context, q *db.Queries, players []db.Player, regions []board.Region) error {
+func (s *ServiceImpl) CreateRegions(ctx context.Context, q db.Querier, players []db.Player, regions []board.Region) error {
 	s.log.Infow("creating regions", "players", players, "regions", regions)
 	regionToPlayer := s.assignmentService.AssignRegionsToPlayers(players, regions)
 	var regionsParams []db.InsertRegionsParams

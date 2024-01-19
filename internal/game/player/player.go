@@ -7,15 +7,19 @@ import (
 	"go.uber.org/zap"
 )
 
-type Service struct {
+type Service interface {
+	CreatePlayers(ctx context.Context, q db.Querier, gameId int64, users []string) ([]db.Player, error)
+}
+
+type ServiceImpl struct {
 	log *zap.SugaredLogger
 }
 
-func NewPlayersService(log *zap.SugaredLogger) *Service {
-	return &Service{log: log}
+func NewPlayersService(log *zap.SugaredLogger) *ServiceImpl {
+	return &ServiceImpl{log: log}
 }
 
-func (s *Service) CreatePlayers(ctx context.Context, q *db.Queries, gameId int64, users []string) ([]db.Player, error) {
+func (s *ServiceImpl) CreatePlayers(ctx context.Context, q db.Querier, gameId int64, users []string) ([]db.Player, error) {
 	s.log.Infow("creating players", "gameId", gameId, "users", users)
 	var playersParams []db.InsertPlayersParams
 	for _, user := range users {

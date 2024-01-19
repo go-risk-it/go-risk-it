@@ -29,14 +29,23 @@ func main() {
 			nbio.NewEngine,
 			handlers.NewWebSocketHandler,
 			logging.NewLogger,
-			player.NewPlayersService,
 			assignment.NewAssignmentService,
 			board.NewBoardService,
-			region.NewRegionService,
-			game.NewGameService,
+			fx.Annotate(
+				region.NewRegionService,
+				fx.As(new(region.Service)),
+			),
+			fx.Annotate(
+				player.NewPlayersService,
+				fx.As(new(player.Service)),
+			),
+			fx.Annotate(
+				game.NewGameService,
+				fx.As(new(game.Service)),
+			),
 		),
 		fx.Invoke(func(engine *nbhttp.Engine) {}),
-		//fx.Invoke(func(gs *game.Service, di db.DBTX, q *db.Queries) error {
+		//fx.Invoke(func(gs *game.ServiceImpl, di db.DBTX, q *db.Queries) error {
 		//	ctx := context.TODO()
 		//	// cast to pgxpool.Pool
 		//	db := di.(*pgxpool.Pool)

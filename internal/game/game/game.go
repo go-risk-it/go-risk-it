@@ -10,26 +10,32 @@ import (
 	"go.uber.org/zap"
 )
 
-type Service struct {
+type Service interface {
+	CreateGame(ctx context.Context, q db.Querier, board *board.Board, users []string) error
+}
+
+type ServiceImpl struct {
 	log           *zap.SugaredLogger
-	playerService *player.Service
-	regionService *region.Service
+	playerService player.Service
+	regionService region.Service
 }
 
-func NewGameService(logger *zap.SugaredLogger, playerService *player.Service, regionService *region.Service) *Service {
-	return &Service{log: logger, playerService: playerService, regionService: regionService}
+func NewGameService(logger *zap.SugaredLogger, playerService player.Service, regionService region.Service) *ServiceImpl {
+	return &ServiceImpl{log: logger, playerService: playerService, regionService: regionService}
 }
 
-func (s *Service) CreateGame(ctx context.Context, q *db.Queries, board *board.Board, users []string) error {
+func (s *ServiceImpl) CreateGame(ctx context.Context, q db.Querier, board *board.Board, users []string) error {
 	s.log.Infow("creating game", "board", board, "users", users)
 	gameId, err := q.InsertGame(ctx)
 	if err != nil {
 		return err
 	}
+
 	players, err := s.playerService.CreatePlayers(ctx, q, gameId, users)
 	if err != nil {
 		return err
 	}
+
 	if err := s.regionService.CreateRegions(ctx, q, players, board.Regions); err != nil {
 		return err
 	}
