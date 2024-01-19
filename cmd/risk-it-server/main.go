@@ -29,8 +29,14 @@ func main() {
 			nbio.NewEngine,
 			handlers.NewWebSocketHandler,
 			logging.NewLogger,
-			assignment.NewAssignmentService,
-			board.NewBoardService,
+			fx.Annotate(
+				assignment.NewAssignmentService,
+				fx.As(new(assignment.Service)),
+			),
+			fx.Annotate(
+				board.NewBoardService,
+				fx.As(new(board.Service)),
+			),
 			fx.Annotate(
 				region.NewRegionService,
 				fx.As(new(region.Service)),

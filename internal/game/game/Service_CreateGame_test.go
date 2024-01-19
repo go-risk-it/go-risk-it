@@ -30,8 +30,10 @@ func TestCreateGameWithValidBoardAndUsers(t *testing.T) {
 		{4, "Samon", 3},
 	}
 
-	board := &board.Board{
-		regions, []board.Continent{}, []board.Border{},
+	gameBoard := &board.Board{
+		Regions:    regions,
+		Continents: []board.Continent{},
+		Borders:    []board.Border{},
 	}
 
 	// setup mocks
@@ -56,7 +58,7 @@ func TestCreateGameWithValidBoardAndUsers(t *testing.T) {
 		regionService: regionServiceMock,
 	}
 
-	result := service.CreateGame(ctx, mockQuerier, board, users)
+	result := service.CreateGame(ctx, mockQuerier, gameBoard, users)
 
 	assert.NoError(t, result)
 }

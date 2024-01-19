@@ -15,10 +15,10 @@ type Service interface {
 
 type ServiceImpl struct {
 	log               *zap.SugaredLogger
-	assignmentService *assignment.Service
+	assignmentService assignment.Service
 }
 
-func NewRegionService(log *zap.SugaredLogger, assignmentService *assignment.Service) *ServiceImpl {
+func NewRegionService(log *zap.SugaredLogger, assignmentService assignment.Service) *ServiceImpl {
 	return &ServiceImpl{log: log, assignmentService: assignmentService}
 }
 

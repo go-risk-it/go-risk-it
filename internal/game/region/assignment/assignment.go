@@ -8,16 +8,20 @@ import (
 
 type RegionAssignment map[board.Region]db.Player
 
-type Service struct {
+type Service interface {
+	AssignRegionsToPlayers(players []db.Player, regions []board.Region) RegionAssignment
+}
+
+type ServiceImpl struct {
 	q   *db.Queries
 	log *zap.SugaredLogger
 }
 
-func NewAssignmentService(queries *db.Queries, logger *zap.SugaredLogger) *Service {
-	return &Service{q: queries, log: logger}
+func NewAssignmentService(queries *db.Queries, logger *zap.SugaredLogger) *ServiceImpl {
+	return &ServiceImpl{q: queries, log: logger}
 }
 
-func (s *Service) AssignRegionsToPlayers(players []db.Player, regions []board.Region) RegionAssignment {
+func (s *ServiceImpl) AssignRegionsToPlayers(players []db.Player, regions []board.Region) RegionAssignment {
 	regionsToPlayers := make(map[board.Region]db.Player)
 	for i, region := range regions {
 		regionsToPlayers[region] = players[i%len(players)]

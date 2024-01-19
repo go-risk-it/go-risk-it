@@ -5,7 +5,11 @@ import (
 	"go.uber.org/zap"
 )
 
-type Service struct {
+type Service interface {
+	PersistBoard(board *Board) error
+}
+
+type ServiceImpl struct {
 	q   *db.Queries
 	log *zap.SugaredLogger
 }
@@ -33,11 +37,11 @@ type Board struct {
 	Borders    []Border    `json:"borders"`
 }
 
-func NewBoardService(queries *db.Queries, logger *zap.SugaredLogger) *Service {
-	return &Service{q: queries, log: logger}
+func NewBoardService(queries *db.Queries, logger *zap.SugaredLogger) *ServiceImpl {
+	return &ServiceImpl{q: queries, log: logger}
 }
 
-func (service *Service) PersistBoard(board *Board) error {
+func (service *ServiceImpl) PersistBoard(board *Board) error {
 	// TODO: validate board
 	// persist continents
 	return nil

@@ -44,6 +44,6 @@ services:
     ports:
       - "8080:8080"
     network_mode: host
-    
+
 volumes:
   postgres_data:
