@@ -9,7 +9,7 @@ import (
 	"github.com/tomfran/go-risk-it/internal/game/region"
 	"github.com/tomfran/go-risk-it/internal/game/region/assignment"
 	"github.com/tomfran/go-risk-it/internal/handlers"
-	"github.com/tomfran/go-risk-it/internal/logging"
+	"github.com/tomfran/go-risk-it/internal/loggerfx"
 	"github.com/tomfran/go-risk-it/internal/nbio"
 	"github.com/tomfran/go-risk-it/internal/ws"
 	"go.uber.org/fx"
@@ -28,7 +28,6 @@ func main() {
 			nbio.NewNbioConfig,
 			nbio.NewEngine,
 			handlers.NewWebSocketHandler,
-			logging.NewLogger,
 			fx.Annotate(
 				assignment.NewAssignmentService,
 				fx.As(new(assignment.Service)),
@@ -89,5 +88,6 @@ func main() {
 		//
 		//	return tx.Commit(ctx)
 		//}),
+		loggerfx.Module,
 	).Run()
 }

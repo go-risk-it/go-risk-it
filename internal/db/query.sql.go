@@ -10,7 +10,9 @@ import (
 )
 
 const getPlayersByGameId = `-- name: GetPlayersByGameId :many
-SELECT id, game_id, user_id FROM player WHERE game_id = $1
+SELECT id, game_id, user_id
+FROM player
+WHERE game_id = $1
 `
 
 func (q *Queries) GetPlayersByGameId(ctx context.Context, gameID int64) ([]Player, error) {
@@ -34,7 +36,9 @@ func (q *Queries) GetPlayersByGameId(ctx context.Context, gameID int64) ([]Playe
 }
 
 const insertGame = `-- name: InsertGame :one
-INSERT INTO game DEFAULT VALUES RETURNING id
+INSERT INTO game DEFAULT
+VALUES
+RETURNING id
 `
 
 func (q *Queries) InsertGame(ctx context.Context) (int64, error) {

@@ -1,4 +1,4 @@
-package logging
+package loggerfx
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 func NewLogger(lc fx.Lifecycle) *zap.SugaredLogger {
 	logger, err := zap.NewProduction()
 	if err != nil {
-		log.Fatal("can't initialize zap logger: %v", err)
+		log.Fatalf("can't initialize zap logger: %v", err)
 	}
 	lc.Append(
 		fx.Hook{
@@ -25,3 +25,8 @@ func NewLogger(lc fx.Lifecycle) *zap.SugaredLogger {
 	)
 	return logger.Sugar()
 }
+
+// Module provided to fx
+var Module = fx.Options(
+	fx.Provide(NewLogger),
+)
