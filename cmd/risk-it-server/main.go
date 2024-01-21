@@ -42,12 +42,12 @@ func main() {
 					{
 						ExternalReference: 1,
 						Name:              "Alaska",
-						ContinentId:       1,
+						ContinentID:       1,
 					},
 					{
 						ExternalReference: 2,
 						Name:              "Northwest Territory",
-						ContinentId:       1,
+						ContinentID:       1,
 					},
 				},
 				Continents: []board.Continent{

@@ -23,7 +23,11 @@ go.work
 # Go land
 .idea
 
+# mockgen generated files
+mock_*.go
+
 # Executables
 ws-server
 
 typescript-demo
+

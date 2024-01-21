@@ -35,7 +35,7 @@ func (s *ServiceImpl) CreateRegions(
 ) error {
 	s.log.Infow("creating regions", "players", players, "regions", regions)
 	regionToPlayer := s.assignmentService.AssignRegionsToPlayers(players, regions)
-	var regionsParams []db.InsertRegionsParams
+	regionsParams := make([]db.InsertRegionsParams, 0, len(regionToPlayer))
 	for region := range regionToPlayer {
 		regionsParams = append(regionsParams, db.InsertRegionsParams{
 			PlayerID: regionToPlayer[region].ID,

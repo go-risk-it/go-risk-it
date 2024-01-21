@@ -30,10 +30,10 @@ func TestCreateGameWithValidBoardAndUsers(t *testing.T) {
 	}
 
 	regions := []board.Region{
-		{ExternalReference: 1, Name: "Netherlands", ContinentId: 1},
-		{ExternalReference: 2, Name: "Italy", ContinentId: 1},
-		{ExternalReference: 3, Name: "Tasin", ContinentId: 2},
-		{ExternalReference: 4, Name: "Samon", ContinentId: 3},
+		{ExternalReference: 1, Name: "Netherlands", ContinentID: 1},
+		{ExternalReference: 2, Name: "Italy", ContinentID: 1},
+		{ExternalReference: 3, Name: "Tasin", ContinentID: 2},
+		{ExternalReference: 4, Name: "Samon", ContinentID: 3},
 	}
 
 	gameBoard := &board.Board{
@@ -99,6 +99,8 @@ func TestCreateGameInsertGameError(t *testing.T) {
 
 // returns error if CreatePlayers method returns an error
 func TestCreateGameCreatePlayersError(t *testing.T) {
+	t.Parallel()
+
 	// Initialize dependencies
 	logger := zap.NewExample().Sugar()
 	playerService := player.NewMockService(t)

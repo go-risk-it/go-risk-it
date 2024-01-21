@@ -35,12 +35,12 @@ func (s *ServiceImpl) CreateGame(
 	users []string,
 ) error {
 	s.log.Infow("creating logic", "board", board, "users", users)
-	gameId, err := q.InsertGame(ctx)
+	gameID, err := q.InsertGame(ctx)
 	if err != nil {
 		return err
 	}
 
-	players, err := s.playerService.CreatePlayers(ctx, q, gameId, users)
+	players, err := s.playerService.CreatePlayers(ctx, q, gameID, users)
 	if err != nil {
 		return err
 	}

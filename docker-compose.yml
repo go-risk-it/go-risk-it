@@ -35,6 +35,13 @@ services:
     working_dir: /src
     command: generate
 
+  mockery:
+    image: vektra/mockery:v2.40.1
+    volumes:
+      - ./:/src
+    working_dir: /src
+    command: --all --keeptree
+
   risk-it:
     build:
       context: .

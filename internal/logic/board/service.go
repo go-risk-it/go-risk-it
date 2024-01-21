@@ -17,7 +17,7 @@ type ServiceImpl struct {
 type Region struct {
 	ExternalReference int    `json:"id"`
 	Name              string `json:"name"`
-	ContinentId       int    `json:"continent_id"`
+	ContinentID       int    `json:"continent_id"`
 }
 
 type Continent struct {
@@ -27,8 +27,8 @@ type Continent struct {
 }
 
 type Border struct {
-	FirstRegionId  int `json:"first_region_id"`
-	SecondRegionId int `json:"second_region_id"`
+	FirstRegionID  int `json:"first_region_id"`
+	SecondRegionID int `json:"second_region_id"`
 }
 
 type Board struct {
@@ -39,10 +39,4 @@ type Board struct {
 
 func NewBoardService(queries *db.Queries, logger *zap.SugaredLogger) *ServiceImpl {
 	return &ServiceImpl{q: queries, log: logger}
-}
-
-func (service *ServiceImpl) PersistBoard(board *Board) error {
-	// TODO: validate board
-	// persist continents
-	return nil
 }

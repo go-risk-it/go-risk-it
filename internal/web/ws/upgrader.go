@@ -8,14 +8,14 @@ import (
 )
 
 type Message struct {
-	PlayerId int
-	GameId   int
+	PlayerID int
+	GameID   int
 	Payload  Payload
 }
 
 type Payload struct {
-	StartRegionId int
-	EndRegionId   int
+	StartRegionID int
+	EndRegionID   int
 	NumTroops     int
 }
 
