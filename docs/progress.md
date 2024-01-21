@@ -14,9 +14,9 @@
 **General**
 
 - [x] Figure out what the fuck is a context?!?
-- [ ] Figure out how to do testing
+- [x] Figure out how to do testing
 - [ ] Figure out how to format code automatically
-- [ ] Figure out fx modules
+- [x] Figure out fx modules
 
 **Front-end**
 
@@ -24,9 +24,9 @@
 
 **Server: Architecture**
 
-- [ ] Figure out how to split code in packages
+- [x] Figure out how to split code in packages
 - [ ] Figure out how to determine whose turn it is in a game
-- [ ] Add a db provider
+- [x] Add a db provider
 
 **Server: Deserialization**
 
