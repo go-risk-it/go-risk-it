@@ -4,20 +4,15 @@ import (
 	"github.com/lesismal/nbio/nbhttp"
 	"github.com/tomfran/go-risk-it/internal/db"
 	"github.com/tomfran/go-risk-it/internal/game/game"
-	"github.com/tomfran/go-risk-it/internal/handlers"
 	"github.com/tomfran/go-risk-it/internal/loggerfx"
 	"github.com/tomfran/go-risk-it/internal/nbio"
-	"github.com/tomfran/go-risk-it/internal/ws"
+	"github.com/tomfran/go-risk-it/internal/web"
 	"go.uber.org/fx"
 )
 
 func main() {
 	fx.New(
-		fx.Provide(
-			handlers.NewServeMux,
-			ws.NewUpgrader,
-			handlers.NewWebSocketHandler,
-		),
+		fx.Provide(),
 		fx.Invoke(func(engine *nbhttp.Engine) {}),
 		//fx.Invoke(func(gs *game.ServiceImpl, di db.DBTX, q *db.Queries) error {
 		//	ctx := context.TODO()
@@ -61,5 +56,6 @@ func main() {
 		game.Module,
 		db.Module,
 		nbio.Module,
+		web.Module,
 	).Run()
 }
