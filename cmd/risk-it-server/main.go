@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/lesismal/nbio/nbhttp"
 	"github.com/tomfran/go-risk-it/internal/db"
 	"github.com/tomfran/go-risk-it/internal/game/game"
 	"github.com/tomfran/go-risk-it/internal/loggerfx"
@@ -14,6 +15,7 @@ func main() {
 		game.Module,
 		db.Module,
 		web.Module,
+		fx.Invoke(func(engine *nbhttp.Engine) {}),
 		//fx.Invoke(func(gs *game.ServiceImpl, di db.DBTX, q *db.Queries) error {
 		//	ctx := context.TODO()
 		//	// cast to pgxpool.Pool
