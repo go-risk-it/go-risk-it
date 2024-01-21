@@ -12,7 +12,11 @@ import (
 
 func main() {
 	fx.New(
-		fx.Provide(),
+		loggerfx.Module,
+		game.Module,
+		db.Module,
+		nbio.Module,
+		web.Module,
 		fx.Invoke(func(engine *nbhttp.Engine) {}),
 		//fx.Invoke(func(gs *game.ServiceImpl, di db.DBTX, q *db.Queries) error {
 		//	ctx := context.TODO()
@@ -52,10 +56,5 @@ func main() {
 		//
 		//	return tx.Commit(ctx)
 		//}),
-		loggerfx.Module,
-		game.Module,
-		db.Module,
-		nbio.Module,
-		web.Module,
 	).Run()
 }
