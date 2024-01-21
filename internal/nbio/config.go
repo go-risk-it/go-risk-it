@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewNbioConfig(mux *http.ServeMux, log *zap.SugaredLogger) *nbhttp.Config {
+func newNbioConfig(mux *http.ServeMux, log *zap.SugaredLogger) *nbhttp.Config {
 	log.Infow("Using mux: ", "mux", mux)
 	return &nbhttp.Config{
 		Network:                 "tcp",

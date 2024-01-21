@@ -14,15 +14,8 @@ import (
 func main() {
 	fx.New(
 		fx.Provide(
-			fx.Annotate(
-				db.NewConnectionPool,
-				fx.As(new(db.DBTX)),
-			),
-			db.New,
+			handlers.NewServeMux,
 			ws.NewUpgrader,
-			nbio.NewServeMux,
-			nbio.NewNbioConfig,
-			nbio.NewEngine,
 			handlers.NewWebSocketHandler,
 		),
 		fx.Invoke(func(engine *nbhttp.Engine) {}),
@@ -66,5 +59,7 @@ func main() {
 		//}),
 		loggerfx.Module,
 		game.Module,
+		db.Module,
+		nbio.Module,
 	).Run()
 }

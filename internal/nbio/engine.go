@@ -39,3 +39,10 @@ func NewEngine(lc fx.Lifecycle, config *nbhttp.Config, log *zap.SugaredLogger) *
 	})
 	return engine
 }
+
+var Module = fx.Options(
+	fx.Provide(
+		newNbioConfig,
+		NewEngine,
+	),
+)

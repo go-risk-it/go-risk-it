@@ -1,13 +1,12 @@
-package nbio
+package handlers
 
 import (
 	"net/http"
 
-	"github.com/tomfran/go-risk-it/internal/handlers"
 	"go.uber.org/zap"
 )
 
-func NewServeMux(wsHandler *handlers.WebSocketHandler, log *zap.SugaredLogger) *http.ServeMux {
+func NewServeMux(wsHandler *WebSocketHandler, log *zap.SugaredLogger) *http.ServeMux {
 	mux := &http.ServeMux{}
 	mux.HandleFunc("/ws", wsHandler.OnWebSocket)
 	log.Infow("Created mux", "mux", mux)
