@@ -4,13 +4,18 @@ import (
 	"context"
 
 	"github.com/tomfran/go-risk-it/internal/db"
-	"github.com/tomfran/go-risk-it/internal/game/board"
-	"github.com/tomfran/go-risk-it/internal/game/region/assignment"
+	"github.com/tomfran/go-risk-it/internal/logic/board"
+	"github.com/tomfran/go-risk-it/internal/logic/region/assignment"
 	"go.uber.org/zap"
 )
 
 type Service interface {
-	CreateRegions(ctx context.Context, q db.Querier, players []db.Player, regions []board.Region) error
+	CreateRegions(
+		ctx context.Context,
+		q db.Querier,
+		players []db.Player,
+		regions []board.Region,
+	) error
 }
 
 type ServiceImpl struct {
@@ -22,7 +27,12 @@ func NewRegionService(log *zap.SugaredLogger, assignmentService assignment.Servi
 	return &ServiceImpl{log: log, assignmentService: assignmentService}
 }
 
-func (s *ServiceImpl) CreateRegions(ctx context.Context, q db.Querier, players []db.Player, regions []board.Region) error {
+func (s *ServiceImpl) CreateRegions(
+	ctx context.Context,
+	q db.Querier,
+	players []db.Player,
+	regions []board.Region,
+) error {
 	s.log.Infow("creating regions", "players", players, "regions", regions)
 	regionToPlayer := s.assignmentService.AssignRegionsToPlayers(players, regions)
 	var regionsParams []db.InsertRegionsParams

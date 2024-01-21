@@ -5,7 +5,7 @@ package region
 import (
 	context "context"
 
-	board "github.com/tomfran/go-risk-it/internal/game/board"
+	board "github.com/tomfran/go-risk-it/internal/logic/board"
 
 	db "github.com/tomfran/go-risk-it/internal/db"
 

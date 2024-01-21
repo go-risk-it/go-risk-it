@@ -4,7 +4,7 @@ package assignment
 
 import (
 	db "github.com/tomfran/go-risk-it/internal/db"
-	board "github.com/tomfran/go-risk-it/internal/game/board"
+	board "github.com/tomfran/go-risk-it/internal/logic/board"
 
 	mock "github.com/stretchr/testify/mock"
 )

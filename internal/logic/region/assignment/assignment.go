@@ -2,7 +2,7 @@ package assignment
 
 import (
 	"github.com/tomfran/go-risk-it/internal/db"
-	"github.com/tomfran/go-risk-it/internal/game/board"
+	"github.com/tomfran/go-risk-it/internal/logic/board"
 	"go.uber.org/zap"
 )
 
@@ -21,7 +21,10 @@ func NewAssignmentService(queries *db.Queries, logger *zap.SugaredLogger) *Servi
 	return &ServiceImpl{q: queries, log: logger}
 }
 
-func (s *ServiceImpl) AssignRegionsToPlayers(players []db.Player, regions []board.Region) RegionAssignment {
+func (s *ServiceImpl) AssignRegionsToPlayers(
+	players []db.Player,
+	regions []board.Region,
+) RegionAssignment {
 	regionsToPlayers := make(map[board.Region]db.Player)
 	for i, region := range regions {
 		regionsToPlayers[region] = players[i%len(players)]

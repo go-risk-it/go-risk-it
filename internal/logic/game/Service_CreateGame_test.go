@@ -3,16 +3,17 @@ package game
 import (
 	"context"
 	"errors"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/tomfran/go-risk-it/internal/db"
-	"github.com/tomfran/go-risk-it/internal/game/board"
-	"github.com/tomfran/go-risk-it/internal/game/player"
-	"github.com/tomfran/go-risk-it/internal/game/region"
+	"github.com/tomfran/go-risk-it/internal/logic/board"
+	"github.com/tomfran/go-risk-it/internal/logic/player"
+	"github.com/tomfran/go-risk-it/internal/logic/region"
 	"go.uber.org/zap"
-	"testing"
 )
 
-// creates a game with a valid board and list of users
+// creates a logic with a valid board and list of users
 func TestCreateGameWithValidBoardAndUsers(t *testing.T) {
 	var gameId int64 = 1
 	users := []string{"Giovanni", "Gabriele"}
@@ -85,14 +86,14 @@ func TestCreateGameInsertGameError(t *testing.T) {
 	users := []string{"user1", "user2"}
 
 	// Set up expectations for InsertGame method
-	querier.On("InsertGame", ctx).Return(int64(0), errors.New("insert game error"))
+	querier.On("InsertGame", ctx).Return(int64(0), errors.New("insert logic error"))
 
 	// Call the method under test
 	err := service.CreateGame(ctx, querier, board, users)
 
 	// Assert the result
 	assert.Error(t, err)
-	assert.EqualError(t, err, "insert game error")
+	assert.EqualError(t, err, "insert logic error")
 
 	// Verify that the expected methods were called
 	querier.AssertExpectations(t)

@@ -2,10 +2,11 @@ package game
 
 import (
 	"context"
+
 	"github.com/tomfran/go-risk-it/internal/db"
-	"github.com/tomfran/go-risk-it/internal/game/board"
-	"github.com/tomfran/go-risk-it/internal/game/player"
-	"github.com/tomfran/go-risk-it/internal/game/region"
+	"github.com/tomfran/go-risk-it/internal/logic/board"
+	"github.com/tomfran/go-risk-it/internal/logic/player"
+	"github.com/tomfran/go-risk-it/internal/logic/region"
 	"go.uber.org/zap"
 )
 
@@ -19,12 +20,21 @@ type ServiceImpl struct {
 	regionService region.Service
 }
 
-func NewGameService(logger *zap.SugaredLogger, playerService player.Service, regionService region.Service) *ServiceImpl {
+func NewGameService(
+	logger *zap.SugaredLogger,
+	playerService player.Service,
+	regionService region.Service,
+) *ServiceImpl {
 	return &ServiceImpl{log: logger, playerService: playerService, regionService: regionService}
 }
 
-func (s *ServiceImpl) CreateGame(ctx context.Context, q db.Querier, board *board.Board, users []string) error {
-	s.log.Infow("creating game", "board", board, "users", users)
+func (s *ServiceImpl) CreateGame(
+	ctx context.Context,
+	q db.Querier,
+	board *board.Board,
+	users []string,
+) error {
+	s.log.Infow("creating logic", "board", board, "users", users)
 	gameId, err := q.InsertGame(ctx)
 	if err != nil {
 		return err
@@ -38,7 +48,7 @@ func (s *ServiceImpl) CreateGame(ctx context.Context, q db.Querier, board *board
 	if err := s.regionService.CreateRegions(ctx, q, players, board.Regions); err != nil {
 		return err
 	}
-	s.log.Infow("created game", "board", board, "users", users)
+	s.log.Infow("created logic", "board", board, "users", users)
 
 	return nil
 }

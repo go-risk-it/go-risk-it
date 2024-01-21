@@ -1,11 +1,11 @@
-package game
+package logic
 
 import (
-	"github.com/tomfran/go-risk-it/internal/game/board"
-	"github.com/tomfran/go-risk-it/internal/game/game"
-	"github.com/tomfran/go-risk-it/internal/game/player"
-	"github.com/tomfran/go-risk-it/internal/game/region"
-	"github.com/tomfran/go-risk-it/internal/game/region/assignment"
+	"github.com/tomfran/go-risk-it/internal/logic/board"
+	"github.com/tomfran/go-risk-it/internal/logic/game"
+	"github.com/tomfran/go-risk-it/internal/logic/player"
+	"github.com/tomfran/go-risk-it/internal/logic/region"
+	"github.com/tomfran/go-risk-it/internal/logic/region/assignment"
 	"go.uber.org/fx"
 )
 

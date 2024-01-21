@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/lesismal/nbio/nbhttp"
 	"github.com/tomfran/go-risk-it/internal/db"
-	"github.com/tomfran/go-risk-it/internal/game"
 	"github.com/tomfran/go-risk-it/internal/loggerfx"
+	"github.com/tomfran/go-risk-it/internal/logic"
 	"github.com/tomfran/go-risk-it/internal/web"
 	"go.uber.org/fx"
 )
@@ -12,11 +12,11 @@ import (
 func main() {
 	fx.New(
 		loggerfx.Module,
-		game.Module,
+		logic.Module,
 		db.Module,
 		web.Module,
 		fx.Invoke(func(engine *nbhttp.Engine) {}),
-		//fx.Invoke(func(gs *game.ServiceImpl, di db.DBTX, q *db.Queries) error {
+		// fx.Invoke(func(gs *logic.ServiceImpl, di db.DBTX, q *db.Queries) error {
 		//	ctx := context.TODO()
 		//	// cast to pgxpool.Pool
 		//	db := di.(*pgxpool.Pool)
@@ -53,6 +53,6 @@ func main() {
 		//	}
 		//
 		//	return tx.Commit(ctx)
-		//}),
+		// }),
 	).Run()
 }

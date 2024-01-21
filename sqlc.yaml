@@ -2,10 +2,10 @@ version: "2"
 sql:
   - engine: "postgresql"
     queries:
-      - "internal/game/board"
-      - "internal/game/player"
-      - "internal/game/game"
-      - "internal/game/region"
+      - "internal/logic/board"
+      - "internal/logic/game"
+      - "internal/logic/player"
+      - "internal/logic/region"
     schema: "internal/db/migrations"
     gen:
       go:
