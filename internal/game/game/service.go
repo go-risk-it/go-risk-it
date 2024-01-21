@@ -2,9 +2,6 @@ package game
 
 import (
 	"context"
-	"github.com/tomfran/go-risk-it/internal/game/region/assignment"
-	"go.uber.org/fx"
-
 	"github.com/tomfran/go-risk-it/internal/db"
 	"github.com/tomfran/go-risk-it/internal/game/board"
 	"github.com/tomfran/go-risk-it/internal/game/player"
@@ -25,32 +22,6 @@ type ServiceImpl struct {
 func NewGameService(logger *zap.SugaredLogger, playerService player.Service, regionService region.Service) *ServiceImpl {
 	return &ServiceImpl{log: logger, playerService: playerService, regionService: regionService}
 }
-
-// Module provided to fx
-var Module = fx.Options(
-	fx.Provide(
-		fx.Annotate(
-			assignment.NewAssignmentService,
-			fx.As(new(assignment.Service)),
-		),
-		fx.Annotate(
-			board.NewBoardService,
-			fx.As(new(board.Service)),
-		),
-		fx.Annotate(
-			region.NewRegionService,
-			fx.As(new(region.Service)),
-		),
-		fx.Annotate(
-			player.NewPlayersService,
-			fx.As(new(player.Service)),
-		),
-		fx.Annotate(
-			NewGameService,
-			fx.As(new(Service)),
-		),
-	),
-)
 
 func (s *ServiceImpl) CreateGame(ctx context.Context, q db.Querier, board *board.Board, users []string) error {
 	s.log.Infow("creating game", "board", board, "users", users)
