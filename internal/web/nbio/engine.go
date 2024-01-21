@@ -15,7 +15,7 @@ func NewEngine(lc fx.Lifecycle, config *nbhttp.Config, log *zap.SugaredLogger) *
 	engine := nbhttp.NewEngine(*config)
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			go func(ctx context.Context) {
+			go func() {
 				log.Info("Starting engine...")
 				err := engine.Start()
 				if err != nil {
@@ -27,9 +27,9 @@ func NewEngine(lc fx.Lifecycle, config *nbhttp.Config, log *zap.SugaredLogger) *
 				signal.Notify(interrupt, os.Interrupt)
 				<-interrupt
 
-				ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+				_, cancel := context.WithTimeout(ctx, time.Second*3)
 				defer cancel()
-			}(ctx)
+			}()
 
 			return nil
 		},

@@ -1,13 +1,14 @@
-package game
+package game_test
 
 import (
 	"context"
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tomfran/go-risk-it/internal/db"
 	"github.com/tomfran/go-risk-it/internal/logic/board"
+	"github.com/tomfran/go-risk-it/internal/logic/game"
 	"github.com/tomfran/go-risk-it/internal/logic/player"
 	"github.com/tomfran/go-risk-it/internal/logic/region"
 	"go.uber.org/zap"
@@ -15,21 +16,24 @@ import (
 
 // creates a logic with a valid board and list of users
 func TestCreateGameWithValidBoardAndUsers(t *testing.T) {
-	var gameId int64 = 1
+	t.Parallel()
+
+	gameID := int64(1)
 	users := []string{"Giovanni", "Gabriele"}
 	ctx := context.Background()
+
 	mockQuerier := db.NewMockQuerier(t)
 
 	players := []db.Player{
-		{420, gameId, "Giovanni"},
-		{69, gameId, "Gabriele"},
+		{ID: 420, GameID: gameID, UserID: "Giovanni"},
+		{ID: 69, GameID: gameID, UserID: "Gabriele"},
 	}
 
 	regions := []board.Region{
-		{1, "Netherlands", 1},
-		{2, "Italy", 1},
-		{3, "Tasin", 2},
-		{4, "Samon", 3},
+		{ExternalReference: 1, Name: "Netherlands", ContinentId: 1},
+		{ExternalReference: 2, Name: "Italy", ContinentId: 1},
+		{ExternalReference: 3, Name: "Tasin", ContinentId: 2},
+		{ExternalReference: 4, Name: "Samon", ContinentId: 3},
 	}
 
 	gameBoard := &board.Board{
@@ -44,7 +48,7 @@ func TestCreateGameWithValidBoardAndUsers(t *testing.T) {
 	playerServiceMock := player.NewMockService(t)
 	playerServiceMock.
 		EXPECT().
-		CreatePlayers(ctx, mockQuerier, gameId, users).
+		CreatePlayers(ctx, mockQuerier, gameID, users).
 		Return(players, nil)
 
 	regionServiceMock := region.NewMockService(t)
@@ -54,19 +58,17 @@ func TestCreateGameWithValidBoardAndUsers(t *testing.T) {
 		Return(nil)
 
 	// Initialize the service
-	service := &ServiceImpl{
-		log:           zap.NewExample().Sugar(),
-		playerService: playerServiceMock,
-		regionService: regionServiceMock,
-	}
+	service := game.NewGameService(zap.NewExample().Sugar(), playerServiceMock, regionServiceMock)
 
 	result := service.CreateGame(ctx, mockQuerier, gameBoard, users)
 
-	assert.NoError(t, result)
+	require.NoError(t, result)
 }
 
 // returns error if InsertGame method returns an error
 func TestCreateGameInsertGameError(t *testing.T) {
+	t.Parallel()
+
 	// Initialize dependencies
 	logger := zap.NewExample().Sugar()
 	playerService := player.NewMockService(t)
@@ -74,26 +76,22 @@ func TestCreateGameInsertGameError(t *testing.T) {
 	querier := db.NewMockQuerier(t)
 
 	// Initialize the service under test
-	service := &ServiceImpl{
-		log:           logger,
-		playerService: playerService,
-		regionService: regionService,
-	}
+	service := game.NewGameService(logger, playerService, regionService)
 
 	// Set up test data
 	ctx := context.Background()
-	board := &board.Board{}
+	gameBoard := &board.Board{} //nolint:exhaustivestruct
 	users := []string{"user1", "user2"}
 
 	// Set up expectations for InsertGame method
 	querier.On("InsertGame", ctx).Return(int64(0), errors.New("insert logic error"))
 
 	// Call the method under test
-	err := service.CreateGame(ctx, querier, board, users)
+	err := service.CreateGame(ctx, querier, gameBoard, users)
 
 	// Assert the result
-	assert.Error(t, err)
-	assert.EqualError(t, err, "insert logic error")
+	require.Error(t, err)
+	require.EqualError(t, err, "insert logic error")
 
 	// Verify that the expected methods were called
 	querier.AssertExpectations(t)
@@ -107,11 +105,7 @@ func TestCreateGameCreatePlayersError(t *testing.T) {
 	regionService := region.NewMockService(t)
 
 	// Initialize the service under test
-	service := &ServiceImpl{
-		log:           logger,
-		playerService: playerService,
-		regionService: regionService,
-	}
+	service := game.NewGameService(logger, playerService, regionService)
 
 	// Set up test data
 	ctx := context.Background()
@@ -129,8 +123,8 @@ func TestCreateGameCreatePlayersError(t *testing.T) {
 	err := service.CreateGame(ctx, q, gameBoard, users)
 
 	// Assert the result
-	assert.Error(t, err)
-	assert.EqualError(t, err, "create players error")
+	require.Error(t, err)
+	require.EqualError(t, err, "create players error")
 
 	// Verify that the expected methods were called
 	q.AssertExpectations(t)
