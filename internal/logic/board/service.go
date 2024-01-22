@@ -5,9 +5,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type Service interface {
-	PersistBoard(board *Board) error
-}
+type Service interface{}
 
 type ServiceImpl struct {
 	q   *db.Queries
