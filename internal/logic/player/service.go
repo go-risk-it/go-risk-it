@@ -29,9 +29,12 @@ func (s *ServiceImpl) CreatePlayers(
 	users []string,
 ) ([]db.Player, error) {
 	s.log.Infow("creating players", "gameId", gameID, "users", users)
+
+	turnIndex := int64(0)
 	playersParams := make([]db.InsertPlayersParams, 0, len(users))
 	for _, user := range users {
-		playersParams = append(playersParams, db.InsertPlayersParams{GameID: gameID, UserID: user})
+		playersParams = append(playersParams, db.InsertPlayersParams{GameID: gameID, UserID: user, TurnIndex: turnIndex})
+		turnIndex += 1
 	}
 	if _, err := q.InsertPlayers(ctx, playersParams); err != nil {
 		s.log.Errorw("failed to insert players", "error", err)

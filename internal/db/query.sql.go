@@ -10,7 +10,7 @@ import (
 )
 
 const getPlayersByGameId = `-- name: GetPlayersByGameId :many
-SELECT id, game_id, user_id
+SELECT id, game_id, turn_index, user_id
 FROM player
 WHERE game_id = $1
 `
@@ -24,7 +24,12 @@ func (q *Queries) GetPlayersByGameId(ctx context.Context, gameID int64) ([]Playe
 	var items []Player
 	for rows.Next() {
 		var i Player
-		if err := rows.Scan(&i.ID, &i.GameID, &i.UserID); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.GameID,
+			&i.TurnIndex,
+			&i.UserID,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -49,8 +54,9 @@ func (q *Queries) InsertGame(ctx context.Context) (int64, error) {
 }
 
 type InsertPlayersParams struct {
-	GameID int64
-	UserID string
+	GameID    int64
+	UserID    string
+	TurnIndex int64
 }
 
 type InsertRegionsParams struct {

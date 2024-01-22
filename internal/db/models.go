@@ -12,7 +12,8 @@ type Card struct {
 }
 
 type Game struct {
-	ID int64
+	ID          int64
+	CurrentTurn int64
 }
 
 type Mission struct {
@@ -21,9 +22,10 @@ type Mission struct {
 }
 
 type Player struct {
-	ID     int64
-	GameID int64
-	UserID string
+	ID        int64
+	GameID    int64
+	TurnIndex int64
+	UserID    string
 }
 
 type Region struct {
