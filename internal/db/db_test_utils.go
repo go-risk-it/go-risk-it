@@ -3,20 +3,55 @@ package db
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/golang-migrate/migrate/v4/source/github"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"path/filepath"
+	"runtime"
 	"time"
 )
 
-func createContainerConnectionPool() (*pgxpool.Pool, error) {
-	ctx := context.Background()
+func GetQuerier(ctx context.Context) (Querier, error) {
+	connStr, err := setupPostgresTestcontainer(ctx)
+	if err != nil {
+		return nil, err
+	}
 
+	// migrate
+	_, path, _, ok := runtime.Caller(0)
+	if !ok {
+		return nil, fmt.Errorf("failed to get path")
+	}
+
+	pathToMigrationFiles := filepath.Dir(path) + "/migrations"
+	m, err := migrate.New(fmt.Sprintf("file:%s", pathToMigrationFiles), connStr)
+	if err != nil {
+		return nil, err
+	}
+
+	defer m.Close()
+	err = m.Up()
+
+	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		return nil, err
+	}
+
+	// create pool
+	pool, err := pgxpool.New(ctx, connStr)
+	if err != nil {
+		return nil, err
+	}
+
+	return New(pool), nil
+}
+
+func setupPostgresTestcontainer(ctx context.Context) (string, error) {
 	dbName := "risk-it"
 	dbUser := "postgres"
 	dbPassword := "password"
@@ -33,32 +68,7 @@ func createContainerConnectionPool() (*pgxpool.Pool, error) {
 				WithStartupTimeout(5*time.Second)),
 	)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-
-	connStr, err := container.ConnectionString(ctx, "sslmode=disable", "application_name=test")
-	if err != nil {
-		return nil, err
-	}
-
-	// migrate
-	m, err := migrate.New("file://migrations", connStr)
-	if err != nil {
-		return nil, err
-	}
-
-	defer m.Close()
-	err = m.Up()
-
-	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		return nil, err
-	}
-
-	// create pool
-	pool, err := pgxpool.Connect(ctx, connStr)
-	if err != nil {
-		return nil, err
-	}
-
-	return pool, nil
+	return container.ConnectionString(ctx, "sslmode=disable", "application_name=test")
 }
