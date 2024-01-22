@@ -44,15 +44,6 @@ services:
     depends_on:
       - sqlc
 
-  golangci-lint:
-    image: golangci/golangci-lint:v1.55.2
-    command: [ "sh", "-c", "if [ \"$LINT\" = true ]; then golangci-lint run -v; fi" ]
-    volumes:
-      - .:/app
-    working_dir: /app
-    environment:
-      - LINT=false
-
   risk-it:
     build:
       context: .
