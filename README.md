@@ -19,5 +19,6 @@ docker run --rm -v $(pwd):/src -w /src sqlc/sqlc generate
 Install:
 ```bash
 go install golang.org/x/tools/cmd/goimports@latest
+go install mvdan.cc/gofumpt@latest
 Install pre-commit hooks with `pre-commit install`
 

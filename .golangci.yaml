@@ -20,6 +20,5 @@ linters:
     - ineffassign
     - staticcheck
     - unused
-    - gofmt
-    - goimports
+    - gofumpt
     - lll # long lines

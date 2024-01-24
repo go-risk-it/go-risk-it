@@ -1,5 +1,5 @@
-lint:
-	@docker run --rm --tty\
-		-v $(shell pwd):/app \
-        -w /app \
-        golangci/golangci-lint:v1.55.2 golangci-lint run -v
+install:
+	go install golang.org/x/tools/cmd/goimports@latest
+	go install mvdan.cc/gofumpt@latest
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.55.2
+
