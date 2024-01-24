@@ -1,0 +1,18 @@
+repos:
+  # formatting
+  - repo: https://github.com/TekWizely/pre-commit-golang
+    rev: v1.0.0-rc.1
+    hooks:
+      - id: go-imports
+        args: ["-w"]
+        exclude: "^.*(/mock_.*|internal/db/(copyfrom|db|models|querier|query.sql)).go$"
+  - repo: https://github.com/segmentio/golines
+    rev: v0.12.2
+    hooks:
+      - id: golines
+        args: ["-m", "99"]
+  # linting
+  - repo: https://github.com/golangci/golangci-lint
+    rev: v1.55.2
+    hooks:
+      - id: golangci-lint-full

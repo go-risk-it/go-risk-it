@@ -33,7 +33,10 @@ func (s *ServiceImpl) CreatePlayers(
 	turnIndex := int64(0)
 	playersParams := make([]db.InsertPlayersParams, 0, len(users))
 	for _, user := range users {
-		playersParams = append(playersParams, db.InsertPlayersParams{GameID: gameID, UserID: user, TurnIndex: turnIndex})
+		playersParams = append(
+			playersParams,
+			db.InsertPlayersParams{GameID: gameID, UserID: user, TurnIndex: turnIndex},
+		)
 		turnIndex += 1
 	}
 	if _, err := q.InsertPlayers(ctx, playersParams); err != nil {

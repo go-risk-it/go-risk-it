@@ -15,4 +15,9 @@ If you want to just generate the `sqlc` code, run:
 docker run --rm -v $(pwd):/src -w /src sqlc/sqlc generate
 ```
 
+## Pre-commit
+Install:
+```bash
+go install golang.org/x/tools/cmd/goimports@latest
+Install pre-commit hooks with `pre-commit install`
 

@@ -1,8 +1,9 @@
 package web
 
 import (
-	"github.com/tomfran/go-risk-it/internal/web/handlers"
 	"net/http"
+
+	"github.com/tomfran/go-risk-it/internal/web/handlers"
 
 	"go.uber.org/zap"
 )

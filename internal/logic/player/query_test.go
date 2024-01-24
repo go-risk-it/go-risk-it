@@ -2,9 +2,10 @@ package player
 
 import (
 	"context"
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	"github.com/tomfran/go-risk-it/internal/db"
-	"testing"
 )
 
 func TestInsertPlayer(t *testing.T) {

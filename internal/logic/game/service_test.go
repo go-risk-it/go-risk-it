@@ -119,7 +119,8 @@ func TestCreateGameCreatePlayersError(t *testing.T) {
 	q.On("InsertGame", ctx).Return(int64(1), nil)
 
 	// Set up expectations for CreatePlayers method
-	playerService.On("CreatePlayers", ctx, q, int64(1), users).Return(nil, errors.New("create players error"))
+	playerService.On("CreatePlayers", ctx, q, int64(1), users).
+		Return(nil, errors.New("create players error"))
 
 	// Call the method under test
 	err := service.CreateGame(ctx, q, gameBoard, users)

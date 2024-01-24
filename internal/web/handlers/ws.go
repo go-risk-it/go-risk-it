@@ -12,7 +12,10 @@ type WebSocketHandler struct {
 	log      *zap.SugaredLogger
 }
 
-func NewWebSocketHandler(upgrader *websocket.Upgrader, logger *zap.SugaredLogger) *WebSocketHandler {
+func NewWebSocketHandler(
+	upgrader *websocket.Upgrader,
+	logger *zap.SugaredLogger,
+) *WebSocketHandler {
 	return &WebSocketHandler{upgrader: upgrader, log: logger}
 }
 
