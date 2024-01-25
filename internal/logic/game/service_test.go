@@ -15,14 +15,11 @@ import (
 	"go.uber.org/zap"
 )
 
-<<<<<<< HEAD
-=======
 var (
 	errCreatePlayers = errors.New("error inserting players")
 	errInsertGame    = errors.New("insert logic error")
 )
 
->>>>>>> 711ca65 (Make all the linters happy)
 // creates a logic with a valid board and list of users.
 func TestCreateGameWithValidBoardAndUsers(t *testing.T) {
 	t.Parallel()
@@ -100,7 +97,7 @@ func TestCreateGameInsertGameError(t *testing.T) {
 
 	// Assert the result
 	require.Error(t, err)
-	require.EqualError(t, err, "insert logic error")
+	require.EqualError(t, err, "failed to insert game: insert logic error")
 
 	// Verify that the expected methods were called
 	querier.AssertExpectations(t)
@@ -136,7 +133,7 @@ func TestCreateGameCreatePlayersError(t *testing.T) {
 
 	// Assert the result
 	require.Error(t, err)
-	require.EqualError(t, err, "create players error")
+	require.EqualError(t, err, "failed to create players: error inserting players")
 
 	// Verify that the expected methods were called
 	querier.AssertExpectations(t)
