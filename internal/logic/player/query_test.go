@@ -1,4 +1,4 @@
-package player
+package player_test
 
 import (
 	"context"
@@ -9,24 +9,26 @@ import (
 )
 
 func TestInsertPlayer(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
-	q, err := db.GetQuerier(ctx)
+	querier, err := db.GetQuerier(ctx)
 
 	require.NoError(t, err)
 
-	game1, err := q.InsertGame(ctx)
+	game1, err := querier.InsertGame(ctx)
 	require.NoError(t, err)
-	game2, err := q.InsertGame(ctx)
+	game2, err := querier.InsertGame(ctx)
 	require.NoError(t, err)
 
 	players := []db.InsertPlayersParams{
-		{GameID: game1, UserID: "Gabriele"},
-		{GameID: game1, UserID: "Giovanni"},
-		{GameID: game2, UserID: "Francesco"},
+		{GameID: game1, TurnIndex: 1, UserID: "Gabriele"},
+		{GameID: game1, TurnIndex: 2, UserID: "Giovanni"},
+		{GameID: game2, TurnIndex: 1, UserID: "Francesco"},
 	}
 
-	result, err := q.InsertPlayers(ctx, players)
+	result, err := querier.InsertPlayers(ctx, players)
 	require.NoError(t, err)
 
-	require.Equal(t, result, int64(3))
+	require.Equal(t, int64(3), result)
 }

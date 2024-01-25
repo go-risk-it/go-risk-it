@@ -15,18 +15,18 @@ type ServiceImpl struct {
 type Region struct {
 	ExternalReference int    `json:"id"`
 	Name              string `json:"name"`
-	ContinentID       int    `json:"continent_id"`
+	ContinentID       int    `json:"continentId"`
 }
 
 type Continent struct {
 	ExternalReference int    `json:"id"`
 	Name              string `json:"name"`
-	BonusTroops       int    `json:"bonus_troops"`
+	BonusTroops       int    `json:"bonusTroops"`
 }
 
 type Border struct {
-	FirstRegionID  int `json:"first_region_id"`
-	SecondRegionID int `json:"second_region_id"`
+	FirstRegionID  int `json:"firstRegionId"`
+	SecondRegionID int `json:"secondRegionId"`
 }
 
 type Board struct {

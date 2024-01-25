@@ -10,15 +10,49 @@ linters-settings:
   lll:
     line-length: 99
     tab-width: 4
+  revive:
+    rules:
+      - name: blank-imports
+        disabled: true
+#  exhaustruct:
+#    # List of regular expressions to match struct packages and their names.
+#    # Regular expressions must match complete canonical struct package/name/structname.
+#    # If this list is empty, all structs are tested.
+#    # Default: []
+#    include:
+#      - '.+\.Test'
+#      - 'example\.com/package\.ExampleStruct[\d]{1,2}'
+#    # List of regular expressions to exclude struct packages and their names from checks.
+#    # Regular expressions must match complete canonical struct package/name/structname.
+#    # Default: []
+#    exclude:
+#      - '.test*'
 linters:
   # See the dedicated "linters" documentation section.
-  disable-all: true
-  enable:
-    - errcheck
-    - gosimple
-    - govet
-    - ineffassign
-    - staticcheck
-    - unused
-    - gofumpt
-    - lll # long lines
+  enable-all: true
+  disable:
+    - golint
+    - depguard
+    - gochecknoglobals
+    - gomnd
+    - exhaustruct
+#    deprecated linters
+    - interfacer
+    - scopelint
+    - ifshort
+    - maligned
+    - varcheck
+    - exhaustivestruct
+    - structcheck
+    - nosnakecase
+    - deadcode
+#  disable-all: true
+#  enable:
+#    - errcheck
+#    - gosimple
+#    - govet
+#    - ineffassign
+#    - staticcheck
+#    - unused
+#    - gofumpt
+#    - lll # long lines

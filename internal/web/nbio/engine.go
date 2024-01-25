@@ -2,6 +2,7 @@ package nbio
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"time"
@@ -11,8 +12,9 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewEngine(lc fx.Lifecycle, config *nbhttp.Config, log *zap.SugaredLogger) *nbhttp.Engine {
-	engine := nbhttp.NewEngine(*config)
+func NewEngine(lc fx.Lifecycle, config nbhttp.Config, log *zap.SugaredLogger) *nbhttp.Engine {
+	engine := nbhttp.NewEngine(config)
+
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			go func() {
@@ -34,9 +36,10 @@ func NewEngine(lc fx.Lifecycle, config *nbhttp.Config, log *zap.SugaredLogger) *
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
-			return engine.Shutdown(ctx)
+			return fmt.Errorf("failure during engine shutdown: %w", engine.Shutdown(ctx))
 		},
 	})
+
 	return engine
 }
 

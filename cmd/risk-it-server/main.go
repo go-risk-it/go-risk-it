@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -16,6 +18,8 @@ import (
 	"go.uber.org/zap"
 )
 
+var errPoolCast = errors.New("cannot cast db pool")
+
 func main() {
 	fx.New(
 		loggerfx.Module,
@@ -23,47 +27,55 @@ func main() {
 		db.Module,
 		web.Module,
 		fx.Invoke(func(engine *nbhttp.Engine) {}),
-		fx.Invoke(func(gs game.Service, di db.DB, q *db.Queries, log *zap.SugaredLogger) error {
-			ctx := context.TODO()
-			dbPool := di.(*pgxpool.Pool)
-			tx, err := dbPool.Begin(ctx)
-			if err != nil {
-				return err
-			}
-			defer func(tx pgx.Tx, ctx context.Context) {
-				err := tx.Rollback(ctx)
-				if err != nil {
-					log.Info(err)
+		fx.Invoke(
+			func(service game.Service, di db.DB, que *db.Queries, log *zap.SugaredLogger) error {
+				ctx := context.TODO()
+				dbPool, ok := di.(*pgxpool.Pool)
+				if !ok {
+					return errPoolCast
 				}
-			}(tx, ctx)
-			qtx := q.WithTx(tx)
-			err = gs.CreateGame(ctx, qtx, &board.Board{
-				Regions: []board.Region{
-					{
-						ExternalReference: 1,
-						Name:              "Alaska",
-						ContinentID:       1,
-					},
-					{
-						ExternalReference: 2,
-						Name:              "Northwest Territory",
-						ContinentID:       1,
-					},
-				},
-				Continents: []board.Continent{
-					{
-						ExternalReference: 1,
-						Name:              "North America",
-						BonusTroops:       5,
-					},
-				},
-				Borders: nil,
-			}, []string{"tom", "fran"})
-			if err != nil {
-				panic(err)
-			}
 
-			return tx.Commit(ctx)
-		}),
+				transaction, err := dbPool.Begin(ctx)
+				if err != nil {
+					return fmt.Errorf("transaction begin failed: %w", err)
+				}
+
+				defer func(tx pgx.Tx, ctx context.Context) {
+					err := tx.Rollback(ctx)
+					if err != nil {
+						log.Info(err)
+					}
+				}(transaction, ctx)
+
+				qtx := que.WithTx(transaction)
+				err = service.CreateGame(ctx, qtx, &board.Board{
+					Regions: []board.Region{
+						{
+							ExternalReference: 1,
+							Name:              "Alaska",
+							ContinentID:       1,
+						},
+						{
+							ExternalReference: 2,
+							Name:              "Northwest Territory",
+							ContinentID:       1,
+						},
+					},
+					Continents: []board.Continent{
+						{
+							ExternalReference: 1,
+							Name:              "North America",
+							BonusTroops:       5,
+						},
+					},
+					Borders: nil,
+				}, []string{"tom", "fran"})
+				if err != nil {
+					panic(err)
+				}
+
+				return fmt.Errorf("transaction commit failed: %w", transaction.Commit(ctx))
+			},
+		),
 	).Run()
 }

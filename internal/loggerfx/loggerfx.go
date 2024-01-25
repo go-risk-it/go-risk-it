@@ -2,27 +2,32 @@ package loggerfx
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
 
-func NewLogger(lc fx.Lifecycle) *zap.SugaredLogger {
+func NewLogger(lifecycle fx.Lifecycle) *zap.SugaredLogger {
 	logger, err := zap.NewProduction()
 	if err != nil {
 		log.Fatalf("can't initialize zap logger: %v", err)
 	}
-	lc.Append(
+
+	lifecycle.Append(
 		fx.Hook{
+			OnStart: nil,
 			OnStop: func(ctx context.Context) error {
 				if err := logger.Sync(); err != nil {
-					return err
+					return fmt.Errorf("failed to sync logger: %w", err)
 				}
+
 				return nil
 			},
 		},
 	)
+
 	return logger.Sugar()
 }
 

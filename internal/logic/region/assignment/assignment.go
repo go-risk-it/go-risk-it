@@ -29,5 +29,6 @@ func (s *ServiceImpl) AssignRegionsToPlayers(
 	for i, region := range regions {
 		regionsToPlayers[region] = players[i%len(players)]
 	}
+
 	return regionsToPlayers
 }

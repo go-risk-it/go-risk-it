@@ -11,5 +11,6 @@ func NewServeMux(wsHandler *handlers.WebSocketHandler, log *zap.SugaredLogger) *
 	mux := &http.ServeMux{}
 	mux.HandleFunc("/ws", wsHandler.OnWebSocket)
 	log.Infow("Created mux", "mux", mux)
+
 	return mux
 }

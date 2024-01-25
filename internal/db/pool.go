@@ -9,22 +9,26 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewConnectionPool(lc fx.Lifecycle, logger *zap.SugaredLogger) *pgxpool.Pool {
+func NewConnectionPool(lifecycle fx.Lifecycle, log *zap.SugaredLogger) *pgxpool.Pool {
 	pool, err := pgxpool.New(
 		context.Background(),
 		"postgresql://localhost:5432/risk-it?user=postgres&password=password",
 	)
 	if err != nil {
-		logger.Fatal(os.Stderr, "Unable to create connection pool: %v\n", err)
+		log.Fatal(os.Stderr, "Unable to create connection pool: %v\n", err)
 		panic("Unable to create connection pool")
 	}
-	lc.Append(
+
+	lifecycle.Append(
 		fx.Hook{
+			OnStart: nil,
 			OnStop: func(ctx context.Context) error {
 				pool.Close()
+
 				return nil
 			},
 		},
 	)
+
 	return pool
 }

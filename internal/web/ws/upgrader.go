@@ -20,14 +20,15 @@ type Payload struct {
 }
 
 func NewUpgrader(logger *zap.SugaredLogger) *websocket.Upgrader {
-	u := websocket.Upgrader{
+	//exhaustruct:ignore
+	upgrader := websocket.Upgrader{
 		// Resolve cross-domain problems
 		CheckOrigin: func(r *http.Request) bool {
 			return true
 		},
 	}
 
-	u.OnOpen(func(c *websocket.Conn) {
+	upgrader.OnOpen(func(c *websocket.Conn) {
 		// echo
 		logger.Info("OnOpen:", zap.String("remoteAddress", c.RemoteAddr().String()))
 		err := c.WriteMessage(1, []byte("Established connection"))
@@ -36,7 +37,7 @@ func NewUpgrader(logger *zap.SugaredLogger) *websocket.Upgrader {
 		}
 	})
 
-	u.OnMessage(func(c *websocket.Conn, messageType websocket.MessageType, data []byte) {
+	upgrader.OnMessage(func(c *websocket.Conn, messageType websocket.MessageType, data []byte) {
 		// echo
 		logger.Infow("OnMessage:", "messageType", messageType, "data", string(data))
 		err := c.WriteMessage(messageType, []byte("{\"hello\":\"there\"}"))
@@ -45,9 +46,9 @@ func NewUpgrader(logger *zap.SugaredLogger) *websocket.Upgrader {
 		}
 	})
 
-	u.OnClose(func(c *websocket.Conn, err error) {
+	upgrader.OnClose(func(c *websocket.Conn, err error) {
 		logger.Infow("OnClose:", "remoteAddress", c.RemoteAddr().String(), "error", err)
 	})
 
-	return &u
+	return &upgrader
 }

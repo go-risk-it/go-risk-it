@@ -15,6 +15,14 @@ import (
 	"go.uber.org/zap"
 )
 
+<<<<<<< HEAD
+=======
+var (
+	errCreatePlayers = errors.New("error inserting players")
+	errInsertGame    = errors.New("insert logic error")
+)
+
+>>>>>>> 711ca65 (Make all the linters happy)
 // creates a logic with a valid board and list of users.
 func TestCreateGameWithValidBoardAndUsers(t *testing.T) {
 	t.Parallel()
@@ -26,8 +34,8 @@ func TestCreateGameWithValidBoardAndUsers(t *testing.T) {
 	mockQuerier := dbmock.NewQuerier(t)
 
 	players := []db.Player{
-		{ID: 420, GameID: gameID, UserID: "Giovanni"},
-		{ID: 69, GameID: gameID, UserID: "Gabriele"},
+		{ID: 420, TurnIndex: 1, GameID: gameID, UserID: "Giovanni"},
+		{ID: 69, TurnIndex: 2, GameID: gameID, UserID: "Gabriele"},
 	}
 
 	regions := []board.Region{
@@ -85,7 +93,7 @@ func TestCreateGameInsertGameError(t *testing.T) {
 	users := []string{"user1", "user2"}
 
 	// Set up expectations for InsertGame method
-	querier.On("InsertGame", ctx).Return(int64(0), errors.New("insert logic error"))
+	querier.On("InsertGame", ctx).Return(int64(0), errInsertGame)
 
 	// Call the method under test
 	err := service.CreateGame(ctx, querier, gameBoard, users)
@@ -112,25 +120,25 @@ func TestCreateGameCreatePlayersError(t *testing.T) {
 
 	// Set up test data
 	ctx := context.Background()
-	q := dbmock.NewQuerier(t)
+	querier := dbmock.NewQuerier(t)
 	gameBoard := &board.Board{}
 	users := []string{"user1", "user2"}
 
 	// Set up expectations for InsertGame method
-	q.On("InsertGame", ctx).Return(int64(1), nil)
+	querier.On("InsertGame", ctx).Return(int64(1), nil)
 
 	// Set up expectations for CreatePlayers method
-	playerService.On("CreatePlayers", ctx, q, int64(1), users).
-		Return(nil, errors.New("create players error"))
+	playerService.On("CreatePlayers", ctx, querier, int64(1), users).
+		Return(nil, errCreatePlayers)
 
 	// Call the method under test
-	err := service.CreateGame(ctx, q, gameBoard, users)
+	err := service.CreateGame(ctx, querier, gameBoard, users)
 
 	// Assert the result
 	require.Error(t, err)
 	require.EqualError(t, err, "create players error")
 
 	// Verify that the expected methods were called
-	q.AssertExpectations(t)
+	querier.AssertExpectations(t)
 	playerService.AssertExpectations(t)
 }
