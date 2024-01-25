@@ -26,7 +26,7 @@ func NewLogger(lc fx.Lifecycle) *zap.SugaredLogger {
 	return logger.Sugar()
 }
 
-// Module provided to fx
+// Module provided to fx.
 var Module = fx.Options(
 	fx.Provide(NewLogger),
 )

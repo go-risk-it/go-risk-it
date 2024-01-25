@@ -1,2 +1,13 @@
-inpackage: True
 with-expecter: True
+inpackage: False
+dir: mocks/{{ replaceAll .InterfaceDirRelative "internal" "internal_" }}
+
+
+mockname: "{{.InterfaceName}}"
+outpkg: "{{.PackageName}}"
+filename: "{{.InterfaceName}}.go"
+all: True
+packages:
+  github.com/tomfran/go-risk-it/internal:
+    config:
+      recursive: True

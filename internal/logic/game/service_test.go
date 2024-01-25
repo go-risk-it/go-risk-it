@@ -9,12 +9,13 @@ import (
 	"github.com/tomfran/go-risk-it/internal/db"
 	"github.com/tomfran/go-risk-it/internal/logic/board"
 	"github.com/tomfran/go-risk-it/internal/logic/game"
-	"github.com/tomfran/go-risk-it/internal/logic/player"
-	"github.com/tomfran/go-risk-it/internal/logic/region"
+	dbmock "github.com/tomfran/go-risk-it/mocks/internal_/db"
+	playermock "github.com/tomfran/go-risk-it/mocks/internal_/logic/player"
+	regionmock "github.com/tomfran/go-risk-it/mocks/internal_/logic/region"
 	"go.uber.org/zap"
 )
 
-// creates a logic with a valid board and list of users
+// creates a logic with a valid board and list of users.
 func TestCreateGameWithValidBoardAndUsers(t *testing.T) {
 	t.Parallel()
 
@@ -22,7 +23,7 @@ func TestCreateGameWithValidBoardAndUsers(t *testing.T) {
 	users := []string{"Giovanni", "Gabriele"}
 	ctx := context.Background()
 
-	mockQuerier := db.NewMockQuerier(t)
+	mockQuerier := dbmock.NewQuerier(t)
 
 	players := []db.Player{
 		{ID: 420, GameID: gameID, UserID: "Giovanni"},
@@ -45,13 +46,13 @@ func TestCreateGameWithValidBoardAndUsers(t *testing.T) {
 	// setup mocks
 	mockQuerier.EXPECT().InsertGame(ctx).Return(gameID, nil)
 
-	playerServiceMock := player.NewMockService(t)
+	playerServiceMock := playermock.NewService(t)
 	playerServiceMock.
 		EXPECT().
 		CreatePlayers(ctx, mockQuerier, gameID, users).
 		Return(players, nil)
 
-	regionServiceMock := region.NewMockService(t)
+	regionServiceMock := regionmock.NewService(t)
 	regionServiceMock.
 		EXPECT().
 		CreateRegions(ctx, mockQuerier, players, regions).
@@ -65,15 +66,15 @@ func TestCreateGameWithValidBoardAndUsers(t *testing.T) {
 	require.NoError(t, result)
 }
 
-// returns error if InsertGame method returns an error
+// returns error if InsertGame method returns an error.
 func TestCreateGameInsertGameError(t *testing.T) {
 	t.Parallel()
 
 	// Initialize dependencies
 	logger := zap.NewExample().Sugar()
-	playerService := player.NewMockService(t)
-	regionService := region.NewMockService(t)
-	querier := db.NewMockQuerier(t)
+	playerService := playermock.NewService(t)
+	regionService := regionmock.NewService(t)
+	querier := dbmock.NewQuerier(t)
 
 	// Initialize the service under test
 	service := game.NewGameService(logger, playerService, regionService)
@@ -97,21 +98,21 @@ func TestCreateGameInsertGameError(t *testing.T) {
 	querier.AssertExpectations(t)
 }
 
-// returns error if CreatePlayers method returns an error
+// returns error if CreatePlayers method returns an error.
 func TestCreateGameCreatePlayersError(t *testing.T) {
 	t.Parallel()
 
 	// Initialize dependencies
 	logger := zap.NewExample().Sugar()
-	playerService := player.NewMockService(t)
-	regionService := region.NewMockService(t)
+	playerService := playermock.NewService(t)
+	regionService := regionmock.NewService(t)
 
 	// Initialize the service under test
 	service := game.NewGameService(logger, playerService, regionService)
 
 	// Set up test data
 	ctx := context.Background()
-	q := db.NewMockQuerier(t)
+	q := dbmock.NewQuerier(t)
 	gameBoard := &board.Board{}
 	users := []string{"user1", "user2"}
 
