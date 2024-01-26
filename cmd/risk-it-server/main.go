@@ -18,7 +18,31 @@ import (
 	"go.uber.org/zap"
 )
 
-var errPoolCast = errors.New("cannot cast db pool")
+var (
+	errPoolCast = errors.New("cannot cast db pool")
+	gameBoard   = &board.Board{
+		Regions: []board.Region{
+			{
+				ExternalReference: 1,
+				Name:              "Alaska",
+				ContinentID:       1,
+			},
+			{
+				ExternalReference: 2,
+				Name:              "Northwest Territory",
+				ContinentID:       1,
+			},
+		},
+		Continents: []board.Continent{
+			{
+				ExternalReference: 1,
+				Name:              "North America",
+				BonusTroops:       5,
+			},
+		},
+		Borders: nil,
+	}
+)
 
 func main() {
 	fx.New(
@@ -48,33 +72,17 @@ func main() {
 				}(transaction, ctx)
 
 				qtx := que.WithTx(transaction)
-				err = service.CreateGame(ctx, qtx, &board.Board{
-					Regions: []board.Region{
-						{
-							ExternalReference: 1,
-							Name:              "Alaska",
-							ContinentID:       1,
-						},
-						{
-							ExternalReference: 2,
-							Name:              "Northwest Territory",
-							ContinentID:       1,
-						},
-					},
-					Continents: []board.Continent{
-						{
-							ExternalReference: 1,
-							Name:              "North America",
-							BonusTroops:       5,
-						},
-					},
-					Borders: nil,
-				}, []string{"tom", "fran"})
+				err = service.CreateGame(ctx, qtx, gameBoard, []string{"tom", "fran"})
 				if err != nil {
-					panic(err)
+					return fmt.Errorf("failed to create game: %w", err)
 				}
 
-				return fmt.Errorf("transaction commit failed: %w", transaction.Commit(ctx))
+				err = transaction.Commit(ctx)
+				if err != nil {
+					return fmt.Errorf("transaction commit failed: %w", err)
+				}
+
+				return nil
 			},
 		),
 	).Run()
