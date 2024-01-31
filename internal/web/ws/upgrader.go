@@ -7,19 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type Message struct {
-	PlayerID int
-	GameID   int
-	Payload  Payload
-}
-
-type Payload struct {
-	StartRegionID int
-	EndRegionID   int
-	NumTroops     int
-}
-
-func NewUpgrader(logger *zap.SugaredLogger) *websocket.Upgrader {
+func NewUpgrader(log *zap.SugaredLogger, messageHandler MessageHandler) *websocket.Upgrader {
 	//exhaustruct:ignore
 	upgrader := websocket.Upgrader{
 		// Resolve cross-domain problems
@@ -30,24 +18,17 @@ func NewUpgrader(logger *zap.SugaredLogger) *websocket.Upgrader {
 
 	upgrader.OnOpen(func(c *websocket.Conn) {
 		// echo
-		logger.Info("OnOpen:", zap.String("remoteAddress", c.RemoteAddr().String()))
+		log.Info("OnOpen:", zap.String("remoteAddress", c.RemoteAddr().String()))
 		err := c.WriteMessage(1, []byte("Established connection"))
 		if err != nil {
 			panic(err)
 		}
 	})
 
-	upgrader.OnMessage(func(c *websocket.Conn, messageType websocket.MessageType, data []byte) {
-		// echo
-		logger.Infow("OnMessage:", "messageType", messageType, "data", string(data))
-		err := c.WriteMessage(messageType, []byte("{\"hello\":\"there\"}"))
-		if err != nil {
-			panic(err)
-		}
-	})
+	upgrader.OnMessage(messageHandler.OnMessage)
 
 	upgrader.OnClose(func(c *websocket.Conn, err error) {
-		logger.Infow("OnClose:", "remoteAddress", c.RemoteAddr().String(), "error", err)
+		log.Infow("OnClose:", "remoteAddress", c.RemoteAddr().String(), "error", err)
 	})
 
 	return &upgrader

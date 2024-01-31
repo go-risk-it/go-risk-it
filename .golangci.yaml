@@ -5,7 +5,8 @@ run:
 #  skip-files:
 #    - "mock_.*\\.go"
 # output configuration options
-#output:
+output:
+  sort-results: true
 linters-settings:
   lll:
     line-length: 99
