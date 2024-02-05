@@ -6,6 +6,7 @@ import (
 
 	"github.com/lesismal/nbio/nbhttp/websocket"
 	"github.com/tomfran/go-risk-it/internal/api/game/message"
+	"github.com/tomfran/go-risk-it/internal/web/controllers/board"
 	"github.com/tomfran/go-risk-it/internal/web/controllers/game"
 	"go.uber.org/zap"
 )
@@ -19,12 +20,21 @@ type MessageHandler interface {
 }
 
 type MessageHandlerImpl struct {
-	log            *zap.SugaredLogger
-	gameController game.Controller
+	log             *zap.SugaredLogger
+	gameController  game.Controller
+	boardController board.Controller
 }
 
-func New(log *zap.SugaredLogger, gameController game.Controller) *MessageHandlerImpl {
-	return &MessageHandlerImpl{log: log, gameController: gameController}
+func New(
+	log *zap.SugaredLogger,
+	gameController game.Controller,
+	boardController board.Controller,
+) *MessageHandlerImpl {
+	return &MessageHandlerImpl{
+		log:             log,
+		gameController:  gameController,
+		boardController: boardController,
+	}
 }
 
 func (m *MessageHandlerImpl) OnMessage(
@@ -43,32 +53,61 @@ func (m *MessageHandlerImpl) OnMessage(
 		return
 	}
 
-	switch requestMessage.Type {
-	case message.GameStateRequestType:
-		response, err := handleMessage(requestMessage.Payload, m.gameController.GetGameState)
-		if err != nil {
-			m.log.Info("Unable to handle message: %v", err)
-		}
+	response, responseType, err := m.handleMessage(requestMessage)
+	if err != nil {
+		m.log.Errorf("unable to handle message: %v", err)
 
-		rawResponse, err := buildResponseMessage(response, message.GameStateResponseType)
-		if err != nil {
-			m.log.Errorf("unable to build response: %v", err)
+		return
+	}
 
-			return
-		}
+	rawResponse, err := buildResponseMessage(response, responseType)
+	if err != nil {
+		m.log.Errorf("unable to build response: %v", err)
 
-		err = connection.WriteMessage(websocket.BinaryMessage, rawResponse)
-		if err != nil {
-			m.log.Errorf("unable to write response: %v", err)
+		return
+	}
 
-			return
-		}
+	err = connection.WriteMessage(websocket.BinaryMessage, rawResponse)
+	if err != nil {
+		m.log.Errorf("unable to write response: %v", err)
+
+		return
 	}
 }
 
-func handleMessage[Request interface{}, Response interface{}](
+func (m *MessageHandlerImpl) handleMessage(
+	requestMessage message.RequestMessage,
+) (interface{}, message.ResponseType, error) {
+	var (
+		response     interface{}
+		responseType message.ResponseType
+		err          error
+	)
+
+	switch requestMessage.Type {
+	case message.GameStateRequestType:
+		response, err = handleRequest(requestMessage.Payload, m.gameController.GetGameState)
+		responseType = message.GameStateResponseType
+	case message.BoardStateRequestType:
+		response, err = handleRequest(requestMessage.Payload, m.boardController.GetBoardState)
+		responseType = message.BoardStateResponseType
+	}
+
+	if err != nil {
+		var (
+			nilResponse     interface{}
+			nilResponseType message.ResponseType
+		)
+
+		return nilResponse, nilResponseType, fmt.Errorf("unable to handle message: %w", err)
+	}
+
+	return response, responseType, nil
+}
+
+func handleRequest[Request interface{}, Response interface{}](
 	payload json.RawMessage,
-	handleRequest func(Request) (Response, error),
+	handler func(Request) (Response, error),
 ) (Response, error) {
 	var (
 		request     Request
@@ -80,7 +119,7 @@ func handleMessage[Request interface{}, Response interface{}](
 		return nilResponse, fmt.Errorf("unable to unmarshal json: %w", err)
 	}
 
-	response, err := handleRequest(request)
+	response, err := handler(request)
 	if err != nil {
 		return nilResponse, fmt.Errorf("unable to handle request: %w", err)
 	}

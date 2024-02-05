@@ -8,8 +8,8 @@ CREATE TABLE player
 (
     id      BIGSERIAL PRIMARY KEY,
     game_id BIGINT NOT NULL,
-    turn_index BIGINT NOT NULL,
     user_id TEXT   NOT NULL,
+    turn_index BIGINT NOT NULL,
     FOREIGN KEY (game_id) REFERENCES game (id)
 );
 

@@ -23,5 +23,5 @@ func New(log *zap.SugaredLogger, gameService game.Service) *ControllerImpl {
 func (c *ControllerImpl) GetGameState(
 	request request.GameStateRequest,
 ) (gameApi.GameStateResponse, error) {
-	return gameApi.GameStateResponse{UserID: 1, GameID: 1}, nil
+	return gameApi.GameStateResponse{GameID: 1, Users: []gameApi.User{}, CurrentTurn: 0}, nil
 }

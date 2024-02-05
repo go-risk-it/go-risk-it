@@ -5,7 +5,8 @@ import "encoding/json"
 type RequestType string
 
 const (
-	GameStateRequestType RequestType = "game_state_request"
+	GameStateRequestType  RequestType = "game_state_request"
+	BoardStateRequestType RequestType = "board_state_request"
 )
 
 type RequestMessage struct {
