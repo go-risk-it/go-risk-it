@@ -1,4 +1,4 @@
-package game
+package request
 
 type GameStateRequest struct {
 	UserID int64 `json:"userId"`

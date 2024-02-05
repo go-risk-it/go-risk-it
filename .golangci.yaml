@@ -15,6 +15,9 @@ linters-settings:
     rules:
       - name: blank-imports
         disabled: true
+  gocritic:
+    disabled-checks:
+      - singleCaseSwitch
 #  exhaustruct:
 #    # List of regular expressions to match struct packages and their names.
 #    # Regular expressions must match complete canonical struct package/name/structname.
@@ -32,12 +35,13 @@ linters:
   # See the dedicated "linters" documentation section.
   enable-all: true
   disable:
-    - golint
     - depguard
     - gochecknoglobals
     - gomnd
     - exhaustruct
-#    deprecated linters
+    - ireturn
+    #    deprecated linters
+    - golint
     - interfacer
     - scopelint
     - ifshort

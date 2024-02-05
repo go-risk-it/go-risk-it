@@ -5,8 +5,7 @@ import (
 	"fmt"
 
 	"github.com/lesismal/nbio/nbhttp/websocket"
-	"github.com/tomfran/go-risk-it/internal/api"
-	game2 "github.com/tomfran/go-risk-it/internal/api/game"
+	"github.com/tomfran/go-risk-it/internal/api/game/message"
 	"github.com/tomfran/go-risk-it/internal/web/controllers/game"
 	"go.uber.org/zap"
 )
@@ -33,62 +32,74 @@ func (m *MessageHandlerImpl) OnMessage(
 	messageType websocket.MessageType,
 	data []byte,
 ) {
-	var message api.Message
+	var requestMessage message.RequestMessage
 
 	m.log.Infow("Received message", "messageType", messageType, "data", data)
 
-	err := json.Unmarshal(data, &message)
+	err := json.Unmarshal(data, &requestMessage)
 	if err != nil {
 		m.log.Info("Unable to unmarshal json: %v", err)
 
 		return
 	}
 
-	switch message.Type {
-	case api.GameStateRequestType:
-		var request game2.GameStateRequest
-
-		err := json.Unmarshal(message.Payload, &request)
+	switch requestMessage.Type {
+	case message.GameStateRequestType:
+		response, err := handleMessage(requestMessage.Payload, m.gameController.GetGameState)
 		if err != nil {
-			m.log.Infow("Unable to unmarshal json: %v", "error", err)
+			m.log.Info("Unable to handle message: %v", err)
+		}
+
+		rawResponse, err := buildResponseMessage(response, message.GameStateResponseType)
+		if err != nil {
+			m.log.Errorf("unable to build response: %v", err)
 
 			return
 		}
 
-		response := m.gameController.GetGameState(request)
-
-		responseByteMessage, err := buildResponseMessage(response, api.GameStateResponseType)
+		err = connection.WriteMessage(websocket.BinaryMessage, rawResponse)
 		if err != nil {
-			m.log.Errorw("Unable to build response message: %v", "error", err)
+			m.log.Errorf("unable to write response: %v", err)
 
 			return
 		}
-
-		m.log.Infow("Sending response:", "response", response)
-
-		err = connection.WriteMessage(websocket.BinaryMessage, responseByteMessage)
-		if err != nil {
-			m.log.Errorw("Unable to write message: %v", "error", err)
-
-			return
-		}
-	case api.GameStateResponseType:
-		m.log.Infow("Received response:", "response", message)
 	}
 }
 
-func buildResponseMessage(payload interface{}, messageType api.Type) ([]byte, error) {
-	var message api.Message
-	message.Type = messageType
+func handleMessage[Request interface{}, Response interface{}](
+	payload json.RawMessage,
+	handleRequest func(Request) (Response, error),
+) (Response, error) {
+	var (
+		request     Request
+		nilResponse Response
+	)
+
+	err := json.Unmarshal(payload, &request)
+	if err != nil {
+		return nilResponse, fmt.Errorf("unable to unmarshal json: %w", err)
+	}
+
+	response, err := handleRequest(request)
+	if err != nil {
+		return nilResponse, fmt.Errorf("unable to handle request: %w", err)
+	}
+
+	return response, nil
+}
+
+func buildResponseMessage(payload interface{}, messageType message.ResponseType) ([]byte, error) {
+	var responseMessage message.ResponseMessage
+	responseMessage.Type = messageType
 
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal json: %w", err)
 	}
 
-	message.Payload = data
+	responseMessage.Payload = data
 
-	result, err := json.Marshal(message)
+	result, err := json.Marshal(responseMessage)
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal json: %w", err)
 	}
