@@ -10,7 +10,7 @@ import (
 )
 
 const getPlayersByGameId = `-- name: GetPlayersByGameId :many
-SELECT id, game_id, turn_index, user_id
+SELECT id, game_id, user_id, turn_index
 FROM player
 WHERE game_id = $1
 `
@@ -27,8 +27,8 @@ func (q *Queries) GetPlayersByGameId(ctx context.Context, gameID int64) ([]Playe
 		if err := rows.Scan(
 			&i.ID,
 			&i.GameID,
-			&i.TurnIndex,
 			&i.UserID,
+			&i.TurnIndex,
 		); err != nil {
 			return nil, err
 		}

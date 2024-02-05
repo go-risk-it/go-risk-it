@@ -1,13 +1,14 @@
-package ws
+package upgrader
 
 import (
 	"net/http"
 
 	"github.com/lesismal/nbio/nbhttp/websocket"
+	"github.com/tomfran/go-risk-it/internal/web/ws/handler"
 	"go.uber.org/zap"
 )
 
-func NewUpgrader(log *zap.SugaredLogger, messageHandler MessageHandler) *websocket.Upgrader {
+func New(log *zap.SugaredLogger, messageHandler handler.MessageHandler) *websocket.Upgrader {
 	//exhaustruct:ignore
 	upgrader := websocket.Upgrader{
 		// Resolve cross-domain problems

@@ -24,8 +24,8 @@ type Mission struct {
 type Player struct {
 	ID        int64
 	GameID    int64
-	TurnIndex int64
 	UserID    string
+	TurnIndex int64
 }
 
 type Region struct {

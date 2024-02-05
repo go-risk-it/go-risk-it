@@ -21,7 +21,7 @@ func New(log *zap.SugaredLogger, boardService board.Service) *ControllerImpl {
 }
 
 func (c *ControllerImpl) GetBoardState(
-	request request.GameStateRequest,
+	request request.BoardStateRequest,
 ) (gameApi.BoardStateResponse, error) {
 	return gameApi.BoardStateResponse{Regions: []gameApi.Region{}}, nil
 }
