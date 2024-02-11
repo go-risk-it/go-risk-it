@@ -20,7 +20,7 @@ func New(log *zap.SugaredLogger, messageHandler handler.MessageHandler) *websock
 	upgrader.OnOpen(func(c *websocket.Conn) {
 		// echo
 		log.Info("OnOpen:", zap.String("remoteAddress", c.RemoteAddr().String()))
-		err := c.WriteMessage(1, []byte("Established connection"))
+		err := c.WriteMessage(websocket.TextMessage, []byte("Established connection"))
 		if err != nil {
 			panic(err)
 		}

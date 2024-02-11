@@ -67,7 +67,9 @@ func (m *MessageHandlerImpl) OnMessage(
 		return
 	}
 
-	err = connection.WriteMessage(websocket.BinaryMessage, rawResponse)
+	m.log.Infow("Sending response", "rawResponse", rawResponse)
+
+	err = connection.WriteMessage(websocket.TextMessage, rawResponse)
 	if err != nil {
 		m.log.Errorf("unable to write response: %v", err)
 
@@ -127,7 +129,10 @@ func handleRequest[Request interface{}, Response interface{}](
 	return response, nil
 }
 
-func buildResponseMessage(payload interface{}, messageType message.ResponseType) ([]byte, error) {
+func buildResponseMessage(
+	payload interface{},
+	messageType message.ResponseType,
+) (json.RawMessage, error) {
 	var responseMessage message.ResponseMessage
 	responseMessage.Type = messageType
 
