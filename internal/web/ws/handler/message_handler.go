@@ -93,6 +93,9 @@ func (m *MessageHandlerImpl) handleMessage(
 	case message.BoardStateRequestType:
 		response, err = handleRequest(requestMessage.Payload, m.boardController.GetBoardState)
 		responseType = message.BoardStateResponseType
+	case message.FullStateRequestType:
+		response, err = handleRequest(requestMessage.Payload, m.gameController.GetFullState)
+		responseType = message.FullStateResponseType
 	}
 
 	if err != nil {

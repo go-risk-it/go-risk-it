@@ -19,6 +19,10 @@ pre-commit-check:
 test:
 	go test ./...
 
+sqlc:
+	@echo "Building..."
+	@docker run --rm -v $(pwd):/src -w /src sqlc/sqlc generate
+
 run:
 	@echo "Destroying existing environment..."
 	@docker compose --project-name go-risk-it down --remove-orphans

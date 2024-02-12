@@ -22,9 +22,9 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
-// CreatePlayers provides a mock function with given fields: ctx, q, gameID, users
-func (_m *Service) CreatePlayers(ctx context.Context, q db.Querier, gameID int64, users []string) ([]db.Player, error) {
-	ret := _m.Called(ctx, q, gameID, users)
+// CreatePlayers provides a mock function with given fields: ctx, gameID, users
+func (_m *Service) CreatePlayers(ctx context.Context, gameID int64, users []string) ([]db.Player, error) {
+	ret := _m.Called(ctx, gameID, users)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreatePlayers")
@@ -32,19 +32,19 @@ func (_m *Service) CreatePlayers(ctx context.Context, q db.Querier, gameID int64
 
 	var r0 []db.Player
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, db.Querier, int64, []string) ([]db.Player, error)); ok {
-		return rf(ctx, q, gameID, users)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, []string) ([]db.Player, error)); ok {
+		return rf(ctx, gameID, users)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, db.Querier, int64, []string) []db.Player); ok {
-		r0 = rf(ctx, q, gameID, users)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, []string) []db.Player); ok {
+		r0 = rf(ctx, gameID, users)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]db.Player)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, db.Querier, int64, []string) error); ok {
-		r1 = rf(ctx, q, gameID, users)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, []string) error); ok {
+		r1 = rf(ctx, gameID, users)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -59,16 +59,15 @@ type Service_CreatePlayers_Call struct {
 
 // CreatePlayers is a helper method to define mock.On call
 //   - ctx context.Context
-//   - q db.Querier
 //   - gameID int64
 //   - users []string
-func (_e *Service_Expecter) CreatePlayers(ctx interface{}, q interface{}, gameID interface{}, users interface{}) *Service_CreatePlayers_Call {
-	return &Service_CreatePlayers_Call{Call: _e.mock.On("CreatePlayers", ctx, q, gameID, users)}
+func (_e *Service_Expecter) CreatePlayers(ctx interface{}, gameID interface{}, users interface{}) *Service_CreatePlayers_Call {
+	return &Service_CreatePlayers_Call{Call: _e.mock.On("CreatePlayers", ctx, gameID, users)}
 }
 
-func (_c *Service_CreatePlayers_Call) Run(run func(ctx context.Context, q db.Querier, gameID int64, users []string)) *Service_CreatePlayers_Call {
+func (_c *Service_CreatePlayers_Call) Run(run func(ctx context.Context, gameID int64, users []string)) *Service_CreatePlayers_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(db.Querier), args[2].(int64), args[3].([]string))
+		run(args[0].(context.Context), args[1].(int64), args[2].([]string))
 	})
 	return _c
 }
@@ -78,7 +77,66 @@ func (_c *Service_CreatePlayers_Call) Return(_a0 []db.Player, _a1 error) *Servic
 	return _c
 }
 
-func (_c *Service_CreatePlayers_Call) RunAndReturn(run func(context.Context, db.Querier, int64, []string) ([]db.Player, error)) *Service_CreatePlayers_Call {
+func (_c *Service_CreatePlayers_Call) RunAndReturn(run func(context.Context, int64, []string) ([]db.Player, error)) *Service_CreatePlayers_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetPlayers provides a mock function with given fields: ctx, gameID
+func (_m *Service) GetPlayers(ctx context.Context, gameID int64) ([]db.Player, error) {
+	ret := _m.Called(ctx, gameID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetPlayers")
+	}
+
+	var r0 []db.Player
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64) ([]db.Player, error)); ok {
+		return rf(ctx, gameID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int64) []db.Player); ok {
+		r0 = rf(ctx, gameID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]db.Player)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(ctx, gameID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Service_GetPlayers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetPlayers'
+type Service_GetPlayers_Call struct {
+	*mock.Call
+}
+
+// GetPlayers is a helper method to define mock.On call
+//   - ctx context.Context
+//   - gameID int64
+func (_e *Service_Expecter) GetPlayers(ctx interface{}, gameID interface{}) *Service_GetPlayers_Call {
+	return &Service_GetPlayers_Call{Call: _e.mock.On("GetPlayers", ctx, gameID)}
+}
+
+func (_c *Service_GetPlayers_Call) Run(run func(ctx context.Context, gameID int64)) *Service_GetPlayers_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int64))
+	})
+	return _c
+}
+
+func (_c *Service_GetPlayers_Call) Return(_a0 []db.Player, _a1 error) *Service_GetPlayers_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Service_GetPlayers_Call) RunAndReturn(run func(context.Context, int64) ([]db.Player, error)) *Service_GetPlayers_Call {
 	_c.Call.Return(run)
 	return _c
 }

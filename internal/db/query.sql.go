@@ -9,6 +9,19 @@ import (
 	"context"
 )
 
+const getGame = `-- name: GetGame :one
+SELECT id, current_turn, current_phase
+FROM game
+WHERE id = $1
+`
+
+func (q *Queries) GetGame(ctx context.Context, id int64) (Game, error) {
+	row := q.db.QueryRow(ctx, getGame, id)
+	var i Game
+	err := row.Scan(&i.ID, &i.CurrentTurn, &i.CurrentPhase)
+	return i, err
+}
+
 const getPlayersByGameId = `-- name: GetPlayersByGameId :many
 SELECT id, game_id, user_id, turn_index
 FROM player

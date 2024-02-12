@@ -22,6 +22,63 @@ func (_m *Querier) EXPECT() *Querier_Expecter {
 	return &Querier_Expecter{mock: &_m.Mock}
 }
 
+// GetGame provides a mock function with given fields: ctx, id
+func (_m *Querier) GetGame(ctx context.Context, id int64) (db.Game, error) {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetGame")
+	}
+
+	var r0 db.Game
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (db.Game, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int64) db.Game); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Get(0).(db.Game)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_GetGame_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetGame'
+type Querier_GetGame_Call struct {
+	*mock.Call
+}
+
+// GetGame is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id int64
+func (_e *Querier_Expecter) GetGame(ctx interface{}, id interface{}) *Querier_GetGame_Call {
+	return &Querier_GetGame_Call{Call: _e.mock.On("GetGame", ctx, id)}
+}
+
+func (_c *Querier_GetGame_Call) Run(run func(ctx context.Context, id int64)) *Querier_GetGame_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int64))
+	})
+	return _c
+}
+
+func (_c *Querier_GetGame_Call) Return(_a0 db.Game, _a1 error) *Querier_GetGame_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_GetGame_Call) RunAndReturn(run func(context.Context, int64) (db.Game, error)) *Querier_GetGame_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetPlayersByGameId provides a mock function with given fields: ctx, gameID
 func (_m *Querier) GetPlayersByGameId(ctx context.Context, gameID int64) ([]db.Player, error) {
 	ret := _m.Called(ctx, gameID)

@@ -4,7 +4,54 @@
 
 package db
 
-import ()
+import (
+	"database/sql/driver"
+	"fmt"
+)
+
+type Phase string
+
+const (
+	PhaseCARDS     Phase = "CARDS"
+	PhaseDEPLOY    Phase = "DEPLOY"
+	PhaseATTACK    Phase = "ATTACK"
+	PhaseREINFORCE Phase = "REINFORCE"
+)
+
+func (e *Phase) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = Phase(s)
+	case string:
+		*e = Phase(s)
+	default:
+		return fmt.Errorf("unsupported scan type for Phase: %T", src)
+	}
+	return nil
+}
+
+type NullPhase struct {
+	Phase Phase
+	Valid bool // Valid is true if Phase is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullPhase) Scan(value interface{}) error {
+	if value == nil {
+		ns.Phase, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.Phase.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullPhase) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.Phase), nil
+}
 
 type Card struct {
 	ID       int64
@@ -12,8 +59,9 @@ type Card struct {
 }
 
 type Game struct {
-	ID          int64
-	CurrentTurn int64
+	ID           int64
+	CurrentTurn  int64
+	CurrentPhase Phase
 }
 
 type Mission struct {

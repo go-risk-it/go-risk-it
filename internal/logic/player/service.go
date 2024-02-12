@@ -9,18 +9,35 @@ import (
 )
 
 type Service interface {
-	CreatePlayers(ctx context.Context, q db.Querier, gameID int64, users []string) (
+	CreatePlayers(ctx context.Context, gameID int64, users []string) (
+		[]db.Player,
+		error,
+	)
+	GetPlayers(ctx context.Context, gameID int64) (
 		[]db.Player,
 		error,
 	)
 }
 
 type ServiceImpl struct {
-	log *zap.SugaredLogger
+	log     *zap.SugaredLogger
+	querier db.Querier
 }
 
-func NewPlayersService(log *zap.SugaredLogger) *ServiceImpl {
-	return &ServiceImpl{log: log}
+func NewPlayersService(log *zap.SugaredLogger, querier db.Querier) *ServiceImpl {
+	return &ServiceImpl{log: log, querier: querier}
+}
+
+func (s *ServiceImpl) GetPlayers(ctx context.Context, gameID int64) (
+	[]db.Player,
+	error,
+) {
+	players, err := s.querier.GetPlayersByGameId(ctx, gameID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get players: %w", err)
+	}
+
+	return players, nil
 }
 
 func (s *ServiceImpl) CreatePlayers(

@@ -21,6 +21,62 @@ func (_m *Controller) EXPECT() *Controller_Expecter {
 	return &Controller_Expecter{mock: &_m.Mock}
 }
 
+// GetFullState provides a mock function with given fields: _a0
+func (_m *Controller) GetFullState(_a0 request.FullStateRequest) (response.FullStateResponse, error) {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetFullState")
+	}
+
+	var r0 response.FullStateResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(request.FullStateRequest) (response.FullStateResponse, error)); ok {
+		return rf(_a0)
+	}
+	if rf, ok := ret.Get(0).(func(request.FullStateRequest) response.FullStateResponse); ok {
+		r0 = rf(_a0)
+	} else {
+		r0 = ret.Get(0).(response.FullStateResponse)
+	}
+
+	if rf, ok := ret.Get(1).(func(request.FullStateRequest) error); ok {
+		r1 = rf(_a0)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Controller_GetFullState_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetFullState'
+type Controller_GetFullState_Call struct {
+	*mock.Call
+}
+
+// GetFullState is a helper method to define mock.On call
+//   - _a0 request.FullStateRequest
+func (_e *Controller_Expecter) GetFullState(_a0 interface{}) *Controller_GetFullState_Call {
+	return &Controller_GetFullState_Call{Call: _e.mock.On("GetFullState", _a0)}
+}
+
+func (_c *Controller_GetFullState_Call) Run(run func(_a0 request.FullStateRequest)) *Controller_GetFullState_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(request.FullStateRequest))
+	})
+	return _c
+}
+
+func (_c *Controller_GetFullState_Call) Return(_a0 response.FullStateResponse, _a1 error) *Controller_GetFullState_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Controller_GetFullState_Call) RunAndReturn(run func(request.FullStateRequest) (response.FullStateResponse, error)) *Controller_GetFullState_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetGameState provides a mock function with given fields: _a0
 func (_m *Controller) GetGameState(_a0 request.GameStateRequest) (response.GameStateResponse, error) {
 	ret := _m.Called(_a0)

@@ -5,6 +5,7 @@ import "encoding/json"
 type RequestType string
 
 const (
+	FullStateRequestType  RequestType = "full_state_request"
 	GameStateRequestType  RequestType = "game_state_request"
 	BoardStateRequestType RequestType = "board_state_request"
 )

@@ -12,3 +12,4 @@ sql:
         package: "db"
         out: "internal/db"
         sql_package: "pgx/v5"
+        emit_interface: true
