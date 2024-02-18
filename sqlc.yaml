@@ -6,10 +6,10 @@ sql:
       - "internal/logic/game"
       - "internal/logic/player"
       - "internal/logic/region"
-    schema: "internal/db/migrations"
+    schema: "internal/data/sqlc/migrations"
     gen:
       go:
-        package: "db"
-        out: "internal/db"
+        package: "sqlc"
+        out: "internal/data/sqlc"
         sql_package: "pgx/v5"
         emit_interface: true

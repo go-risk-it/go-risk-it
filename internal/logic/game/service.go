@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/tomfran/go-risk-it/internal/db"
+	"github.com/tomfran/go-risk-it/internal/data/db"
+	sqlc "github.com/tomfran/go-risk-it/internal/data/sqlc"
 	"github.com/tomfran/go-risk-it/internal/logic/board"
 	"github.com/tomfran/go-risk-it/internal/logic/player"
 	"github.com/tomfran/go-risk-it/internal/logic/region"
@@ -12,8 +13,8 @@ import (
 )
 
 type Service interface {
-	CreateGame(ctx context.Context, board *board.Board, users []string) error
-	GetGameState(ctx context.Context, gameID int64) (*db.Game, error)
+	CreateGameWithTx(ctx context.Context, board *board.Board, users []string) error
+	GetGameState(ctx context.Context, gameID int64) (*sqlc.Game, error)
 }
 
 type ServiceImpl struct {
@@ -37,14 +38,30 @@ func NewGameService(
 	}
 }
 
+func (s *ServiceImpl) CreateGameWithTx(
+	ctx context.Context,
+	board *board.Board,
+	users []string,
+) error {
+	err := s.querier.Transact(ctx, func(qtx db.Querier) error {
+		return s.CreateGame(ctx, qtx, board, users)
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create game: %w", err)
+	}
+
+	return nil
+}
+
 func (s *ServiceImpl) CreateGame(
 	ctx context.Context,
+	querier db.Querier,
 	board *board.Board,
 	users []string,
 ) error {
 	s.log.Infow("creating logic", "board", board, "users", users)
 
-	gameID, err := s.querier.InsertGame(ctx)
+	gameID, err := querier.InsertGame(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to insert game: %w", err)
 	}
@@ -54,7 +71,7 @@ func (s *ServiceImpl) CreateGame(
 		return fmt.Errorf("failed to create players: %w", err)
 	}
 
-	if err := s.regionService.CreateRegions(ctx, s.querier, players, board.Regions); err != nil {
+	if err := s.regionService.CreateRegions(ctx, players, board.Regions); err != nil {
 		return fmt.Errorf("failed to create regions: %w", err)
 	}
 
@@ -66,7 +83,7 @@ func (s *ServiceImpl) CreateGame(
 func (s *ServiceImpl) GetGameState(
 	ctx context.Context,
 	gameID int64,
-) (*db.Game, error) {
+) (*sqlc.Game, error) {
 	game, err := s.querier.GetGame(ctx, gameID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get game: %w", err)

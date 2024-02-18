@@ -4,17 +4,18 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/tomfran/go-risk-it/internal/db"
+	"github.com/tomfran/go-risk-it/internal/data/db"
+	sqlc "github.com/tomfran/go-risk-it/internal/data/sqlc"
 	"go.uber.org/zap"
 )
 
 type Service interface {
 	CreatePlayers(ctx context.Context, gameID int64, users []string) (
-		[]db.Player,
+		[]sqlc.Player,
 		error,
 	)
 	GetPlayers(ctx context.Context, gameID int64) (
-		[]db.Player,
+		[]sqlc.Player,
 		error,
 	)
 }
@@ -29,7 +30,7 @@ func NewPlayersService(log *zap.SugaredLogger, querier db.Querier) *ServiceImpl 
 }
 
 func (s *ServiceImpl) GetPlayers(ctx context.Context, gameID int64) (
-	[]db.Player,
+	[]sqlc.Player,
 	error,
 ) {
 	players, err := s.querier.GetPlayersByGameId(ctx, gameID)
@@ -42,30 +43,29 @@ func (s *ServiceImpl) GetPlayers(ctx context.Context, gameID int64) (
 
 func (s *ServiceImpl) CreatePlayers(
 	ctx context.Context,
-	querier db.Querier,
 	gameID int64,
 	users []string,
-) ([]db.Player, error) {
+) ([]sqlc.Player, error) {
 	s.log.Infow("creating players", "gameID", gameID, "users", users)
 
 	turnIndex := int64(0)
-	playersParams := make([]db.InsertPlayersParams, 0, len(users))
+	playersParams := make([]sqlc.InsertPlayersParams, 0, len(users))
 
 	for _, user := range users {
 		playersParams = append(
 			playersParams,
-			db.InsertPlayersParams{GameID: gameID, UserID: user, TurnIndex: turnIndex},
+			sqlc.InsertPlayersParams{GameID: gameID, UserID: user, TurnIndex: turnIndex},
 		)
 		turnIndex += 1
 	}
 
-	if _, err := querier.InsertPlayers(ctx, playersParams); err != nil {
+	if _, err := s.querier.InsertPlayers(ctx, playersParams); err != nil {
 		return nil, fmt.Errorf("failed to insert players: %w", err)
 	}
 
 	s.log.Infow("created players", "gameId", gameID, "users", users)
 
-	players, err := querier.GetPlayersByGameId(ctx, gameID)
+	players, err := s.querier.GetPlayersByGameId(ctx, gameID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get players by game ID: %w", err)
 	}

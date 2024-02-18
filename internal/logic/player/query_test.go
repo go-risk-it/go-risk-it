@@ -5,14 +5,15 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/tomfran/go-risk-it/internal/db"
+	"github.com/tomfran/go-risk-it/internal/data"
+	sqlc "github.com/tomfran/go-risk-it/internal/data/sqlc"
 )
 
 func TestInsertPlayer(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	querier, err := db.GetQuerier(ctx)
+	querier, err := data.GetQuerier(ctx)
 
 	require.NoError(t, err)
 
@@ -21,7 +22,7 @@ func TestInsertPlayer(t *testing.T) {
 	game2, err := querier.InsertGame(ctx)
 	require.NoError(t, err)
 
-	players := []db.InsertPlayersParams{
+	players := []sqlc.InsertPlayersParams{
 		{GameID: game1, TurnIndex: 1, UserID: "Gabriele"},
 		{GameID: game1, TurnIndex: 2, UserID: "Giovanni"},
 		{GameID: game2, TurnIndex: 1, UserID: "Francesco"},

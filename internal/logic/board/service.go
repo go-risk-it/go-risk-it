@@ -1,15 +1,15 @@
 package board
 
 import (
-	"github.com/tomfran/go-risk-it/internal/db"
+	"github.com/tomfran/go-risk-it/internal/data/db"
 	"go.uber.org/zap"
 )
 
 type Service interface{}
 
 type ServiceImpl struct {
-	q   *db.Queries
-	log *zap.SugaredLogger
+	querier db.Querier
+	log     *zap.SugaredLogger
 }
 
 type Region struct {
@@ -35,6 +35,6 @@ type Board struct {
 	Borders    []Border    `json:"borders"`
 }
 
-func NewBoardService(queries *db.Queries, logger *zap.SugaredLogger) *ServiceImpl {
-	return &ServiceImpl{q: queries, log: logger}
+func NewBoardService(q db.Querier, logger *zap.SugaredLogger) *ServiceImpl {
+	return &ServiceImpl{querier: q, log: logger}
 }

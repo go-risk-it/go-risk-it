@@ -1,4 +1,4 @@
-package db
+package data
 
 import (
 	"context"
@@ -16,11 +16,12 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"github.com/tomfran/go-risk-it/internal/data/db"
 )
 
 var errGetPath = errors.New("failed to get path")
 
-func GetQuerier(ctx context.Context) (*Queries, error) {
+func GetQuerier(ctx context.Context) (db.Querier, error) {
 	connStr, err := setupPostgresTestcontainer(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup postgres testcontainer: %w", err)
@@ -32,11 +33,11 @@ func GetQuerier(ctx context.Context) (*Queries, error) {
 		return nil, errGetPath
 	}
 
-	pathToMigrationFiles := filepath.Dir(path) + "/migrations"
+	pathToMigrationFiles := filepath.Dir(path) + "/sqlc/migrations"
 
 	mig, err := migrate.New(fmt.Sprintf("file:%s", pathToMigrationFiles), connStr)
 	if err != nil {
-		return nil, fmt.Errorf("failed to migrate db: %w", err)
+		return nil, fmt.Errorf("failed to migrate data: %w", err)
 	}
 
 	defer mig.Close()
@@ -52,7 +53,7 @@ func GetQuerier(ctx context.Context) (*Queries, error) {
 		return nil, fmt.Errorf("failed to create database pool: %w", err)
 	}
 
-	return New(pool), nil
+	return db.New(pool), nil
 }
 
 func setupPostgresTestcontainer(ctx context.Context) (string, error) {

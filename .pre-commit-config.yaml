@@ -5,16 +5,16 @@ repos:
     hooks:
       - id: golines
         args: ["-m", "99"]
-        exclude: "^(mocks/.*|internal/db/(copyfrom|db|models|querier|query.sql)).go$"
+        exclude: "^(mocks/.*|internal/data/(copyfrom|data|models|querier|query.sql)).go$"
   - repo: https://github.com/TekWizely/pre-commit-golang
     rev: v1.0.0-rc.1
     hooks:
       - id: go-imports
         args: [ "-w" ]
-        exclude: "^(mocks/.*|internal/db/(copyfrom|db|models|querier|query.sql)).go$"
+        exclude: "^(mocks/.*|internal/data/(copyfrom|data|models|querier|query.sql)).go$"
       - id: go-fumpt
         args: [ "-w" ]
-        exclude: "^(mocks/.*|internal/db/(copyfrom|db|models|querier|query.sql)).go$"
+        exclude: "^(mocks/.*|internal/data/(copyfrom|data|models|querier|query.sql)).go$"
   # linting
   - repo: https://github.com/golangci/golangci-lint
     rev: v1.55.2

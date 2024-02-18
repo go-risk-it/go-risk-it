@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/tomfran/go-risk-it/internal/db"
+	sqlc "github.com/tomfran/go-risk-it/internal/data/sqlc"
 	"github.com/tomfran/go-risk-it/internal/logic/player"
-	dbmock "github.com/tomfran/go-risk-it/mocks/internal_/db"
+	"github.com/tomfran/go-risk-it/mocks/internal_/data/db"
 	"go.uber.org/zap"
 )
 
@@ -16,7 +16,7 @@ func TestServiceImpl_GetPlayers(t *testing.T) {
 
 	// Initialize dependencies
 	logger := zap.NewExample().Sugar()
-	querier := dbmock.NewQuerier(t)
+	querier := db.NewQuerier(t)
 
 	// Initialize the service under test
 	service := player.NewPlayersService(logger, querier)
@@ -25,20 +25,20 @@ func TestServiceImpl_GetPlayers(t *testing.T) {
 	ctx := context.Background()
 	gameID := int64(1)
 
-	player1 := db.Player{
+	player1 := sqlc.Player{
 		ID:        1,
 		GameID:    gameID,
 		UserID:    "user1",
 		TurnIndex: 0,
 	}
-	player2 := db.Player{
+	player2 := sqlc.Player{
 		ID:        2,
 		GameID:    gameID,
 		UserID:    "user2",
 		TurnIndex: 1,
 	}
 	// Set up expectations for GetGame method
-	querier.On("GetPlayersByGameId", ctx, gameID).Return([]db.Player{
+	querier.On("GetPlayersByGameId", ctx, gameID).Return([]sqlc.Player{
 		player1, player2,
 	}, nil)
 

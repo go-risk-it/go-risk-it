@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/tomfran/go-risk-it/internal/db"
+	"github.com/tomfran/go-risk-it/internal/data/sqlc"
 	"github.com/tomfran/go-risk-it/internal/logic/board"
 	"github.com/tomfran/go-risk-it/internal/logic/game"
-	dbmock "github.com/tomfran/go-risk-it/mocks/internal_/db"
-	playermock "github.com/tomfran/go-risk-it/mocks/internal_/logic/player"
-	regionmock "github.com/tomfran/go-risk-it/mocks/internal_/logic/region"
+	"github.com/tomfran/go-risk-it/mocks/internal_/data/db"
+	"github.com/tomfran/go-risk-it/mocks/internal_/logic/player"
+	"github.com/tomfran/go-risk-it/mocks/internal_/logic/region"
 	"go.uber.org/zap"
 )
 
@@ -28,9 +28,9 @@ func TestCreateGameWithValidBoardAndUsers(t *testing.T) {
 	users := []string{"Giovanni", "Gabriele"}
 	ctx := context.Background()
 
-	mockQuerier := dbmock.NewQuerier(t)
+	mockQuerier := db.NewQuerier(t)
 
-	players := []db.Player{
+	players := []sqlc.Player{
 		{ID: 420, TurnIndex: 1, GameID: gameID, UserID: "Giovanni"},
 		{ID: 69, TurnIndex: 2, GameID: gameID, UserID: "Gabriele"},
 	}
@@ -50,17 +50,18 @@ func TestCreateGameWithValidBoardAndUsers(t *testing.T) {
 
 	// setup mocks
 	mockQuerier.EXPECT().InsertGame(ctx).Return(gameID, nil)
+	// mockDB.EXPECT().Begin(ctx).Return()
 
-	playerServiceMock := playermock.NewService(t)
+	playerServiceMock := player.NewService(t)
 	playerServiceMock.
 		EXPECT().
 		CreatePlayers(ctx, gameID, users).
 		Return(players, nil)
 
-	regionServiceMock := regionmock.NewService(t)
+	regionServiceMock := region.NewService(t)
 	regionServiceMock.
 		EXPECT().
-		CreateRegions(ctx, mockQuerier, players, regions).
+		CreateRegions(ctx, players, regions).
 		Return(nil)
 
 	// Initialize the service
@@ -71,7 +72,7 @@ func TestCreateGameWithValidBoardAndUsers(t *testing.T) {
 		regionServiceMock,
 	)
 
-	result := service.CreateGame(ctx, gameBoard, users)
+	result := service.CreateGame(ctx, mockQuerier, gameBoard, users)
 
 	require.NoError(t, result)
 }
@@ -82,9 +83,9 @@ func TestCreateGameInsertGameError(t *testing.T) {
 
 	// Initialize dependencies
 	logger := zap.NewExample().Sugar()
-	playerService := playermock.NewService(t)
-	regionService := regionmock.NewService(t)
-	querier := dbmock.NewQuerier(t)
+	playerService := player.NewService(t)
+	regionService := region.NewService(t)
+	querier := db.NewQuerier(t)
 
 	// Initialize the service under test
 	service := game.NewGameService(logger, querier, playerService, regionService)
@@ -98,7 +99,7 @@ func TestCreateGameInsertGameError(t *testing.T) {
 	querier.On("InsertGame", ctx).Return(int64(0), errInsertGame)
 
 	// Call the method under test
-	err := service.CreateGame(ctx, gameBoard, users)
+	err := service.CreateGame(ctx, querier, gameBoard, users)
 
 	// Assert the result
 	require.Error(t, err)
@@ -114,9 +115,9 @@ func TestCreateGameCreatePlayersError(t *testing.T) {
 
 	// Initialize dependencies
 	logger := zap.NewExample().Sugar()
-	querier := dbmock.NewQuerier(t)
-	playerService := playermock.NewService(t)
-	regionService := regionmock.NewService(t)
+	querier := db.NewQuerier(t)
+	playerService := player.NewService(t)
+	regionService := region.NewService(t)
 
 	// Initialize the service under test
 	service := game.NewGameService(logger, querier, playerService, regionService)
@@ -134,7 +135,7 @@ func TestCreateGameCreatePlayersError(t *testing.T) {
 		Return(nil, errCreatePlayers)
 
 	// Call the method under test
-	err := service.CreateGame(ctx, gameBoard, users)
+	err := service.CreateGame(ctx, querier, gameBoard, users)
 
 	// Assert the result
 	require.Error(t, err)
@@ -150,9 +151,9 @@ func TestGetGameState(t *testing.T) {
 
 	// Initialize dependencies
 	logger := zap.NewExample().Sugar()
-	querier := dbmock.NewQuerier(t)
-	playerService := playermock.NewService(t)
-	regionService := regionmock.NewService(t)
+	querier := db.NewQuerier(t)
+	playerService := player.NewService(t)
+	regionService := region.NewService(t)
 
 	// Initialize the service under test
 	service := game.NewGameService(logger, querier, playerService, regionService)
@@ -162,10 +163,10 @@ func TestGetGameState(t *testing.T) {
 	gameID := int64(1)
 
 	// Set up expectations for GetGame method
-	querier.On("GetGame", ctx, gameID).Return(db.Game{
+	querier.On("GetGame", ctx, gameID).Return(sqlc.Game{
 		ID:           gameID,
 		CurrentTurn:  3,
-		CurrentPhase: db.PhaseATTACK,
+		CurrentPhase: sqlc.PhaseATTACK,
 	}, nil)
 
 	// Call the method under test

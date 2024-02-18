@@ -23,7 +23,7 @@ services:
       postgres:
         condition: service_healthy
     volumes:
-      - ./internal/db/migrations:/migrations
+      - ./internal/data/sqlc/migrations:/migrations
     command: -verbose -path=/migrations/ -database postgresql://postgres:password@postgres:5432/risk-it?sslmode=disable up
 
   sqlc:
