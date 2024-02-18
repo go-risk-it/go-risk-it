@@ -3,9 +3,14 @@ package db
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"google.golang.org/appengine/log"
+)
+
+const (
+	txTimeout = 10 * time.Second
 )
 
 func (q *Queries) WithTx(tx pgx.Tx) Querier {
@@ -15,6 +20,9 @@ func (q *Queries) WithTx(tx pgx.Tx) Querier {
 }
 
 func (q *Queries) Transact(ctx context.Context, txFunc func(Querier) error) error {
+	ctx, cancel := context.WithTimeout(ctx, txTimeout)
+	defer cancel()
+
 	transaction, err := q.db.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
