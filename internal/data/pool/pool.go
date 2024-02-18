@@ -1,10 +1,12 @@
-package db
+package pool
 
 import (
 	"context"
 	"os"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/tomfran/go-risk-it/internal/data/sqlc"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -32,3 +34,22 @@ func NewConnectionPool(lifecycle fx.Lifecycle, log *zap.SugaredLogger) *pgxpool.
 
 	return pool
 }
+
+type Transaction interface {
+	pgx.Tx
+}
+
+type DB interface {
+	sqlc.DBTX
+	Begin(ctx context.Context) (pgx.Tx, error)
+}
+
+var Module = fx.Options(
+	fx.Provide(
+		fx.Annotate(
+			NewConnectionPool,
+			fx.As(new(sqlc.DBTX)),
+			fx.As(new(DB)),
+		),
+	),
+)

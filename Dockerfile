@@ -3,12 +3,14 @@
 FROM golang:1.21 AS builder
 
 WORKDIR /src
-COPY ./ .
+COPY go.mod go.sum ./
 
 # Ensure binary is statically compiled
 ENV CGO_ENABLED=0
 
 RUN go mod download
+
+COPY . .
 
 RUN go build -o risk-it-server ./cmd/risk-it-server
 

@@ -6,7 +6,7 @@ import (
 
 	"github.com/tomfran/go-risk-it/internal/api/game/message/request"
 	gameApi "github.com/tomfran/go-risk-it/internal/api/game/message/response"
-	"github.com/tomfran/go-risk-it/internal/db"
+	sqlc "github.com/tomfran/go-risk-it/internal/data/sqlc"
 	"github.com/tomfran/go-risk-it/internal/logic/board"
 	"github.com/tomfran/go-risk-it/internal/logic/game"
 	"github.com/tomfran/go-risk-it/internal/logic/player"
@@ -73,7 +73,7 @@ func (c *ControllerImpl) GetFullState(
 	}, nil
 }
 
-func convertPlayers(players []db.Player) []gameApi.Player {
+func convertPlayers(players []sqlc.Player) []gameApi.Player {
 	result := make([]gameApi.Player, len(players))
 	for i, p := range players {
 		result[i] = convertPlayer(p)
@@ -82,7 +82,7 @@ func convertPlayers(players []db.Player) []gameApi.Player {
 	return result
 }
 
-func convertPlayer(player db.Player) gameApi.Player {
+func convertPlayer(player sqlc.Player) gameApi.Player {
 	return gameApi.Player{
 		PlayerID:  player.UserID,
 		TurnIndex: player.TurnIndex,

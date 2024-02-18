@@ -51,6 +51,7 @@ linters:
     - structcheck
     - nosnakecase
     - deadcode
+    - goerr113
 #  disable-all: true
 #  enable:
 #    - errcheck

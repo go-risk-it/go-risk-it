@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/tomfran/go-risk-it/internal/db"
+	"github.com/tomfran/go-risk-it/internal/data/db"
+	sqlc "github.com/tomfran/go-risk-it/internal/data/sqlc"
 	"github.com/tomfran/go-risk-it/internal/logic/board"
 	"github.com/tomfran/go-risk-it/internal/logic/region/assignment"
 	"go.uber.org/zap"
@@ -13,40 +14,43 @@ import (
 type Service interface {
 	CreateRegions(
 		ctx context.Context,
-		q db.Querier,
-		players []db.Player,
+		players []sqlc.Player,
 		regions []board.Region,
 	) error
 }
 
 type ServiceImpl struct {
 	log               *zap.SugaredLogger
+	querier           db.Querier
 	assignmentService assignment.Service
 }
 
-func NewRegionService(log *zap.SugaredLogger, assignmentService assignment.Service) *ServiceImpl {
-	return &ServiceImpl{log: log, assignmentService: assignmentService}
+func NewRegionService(
+	log *zap.SugaredLogger,
+	querier db.Querier,
+	assignmentService assignment.Service,
+) *ServiceImpl {
+	return &ServiceImpl{log: log, querier: querier, assignmentService: assignmentService}
 }
 
 func (s *ServiceImpl) CreateRegions(
 	ctx context.Context,
-	querier db.Querier,
-	players []db.Player,
+	players []sqlc.Player,
 	regions []board.Region,
 ) error {
 	s.log.Infow("creating regions", "players", players, "regions", regions)
 
 	regionToPlayer := s.assignmentService.AssignRegionsToPlayers(players, regions)
-	regionsParams := make([]db.InsertRegionsParams, 0, len(regionToPlayer))
+	regionsParams := make([]sqlc.InsertRegionsParams, 0, len(regionToPlayer))
 
 	for region := range regionToPlayer {
-		regionsParams = append(regionsParams, db.InsertRegionsParams{
+		regionsParams = append(regionsParams, sqlc.InsertRegionsParams{
 			PlayerID: regionToPlayer[region].ID,
 			Troops:   3,
 		})
 	}
 
-	if _, err := querier.InsertRegions(ctx, regionsParams); err != nil {
+	if _, err := s.querier.InsertRegions(ctx, regionsParams); err != nil {
 		return fmt.Errorf("failed to insert regions: %w", err)
 	}
 
