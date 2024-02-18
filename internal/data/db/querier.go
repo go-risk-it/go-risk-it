@@ -4,24 +4,27 @@ import (
 	"context"
 
 	"github.com/tomfran/go-risk-it/internal/data/pool"
-	sqlc "github.com/tomfran/go-risk-it/internal/data/sqlc"
+	"github.com/tomfran/go-risk-it/internal/data/sqlc"
+	"go.uber.org/zap"
 )
 
 type Querier interface {
 	sqlc.Querier
-	Transact(ctx context.Context, txFunc func(Querier) error) error
+	ExecuteInTransaction(ctx context.Context, txFunc func(Querier) error) error
 }
 
 var _ Querier = (*Queries)(nil)
 
 type Queries struct {
 	*sqlc.Queries
-	db pool.DB
+	log *zap.SugaredLogger
+	db  pool.DB
 }
 
-func New(db pool.DB) Querier {
+func New(db pool.DB, log *zap.SugaredLogger) Querier {
 	return &Queries{
 		Queries: sqlc.New(db),
+		log:     log,
 		db:      db,
 	}
 }

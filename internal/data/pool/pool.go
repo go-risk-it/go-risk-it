@@ -35,6 +35,10 @@ func NewConnectionPool(lifecycle fx.Lifecycle, log *zap.SugaredLogger) *pgxpool.
 	return pool
 }
 
+type Transaction interface {
+	pgx.Tx
+}
+
 type DB interface {
 	sqlc.DBTX
 	Begin(ctx context.Context) (pgx.Tx, error)

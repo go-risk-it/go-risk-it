@@ -24,6 +24,53 @@ func (_m *Querier) EXPECT() *Querier_Expecter {
 	return &Querier_Expecter{mock: &_m.Mock}
 }
 
+// ExecuteInTransaction provides a mock function with given fields: ctx, txFunc
+func (_m *Querier) ExecuteInTransaction(ctx context.Context, txFunc func(db.Querier) error) error {
+	ret := _m.Called(ctx, txFunc)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ExecuteInTransaction")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, func(db.Querier) error) error); ok {
+		r0 = rf(ctx, txFunc)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Querier_ExecuteInTransaction_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ExecuteInTransaction'
+type Querier_ExecuteInTransaction_Call struct {
+	*mock.Call
+}
+
+// ExecuteInTransaction is a helper method to define mock.On call
+//   - ctx context.Context
+//   - txFunc func(db.Querier) error
+func (_e *Querier_Expecter) ExecuteInTransaction(ctx interface{}, txFunc interface{}) *Querier_ExecuteInTransaction_Call {
+	return &Querier_ExecuteInTransaction_Call{Call: _e.mock.On("ExecuteInTransaction", ctx, txFunc)}
+}
+
+func (_c *Querier_ExecuteInTransaction_Call) Run(run func(ctx context.Context, txFunc func(db.Querier) error)) *Querier_ExecuteInTransaction_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(func(db.Querier) error))
+	})
+	return _c
+}
+
+func (_c *Querier_ExecuteInTransaction_Call) Return(_a0 error) *Querier_ExecuteInTransaction_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Querier_ExecuteInTransaction_Call) RunAndReturn(run func(context.Context, func(db.Querier) error) error) *Querier_ExecuteInTransaction_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetGame provides a mock function with given fields: ctx, id
 func (_m *Querier) GetGame(ctx context.Context, id int64) (sqlc.Game, error) {
 	ret := _m.Called(ctx, id)
@@ -306,53 +353,6 @@ func (_c *Querier_InsertRegions_Call) Return(_a0 int64, _a1 error) *Querier_Inse
 }
 
 func (_c *Querier_InsertRegions_Call) RunAndReturn(run func(context.Context, []sqlc.InsertRegionsParams) (int64, error)) *Querier_InsertRegions_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// Transact provides a mock function with given fields: ctx, txFunc
-func (_m *Querier) Transact(ctx context.Context, txFunc func(db.Querier) error) error {
-	ret := _m.Called(ctx, txFunc)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Transact")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, func(db.Querier) error) error); ok {
-		r0 = rf(ctx, txFunc)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// Querier_Transact_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Transact'
-type Querier_Transact_Call struct {
-	*mock.Call
-}
-
-// Transact is a helper method to define mock.On call
-//   - ctx context.Context
-//   - txFunc func(db.Querier) error
-func (_e *Querier_Expecter) Transact(ctx interface{}, txFunc interface{}) *Querier_Transact_Call {
-	return &Querier_Transact_Call{Call: _e.mock.On("Transact", ctx, txFunc)}
-}
-
-func (_c *Querier_Transact_Call) Run(run func(ctx context.Context, txFunc func(db.Querier) error)) *Querier_Transact_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(func(db.Querier) error))
-	})
-	return _c
-}
-
-func (_c *Querier_Transact_Call) Return(_a0 error) *Querier_Transact_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Querier_Transact_Call) RunAndReturn(run func(context.Context, func(db.Querier) error) error) *Querier_Transact_Call {
 	_c.Call.Return(run)
 	return _c
 }

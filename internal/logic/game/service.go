@@ -14,6 +14,7 @@ import (
 
 type Service interface {
 	CreateGameWithTx(ctx context.Context, board *board.Board, users []string) error
+	CreateGame(ctx context.Context, querier db.Querier, board *board.Board, users []string) error
 	GetGameState(ctx context.Context, gameID int64) (*sqlc.Game, error)
 }
 
@@ -43,7 +44,7 @@ func (s *ServiceImpl) CreateGameWithTx(
 	board *board.Board,
 	users []string,
 ) error {
-	err := s.querier.Transact(ctx, func(qtx db.Querier) error {
+	err := s.querier.ExecuteInTransaction(ctx, func(qtx db.Querier) error {
 		return s.CreateGame(ctx, qtx, board, users)
 	})
 	if err != nil {
