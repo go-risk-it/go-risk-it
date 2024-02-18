@@ -17,7 +17,6 @@ pre-commit-check:
 	pre-commit run --all-files
 
 test:
-	@
 	go test ./...
 
 sqlc:
