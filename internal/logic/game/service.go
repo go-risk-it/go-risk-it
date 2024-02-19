@@ -60,23 +60,25 @@ func (s *ServiceImpl) CreateGame(
 	board *board.Board,
 	users []string,
 ) error {
-	s.log.Infow("creating logic", "board", board, "users", users)
+	s.log.Infow("creating game", "board", board, "users", users)
 
 	gameID, err := querier.InsertGame(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to insert game: %w", err)
 	}
 
-	players, err := s.playerService.CreatePlayers(ctx, gameID, users)
+	s.log.Infow("inserted game", "id", gameID)
+
+	players, err := s.playerService.CreatePlayers(ctx, querier, gameID, users)
 	if err != nil {
 		return fmt.Errorf("failed to create players: %w", err)
 	}
 
-	if err := s.regionService.CreateRegions(ctx, players, board.Regions); err != nil {
+	if err := s.regionService.CreateRegions(ctx, querier, players, board.Regions); err != nil {
 		return fmt.Errorf("failed to create regions: %w", err)
 	}
 
-	s.log.Infow("created logic", "board", board, "users", users)
+	s.log.Infow("successfully created game", "board", board, "users", users)
 
 	return nil
 }

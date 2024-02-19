@@ -15,7 +15,7 @@
 
 - [x] Figure out what the fuck is a context?!?
 - [x] Figure out how to do testing
-- [ ] Figure out how to format code automatically
+- [x] Figure out how to format code automatically
 - [x] Figure out fx modules
 
 **Front-end**
@@ -37,6 +37,13 @@
 
 - [ ] Game logic
 - [ ] Map validation
+- [ ] POST endpoint for creating a game
+- [ ] GetFullState
+- [ ] Frontend - Display full state
+
+- [ ] Deploy move
+- [ ] Attack move
+- [ ] Reinforcement move
 
 **Server: Analytics**
 

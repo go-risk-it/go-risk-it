@@ -24,7 +24,7 @@ func (q *Queries) ExecuteInTransaction(ctx context.Context, txFunc func(Querier)
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
-	q.log.Infow("started transaction", "transaction", transaction)
+	q.log.Infow("started transaction")
 
 	defer func() {
 		if panicking := recover(); panicking != nil {
@@ -36,6 +36,11 @@ func (q *Queries) ExecuteInTransaction(ctx context.Context, txFunc func(Querier)
 			q.rollback(transaction, ctx)
 		} else {
 			err = transaction.Commit(ctx) // err is nil; if Commit returns error update err
+			if err != nil {
+				q.log.Errorw("failed to commit transaction", "err", err)
+			} else {
+				q.log.Infow("committed transaction")
+			}
 		}
 	}()
 
@@ -45,8 +50,8 @@ func (q *Queries) ExecuteInTransaction(ctx context.Context, txFunc func(Querier)
 }
 
 func (q *Queries) rollback(transaction pgx.Tx, ctx context.Context) {
-	err2 := transaction.Rollback(ctx) // err is non-nil; don't change it
-	if err2 != nil {
-		q.log.Errorf("failed to rollback transaction: %v", err2)
+	err := transaction.Rollback(ctx)
+	if err != nil {
+		q.log.Errorf("failed to rollback transaction: %v", err)
 	}
 }
