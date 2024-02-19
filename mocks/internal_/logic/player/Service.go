@@ -6,6 +6,7 @@ import (
 	context "context"
 
 	mock "github.com/stretchr/testify/mock"
+	db "github.com/tomfran/go-risk-it/internal/data/db"
 
 	sqlc "github.com/tomfran/go-risk-it/internal/data/sqlc"
 )
@@ -23,9 +24,9 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
-// CreatePlayers provides a mock function with given fields: ctx, gameID, users
-func (_m *Service) CreatePlayers(ctx context.Context, gameID int64, users []string) ([]sqlc.Player, error) {
-	ret := _m.Called(ctx, gameID, users)
+// CreatePlayers provides a mock function with given fields: ctx, querier, gameID, users
+func (_m *Service) CreatePlayers(ctx context.Context, querier db.Querier, gameID int64, users []string) ([]sqlc.Player, error) {
+	ret := _m.Called(ctx, querier, gameID, users)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreatePlayers")
@@ -33,19 +34,19 @@ func (_m *Service) CreatePlayers(ctx context.Context, gameID int64, users []stri
 
 	var r0 []sqlc.Player
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, []string) ([]sqlc.Player, error)); ok {
-		return rf(ctx, gameID, users)
+	if rf, ok := ret.Get(0).(func(context.Context, db.Querier, int64, []string) ([]sqlc.Player, error)); ok {
+		return rf(ctx, querier, gameID, users)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, []string) []sqlc.Player); ok {
-		r0 = rf(ctx, gameID, users)
+	if rf, ok := ret.Get(0).(func(context.Context, db.Querier, int64, []string) []sqlc.Player); ok {
+		r0 = rf(ctx, querier, gameID, users)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]sqlc.Player)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, []string) error); ok {
-		r1 = rf(ctx, gameID, users)
+	if rf, ok := ret.Get(1).(func(context.Context, db.Querier, int64, []string) error); ok {
+		r1 = rf(ctx, querier, gameID, users)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -60,15 +61,16 @@ type Service_CreatePlayers_Call struct {
 
 // CreatePlayers is a helper method to define mock.On call
 //   - ctx context.Context
+//   - querier db.Querier
 //   - gameID int64
 //   - users []string
-func (_e *Service_Expecter) CreatePlayers(ctx interface{}, gameID interface{}, users interface{}) *Service_CreatePlayers_Call {
-	return &Service_CreatePlayers_Call{Call: _e.mock.On("CreatePlayers", ctx, gameID, users)}
+func (_e *Service_Expecter) CreatePlayers(ctx interface{}, querier interface{}, gameID interface{}, users interface{}) *Service_CreatePlayers_Call {
+	return &Service_CreatePlayers_Call{Call: _e.mock.On("CreatePlayers", ctx, querier, gameID, users)}
 }
 
-func (_c *Service_CreatePlayers_Call) Run(run func(ctx context.Context, gameID int64, users []string)) *Service_CreatePlayers_Call {
+func (_c *Service_CreatePlayers_Call) Run(run func(ctx context.Context, querier db.Querier, gameID int64, users []string)) *Service_CreatePlayers_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(int64), args[2].([]string))
+		run(args[0].(context.Context), args[1].(db.Querier), args[2].(int64), args[3].([]string))
 	})
 	return _c
 }
@@ -78,7 +80,7 @@ func (_c *Service_CreatePlayers_Call) Return(_a0 []sqlc.Player, _a1 error) *Serv
 	return _c
 }
 
-func (_c *Service_CreatePlayers_Call) RunAndReturn(run func(context.Context, int64, []string) ([]sqlc.Player, error)) *Service_CreatePlayers_Call {
+func (_c *Service_CreatePlayers_Call) RunAndReturn(run func(context.Context, db.Querier, int64, []string) ([]sqlc.Player, error)) *Service_CreatePlayers_Call {
 	_c.Call.Return(run)
 	return _c
 }

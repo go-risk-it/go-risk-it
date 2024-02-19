@@ -14,6 +14,7 @@ import (
 type Service interface {
 	CreateRegions(
 		ctx context.Context,
+		querier db.Querier,
 		players []sqlc.Player,
 		regions []board.Region,
 	) error
@@ -35,6 +36,7 @@ func NewRegionService(
 
 func (s *ServiceImpl) CreateRegions(
 	ctx context.Context,
+	querier db.Querier,
 	players []sqlc.Player,
 	regions []board.Region,
 ) error {
@@ -50,7 +52,7 @@ func (s *ServiceImpl) CreateRegions(
 		})
 	}
 
-	if _, err := s.querier.InsertRegions(ctx, regionsParams); err != nil {
+	if _, err := querier.InsertRegions(ctx, regionsParams); err != nil {
 		return fmt.Errorf("failed to insert regions: %w", err)
 	}
 

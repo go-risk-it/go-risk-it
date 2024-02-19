@@ -7,6 +7,8 @@ import (
 
 	board "github.com/tomfran/go-risk-it/internal/logic/board"
 
+	db "github.com/tomfran/go-risk-it/internal/data/db"
+
 	mock "github.com/stretchr/testify/mock"
 
 	sqlc "github.com/tomfran/go-risk-it/internal/data/sqlc"
@@ -25,17 +27,17 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
-// CreateRegions provides a mock function with given fields: ctx, players, regions
-func (_m *Service) CreateRegions(ctx context.Context, players []sqlc.Player, regions []board.Region) error {
-	ret := _m.Called(ctx, players, regions)
+// CreateRegions provides a mock function with given fields: ctx, querier, players, regions
+func (_m *Service) CreateRegions(ctx context.Context, querier db.Querier, players []sqlc.Player, regions []board.Region) error {
+	ret := _m.Called(ctx, querier, players, regions)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateRegions")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []sqlc.Player, []board.Region) error); ok {
-		r0 = rf(ctx, players, regions)
+	if rf, ok := ret.Get(0).(func(context.Context, db.Querier, []sqlc.Player, []board.Region) error); ok {
+		r0 = rf(ctx, querier, players, regions)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -50,15 +52,16 @@ type Service_CreateRegions_Call struct {
 
 // CreateRegions is a helper method to define mock.On call
 //   - ctx context.Context
+//   - querier db.Querier
 //   - players []sqlc.Player
 //   - regions []board.Region
-func (_e *Service_Expecter) CreateRegions(ctx interface{}, players interface{}, regions interface{}) *Service_CreateRegions_Call {
-	return &Service_CreateRegions_Call{Call: _e.mock.On("CreateRegions", ctx, players, regions)}
+func (_e *Service_Expecter) CreateRegions(ctx interface{}, querier interface{}, players interface{}, regions interface{}) *Service_CreateRegions_Call {
+	return &Service_CreateRegions_Call{Call: _e.mock.On("CreateRegions", ctx, querier, players, regions)}
 }
 
-func (_c *Service_CreateRegions_Call) Run(run func(ctx context.Context, players []sqlc.Player, regions []board.Region)) *Service_CreateRegions_Call {
+func (_c *Service_CreateRegions_Call) Run(run func(ctx context.Context, querier db.Querier, players []sqlc.Player, regions []board.Region)) *Service_CreateRegions_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([]sqlc.Player), args[2].([]board.Region))
+		run(args[0].(context.Context), args[1].(db.Querier), args[2].([]sqlc.Player), args[3].([]board.Region))
 	})
 	return _c
 }
@@ -68,7 +71,7 @@ func (_c *Service_CreateRegions_Call) Return(_a0 error) *Service_CreateRegions_C
 	return _c
 }
 
-func (_c *Service_CreateRegions_Call) RunAndReturn(run func(context.Context, []sqlc.Player, []board.Region) error) *Service_CreateRegions_Call {
+func (_c *Service_CreateRegions_Call) RunAndReturn(run func(context.Context, db.Querier, []sqlc.Player, []board.Region) error) *Service_CreateRegions_Call {
 	_c.Call.Return(run)
 	return _c
 }

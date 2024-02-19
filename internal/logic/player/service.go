@@ -10,7 +10,7 @@ import (
 )
 
 type Service interface {
-	CreatePlayers(ctx context.Context, gameID int64, users []string) (
+	CreatePlayers(ctx context.Context, querier db.Querier, gameID int64, users []string) (
 		[]sqlc.Player,
 		error,
 	)
@@ -43,6 +43,7 @@ func (s *ServiceImpl) GetPlayers(ctx context.Context, gameID int64) (
 
 func (s *ServiceImpl) CreatePlayers(
 	ctx context.Context,
+	querier db.Querier,
 	gameID int64,
 	users []string,
 ) ([]sqlc.Player, error) {
@@ -59,13 +60,13 @@ func (s *ServiceImpl) CreatePlayers(
 		turnIndex += 1
 	}
 
-	if _, err := s.querier.InsertPlayers(ctx, playersParams); err != nil {
+	if _, err := querier.InsertPlayers(ctx, playersParams); err != nil {
 		return nil, fmt.Errorf("failed to insert players: %w", err)
 	}
 
 	s.log.Infow("created players", "gameId", gameID, "users", users)
 
-	players, err := s.querier.GetPlayersByGameId(ctx, gameID)
+	players, err := querier.GetPlayersByGameId(ctx, gameID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get players by game ID: %w", err)
 	}

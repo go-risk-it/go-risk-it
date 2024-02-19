@@ -55,13 +55,13 @@ func TestCreateGameWithValidBoardAndUsers(t *testing.T) {
 	playerServiceMock := player.NewService(t)
 	playerServiceMock.
 		EXPECT().
-		CreatePlayers(ctx, gameID, users).
+		CreatePlayers(ctx, mockQuerier, gameID, users).
 		Return(players, nil)
 
 	regionServiceMock := region.NewService(t)
 	regionServiceMock.
 		EXPECT().
-		CreateRegions(ctx, players, regions).
+		CreateRegions(ctx, mockQuerier, players, regions).
 		Return(nil)
 
 	// Initialize the service
