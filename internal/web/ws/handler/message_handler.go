@@ -1,26 +1,23 @@
 package handler
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"math/big"
+	"time"
 
 	"github.com/lesismal/nbio/nbhttp/websocket"
+	"github.com/tomfran/go-risk-it/internal/api/game/message"
 	"github.com/tomfran/go-risk-it/internal/web/controllers/board"
 	"github.com/tomfran/go-risk-it/internal/web/controllers/game"
 	"go.uber.org/zap"
 )
 
-type ResponseType string
+type MessageType string
 
-type ResponseMessage struct {
-	Type    ResponseType    `json:"type"`
-	Payload json.RawMessage `json:"data"`
-}
-
-type RequestType string
-
-type RequestMessage struct {
-	Type    RequestType     `json:"type"`
+type Message struct {
+	Type    MessageType     `json:"type"`
 	Payload json.RawMessage `json:"data"`
 }
 
@@ -29,6 +26,10 @@ type MessageHandler interface {
 		connection *websocket.Conn,
 		messageType websocket.MessageType,
 		data []byte,
+	)
+
+	OnOpen(
+		connection *websocket.Conn,
 	)
 }
 
@@ -50,12 +51,41 @@ func New(
 	}
 }
 
+func (m *MessageHandlerImpl) OnOpen(
+	connection *websocket.Conn,
+) {
+	m.log.Info("OnOpen:", zap.String("remoteAddress", connection.RemoteAddr().String()))
+	err := connection.WriteMessage(websocket.TextMessage, []byte("Established connection"))
+
+	for i := 0; i < 100; i++ {
+		rawResponse, err := buildMessage("boardState", buildRandomBoardState())
+		if err != nil {
+			m.log.Errorf("unable to build response: %v", err)
+
+			panic(err)
+		}
+
+		err = connection.WriteMessage(websocket.TextMessage, rawResponse)
+		if err != nil {
+			m.log.Errorf("unable to write message: %v", err)
+
+			panic(err)
+		}
+
+		time.Sleep(10 * time.Second)
+	}
+
+	if err != nil {
+		panic(err)
+	}
+}
+
 func (m *MessageHandlerImpl) OnMessage(
 	connection *websocket.Conn,
 	messageType websocket.MessageType,
 	data []byte,
 ) {
-	var requestMessage RequestMessage
+	var requestMessage Message
 
 	m.log.Infow("Received message", "messageType", messageType, "data", data)
 
@@ -73,7 +103,7 @@ func (m *MessageHandlerImpl) OnMessage(
 		return
 	}
 
-	rawResponse, err := buildResponseMessage(response, responseType)
+	rawResponse, err := buildMessage(responseType, response)
 	if err != nil {
 		m.log.Errorf("unable to build response: %v", err)
 
@@ -91,11 +121,11 @@ func (m *MessageHandlerImpl) OnMessage(
 }
 
 func (m *MessageHandlerImpl) handleMessage(
-	requestMessage RequestMessage,
-) (interface{}, ResponseType, error) {
+	requestMessage Message,
+) (interface{}, MessageType, error) {
 	var (
 		response     interface{}
-		responseType ResponseType
+		responseType MessageType
 		err          error
 	)
 
@@ -118,7 +148,7 @@ func (m *MessageHandlerImpl) handleMessage(
 	if err != nil {
 		var (
 			nilResponse     interface{}
-			nilResponseType ResponseType
+			nilResponseType MessageType
 		)
 
 		return nilResponse, nilResponseType, fmt.Errorf("unable to handle message: %w", err)
@@ -149,24 +179,63 @@ func (m *MessageHandlerImpl) handleMessage(
 //	return response, nil
 //}
 
-func buildResponseMessage(
+func buildRandomBoardState() message.BoardState {
+	nBig, err := rand.Int(rand.Reader, big.NewInt(27))
+	if err != nil {
+		panic(err)
+	}
+
+	if n := nBig.Int64(); n%2 == 0 {
+		return message.BoardState{
+			Regions: []message.Region{
+				{
+					RegionID: 1,
+					OwnerID:  1,
+					Troops:   10,
+				},
+				{
+					RegionID: 2,
+					OwnerID:  2,
+					Troops:   20,
+				},
+			},
+		}
+	} else {
+		return message.BoardState{
+			Regions: []message.Region{
+				{
+					RegionID: 1,
+					OwnerID:  2,
+					Troops:   10,
+				},
+				{
+					RegionID: 2,
+					OwnerID:  1,
+					Troops:   20,
+				},
+			},
+		}
+	}
+}
+
+func buildMessage(
+	messageType MessageType,
 	payload interface{},
-	messageType ResponseType,
 ) (json.RawMessage, error) {
-	var responseMessage ResponseMessage
-	responseMessage.Type = messageType
+	var result Message
+	result.Type = messageType
 
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal json: %w", err)
 	}
 
-	responseMessage.Payload = data
+	result.Payload = data
 
-	result, err := json.Marshal(responseMessage)
+	rawMessage, err := json.Marshal(result)
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal json: %w", err)
 	}
 
-	return result, nil
+	return rawMessage, nil
 }

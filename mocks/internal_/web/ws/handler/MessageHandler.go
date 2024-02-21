@@ -55,6 +55,39 @@ func (_c *MessageHandler_OnMessage_Call) RunAndReturn(run func(*websocket.Conn, 
 	return _c
 }
 
+// OnOpen provides a mock function with given fields: connection
+func (_m *MessageHandler) OnOpen(connection *websocket.Conn) {
+	_m.Called(connection)
+}
+
+// MessageHandler_OnOpen_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OnOpen'
+type MessageHandler_OnOpen_Call struct {
+	*mock.Call
+}
+
+// OnOpen is a helper method to define mock.On call
+//   - connection *websocket.Conn
+func (_e *MessageHandler_Expecter) OnOpen(connection interface{}) *MessageHandler_OnOpen_Call {
+	return &MessageHandler_OnOpen_Call{Call: _e.mock.On("OnOpen", connection)}
+}
+
+func (_c *MessageHandler_OnOpen_Call) Run(run func(connection *websocket.Conn)) *MessageHandler_OnOpen_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*websocket.Conn))
+	})
+	return _c
+}
+
+func (_c *MessageHandler_OnOpen_Call) Return() *MessageHandler_OnOpen_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *MessageHandler_OnOpen_Call) RunAndReturn(run func(*websocket.Conn)) *MessageHandler_OnOpen_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewMessageHandler creates a new instance of MessageHandler. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewMessageHandler(t interface {
