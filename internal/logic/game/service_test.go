@@ -131,7 +131,7 @@ func TestCreateGameCreatePlayersError(t *testing.T) {
 	querier.On("InsertGame", ctx).Return(int64(1), nil)
 
 	// Set up expectations for CreatePlayers method
-	playerService.On("CreatePlayers", ctx, int64(1), users).
+	playerService.On("CreatePlayers", ctx, querier, int64(1), users).
 		Return(nil, errCreatePlayers)
 
 	// Call the method under test

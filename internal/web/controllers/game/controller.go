@@ -4,9 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/tomfran/go-risk-it/internal/api/game/message/request"
-	gameApi "github.com/tomfran/go-risk-it/internal/api/game/message/response"
-	sqlc "github.com/tomfran/go-risk-it/internal/data/sqlc"
+	"github.com/tomfran/go-risk-it/internal/api/game/message"
+	"github.com/tomfran/go-risk-it/internal/data/sqlc"
 	"github.com/tomfran/go-risk-it/internal/logic/board"
 	"github.com/tomfran/go-risk-it/internal/logic/game"
 	"github.com/tomfran/go-risk-it/internal/logic/player"
@@ -14,8 +13,8 @@ import (
 )
 
 type Controller interface {
-	GetGameState(request request.GameStateRequest) (gameApi.GameStateResponse, error)
-	GetFullState(request request.FullStateRequest) (gameApi.FullStateResponse, error)
+	GetGameState(gameID int64) (message.GameState, error)
+	GetFullState(gameID int64) (message.FullState, error)
 }
 
 type ControllerImpl struct {
@@ -40,41 +39,41 @@ func New(
 }
 
 func (c *ControllerImpl) GetGameState(
-	request request.GameStateRequest,
-) (gameApi.GameStateResponse, error) {
-	return gameApi.GameStateResponse{GameID: 1, Players: []gameApi.Player{}, CurrentTurn: 0}, nil
+	gameID int64,
+) (message.GameState, error) {
+	return message.GameState{GameID: gameID, Players: []message.Player{}, CurrentTurn: 0}, nil
 }
 
 func (c *ControllerImpl) GetFullState(
-	request request.FullStateRequest,
-) (gameApi.FullStateResponse, error) {
+	gameID int64,
+) (message.FullState, error) {
 	ctx := context.Background()
 
-	gameState, err := c.gameService.GetGameState(ctx, request.GameID)
+	gameState, err := c.gameService.GetGameState(ctx, gameID)
 	if err != nil {
-		return gameApi.FullStateResponse{}, fmt.Errorf("failed to get game state: %w", err)
+		return message.FullState{}, fmt.Errorf("failed to get game state: %w", err)
 	}
 
 	players, err := c.playerService.GetPlayers(ctx, gameState.ID)
 	if err != nil {
-		return gameApi.FullStateResponse{}, fmt.Errorf("failed to get players: %w", err)
+		return message.FullState{}, fmt.Errorf("failed to get players: %w", err)
 	}
 
-	return gameApi.FullStateResponse{
-		GameState: gameApi.GameStateResponse{
+	return message.FullState{
+		GameState: message.GameState{
 			GameID:       gameState.ID,
 			Players:      convertPlayers(players),
 			CurrentTurn:  gameState.CurrentTurn,
 			CurrentPhase: string(gameState.CurrentPhase),
 		},
-		BoardState: gameApi.BoardStateResponse{
-			Regions: []gameApi.Region{},
+		BoardState: message.BoardState{
+			Regions: []message.Region{},
 		},
 	}, nil
 }
 
-func convertPlayers(players []sqlc.Player) []gameApi.Player {
-	result := make([]gameApi.Player, len(players))
+func convertPlayers(players []sqlc.Player) []message.Player {
+	result := make([]message.Player, len(players))
 	for i, p := range players {
 		result[i] = convertPlayer(p)
 	}
@@ -82,8 +81,8 @@ func convertPlayers(players []sqlc.Player) []gameApi.Player {
 	return result
 }
 
-func convertPlayer(player sqlc.Player) gameApi.Player {
-	return gameApi.Player{
+func convertPlayer(player sqlc.Player) message.Player {
+	return message.Player{
 		PlayerID:  player.UserID,
 		TurnIndex: player.TurnIndex,
 	}

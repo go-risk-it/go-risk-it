@@ -1,4 +1,4 @@
-package response
+package message
 
 type Region struct {
 	RegionID int64 `json:"regionId"`
@@ -6,6 +6,6 @@ type Region struct {
 	Troops   int64 `json:"troops"`
 }
 
-type BoardStateResponse struct {
+type BoardState struct {
 	Regions []Region `json:"regions"`
 }
