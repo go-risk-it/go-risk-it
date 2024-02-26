@@ -36,10 +36,10 @@ func TestCreateGameWithValidBoardAndUsers(t *testing.T) {
 	}
 
 	regions := []board.Region{
-		{ExternalReference: 1, Name: "Netherlands", ContinentID: 1},
-		{ExternalReference: 2, Name: "Italy", ContinentID: 1},
-		{ExternalReference: 3, Name: "Tasin", ContinentID: 2},
-		{ExternalReference: 4, Name: "Samon", ContinentID: 3},
+		{ExternalReference: "netherlands", Name: "Netherlands", ContinentID: 1},
+		{ExternalReference: "italy", Name: "Italy", ContinentID: 1},
+		{ExternalReference: "tasin", Name: "Tasin", ContinentID: 2},
+		{ExternalReference: "samon", Name: "Samon", ContinentID: 3},
 	}
 
 	gameBoard := &board.Board{

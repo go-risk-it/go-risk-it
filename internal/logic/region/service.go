@@ -47,8 +47,9 @@ func (s *ServiceImpl) CreateRegions(
 
 	for region := range regionToPlayer {
 		regionsParams = append(regionsParams, sqlc.InsertRegionsParams{
-			PlayerID: regionToPlayer[region].ID,
-			Troops:   3,
+			ExternalReference: region.ExternalReference,
+			PlayerID:          regionToPlayer[region].ID,
+			Troops:            3,
 		})
 	}
 

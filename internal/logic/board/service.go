@@ -13,13 +13,13 @@ type ServiceImpl struct {
 }
 
 type Region struct {
-	ExternalReference int    `json:"id"`
+	ExternalReference string `json:"id"`
 	Name              string `json:"name"`
 	ContinentID       int    `json:"continentId"`
 }
 
 type Continent struct {
-	ExternalReference int    `json:"id"`
+	ExternalReference string `json:"id"`
 	Name              string `json:"name"`
 	BonusTroops       int    `json:"bonusTroops"`
 }

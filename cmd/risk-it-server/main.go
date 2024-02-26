@@ -17,19 +17,19 @@ import (
 var gameBoard = &board.Board{
 	Regions: []board.Region{
 		{
-			ExternalReference: 1,
+			ExternalReference: "alaska",
 			Name:              "Alaska",
 			ContinentID:       1,
 		},
 		{
-			ExternalReference: 2,
+			ExternalReference: "northwest_territory",
 			Name:              "Northwest Territory",
 			ContinentID:       1,
 		},
 	},
 	Continents: []board.Continent{
 		{
-			ExternalReference: 1,
+			ExternalReference: "north_america",
 			Name:              "North America",
 			BonusTroops:       5,
 		},

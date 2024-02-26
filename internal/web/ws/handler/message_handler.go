@@ -189,14 +189,14 @@ func buildRandomBoardState() message.BoardState {
 		return message.BoardState{
 			Regions: []message.Region{
 				{
-					RegionID: 1,
-					OwnerID:  1,
-					Troops:   10,
+					ID:      "alaska",
+					OwnerID: 1,
+					Troops:  10,
 				},
 				{
-					RegionID: 2,
-					OwnerID:  2,
-					Troops:   20,
+					ID:      "ukraine",
+					OwnerID: 2,
+					Troops:  20,
 				},
 			},
 		}
@@ -204,14 +204,14 @@ func buildRandomBoardState() message.BoardState {
 		return message.BoardState{
 			Regions: []message.Region{
 				{
-					RegionID: 1,
-					OwnerID:  2,
-					Troops:   10,
+					ID:      "greenland",
+					OwnerID: 2,
+					Troops:  10,
 				},
 				{
-					RegionID: 2,
-					OwnerID:  1,
-					Troops:   20,
+					ID:      "congo",
+					OwnerID: 1,
+					Troops:  20,
 				},
 			},
 		}

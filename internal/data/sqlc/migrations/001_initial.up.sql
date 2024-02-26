@@ -18,9 +18,10 @@ CREATE TABLE player
 
 CREATE TABLE region
 (
-    id        BIGSERIAL PRIMARY KEY,
-    player_id BIGINT NOT NULL,
-    troops    INT    NOT NULL,
+    id                 BIGSERIAL PRIMARY KEY,
+    external_reference TEXT   NOT NULL,
+    player_id          BIGINT NOT NULL,
+    troops             INT    NOT NULL,
     FOREIGN KEY (player_id) REFERENCES player (id)
 );
 
