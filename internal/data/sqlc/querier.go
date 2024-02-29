@@ -10,7 +10,8 @@ import (
 
 type Querier interface {
 	GetGame(ctx context.Context, id int64) (Game, error)
-	GetPlayersByGameId(ctx context.Context, gameID int64) ([]Player, error)
+	GetPlayersByGame(ctx context.Context, gameID int64) ([]Player, error)
+	GetRegionsByGame(ctx context.Context, id int64) ([]GetRegionsByGameRow, error)
 	InsertGame(ctx context.Context) (int64, error)
 	InsertPlayers(ctx context.Context, arg []InsertPlayersParams) (int64, error)
 	InsertRegions(ctx context.Context, arg []InsertRegionsParams) (int64, error)

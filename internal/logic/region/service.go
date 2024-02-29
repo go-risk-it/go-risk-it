@@ -18,8 +18,8 @@ type Service interface {
 		players []sqlc.Player,
 		regions []board.Region,
 	) error
+	GetRegions(ctx context.Context, gameID int64) ([]sqlc.GetRegionsByGameRow, error)
 }
-
 type ServiceImpl struct {
 	log               *zap.SugaredLogger
 	querier           db.Querier
@@ -60,4 +60,18 @@ func (s *ServiceImpl) CreateRegions(
 	s.log.Infow("created regions", "players", players, "regions", regions)
 
 	return nil
+}
+
+func (s *ServiceImpl) GetRegions(
+	ctx context.Context,
+	gameID int64,
+) ([]sqlc.GetRegionsByGameRow, error) {
+	regions, err := s.querier.GetRegionsByGame(ctx, gameID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get regions: %w", err)
+	}
+
+	s.log.Infow("got regions", "regions", regions)
+
+	return regions, nil
 }

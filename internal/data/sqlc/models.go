@@ -80,5 +80,5 @@ type Region struct {
 	ID                int64
 	ExternalReference string
 	PlayerID          int64
-	Troops            int32
+	Troops            int64
 }

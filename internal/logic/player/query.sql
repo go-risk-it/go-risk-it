@@ -1,4 +1,4 @@
--- name: GetPlayersByGameId :many
+-- name: GetPlayersByGame :many
 SELECT *
 FROM player
 WHERE game_id = $1;

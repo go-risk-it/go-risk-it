@@ -33,7 +33,7 @@ func (s *ServiceImpl) GetPlayers(ctx context.Context, gameID int64) (
 	[]sqlc.Player,
 	error,
 ) {
-	players, err := s.querier.GetPlayersByGameId(ctx, gameID)
+	players, err := s.querier.GetPlayersByGame(ctx, gameID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get players: %w", err)
 	}
@@ -66,7 +66,7 @@ func (s *ServiceImpl) CreatePlayers(
 
 	s.log.Infow("created players", "gameId", gameID, "users", users)
 
-	players, err := querier.GetPlayersByGameId(ctx, gameID)
+	players, err := querier.GetPlayersByGame(ctx, gameID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get players by game ID: %w", err)
 	}

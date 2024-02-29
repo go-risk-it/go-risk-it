@@ -1,16 +1,15 @@
 package handler
 
 import (
-	"crypto/rand"
+	"context"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"time"
 
 	"github.com/lesismal/nbio/nbhttp/websocket"
-	"github.com/tomfran/go-risk-it/internal/api/game/message"
 	"github.com/tomfran/go-risk-it/internal/web/controllers/board"
 	"github.com/tomfran/go-risk-it/internal/web/controllers/game"
+	"github.com/tomfran/go-risk-it/internal/web/controllers/player"
 	"go.uber.org/zap"
 )
 
@@ -34,20 +33,23 @@ type MessageHandler interface {
 }
 
 type MessageHandlerImpl struct {
-	log             *zap.SugaredLogger
-	gameController  game.Controller
-	boardController board.Controller
+	log              *zap.SugaredLogger
+	boardController  board.Controller
+	gameController   game.Controller
+	playerController player.Controller
 }
 
 func New(
 	log *zap.SugaredLogger,
-	gameController game.Controller,
 	boardController board.Controller,
+	gameController game.Controller,
+	playerController player.Controller,
 ) *MessageHandlerImpl {
 	return &MessageHandlerImpl{
-		log:             log,
-		gameController:  gameController,
-		boardController: boardController,
+		log:              log,
+		boardController:  boardController,
+		gameController:   gameController,
+		playerController: playerController,
 	}
 }
 
@@ -55,29 +57,75 @@ func (m *MessageHandlerImpl) OnOpen(
 	connection *websocket.Conn,
 ) {
 	m.log.Info("OnOpen:", zap.String("remoteAddress", connection.RemoteAddr().String()))
+
 	err := connection.WriteMessage(websocket.TextMessage, []byte("Established connection"))
-
-	for i := 0; i < 100; i++ {
-		rawResponse, err := buildMessage("boardState", buildRandomBoardState())
-		if err != nil {
-			m.log.Errorf("unable to build response: %v", err)
-
-			panic(err)
-		}
-
-		err = connection.WriteMessage(websocket.TextMessage, rawResponse)
-		if err != nil {
-			m.log.Errorf("unable to write message: %v", err)
-
-			panic(err)
-		}
-
-		time.Sleep(10 * time.Second)
-	}
-
 	if err != nil {
-		panic(err)
+		m.log.Errorf("unable to write response: %v", err)
+
+		return
 	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	const NStates = 3
+
+	stateChannel := make(chan json.RawMessage, NStates)
+	go func() {
+		err := getState(ctx, m.gameController.GetGameState, "gameState", stateChannel)
+		if err != nil {
+			m.log.Errorf("unable to get game state: %v", err)
+		}
+	}()
+
+	go func() {
+		err := getState(ctx, m.boardController.GetBoardState, "boardState", stateChannel)
+		if err != nil {
+			m.log.Errorf("unable to get board state: %v", err)
+		}
+	}()
+
+	go func() {
+		err := getState(ctx, m.playerController.GetPlayerState, "playerState", stateChannel)
+		if err != nil {
+			m.log.Errorf("unable to get player state: %v", err)
+		}
+	}()
+
+	for i := 0; i < NStates; i++ {
+		select {
+		case state := <-stateChannel:
+			err := connection.WriteMessage(websocket.TextMessage, state)
+			if err != nil {
+				m.log.Errorf("unable to write response: %v", err)
+			}
+		case <-ctx.Done():
+			m.log.Errorf("unable to get all states: %v", ctx.Err())
+
+			return
+		}
+	}
+}
+
+func getState[T interface{}](
+	ctx context.Context,
+	fetcher func(context.Context, int64) (T, error),
+	messageType MessageType,
+	channel chan json.RawMessage,
+) error {
+	state, err := fetcher(ctx, 1)
+	if err != nil {
+		return fmt.Errorf("unable to fetch state for %s: %w", messageType, err)
+	}
+
+	rawResponse, err := buildMessage(messageType, state)
+	if err != nil {
+		return fmt.Errorf("unable to build response: %w", err)
+	}
+
+	channel <- rawResponse
+
+	return nil
 }
 
 func (m *MessageHandlerImpl) OnMessage(
@@ -178,45 +226,6 @@ func (m *MessageHandlerImpl) handleMessage(
 //
 //	return response, nil
 //}
-
-func buildRandomBoardState() message.BoardState {
-	nBig, err := rand.Int(rand.Reader, big.NewInt(27))
-	if err != nil {
-		panic(err)
-	}
-
-	if n := nBig.Int64(); n%2 == 0 {
-		return message.BoardState{
-			Regions: []message.Region{
-				{
-					ID:      "alaska",
-					OwnerID: 1,
-					Troops:  10,
-				},
-				{
-					ID:      "ukraine",
-					OwnerID: 2,
-					Troops:  20,
-				},
-			},
-		}
-	} else {
-		return message.BoardState{
-			Regions: []message.Region{
-				{
-					ID:      "greenland",
-					OwnerID: 2,
-					Troops:  10,
-				},
-				{
-					ID:      "congo",
-					OwnerID: 1,
-					Troops:  20,
-				},
-			},
-		}
-	}
-}
 
 func buildMessage(
 	messageType MessageType,

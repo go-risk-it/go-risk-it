@@ -38,7 +38,7 @@ func TestServiceImpl_GetPlayers(t *testing.T) {
 		TurnIndex: 1,
 	}
 	// Set up expectations for GetGame method
-	querier.On("GetPlayersByGameId", ctx, gameID).Return([]sqlc.Player{
+	querier.On("GetPlayersByGame", ctx, gameID).Return([]sqlc.Player{
 		player1, player2,
 	}, nil)
 

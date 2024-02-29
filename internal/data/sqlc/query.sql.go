@@ -22,14 +22,14 @@ func (q *Queries) GetGame(ctx context.Context, id int64) (Game, error) {
 	return i, err
 }
 
-const getPlayersByGameId = `-- name: GetPlayersByGameId :many
+const getPlayersByGame = `-- name: GetPlayersByGame :many
 SELECT id, game_id, user_id, turn_index
 FROM player
 WHERE game_id = $1
 `
 
-func (q *Queries) GetPlayersByGameId(ctx context.Context, gameID int64) ([]Player, error) {
-	rows, err := q.db.Query(ctx, getPlayersByGameId, gameID)
+func (q *Queries) GetPlayersByGame(ctx context.Context, gameID int64) ([]Player, error) {
+	rows, err := q.db.Query(ctx, getPlayersByGame, gameID)
 	if err != nil {
 		return nil, err
 	}
@@ -43,6 +43,40 @@ func (q *Queries) GetPlayersByGameId(ctx context.Context, gameID int64) ([]Playe
 			&i.UserID,
 			&i.TurnIndex,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getRegionsByGame = `-- name: GetRegionsByGame :many
+SELECT r.external_reference, r.troops, p.user_id as player_name
+FROM region r
+         JOIN player p on r.player_id = p.id
+         JOIN game g on p.game_id = g.id
+WHERE g.id = $1
+`
+
+type GetRegionsByGameRow struct {
+	ExternalReference string
+	Troops            int64
+	PlayerName        string
+}
+
+func (q *Queries) GetRegionsByGame(ctx context.Context, id int64) ([]GetRegionsByGameRow, error) {
+	rows, err := q.db.Query(ctx, getRegionsByGame, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetRegionsByGameRow
+	for rows.Next() {
+		var i GetRegionsByGameRow
+		if err := rows.Scan(&i.ExternalReference, &i.Troops, &i.PlayerName); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -75,5 +109,5 @@ type InsertPlayersParams struct {
 type InsertRegionsParams struct {
 	ExternalReference string
 	PlayerID          int64
-	Troops            int32
+	Troops            int64
 }

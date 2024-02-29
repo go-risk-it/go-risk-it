@@ -2,7 +2,7 @@ package message
 
 type Region struct {
 	ID      string `json:"id"`
-	OwnerID int64  `json:"ownerId"`
+	OwnerID string `json:"ownerId"`
 	Troops  int64  `json:"troops"`
 }
 
