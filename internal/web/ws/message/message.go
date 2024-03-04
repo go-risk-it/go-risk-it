@@ -7,6 +7,12 @@ import (
 
 type Type string
 
+const (
+	GameState   Type = "gameState"
+	BoardState  Type = "boardState"
+	PlayerState Type = "playerState"
+)
+
 type Message struct {
 	Type    Type            `json:"type"`
 	Payload json.RawMessage `json:"data"`

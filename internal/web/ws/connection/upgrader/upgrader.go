@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/lesismal/nbio/nbhttp/websocket"
-	"github.com/tomfran/go-risk-it/internal/web/ws/connection"
+	"github.com/tomfran/go-risk-it/internal/web/ws/connection/manager"
 	"github.com/tomfran/go-risk-it/internal/web/ws/message"
 	"go.uber.org/zap"
 )
@@ -21,14 +21,14 @@ type Upgrader interface {
 type UpgraderImpl struct {
 	*websocket.Upgrader
 	log               *zap.SugaredLogger
-	connectionManager connection.Manager
+	connectionManager manager.Manager
 	messageHandler    message.Handler
 }
 
 func New(
 	log *zap.SugaredLogger,
 	messageHandler message.Handler,
-	connectionManager connection.Manager,
+	connectionManager manager.Manager,
 	args ...interface{},
 ) *UpgraderImpl {
 	//exhaustruct:ignore
@@ -51,6 +51,17 @@ func New(
 	upgrader.OnMessage(messageHandler.OnMessage)
 
 	upgrader.OnClose(func(connection *websocket.Conn, err error) {
+		if err != nil {
+			log.Errorw(
+				"Connection closed",
+				"remoteAddress",
+				connection.RemoteAddr().String(),
+				"error",
+				err,
+			)
+		} else {
+			log.Infow("Connection closed", "remoteAddress", connection.RemoteAddr().String())
+		}
 		connectionManager.DisconnectPlayer(connection, 0)
 	})
 

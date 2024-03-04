@@ -19,13 +19,13 @@ func NewWebSocketHandler(
 	return &WebSocketHandler{upgrader: upgrader, log: logger}
 }
 
-func (wsHandler *WebSocketHandler) OnWebSocket(w http.ResponseWriter, r *http.Request) {
-	wsHandler.log.Infow("Received request")
+func (h *WebSocketHandler) OnWebSocket(w http.ResponseWriter, r *http.Request) {
+	h.log.Infow("Received request")
 
-	conn, err := wsHandler.upgrader.Upgrade(w, r, nil)
+	conn, err := h.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		panic(err)
 	}
 
-	wsHandler.log.Infow("Upgraded:", "remoteAddress", conn.RemoteAddr().String())
+	h.log.Infow("Upgraded:", "remoteAddress", conn.RemoteAddr().String())
 }
