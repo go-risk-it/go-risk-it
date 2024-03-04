@@ -21,7 +21,7 @@ var (
 )
 
 // creates a logic with a valid board and list of users.
-func TestCreateGameWithValidBoardAndUsers(t *testing.T) {
+func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 	t.Parallel()
 
 	gameID := int64(1)
@@ -78,7 +78,7 @@ func TestCreateGameWithValidBoardAndUsers(t *testing.T) {
 }
 
 // returns error if InsertGame method returns an error.
-func TestCreateGameInsertGameError(t *testing.T) {
+func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 	t.Parallel()
 
 	// Initialize dependencies
@@ -110,7 +110,7 @@ func TestCreateGameInsertGameError(t *testing.T) {
 }
 
 // returns error if CreatePlayers method returns an error.
-func TestCreateGameCreatePlayersError(t *testing.T) {
+func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 	t.Parallel()
 
 	// Initialize dependencies
@@ -146,7 +146,7 @@ func TestCreateGameCreatePlayersError(t *testing.T) {
 	playerService.AssertExpectations(t)
 }
 
-func TestGetGameState(t *testing.T) {
+func TestServiceImpl_GetGameState(t *testing.T) {
 	t.Parallel()
 
 	// Initialize dependencies

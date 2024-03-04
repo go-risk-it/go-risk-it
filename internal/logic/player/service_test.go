@@ -17,7 +17,7 @@ var (
 	errGetPlayersByGame = errors.New("error getting players")
 )
 
-func TestGetPlayersByGame(t *testing.T) {
+func TestServiceImpl_GetPlayersByGame(t *testing.T) {
 	t.Parallel()
 
 	// Initialize dependencies
@@ -67,7 +67,7 @@ func TestGetPlayersByGame(t *testing.T) {
 	require.Contains(t, result, player3)
 }
 
-func TestGetPlayersByGameWithError(t *testing.T) {
+func TestServiceImpl_GetPlayersByGame_WithError(t *testing.T) {
 	t.Parallel()
 
 	// Initialize dependencies
@@ -92,7 +92,7 @@ func TestGetPlayersByGameWithError(t *testing.T) {
 	require.Nil(t, result)
 }
 
-func TestCreatePlayersWithValidData(t *testing.T) {
+func TestServiceImpl_CreatePlayers_WithValidData(t *testing.T) {
 	t.Parallel()
 
 	// Initialize dependencies
@@ -134,7 +134,7 @@ func TestCreatePlayersWithValidData(t *testing.T) {
 	querier.AssertExpectations(t)
 }
 
-func TestCreatePlayersInsertPlayersError(t *testing.T) {
+func TestServiceImpl_CreatePlayers_InsertPlayersError(t *testing.T) {
 	t.Parallel()
 
 	// Initialize dependencies
@@ -167,7 +167,7 @@ func TestCreatePlayersInsertPlayersError(t *testing.T) {
 	querier.AssertExpectations(t)
 }
 
-func TestCreatePlayersGetPlayersByGameError(t *testing.T) {
+func TestServiceImpl_CreatePlayers_GetPlayersByGameError(t *testing.T) {
 	t.Parallel()
 
 	// Initialize dependencies
