@@ -25,7 +25,7 @@ func TestServiceImpl_GetPlayersByGame(t *testing.T) {
 	querier := db.NewQuerier(t)
 
 	// Initialize the service under test
-	service := player.NewPlayersService(logger, querier)
+	service := player.NewService(logger, querier)
 
 	// Set up test data
 	ctx := context.Background()
@@ -75,7 +75,7 @@ func TestServiceImpl_GetPlayersByGame_WithError(t *testing.T) {
 	querier := db.NewQuerier(t)
 
 	// Initialize the service under test
-	service := player.NewPlayersService(logger, querier)
+	service := player.NewService(logger, querier)
 
 	// Set up test data
 	ctx := context.Background()
@@ -100,7 +100,7 @@ func TestServiceImpl_CreatePlayers_WithValidData(t *testing.T) {
 	querier := db.NewQuerier(t)
 
 	// Initialize the service under test
-	service := player.NewPlayersService(logger, querier)
+	service := player.NewService(logger, querier)
 
 	// Set up test data
 	ctx := context.Background()
@@ -142,7 +142,7 @@ func TestServiceImpl_CreatePlayers_InsertPlayersError(t *testing.T) {
 	querier := db.NewQuerier(t)
 
 	// Initialize the service under test
-	service := player.NewPlayersService(logger, querier)
+	service := player.NewService(logger, querier)
 
 	// Set up test data
 	ctx := context.Background()
@@ -175,7 +175,7 @@ func TestServiceImpl_CreatePlayers_GetPlayersByGameError(t *testing.T) {
 	querier := db.NewQuerier(t)
 
 	// Initialize the service under test
-	service := player.NewPlayersService(logger, querier)
+	service := player.NewService(logger, querier)
 
 	// Set up test data
 	ctx := context.Background()

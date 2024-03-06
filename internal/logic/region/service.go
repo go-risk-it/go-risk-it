@@ -32,7 +32,7 @@ type ServiceImpl struct {
 	assignmentService assignment.Service
 }
 
-func NewRegionService(
+func NewService(
 	log *zap.SugaredLogger,
 	querier db.Querier,
 	assignmentService assignment.Service,

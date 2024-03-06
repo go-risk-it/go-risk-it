@@ -35,6 +35,6 @@ type Board struct {
 	Borders    []Border    `json:"borders"`
 }
 
-func NewBoardService(q db.Querier, logger *zap.SugaredLogger) *ServiceImpl {
+func NewService(q db.Querier, logger *zap.SugaredLogger) *ServiceImpl {
 	return &ServiceImpl{querier: q, log: logger}
 }

@@ -25,7 +25,7 @@ type ServiceImpl struct {
 	regionService region.Service
 }
 
-func NewGameService(
+func NewService(
 	logger *zap.SugaredLogger,
 	querier db.Querier,
 	playerService player.Service,

@@ -16,19 +16,19 @@ var Module = fx.Options(
 			fx.As(new(assignment.Service)),
 		),
 		fx.Annotate(
-			board.NewBoardService,
+			board.NewService,
 			fx.As(new(board.Service)),
 		),
 		fx.Annotate(
-			region.NewRegionService,
+			region.NewService,
 			fx.As(new(region.Service)),
 		),
 		fx.Annotate(
-			player.NewPlayersService,
+			player.NewService,
 			fx.As(new(player.Service)),
 		),
 		fx.Annotate(
-			game.NewGameService,
+			game.NewService,
 			fx.As(new(game.Service)),
 		),
 	),

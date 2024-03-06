@@ -25,7 +25,7 @@ type ServiceImpl struct {
 	querier db.Querier
 }
 
-func NewPlayersService(log *zap.SugaredLogger, querier db.Querier) *ServiceImpl {
+func NewService(log *zap.SugaredLogger, querier db.Querier) *ServiceImpl {
 	return &ServiceImpl{log: log, querier: querier}
 }
 

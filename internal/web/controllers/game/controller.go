@@ -13,7 +13,6 @@ import (
 
 type Controller interface {
 	GetGameState(ctx context.Context, gameID int64) (message.GameState, error)
-	GetFullState(ctx context.Context, gameID int64) (message.FullState, error)
 }
 
 type ControllerImpl struct {
@@ -40,25 +39,14 @@ func New(
 func (c *ControllerImpl) GetGameState(
 	ctx context.Context, gameID int64,
 ) (message.GameState, error) {
-	return message.GameState{GameID: gameID, CurrentTurn: 0}, nil
-}
-
-func (c *ControllerImpl) GetFullState(
-	ctx context.Context, gameID int64,
-) (message.FullState, error) {
 	gameState, err := c.gameService.GetGameState(ctx, gameID)
 	if err != nil {
-		return message.FullState{}, fmt.Errorf("failed to get game state: %w", err)
+		return message.GameState{}, fmt.Errorf("failed to get game state: %w", err)
 	}
 
-	return message.FullState{
-		GameState: message.GameState{
-			GameID:       gameState.ID,
-			CurrentTurn:  gameState.CurrentTurn,
-			CurrentPhase: string(gameState.CurrentPhase),
-		},
-		BoardState: message.BoardState{
-			Regions: []message.Region{},
-		},
+	return message.GameState{
+		GameID:       gameState.ID,
+		CurrentTurn:  gameState.CurrentTurn,
+		CurrentPhase: string(gameState.CurrentPhase),
 	}, nil
 }

@@ -65,7 +65,7 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 		Return(nil)
 
 	// Initialize the service
-	service := game.NewGameService(
+	service := game.NewService(
 		zap.NewExample().Sugar(),
 		mockQuerier,
 		playerServiceMock,
@@ -88,7 +88,7 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 	querier := db.NewQuerier(t)
 
 	// Initialize the service under test
-	service := game.NewGameService(logger, querier, playerService, regionService)
+	service := game.NewService(logger, querier, playerService, regionService)
 
 	// Set up test data
 	ctx := context.Background()
@@ -120,7 +120,7 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 	regionService := region.NewService(t)
 
 	// Initialize the service under test
-	service := game.NewGameService(logger, querier, playerService, regionService)
+	service := game.NewService(logger, querier, playerService, regionService)
 
 	// Set up test data
 	ctx := context.Background()
@@ -156,7 +156,7 @@ func TestServiceImpl_GetGameState(t *testing.T) {
 	regionService := region.NewService(t)
 
 	// Initialize the service under test
-	service := game.NewGameService(logger, querier, playerService, regionService)
+	service := game.NewService(logger, querier, playerService, regionService)
 
 	// Set up test data
 	ctx := context.Background()

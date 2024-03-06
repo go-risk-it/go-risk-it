@@ -24,7 +24,7 @@ func TestServiceImpl_CreateRegions(t *testing.T) {
 	assignmentService := assignment.NewService(t)
 
 	// Initialize the service under test
-	service := region.NewRegionService(logger, querier, assignmentService)
+	service := region.NewService(logger, querier, assignmentService)
 
 	// Set up test data
 	ctx := context.Background()
@@ -78,7 +78,7 @@ func TestServiceImpl_CreateRegions_NoPlayers(t *testing.T) {
 	assignmentService := assignment.NewService(t)
 
 	// Initialize the service under test
-	service := region.NewRegionService(logger, querier, assignmentService)
+	service := region.NewService(logger, querier, assignmentService)
 
 	// Set up test data
 	ctx := context.Background()
@@ -107,7 +107,7 @@ func TestServiceImpl_CreateRegions_PlayersNotInSameGame(t *testing.T) {
 	assignmentService := assignment.NewService(t)
 
 	// Initialize the service under test
-	service := region.NewRegionService(logger, querier, assignmentService)
+	service := region.NewService(logger, querier, assignmentService)
 
 	// Set up test data
 	ctx := context.Background()
@@ -138,7 +138,7 @@ func TestServiceImpl_CreateRegions_InsertRegionsError(t *testing.T) {
 	assignmentService := assignment.NewService(t)
 
 	// Initialize the service under test
-	service := region.NewRegionService(logger, querier, assignmentService)
+	service := region.NewService(logger, querier, assignmentService)
 
 	// Set up test data
 	ctx := context.Background()
