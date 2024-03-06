@@ -23,7 +23,7 @@ func (q *Queries) GetGame(ctx context.Context, id int64) (Game, error) {
 }
 
 const getPlayersByGame = `-- name: GetPlayersByGame :many
-SELECT id, game_id, user_id, turn_index
+SELECT id, game_id, user_id, turn_index, troops_to_deploy
 FROM player
 WHERE game_id = $1
 `
@@ -42,6 +42,7 @@ func (q *Queries) GetPlayersByGame(ctx context.Context, gameID int64) ([]Player,
 			&i.GameID,
 			&i.UserID,
 			&i.TurnIndex,
+			&i.TroopsToDeploy,
 		); err != nil {
 			return nil, err
 		}
@@ -101,9 +102,10 @@ func (q *Queries) InsertGame(ctx context.Context) (int64, error) {
 }
 
 type InsertPlayersParams struct {
-	GameID    int64
-	UserID    string
-	TurnIndex int64
+	GameID         int64
+	UserID         string
+	TurnIndex      int64
+	TroopsToDeploy int64
 }
 
 type InsertRegionsParams struct {

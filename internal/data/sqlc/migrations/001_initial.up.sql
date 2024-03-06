@@ -9,10 +9,11 @@ CREATE TABLE game
 
 CREATE TABLE player
 (
-    id         BIGSERIAL PRIMARY KEY,
-    game_id    BIGINT NOT NULL,
-    user_id    TEXT   NOT NULL,
-    turn_index BIGINT NOT NULL,
+    id               BIGSERIAL PRIMARY KEY,
+    game_id          BIGINT NOT NULL,
+    user_id          TEXT   NOT NULL,
+    turn_index       BIGINT NOT NULL,
+    troops_to_deploy BIGINT NOT NULL,
     FOREIGN KEY (game_id) REFERENCES game (id)
 );
 
@@ -28,8 +29,10 @@ CREATE TABLE region
 CREATE TABLE card
 (
     id        BIGSERIAL PRIMARY KEY,
-    player_id BIGINT NOT NULL,
-    FOREIGN KEY (player_id) REFERENCES player (id)
+    player_id BIGINT,
+    region_id BIGINT NOT NULL,
+    FOREIGN KEY (player_id) REFERENCES player (id),
+    FOREIGN KEY (region_id) REFERENCES region (id)
 );
 
 CREATE TABLE mission

@@ -21,7 +21,7 @@ test:
 
 sqlc:
 	@echo "Building..."
-	@docker run --rm -v $(pwd):/src -w /src sqlc/sqlc generate
+	@docker compose run --rm sqlc
 
 run:
 	@echo "Destroying existing environment..."

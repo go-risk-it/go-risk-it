@@ -7,6 +7,8 @@ package sqlc
 import (
 	"database/sql/driver"
 	"fmt"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Phase string
@@ -55,7 +57,8 @@ func (ns NullPhase) Value() (driver.Value, error) {
 
 type Card struct {
 	ID       int64
-	PlayerID int64
+	PlayerID pgtype.Int8
+	RegionID int64
 }
 
 type Game struct {
@@ -70,10 +73,11 @@ type Mission struct {
 }
 
 type Player struct {
-	ID        int64
-	GameID    int64
-	UserID    string
-	TurnIndex int64
+	ID             int64
+	GameID         int64
+	UserID         string
+	TurnIndex      int64
+	TroopsToDeploy int64
 }
 
 type Region struct {

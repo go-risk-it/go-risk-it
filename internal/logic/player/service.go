@@ -55,7 +55,12 @@ func (s *ServiceImpl) CreatePlayers(
 	for _, user := range users {
 		playersParams = append(
 			playersParams,
-			sqlc.InsertPlayersParams{GameID: gameID, UserID: user, TurnIndex: turnIndex},
+			sqlc.InsertPlayersParams{
+				GameID:         gameID,
+				UserID:         user,
+				TurnIndex:      turnIndex,
+				TroopsToDeploy: 0,
+			},
 		)
 		turnIndex += 1
 	}
