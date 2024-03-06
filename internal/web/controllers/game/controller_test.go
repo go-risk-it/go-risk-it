@@ -1,15 +1,17 @@
-package game
+package game_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	"github.com/tomfran/go-risk-it/internal/api/game/message"
 	"github.com/tomfran/go-risk-it/internal/data/sqlc"
+	gameController "github.com/tomfran/go-risk-it/internal/web/controllers/game"
 	"github.com/tomfran/go-risk-it/mocks/internal_/logic/board"
 	"github.com/tomfran/go-risk-it/mocks/internal_/logic/game"
 	"github.com/tomfran/go-risk-it/mocks/internal_/logic/player"
 	"go.uber.org/zap"
-	"testing"
 )
 
 func TestControllerImpl_GetGameState(t *testing.T) {
@@ -22,7 +24,7 @@ func TestControllerImpl_GetGameState(t *testing.T) {
 	playerService := player.NewService(t)
 
 	// Initialize the service under test
-	controller := New(log, gameService, boardService, playerService)
+	controller := gameController.New(log, gameService, boardService, playerService)
 
 	// Set up test data
 	ctx := context.Background()
