@@ -1,19 +1,18 @@
-package handler
+package connection
 
 import (
 	"net/http"
 
-	"github.com/tomfran/go-risk-it/internal/web/ws/connection/upgrader"
 	"go.uber.org/zap"
 )
 
 type WebSocketHandler struct {
-	upgrader upgrader.Upgrader
+	upgrader Upgrader
 	log      *zap.SugaredLogger
 }
 
 func NewWebSocketHandler(
-	upgrader upgrader.Upgrader,
+	upgrader Upgrader,
 	logger *zap.SugaredLogger,
 ) *WebSocketHandler {
 	return &WebSocketHandler{upgrader: upgrader, log: logger}

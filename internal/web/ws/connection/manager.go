@@ -1,4 +1,4 @@
-package manager
+package connection
 
 import (
 	"context"
@@ -62,7 +62,7 @@ func (m *ManagerImpl) sendRelevantState(connection *websocket.Conn) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	const NStates = 3
+	NStates := len(m.fetchers)
 	stateChannel := make(chan json.RawMessage, NStates)
 
 	for _, fetcher := range m.fetchers {

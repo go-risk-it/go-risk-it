@@ -1,10 +1,9 @@
-package upgrader
+package connection
 
 import (
 	"net/http"
 
 	"github.com/lesismal/nbio/nbhttp/websocket"
-	"github.com/tomfran/go-risk-it/internal/web/ws/connection/manager"
 	"github.com/tomfran/go-risk-it/internal/web/ws/message"
 	"go.uber.org/zap"
 )
@@ -21,14 +20,14 @@ type Upgrader interface {
 type UpgraderImpl struct {
 	*websocket.Upgrader
 	log               *zap.SugaredLogger
-	connectionManager manager.Manager
+	connectionManager Manager
 	messageHandler    message.Handler
 }
 
 func New(
 	log *zap.SugaredLogger,
 	messageHandler message.Handler,
-	connectionManager manager.Manager,
+	connectionManager Manager,
 	args ...interface{},
 ) *UpgraderImpl {
 	//exhaustruct:ignore

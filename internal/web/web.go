@@ -5,7 +5,7 @@ import (
 	"github.com/tomfran/go-risk-it/internal/web/fetchers"
 	"github.com/tomfran/go-risk-it/internal/web/nbio"
 	"github.com/tomfran/go-risk-it/internal/web/ws"
-	"github.com/tomfran/go-risk-it/internal/web/ws/connection/handler"
+	"github.com/tomfran/go-risk-it/internal/web/ws/connection"
 	"go.uber.org/fx"
 )
 
@@ -16,6 +16,6 @@ var Module = fx.Options(
 	ws.Module,
 	fx.Provide(
 		NewServeMux,
-		handler.NewWebSocketHandler,
+		connection.NewWebSocketHandler,
 	),
 )

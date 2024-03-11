@@ -17,29 +17,35 @@
 - [x] Figure out how to do testing
 - [x] Figure out how to format code automatically
 - [x] Figure out fx modules
+- [ ] Create realistic input
+- [ ] Improve region-to-player assignment
+- [ ] Improve troops-region assignment
+- [x] Define deploy-move API
+- [ ] Implement deploy-move API
+- [ ] Store playerID and gameID in HTTP/WS headers
 
 **Front-end**
 
-- [ ] Understand how to start with frontend
+- [x] Understand how to start with frontend
+- [ ] Implement deploy-move API
 
 **Server: Architecture**
 
 - [x] Figure out how to split code in packages
-- [ ] Figure out how to determine whose turn it is in a game
+- [x] Figure out how to determine whose turn it is in a game
 - [x] Add a db provider
 
 **Server: Deserialization**
 
 - [x] Byte-array to JSON conversion and vice-versa
-- [ ] Message handler component with message structs
+- [x] Message handler component with message structs
 
 **Server: Logic**
 
-- [ ] Game logic
+- [x] Game logic
 - [ ] Map validation
 - [ ] POST endpoint for creating a game
-- [ ] GetFullState
-- [ ] Frontend - Display full state
+- [x] Frontend - Display full state
 
 - [ ] Deploy move
 - [ ] Attack move
