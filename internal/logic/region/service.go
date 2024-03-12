@@ -46,7 +46,7 @@ func (s *ServiceImpl) CreateRegions(
 	players []sqlc.Player,
 	regions []board.Region,
 ) error {
-	s.log.Infow("creating regions", "players", players, "regions", regions)
+	s.log.Infow("creating regions", "players_size", len(players), "regions_size", len(regions))
 
 	if len(players) == 0 {
 		return ErrNoPlayers

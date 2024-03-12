@@ -36,10 +36,10 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 	}
 
 	regions := []board.Region{
-		{ExternalReference: "netherlands", Name: "Netherlands", ContinentID: 1},
-		{ExternalReference: "italy", Name: "Italy", ContinentID: 1},
-		{ExternalReference: "tasin", Name: "Tasin", ContinentID: 2},
-		{ExternalReference: "samon", Name: "Samon", ContinentID: 3},
+		{ExternalReference: "netherlands", Name: "Netherlands", Continent: "1"},
+		{ExternalReference: "italy", Name: "Italy", Continent: "1"},
+		{ExternalReference: "tasin", Name: "Tasin", Continent: "2"},
+		{ExternalReference: "samon", Name: "Samon", Continent: "3"},
 	}
 
 	gameBoard := &board.Board{

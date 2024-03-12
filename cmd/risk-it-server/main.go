@@ -14,29 +14,6 @@ import (
 	"go.uber.org/fx"
 )
 
-var gameBoard = &board.Board{
-	Regions: []board.Region{
-		{
-			ExternalReference: "alaska",
-			Name:              "Alaska",
-			ContinentID:       1,
-		},
-		{
-			ExternalReference: "northwest_territory",
-			Name:              "Northwest Territory",
-			ContinentID:       1,
-		},
-	},
-	Continents: []board.Continent{
-		{
-			ExternalReference: "north_america",
-			Name:              "North America",
-			BonusTroops:       5,
-		},
-	},
-	Borders: nil,
-}
-
 func main() {
 	fx.New(
 		loggerfx.Module,
@@ -44,9 +21,19 @@ func main() {
 		data.Module,
 		web.Module,
 		fx.Invoke(func(engine *nbhttp.Engine) {}),
-		fx.Invoke(func(gameService game.Service) error {
+		fx.Invoke(func(boardService board.Service, gameService game.Service) error {
 			ctx := context.TODO()
-			err := gameService.CreateGameWithTx(ctx, gameBoard, []string{"test"})
+
+			gameBoard, err := boardService.FetchFromFile()
+			if err != nil {
+				return fmt.Errorf("failed to fetch board from file: %w", err)
+			}
+
+			err = gameService.CreateGameWithTx(
+				ctx,
+				gameBoard,
+				[]string{"gabriele", "giovanni", "francesco", "vasilii"},
+			)
 			if err != nil {
 				return fmt.Errorf("failed to create game: %w", err)
 			}
