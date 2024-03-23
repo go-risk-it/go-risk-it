@@ -134,63 +134,6 @@ func (_c *Service_DecreaseDeployableTroopsQ_Call) RunAndReturn(run func(context.
 	return _c
 }
 
-// GetPlayer provides a mock function with given fields: ctx, _a1
-func (_m *Service) GetPlayer(ctx context.Context, _a1 string) (sqlc.Player, error) {
-	ret := _m.Called(ctx, _a1)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetPlayer")
-	}
-
-	var r0 sqlc.Player
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (sqlc.Player, error)); ok {
-		return rf(ctx, _a1)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) sqlc.Player); ok {
-		r0 = rf(ctx, _a1)
-	} else {
-		r0 = ret.Get(0).(sqlc.Player)
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, _a1)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// Service_GetPlayer_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetPlayer'
-type Service_GetPlayer_Call struct {
-	*mock.Call
-}
-
-// GetPlayer is a helper method to define mock.On call
-//   - ctx context.Context
-//   - _a1 string
-func (_e *Service_Expecter) GetPlayer(ctx interface{}, _a1 interface{}) *Service_GetPlayer_Call {
-	return &Service_GetPlayer_Call{Call: _e.mock.On("GetPlayer", ctx, _a1)}
-}
-
-func (_c *Service_GetPlayer_Call) Run(run func(ctx context.Context, _a1 string)) *Service_GetPlayer_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
-	})
-	return _c
-}
-
-func (_c *Service_GetPlayer_Call) Return(_a0 sqlc.Player, _a1 error) *Service_GetPlayer_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *Service_GetPlayer_Call) RunAndReturn(run func(context.Context, string) (sqlc.Player, error)) *Service_GetPlayer_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // GetPlayers provides a mock function with given fields: ctx, gameID
 func (_m *Service) GetPlayers(ctx context.Context, gameID int64) ([]sqlc.Player, error) {
 	ret := _m.Called(ctx, gameID)

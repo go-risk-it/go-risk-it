@@ -29,8 +29,6 @@ type Service interface {
 		player *sqlc.Player,
 		troops int64,
 	) error
-
-	GetPlayer(ctx context.Context, player string) (sqlc.Player, error)
 }
 
 type ServiceImpl struct {
