@@ -164,9 +164,9 @@ func TestServiceImpl_GetGameState(t *testing.T) {
 
 	// Set up expectations for GetGame method
 	querier.On("GetGame", ctx, gameID).Return(sqlc.Game{
-		ID:           gameID,
-		CurrentTurn:  3,
-		CurrentPhase: sqlc.PhaseATTACK,
+		ID:    gameID,
+		Turn:  3,
+		Phase: sqlc.PhaseATTACK,
 	}, nil)
 
 	// Call the method under test

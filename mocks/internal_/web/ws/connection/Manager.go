@@ -3,6 +3,8 @@
 package connection
 
 import (
+	json "encoding/json"
+
 	websocket "github.com/lesismal/nbio/nbhttp/websocket"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -18,6 +20,40 @@ type Manager_Expecter struct {
 
 func (_m *Manager) EXPECT() *Manager_Expecter {
 	return &Manager_Expecter{mock: &_m.Mock}
+}
+
+// Broadcast provides a mock function with given fields: gameID, message
+func (_m *Manager) Broadcast(gameID int64, message json.RawMessage) {
+	_m.Called(gameID, message)
+}
+
+// Manager_Broadcast_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Broadcast'
+type Manager_Broadcast_Call struct {
+	*mock.Call
+}
+
+// Broadcast is a helper method to define mock.On call
+//   - gameID int64
+//   - message json.RawMessage
+func (_e *Manager_Expecter) Broadcast(gameID interface{}, message interface{}) *Manager_Broadcast_Call {
+	return &Manager_Broadcast_Call{Call: _e.mock.On("Broadcast", gameID, message)}
+}
+
+func (_c *Manager_Broadcast_Call) Run(run func(gameID int64, message json.RawMessage)) *Manager_Broadcast_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(int64), args[1].(json.RawMessage))
+	})
+	return _c
+}
+
+func (_c *Manager_Broadcast_Call) Return() *Manager_Broadcast_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Manager_Broadcast_Call) RunAndReturn(run func(int64, json.RawMessage)) *Manager_Broadcast_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // ConnectPlayer provides a mock function with given fields: _a0, gameID

@@ -1,4 +1,4 @@
-package player
+package controller
 
 import (
 	"context"
@@ -10,26 +10,26 @@ import (
 	"go.uber.org/zap"
 )
 
-type Controller interface {
+type PlayerController interface {
 	GetPlayerState(ctx context.Context, gameID int64) (message.PlayersState, error)
 }
 
-type ControllerImpl struct {
+type PlayerControllerImpl struct {
 	log           *zap.SugaredLogger
 	playerService player.Service
 }
 
-func New(
+func NewPlayerController(
 	log *zap.SugaredLogger,
 	playerService player.Service,
-) *ControllerImpl {
-	return &ControllerImpl{
+) *PlayerControllerImpl {
+	return &PlayerControllerImpl{
 		log:           log,
 		playerService: playerService,
 	}
 }
 
-func (c *ControllerImpl) GetPlayerState(
+func (c *PlayerControllerImpl) GetPlayerState(
 	ctx context.Context, gameID int64,
 ) (message.PlayersState, error) {
 	players, err := c.playerService.GetPlayers(ctx, gameID)
@@ -55,6 +55,6 @@ func convertPlayer(player sqlc.Player) message.Player {
 	return message.Player{
 		ID:             player.UserID,
 		Index:          player.TurnIndex,
-		TroopsToDeploy: player.TroopsToDeploy,
+		TroopsToDeploy: player.DeployableTroops,
 	}
 }

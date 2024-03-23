@@ -3,13 +3,16 @@ package logic
 import (
 	"github.com/tomfran/go-risk-it/internal/logic/board"
 	"github.com/tomfran/go-risk-it/internal/logic/game"
+	"github.com/tomfran/go-risk-it/internal/logic/move"
 	"github.com/tomfran/go-risk-it/internal/logic/player"
 	"github.com/tomfran/go-risk-it/internal/logic/region"
 	"github.com/tomfran/go-risk-it/internal/logic/region/assignment"
+	"github.com/tomfran/go-risk-it/internal/signals"
 	"go.uber.org/fx"
 )
 
 var Module = fx.Options(
+	signals.Module,
 	fx.Provide(
 		fx.Annotate(
 			assignment.NewAssignmentService,
@@ -30,6 +33,10 @@ var Module = fx.Options(
 		fx.Annotate(
 			game.NewService,
 			fx.As(new(game.Service)),
+		),
+		fx.Annotate(
+			move.NewService,
+			fx.As(new(move.Service)),
 		),
 	),
 )

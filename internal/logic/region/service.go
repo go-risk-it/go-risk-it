@@ -25,6 +25,17 @@ type Service interface {
 		regions []board.Region,
 	) error
 	GetRegions(ctx context.Context, gameID int64) ([]sqlc.GetRegionsByGameRow, error)
+	GetRegionsQ(
+		ctx context.Context,
+		querier db.Querier,
+		gameID int64,
+	) ([]sqlc.GetRegionsByGameRow, error)
+	IncreaseTroopsInRegion(
+		ctx context.Context,
+		querier db.Querier,
+		regionID int64,
+		troops int64,
+	) error
 }
 type ServiceImpl struct {
 	log               *zap.SugaredLogger
@@ -84,7 +95,15 @@ func (s *ServiceImpl) GetRegions(
 	ctx context.Context,
 	gameID int64,
 ) ([]sqlc.GetRegionsByGameRow, error) {
-	regions, err := s.querier.GetRegionsByGame(ctx, gameID)
+	return s.GetRegionsQ(ctx, s.querier, gameID)
+}
+
+func (s *ServiceImpl) GetRegionsQ(
+	ctx context.Context,
+	querier db.Querier,
+	gameID int64,
+) ([]sqlc.GetRegionsByGameRow, error) {
+	regions, err := querier.GetRegionsByGame(ctx, gameID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get regions: %w", err)
 	}
@@ -92,4 +111,25 @@ func (s *ServiceImpl) GetRegions(
 	s.log.Infow("got regions", "regions", regions)
 
 	return regions, nil
+}
+
+func (s *ServiceImpl) IncreaseTroopsInRegion(
+	ctx context.Context,
+	querier db.Querier,
+	regionID int64,
+	troops int64,
+) error {
+	s.log.Infow("increasing region troops", "region_id", regionID, "troops", troops)
+
+	err := querier.IncreaseRegionTroops(ctx, sqlc.IncreaseRegionTroopsParams{
+		ID:     regionID,
+		Troops: troops,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to increase region troops: %w", err)
+	}
+
+	s.log.Infow("increased region troops", "region_id", regionID, "troops", troops)
+
+	return nil
 }

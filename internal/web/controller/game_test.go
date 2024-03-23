@@ -1,4 +1,4 @@
-package game_test
+package controller_test
 
 import (
 	"context"
@@ -7,14 +7,14 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tomfran/go-risk-it/internal/api/game/message"
 	"github.com/tomfran/go-risk-it/internal/data/sqlc"
-	gameController "github.com/tomfran/go-risk-it/internal/web/controllers/game"
+	gameController "github.com/tomfran/go-risk-it/internal/web/controller"
 	"github.com/tomfran/go-risk-it/mocks/internal_/logic/board"
 	"github.com/tomfran/go-risk-it/mocks/internal_/logic/game"
 	"github.com/tomfran/go-risk-it/mocks/internal_/logic/player"
 	"go.uber.org/zap"
 )
 
-func TestControllerImpl_GetGameState(t *testing.T) {
+func TestGameControllerImpl_GetGameState(t *testing.T) {
 	t.Parallel()
 
 	// Initialize dependencies
@@ -24,7 +24,7 @@ func TestControllerImpl_GetGameState(t *testing.T) {
 	playerService := player.NewService(t)
 
 	// Initialize the service under test
-	controller := gameController.New(log, gameService, boardService, playerService)
+	controller := gameController.NewGameController(log, gameService, boardService, playerService)
 
 	// Set up test data
 	ctx := context.Background()
@@ -32,9 +32,9 @@ func TestControllerImpl_GetGameState(t *testing.T) {
 
 	// Set up expectations for GetGameState method
 	gameService.On("GetGameState", ctx, gameID).Return(&sqlc.Game{
-		ID:           gameID,
-		CurrentTurn:  0,
-		CurrentPhase: "CARDS",
+		ID:    gameID,
+		Turn:  0,
+		Phase: "CARDS",
 	}, nil)
 
 	// Call the method under test

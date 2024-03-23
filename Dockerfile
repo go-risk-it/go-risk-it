@@ -20,6 +20,7 @@ FROM golang:1.21-alpine
 
 WORKDIR /src
 COPY --from=builder /src/risk-it-server .
+COPY --from=builder /src/map.json .
 
 # Command to run the executable
 ENTRYPOINT ["./risk-it-server"]

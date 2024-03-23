@@ -1,4 +1,4 @@
-package board
+package controller
 
 import (
 	"context"
@@ -11,25 +11,25 @@ import (
 	"go.uber.org/zap"
 )
 
-type Controller interface {
+type BoardController interface {
 	GetBoardState(ctx context.Context, gameID int64) (message.BoardState, error)
 }
 
-type ControllerImpl struct {
+type BoardControllerImpl struct {
 	log           *zap.SugaredLogger
 	boardService  board.Service
 	regionService region.Service
 }
 
-func New(
+func NewBoardController(
 	log *zap.SugaredLogger,
 	boardService board.Service,
 	regionService region.Service,
-) *ControllerImpl {
-	return &ControllerImpl{log: log, boardService: boardService, regionService: regionService}
+) *BoardControllerImpl {
+	return &BoardControllerImpl{log: log, boardService: boardService, regionService: regionService}
 }
 
-func (c *ControllerImpl) GetBoardState(
+func (c *BoardControllerImpl) GetBoardState(
 	ctx context.Context, gameID int64,
 ) (message.BoardState, error) {
 	regions, err := c.regionService.GetRegions(ctx, gameID)

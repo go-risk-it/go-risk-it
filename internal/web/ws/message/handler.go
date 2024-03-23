@@ -107,7 +107,7 @@ func (m *HandlerImpl) handleMessage(
 
 // func handleRequest[Request interface{}, Response interface{}](
 //	payload json.RawMessage,
-//	handler func(Request) (Response, error),
+//	handlers func(Request) (Response, error),
 // ) (Response, error) {
 //	var (
 //		request     Request
@@ -119,7 +119,7 @@ func (m *HandlerImpl) handleMessage(
 //		return nilResponse, fmt.Errorf("unable to unmarshal json: %w", err)
 //	}
 //
-//	response, err := handler(request)
+//	response, err := handlers(request)
 //	if err != nil {
 //		return nilResponse, fmt.Errorf("unable to handle request: %w", err)
 //	}

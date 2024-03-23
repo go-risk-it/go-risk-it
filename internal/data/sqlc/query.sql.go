@@ -9,8 +9,24 @@ import (
 	"context"
 )
 
+const decreaseDeployableTroops = `-- name: DecreaseDeployableTroops :exec
+UPDATE player
+SET deployable_troops = deployable_troops - $2
+WHERE id = $1
+`
+
+type DecreaseDeployableTroopsParams struct {
+	ID               int64
+	DeployableTroops int64
+}
+
+func (q *Queries) DecreaseDeployableTroops(ctx context.Context, arg DecreaseDeployableTroopsParams) error {
+	_, err := q.db.Exec(ctx, decreaseDeployableTroops, arg.ID, arg.DeployableTroops)
+	return err
+}
+
 const getGame = `-- name: GetGame :one
-SELECT id, current_turn, current_phase
+SELECT id, turn, phase
 FROM game
 WHERE id = $1
 `
@@ -18,12 +34,31 @@ WHERE id = $1
 func (q *Queries) GetGame(ctx context.Context, id int64) (Game, error) {
 	row := q.db.QueryRow(ctx, getGame, id)
 	var i Game
-	err := row.Scan(&i.ID, &i.CurrentTurn, &i.CurrentPhase)
+	err := row.Scan(&i.ID, &i.Turn, &i.Phase)
+	return i, err
+}
+
+const getPlayerByUserId = `-- name: GetPlayerByUserId :one
+SELECT id, game_id, user_id, turn_index, deployable_troops
+FROM player
+WHERE user_id = $1
+`
+
+func (q *Queries) GetPlayerByUserId(ctx context.Context, userID string) (Player, error) {
+	row := q.db.QueryRow(ctx, getPlayerByUserId, userID)
+	var i Player
+	err := row.Scan(
+		&i.ID,
+		&i.GameID,
+		&i.UserID,
+		&i.TurnIndex,
+		&i.DeployableTroops,
+	)
 	return i, err
 }
 
 const getPlayersByGame = `-- name: GetPlayersByGame :many
-SELECT id, game_id, user_id, turn_index, troops_to_deploy
+SELECT id, game_id, user_id, turn_index, deployable_troops
 FROM player
 WHERE game_id = $1
 `
@@ -42,7 +77,7 @@ func (q *Queries) GetPlayersByGame(ctx context.Context, gameID int64) ([]Player,
 			&i.GameID,
 			&i.UserID,
 			&i.TurnIndex,
-			&i.TroopsToDeploy,
+			&i.DeployableTroops,
 		); err != nil {
 			return nil, err
 		}
@@ -55,7 +90,7 @@ func (q *Queries) GetPlayersByGame(ctx context.Context, gameID int64) ([]Player,
 }
 
 const getRegionsByGame = `-- name: GetRegionsByGame :many
-SELECT r.external_reference, r.troops, p.user_id as player_name
+SELECT r.id, r.external_reference, r.troops, p.user_id as player_name
 FROM region r
          JOIN player p on r.player_id = p.id
          JOIN game g on p.game_id = g.id
@@ -63,6 +98,7 @@ WHERE g.id = $1
 `
 
 type GetRegionsByGameRow struct {
+	ID                int64
 	ExternalReference string
 	Troops            int64
 	PlayerName        string
@@ -77,7 +113,12 @@ func (q *Queries) GetRegionsByGame(ctx context.Context, id int64) ([]GetRegionsB
 	var items []GetRegionsByGameRow
 	for rows.Next() {
 		var i GetRegionsByGameRow
-		if err := rows.Scan(&i.ExternalReference, &i.Troops, &i.PlayerName); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.ExternalReference,
+			&i.Troops,
+			&i.PlayerName,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -86,6 +127,22 @@ func (q *Queries) GetRegionsByGame(ctx context.Context, id int64) ([]GetRegionsB
 		return nil, err
 	}
 	return items, nil
+}
+
+const increaseRegionTroops = `-- name: IncreaseRegionTroops :exec
+UPDATE region
+SET troops = troops + $2
+WHERE id = $1
+`
+
+type IncreaseRegionTroopsParams struct {
+	ID     int64
+	Troops int64
+}
+
+func (q *Queries) IncreaseRegionTroops(ctx context.Context, arg IncreaseRegionTroopsParams) error {
+	_, err := q.db.Exec(ctx, increaseRegionTroops, arg.ID, arg.Troops)
+	return err
 }
 
 const insertGame = `-- name: InsertGame :one
@@ -102,14 +159,30 @@ func (q *Queries) InsertGame(ctx context.Context) (int64, error) {
 }
 
 type InsertPlayersParams struct {
-	GameID         int64
-	UserID         string
-	TurnIndex      int64
-	TroopsToDeploy int64
+	GameID           int64
+	UserID           string
+	TurnIndex        int64
+	DeployableTroops int64
 }
 
 type InsertRegionsParams struct {
 	ExternalReference string
 	PlayerID          int64
 	Troops            int64
+}
+
+const setGamePhase = `-- name: SetGamePhase :exec
+UPDATE game
+SET phase = $2
+WHERE id = $1
+`
+
+type SetGamePhaseParams struct {
+	ID    int64
+	Phase Phase
+}
+
+func (q *Queries) SetGamePhase(ctx context.Context, arg SetGamePhaseParams) error {
+	_, err := q.db.Exec(ctx, setGamePhase, arg.ID, arg.Phase)
+	return err
 }

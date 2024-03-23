@@ -5,7 +5,9 @@ go 1.21.0
 require (
 	github.com/golang-migrate/migrate/v4 v4.17.0
 	github.com/jackc/pgx/v5 v5.5.2
+	github.com/jonhoo/go-events v0.0.0-20150121182257-5b240ffae643
 	github.com/lesismal/nbio v1.3.21
+	github.com/maniartech/signals v1.2.0
 	github.com/stretchr/testify v1.8.4
 	github.com/testcontainers/testcontainers-go v0.27.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.27.0

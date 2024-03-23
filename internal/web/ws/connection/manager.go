@@ -13,6 +13,7 @@ import (
 type Manager interface {
 	ConnectPlayer(connection *websocket.Conn, gameID int64)
 	DisconnectPlayer(connection *websocket.Conn, gameID int64)
+	Broadcast(gameID int64, message json.RawMessage)
 }
 
 type ManagerImpl struct {
@@ -29,6 +30,21 @@ func NewManager(
 		log:             log,
 		gameConnections: make(map[int64][]*websocket.Conn),
 		fetchers:        fetchers,
+	}
+}
+
+func (m *ManagerImpl) Broadcast(gameID int64, message json.RawMessage) {
+	m.log.Infof(
+		"broadcasting message to %d players for game %d",
+		len(m.gameConnections[gameID]),
+		gameID,
+	)
+
+	for i := range m.gameConnections[gameID] {
+		err := m.gameConnections[gameID][i].WriteMessage(websocket.TextMessage, message)
+		if err != nil {
+			m.log.Errorw("unable to write message", "error", err)
+		}
 	}
 }
 

@@ -18,6 +18,19 @@ type Service interface {
 		[]sqlc.Player,
 		error,
 	)
+	GetPlayersQ(ctx context.Context, querier db.Querier, gameID int64) (
+		[]sqlc.Player,
+		error,
+	)
+
+	DecreaseDeployableTroopsQ(
+		ctx context.Context,
+		querier db.Querier,
+		player *sqlc.Player,
+		troops int64,
+	) error
+
+	GetPlayer(ctx context.Context, player string) (sqlc.Player, error)
 }
 
 type ServiceImpl struct {
@@ -33,12 +46,21 @@ func (s *ServiceImpl) GetPlayers(ctx context.Context, gameID int64) (
 	[]sqlc.Player,
 	error,
 ) {
-	players, err := s.querier.GetPlayersByGame(ctx, gameID)
+	return s.GetPlayersQ(ctx, s.querier, gameID)
+}
+
+func (s *ServiceImpl) GetPlayersQ(ctx context.Context, querier db.Querier, gameID int64) (
+	[]sqlc.Player,
+	error,
+) {
+	result, err := querier.GetPlayersByGame(ctx, gameID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get players: %w", err)
+		return result, fmt.Errorf("failed to get players: %w", err)
 	}
 
-	return players, nil
+	s.log.Infow("got players", "gameID", gameID)
+
+	return result, nil
 }
 
 func (s *ServiceImpl) CreatePlayers(
@@ -56,10 +78,10 @@ func (s *ServiceImpl) CreatePlayers(
 		playersParams = append(
 			playersParams,
 			sqlc.InsertPlayersParams{
-				GameID:         gameID,
-				UserID:         user,
-				TurnIndex:      turnIndex,
-				TroopsToDeploy: 0,
+				GameID:           gameID,
+				UserID:           user,
+				TurnIndex:        turnIndex,
+				DeployableTroops: 0,
 			},
 		)
 		turnIndex += 1
@@ -77,4 +99,29 @@ func (s *ServiceImpl) CreatePlayers(
 	}
 
 	return players, nil
+}
+
+func (s *ServiceImpl) DecreaseDeployableTroopsQ(
+	ctx context.Context,
+	querier db.Querier,
+	player *sqlc.Player,
+	troops int64,
+) error {
+	s.log.Infow("decreasing deployable troops", "player", player, "troops", troops)
+
+	if player.DeployableTroops < troops {
+		return fmt.Errorf("player does not have enough troops to deploy")
+	}
+
+	err := querier.DecreaseDeployableTroops(ctx, sqlc.DecreaseDeployableTroopsParams{
+		ID:               player.ID,
+		DeployableTroops: troops,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to decrease deployable troops: %w", err)
+	}
+
+	s.log.Infow("decreased deployable troops", "player", player, "troops", troops)
+
+	return nil
 }

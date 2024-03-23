@@ -1,4 +1,4 @@
-package board_test
+package controller_test
 
 import (
 	"context"
@@ -7,13 +7,13 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tomfran/go-risk-it/internal/api/game/message"
 	"github.com/tomfran/go-risk-it/internal/data/sqlc"
-	boardController "github.com/tomfran/go-risk-it/internal/web/controllers/board"
+	boardController "github.com/tomfran/go-risk-it/internal/web/controller"
 	"github.com/tomfran/go-risk-it/mocks/internal_/logic/board"
 	"github.com/tomfran/go-risk-it/mocks/internal_/logic/region"
 	"go.uber.org/zap"
 )
 
-func TestControllerImpl_GetBoardState(t *testing.T) {
+func TestBoardControllerImpl_GetBoardState(t *testing.T) {
 	t.Parallel()
 
 	// Initialize dependencies
@@ -22,7 +22,7 @@ func TestControllerImpl_GetBoardState(t *testing.T) {
 	regionService := region.NewService(t)
 
 	// Initialize the service under test
-	controller := boardController.New(log, boardService, regionService)
+	controller := boardController.NewBoardController(log, boardService, regionService)
 
 	// Set up test data
 	ctx := context.Background()

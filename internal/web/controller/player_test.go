@@ -1,4 +1,4 @@
-package player_test
+package controller_test
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tomfran/go-risk-it/internal/api/game/message"
 	"github.com/tomfran/go-risk-it/internal/data/sqlc"
-	playerController "github.com/tomfran/go-risk-it/internal/web/controllers/player"
+	playerController "github.com/tomfran/go-risk-it/internal/web/controller"
 	"github.com/tomfran/go-risk-it/mocks/internal_/logic/player"
 	"go.uber.org/zap"
 )
@@ -20,7 +20,7 @@ func TestControllerImpl_GetPlayerState(t *testing.T) {
 	playerService := player.NewService(t)
 
 	// Initialize the service under test
-	controller := playerController.New(logger, playerService)
+	controller := playerController.NewPlayerController(logger, playerService)
 
 	// Set up test data
 	ctx := context.Background()

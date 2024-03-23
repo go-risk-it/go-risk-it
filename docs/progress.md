@@ -17,17 +17,20 @@
 - [x] Figure out how to do testing
 - [x] Figure out how to format code automatically
 - [x] Figure out fx modules
-- [ ] Create realistic input
+- [x] Create realistic input
 - [ ] Improve region-to-player assignment
 - [ ] Improve troops-region assignment
 - [x] Define deploy-move API
 - [ ] Implement deploy-move API
+  - [ ] Polish up deploy phase
+  - [ ] Test deploy phase
+  - [ ] Expose POST endpoint for deploy phase
 - [ ] Store playerID and gameID in HTTP/WS headers
 
 **Front-end**
 
 - [x] Understand how to start with frontend
-- [ ] Implement deploy-move API
+- [x] Implement deploy-move API
 
 **Server: Architecture**
 

@@ -16,6 +16,8 @@ type Service interface {
 	CreateGameWithTx(ctx context.Context, board *board.Board, users []string) error
 	CreateGame(ctx context.Context, querier db.Querier, board *board.Board, users []string) error
 	GetGameState(ctx context.Context, gameID int64) (*sqlc.Game, error)
+	GetGameStateQ(ctx context.Context, querier db.Querier, gameID int64) (*sqlc.Game, error)
+	SetGamePhaseQ(ctx context.Context, querier db.Querier, gameID int64, phase sqlc.Phase) error
 }
 
 type ServiceImpl struct {
@@ -87,10 +89,39 @@ func (s *ServiceImpl) GetGameState(
 	ctx context.Context,
 	gameID int64,
 ) (*sqlc.Game, error) {
-	game, err := s.querier.GetGame(ctx, gameID)
+	return s.GetGameStateQ(ctx, s.querier, gameID)
+}
+
+func (s *ServiceImpl) GetGameStateQ(
+	ctx context.Context,
+	querier db.Querier,
+	gameID int64,
+) (*sqlc.Game, error) {
+	game, err := querier.GetGame(ctx, gameID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get game: %w", err)
 	}
 
 	return &game, nil
+}
+
+func (s *ServiceImpl) SetGamePhaseQ(
+	ctx context.Context,
+	querier db.Querier,
+	gameID int64,
+	phase sqlc.Phase,
+) error {
+	s.log.Infow("setting phase", "gameID", gameID, "phase", phase)
+
+	err := querier.SetGamePhase(ctx, sqlc.SetGamePhaseParams{
+		Phase: phase,
+		ID:    gameID,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to set phase: %w", err)
+	}
+
+	s.log.Infow("phase set", "gameID", gameID, "phase", phase)
+
+	return nil
 }

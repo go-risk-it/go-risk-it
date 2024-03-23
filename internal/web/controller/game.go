@@ -1,4 +1,4 @@
-package game
+package controller
 
 import (
 	"context"
@@ -11,24 +11,24 @@ import (
 	"go.uber.org/zap"
 )
 
-type Controller interface {
+type GameController interface {
 	GetGameState(ctx context.Context, gameID int64) (message.GameState, error)
 }
 
-type ControllerImpl struct {
+type GameControllerImpl struct {
 	log           *zap.SugaredLogger
 	gameService   game.Service
 	playerService player.Service
 	boardService  board.Service
 }
 
-func New(
+func NewGameController(
 	log *zap.SugaredLogger,
 	gameService game.Service,
 	boardService board.Service,
 	playerService player.Service,
-) *ControllerImpl {
-	return &ControllerImpl{
+) *GameControllerImpl {
+	return &GameControllerImpl{
 		log:           log,
 		gameService:   gameService,
 		boardService:  boardService,
@@ -36,7 +36,7 @@ func New(
 	}
 }
 
-func (c *ControllerImpl) GetGameState(
+func (c *GameControllerImpl) GetGameState(
 	ctx context.Context, gameID int64,
 ) (message.GameState, error) {
 	gameState, err := c.gameService.GetGameState(ctx, gameID)
@@ -46,7 +46,7 @@ func (c *ControllerImpl) GetGameState(
 
 	return message.GameState{
 		GameID:       gameState.ID,
-		CurrentTurn:  gameState.CurrentTurn,
-		CurrentPhase: string(gameState.CurrentPhase),
+		CurrentTurn:  gameState.Turn,
+		CurrentPhase: string(gameState.Phase),
 	}, nil
 }
