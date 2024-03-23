@@ -96,9 +96,9 @@ func (s *ServiceImpl) PerformDeployMoveQ(
 		return fmt.Errorf("turn check failed: %w", err2)
 	}
 
-	regionState, err2 := s.getRegion(ctx, querier, gameID, region, playerState)
-	if err2 != nil {
-		return fmt.Errorf("failed to get region: %w", err2)
+	regionState, err := s.getRegion(ctx, querier, gameID, region, playerState)
+	if err != nil {
+		return fmt.Errorf("failed to get region: %w", err)
 	}
 
 	err = s.playerService.DecreaseDeployableTroopsQ(ctx, querier, playerState, int64(troops))
