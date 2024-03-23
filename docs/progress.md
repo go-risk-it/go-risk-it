@@ -24,7 +24,9 @@
 - [ ] Implement deploy-move API
   - [ ] Polish up deploy phase
   - [ ] Test deploy phase
-  - [ ] Expose POST endpoint for deploy phase
+  - [ ] Expose POST endpoint for deploy phase 
+  - [ ] Emit `GameStateChanged` in `SetGamePhaseQ`
+  - [ ] Handle `GameStateChanged`
 - [ ] Store playerID and gameID in HTTP/WS headers
 
 **Front-end**
