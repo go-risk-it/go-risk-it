@@ -18,6 +18,8 @@ func HandleBoardStateChanged(
 	signal signals.BoardStateChangedSignal,
 ) {
 	signal.AddListener(func(ctx context.Context, data signals.BoardStateChangedData) {
+		log.Infow("handling board state changed", "data", data)
+
 		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
 

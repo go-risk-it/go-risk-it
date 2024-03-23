@@ -19,5 +19,8 @@ var Module = fx.Options(
 		NewServeMux,
 		connection.NewWebSocketHandler,
 	),
-	fx.Invoke(handlers.HandleBoardStateChanged),
+	fx.Invoke(
+		handlers.HandleBoardStateChanged,
+		handlers.HandlePlayerConnected,
+	),
 )

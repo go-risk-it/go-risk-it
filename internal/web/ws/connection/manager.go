@@ -3,9 +3,9 @@ package connection
 import (
 	"context"
 	"encoding/json"
-	"time"
 
 	"github.com/lesismal/nbio/nbhttp/websocket"
+	"github.com/tomfran/go-risk-it/internal/signals"
 	"github.com/tomfran/go-risk-it/internal/web/fetchers"
 	"go.uber.org/zap"
 )
@@ -17,19 +17,22 @@ type Manager interface {
 }
 
 type ManagerImpl struct {
-	log             *zap.SugaredLogger
-	gameConnections map[int64][]*websocket.Conn
-	fetchers        []fetchers.Fetcher
+	log                   *zap.SugaredLogger
+	gameConnections       map[int64][]*websocket.Conn
+	fetchers              []fetchers.Fetcher
+	playerConnectedSignal signals.PlayerConnectedSignal
 }
 
 func NewManager(
 	fetchers []fetchers.Fetcher,
 	log *zap.SugaredLogger,
+	playerConnectedSignal signals.PlayerConnectedSignal,
 ) *ManagerImpl {
 	return &ManagerImpl{
-		log:             log,
-		gameConnections: make(map[int64][]*websocket.Conn),
-		fetchers:        fetchers,
+		log:                   log,
+		gameConnections:       make(map[int64][]*websocket.Conn),
+		fetchers:              fetchers,
+		playerConnectedSignal: playerConnectedSignal,
 	}
 }
 
@@ -71,33 +74,10 @@ func (m *ManagerImpl) ConnectPlayer(connection *websocket.Conn, gameID int64) {
 	)
 
 	m.gameConnections[gameID] = append(m.gameConnections[gameID], connection)
-	go m.sendRelevantState(connection)
-}
-
-func (m *ManagerImpl) sendRelevantState(connection *websocket.Conn) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	NStates := len(m.fetchers)
-	stateChannel := make(chan json.RawMessage, NStates)
-
-	for _, fetcher := range m.fetchers {
-		go fetcher.FetchState(ctx, 1, stateChannel)
-	}
-
-	for i := 0; i < NStates; i++ {
-		select {
-		case state := <-stateChannel:
-			err := connection.WriteMessage(websocket.TextMessage, state)
-			if err != nil {
-				m.log.Errorf("unable to write response: %v", err)
-			}
-		case <-ctx.Done():
-			m.log.Errorf("unable to get all states: %v", ctx.Err())
-
-			return
-		}
-	}
+	m.playerConnectedSignal.Emit(context.Background(), signals.PlayerConnectedData{
+		Connection: connection,
+		GameID:     gameID,
+	})
 }
 
 func removeIndex[T any](s []T, index int) []T {
