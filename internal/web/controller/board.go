@@ -32,6 +32,8 @@ func NewBoardController(
 func (c *BoardControllerImpl) GetBoardState(
 	ctx context.Context, gameID int64,
 ) (message.BoardState, error) {
+	c.log.Infow("getting board state", "gameID", gameID)
+
 	regions, err := c.regionService.GetRegions(ctx, gameID)
 	if err != nil {
 		return message.BoardState{}, fmt.Errorf("unable to get regions: %w", err)

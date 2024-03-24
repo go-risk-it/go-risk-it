@@ -3,7 +3,7 @@ package logic
 import (
 	"github.com/tomfran/go-risk-it/internal/logic/board"
 	"github.com/tomfran/go-risk-it/internal/logic/game"
-	"github.com/tomfran/go-risk-it/internal/logic/move"
+	"github.com/tomfran/go-risk-it/internal/logic/move/deploy"
 	"github.com/tomfran/go-risk-it/internal/logic/player"
 	"github.com/tomfran/go-risk-it/internal/logic/region"
 	"github.com/tomfran/go-risk-it/internal/logic/region/assignment"
@@ -35,8 +35,8 @@ var Module = fx.Options(
 			fx.As(new(game.Service)),
 		),
 		fx.Annotate(
-			move.NewService,
-			fx.As(new(move.Service)),
+			deploy.NewService,
+			fx.As(new(deploy.Service)),
 		),
 	),
 )

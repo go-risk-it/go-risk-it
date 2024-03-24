@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/tomfran/go-risk-it/internal/api/game/rest/request"
-	"github.com/tomfran/go-risk-it/internal/logic/move"
+	"github.com/tomfran/go-risk-it/internal/logic/move/deploy"
 	"go.uber.org/zap"
 )
 
@@ -14,21 +14,21 @@ type MoveController interface {
 }
 
 type MoveControllerImpl struct {
-	log         *zap.SugaredLogger
-	moveService move.Service
+	log           *zap.SugaredLogger
+	deployService deploy.Service
 }
 
 func NewMoveController(
 	log *zap.SugaredLogger,
-	moveService move.Service,
+	deployService deploy.Service,
 ) *MoveControllerImpl {
-	return &MoveControllerImpl{log: log, moveService: moveService}
+	return &MoveControllerImpl{log: log, deployService: deployService}
 }
 
 func (c *MoveControllerImpl) PerformDeployMove(
 	ctx context.Context, deployMove request.DeployMove,
 ) error {
-	if err := c.moveService.PerformDeployMoveWithTx(
+	if err := c.deployService.PerformDeployMoveWithTx(
 		ctx,
 		deployMove.GameID,
 		deployMove.PlayerID,

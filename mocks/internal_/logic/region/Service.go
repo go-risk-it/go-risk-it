@@ -76,6 +76,67 @@ func (_c *Service_CreateRegions_Call) RunAndReturn(run func(context.Context, db.
 	return _c
 }
 
+// GetRegionQ provides a mock function with given fields: ctx, querier, gameID, _a3
+func (_m *Service) GetRegionQ(ctx context.Context, querier db.Querier, gameID int64, _a3 string) (*sqlc.GetRegionsByGameRow, error) {
+	ret := _m.Called(ctx, querier, gameID, _a3)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetRegionQ")
+	}
+
+	var r0 *sqlc.GetRegionsByGameRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, db.Querier, int64, string) (*sqlc.GetRegionsByGameRow, error)); ok {
+		return rf(ctx, querier, gameID, _a3)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, db.Querier, int64, string) *sqlc.GetRegionsByGameRow); ok {
+		r0 = rf(ctx, querier, gameID, _a3)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*sqlc.GetRegionsByGameRow)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, db.Querier, int64, string) error); ok {
+		r1 = rf(ctx, querier, gameID, _a3)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Service_GetRegionQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetRegionQ'
+type Service_GetRegionQ_Call struct {
+	*mock.Call
+}
+
+// GetRegionQ is a helper method to define mock.On call
+//   - ctx context.Context
+//   - querier db.Querier
+//   - gameID int64
+//   - _a3 string
+func (_e *Service_Expecter) GetRegionQ(ctx interface{}, querier interface{}, gameID interface{}, _a3 interface{}) *Service_GetRegionQ_Call {
+	return &Service_GetRegionQ_Call{Call: _e.mock.On("GetRegionQ", ctx, querier, gameID, _a3)}
+}
+
+func (_c *Service_GetRegionQ_Call) Run(run func(ctx context.Context, querier db.Querier, gameID int64, _a3 string)) *Service_GetRegionQ_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(db.Querier), args[2].(int64), args[3].(string))
+	})
+	return _c
+}
+
+func (_c *Service_GetRegionQ_Call) Return(_a0 *sqlc.GetRegionsByGameRow, _a1 error) *Service_GetRegionQ_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Service_GetRegionQ_Call) RunAndReturn(run func(context.Context, db.Querier, int64, string) (*sqlc.GetRegionsByGameRow, error)) *Service_GetRegionQ_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetRegions provides a mock function with given fields: ctx, gameID
 func (_m *Service) GetRegions(ctx context.Context, gameID int64) ([]sqlc.GetRegionsByGameRow, error) {
 	ret := _m.Called(ctx, gameID)

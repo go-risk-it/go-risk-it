@@ -24,7 +24,17 @@ type Service interface {
 		players []sqlc.Player,
 		regions []board.Region,
 	) error
-	GetRegions(ctx context.Context, gameID int64) ([]sqlc.GetRegionsByGameRow, error)
+
+	GetRegionQ(
+		ctx context.Context,
+		querier db.Querier,
+		gameID int64,
+		region string,
+	) (*sqlc.GetRegionsByGameRow, error)
+	GetRegions(
+		ctx context.Context,
+		gameID int64,
+	) ([]sqlc.GetRegionsByGameRow, error)
 	GetRegionsQ(
 		ctx context.Context,
 		querier db.Querier,
@@ -103,6 +113,8 @@ func (s *ServiceImpl) GetRegionsQ(
 	querier db.Querier,
 	gameID int64,
 ) ([]sqlc.GetRegionsByGameRow, error) {
+	s.log.Infow("fetching regions", "game_id", gameID)
+
 	regions, err := querier.GetRegionsByGame(ctx, gameID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get regions: %w", err)
@@ -111,6 +123,42 @@ func (s *ServiceImpl) GetRegionsQ(
 	s.log.Infow("got regions", "regions", regions)
 
 	return regions, nil
+}
+
+func (s *ServiceImpl) GetRegionQ(
+	ctx context.Context,
+	querier db.Querier,
+	gameID int64,
+	region string,
+) (*sqlc.GetRegionsByGameRow, error) {
+	s.log.Infow("fetching region", "region", region, "game_id", gameID)
+
+	regions, err := s.GetRegionsQ(ctx, querier, gameID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get regions: %w", err)
+	}
+
+	s.log.Infow("got regions", "regions", regions)
+
+	result := extractRegionFrom(region, regions)
+	if result == nil {
+		return nil, fmt.Errorf("region is not in game")
+	}
+
+	return result, nil
+}
+
+func extractRegionFrom(
+	region string,
+	regions []sqlc.GetRegionsByGameRow,
+) *sqlc.GetRegionsByGameRow {
+	for _, r := range regions {
+		if r.ExternalReference == region {
+			return &r
+		}
+	}
+
+	return nil
 }
 
 func (s *ServiceImpl) IncreaseTroopsInRegion(

@@ -1,4 +1,4 @@
-package move
+package deploy
 
 import (
 	"context"
@@ -82,18 +82,30 @@ func (s *ServiceImpl) PerformDeployMoveQ(
 	region string,
 	troops int,
 ) error {
+	s.log.Infow(
+		"performing deploy move",
+		"gameID",
+		gameID,
+		"userID",
+		userID,
+		"region",
+		region,
+		"troops",
+		troops,
+	)
+
 	players, err := s.playerService.GetPlayersQ(ctx, querier, gameID)
 	if err != nil {
 		return fmt.Errorf("failed to get players: %w", err)
 	}
 
-	playerState := getPlayerFrom(userID, players)
+	playerState := extractPlayerFrom(userID, players)
 	if playerState == nil {
 		return fmt.Errorf("player is not in game")
 	}
 
-	if err2 := s.checkTurn(ctx, querier, gameID, players, playerState.TurnIndex); err2 != nil {
-		return fmt.Errorf("turn check failed: %w", err2)
+	if err := s.checkTurn(ctx, querier, gameID, players, playerState.TurnIndex); err != nil {
+		return fmt.Errorf("turn check failed: %w", err)
 	}
 
 	regionState, err := s.getRegion(ctx, querier, gameID, region, playerState)
@@ -101,26 +113,73 @@ func (s *ServiceImpl) PerformDeployMoveQ(
 		return fmt.Errorf("failed to get region: %w", err)
 	}
 
-	err = s.playerService.DecreaseDeployableTroopsQ(ctx, querier, playerState, int64(troops))
+	err = s.executeDeploy(ctx, querier, gameID, playerState, regionState, troops)
 	if err != nil {
-		return fmt.Errorf("failed to decrease deployable troops: %w", err)
-	}
-
-	err = s.regionService.IncreaseTroopsInRegion(ctx, querier, regionState.ID, int64(troops))
-	if err != nil {
-		return fmt.Errorf("failed to increase region troops: %w", err)
-	}
-
-	if playerState.DeployableTroops == int64(troops) {
-		err = s.gameService.SetGamePhaseQ(ctx, querier, gameID, sqlc.PhaseATTACK)
-		if err != nil {
-			return fmt.Errorf("failed to set game phase: %w", err)
-		}
+		return fmt.Errorf("failed to execute deploy: %w", err)
 	}
 
 	s.boardStateChangedSignal.Emit(ctx, signals.BoardStateChangedData{
 		GameID: gameID,
 	})
+
+	return nil
+}
+
+func (s *ServiceImpl) executeDeploy(ctx context.Context,
+	querier db.Querier,
+	gameID int64,
+	player *sqlc.Player,
+	region *sqlc.GetRegionsByGameRow,
+	troops int,
+) error {
+	s.log.Infow(
+		"deploying",
+		"player",
+		player.UserID,
+		"region",
+		region.ExternalReference,
+		"troops",
+		troops,
+	)
+
+	s.log.Infow(
+		"decreasing deployable troops",
+		"player",
+		player.UserID,
+		"region",
+		region.ExternalReference,
+		"troops",
+		troops,
+	)
+
+	err := s.playerService.DecreaseDeployableTroopsQ(ctx, querier, player, int64(troops))
+	if err != nil {
+		return fmt.Errorf("failed to decrease deployable troops: %w", err)
+	}
+
+	s.log.Infow(
+		"increasing region troops",
+		"player",
+		player.UserID,
+		"region",
+		region.ExternalReference,
+		"troops",
+		troops,
+	)
+
+	err = s.regionService.IncreaseTroopsInRegion(ctx, querier, region.ID, int64(troops))
+	if err != nil {
+		return fmt.Errorf("failed to increase region troops: %w", err)
+	}
+
+	if player.DeployableTroops == int64(troops) {
+		s.log.Infow("all deployable troops were deployed, advancing game phase", "gameID", gameID)
+
+		err = s.gameService.SetGamePhaseQ(ctx, querier, gameID, sqlc.PhaseATTACK)
+		if err != nil {
+			return fmt.Errorf("failed to set game phase: %w", err)
+		}
+	}
 
 	return nil
 }
@@ -132,21 +191,16 @@ func (s *ServiceImpl) getRegion(
 	region string,
 	playerState *sqlc.Player,
 ) (*sqlc.GetRegionsByGameRow, error) {
-	regions, err := s.regionService.GetRegionsQ(ctx, querier, gameID)
+	result, err := s.regionService.GetRegionQ(ctx, querier, gameID, region)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get regions: %w", err)
+		return nil, fmt.Errorf("failed to get region: %w", err)
 	}
 
-	regionState := getRegionFrom(region, regions)
-	if regionState == nil {
-		return nil, fmt.Errorf("region is not in game")
-	}
-
-	if regionState.PlayerName != playerState.UserID {
+	if result.PlayerName != playerState.UserID {
 		return nil, fmt.Errorf("region is not owned by player")
 	}
 
-	return regionState, nil
+	return result, nil
 }
 
 func (s *ServiceImpl) checkTurn(
@@ -172,17 +226,7 @@ func (s *ServiceImpl) checkTurn(
 	return nil
 }
 
-func getRegionFrom(region string, regions []sqlc.GetRegionsByGameRow) *sqlc.GetRegionsByGameRow {
-	for _, r := range regions {
-		if r.ExternalReference == region {
-			return &r
-		}
-	}
-
-	return nil
-}
-
-func getPlayerFrom(player string, players []sqlc.Player) *sqlc.Player {
+func extractPlayerFrom(player string, players []sqlc.Player) *sqlc.Player {
 	for _, p := range players {
 		if p.UserID == player {
 			return &p
