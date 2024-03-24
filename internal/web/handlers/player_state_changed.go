@@ -9,20 +9,20 @@ import (
 	"go.uber.org/zap"
 )
 
-func HandleBoardStateChanged(
+func HandlePlayerStateChanged(
 	log *zap.SugaredLogger,
-	boardStateFetcher fetchers.BoardFetcher,
+	playerStateFetcher fetchers.PlayerFetcher,
 	connectionManager connection.Manager,
-	signal signals.BoardStateChangedSignal,
+	signal signals.PlayerStateChangedSignal,
 ) {
-	signal.AddListener(func(ctx context.Context, data signals.BoardStateChangedData) {
-		log.Infow("handling board state changed", "data", data)
+	signal.AddListener(func(ctx context.Context, data signals.PlayerStateChangedData) {
+		log.Infow("handling player state changed", "data", data)
 
 		FetchStateAndBroadcast(
 			ctx,
 			data.GameID,
 			log,
-			boardStateFetcher.FetchState,
+			playerStateFetcher.FetchState,
 			connectionManager)
 	})
 }

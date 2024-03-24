@@ -32,12 +32,14 @@ type Service interface {
 }
 
 type ServiceImpl struct {
-	log                     *zap.SugaredLogger
-	querier                 db.Querier
-	gameService             game.Service
-	playerService           player.Service
-	regionService           region.Service
-	boardStateChangedSignal signals.BoardStateChangedSignal
+	log                      *zap.SugaredLogger
+	querier                  db.Querier
+	gameService              game.Service
+	playerService            player.Service
+	regionService            region.Service
+	boardStateChangedSignal  signals.BoardStateChangedSignal
+	playerStateChangedSignal signals.PlayerStateChangedSignal
+	gameStateChangedSignal   signals.GameStateChangedSignal
 }
 
 func NewService(
@@ -47,14 +49,18 @@ func NewService(
 	playerService player.Service,
 	regionService region.Service,
 	boardStateChangedSignal signals.BoardStateChangedSignal,
+	playerStateChangedSignal signals.PlayerStateChangedSignal,
+	gameStateChangedSignal signals.GameStateChangedSignal,
 ) *ServiceImpl {
 	return &ServiceImpl{
-		querier:                 que,
-		log:                     log,
-		gameService:             gameService,
-		playerService:           playerService,
-		regionService:           regionService,
-		boardStateChangedSignal: boardStateChangedSignal,
+		querier:                  que,
+		log:                      log,
+		gameService:              gameService,
+		playerService:            playerService,
+		regionService:            regionService,
+		boardStateChangedSignal:  boardStateChangedSignal,
+		playerStateChangedSignal: playerStateChangedSignal,
+		gameStateChangedSignal:   gameStateChangedSignal,
 	}
 }
 
@@ -70,6 +76,16 @@ func (s *ServiceImpl) PerformDeployMoveWithTx(
 	}); err != nil {
 		return fmt.Errorf("failed to perform deploy move: %w", err)
 	}
+
+	s.boardStateChangedSignal.Emit(ctx, signals.BoardStateChangedData{
+		GameID: gameID,
+	})
+	s.playerStateChangedSignal.Emit(ctx, signals.PlayerStateChangedData{
+		GameID: gameID,
+	})
+	s.gameStateChangedSignal.Emit(ctx, signals.GameStateChangedData{
+		GameID: gameID,
+	})
 
 	return nil
 }
@@ -121,10 +137,6 @@ func (s *ServiceImpl) PerformDeployMoveQ(
 	if err != nil {
 		return fmt.Errorf("failed to execute deploy: %w", err)
 	}
-
-	s.boardStateChangedSignal.Emit(ctx, signals.BoardStateChangedData{
-		GameID: gameID,
-	})
 
 	return nil
 }

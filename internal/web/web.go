@@ -21,6 +21,8 @@ var Module = fx.Options(
 	),
 	fx.Invoke(
 		handlers.HandleBoardStateChanged,
+		handlers.HandleGameStateChanged,
+		handlers.HandlePlayerStateChanged,
 		handlers.HandlePlayerConnected,
 	),
 )

@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tomfran/go-risk-it/internal/data/sqlc"
 	"github.com/tomfran/go-risk-it/internal/logic/move/deploy"
-	signals2 "github.com/tomfran/go-risk-it/internal/signals"
 	"github.com/tomfran/go-risk-it/mocks/internal_/data/db"
 	"github.com/tomfran/go-risk-it/mocks/internal_/logic/game"
 	"github.com/tomfran/go-risk-it/mocks/internal_/logic/player"
@@ -16,13 +15,11 @@ import (
 	"go.uber.org/zap"
 )
 
-func setup(
-	t *testing.T,
-) (*db.Querier,
+func setup(t *testing.T) (
+	*db.Querier,
 	*player.Service,
 	*game.Service,
 	*region.Service,
-	*signals.BoardStateChangedSignal,
 	*deploy.ServiceImpl,
 ) {
 	t.Helper()
@@ -31,6 +28,8 @@ func setup(
 	gameService := game.NewService(t)
 	regionService := region.NewService(t)
 	boardStateChangedSignal := signals.NewBoardStateChangedSignal(t)
+	playerStateChangedSignal := signals.NewPlayerStateChangedSignal(t)
+	gameStateChangedSignal := signals.NewGameStateChangedSignal(t)
 	service := deploy.NewService(
 		querier,
 		zap.NewNop().Sugar(),
@@ -38,9 +37,11 @@ func setup(
 		playerService,
 		regionService,
 		boardStateChangedSignal,
+		playerStateChangedSignal,
+		gameStateChangedSignal,
 	)
 
-	return querier, playerService, gameService, regionService, boardStateChangedSignal, service
+	return querier, playerService, gameService, regionService, service
 }
 
 func input() (int64, string, string, int, context.Context) {
@@ -56,7 +57,7 @@ func input() (int64, string, string, int, context.Context) {
 func TestServiceImpl_DeployShouldFailWhenPlayerNotInGame(t *testing.T) {
 	t.Parallel()
 
-	querier, playerService, _, _, _, service := setup(t)
+	querier, playerService, _, _, service := setup(t)
 	gameID, userID, regionReference, troops, ctx := input()
 
 	players := []sqlc.Player{
@@ -109,7 +110,7 @@ func TestServiceImpl_DeployShouldFailOnTurnCheck(t *testing.T) {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			querier, playerService, gameService, _, _, service := setup(t)
+			querier, playerService, gameService, _, service := setup(t)
 			gameID, userID, regionReference, troops, ctx := input()
 
 			players := []sqlc.Player{
@@ -148,7 +149,7 @@ func TestServiceImpl_DeployShouldFailOnTurnCheck(t *testing.T) {
 func TestServiceImpl_DeployShouldFailWhenPlayerDoesntHaveEnoughDeployableTroops(t *testing.T) {
 	t.Parallel()
 
-	querier, playerService, gameService, _, _, service := setup(t)
+	querier, playerService, gameService, _, service := setup(t)
 	gameID, userID, regionReference, troops, ctx := input()
 
 	players := []sqlc.Player{
@@ -185,7 +186,7 @@ func TestServiceImpl_DeployShouldFailWhenPlayerDoesntHaveEnoughDeployableTroops(
 func TestServiceImpl_DeployShouldFailWhenRegionNotOwnedByPlayer(t *testing.T) {
 	t.Parallel()
 
-	querier, playerService, gameService, regionService, _, service := setup(t)
+	querier, playerService, gameService, regionService, service := setup(t)
 	gameID, userID, regionReference, troops, ctx := input()
 
 	players := []sqlc.Player{
@@ -251,7 +252,7 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, playerService, gameService, regionService, boardStateChanged, service := setup(
+			querier, playerService, gameService, regionService, service := setup(
 				t,
 			)
 			gameID, userID, regionReference, troops, ctx := input()
@@ -304,11 +305,6 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 				EXPECT().
 				IncreaseTroopsInRegion(ctx, querier, int64(1), int64(troops)).
 				Return(nil)
-			boardStateChanged.
-				EXPECT().
-				Emit(ctx, signals2.BoardStateChangedData{
-					GameID: gameID,
-				})
 			if test.deployableTroops == int64(troops) {
 				gameService.
 					EXPECT().
@@ -329,7 +325,6 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 			gameService.AssertExpectations(t)
 			playerService.AssertExpectations(t)
 			regionService.AssertExpectations(t)
-			boardStateChanged.AssertExpectations(t)
 		})
 	}
 }
