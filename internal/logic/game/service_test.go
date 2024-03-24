@@ -50,7 +50,7 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 
 	// setup mocks
 	mockQuerier.EXPECT().InsertGame(ctx).Return(gameID, nil)
-	// mockDB.EXPECT().Begin(ctx).Return()
+	// mockDB.EXPECT().Begin(qctx).Return()
 
 	playerServiceMock := player.NewService(t)
 	playerServiceMock.

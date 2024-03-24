@@ -108,7 +108,11 @@ func (s *ServiceImpl) PerformDeployMoveQ(
 		return fmt.Errorf("turn check failed: %w", err)
 	}
 
-	regionState, err := s.getRegion(ctx, querier, gameID, region, playerState)
+	if playerState.DeployableTroops < int64(troops) {
+		return fmt.Errorf("not enough deployable troops")
+	}
+
+	regionState, err := s.getRegion(ctx, querier, gameID, region, userID)
 	if err != nil {
 		return fmt.Errorf("failed to get region: %w", err)
 	}
@@ -189,14 +193,14 @@ func (s *ServiceImpl) getRegion(
 	querier db.Querier,
 	gameID int64,
 	region string,
-	playerState *sqlc.Player,
+	userID string,
 ) (*sqlc.GetRegionsByGameRow, error) {
 	result, err := s.regionService.GetRegionQ(ctx, querier, gameID, region)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get region: %w", err)
 	}
 
-	if result.PlayerName != playerState.UserID {
+	if result.PlayerName != userID {
 		return nil, fmt.Errorf("region is not owned by player")
 	}
 
