@@ -10,7 +10,7 @@ import (
 )
 
 type MoveController interface {
-	PerformDeployMove(ctx context.Context, deployMove request.DeployMove) error
+	PerformDeployMove(ctx context.Context, gameID int64, deployMove request.DeployMove) error
 }
 
 type MoveControllerImpl struct {
@@ -26,11 +26,11 @@ func NewMoveController(
 }
 
 func (c *MoveControllerImpl) PerformDeployMove(
-	ctx context.Context, deployMove request.DeployMove,
+	ctx context.Context, gameID int64, deployMove request.DeployMove,
 ) error {
 	if err := c.deployService.PerformDeployMoveWithTx(
 		ctx,
-		deployMove.GameID,
+		gameID,
 		deployMove.PlayerID,
 		deployMove.RegionID,
 		deployMove.Troops,

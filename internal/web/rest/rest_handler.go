@@ -1,7 +1,8 @@
 package rest
 
 import (
-	"encoding/json"
+	"errors"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -26,7 +27,7 @@ func NewHandler(moveController controller.MoveController) *HandlerImpl {
 func (m *HandlerImpl) OnMoveDeploy(writer http.ResponseWriter, req *http.Request) {
 	gameIDStr := req.PathValue("id")
 
-	_, err := strconv.Atoi(gameIDStr)
+	gameID, err := strconv.Atoi(gameIDStr)
 	if err != nil {
 		http.Error(writer, "invalid game id", http.StatusBadRequest)
 
@@ -35,15 +36,24 @@ func (m *HandlerImpl) OnMoveDeploy(writer http.ResponseWriter, req *http.Request
 
 	var deployMove request2.DeployMove
 
-	err = json.NewDecoder(req.Body).Decode(&deployMove)
+	err = decodeJSONBody(writer, req, &deployMove)
 	if err != nil {
-		http.Error(writer, "invalid req body", http.StatusBadRequest)
+		var mr *malformedRequestError
+		if errors.As(err, &mr) {
+			http.Error(writer, mr.msg, mr.status)
+		} else {
+			log.Print(err.Error())
+			http.Error(
+				writer,
+				http.StatusText(http.StatusInternalServerError),
+				http.StatusInternalServerError,
+			)
+		}
 
 		return
 	}
-	// remove gameId from deployMove, use custom struct instead
 
-	err = m.moveController.PerformDeployMove(req.Context(), deployMove)
+	err = m.moveController.PerformDeployMove(req.Context(), int64(gameID), deployMove)
 	if err != nil {
 		http.Error(writer, "unable to perform deploy move", http.StatusInternalServerError)
 
