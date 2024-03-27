@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -29,11 +30,9 @@ func NewHandler(
 }
 
 func (m *HandlerImpl) OnMoveDeploy(writer http.ResponseWriter, req *http.Request) {
-	gameIDStr := req.PathValue("id")
-
-	gameID, err := strconv.Atoi(gameIDStr)
+	gameID, err := extractGameID(req)
 	if err != nil {
-		http.Error(writer, "invalid game id", http.StatusBadRequest)
+		http.Error(writer, err.Error(), http.StatusBadRequest)
 
 		return
 	}
@@ -50,16 +49,36 @@ func (m *HandlerImpl) OnMoveDeploy(writer http.ResponseWriter, req *http.Request
 		return
 	}
 
-	m.log.Infow("writing http response")
+	m.log.Infow("writing successful http response with no content")
 
-	writer.WriteHeader(http.StatusNoContent)
-
-	_, err = writer.Write([]byte{})
+	err = writeNoContentResponse(writer, http.StatusNoContent)
 	if err != nil {
-		m.log.Errorw("failed to write response", "err", err)
+		m.log.Errorw("unable to write response", "error", err)
 
 		return
 	}
 
-	m.log.Infow("successfully wrote http response")
+	m.log.Infow("successfully wrote http response with no content")
+}
+
+func writeNoContentResponse(writer http.ResponseWriter, status int) error {
+	writer.WriteHeader(status)
+
+	_, err := writer.Write([]byte{})
+	if err != nil {
+		return fmt.Errorf("failed to write response: %w", err)
+	}
+
+	return nil
+}
+
+func extractGameID(req *http.Request) (int, error) {
+	gameIDStr := req.PathValue("id")
+
+	gameID, err := strconv.Atoi(gameIDStr)
+	if err != nil {
+		return 0, fmt.Errorf("invalid game id: %w", err)
+	}
+
+	return gameID, nil
 }
