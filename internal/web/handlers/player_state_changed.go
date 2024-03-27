@@ -18,11 +18,11 @@ func HandlePlayerStateChanged(
 	signal.AddListener(func(ctx context.Context, data signals.PlayerStateChangedData) {
 		log.Infow("handling player state changed", "data", data)
 
-		FetchStateAndBroadcast(
+		fetchStateAndBroadcast(
 			ctx,
 			data.GameID,
 			log,
 			playerStateFetcher.FetchState,
-			connectionManager)
+			connectionManager.Broadcast)
 	})
 }

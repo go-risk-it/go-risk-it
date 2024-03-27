@@ -36,7 +36,12 @@ func NewEngine(lc fx.Lifecycle, config nbhttp.Config, log *zap.SugaredLogger) *n
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
-			return fmt.Errorf("failure during engine shutdown: %w", engine.Shutdown(ctx))
+			err := engine.Shutdown(ctx)
+			if err != nil {
+				return fmt.Errorf("failure during engine shutdown: %w", err)
+			}
+
+			return nil
 		},
 	})
 

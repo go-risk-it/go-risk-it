@@ -50,8 +50,12 @@ func (q *Queries) ExecuteInTransaction(ctx context.Context, txFunc func(Querier)
 }
 
 func (q *Queries) rollback(transaction pgx.Tx, ctx context.Context) {
+	q.log.Infow("rolling back transaction")
+
 	err := transaction.Rollback(ctx)
 	if err != nil {
 		q.log.Errorf("failed to rollback transaction: %v", err)
 	}
+
+	q.log.Infow("rolled back transaction")
 }

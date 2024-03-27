@@ -77,13 +77,13 @@ func (s *ServiceImpl) PerformDeployMoveWithTx(
 		return fmt.Errorf("failed to perform deploy move: %w", err)
 	}
 
-	s.boardStateChangedSignal.Emit(ctx, signals.BoardStateChangedData{
+	go s.boardStateChangedSignal.Emit(ctx, signals.BoardStateChangedData{
 		GameID: gameID,
 	})
-	s.playerStateChangedSignal.Emit(ctx, signals.PlayerStateChangedData{
+	go s.playerStateChangedSignal.Emit(ctx, signals.PlayerStateChangedData{
 		GameID: gameID,
 	})
-	s.gameStateChangedSignal.Emit(ctx, signals.GameStateChangedData{
+	go s.gameStateChangedSignal.Emit(ctx, signals.GameStateChangedData{
 		GameID: gameID,
 	})
 
@@ -158,30 +158,10 @@ func (s *ServiceImpl) executeDeploy(ctx context.Context,
 		troops,
 	)
 
-	s.log.Infow(
-		"decreasing deployable troops",
-		"player",
-		player.UserID,
-		"region",
-		region.ExternalReference,
-		"troops",
-		troops,
-	)
-
 	err := s.playerService.DecreaseDeployableTroopsQ(ctx, querier, player, int64(troops))
 	if err != nil {
 		return fmt.Errorf("failed to decrease deployable troops: %w", err)
 	}
-
-	s.log.Infow(
-		"increasing region troops",
-		"player",
-		player.UserID,
-		"region",
-		region.ExternalReference,
-		"troops",
-		troops,
-	)
 
 	err = s.regionService.IncreaseTroopsInRegion(ctx, querier, region.ID, int64(troops))
 	if err != nil {

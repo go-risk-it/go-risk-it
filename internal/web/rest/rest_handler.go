@@ -1,13 +1,12 @@
 package rest
 
 import (
-	"errors"
-	"log"
 	"net/http"
 	"strconv"
 
-	request2 "github.com/tomfran/go-risk-it/internal/api/game/rest/request"
+	"github.com/tomfran/go-risk-it/internal/api/game/rest/request"
 	"github.com/tomfran/go-risk-it/internal/web/controller"
+	"go.uber.org/zap"
 )
 
 type Handler interface {
@@ -15,11 +14,16 @@ type Handler interface {
 }
 
 type HandlerImpl struct {
+	log            *zap.SugaredLogger
 	moveController controller.MoveController
 }
 
-func NewHandler(moveController controller.MoveController) *HandlerImpl {
+func NewHandler(
+	log *zap.SugaredLogger,
+	moveController controller.MoveController,
+) *HandlerImpl {
 	return &HandlerImpl{
+		log:            log,
 		moveController: moveController,
 	}
 }
@@ -34,29 +38,28 @@ func (m *HandlerImpl) OnMoveDeploy(writer http.ResponseWriter, req *http.Request
 		return
 	}
 
-	var deployMove request2.DeployMove
-
-	err = decodeJSONBody(writer, req, &deployMove)
+	deployMove, err := decodeRequest[request.DeployMove](writer, req)
 	if err != nil {
-		var mr *malformedRequestError
-		if errors.As(err, &mr) {
-			http.Error(writer, mr.msg, mr.status)
-		} else {
-			log.Print(err.Error())
-			http.Error(
-				writer,
-				http.StatusText(http.StatusInternalServerError),
-				http.StatusInternalServerError,
-			)
-		}
-
 		return
 	}
 
 	err = m.moveController.PerformDeployMove(req.Context(), int64(gameID), deployMove)
 	if err != nil {
-		http.Error(writer, "unable to perform deploy move", http.StatusInternalServerError)
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
 
 		return
 	}
+
+	m.log.Infow("writing http response")
+
+	writer.WriteHeader(http.StatusNoContent)
+
+	_, err = writer.Write([]byte{})
+	if err != nil {
+		m.log.Errorw("failed to write response", "err", err)
+
+		return
+	}
+
+	m.log.Infow("successfully wrote http response")
 }

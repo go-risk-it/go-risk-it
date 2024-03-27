@@ -22,12 +22,15 @@
 - [ ] Improve troops-region assignment
 - [x] Define deploy-move API
 - [ ] Implement deploy-move API
-  - [ ] Polish up deploy phase
-  - [ ] Test deploy phase
-  - [ ] Expose POST endpoint for deploy phase 
+  - [x] Polish up deploy phase
+  - [x] Test deploy phase
+  - [x] Expose POST endpoint for deploy phase 
   - [ ] Emit `GameStateChanged` in `SetGamePhaseQ`
   - [ ] Handle `GameStateChanged`
 - [ ] Store playerID and gameID in HTTP/WS headers
+- [ ] Figure out error handling and propagation
+- [ ] Check if game is ended 
+- [ ] Figure out authentication
 
 **Front-end**
 

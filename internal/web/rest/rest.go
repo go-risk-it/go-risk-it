@@ -20,6 +20,28 @@ func (mr *malformedRequestError) Error() string {
 	return mr.msg
 }
 
+func decodeRequest[T any](writer http.ResponseWriter, req *http.Request) (T, error) {
+	var result T
+
+	err := decodeJSONBody(writer, req, &result)
+	if err != nil {
+		var mr *malformedRequestError
+		if errors.As(err, &mr) {
+			http.Error(writer, mr.msg, mr.status)
+		} else {
+			http.Error(
+				writer,
+				http.StatusText(http.StatusInternalServerError),
+				http.StatusInternalServerError,
+			)
+		}
+
+		return result, err
+	}
+
+	return result, nil
+}
+
 func decodeJSONBody[T any](writer http.ResponseWriter, req *http.Request, dst T) error {
 	ct := req.Header.Get("Content-Type")
 	if ct != "" {
