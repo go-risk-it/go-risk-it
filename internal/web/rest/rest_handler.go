@@ -42,6 +42,8 @@ func (m *HandlerImpl) OnMoveDeploy(writer http.ResponseWriter, req *http.Request
 		return
 	}
 
+	m.log.Infow("using request context", "context", req.Context())
+
 	err = m.moveController.PerformDeployMove(req.Context(), int64(gameID), deployMove)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)

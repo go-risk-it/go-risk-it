@@ -3,6 +3,7 @@ package connection
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/lesismal/nbio/nbhttp/websocket"
 	"github.com/tomfran/go-risk-it/internal/signals"
@@ -52,26 +53,40 @@ func (m *ManagerImpl) Broadcast(gameID int64, message json.RawMessage) {
 }
 
 func (m *ManagerImpl) DisconnectPlayer(connection *websocket.Conn, gameID int64) {
-	m.log.Info(
+	m.log.Infow(
 		"Disconnecting player",
-		zap.String("remoteAddress", connection.RemoteAddr().String()),
-	)
+		"remoteAddress", connection.RemoteAddr().String())
 
 	gameConnections := m.gameConnections[gameID]
 
+	index, err := findIndexToRemove(connection, gameConnections)
+	if err != nil {
+		m.log.Errorw(err.Error())
+
+		return
+	}
+
+	m.gameConnections[gameID] = removeIndex(gameConnections, index)
+}
+
+func findIndexToRemove(
+	connection *websocket.Conn,
+	gameConnections []*websocket.Conn,
+) (int, error) {
 	for i := range gameConnections {
-		if gameConnections[i] == connection {
-			removeIndex(gameConnections, i)
+		if gameConnections[i].RemoteAddr() == connection.RemoteAddr() {
+			return i, nil
 		}
 	}
+
+	return -1, fmt.Errorf("unable to find index to remove")
 }
 
 func (m *ManagerImpl) ConnectPlayer(connection *websocket.Conn, gameID int64) {
-	m.log.Info(
+	m.log.Infow(
 		"Connecting player",
-		zap.String("remoteAddress", connection.RemoteAddr().String()),
-		zap.Int64("gameID", gameID),
-	)
+		"remoteAddress", connection.RemoteAddr().String(),
+		"gameID", gameID)
 
 	m.gameConnections[gameID] = append(m.gameConnections[gameID], connection)
 	m.playerConnectedSignal.Emit(context.Background(), signals.PlayerConnectedData{

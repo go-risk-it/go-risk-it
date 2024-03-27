@@ -31,6 +31,7 @@
 - [ ] Figure out error handling and propagation
 - [ ] Check if game is ended 
 - [ ] Figure out authentication
+- [ ] When fetching state and the game is not there, err should be returned but instead we get empty array for player state and board state. Decouple state fetching from message broadcasting for better handling
 
 **Front-end**
 

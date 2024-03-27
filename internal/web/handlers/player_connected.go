@@ -24,7 +24,9 @@ func HandlePlayerConnected(
 	params PlayerConnectedHandlerParams,
 ) {
 	params.Signal.AddListener(func(ctx context.Context, data signals.PlayerConnectedData) {
-		params.Log.Infow("handling player connected", "data", data)
+		params.Log.Infow("handling player connected",
+			"gameID", data.GameID,
+			"remoteAddress", data.Connection.RemoteAddr().String())
 
 		childCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()

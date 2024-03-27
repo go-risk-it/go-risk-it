@@ -10,7 +10,7 @@ import (
 )
 
 func NewLogger(lifecycle fx.Lifecycle) *zap.SugaredLogger {
-	logger, err := zap.NewProduction()
+	logger, err := zap.NewDevelopment()
 	if err != nil {
 		log.Fatalf("can't initialize zap logger: %v", err)
 	}

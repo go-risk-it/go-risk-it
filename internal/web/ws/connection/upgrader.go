@@ -32,36 +32,25 @@ func New(
 ) *UpgraderImpl {
 	//exhaustruct:ignore
 	upgrader := UpgraderImpl{
-		Upgrader: &websocket.Upgrader{
-			// resolve cross-origin problems
-			CheckOrigin: func(r *http.Request) bool {
-				return true
-			},
-		},
+		Upgrader:          websocket.NewUpgrader(),
 		log:               log,
 		connectionManager: connectionManager,
 		messageHandler:    messageHandler,
 	}
 
+	upgrader.CheckOrigin = func(r *http.Request) bool {
+		return true
+	}
+
 	upgrader.OnOpen(func(connection *websocket.Conn) {
-		connectionManager.ConnectPlayer(connection, 0)
+		connectionManager.ConnectPlayer(connection, 1)
 	})
 
 	upgrader.OnMessage(messageHandler.OnMessage)
 
 	upgrader.OnClose(func(connection *websocket.Conn, err error) {
-		if err != nil {
-			log.Errorw(
-				"Connection closed",
-				"remoteAddress",
-				connection.RemoteAddr().String(),
-				"error",
-				err,
-			)
-		} else {
-			log.Infow("Connection closed", "remoteAddress", connection.RemoteAddr().String())
-		}
-		connectionManager.DisconnectPlayer(connection, 0)
+		log.Infow("Connection closed", "remoteAddress", connection.RemoteAddr().String())
+		connectionManager.DisconnectPlayer(connection, 1)
 	})
 
 	return &upgrader
