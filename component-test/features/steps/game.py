@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-
 from behave import *
 
 from util.context import RiskItContext
