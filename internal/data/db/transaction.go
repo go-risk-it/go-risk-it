@@ -16,12 +16,15 @@ func (q *Queries) WithTx(tx pool.Transaction) Querier {
 	}
 }
 
-func (q *Queries) ExecuteInTransaction(ctx context.Context, txFunc func(Querier) error) error {
+func (q *Queries) ExecuteInTransaction(
+	ctx context.Context,
+	txFunc func(Querier) (interface{}, error),
+) (interface{}, error) {
 	q.log.Infow("starting transaction")
 
 	transaction, err := q.db.Begin(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
 	q.log.Infow("started transaction")
@@ -44,9 +47,9 @@ func (q *Queries) ExecuteInTransaction(ctx context.Context, txFunc func(Querier)
 		}
 	}()
 
-	err = txFunc(q.WithTx(transaction))
+	result, err := txFunc(q.WithTx(transaction))
 
-	return err
+	return result, err
 }
 
 func (q *Queries) rollback(transaction pgx.Tx, ctx context.Context) {

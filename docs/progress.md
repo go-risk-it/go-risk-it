@@ -25,11 +25,11 @@
   - [x] Polish up deploy phase
   - [x] Test deploy phase
   - [x] Expose POST endpoint for deploy phase 
-  - [ ] Emit `GameStateChanged` in `SetGamePhaseQ`
-  - [ ] Handle `GameStateChanged`
+  - [x] Emit `GameStateChanged` in `SetGamePhaseQ`
+  - [x] Handle `GameStateChanged`
 - [ ] Store playerID and gameID in HTTP/WS headers
 - [ ] Figure out error handling and propagation
-- [ ] Check if game is ended 
+- [ ] Check if game is ended
 - [ ] Figure out authentication
 - [ ] When fetching state and the game is not there, err should be returned but instead we get empty array for player state and board state. Decouple state fetching from message broadcasting for better handling
 

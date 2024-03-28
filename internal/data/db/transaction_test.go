@@ -29,7 +29,7 @@ func TestQueries_ExecuteInTransaction_ShouldRollbackIfPanic(t *testing.T) {
 		}
 	}()
 
-	err := querier.ExecuteInTransaction(ctx, func(querier db.Querier) error {
+	_, err := querier.ExecuteInTransaction(ctx, func(querier db.Querier) (interface{}, error) {
 		panic("test")
 	})
 	require.Error(t, err)
@@ -50,8 +50,8 @@ func TestQueries_ExecuteInTransaction_ShouldRollbackIfErr(t *testing.T) {
 
 	querier := db.New(mockDB, zap.NewNop().Sugar())
 
-	err := querier.ExecuteInTransaction(ctx, func(querier db.Querier) error {
-		return fmt.Errorf("test")
+	_, err := querier.ExecuteInTransaction(ctx, func(querier db.Querier) (interface{}, error) {
+		return nil, fmt.Errorf("test")
 	})
 	require.Error(t, err)
 
@@ -71,8 +71,8 @@ func TestQueries_ExecuteInTransaction_ShouldCommitIfNoErr(t *testing.T) {
 
 	querier := db.New(mockDB, zap.NewNop().Sugar())
 
-	err := querier.ExecuteInTransaction(ctx, func(querier db.Querier) error {
-		return nil
+	_, err := querier.ExecuteInTransaction(ctx, func(querier db.Querier) (interface{}, error) {
+		return -1, nil
 	})
 	require.NoError(t, err)
 

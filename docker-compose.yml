@@ -36,7 +36,7 @@ services:
     command: generate
 
   mockery:
-    image: vektra/mockery:v2.40.1
+    image: vektra/mockery:v2.42.1
     volumes:
       - ./:/src
     working_dir: /src

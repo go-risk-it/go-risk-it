@@ -1,35 +1,39 @@
 package rest
 
 import (
-	"fmt"
+	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/tomfran/go-risk-it/internal/api/game/rest/request"
+	"github.com/tomfran/go-risk-it/internal/api/game/rest/response"
 	"github.com/tomfran/go-risk-it/internal/web/controller"
 	"go.uber.org/zap"
 )
 
 type Handler interface {
 	OnMoveDeploy(w http.ResponseWriter, r *http.Request)
+	OnCreateGame(w http.ResponseWriter, r *http.Request)
 }
 
 type HandlerImpl struct {
 	log            *zap.SugaredLogger
 	moveController controller.MoveController
+	gameController controller.GameController
 }
 
 func NewHandler(
 	log *zap.SugaredLogger,
 	moveController controller.MoveController,
+	gameController controller.GameController,
 ) *HandlerImpl {
 	return &HandlerImpl{
 		log:            log,
 		moveController: moveController,
+		gameController: gameController,
 	}
 }
 
-func (m *HandlerImpl) OnMoveDeploy(writer http.ResponseWriter, req *http.Request) {
+func (h *HandlerImpl) OnMoveDeploy(writer http.ResponseWriter, req *http.Request) {
 	gameID, err := extractGameID(req)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusBadRequest)
@@ -37,50 +41,50 @@ func (m *HandlerImpl) OnMoveDeploy(writer http.ResponseWriter, req *http.Request
 		return
 	}
 
-	deployMove, err := decodeRequest[request.DeployMove](writer, req)
+	deployMoveRequest, err := decodeRequest[request.DeployMove](writer, req)
 	if err != nil {
 		return
 	}
 
-	m.log.Infow("using request context", "context", req.Context())
-
-	err = m.moveController.PerformDeployMove(req.Context(), int64(gameID), deployMove)
+	err = h.moveController.PerformDeployMove(req.Context(), int64(gameID), deployMoveRequest)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 
 		return
 	}
 
-	m.log.Infow("writing successful http response with no content")
-
-	err = writeNoContentResponse(writer, http.StatusNoContent)
+	err = writeResponse(writer, []byte{}, http.StatusNoContent)
 	if err != nil {
-		m.log.Errorw("unable to write response", "error", err)
+		h.log.Errorw("unable to write response", "error", err)
+
+		return
+	}
+}
+
+func (h *HandlerImpl) OnCreateGame(writer http.ResponseWriter, req *http.Request) {
+	createGameRequest, err := decodeRequest[request.CreateGame](writer, req)
+	if err != nil {
+		return
+	}
+
+	gameID, err := h.gameController.CreateGame(req.Context(), createGameRequest)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
 
 		return
 	}
 
-	m.log.Infow("successfully wrote http response with no content")
-}
-
-func writeNoContentResponse(writer http.ResponseWriter, status int) error {
-	writer.WriteHeader(status)
-
-	_, err := writer.Write([]byte{})
+	createGameResponse, err := json.Marshal(response.CreateGame{GameID: gameID})
 	if err != nil {
-		return fmt.Errorf("failed to write response: %w", err)
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+
+		return
 	}
 
-	return nil
-}
-
-func extractGameID(req *http.Request) (int, error) {
-	gameIDStr := req.PathValue("id")
-
-	gameID, err := strconv.Atoi(gameIDStr)
+	err = writeResponse(writer, createGameResponse, http.StatusCreated)
 	if err != nil {
-		return 0, fmt.Errorf("invalid game id: %w", err)
-	}
+		h.log.Errorw("unable to write response", "error", err)
 
-	return gameID, nil
+		return
+	}
 }

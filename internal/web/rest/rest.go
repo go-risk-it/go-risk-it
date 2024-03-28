@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"go.uber.org/fx"
@@ -126,6 +127,28 @@ func decode[T any](dec *json.Decoder, dst T) error {
 	}
 
 	return nil
+}
+
+func writeResponse(writer http.ResponseWriter, body []byte, status int) error {
+	writer.WriteHeader(status)
+
+	_, err := writer.Write(body)
+	if err != nil {
+		return fmt.Errorf("failed to write response: %w", err)
+	}
+
+	return nil
+}
+
+func extractGameID(req *http.Request) (int, error) {
+	gameIDStr := req.PathValue("id")
+
+	gameID, err := strconv.Atoi(gameIDStr)
+	if err != nil {
+		return 0, fmt.Errorf("invalid game id: %w", err)
+	}
+
+	return gameID, nil
 }
 
 var Module = fx.Options(

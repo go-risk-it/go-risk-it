@@ -13,8 +13,12 @@ import (
 )
 
 type Service interface {
-	CreateGameWithTx(ctx context.Context, board *board.Board, users []string) error
-	CreateGame(ctx context.Context, querier db.Querier, board *board.Board, users []string) error
+	CreateGameWithTx(ctx context.Context, board *board.Board, users []string) (int64, error)
+	CreateGame(
+		ctx context.Context,
+		querier db.Querier,
+		board *board.Board,
+		users []string) (int64, error)
 	GetGameState(ctx context.Context, gameID int64) (*sqlc.Game, error)
 	GetGameStateQ(ctx context.Context, querier db.Querier, gameID int64) (*sqlc.Game, error)
 	SetGamePhaseQ(ctx context.Context, querier db.Querier, gameID int64, phase sqlc.Phase) error
@@ -45,15 +49,20 @@ func (s *ServiceImpl) CreateGameWithTx(
 	ctx context.Context,
 	board *board.Board,
 	users []string,
-) error {
-	err := s.querier.ExecuteInTransaction(ctx, func(qtx db.Querier) error {
+) (int64, error) {
+	gameID, err := s.querier.ExecuteInTransaction(ctx, func(qtx db.Querier) (interface{}, error) {
 		return s.CreateGame(ctx, qtx, board, users)
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create game: %w", err)
+		return -1, fmt.Errorf("failed to create game: %w", err)
 	}
 
-	return nil
+	gameIDInt, ok := gameID.(int64)
+	if !ok {
+		return -1, fmt.Errorf("failed to convert gameID to int64: %w", err)
+	}
+
+	return gameIDInt, nil
 }
 
 func (s *ServiceImpl) CreateGame(
@@ -61,28 +70,28 @@ func (s *ServiceImpl) CreateGame(
 	querier db.Querier,
 	board *board.Board,
 	users []string,
-) error {
+) (int64, error) {
 	s.log.Infow("creating game", "board", board, "users", users)
 
 	gameID, err := querier.InsertGame(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to insert game: %w", err)
+		return -1, fmt.Errorf("failed to insert game: %w", err)
 	}
 
 	s.log.Infow("inserted game", "id", gameID)
 
 	players, err := s.playerService.CreatePlayers(ctx, querier, gameID, users)
 	if err != nil {
-		return fmt.Errorf("failed to create players: %w", err)
+		return -1, fmt.Errorf("failed to create players: %w", err)
 	}
 
 	if err := s.regionService.CreateRegions(ctx, querier, players, board.Regions); err != nil {
-		return fmt.Errorf("failed to create regions: %w", err)
+		return -1, fmt.Errorf("failed to create regions: %w", err)
 	}
 
 	s.log.Infow("successfully created game", "board", board, "users", users)
 
-	return nil
+	return gameID, nil
 }
 
 func (s *ServiceImpl) GetGameState(

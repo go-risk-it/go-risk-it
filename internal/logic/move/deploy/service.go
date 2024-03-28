@@ -71,9 +71,10 @@ func (s *ServiceImpl) PerformDeployMoveWithTx(
 	region string,
 	troops int,
 ) error {
-	if err := s.querier.ExecuteInTransaction(ctx, func(qtx db.Querier) error {
-		return s.PerformDeployMoveQ(ctx, qtx, gameID, userID, region, troops)
-	}); err != nil {
+	_, err := s.querier.ExecuteInTransaction(ctx, func(qtx db.Querier) (interface{}, error) {
+		return nil, s.PerformDeployMoveQ(ctx, qtx, gameID, userID, region, troops)
+	})
+	if err != nil {
 		return fmt.Errorf("failed to perform deploy move: %w", err)
 	}
 

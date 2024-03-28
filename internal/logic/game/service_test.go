@@ -72,9 +72,10 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 		regionServiceMock,
 	)
 
-	result := service.CreateGame(ctx, mockQuerier, gameBoard, users)
+	gameID, err := service.CreateGame(ctx, mockQuerier, gameBoard, users)
 
-	require.NoError(t, result)
+	require.NoError(t, err)
+	require.Equal(t, int64(1), gameID)
 }
 
 // returns error if InsertGame method returns an error.
@@ -99,11 +100,12 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 	querier.On("InsertGame", ctx).Return(int64(0), errInsertGame)
 
 	// Call the method under test
-	err := service.CreateGame(ctx, querier, gameBoard, users)
+	gameID, err := service.CreateGame(ctx, querier, gameBoard, users)
 
 	// Assert the result
 	require.Error(t, err)
 	require.EqualError(t, err, "failed to insert game: insert logic error")
+	require.Equal(t, int64(-1), gameID)
 
 	// Verify that the expected methods were called
 	querier.AssertExpectations(t)
@@ -135,11 +137,12 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 		Return(nil, errCreatePlayers)
 
 	// Call the method under test
-	err := service.CreateGame(ctx, querier, gameBoard, users)
+	gameID, err := service.CreateGame(ctx, querier, gameBoard, users)
 
 	// Assert the result
 	require.Error(t, err)
 	require.EqualError(t, err, "failed to create players: error inserting players")
+	require.Equal(t, int64(-1), gameID)
 
 	// Verify that the expected methods were called
 	querier.AssertExpectations(t)

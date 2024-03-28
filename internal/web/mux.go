@@ -14,7 +14,8 @@ func NewServeMux(wsHandler *connection.WebSocketHandler,
 ) *http.ServeMux {
 	mux := &http.ServeMux{}
 	mux.HandleFunc("/ws", wsHandler.OnWebSocket)
-	mux.HandleFunc("/api/1/game/{id}/move/deploy/", restHandler.OnMoveDeploy)
+	mux.HandleFunc("POST /api/1/game", restHandler.OnCreateGame)
+	mux.HandleFunc("POST /api/1/game/{id}/move/deploy", restHandler.OnMoveDeploy)
 	log.Infow("Created mux", "mux", mux)
 
 	return mux

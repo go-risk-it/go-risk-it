@@ -10,7 +10,9 @@ import (
 
 type Querier interface {
 	sqlc.Querier
-	ExecuteInTransaction(ctx context.Context, txFunc func(Querier) error) error
+	ExecuteInTransaction(
+		ctx context.Context,
+		txFunc func(Querier) (interface{}, error)) (interface{}, error)
 }
 
 var _ Querier = (*Queries)(nil)
