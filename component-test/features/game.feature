@@ -1,8 +1,8 @@
-Feature: showing off behave
+Feature: Creating a game
 
   Scenario: create game
     Given a game is created with the following players
-      | player   |
+      | player    |
       | giovanni  |
       | francesco |
       | gabriele  |

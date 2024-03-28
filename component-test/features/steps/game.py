@@ -8,6 +8,5 @@ def step_impl(context: RiskItContext):
     request = {
         "players": [row.get("player") for row in context.table]
     }
-    print(request)
 
     context.risk_it_client.create_game(request)
