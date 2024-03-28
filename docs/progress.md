@@ -32,6 +32,7 @@
 - [ ] Check if game is ended
 - [ ] Figure out authentication
 - [ ] When fetching state and the game is not there, err should be returned but instead we get empty array for player state and board state. Decouple state fetching from message broadcasting for better handling
+- [ ] Figure out how to specify GameID when connecting via websockets
 
 **Front-end**
 
@@ -53,12 +54,13 @@
 
 - [x] Game logic
 - [ ] Map validation
-- [ ] POST endpoint for creating a game
+- [x] POST endpoint for creating a game
 - [x] Frontend - Display full state
 
-- [ ] Deploy move
+- [x] Deploy move
 - [ ] Attack move
 - [ ] Reinforcement move
+- [ ] Cards move
 
 **Server: Analytics**
 
