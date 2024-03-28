@@ -18,32 +18,32 @@
 - [x] Figure out how to format code automatically
 - [x] Figure out fx modules
 - [x] Create realistic input
-- [ ] Improve region-to-player assignment
-- [ ] Improve troops-region assignment
 - [x] Define deploy-move API
-- [ ] Implement deploy-move API
+- [x] Implement deploy-move API
   - [x] Polish up deploy phase
   - [x] Test deploy phase
   - [x] Expose POST endpoint for deploy phase 
   - [x] Emit `GameStateChanged` in `SetGamePhaseQ`
   - [x] Handle `GameStateChanged`
-- [ ] Store playerID and gameID in HTTP/WS headers
-- [ ] Figure out error handling and propagation
+- [ ] Improve region-to-player assignment
+- [ ] Improve troops-region assignment
 - [ ] Check if game is ended
 - [ ] Figure out authentication
 - [ ] When fetching state and the game is not there, err should be returned but instead we get empty array for player state and board state. Decouple state fetching from message broadcasting for better handling
-- [ ] Figure out how to specify GameID when connecting via websockets
 
 **Front-end**
 
 - [x] Understand how to start with frontend
-- [x] Implement deploy-move API
+- [x] Display full state
+- [ ] Implement deploy-move API
+- [ ] Figure out how to specify GameID when connecting via websockets (after OnOpen, send a "subscribe" message with GameID?)
 
 **Server: Architecture**
 
 - [x] Figure out how to split code in packages
 - [x] Figure out how to determine whose turn it is in a game
 - [x] Add a db provider
+- [ ] Figure out error handling and propagation
 
 **Server: Deserialization**
 
@@ -55,8 +55,6 @@
 - [x] Game logic
 - [ ] Map validation
 - [x] POST endpoint for creating a game
-- [x] Frontend - Display full state
-
 - [x] Deploy move
 - [ ] Attack move
 - [ ] Reinforcement move
@@ -69,4 +67,5 @@
 **Server: Auth**
 
 - [ ] Figure out TLS for websockets
+- [ ] Store playerID and authToken in HTTP request headers
 - [ ] Figure out where and how to store user credentials
