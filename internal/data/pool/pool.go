@@ -14,7 +14,7 @@ import (
 func NewConnectionPool(lifecycle fx.Lifecycle, log *zap.SugaredLogger) *pgxpool.Pool {
 	pool, err := pgxpool.New(
 		context.Background(),
-		"postgresql://localhost:5432/risk-it?user=postgres&password=password",
+		"postgresql://postgres:5432/risk-it?user=postgres&password=password",
 	)
 	if err != nil {
 		log.Fatal(os.Stderr, "Unable to create connection pool: %v\n", err)
