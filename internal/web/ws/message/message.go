@@ -8,10 +8,15 @@ import (
 type Type string
 
 const (
+	Subscribe   Type = "subscribe"
 	GameState   Type = "gameState"
 	BoardState  Type = "boardState"
 	PlayerState Type = "playerState"
 )
+
+type SubscribePayload struct {
+	GameID int64 `json:"gameId"`
+}
 
 type Message struct {
 	Type    Type            `json:"type"`

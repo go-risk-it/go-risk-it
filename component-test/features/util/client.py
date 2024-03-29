@@ -1,3 +1,5 @@
+from requests import Response
+
 from util.prefix_session import PrefixSession
 
 
@@ -16,8 +18,14 @@ class RiskItClient:
             timeout=timeout,
         )
 
-    def create_game(self, body):
+    def create_game(self, body) -> Response:
         return self.__post(
             "/api/1/game",
+            body=body,
+        )
+
+    def deploy(self, game_id: int, body) -> Response:
+        return self.__post(
+            f"/api/1/game/{game_id}/move/deploy",
             body=body,
         )

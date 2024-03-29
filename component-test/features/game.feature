@@ -7,3 +7,4 @@ Feature: Creating a game
       | francesco |
       | gabriele  |
       | vasilii   |
+    When gabriele deploys 3 troops in siberia

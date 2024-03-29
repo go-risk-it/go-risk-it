@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewServeMux(wsHandler *connection.WebSocketHandler,
+func NewServeMux(wsHandler *connection.WebSocketUpgraderHandler,
 	restHandler rest.Handler,
 	log *zap.SugaredLogger,
 ) *http.ServeMux {

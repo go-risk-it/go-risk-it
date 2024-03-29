@@ -6,7 +6,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type WebSocketHandler struct {
+type WebSocketUpgraderHandler struct {
 	upgrader Upgrader
 	log      *zap.SugaredLogger
 }
@@ -14,11 +14,11 @@ type WebSocketHandler struct {
 func NewWebSocketHandler(
 	upgrader Upgrader,
 	logger *zap.SugaredLogger,
-) *WebSocketHandler {
-	return &WebSocketHandler{upgrader: upgrader, log: logger}
+) *WebSocketUpgraderHandler {
+	return &WebSocketUpgraderHandler{upgrader: upgrader, log: logger}
 }
 
-func (h *WebSocketHandler) OnWebSocket(w http.ResponseWriter, r *http.Request) {
+func (h *WebSocketUpgraderHandler) OnWebSocket(w http.ResponseWriter, r *http.Request) {
 	h.log.Infow("Received request")
 
 	conn, err := h.upgrader.Upgrade(w, r, nil)

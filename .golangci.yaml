@@ -25,6 +25,8 @@ linters-settings:
   gocritic:
     disabled-checks:
       - singleCaseSwitch
+  exhaustive:
+    default-signifies-exhaustive: true
 #  exhaustruct:
 #    # List of regular expressions to match struct packages and their names.
 #    # Regular expressions must match complete canonical struct package/name/structname.

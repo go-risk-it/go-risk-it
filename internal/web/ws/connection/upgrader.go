@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/lesismal/nbio/nbhttp/websocket"
-	"github.com/tomfran/go-risk-it/internal/web/ws/message"
 	"go.uber.org/zap"
 )
 
@@ -21,12 +20,12 @@ type UpgraderImpl struct {
 	*websocket.Upgrader
 	log               *zap.SugaredLogger
 	connectionManager Manager
-	messageHandler    message.Handler
+	messageHandler    Handler
 }
 
 func New(
 	log *zap.SugaredLogger,
-	messageHandler message.Handler,
+	messageHandler Handler,
 	connectionManager Manager,
 	args ...interface{},
 ) *UpgraderImpl {
@@ -42,9 +41,7 @@ func New(
 		return true
 	}
 
-	upgrader.OnOpen(func(connection *websocket.Conn) {
-		connectionManager.ConnectPlayer(connection, 1)
-	})
+	upgrader.OnOpen(func(connection *websocket.Conn) {})
 
 	upgrader.OnMessage(messageHandler.OnMessage)
 

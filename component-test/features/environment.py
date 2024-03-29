@@ -1,4 +1,5 @@
 import logging
+import time
 
 from util.client import RiskItClient
 from util.context import RiskItContext
@@ -11,13 +12,9 @@ LOGGER = logging.getLogger(__name__)
 def before_all(context: RiskItContext):
     start_command = [
         "docker-compose",
-        "--project-name",
-        "component-test",
-        "--file",
-        "docker-compose.yml",
         "up",
         "--build",
-        "-d",
+        "--detach",
     ]
 
     context.session = PrefixSession(prefix_url="http://localhost:8080")
@@ -31,3 +28,5 @@ def before_all(context: RiskItContext):
     LOGGER.info("Starting service")
     context.service_runner.start()
     LOGGER.info("Service started")
+
+    time.sleep(2)
