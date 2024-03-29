@@ -2,19 +2,27 @@ package pool
 
 import (
 	"context"
+	"fmt"
+	"net"
 	"os"
+	"strconv"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/tomfran/go-risk-it/internal/config"
 	"github.com/tomfran/go-risk-it/internal/data/sqlc"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
 
-func NewConnectionPool(lifecycle fx.Lifecycle, log *zap.SugaredLogger) *pgxpool.Pool {
+func NewConnectionPool(
+	lifecycle fx.Lifecycle,
+	log *zap.SugaredLogger,
+	config config.DatabaseConfig,
+) *pgxpool.Pool {
 	pool, err := pgxpool.New(
 		context.Background(),
-		"postgresql://postgres:5432/risk-it?user=postgres&password=password",
+		buildConnectionString(config),
 	)
 	if err != nil {
 		log.Fatal(os.Stderr, "Unable to create connection pool: %v\n", err)
@@ -33,6 +41,18 @@ func NewConnectionPool(lifecycle fx.Lifecycle, log *zap.SugaredLogger) *pgxpool.
 	)
 
 	return pool
+}
+
+func buildConnectionString(config config.DatabaseConfig) string {
+	hostPort := net.JoinHostPort(config.Host, strconv.Itoa(config.Port))
+
+	return fmt.Sprintf(
+		"postgresql://%s/%s?user=%s&password=%s",
+		hostPort,
+		config.Name,
+		config.User,
+		config.Password,
+	)
 }
 
 type Transaction interface {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/lesismal/nbio/nbhttp"
 	"github.com/tomfran/go-risk-it/internal/api/game/rest/request"
+	"github.com/tomfran/go-risk-it/internal/config"
 	"github.com/tomfran/go-risk-it/internal/data"
 	"github.com/tomfran/go-risk-it/internal/loggerfx"
 	"github.com/tomfran/go-risk-it/internal/logic"
@@ -16,6 +17,7 @@ import (
 
 func main() {
 	fx.New(
+		config.Module,
 		loggerfx.Module,
 		logic.Module,
 		data.Module,

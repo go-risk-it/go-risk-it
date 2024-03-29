@@ -1,0 +1,6 @@
+database:
+  host: postgres
+  port: 5432
+  name: risk-it
+  user: postgres
+  password: password
