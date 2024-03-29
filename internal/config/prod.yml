@@ -1,0 +1,7 @@
+database:
+  host: aws-0-eu-central-1.pooler.supabase.com
+  port: 5432
+  name: postgres
+  user: postgres.aioorjdmravxznadmtie
+  password: _9fn4zF*w.PqZhWh.uAMC3R3gB
+  disable_ssl: false

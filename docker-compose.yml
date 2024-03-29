@@ -17,19 +17,17 @@ services:
       timeout: 2s
       retries: 5
 
-  migrate:
-    image: migrate/migrate:latest
-    depends_on:
-      postgres:
-        condition: service_healthy
-    volumes:
-      - ./internal/data/sqlc/migrations:/migrations
-    command: -verbose -path=/migrations/ -database postgresql://postgres:password@postgres:5432/risk-it?sslmode=disable up
+#  migrate:
+#    image: migrate/migrate:latest
+#    depends_on:
+#      postgres:
+#        condition: service_healthy
+#    volumes:
+#      - ./internal/data/sqlc/migrations:/migrations
+#    command: -verbose -path=/migrations/ -database postgresql://postgres:password@postgres:5432/risk-it?sslmode=disable up
 
   sqlc:
     image: sqlc/sqlc:latest
-    depends_on:
-      - migrate
     volumes:
       - ./:/src
     working_dir: /src
@@ -48,7 +46,8 @@ services:
       context: .
       dockerfile: Dockerfile
     depends_on:
-      - sqlc
+      postgres:
+        condition: service_healthy
     ports:
       - "8080:8080"
 

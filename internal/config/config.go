@@ -6,11 +6,12 @@ import (
 )
 
 type DatabaseConfig struct {
-	Host     string
-	Port     int
-	Name     string
-	User     string
-	Password string
+	Host       string
+	Port       int
+	Name       string
+	User       string
+	Password   string
+	DisableSSL bool
 }
 
 type Result struct {
@@ -31,11 +32,12 @@ func newConfig() Result {
 
 	return Result{
 		DatabaseConfig: DatabaseConfig{
-			Host:     viper.GetString("database.host"),
-			Port:     viper.GetInt("database.port"),
-			Name:     viper.GetString("database.name"),
-			User:     viper.GetString("database.user"),
-			Password: viper.GetString("database.password"),
+			Host:       viper.GetString("database.host"),
+			Port:       viper.GetInt("database.port"),
+			Name:       viper.GetString("database.name"),
+			User:       viper.GetString("database.user"),
+			Password:   viper.GetString("database.password"),
+			DisableSSL: viper.GetBool("database.disable_ssl"),
 		},
 	}
 }

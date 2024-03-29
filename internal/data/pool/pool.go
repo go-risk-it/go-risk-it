@@ -2,11 +2,12 @@ package pool
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
-	"os"
 	"strconv"
 
+	"github.com/golang-migrate/migrate/v4"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tomfran/go-risk-it/internal/config"
@@ -25,9 +26,10 @@ func NewConnectionPool(
 		buildConnectionString(config),
 	)
 	if err != nil {
-		log.Fatal(os.Stderr, "Unable to create connection pool: %v\n", err)
 		panic("Unable to create connection pool")
 	}
+
+	log.Infow("created connection pool", "connstr", buildConnectionString(config))
 
 	lifecycle.Append(
 		fx.Hook{
@@ -46,13 +48,45 @@ func NewConnectionPool(
 func buildConnectionString(config config.DatabaseConfig) string {
 	hostPort := net.JoinHostPort(config.Host, strconv.Itoa(config.Port))
 
-	return fmt.Sprintf(
-		"postgresql://%s/%s?user=%s&password=%s",
-		hostPort,
-		config.Name,
+	result := fmt.Sprintf(
+		"postgresql://%s:%s@%s/%s",
 		config.User,
 		config.Password,
+		hostPort,
+		config.Name,
 	)
+
+	if config.DisableSSL {
+		result += "?sslmode=disable"
+	}
+
+	return result
+}
+
+func executeMigrations(
+	log *zap.SugaredLogger,
+	config config.DatabaseConfig,
+) error {
+	log.Infow("preparing to execute migrations", "connstr", buildConnectionString(config))
+
+	migr, err := migrate.New("file://migrations", buildConnectionString(config))
+	if err != nil {
+		return fmt.Errorf("failed to connect to DB for migrations: %w", err)
+	}
+
+	log.Infow("executing migrations")
+
+	if err := migr.Up(); err != nil {
+		if errors.Is(err, migrate.ErrNoChange) {
+			return nil
+		}
+
+		return fmt.Errorf("failed to run migrations: %w", err)
+	}
+
+	log.Infow("successfully ran migrations")
+
+	return nil
 }
 
 type Transaction interface {
@@ -72,4 +106,5 @@ var Module = fx.Options(
 			fx.As(new(DB)),
 		),
 	),
+	fx.Invoke(executeMigrations),
 )

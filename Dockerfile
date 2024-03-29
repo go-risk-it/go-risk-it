@@ -22,6 +22,7 @@ WORKDIR /src
 COPY --from=builder /src/risk-it-server .
 COPY --from=builder /src/map.json .
 COPY --from=builder /src/internal/config .
+COPY --from=builder /src/internal/data/sqlc/migrations ./migrations
 
 # Command to run the executable
 ENTRYPOINT ["./risk-it-server"]

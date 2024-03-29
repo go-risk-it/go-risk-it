@@ -4,3 +4,4 @@ database:
   name: risk-it
   user: postgres
   password: password
+  disable_ssl: true
