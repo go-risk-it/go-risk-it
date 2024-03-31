@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/tomfran/go-risk-it/internal/data/db"
+	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"go.uber.org/zap"
 )
 

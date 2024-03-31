@@ -4,14 +4,14 @@ import (
 	"context"
 	"testing"
 
+	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/logic/move/deploy"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/player"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/region"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/signals"
 	"github.com/stretchr/testify/require"
-	"github.com/tomfran/go-risk-it/internal/data/sqlc"
-	"github.com/tomfran/go-risk-it/internal/logic/move/deploy"
-	"github.com/tomfran/go-risk-it/mocks/internal_/data/db"
-	"github.com/tomfran/go-risk-it/mocks/internal_/logic/game"
-	"github.com/tomfran/go-risk-it/mocks/internal_/logic/player"
-	"github.com/tomfran/go-risk-it/mocks/internal_/logic/region"
-	"github.com/tomfran/go-risk-it/mocks/internal_/signals"
 	"go.uber.org/zap"
 )
 

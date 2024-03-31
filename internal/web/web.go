@@ -1,13 +1,13 @@
 package web
 
 import (
-	"github.com/tomfran/go-risk-it/internal/web/controller"
-	"github.com/tomfran/go-risk-it/internal/web/fetchers"
-	"github.com/tomfran/go-risk-it/internal/web/handlers"
-	"github.com/tomfran/go-risk-it/internal/web/nbio"
-	"github.com/tomfran/go-risk-it/internal/web/rest"
-	"github.com/tomfran/go-risk-it/internal/web/ws"
-	"github.com/tomfran/go-risk-it/internal/web/ws/connection"
+	"github.com/go-risk-it/go-risk-it/internal/web/controller"
+	"github.com/go-risk-it/go-risk-it/internal/web/fetchers"
+	"github.com/go-risk-it/go-risk-it/internal/web/handlers"
+	"github.com/go-risk-it/go-risk-it/internal/web/nbio"
+	"github.com/go-risk-it/go-risk-it/internal/web/rest"
+	"github.com/go-risk-it/go-risk-it/internal/web/ws"
+	"github.com/go-risk-it/go-risk-it/internal/web/ws/connection"
 	"go.uber.org/fx"
 )
 

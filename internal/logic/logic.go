@@ -1,13 +1,13 @@
 package logic
 
 import (
-	"github.com/tomfran/go-risk-it/internal/logic/board"
-	"github.com/tomfran/go-risk-it/internal/logic/game"
-	"github.com/tomfran/go-risk-it/internal/logic/move/deploy"
-	"github.com/tomfran/go-risk-it/internal/logic/player"
-	"github.com/tomfran/go-risk-it/internal/logic/region"
-	"github.com/tomfran/go-risk-it/internal/logic/region/assignment"
-	"github.com/tomfran/go-risk-it/internal/signals"
+	"github.com/go-risk-it/go-risk-it/internal/logic/board"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game"
+	"github.com/go-risk-it/go-risk-it/internal/logic/move/deploy"
+	"github.com/go-risk-it/go-risk-it/internal/logic/player"
+	"github.com/go-risk-it/go-risk-it/internal/logic/region"
+	"github.com/go-risk-it/go-risk-it/internal/logic/region/assignment"
+	"github.com/go-risk-it/go-risk-it/internal/signals"
 	"go.uber.org/fx"
 )
 

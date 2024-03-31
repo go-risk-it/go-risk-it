@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/tomfran/go-risk-it/internal/data/db"
-	sqlc "github.com/tomfran/go-risk-it/internal/data/sqlc"
-	"github.com/tomfran/go-risk-it/internal/logic/board"
-	"github.com/tomfran/go-risk-it/internal/logic/region/assignment"
+	"github.com/go-risk-it/go-risk-it/internal/data/db"
+	sqlc "github.com/go-risk-it/go-risk-it/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/logic/board"
+	"github.com/go-risk-it/go-risk-it/internal/logic/region/assignment"
 	"go.uber.org/zap"
 )
 

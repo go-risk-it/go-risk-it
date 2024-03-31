@@ -1,9 +1,9 @@
 package data
 
 import (
-	"github.com/tomfran/go-risk-it/internal/data/db"
-	"github.com/tomfran/go-risk-it/internal/data/pool"
-	"github.com/tomfran/go-risk-it/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/data/db"
+	"github.com/go-risk-it/go-risk-it/internal/data/pool"
+	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"go.uber.org/fx"
 )
 

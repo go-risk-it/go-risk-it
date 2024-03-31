@@ -1,9 +1,9 @@
 package assignment
 
 import (
-	"github.com/tomfran/go-risk-it/internal/data/db"
-	sqlc "github.com/tomfran/go-risk-it/internal/data/sqlc"
-	"github.com/tomfran/go-risk-it/internal/logic/board"
+	"github.com/go-risk-it/go-risk-it/internal/data/db"
+	sqlc "github.com/go-risk-it/go-risk-it/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/logic/board"
 	"go.uber.org/zap"
 )
 

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/tomfran/go-risk-it/internal/api/game/rest/request"
-	"github.com/tomfran/go-risk-it/internal/logic/move/deploy"
+	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
+	"github.com/go-risk-it/go-risk-it/internal/logic/move/deploy"
 	"go.uber.org/zap"
 )
 

@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/tomfran/go-risk-it/internal/api/game/rest/request"
-	"github.com/tomfran/go-risk-it/internal/api/game/rest/response"
-	"github.com/tomfran/go-risk-it/internal/web/controller"
+	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
+	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/response"
+	"github.com/go-risk-it/go-risk-it/internal/web/controller"
 	"go.uber.org/zap"
 )
 

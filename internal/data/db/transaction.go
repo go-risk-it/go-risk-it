@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-risk-it/go-risk-it/internal/data/pool"
 	pgx "github.com/jackc/pgx/v5"
-	"github.com/tomfran/go-risk-it/internal/data/pool"
 )
 
 func (q *Queries) WithTx(tx pool.Transaction) Querier {

@@ -5,7 +5,7 @@ package game
 import (
 	context "context"
 
-	message "github.com/tomfran/go-risk-it/internal/api/game/message"
+	message "github.com/go-risk-it/go-risk-it/internal/api/game/message"
 
 	mock "github.com/stretchr/testify/mock"
 )

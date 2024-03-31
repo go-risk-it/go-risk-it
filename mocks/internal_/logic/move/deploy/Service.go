@@ -5,7 +5,7 @@ package deploy
 import (
 	context "context"
 
-	db "github.com/tomfran/go-risk-it/internal/data/db"
+	db "github.com/go-risk-it/go-risk-it/internal/data/db"
 
 	mock "github.com/stretchr/testify/mock"
 )

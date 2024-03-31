@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/tomfran/go-risk-it/internal/api/game/message"
-	"github.com/tomfran/go-risk-it/internal/api/game/rest/request"
-	"github.com/tomfran/go-risk-it/internal/logic/board"
-	"github.com/tomfran/go-risk-it/internal/logic/game"
-	"github.com/tomfran/go-risk-it/internal/logic/player"
+	"github.com/go-risk-it/go-risk-it/internal/api/game/message"
+	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
+	"github.com/go-risk-it/go-risk-it/internal/logic/board"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game"
+	"github.com/go-risk-it/go-risk-it/internal/logic/player"
 	"go.uber.org/zap"
 )
 

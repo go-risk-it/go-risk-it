@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/tomfran/go-risk-it/internal/api/game/message"
-	sqlc "github.com/tomfran/go-risk-it/internal/data/sqlc"
-	"github.com/tomfran/go-risk-it/internal/logic/board"
-	"github.com/tomfran/go-risk-it/internal/logic/region"
+	"github.com/go-risk-it/go-risk-it/internal/api/game/message"
+	sqlc "github.com/go-risk-it/go-risk-it/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/logic/board"
+	"github.com/go-risk-it/go-risk-it/internal/logic/region"
 	"go.uber.org/zap"
 )
 

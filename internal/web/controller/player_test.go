@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/go-risk-it/go-risk-it/internal/api/game/message"
+	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
+	playerController "github.com/go-risk-it/go-risk-it/internal/web/controller"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/player"
 	"github.com/stretchr/testify/require"
-	"github.com/tomfran/go-risk-it/internal/api/game/message"
-	"github.com/tomfran/go-risk-it/internal/data/sqlc"
-	playerController "github.com/tomfran/go-risk-it/internal/web/controller"
-	"github.com/tomfran/go-risk-it/mocks/internal_/logic/player"
 	"go.uber.org/zap"
 )
 

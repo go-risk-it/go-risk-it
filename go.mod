@@ -1,4 +1,4 @@
-module github.com/tomfran/go-risk-it
+module github.com/go-risk-it/go-risk-it
 
 go 1.22
 

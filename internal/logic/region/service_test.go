@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/logic/board"
+	"github.com/go-risk-it/go-risk-it/internal/logic/region"
+	assignment2 "github.com/go-risk-it/go-risk-it/internal/logic/region/assignment"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/region/assignment"
 	"github.com/stretchr/testify/require"
-	"github.com/tomfran/go-risk-it/internal/data/sqlc"
-	"github.com/tomfran/go-risk-it/internal/logic/board"
-	"github.com/tomfran/go-risk-it/internal/logic/region"
-	assignment2 "github.com/tomfran/go-risk-it/internal/logic/region/assignment"
-	"github.com/tomfran/go-risk-it/mocks/internal_/data/db"
-	"github.com/tomfran/go-risk-it/mocks/internal_/logic/region/assignment"
 	"go.uber.org/zap"
 )
 

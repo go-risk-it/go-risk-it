@@ -1,7 +1,7 @@
 package ws
 
 import (
-	"github.com/tomfran/go-risk-it/internal/web/ws/connection"
+	"github.com/go-risk-it/go-risk-it/internal/web/ws/connection"
 	"go.uber.org/fx"
 )
 

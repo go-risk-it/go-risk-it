@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -16,7 +17,6 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
-	"github.com/tomfran/go-risk-it/internal/data/db"
 	"go.uber.org/zap"
 )
 

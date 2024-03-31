@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
+	"github.com/go-risk-it/go-risk-it/internal/config"
+	"github.com/go-risk-it/go-risk-it/internal/data"
+	"github.com/go-risk-it/go-risk-it/internal/loggerfx"
+	"github.com/go-risk-it/go-risk-it/internal/logic"
+	"github.com/go-risk-it/go-risk-it/internal/web"
+	"github.com/go-risk-it/go-risk-it/internal/web/controller"
 	"github.com/lesismal/nbio/nbhttp"
-	"github.com/tomfran/go-risk-it/internal/api/game/rest/request"
-	"github.com/tomfran/go-risk-it/internal/config"
-	"github.com/tomfran/go-risk-it/internal/data"
-	"github.com/tomfran/go-risk-it/internal/loggerfx"
-	"github.com/tomfran/go-risk-it/internal/logic"
-	"github.com/tomfran/go-risk-it/internal/web"
-	"github.com/tomfran/go-risk-it/internal/web/controller"
 	"go.uber.org/fx"
 )
 

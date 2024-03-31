@@ -4,7 +4,7 @@ package signals
 
 import (
 	context "context"
-	logicsignals "github.com/tomfran/go-risk-it/internal/signals"
+	logicsignals "github.com/go-risk-it/go-risk-it/internal/signals"
 
 	signals "github.com/maniartech/signals"
 	mock "github.com/stretchr/testify/mock"

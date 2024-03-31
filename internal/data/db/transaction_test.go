@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/go-risk-it/go-risk-it/internal/data/db"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/pool"
 	"github.com/stretchr/testify/require"
-	"github.com/tomfran/go-risk-it/internal/data/db"
-	"github.com/tomfran/go-risk-it/mocks/internal_/data/pool"
 	"go.uber.org/zap"
 )
 

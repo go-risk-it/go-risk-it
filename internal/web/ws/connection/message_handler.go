@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 	"github.com/lesismal/nbio/nbhttp/websocket"
-	"github.com/tomfran/go-risk-it/internal/web/ws/message"
 	"go.uber.org/zap"
 )
 

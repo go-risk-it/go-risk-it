@@ -7,11 +7,11 @@ import (
 	"net"
 	"strconv"
 
+	"github.com/go-risk-it/go-risk-it/internal/config"
+	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/tomfran/go-risk-it/internal/config"
-	"github.com/tomfran/go-risk-it/internal/data/sqlc"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )

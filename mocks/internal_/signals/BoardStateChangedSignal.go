@@ -6,7 +6,7 @@ import (
 	context "context"
 
 	mock "github.com/stretchr/testify/mock"
-	internalsignals "github.com/tomfran/go-risk-it/internal/signals"
+	internalsignals "github.com/go-risk-it/go-risk-it/internal/signals"
 
 	signals "github.com/maniartech/signals"
 )

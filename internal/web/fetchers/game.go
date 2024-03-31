@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/tomfran/go-risk-it/internal/web/controller"
-	"github.com/tomfran/go-risk-it/internal/web/ws/message"
+	"github.com/go-risk-it/go-risk-it/internal/web/controller"
+	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )

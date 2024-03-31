@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/tomfran/go-risk-it/internal/data/db"
-	sqlc "github.com/tomfran/go-risk-it/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/data/db"
+	sqlc "github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"go.uber.org/zap"
 )
 
