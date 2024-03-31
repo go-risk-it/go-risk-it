@@ -8,6 +8,6 @@ outpkg: "{{.PackageName}}"
 filename: "{{.InterfaceName}}.go"
 all: True
 packages:
-  github.com/tomfran/go-risk-it/internal:
+  github.com/go-risk-it/go-risk-it/internal:
     config:
       recursive: True

@@ -5,8 +5,8 @@ package player
 import (
 	context "context"
 
-	mock "github.com/stretchr/testify/mock"
 	db "github.com/go-risk-it/go-risk-it/internal/data/db"
+	mock "github.com/stretchr/testify/mock"
 
 	sqlc "github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 )

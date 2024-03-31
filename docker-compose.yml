@@ -17,14 +17,14 @@ services:
       timeout: 2s
       retries: 5
 
-#  migrate:
-#    image: migrate/migrate:latest
-#    depends_on:
-#      postgres:
-#        condition: service_healthy
-#    volumes:
-#      - ./internal/data/sqlc/migrations:/migrations
-#    command: -verbose -path=/migrations/ -database postgresql://postgres:password@postgres:5432/risk-it?sslmode=disable up
+  migrate:
+    image: migrate/migrate:latest
+    volumes:
+      - ./internal/data/sqlc/migrations:/migrations
+    command: -verbose -path=/migrations/ -database postgresql://postgres:password@postgres:5432/risk-it?sslmode=disable up
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   sqlc:
     image: sqlc/sqlc:latest
@@ -32,6 +32,8 @@ services:
       - ./:/src
     working_dir: /src
     command: generate
+    depends_on:
+      - migrate
 
   mockery:
     image: vektra/mockery:v2.42.1
@@ -45,11 +47,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
-    ports:
-      - "8080:8080"
 
 volumes:
   postgres_data:

@@ -5,8 +5,8 @@ package signals
 import (
 	context "context"
 
-	mock "github.com/stretchr/testify/mock"
 	internalsignals "github.com/go-risk-it/go-risk-it/internal/signals"
+	mock "github.com/stretchr/testify/mock"
 
 	signals "github.com/maniartech/signals"
 )
