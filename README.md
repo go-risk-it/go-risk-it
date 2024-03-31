@@ -1,24 +1,39 @@
 # GO Risk-It
 
-## Development
+A backend application for the Risk-It game.
 
-From the root of the project, run `docker compose up --build` to:
-
-1. Spin up a Postgres DB
-2. Run the necessary migrations
-3. Generate `sqlc` Go code
-4. Build and run the `go-risk-it` application
-
-If you want to just generate the `sqlc` code, run:
+## Running the application
 
 ```bash
-docker run --rm -v $(pwd):/src -w /src sqlc/sqlc generate
+make run
 ```
 
-## Pre-commit
-Install:
-```bash
-go install golang.org/x/tools/cmd/goimports@latest
-go install mvdan.cc/gofumpt@latest
-Install pre-commit hooks with `pre-commit install`
+## Development
 
+### Dev environment setup
+
+Install linters, formatters, and pre-commit hooks with:
+
+```bash
+make install
+```
+
+### Running the tests
+
+```bash
+make test
+```
+
+### Code generation
+
+Generate SQLC code for interacting with the database:
+
+```bash
+make sqlc
+```
+
+Generate mocks for testing:
+
+```bash
+make mock
+```

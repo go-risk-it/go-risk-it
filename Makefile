@@ -1,30 +1,39 @@
-help:
-	@echo "Commands:"
-	@echo "    install: install dependencies and tools for development"
-	@echo "    run: spin up postgres DB and server"
-	@echo "    pre-commit-check"
-	@echo "    test"
+MAKEFILE := $(lastword $(MAKEFILE_LIST))
 
-install:
+# Default target
+.DEFAULT_GOAL := help
+
+help: ## Print this help message
+	@echo "Usage: make [target]"
+	@echo ""
+	@echo "Available targets:"
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+
+
+install: ## Install dependencies and tools
 	@echo "Installing dependencies and tools..."
 	@go install golang.org/x/tools/cmd/goimports@latest
 	@go install mvdan.cc/gofumpt@latest
 	@go install github.com/segmentio/golines@latest
 	@curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.55.2
-	@echo "Make sure to have pre-commit installed. See https://pre-commit.com/#install"
+	@pre-commit install
 
-pre-commit-check:
+pre-commit-check: ## Run pre-commit checks
 	pre-commit run --all-files
 
-test:
+test: ## Run tests
 	go test ./...
 
-sqlc:
+sqlc: ## Generate SQLC code to interact with the database
 	@echo "Building..."
 	@docker compose run --rm sqlc
 
-run:
+mock: ## Generate mocks
+	@echo "Building..."
+	@docker compose run --rm mockery
+
+run: ## Run the application
 	@echo "Destroying existing environment..."
 	@docker compose --project-name go-risk-it down --remove-orphans
 	@echo "Spinning up new environment..."
-	@docker compose up --build --detach
+	@docker compose up --build --detach  risk-it
