@@ -3,5 +3,5 @@ database:
   port: 5432
   name: postgres
   user: postgres.aioorjdmravxznadmtie
-  password: _9fn4zF*w.PqZhWh.uAMC3R3gB
+  password: fake_pw
   disable_ssl: false
