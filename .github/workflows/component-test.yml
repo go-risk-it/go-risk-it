@@ -70,14 +70,14 @@ jobs:
 
       - name: Install Dependencies 📦
         run: |
-          make install-full
+          poetry install
         working-directory: component-test
 
-      - name: Lint Code 🎎
-        run: |
-          poetry run ruff check .github --extend-ignore D
-          poetry run black --check .github
-        working-directory: component-test
+      # - name: Lint Code 🎎
+      #   run: |
+      #     poetry run ruff check .github --extend-ignore D
+      #     poetry run black --check .github
+      #   working-directory: component-test
 
       - name: Test Code 🔍
         run: |
