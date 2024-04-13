@@ -109,9 +109,9 @@ func TestServiceImpl_CreatePlayers_WithValidData(t *testing.T) {
 
 	// Set up expectations for InsertPlayers method
 	querier.On("InsertPlayers", ctx, []sqlc.InsertPlayersParams{
-		{GameID: gameID, UserID: "francesco", TurnIndex: 0},
-		{GameID: gameID, UserID: "gabriele", TurnIndex: 1},
-		{GameID: gameID, UserID: "giovanni", TurnIndex: 2},
+		{GameID: gameID, UserID: "francesco", TurnIndex: 0, DeployableTroops: 5},
+		{GameID: gameID, UserID: "gabriele", TurnIndex: 1, DeployableTroops: 5},
+		{GameID: gameID, UserID: "giovanni", TurnIndex: 2, DeployableTroops: 5},
 	}).Return(int64(2), nil)
 
 	querier.On("GetPlayersByGame", ctx, gameID).Return([]sqlc.Player{
@@ -151,9 +151,9 @@ func TestServiceImpl_CreatePlayers_InsertPlayersError(t *testing.T) {
 
 	// Set up expectations for InsertPlayers method
 	querier.On("InsertPlayers", ctx, []sqlc.InsertPlayersParams{
-		{GameID: gameID, UserID: "francesco", TurnIndex: 0},
-		{GameID: gameID, UserID: "gabriele", TurnIndex: 1},
-		{GameID: gameID, UserID: "giovanni", TurnIndex: 2},
+		{GameID: gameID, UserID: "francesco", TurnIndex: 0, DeployableTroops: 5},
+		{GameID: gameID, UserID: "gabriele", TurnIndex: 1, DeployableTroops: 5},
+		{GameID: gameID, UserID: "giovanni", TurnIndex: 2, DeployableTroops: 5},
 	}).Return(int64(0), errInsertPlayers)
 
 	// Call the method under test
@@ -184,9 +184,9 @@ func TestServiceImpl_CreatePlayers_GetPlayersByGameError(t *testing.T) {
 
 	// Set up expectations for InsertPlayers method
 	querier.On("InsertPlayers", ctx, []sqlc.InsertPlayersParams{
-		{GameID: gameID, UserID: "francesco", TurnIndex: 0},
-		{GameID: gameID, UserID: "gabriele", TurnIndex: 1},
-		{GameID: gameID, UserID: "giovanni", TurnIndex: 2},
+		{GameID: gameID, UserID: "francesco", TurnIndex: 0, DeployableTroops: 5},
+		{GameID: gameID, UserID: "gabriele", TurnIndex: 1, DeployableTroops: 5},
+		{GameID: gameID, UserID: "giovanni", TurnIndex: 2, DeployableTroops: 5},
 	}).Return(int64(2), nil)
 
 	querier.On("GetPlayersByGame", ctx, gameID).Return(nil, errGetPlayersByGame)
