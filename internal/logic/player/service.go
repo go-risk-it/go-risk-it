@@ -79,7 +79,7 @@ func (s *ServiceImpl) CreatePlayers(
 				GameID:           gameID,
 				UserID:           user,
 				TurnIndex:        turnIndex,
-				DeployableTroops: 0,
+				DeployableTroops: 5,
 			},
 		)
 		turnIndex += 1

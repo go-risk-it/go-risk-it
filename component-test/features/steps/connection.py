@@ -14,24 +14,38 @@ def step_impl(context: RiskItContext, player: str):
     context.websocket_manager.connect_player(player, context.game_id)
 
 
-def deserialize(message: str) -> Union[BoardStateMessage, GameStateMessage, PlayerStateMessage]:
+def deserialize(context: RiskItContext, message: str) -> Union[BoardStateMessage, GameStateMessage, PlayerStateMessage]:
     parsed_message = json.loads(message)
     message_type = parsed_message["type"]
 
     if message_type == "gameState":
-        return GameStateMessage(**parsed_message)
+        game_state = GameStateMessage(**parsed_message)
+        context.game_state = game_state.data
+        return game_state
     elif message_type == "playerState":
-        return PlayerStateMessage(**parsed_message)
+        player_state = PlayerStateMessage(**parsed_message)
+        context.player_state = player_state.data
+        return player_state
     elif message_type == "boardState":
-        return BoardStateMessage(**parsed_message)
+        board_state = BoardStateMessage(**parsed_message)
+        context.board_state = board_state.data
+        return board_state
 
     raise ValueError(f"Unknown message type: {message_type}")
 
 
+def receive_all_state_updates(context: RiskItContext, player):
+    conn = context.websocket_manager.get_conn(player)
+    for i in range(3):
+        deserialize(context, conn.recv())
+
+
 @then("{player} receives all state updates")
 def step_impl(context: RiskItContext, player: str):
-    conn = context.websocket_manager.get_conn(player)
+    receive_all_state_updates(context, player)
 
-    for i in range(3):
-        message = deserialize(conn.recv())
-        print(message)
+
+@then("all players receive all state updates")
+def step_impl(context: RiskItContext):
+    for player in context.websocket_manager.player_connections.keys():
+        receive_all_state_updates(context, player)

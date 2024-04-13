@@ -15,3 +15,16 @@ Feature: Creating a game
     Then francesco receives all state updates
     When vasilii connects to the game
     Then vasilii receives all state updates
+
+    And it's giovanni's turn
+    And the game phase is DEPLOY
+    When giovanni deploys 3 troops in eastern_australia
+    Then all players receive all state updates
+    And it's giovanni's turn
+    And the game phase is DEPLOY
+
+    When giovanni deploys 2 troops in ontario
+    Then all players receive all state updates
+    And it's giovanni's turn
+    And the game phase is ATTACK
+
