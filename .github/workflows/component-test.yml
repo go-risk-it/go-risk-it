@@ -34,10 +34,11 @@ jobs:
           sudo chmod +x /usr/local/bin/gomplate
 
       - name: Set up Python ${{ env.DEFAULT_PYTHON_VERSION }} 🐍
-        working-directory: component-test
         uses: actions/setup-python@57ded4d7d5e986d7296eab16560982c6dd7c923b
         with:
           python-version: ${{ env.DEFAULT_PYTHON_VERSION }}
+        working-directory: component-test
+        
 
       - name: Read Poetry Version 🔢
         run: |
@@ -45,46 +46,46 @@ jobs:
         shell: bash
 
       - name: Install poetry 🦄
-        working-directory: component-test
         uses: Gr1N/setup-poetry@15821dc8a61bc630db542ae4baf6a7c19a994844 # v8
         with:
           poetry-version: ${{ env.POETRY_VERSION }}
+        working-directory: component-test
 
       - name: Load Poetry Cached Libraries ⬇
-        working-directory: component-test
         id: cache-poetry
         uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8
         with:
           path: .venv
           key: ${{ runner.os }}-poetry-${{ env.POETRY_VERSION }}-${{ env.DEFAULT_PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ secrets.POETRY_CACHE_VERSION }}
           restore-keys: ${{ runner.os }}-poetry-${{ env.DEFAULT_PYTHON_VERSION }}
+        working-directory: component-test
 
       - name: Clear Poetry cache
-        working-directory: component-test
         if: steps.cache-poetry.outputs.cache-hit == 'true' && contains(github.event.pull_request.labels.*.name, 'tools:clear-poetry-cache-unit-tests')
         run: rm -r .venv
+        working-directory: component-test
 
       - name: Create virtual environment
-        working-directory: component-test
         if: (steps.cache-poetry.outputs.cache-hit != 'true' || contains(github.event.pull_request.labels.*.name, 'tools:clear-poetry-cache-unit-tests'))
         run: python -m venv create .venv
+        working-directory: component-test
 
       - name: Set up virtual environment
-        working-directory: component-test
         run: poetry config virtualenvs.in-project true
+        working-directory: component-test
 
       - name: Install Dependencies 📦
-        working-directory: component-test
         run: |
           make install-full
+        working-directory: component-test
 
       - name: Lint Code 🎎
-        working-directory: component-test
         run: |
           poetry run ruff check .github --extend-ignore D
           poetry run black --check .github
+        working-directory: component-test
 
       - name: Test Code 🔍
-        working-directory: component-test
         run: |
           poetry run behave
+        working-directory: component-test
