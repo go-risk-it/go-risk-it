@@ -1,6 +1,6 @@
 from requests import Response
 
-from util.prefix_session import PrefixSession
+from src.client.rest.prefix_session import PrefixSession
 
 
 class RiskItClient:

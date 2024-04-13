@@ -7,4 +7,11 @@ Feature: Creating a game
       | francesco |
       | gabriele  |
       | vasilii   |
-    When gabriele deploys 3 troops in siberia
+    When gabriele connects to the game
+    Then gabriele receives all state updates
+    When giovanni connects to the game
+    Then giovanni receives all state updates
+    When francesco connects to the game
+    Then francesco receives all state updates
+    When vasilii connects to the game
+    Then vasilii receives all state updates

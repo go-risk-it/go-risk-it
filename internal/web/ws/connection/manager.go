@@ -67,6 +67,8 @@ func (m *ManagerImpl) DisconnectPlayer(connection *websocket.Conn, gameID int64)
 	}
 
 	m.gameConnections[gameID] = removeIndex(gameConnections, index)
+
+	m.log.Infow("Disconnected player", "currentConnections", len(m.gameConnections[gameID]))
 }
 
 func findIndexToRemove(
@@ -93,6 +95,8 @@ func (m *ManagerImpl) ConnectPlayer(connection *websocket.Conn, gameID int64) {
 		Connection: connection,
 		GameID:     gameID,
 	})
+
+	m.log.Infow("Connected player", "currentConnections", len(m.gameConnections[gameID]))
 }
 
 func removeIndex[T any](s []T, index int) []T {

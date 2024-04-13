@@ -1,10 +1,11 @@
 import logging
 import time
 
-from util.client import RiskItClient
-from util.context import RiskItContext
-from util.prefix_session import PrefixSession
-from util.runner import ServiceRunner
+from src.client.rest.client import RiskItClient
+from src.client.websockets.manager import RiskItWebsocketManager
+from src.core.context import RiskItContext
+from src.client.rest.prefix_session import PrefixSession
+from src.core.runner import ServiceRunner
 
 LOGGER = logging.getLogger(__name__)
 
@@ -17,6 +18,7 @@ def before_all(context: RiskItContext):
         "--detach",
     ]
 
+    context.websocket_manager = RiskItWebsocketManager()
     context.session = PrefixSession(prefix_url="http://localhost:8080")
     context.service_runner = ServiceRunner(
         start_command=start_command,

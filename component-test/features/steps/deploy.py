@@ -1,6 +1,6 @@
 from behave import *
 
-from util.context import RiskItContext
+from src.core.context import RiskItContext
 from util.http_assertions import assert_2xx
 
 
