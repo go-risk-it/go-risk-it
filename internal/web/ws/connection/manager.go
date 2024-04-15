@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"github.com/go-risk-it/go-risk-it/internal/signals"
 	"github.com/go-risk-it/go-risk-it/internal/web/fetchers"
@@ -19,6 +20,7 @@ type Manager interface {
 
 type ManagerImpl struct {
 	log                   *zap.SugaredLogger
+	connectionRWMutex     *sync.RWMutex
 	gameConnections       map[int64][]*websocket.Conn
 	fetchers              []fetchers.Fetcher
 	playerConnectedSignal signals.PlayerConnectedSignal
@@ -31,6 +33,7 @@ func NewManager(
 ) *ManagerImpl {
 	return &ManagerImpl{
 		log:                   log,
+		connectionRWMutex:     &sync.RWMutex{},
 		gameConnections:       make(map[int64][]*websocket.Conn),
 		fetchers:              fetchers,
 		playerConnectedSignal: playerConnectedSignal,
@@ -38,14 +41,24 @@ func NewManager(
 }
 
 func (m *ManagerImpl) Broadcast(gameID int64, message json.RawMessage) {
+	m.connectionRWMutex.RLock()
+	connections, ok := m.gameConnections[gameID]
+	m.connectionRWMutex.RUnlock()
+
+	if !ok {
+		m.log.Errorw("no connections for given game", "gameId", gameID)
+
+		return
+	}
+
 	m.log.Infof(
 		"broadcasting message to %d players for game %d",
-		len(m.gameConnections[gameID]),
+		len(connections),
 		gameID,
 	)
 
-	for i := range m.gameConnections[gameID] {
-		err := m.gameConnections[gameID][i].WriteMessage(websocket.TextMessage, message)
+	for i := range connections {
+		err := connections[i].WriteMessage(websocket.TextMessage, message)
 		if err != nil {
 			m.log.Errorw("unable to write message", "error", err)
 		}
@@ -57,7 +70,9 @@ func (m *ManagerImpl) DisconnectPlayer(connection *websocket.Conn, gameID int64)
 		"Disconnecting player",
 		"remoteAddress", connection.RemoteAddr().String())
 
+	m.connectionRWMutex.RLock()
 	gameConnections := m.gameConnections[gameID]
+	m.connectionRWMutex.RUnlock()
 
 	index, err := findIndexToRemove(connection, gameConnections)
 	if err != nil {
@@ -66,9 +81,10 @@ func (m *ManagerImpl) DisconnectPlayer(connection *websocket.Conn, gameID int64)
 		return
 	}
 
+	m.connectionRWMutex.Lock()
 	m.gameConnections[gameID] = removeIndex(gameConnections, index)
-
 	m.log.Infow("Disconnected player", "currentConnections", len(m.gameConnections[gameID]))
+	m.connectionRWMutex.Unlock()
 }
 
 func findIndexToRemove(
@@ -90,12 +106,14 @@ func (m *ManagerImpl) ConnectPlayer(connection *websocket.Conn, gameID int64) {
 		"remoteAddress", connection.RemoteAddr().String(),
 		"gameID", gameID)
 
+	m.connectionRWMutex.Lock()
 	m.gameConnections[gameID] = append(m.gameConnections[gameID], connection)
+	m.connectionRWMutex.Unlock()
+
 	m.playerConnectedSignal.Emit(context.Background(), signals.PlayerConnectedData{
 		Connection: connection,
 		GameID:     gameID,
 	})
-
 	m.log.Infow("Connected player", "currentConnections", len(m.gameConnections[gameID]))
 }
 

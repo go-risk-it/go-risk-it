@@ -1,6 +1,6 @@
 Feature: Creating a game
 
-  Scenario: create game
+  Scenario: Create game, connect players and make some moves
     Given a game is created with the following players
       | player    |
       | giovanni  |
@@ -8,13 +8,13 @@ Feature: Creating a game
       | gabriele  |
       | vasilii   |
     When gabriele connects to the game
+    And giovanni connects to the game
+    And francesco connects to the game
+    And vasilii connects to the game
     Then gabriele receives all state updates
-    When giovanni connects to the game
-    Then giovanni receives all state updates
-    When francesco connects to the game
-    Then francesco receives all state updates
-    When vasilii connects to the game
-    Then vasilii receives all state updates
+    And giovanni receives all state updates
+    And francesco receives all state updates
+    And vasilii receives all state updates
 
     And it's giovanni's turn
     And giovanni has 5 deployable troops
