@@ -107,14 +107,15 @@ func (m *ManagerImpl) ConnectPlayer(connection *websocket.Conn, gameID int64) {
 		"gameID", gameID)
 
 	m.connectionRWMutex.Lock()
-	m.gameConnections[gameID] = append(m.gameConnections[gameID], connection)
-	m.connectionRWMutex.Unlock()
 
+	m.gameConnections[gameID] = append(m.gameConnections[gameID], connection)
 	m.playerConnectedSignal.Emit(context.Background(), signals.PlayerConnectedData{
 		Connection: connection,
 		GameID:     gameID,
 	})
 	m.log.Infow("Connected player", "currentConnections", len(m.gameConnections[gameID]))
+
+	m.connectionRWMutex.Unlock()
 }
 
 func removeIndex[T any](s []T, index int) []T {
