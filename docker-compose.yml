@@ -5,10 +5,22 @@ services:
     extends:
       file: supabase/docker-compose.yml
       service: vector
-  supabase:
+  db:
     extends:
       file: supabase/docker-compose.yml
       service: db
+  auth:
+    extends:
+      file: supabase/docker-compose.yml
+      service: auth
+  analytics:
+    extends:
+      file: supabase/docker-compose.yml
+      service: analytics
+  kong:
+    extends:
+      file: supabase/docker-compose.yml
+      service: kong
 
   migrate:
     image: migrate/migrate:latest
@@ -16,7 +28,7 @@ services:
       - ./internal/data/sqlc/migrations:/migrations
     command: -verbose -path=/migrations/ -database postgresql://postgres:password@postgres:5432/risk-it?sslmode=disable up
     depends_on:
-      supabase:
+      db:
         condition: service_healthy
 
   sqlc:
@@ -43,7 +55,7 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      supabase:
+      db:
         condition: service_healthy
 
 

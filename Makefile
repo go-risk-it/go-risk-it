@@ -36,4 +36,4 @@ run: ## Run the application
 	@echo "Destroying existing environment..."
 	@docker compose --project-name go-risk-it down --remove-orphans
 	@echo "Spinning up new environment..."
-	@docker compose up --build --detach  risk-it
+	@docker compose up --build --detach
