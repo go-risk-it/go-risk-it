@@ -1,7 +1,7 @@
 database:
-  host: postgres
-  port: 5432
-  name: risk-it
+  host: supabase-db
+  port:
+  name:
   user: postgres
-  password: password
+  password:
   disable_ssl: true

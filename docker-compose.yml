@@ -1,21 +1,14 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:latest
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: risk-it
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/tmp/postgresql/data
-    healthcheck:
-      test: [ "CMD", "pg_isready", "-U", "postgres" ]
-      interval: 2s
-      timeout: 2s
-      retries: 5
+  vector:
+    extends:
+      file: supabase/docker-compose.yml
+      service: vector
+  supabase:
+    extends:
+      file: supabase/docker-compose.yml
+      service: db
 
   migrate:
     image: migrate/migrate:latest
@@ -23,7 +16,7 @@ services:
       - ./internal/data/sqlc/migrations:/migrations
     command: -verbose -path=/migrations/ -database postgresql://postgres:password@postgres:5432/risk-it?sslmode=disable up
     depends_on:
-      postgres:
+      supabase:
         condition: service_healthy
 
   sqlc:
@@ -50,9 +43,11 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      postgres:
+      supabase:
         condition: service_healthy
+
 
 volumes:
   postgres_data:
   socket:
+  db-config:

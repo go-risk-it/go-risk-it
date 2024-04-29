@@ -12,7 +12,8 @@ LOGGER = logging.getLogger(__name__)
 
 def before_all(context: RiskItContext):
     start_command = [
-        "docker-compose",
+        "docker",
+        "compose",
         "up",
         "--build",
         "--detach",
