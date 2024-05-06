@@ -19,11 +19,11 @@ RUN go build -o risk-it-server ./cmd/risk-it-server
 FROM golang:1.22-alpine
 
 WORKDIR /src
-COPY --from=builder /src/risk-it-server .
-COPY --from=builder /src/map.json .
+COPY --from=builder /src/component-test/.env .
 COPY --from=builder /src/internal/config .
-COPY --from=builder /src/.env .
 COPY --from=builder /src/internal/data/sqlc/migrations ./migrations
+COPY --from=builder /src/map.json .
+COPY --from=builder /src/risk-it-server .
 
 # Command to run the executable
 ENTRYPOINT ["./risk-it-server"]

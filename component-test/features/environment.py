@@ -1,6 +1,7 @@
 import logging
 import time
 
+from dotenv import load_dotenv
 from src.client.rest.client import RiskItClient
 from src.client.websockets.manager import RiskItWebsocketManager
 from src.core.context import RiskItContext
@@ -19,6 +20,7 @@ def before_all(context: RiskItContext):
         "--detach",
     ]
 
+    load_dotenv()
     context.websocket_manager = RiskItWebsocketManager()
     context.session = PrefixSession(prefix_url="http://localhost:8080")
     context.service_runner = ServiceRunner(
