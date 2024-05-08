@@ -87,6 +87,29 @@ services:
             - anon
 
   ## Secure REST routes
+  - name: risk-it-v1
+    _comment: 'http://risk-it:8080/: /api/v1/* -> risk-it:8080/*'
+    url: http://risk-it:8080/
+    routes:
+      - name: risk-it-v1-all
+        strip_path: true
+        paths:
+          - /api/v1/
+    plugins:
+      - name: cors
+      - name: key-auth
+        config:
+          hide_credentials: true
+      - name: basic-auth
+        config:
+          hide_credentials: true
+      - name: acl
+        config:
+          hide_groups_header: true
+          allow:
+            - admin
+            - anon
+
   - name: rest-v1
     _comment: 'PostgREST: /rest/v1/* -> http://rest:3000/*'
     url: http://rest:3000/
