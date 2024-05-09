@@ -1,10 +1,6 @@
 version: '3.8'
 
 services:
-  vector:
-    extends:
-      file: supabase/docker-compose.yml
-      service: vector
   db:
     extends:
       file: supabase/docker-compose.yml
@@ -13,10 +9,6 @@ services:
     extends:
       file: supabase/docker-compose.yml
       service: auth
-  analytics:
-    extends:
-      file: supabase/docker-compose.yml
-      service: analytics
   kong:
     extends:
       file: supabase/docker-compose.yml

@@ -55,9 +55,9 @@ services:
     ports:
       - ${KONG_HTTP_PORT}:8000/tcp
       - ${KONG_HTTPS_PORT}:8443/tcp
-    depends_on:
-      analytics:
-        condition: service_healthy
+#    depends_on:
+#      analytics:
+#        condition: service_healthy
     environment:
       KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /home/kong/kong.yml
@@ -81,8 +81,8 @@ services:
       db:
         # Disable this if you are using an external Postgres database
         condition: service_healthy
-      analytics:
-        condition: service_healthy
+#      analytics:
+#        condition: service_healthy
     healthcheck:
       test:
         [
@@ -345,9 +345,9 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-    depends_on:
-      vector:
-        condition: service_healthy
+#    depends_on:
+#      vector:
+#        condition: service_healthy
     command:
       - postgres
       - -c
