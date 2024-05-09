@@ -2,5 +2,32 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
-  ]
+  ],
+  "packageRules": [
+    {
+      "matchFileNames": [
+        "component-test/pyproject.toml"
+      ]
+    },
+    {
+      "matchManagers": [
+        "docker-compose",
+        "dockerfile",
+        "poetry"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "lockFileMaintenance"
+      ],
+      "matchCurrentVersion": "!/^0/",
+      "automerge": true,
+      "automergeStrategy": "squash",
+      "automergeType": "pr",
+      "platformAutomerge": true
+    }
+  ],
+  "lockFileMaintenance": {
+    "enabled": true
+  }
 }
