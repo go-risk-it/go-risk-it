@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"github.com/go-risk-it/go-risk-it/internal/config"
@@ -10,13 +10,11 @@ import (
 	"go.uber.org/fx"
 )
 
-func main() {
-	fx.New(
-		config.Module,
-		loggerfx.Module,
-		logic.Module,
-		data.Module,
-		web.Module,
-		fx.Invoke(func(engine *nbhttp.Engine) {}),
-	).Run()
-}
+var Module = fx.Options(
+	config.Module,
+	loggerfx.Module,
+	logic.Module,
+	data.Module,
+	web.Module,
+	fx.Invoke(func(engine *nbhttp.Engine) {}),
+)

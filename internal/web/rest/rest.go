@@ -129,7 +129,7 @@ func decode[T any](dec *json.Decoder, dst T) error {
 	return nil
 }
 
-func writeResponse(writer http.ResponseWriter, body []byte, status int) error {
+func WriteResponse(writer http.ResponseWriter, body []byte, status int) error {
 	writer.WriteHeader(status)
 
 	_, err := writer.Write(body)

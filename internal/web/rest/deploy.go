@@ -52,7 +52,7 @@ func (h *DeployHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Requ
 		return
 	}
 
-	err = writeResponse(writer, []byte{}, http.StatusNoContent)
+	err = WriteResponse(writer, []byte{}, http.StatusNoContent)
 	if err != nil {
 		h.log.Errorw("unable to write response", "error", err)
 

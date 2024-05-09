@@ -12,7 +12,7 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o risk-it-server ./cmd/risk-it-server
+RUN go build -o risk-it-server ./cmd/risk-it-server/component-test
 
 # === Stage 2: Runtime Stage ===
 # Use a lightweight Golang image as the base image for the runtime stage

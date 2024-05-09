@@ -33,6 +33,8 @@ services:
 
   sqlc:
     image: sqlc/sqlc:latest
+    env_file:
+      - component-test/.env
     volumes:
       - ./:/src
     working_dir: /src

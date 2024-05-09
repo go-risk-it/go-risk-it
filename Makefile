@@ -37,3 +37,7 @@ run: ## Run the application
 	@docker compose --project-name go-risk-it down --remove-orphans
 	@echo "Spinning up new environment..."
 	@docker compose up --build --detach
+
+cp: ## Run component tests
+	@echo "Running component tests..."
+	@cd component-test; poetry run behave
