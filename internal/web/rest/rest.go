@@ -153,9 +153,12 @@ func extractGameID(req *http.Request) (int, error) {
 
 var Module = fx.Options(
 	fx.Provide(
+		AsRoute(NewDeployHandler),
+		AsRoute(NewGameHandler),
+		AsRoute(NewWebSocketHandler),
 		fx.Annotate(
-			NewHandler,
-			fx.As(new(Handler)),
+			NewServeMux,
+			fx.ParamTags(`group:"routes"`),
 		),
 	),
 )

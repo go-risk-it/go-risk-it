@@ -10,58 +10,31 @@ import (
 	"go.uber.org/zap"
 )
 
-type Handler interface {
-	OnMoveDeploy(w http.ResponseWriter, r *http.Request)
-	OnCreateGame(w http.ResponseWriter, r *http.Request)
+type GameHandler interface {
+	Pattern() string
+	ServeHTTP(w http.ResponseWriter, r *http.Request)
 }
 
-type HandlerImpl struct {
+type GameHandlerImpl struct {
 	log            *zap.SugaredLogger
-	moveController controller.MoveController
 	gameController controller.GameController
 }
 
-func NewHandler(
+func NewGameHandler(
 	log *zap.SugaredLogger,
-	moveController controller.MoveController,
 	gameController controller.GameController,
-) *HandlerImpl {
-	return &HandlerImpl{
+) *GameHandlerImpl {
+	return &GameHandlerImpl{
 		log:            log,
-		moveController: moveController,
 		gameController: gameController,
 	}
 }
 
-func (h *HandlerImpl) OnMoveDeploy(writer http.ResponseWriter, req *http.Request) {
-	gameID, err := extractGameID(req)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
-
-		return
-	}
-
-	deployMoveRequest, err := decodeRequest[request.DeployMove](writer, req)
-	if err != nil {
-		return
-	}
-
-	err = h.moveController.PerformDeployMove(req.Context(), int64(gameID), deployMoveRequest)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-
-		return
-	}
-
-	err = writeResponse(writer, []byte{}, http.StatusNoContent)
-	if err != nil {
-		h.log.Errorw("unable to write response", "error", err)
-
-		return
-	}
+func (h *GameHandlerImpl) Pattern() string {
+	return "/api/1/game"
 }
 
-func (h *HandlerImpl) OnCreateGame(writer http.ResponseWriter, req *http.Request) {
+func (h *GameHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	createGameRequest, err := decodeRequest[request.CreateGame](writer, req)
 	if err != nil {
 		return
