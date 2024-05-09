@@ -29,3 +29,8 @@ class RiskItClient:
             f"/api/1/game/{game_id}/move/deploy",
             body=body,
         )
+
+    def reset_state(self) -> Response:
+        return self.__post(
+            "/api/1/reset",
+        )

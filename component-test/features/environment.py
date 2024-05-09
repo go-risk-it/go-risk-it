@@ -35,3 +35,7 @@ def before_all(context: RiskItContext):
     LOGGER.info("Service started")
 
     time.sleep(2)
+
+
+def before_scenario(context: RiskItContext, _):
+    context.risk_it_client.reset_state()
