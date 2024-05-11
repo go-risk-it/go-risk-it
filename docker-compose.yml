@@ -35,7 +35,7 @@ services:
       - migrate
 
   mockery:
-    image: vektra/mockery:v2.42.1
+    image: vektra/mockery:v2.43.0
     volumes:
       - ./:/src
     working_dir: /src
