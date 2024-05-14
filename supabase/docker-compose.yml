@@ -274,7 +274,7 @@ services:
 
   functions:
     container_name: supabase-edge-functions
-    image: supabase/edge-runtime:v1.49.0
+    image: supabase/edge-runtime:v1.51.0
     restart: unless-stopped
     depends_on:
       analytics:
