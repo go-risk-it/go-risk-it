@@ -6,7 +6,7 @@ from src.api.subscribe_message import build_subscribe_message
 
 
 def connect() -> WebSocket:
-    return create_connection("ws://localhost:8080/ws", timeout=2)
+    return create_connection("ws://localhost:8000/ws", timeout=2)
 
 
 class RiskItWebsocketManager:

@@ -32,12 +32,14 @@ mock: ## Generate mocks
 	@echo "Building..."
 	@docker compose run --rm mockery
 
-run: ## Run the application
+destroy:
 	@echo "Destroying existing environment..."
 	@docker compose --project-name go-risk-it down --remove-orphans
+
+run: destroy ## Run the application
 	@echo "Spinning up new environment..."
 	@docker compose up --build --detach
 
-cp: ## Run component tests
+cp: destroy ## Run component tests
 	@echo "Running component tests..."
 	@cd component-test; poetry run behave

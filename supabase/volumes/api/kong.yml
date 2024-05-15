@@ -26,9 +26,9 @@ acls:
 ### Dashboard credentials
 ###
 basicauth_credentials:
-- consumer: DASHBOARD
-  username: $DASHBOARD_USERNAME
-  password: $DASHBOARD_PASSWORD
+  - consumer: DASHBOARD
+    username: $DASHBOARD_USERNAME
+    password: $DASHBOARD_PASSWORD
 
 
 ###
@@ -92,23 +92,23 @@ services:
     url: http://risk-it:8080/
     routes:
       - name: risk-it-v1-all
-        strip_path: true
+        strip_path: false
         paths:
           - /api/v1/
     plugins:
       - name: cors
-      - name: key-auth
-        config:
-          hide_credentials: true
-      - name: basic-auth
-        config:
-          hide_credentials: true
-      - name: acl
-        config:
-          hide_groups_header: true
-          allow:
-            - admin
-            - anon
+
+  ## Secure WS route
+  - name: risk-it-ws
+    _comment: 'http://risk-it:8080/: /ws* -> risk-it:8080/*'
+    url: http://risk-it:8080/
+    routes:
+      - name: risk-it-ws
+        strip_path: false
+        paths:
+          - /ws
+    plugins:
+      - name: cors
 
   - name: rest-v1
     _comment: 'PostgREST: /rest/v1/* -> http://rest:3000/*'

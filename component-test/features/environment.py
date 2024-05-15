@@ -22,7 +22,7 @@ def before_all(context: RiskItContext):
 
     load_dotenv()
     context.websocket_manager = RiskItWebsocketManager()
-    context.session = PrefixSession(prefix_url="http://localhost:8080")
+    context.session = PrefixSession(prefix_url="http://localhost:8000")
     context.service_runner = ServiceRunner(
         start_command=start_command,
         path="../",

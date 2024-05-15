@@ -20,17 +20,17 @@ class RiskItClient:
 
     def create_game(self, body) -> Response:
         return self.__post(
-            "/api/1/game",
+            "/api/v1/game",
             body=body,
         )
 
     def deploy(self, game_id: int, body) -> Response:
         return self.__post(
-            f"/api/1/game/{game_id}/move/deploy",
+            f"/api/v1/game/{game_id}/move/deploy",
             body=body,
         )
 
     def reset_state(self) -> Response:
         return self.__post(
-            "/api/1/reset",
+            "/api/v1/reset",
         )

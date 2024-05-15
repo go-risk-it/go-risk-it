@@ -31,7 +31,7 @@ func NewGameHandler(
 }
 
 func (h *GameHandlerImpl) Pattern() string {
-	return "/api/1/game"
+	return "/api/v1/game"
 }
 
 func (h *GameHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {

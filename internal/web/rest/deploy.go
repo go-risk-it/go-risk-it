@@ -29,7 +29,7 @@ func NewDeployHandler(
 }
 
 func (h *DeployHandlerImpl) Pattern() string {
-	return "/api/1/game/{id}/move/deploy"
+	return "/api/v1/game/{id}/move/deploy"
 }
 
 func (h *DeployHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
