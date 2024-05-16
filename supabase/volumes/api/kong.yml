@@ -95,17 +95,6 @@ services:
         strip_path: false
         paths:
           - /api/v1/
-    plugins:
-      - name: cors
-
-  ## Secure WS route
-  - name: risk-it-ws
-    _comment: 'http://risk-it:8080/: /ws* -> risk-it:8080/*'
-    url: http://risk-it:8080/
-    routes:
-      - name: risk-it-ws
-        strip_path: false
-        paths:
           - /ws
     plugins:
       - name: cors

@@ -21,13 +21,19 @@ type DatabaseConfig struct {
 	DisableSSL bool   `koanf:"disable_ssl"`
 }
 
+type JwtConfig struct {
+	Secret []byte `koanf:"secret"`
+}
+
 type Config struct {
+	Jwt      JwtConfig
 	Database DatabaseConfig
 }
 
 type Result struct {
 	fx.Out
 
+	JwtConfig      JwtConfig
 	DatabaseConfig DatabaseConfig
 }
 
@@ -52,6 +58,7 @@ func newConfig(log *zap.SugaredLogger) Result {
 	log.Infof("Loaded actual config: %+v", config)
 
 	return Result{
+		JwtConfig:      config.Jwt,
 		DatabaseConfig: config.Database,
 	}
 }

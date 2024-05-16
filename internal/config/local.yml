@@ -5,3 +5,6 @@ database:
   user: postgres
   password:
   disable_ssl: true
+
+jwt:
+  secret:
