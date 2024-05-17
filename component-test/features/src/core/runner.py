@@ -6,12 +6,11 @@ LOGGER = logging.getLogger(__name__)
 
 
 class ServiceRunner:
-
     def __init__(
-            self,
-            start_command: list[str],
-            path: str | PathLike,
-            timeout: int,
+        self,
+        start_command: list[str],
+        path: str | PathLike,
+        timeout: int,
     ) -> None:
         self.path = path
         self.start_command = start_command

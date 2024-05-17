@@ -13,7 +13,7 @@ class PrefixSession(requests.Session):
     """
 
     def __init__(self, prefix_url: str) -> None:
-        """Initialize BaseUrlSession."""
+        """Initialize PrefixSession."""
         super().__init__()
         self.prefix_url = prefix_url
 

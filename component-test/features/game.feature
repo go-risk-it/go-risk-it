@@ -1,19 +1,29 @@
 Feature: Creating a game
 
+  Background:
+    Given francesco creates an account
+    And gabriele creates an account
+    And giovanni creates an account
+    And vasilii creates an account
+#    And francesco logs in
+#    And giovanni logs in
+#    And gabriele logs in
+#    And vasilii logs in
+
   Scenario: Create game, connect players and make some moves
     Given a game is created with the following players
       | player    |
-      | giovanni  |
       | francesco |
       | gabriele  |
+      | giovanni  |
       | vasilii   |
-    When gabriele connects to the game
+    When francesco connects to the game
+    And gabriele connects to the game
     And giovanni connects to the game
-    And francesco connects to the game
     And vasilii connects to the game
-    Then gabriele receives all state updates
+    Then francesco receives all state updates
+    And gabriele receives all state updates
     And giovanni receives all state updates
-    And francesco receives all state updates
     And vasilii receives all state updates
 
     And it's giovanni's turn

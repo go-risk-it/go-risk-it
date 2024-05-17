@@ -11,10 +11,13 @@ from src.core.context import RiskItContext
 
 @when("{player} connects to the game")
 def step_impl(context: RiskItContext, player: str):
-    context.websocket_manager.connect_player(player, context.game_id)
+    conn = context.websocket_manager.connect_player(player, context.game_id)
+    context.players[player].connection = conn
 
 
-def deserialize(context: RiskItContext, message: str) -> Union[BoardStateMessage, GameStateMessage, PlayerStateMessage]:
+def deserialize(
+    context: RiskItContext, message: str
+) -> Union[BoardStateMessage, GameStateMessage, PlayerStateMessage]:
     parsed_message = json.loads(message)
     message_type = parsed_message["type"]
 
@@ -34,8 +37,8 @@ def deserialize(context: RiskItContext, message: str) -> Union[BoardStateMessage
     raise ValueError(f"Unknown message type: {message_type}")
 
 
-def receive_all_state_updates(context: RiskItContext, player):
-    conn = context.websocket_manager.get_conn(player)
+def receive_all_state_updates(context: RiskItContext, player: str):
+    conn = context.players[player].connection
     for i in range(3):
         deserialize(context, conn.recv())
 

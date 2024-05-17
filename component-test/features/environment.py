@@ -2,10 +2,12 @@ import logging
 import time
 
 from dotenv import load_dotenv
-from src.client.rest.client import RiskItClient
-from src.client.websockets.manager import RiskItWebsocketManager
+
+from src.client.http_client import RiskItClient
+from src.client.supabase_client import SupabaseClient
+from src.client.websocket_manager import RiskItWebsocketManager
 from src.core.context import RiskItContext
-from src.client.rest.prefix_session import PrefixSession
+from src.core.player import Player
 from src.core.runner import ServiceRunner
 
 LOGGER = logging.getLogger(__name__)
@@ -21,14 +23,14 @@ def before_all(context: RiskItContext):
     ]
 
     load_dotenv()
+    context.players = dict()
+    context.risk_it_clients = dict()
     context.websocket_manager = RiskItWebsocketManager()
-    context.session = PrefixSession(prefix_url="http://localhost:8000")
     context.service_runner = ServiceRunner(
         start_command=start_command,
         path="../",
         timeout=10,
     )
-    context.risk_it_client = RiskItClient(context.session)
 
     LOGGER.info("Starting service")
     context.service_runner.start()
@@ -36,6 +38,17 @@ def before_all(context: RiskItContext):
 
     time.sleep(2)
 
+    setup_admin_account(context)
+
+
+def setup_admin_account(context):
+    context.supabase_client = SupabaseClient()
+    response = context.supabase_client.sign_up("admin@admin.admin", "secret_password")
+    admin = Player(
+        email="admin@admin.admin", password="secret_password", name="admin", jwt=response.session.access_token
+    )
+    context.admin_http_client = RiskItClient(admin)
+
 
 def before_scenario(context: RiskItContext, _):
-    context.risk_it_client.reset_state()
+    context.admin_http_client.reset_state()

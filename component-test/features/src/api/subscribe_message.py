@@ -15,9 +15,6 @@ class SubscribeMessage:
 
 
 def build_subscribe_message(game_id) -> str:
-    message = SubscribeMessage(
-        type="subscribe",
-        data=SubscribeData(gameId=game_id)
-    )
+    message = SubscribeMessage(type="subscribe", data=SubscribeData(gameId=game_id))
 
     return json.dumps(dataclasses.asdict(message))

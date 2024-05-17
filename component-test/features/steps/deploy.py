@@ -11,6 +11,6 @@ def step_impl(context: RiskItContext, player: str, troops: int, region: str):
         "regionId": region,
         "troops": int(troops),
     }
-    response = context.risk_it_client.deploy(context.game_id, request)
+    response = context.risk_it_clients[player].deploy(context.game_id, request)
 
     assert_2xx(response)

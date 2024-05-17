@@ -1,17 +1,18 @@
 from requests import Response
 
-from src.client.rest.prefix_session import PrefixSession
+from src.client.prefix_session import PrefixSession
+from src.core.player import Player
 
 
 class RiskItClient:
-    def __init__(self, session: PrefixSession):
-        self.session = session
+    player: Player
 
-    def __post(
-            self,
-            url: str,
-            body: dict = None,
-            timeout: int = 2):
+    def __init__(self, player: Player):
+        self.player = player
+        self.session = PrefixSession(prefix_url="http://localhost:8000")
+        self.session.headers.update({"Authorization": f"Bearer {player.jwt}"})
+
+    def __post(self, url: str, body: dict = None, timeout: int = 2):
         return self.session.post(
             url,
             json=body,
