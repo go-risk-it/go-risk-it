@@ -2,17 +2,24 @@ import json
 from typing import Union
 
 from behave import *
+from websocket import create_connection
 
 from src.api.board_state_message import BoardStateMessage
 from src.api.game_state_message import GameStateMessage
 from src.api.player_state_message import PlayerStateMessage
+from src.api.subscribe_message import build_subscribe_message
 from src.core.context import RiskItContext
 
 
 @when("{player} connects to the game")
 def step_impl(context: RiskItContext, player: str):
-    conn = context.websocket_manager.connect_player(player, context.game_id)
+    conn = create_connection(
+        "ws://localhost:8000/ws",
+        timeout=2,
+        header=["Authorization: Bearer " + context.players[player].jwt],
+    )
     context.players[player].connection = conn
+    conn.send(build_subscribe_message(context.game_id))
 
 
 def deserialize(
@@ -50,5 +57,5 @@ def step_impl(context: RiskItContext, player: str):
 
 @then("all players receive all state updates")
 def step_impl(context: RiskItContext):
-    for player in context.websocket_manager.player_connections.keys():
+    for player in context.players.keys():
         receive_all_state_updates(context, player)
