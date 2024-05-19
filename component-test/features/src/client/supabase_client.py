@@ -30,3 +30,6 @@ class SupabaseClient:
                 email=email, password=password
             )
         )
+
+    def close(self):
+        self.client.auth.close()

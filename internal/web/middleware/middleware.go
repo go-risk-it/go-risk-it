@@ -8,5 +8,9 @@ var Module = fx.Options(
 			NewAuthMiddleware,
 			fx.As(new(AuthMiddleware)),
 		),
+		fx.Annotate(
+			NewWebsocketAuthMiddleware,
+			fx.As(new(WebsocketHeaderConversionMiddleware)),
+		),
 	),
 )

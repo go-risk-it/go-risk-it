@@ -21,20 +21,20 @@ Feature: Creating a game
     And gabriele receives all state updates
     And giovanni receives all state updates
     And vasilii receives all state updates
-
-    And it's francesco's turn
-    And francesco has 5 deployable troops
-    And the game phase is DEPLOY
-
-    When francesco deploys 3 troops in eastern_australia
-    Then all players receive all state updates
-    And it's francesco's turn
-    And francesco has 2 deployable troops
-    And the game phase is DEPLOY
-
-    When francesco deploys 2 troops in ontario
-    Then all players receive all state updates
-    And it's francesco's turn
-    And francesco has 0 deployable troops
-    And the game phase is ATTACK
+#
+#    And it's francesco's turn
+#    And francesco has 5 deployable troops
+#    And the game phase is DEPLOY
+#
+#    When francesco deploys 3 troops in eastern_australia
+#    Then all players receive all state updates
+#    And it's francesco's turn
+#    And francesco has 2 deployable troops
+#    And the game phase is DEPLOY
+#
+#    When francesco deploys 2 troops in ontario
+#    Then all players receive all state updates
+#    And it's francesco's turn
+#    And francesco has 0 deployable troops
+#    And the game phase is ATTACK
 

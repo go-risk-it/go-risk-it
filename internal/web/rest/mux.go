@@ -10,13 +10,14 @@ import (
 func NewServeMux(
 	routes []Route,
 	authMiddleware middleware.AuthMiddleware,
+	websocketAuthMiddleware middleware.WebsocketHeaderConversionMiddleware,
 	log *zap.SugaredLogger,
 ) *http.ServeMux {
 	mux := http.NewServeMux()
 	routeNames := make([]string, 0, len(routes))
 
 	for _, route := range routes {
-		mux.Handle(route.Pattern(), authMiddleware.Wrap(route))
+		mux.Handle(route.Pattern(), websocketAuthMiddleware.Wrap(authMiddleware.Wrap(route)))
 
 		routeNames = append(routeNames, route.Pattern())
 	}

@@ -24,6 +24,7 @@ def before_all(context: RiskItContext):
     load_dotenv()
     context.players = dict()
     context.risk_it_clients = dict()
+    context.supabase_client = SupabaseClient()
     context.service_runner = ServiceRunner(
         start_command=start_command,
         path="../",
@@ -40,7 +41,6 @@ def before_all(context: RiskItContext):
 
 
 def setup_admin_account(context):
-    context.supabase_client = SupabaseClient()
     response = context.supabase_client.sign_up("admin@admin.admin", "secret_password")
     admin = Player(
         email="admin@admin.admin",
@@ -53,3 +53,28 @@ def setup_admin_account(context):
 
 def before_scenario(context: RiskItContext, _):
     context.admin_http_client.reset_state()
+
+
+def after_scenario(context: RiskItContext, _):
+    close_ws_connections(context)
+    close_http_connections(context)
+
+
+def after_all(context: RiskItContext):
+    context.supabase_client.close()
+    context.admin_http_client.session.close()
+
+    context.admin_http_client = None
+    context.supabase_client = None
+
+
+def close_http_connections(context):
+    for client in context.risk_it_clients.values():
+        client.session.close()
+    context.risk_it_clients = dict()
+
+
+def close_ws_connections(context):
+    for player in context.players.values():
+        player.connection.close()
+    context.players = dict()

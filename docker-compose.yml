@@ -13,8 +13,6 @@ services:
     extends:
       file: supabase/docker-compose.yml
       service: kong
-    depends_on:
-      - db
 
   migrate:
     image: migrate/migrate:latest

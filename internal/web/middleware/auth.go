@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -28,17 +27,14 @@ func NewAuthMiddleware(log *zap.SugaredLogger, jwtConfig config.JwtConfig) AuthM
 
 func (m *AuthMiddlewareImpl) Wrap(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		m.log.Infow("wrapping request", "headers", request.Header)
+
 		authHeader := request.Header.Get("Authorization") // Bearer <token>
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			// Don't forget to validate the alg is what you expect:
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-			}
-
 			return m.jwtConfig.Secret, nil
-		})
+		}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 		if err != nil {
 			m.log.Errorw("Failed to parse token : ", "token", tokenString, "err", err)
 
