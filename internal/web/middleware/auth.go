@@ -30,7 +30,7 @@ func (m *AuthMiddlewareImpl) Wrap(handler http.Handler) http.Handler {
 		authHeader := request.Header.Get("Authorization") // Bearer <token>
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-		_, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			return m.jwtConfig.Secret, nil
 		}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 		if err != nil {
@@ -39,13 +39,22 @@ func (m *AuthMiddlewareImpl) Wrap(handler http.Handler) http.Handler {
 			return
 		}
 
-		// if claims, ok := token.Claims.(jwt.MapClaims); ok {
-		//	fmt.Println(claims["foo"], claims["nbf"])
-		// } else {
-		//	fmt.Println(err)
-		//}
-		// ctx := context.WithValue(request.Context(), session.CurrentUserKey, user)
-		// handler.ServeHTTP(writer, request.WithContext(ctx))
+		if !token.Valid {
+			m.log.Errorw("Invalid token", "token", tokenString)
+
+			return
+		}
+
+		m.log.Debugw("Token is valid", "token", tokenString)
+
+		if claims, ok := token.Claims.(jwt.MapClaims); ok {
+			m.log.Debugw("Claims", "claims", claims)
+		} else {
+			m.log.Error("Failed to parse claims")
+
+			return
+		}
+
 		handler.ServeHTTP(writer, request)
 	})
 }
