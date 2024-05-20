@@ -1,11 +1,7 @@
 import os
 
-from gotrue import (
-    SignUpWithEmailAndPasswordCredentials,
-    SignInWithEmailAndPasswordCredentials,
-)
-from supabase import create_client
-from supabase._sync.client import SyncClient
+from gotrue.http_clients import SyncClient
+from supabase import create_client, ClientOptions
 
 
 class SupabaseClient:
@@ -15,21 +11,19 @@ class SupabaseClient:
         self.client = create_client(
             supabase_url=os.environ.get("SUPABASE_PUBLIC_URL"),
             supabase_key=os.environ.get("ANON_KEY"),
+            options=ClientOptions(auto_refresh_token=False),
         )
 
     def sign_up(self, email: str, password: str):
         return self.client.auth.sign_up(
-            credentials=SignUpWithEmailAndPasswordCredentials(
+            credentials=dict(
                 email=email, password=password
             )
         )
 
     def sign_in(self, email: str, password: str):
         return self.client.auth.sign_in_with_password(
-            credentials=SignInWithEmailAndPasswordCredentials(
+            credentials=dict(
                 email=email, password=password
             )
         )
-
-    def close(self):
-        self.client.auth.close()

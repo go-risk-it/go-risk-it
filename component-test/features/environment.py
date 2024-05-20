@@ -61,11 +61,7 @@ def after_scenario(context: RiskItContext, _):
 
 
 def after_all(context: RiskItContext):
-    context.supabase_client.close()
     context.admin_http_client.session.close()
-
-    context.admin_http_client = None
-    context.supabase_client = None
 
 
 def close_http_connections(context):
