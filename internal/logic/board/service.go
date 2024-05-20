@@ -58,7 +58,7 @@ func (s *ServiceImpl) FetchFromFile() (*Board, error) {
 		return nil, fmt.Errorf("error unmarshaling JSON: %w", err)
 	}
 
-	s.log.Infow("Read board from file", "board", board)
+	s.log.Debugw("Read board from file", "board", board)
 
 	return board, nil
 }

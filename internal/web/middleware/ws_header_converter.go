@@ -32,8 +32,6 @@ func NewWebsocketAuthMiddleware(log *zap.SugaredLogger) WebsocketHeaderConversio
 // See: https://stackoverflow.com/questions/4361173/http-headers-in-websockets-client-api/77060459
 func (m *WebsocketHeaderConversionMiddlewareImpl) Wrap(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		m.log.Infow("wrapping request", "headers", request.Header)
-
 		subprotocol := request.Header.Get("Sec-WebSocket-Protocol")
 		if subprotocol != "" {
 			token, err := extractToken(subprotocol)

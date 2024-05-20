@@ -48,14 +48,12 @@ func newConfig(log *zap.SugaredLogger) Result {
 	readFromConfigFile(koanfManager)
 	readFromEnv(koanfManager)
 
-	log.Infof("Loaded config: %+v", koanfManager)
-
 	var config Config
 	if err := koanfManager.Unmarshal("", &config); err != nil {
 		panic(err)
 	}
 
-	log.Infof("Loaded actual config: %+v", config)
+	log.Debugf("Loaded config: %+v", koanfManager)
 
 	return Result{
 		JwtConfig:      config.Jwt,

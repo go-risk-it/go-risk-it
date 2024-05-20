@@ -27,12 +27,10 @@ func NewAuthMiddleware(log *zap.SugaredLogger, jwtConfig config.JwtConfig) AuthM
 
 func (m *AuthMiddlewareImpl) Wrap(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		m.log.Infow("wrapping request", "headers", request.Header)
-
 		authHeader := request.Header.Get("Authorization") // Bearer <token>
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		_, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			return m.jwtConfig.Secret, nil
 		}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 		if err != nil {
@@ -40,8 +38,6 @@ func (m *AuthMiddlewareImpl) Wrap(handler http.Handler) http.Handler {
 
 			return
 		}
-
-		m.log.Debugf("Successfully validated token: %+v", token)
 
 		// if claims, ok := token.Claims.(jwt.MapClaims); ok {
 		//	fmt.Println(claims["foo"], claims["nbf"])

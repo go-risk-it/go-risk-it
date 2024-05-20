@@ -120,7 +120,7 @@ func (s *ServiceImpl) GetRegionsQ(
 		return nil, fmt.Errorf("failed to get regions: %w", err)
 	}
 
-	s.log.Infow("got regions", "regions", regions)
+	s.log.Debugw("got regions", "regions", regions)
 
 	return regions, nil
 }
@@ -137,8 +137,6 @@ func (s *ServiceImpl) GetRegionQ(
 	if err != nil {
 		return nil, fmt.Errorf("failed to get regions: %w", err)
 	}
-
-	s.log.Infow("got regions", "regions", regions)
 
 	result := extractRegionFrom(region, regions)
 	if result == nil {

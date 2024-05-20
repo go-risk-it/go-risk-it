@@ -71,14 +71,14 @@ func (s *ServiceImpl) CreateGame(
 	board *board.Board,
 	users []string,
 ) (int64, error) {
-	s.log.Infow("creating game", "board", board, "users", users)
+	s.log.Debugw("creating game", "board", board, "users", users)
 
 	gameID, err := querier.InsertGame(ctx)
 	if err != nil {
 		return -1, fmt.Errorf("failed to insert game: %w", err)
 	}
 
-	s.log.Infow("inserted game", "id", gameID)
+	s.log.Debugw("inserted game", "id", gameID)
 
 	players, err := s.playerService.CreatePlayers(ctx, querier, gameID, users)
 	if err != nil {
@@ -89,7 +89,7 @@ func (s *ServiceImpl) CreateGame(
 		return -1, fmt.Errorf("failed to create regions: %w", err)
 	}
 
-	s.log.Infow("successfully created game", "board", board, "users", users)
+	s.log.Debugw("successfully created game", "board", board, "users", users)
 
 	return gameID, nil
 }
