@@ -339,7 +339,7 @@ services:
   # Comment out everything below this point if you are using an external Postgres database
   db:
     container_name: supabase-db
-    image: supabase/postgres:15.1.1.52@sha256:1a09be579bcab79491cfcabd86b5f1de2e5b216bdf2551627e1023018e8628af
+    image: supabase/postgres:15.1.1.53@sha256:4f38dae78fec0946ee8f69d2370878c9b2219fabb971a6e6d6406dae053a298a
     healthcheck:
       test: pg_isready -U postgres -h localhost
       interval: 5s
