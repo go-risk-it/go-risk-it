@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game"
@@ -20,12 +21,15 @@ var (
 	errInsertGame    = errors.New("insert logic error")
 )
 
-// creates a logic with a valid board and list of users.
+// creates a game with a valid board and list of users.
 func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 	t.Parallel()
 
 	gameID := int64(1)
-	users := []string{"Giovanni", "Gabriele"}
+	users := []request.Player{
+		{UserID: "fc497971-de4d-49c2-842a-4af62ec9e858", Name: "Giovanni"},
+		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "Gabriele"},
+	}
 	ctx := context.Background()
 
 	mockQuerier := db.NewQuerier(t)
@@ -94,7 +98,10 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 	// Set up test data
 	ctx := context.Background()
 	gameBoard := &board.Board{} //nolint:exhaustivestruct
-	users := []string{"user1", "user2"}
+	users := []request.Player{
+		{UserID: "fc497971-de4d-49c2-842a-4af62ec9e858", Name: "user1"},
+		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "user2"},
+	}
 
 	// Set up expectations for InsertGame method
 	querier.On("InsertGame", ctx).Return(int64(0), errInsertGame)
@@ -127,7 +134,10 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 	// Set up test data
 	ctx := context.Background()
 	gameBoard := &board.Board{}
-	users := []string{"user1", "user2"}
+	users := []request.Player{
+		{UserID: "fc497971-de4d-49c2-842a-4af62ec9e858", Name: "user1"},
+		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "user2"},
+	}
 
 	// Set up expectations for InsertGame method
 	querier.On("InsertGame", ctx).Return(int64(1), nil)

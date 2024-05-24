@@ -3,11 +3,12 @@ from typing import Optional
 
 from websocket import WebSocket
 
+from src.core.user import User
+
 
 @dataclass
 class Player:
-    email: str
-    password: str
+    user: User
     name: str
     jwt: str
     connection: Optional[WebSocket] = None

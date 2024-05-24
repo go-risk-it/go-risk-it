@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 
+from dataclasses_json import dataclass_json
 
+
+@dataclass_json
 @dataclass
 class Region:
     id: str
@@ -8,6 +11,7 @@ class Region:
     troops: int
 
 
+@dataclass_json
 @dataclass
 class BoardStateData:
     regions: list[Region]

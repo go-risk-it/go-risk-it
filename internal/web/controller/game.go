@@ -55,7 +55,8 @@ func (c *GameControllerImpl) CreateGame(
 }
 
 func (c *GameControllerImpl) GetGameState(
-	ctx context.Context, gameID int64,
+	ctx context.Context,
+	gameID int64,
 ) (message.GameState, error) {
 	gameState, err := c.gameService.GetGameState(ctx, gameID)
 	if err != nil {

@@ -1,7 +1,8 @@
 package message
 
 type Player struct {
-	ID             string `json:"id"`
+	UserID         string `json:"userId"`
+	Name           string `json:"name"`
 	Index          int64  `json:"index"`
 	TroopsToDeploy int64  `json:"troopsToDeploy"`
 }

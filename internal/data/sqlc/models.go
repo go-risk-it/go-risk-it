@@ -75,6 +75,7 @@ type Mission struct {
 type Player struct {
 	ID               int64
 	GameID           int64
+	Name             string
 	UserID           string
 	TurnIndex        int64
 	DeployableTroops int64

@@ -4,9 +4,9 @@ from typing import Union
 from behave import *
 from websocket import create_connection
 
-from src.api.board_state_message import BoardStateMessage
-from src.api.game_state_message import GameStateMessage
-from src.api.player_state_message import PlayerStateMessage
+from src.api.board_state_message import BoardStateMessage, BoardStateData
+from src.api.game_state_message import GameStateMessage, GameStateData
+from src.api.player_state_message import PlayerStateMessage, PlayerStateData
 from src.api.subscribe_message import build_subscribe_message
 from src.core.context import RiskItContext
 
@@ -30,15 +30,15 @@ def deserialize(
 
     if message_type == "gameState":
         game_state = GameStateMessage(**parsed_message)
-        context.game_state = game_state.data
+        context.game_state = GameStateData.schema().load(game_state.data)
         return game_state
     elif message_type == "playerState":
         player_state = PlayerStateMessage(**parsed_message)
-        context.player_state = player_state.data
+        context.player_state = PlayerStateData.schema().load(player_state.data)
         return player_state
     elif message_type == "boardState":
         board_state = BoardStateMessage(**parsed_message)
-        context.board_state = board_state.data
+        context.board_state = BoardStateData.schema().load(board_state.data)
         return board_state
 
     raise ValueError(f"Unknown message type: {message_type}")

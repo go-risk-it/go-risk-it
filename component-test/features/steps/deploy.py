@@ -7,7 +7,7 @@ from util.http_assertions import assert_2xx
 @when("{player} deploys {troops} troops in {region}")
 def step_impl(context: RiskItContext, player: str, troops: int, region: str):
     request = {
-        "playerId": player,
+        "userId": context.players[player].user.id,
         "regionId": region,
         "troops": int(troops),
     }

@@ -8,6 +8,7 @@ from src.client.supabase_client import SupabaseClient
 from src.core.context import RiskItContext
 from src.core.player import Player
 from src.core.runner import ServiceRunner
+from src.core.user import User
 
 LOGGER = logging.getLogger(__name__)
 
@@ -42,9 +43,9 @@ def before_all(context: RiskItContext):
 
 def setup_admin_account(context):
     response = context.supabase_client.sign_up("admin@admin.admin", "secret_password")
+    admin_user = User(id="asd", email="admin@admin.admin", password="secret_password")
     admin = Player(
-        email="admin@admin.admin",
-        password="secret_password",
+        user=admin_user,
         name="admin",
         jwt=response.session.access_token,
     )

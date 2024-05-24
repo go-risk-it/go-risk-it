@@ -2,17 +2,18 @@ CREATE TYPE phase AS ENUM ('CARDS', 'DEPLOY', 'ATTACK', 'REINFORCE');
 
 CREATE TABLE game
 (
-    id            BIGSERIAL PRIMARY KEY,
+    id    BIGSERIAL PRIMARY KEY,
     turn  BIGINT NOT NULL DEFAULT 0,
     phase phase  NOT NULL DEFAULT 'DEPLOY'
 );
 
 CREATE TABLE player
 (
-    id               BIGSERIAL PRIMARY KEY,
-    game_id          BIGINT NOT NULL,
-    user_id          TEXT   NOT NULL,
-    turn_index       BIGINT NOT NULL,
+    id                BIGSERIAL PRIMARY KEY,
+    game_id           BIGINT NOT NULL,
+    name              TEXT   NOT NULL,
+    user_id           TEXT   NOT NULL,
+    turn_index        BIGINT NOT NULL,
     deployable_troops BIGINT NOT NULL,
     FOREIGN KEY (game_id) REFERENCES game (id)
 );

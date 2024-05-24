@@ -31,7 +31,7 @@ func (c *MoveControllerImpl) PerformDeployMove(
 	if err := c.deployService.PerformDeployMoveWithTx(
 		ctx,
 		gameID,
-		deployMove.PlayerID,
+		deployMove.UserID,
 		deployMove.RegionID,
 		deployMove.Troops,
 	); err != nil {

@@ -8,7 +8,7 @@ Feature: Creating a game
 
   Scenario: Create game, connect players and make some moves
     Given a game is created with the following players
-      | player    |
+      | player      |
       | francesco |
       | gabriele  |
       | giovanni  |

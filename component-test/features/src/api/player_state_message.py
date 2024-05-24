@@ -1,13 +1,18 @@
 from dataclasses import dataclass
 
+from dataclasses_json import dataclass_json
 
+
+@dataclass_json
 @dataclass
 class Player:
-    id: str
+    userId: str
+    name: str
     index: int
     troopsToDeploy: int
 
 
+@dataclass_json
 @dataclass
 class PlayerStateData:
     players: list[Player]

@@ -39,8 +39,8 @@ func TestControllerImpl_GetPlayerState(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, message.PlayersState{
 		Players: []message.Player{
-			{ID: "user1", Index: 0},
-			{ID: "user2", Index: 1},
+			{UserID: "user1", Index: 0},
+			{UserID: "user2", Index: 1},
 		},
 	}, playerState)
 

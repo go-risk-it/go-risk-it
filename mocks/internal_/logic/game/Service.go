@@ -11,6 +11,8 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
+	request "github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
+
 	sqlc "github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 )
 
@@ -27,9 +29,9 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
-// CreateGame provides a mock function with given fields: ctx, querier, _a2, users
-func (_m *Service) CreateGame(ctx context.Context, querier db.Querier, _a2 *board.Board, users []string) (int64, error) {
-	ret := _m.Called(ctx, querier, _a2, users)
+// CreateGame provides a mock function with given fields: ctx, querier, _a2, players
+func (_m *Service) CreateGame(ctx context.Context, querier db.Querier, _a2 *board.Board, players []request.Player) (int64, error) {
+	ret := _m.Called(ctx, querier, _a2, players)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateGame")
@@ -37,17 +39,17 @@ func (_m *Service) CreateGame(ctx context.Context, querier db.Querier, _a2 *boar
 
 	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, db.Querier, *board.Board, []string) (int64, error)); ok {
-		return rf(ctx, querier, _a2, users)
+	if rf, ok := ret.Get(0).(func(context.Context, db.Querier, *board.Board, []request.Player) (int64, error)); ok {
+		return rf(ctx, querier, _a2, players)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, db.Querier, *board.Board, []string) int64); ok {
-		r0 = rf(ctx, querier, _a2, users)
+	if rf, ok := ret.Get(0).(func(context.Context, db.Querier, *board.Board, []request.Player) int64); ok {
+		r0 = rf(ctx, querier, _a2, players)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, db.Querier, *board.Board, []string) error); ok {
-		r1 = rf(ctx, querier, _a2, users)
+	if rf, ok := ret.Get(1).(func(context.Context, db.Querier, *board.Board, []request.Player) error); ok {
+		r1 = rf(ctx, querier, _a2, players)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -64,14 +66,14 @@ type Service_CreateGame_Call struct {
 //   - ctx context.Context
 //   - querier db.Querier
 //   - _a2 *board.Board
-//   - users []string
-func (_e *Service_Expecter) CreateGame(ctx interface{}, querier interface{}, _a2 interface{}, users interface{}) *Service_CreateGame_Call {
-	return &Service_CreateGame_Call{Call: _e.mock.On("CreateGame", ctx, querier, _a2, users)}
+//   - players []request.Player
+func (_e *Service_Expecter) CreateGame(ctx interface{}, querier interface{}, _a2 interface{}, players interface{}) *Service_CreateGame_Call {
+	return &Service_CreateGame_Call{Call: _e.mock.On("CreateGame", ctx, querier, _a2, players)}
 }
 
-func (_c *Service_CreateGame_Call) Run(run func(ctx context.Context, querier db.Querier, _a2 *board.Board, users []string)) *Service_CreateGame_Call {
+func (_c *Service_CreateGame_Call) Run(run func(ctx context.Context, querier db.Querier, _a2 *board.Board, players []request.Player)) *Service_CreateGame_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(db.Querier), args[2].(*board.Board), args[3].([]string))
+		run(args[0].(context.Context), args[1].(db.Querier), args[2].(*board.Board), args[3].([]request.Player))
 	})
 	return _c
 }
@@ -81,14 +83,14 @@ func (_c *Service_CreateGame_Call) Return(_a0 int64, _a1 error) *Service_CreateG
 	return _c
 }
 
-func (_c *Service_CreateGame_Call) RunAndReturn(run func(context.Context, db.Querier, *board.Board, []string) (int64, error)) *Service_CreateGame_Call {
+func (_c *Service_CreateGame_Call) RunAndReturn(run func(context.Context, db.Querier, *board.Board, []request.Player) (int64, error)) *Service_CreateGame_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// CreateGameWithTx provides a mock function with given fields: ctx, _a1, users
-func (_m *Service) CreateGameWithTx(ctx context.Context, _a1 *board.Board, users []string) (int64, error) {
-	ret := _m.Called(ctx, _a1, users)
+// CreateGameWithTx provides a mock function with given fields: ctx, _a1, players
+func (_m *Service) CreateGameWithTx(ctx context.Context, _a1 *board.Board, players []request.Player) (int64, error) {
+	ret := _m.Called(ctx, _a1, players)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateGameWithTx")
@@ -96,17 +98,17 @@ func (_m *Service) CreateGameWithTx(ctx context.Context, _a1 *board.Board, users
 
 	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *board.Board, []string) (int64, error)); ok {
-		return rf(ctx, _a1, users)
+	if rf, ok := ret.Get(0).(func(context.Context, *board.Board, []request.Player) (int64, error)); ok {
+		return rf(ctx, _a1, players)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *board.Board, []string) int64); ok {
-		r0 = rf(ctx, _a1, users)
+	if rf, ok := ret.Get(0).(func(context.Context, *board.Board, []request.Player) int64); ok {
+		r0 = rf(ctx, _a1, players)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *board.Board, []string) error); ok {
-		r1 = rf(ctx, _a1, users)
+	if rf, ok := ret.Get(1).(func(context.Context, *board.Board, []request.Player) error); ok {
+		r1 = rf(ctx, _a1, players)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -122,14 +124,14 @@ type Service_CreateGameWithTx_Call struct {
 // CreateGameWithTx is a helper method to define mock.On call
 //   - ctx context.Context
 //   - _a1 *board.Board
-//   - users []string
-func (_e *Service_Expecter) CreateGameWithTx(ctx interface{}, _a1 interface{}, users interface{}) *Service_CreateGameWithTx_Call {
-	return &Service_CreateGameWithTx_Call{Call: _e.mock.On("CreateGameWithTx", ctx, _a1, users)}
+//   - players []request.Player
+func (_e *Service_Expecter) CreateGameWithTx(ctx interface{}, _a1 interface{}, players interface{}) *Service_CreateGameWithTx_Call {
+	return &Service_CreateGameWithTx_Call{Call: _e.mock.On("CreateGameWithTx", ctx, _a1, players)}
 }
 
-func (_c *Service_CreateGameWithTx_Call) Run(run func(ctx context.Context, _a1 *board.Board, users []string)) *Service_CreateGameWithTx_Call {
+func (_c *Service_CreateGameWithTx_Call) Run(run func(ctx context.Context, _a1 *board.Board, players []request.Player)) *Service_CreateGameWithTx_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*board.Board), args[2].([]string))
+		run(args[0].(context.Context), args[1].(*board.Board), args[2].([]request.Player))
 	})
 	return _c
 }
@@ -139,7 +141,7 @@ func (_c *Service_CreateGameWithTx_Call) Return(_a0 int64, _a1 error) *Service_C
 	return _c
 }
 
-func (_c *Service_CreateGameWithTx_Call) RunAndReturn(run func(context.Context, *board.Board, []string) (int64, error)) *Service_CreateGameWithTx_Call {
+func (_c *Service_CreateGameWithTx_Call) RunAndReturn(run func(context.Context, *board.Board, []request.Player) (int64, error)) *Service_CreateGameWithTx_Call {
 	_c.Call.Return(run)
 	return _c
 }

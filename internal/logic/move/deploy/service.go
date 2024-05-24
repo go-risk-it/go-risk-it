@@ -17,7 +17,7 @@ type Service interface {
 	PerformDeployMoveWithTx(
 		ctx context.Context,
 		gameID int64,
-		player string,
+		userID string,
 		region string,
 		troops int,
 	) error
@@ -25,7 +25,7 @@ type Service interface {
 		ctx context.Context,
 		querier db.Querier,
 		gameID int64,
-		player string,
+		userID string,
 		region string,
 		troops int,
 	) error
@@ -223,9 +223,9 @@ func (s *ServiceImpl) checkTurn(
 	return nil
 }
 
-func extractPlayerFrom(player string, players []sqlc.Player) *sqlc.Player {
+func extractPlayerFrom(userID string, players []sqlc.Player) *sqlc.Player {
 	for _, p := range players {
-		if p.UserID == player {
+		if p.UserID == userID {
 			return &p
 		}
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	sqlc "github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/board"
@@ -13,12 +14,16 @@ import (
 )
 
 type Service interface {
-	CreateGameWithTx(ctx context.Context, board *board.Board, users []string) (int64, error)
+	CreateGameWithTx(
+		ctx context.Context,
+		board *board.Board,
+		players []request.Player,
+	) (int64, error)
 	CreateGame(
 		ctx context.Context,
 		querier db.Querier,
 		board *board.Board,
-		users []string) (int64, error)
+		players []request.Player) (int64, error)
 	GetGameState(ctx context.Context, gameID int64) (*sqlc.Game, error)
 	GetGameStateQ(ctx context.Context, querier db.Querier, gameID int64) (*sqlc.Game, error)
 	SetGamePhaseQ(ctx context.Context, querier db.Querier, gameID int64, phase sqlc.Phase) error
@@ -48,10 +53,10 @@ func NewService(
 func (s *ServiceImpl) CreateGameWithTx(
 	ctx context.Context,
 	board *board.Board,
-	users []string,
+	players []request.Player,
 ) (int64, error) {
 	gameID, err := s.querier.ExecuteInTransaction(ctx, func(qtx db.Querier) (interface{}, error) {
-		return s.CreateGame(ctx, qtx, board, users)
+		return s.CreateGame(ctx, qtx, board, players)
 	})
 	if err != nil {
 		return -1, fmt.Errorf("failed to create game: %w", err)
@@ -69,9 +74,9 @@ func (s *ServiceImpl) CreateGame(
 	ctx context.Context,
 	querier db.Querier,
 	board *board.Board,
-	users []string,
+	players []request.Player,
 ) (int64, error) {
-	s.log.Debugw("creating game", "board", board, "users", users)
+	s.log.Debugw("creating game", "board", board, "players", players)
 
 	gameID, err := querier.InsertGame(ctx)
 	if err != nil {
@@ -80,16 +85,17 @@ func (s *ServiceImpl) CreateGame(
 
 	s.log.Debugw("inserted game", "id", gameID)
 
-	players, err := s.playerService.CreatePlayers(ctx, querier, gameID, users)
+	createdPlayers, err := s.playerService.CreatePlayers(ctx, querier, gameID, players)
 	if err != nil {
 		return -1, fmt.Errorf("failed to create players: %w", err)
 	}
 
-	if err := s.regionService.CreateRegions(ctx, querier, players, board.Regions); err != nil {
+	err = s.regionService.CreateRegions(ctx, querier, createdPlayers, board.Regions)
+	if err != nil {
 		return -1, fmt.Errorf("failed to create regions: %w", err)
 	}
 
-	s.log.Debugw("successfully created game", "board", board, "users", users)
+	s.log.Debugw("successfully created game", "board", board, "players", players)
 
 	return gameID, nil
 }

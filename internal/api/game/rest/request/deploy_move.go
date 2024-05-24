@@ -1,7 +1,7 @@
 package request
 
 type DeployMove struct {
-	PlayerID string `json:"playerId"`
+	UserID   string `json:"userId"`
 	RegionID string `json:"regionId"`
 	Troops   int    `json:"troops"`
 }
