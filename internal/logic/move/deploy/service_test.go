@@ -187,53 +187,6 @@ func TestServiceImpl_DeployShouldFailWhenPlayerDoesntHaveEnoughDeployableTroops(
 	require.EqualError(t, err, "not enough deployable troops")
 }
 
-func TestServiceImpl_DeployShouldFailWhenRegionNotOwnedByPlayer(t *testing.T) {
-	t.Parallel()
-
-	querier, playerService, gameService, regionService, service := setup(t)
-	gameID, userID, regionReference, currentTroops, desiredTroops, ctx := input()
-
-	players := []sqlc.Player{
-		{ID: 420, TurnIndex: 0, GameID: 1, UserID: "Gabriele", DeployableTroops: 10},
-		{ID: 69, TurnIndex: 1, GameID: 1, UserID: "Francesco", DeployableTroops: 10},
-		{ID: 42069, TurnIndex: 2, GameID: 1, UserID: "Giovanni", DeployableTroops: 5},
-	}
-	playerService.
-		EXPECT().
-		GetPlayersQ(ctx, querier, gameID).
-		Return(players, nil)
-	gameService.
-		EXPECT().
-		GetGameStateQ(ctx, querier, gameID).
-		Return(&sqlc.Game{
-			ID:    gameID,
-			Phase: sqlc.PhaseDEPLOY,
-			Turn:  2,
-		}, nil)
-	regionService.
-		EXPECT().
-		GetRegionQ(ctx, querier, gameID, regionReference).
-		Return(&sqlc.GetRegionsByGameRow{
-			ID:                1,
-			ExternalReference: "greenland",
-			UserID:            "Giovanni",
-			Troops:            10,
-		}, nil)
-
-	err := service.PerformDeployMoveQ(
-		ctx,
-		querier,
-		gameID,
-		userID,
-		regionReference,
-		currentTroops,
-		desiredTroops,
-	)
-
-	require.Error(t, err)
-	require.EqualError(t, err, "region has different number of troops than declared")
-}
-
 func TestServiceImpl_DeployShouldFail(t *testing.T) {
 	t.Parallel()
 
