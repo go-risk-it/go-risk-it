@@ -32,8 +32,8 @@ func (q *Queries) ExecuteInTransaction(
 
 func (q *Queries) ExecuteInTransactionWithIsolation(
 	ctx context.Context,
-	txFunc func(Querier) (interface{}, error),
 	isolationLevel pgx.TxIsoLevel,
+	txFunc func(Querier) (interface{}, error),
 ) (interface{}, error) {
 	q.log.Infow("starting transaction", "isolation", isolationLevel)
 

@@ -132,9 +132,9 @@ func (_c *Querier_ExecuteInTransaction_Call) RunAndReturn(run func(context.Conte
 	return _c
 }
 
-// ExecuteInTransactionWithIsolation provides a mock function with given fields: ctx, txFunc, isolationLevel
-func (_m *Querier) ExecuteInTransactionWithIsolation(ctx context.Context, txFunc func(db.Querier) (interface{}, error), isolationLevel pgx.TxIsoLevel) (interface{}, error) {
-	ret := _m.Called(ctx, txFunc, isolationLevel)
+// ExecuteInTransactionWithIsolation provides a mock function with given fields: ctx, isolationLevel, txFunc
+func (_m *Querier) ExecuteInTransactionWithIsolation(ctx context.Context, isolationLevel pgx.TxIsoLevel, txFunc func(db.Querier) (interface{}, error)) (interface{}, error) {
+	ret := _m.Called(ctx, isolationLevel, txFunc)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ExecuteInTransactionWithIsolation")
@@ -142,19 +142,19 @@ func (_m *Querier) ExecuteInTransactionWithIsolation(ctx context.Context, txFunc
 
 	var r0 interface{}
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, func(db.Querier) (interface{}, error), pgx.TxIsoLevel) (interface{}, error)); ok {
-		return rf(ctx, txFunc, isolationLevel)
+	if rf, ok := ret.Get(0).(func(context.Context, pgx.TxIsoLevel, func(db.Querier) (interface{}, error)) (interface{}, error)); ok {
+		return rf(ctx, isolationLevel, txFunc)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, func(db.Querier) (interface{}, error), pgx.TxIsoLevel) interface{}); ok {
-		r0 = rf(ctx, txFunc, isolationLevel)
+	if rf, ok := ret.Get(0).(func(context.Context, pgx.TxIsoLevel, func(db.Querier) (interface{}, error)) interface{}); ok {
+		r0 = rf(ctx, isolationLevel, txFunc)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(interface{})
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, func(db.Querier) (interface{}, error), pgx.TxIsoLevel) error); ok {
-		r1 = rf(ctx, txFunc, isolationLevel)
+	if rf, ok := ret.Get(1).(func(context.Context, pgx.TxIsoLevel, func(db.Querier) (interface{}, error)) error); ok {
+		r1 = rf(ctx, isolationLevel, txFunc)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -169,15 +169,15 @@ type Querier_ExecuteInTransactionWithIsolation_Call struct {
 
 // ExecuteInTransactionWithIsolation is a helper method to define mock.On call
 //   - ctx context.Context
-//   - txFunc func(db.Querier)(interface{} , error)
 //   - isolationLevel pgx.TxIsoLevel
-func (_e *Querier_Expecter) ExecuteInTransactionWithIsolation(ctx interface{}, txFunc interface{}, isolationLevel interface{}) *Querier_ExecuteInTransactionWithIsolation_Call {
-	return &Querier_ExecuteInTransactionWithIsolation_Call{Call: _e.mock.On("ExecuteInTransactionWithIsolation", ctx, txFunc, isolationLevel)}
+//   - txFunc func(db.Querier)(interface{} , error)
+func (_e *Querier_Expecter) ExecuteInTransactionWithIsolation(ctx interface{}, isolationLevel interface{}, txFunc interface{}) *Querier_ExecuteInTransactionWithIsolation_Call {
+	return &Querier_ExecuteInTransactionWithIsolation_Call{Call: _e.mock.On("ExecuteInTransactionWithIsolation", ctx, isolationLevel, txFunc)}
 }
 
-func (_c *Querier_ExecuteInTransactionWithIsolation_Call) Run(run func(ctx context.Context, txFunc func(db.Querier) (interface{}, error), isolationLevel pgx.TxIsoLevel)) *Querier_ExecuteInTransactionWithIsolation_Call {
+func (_c *Querier_ExecuteInTransactionWithIsolation_Call) Run(run func(ctx context.Context, isolationLevel pgx.TxIsoLevel, txFunc func(db.Querier) (interface{}, error))) *Querier_ExecuteInTransactionWithIsolation_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(func(db.Querier) (interface{}, error)), args[2].(pgx.TxIsoLevel))
+		run(args[0].(context.Context), args[1].(pgx.TxIsoLevel), args[2].(func(db.Querier) (interface{}, error)))
 	})
 	return _c
 }
@@ -187,7 +187,7 @@ func (_c *Querier_ExecuteInTransactionWithIsolation_Call) Return(_a0 interface{}
 	return _c
 }
 
-func (_c *Querier_ExecuteInTransactionWithIsolation_Call) RunAndReturn(run func(context.Context, func(db.Querier) (interface{}, error), pgx.TxIsoLevel) (interface{}, error)) *Querier_ExecuteInTransactionWithIsolation_Call {
+func (_c *Querier_ExecuteInTransactionWithIsolation_Call) RunAndReturn(run func(context.Context, pgx.TxIsoLevel, func(db.Querier) (interface{}, error)) (interface{}, error)) *Querier_ExecuteInTransactionWithIsolation_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -16,8 +16,8 @@ type Querier interface {
 		txFunc func(Querier) (interface{}, error)) (interface{}, error)
 	ExecuteInTransactionWithIsolation(
 		ctx context.Context,
-		txFunc func(Querier) (interface{}, error),
 		isolationLevel pgx.TxIsoLevel,
+		txFunc func(Querier) (interface{}, error),
 	) (interface{}, error)
 }
 

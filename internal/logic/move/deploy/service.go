@@ -10,6 +10,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/region"
 	"github.com/go-risk-it/go-risk-it/internal/signals"
+	"github.com/jackc/pgx/v5"
 	"go.uber.org/zap"
 )
 
@@ -74,17 +75,21 @@ func (s *ServiceImpl) PerformDeployMoveWithTx(
 	currentTroops int64,
 	desiredTroops int64,
 ) error {
-	_, err := s.querier.ExecuteInTransaction(ctx, func(qtx db.Querier) (interface{}, error) {
-		return nil, s.PerformDeployMoveQ(
-			ctx,
-			qtx,
-			gameID,
-			userID,
-			region,
-			currentTroops,
-			desiredTroops,
-		)
-	})
+	_, err := s.querier.ExecuteInTransactionWithIsolation(
+		ctx,
+		pgx.RepeatableRead,
+		func(qtx db.Querier) (interface{}, error) {
+			return nil, s.PerformDeployMoveQ(
+				ctx,
+				qtx,
+				gameID,
+				userID,
+				region,
+				currentTroops,
+				desiredTroops,
+			)
+		},
+	)
 	if err != nil {
 		return fmt.Errorf("failed to perform deploy move: %w", err)
 	}
