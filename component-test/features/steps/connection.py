@@ -4,7 +4,7 @@ from typing import Union
 from behave import *
 from websocket import create_connection
 
-from src.api.board_state_message import BoardStateMessage, BoardStateData
+from src.api.board_state_message import BoardStateMessage, BoardStateData, IndexedBoardStateData
 from src.api.game_state_message import GameStateMessage, GameStateData
 from src.api.player_state_message import PlayerStateMessage, PlayerStateData
 from src.api.subscribe_message import build_subscribe_message
@@ -23,22 +23,27 @@ def step_impl(context: RiskItContext, player: str):
 
 
 def deserialize(
-    context: RiskItContext, message: str
+        context: RiskItContext, message: str
 ) -> Union[BoardStateMessage, GameStateMessage, PlayerStateMessage]:
     parsed_message = json.loads(message)
     message_type = parsed_message["type"]
 
     if message_type == "gameState":
-        game_state = GameStateMessage(**parsed_message)
-        context.game_state = GameStateData.schema().load(game_state.data)
-        return game_state
+        game_state_message = GameStateMessage(**parsed_message)
+        context.game_state = GameStateData.schema().load(game_state_message.data)
+        return game_state_message
     elif message_type == "playerState":
-        player_state = PlayerStateMessage(**parsed_message)
-        context.player_state = PlayerStateData.schema().load(player_state.data)
-        return player_state
+        player_state_message = PlayerStateMessage(**parsed_message)
+        context.player_state = PlayerStateData.schema().load(player_state_message.data)
+        return player_state_message
     elif message_type == "boardState":
-        board_state = BoardStateMessage(**parsed_message)
-        context.board_state = BoardStateData.schema().load(board_state.data)
+        board_state_message = BoardStateMessage(**parsed_message)
+        board_state = BoardStateData.schema().load(board_state_message.data)
+        context.board_state = IndexedBoardStateData(
+            regions={
+                region.id: region
+                for region in board_state.regions
+            })
         return board_state
 
     raise ValueError(f"Unknown message type: {message_type}")

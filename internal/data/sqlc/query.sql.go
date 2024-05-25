@@ -92,7 +92,7 @@ func (q *Queries) GetPlayersByGame(ctx context.Context, gameID int64) ([]Player,
 }
 
 const getRegionsByGame = `-- name: GetRegionsByGame :many
-SELECT r.id, r.external_reference, r.troops, p.user_id as player_name
+SELECT r.id, r.external_reference, r.troops, p.user_id
 FROM region r
          JOIN player p on r.player_id = p.id
          JOIN game g on p.game_id = g.id
@@ -103,7 +103,7 @@ type GetRegionsByGameRow struct {
 	ID                int64
 	ExternalReference string
 	Troops            int64
-	PlayerName        string
+	UserID            string
 }
 
 func (q *Queries) GetRegionsByGame(ctx context.Context, id int64) ([]GetRegionsByGameRow, error) {
@@ -119,7 +119,7 @@ func (q *Queries) GetRegionsByGame(ctx context.Context, id int64) ([]GetRegionsB
 			&i.ID,
 			&i.ExternalReference,
 			&i.Troops,
-			&i.PlayerName,
+			&i.UserID,
 		); err != nil {
 			return nil, err
 		}

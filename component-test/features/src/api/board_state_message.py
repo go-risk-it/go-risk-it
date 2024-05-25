@@ -21,3 +21,8 @@ class BoardStateData:
 class BoardStateMessage:
     type: str
     data: BoardStateData
+
+
+@dataclass
+class IndexedBoardStateData:
+    regions: dict[str, Region]

@@ -8,6 +8,8 @@ import (
 	db "github.com/go-risk-it/go-risk-it/internal/data/db"
 	mock "github.com/stretchr/testify/mock"
 
+	pgx "github.com/jackc/pgx/v5"
+
 	sqlc "github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 )
 
@@ -126,6 +128,66 @@ func (_c *Querier_ExecuteInTransaction_Call) Return(_a0 interface{}, _a1 error) 
 }
 
 func (_c *Querier_ExecuteInTransaction_Call) RunAndReturn(run func(context.Context, func(db.Querier) (interface{}, error)) (interface{}, error)) *Querier_ExecuteInTransaction_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ExecuteInTransactionWithIsolation provides a mock function with given fields: ctx, txFunc, isolationLevel
+func (_m *Querier) ExecuteInTransactionWithIsolation(ctx context.Context, txFunc func(db.Querier) (interface{}, error), isolationLevel pgx.TxIsoLevel) (interface{}, error) {
+	ret := _m.Called(ctx, txFunc, isolationLevel)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ExecuteInTransactionWithIsolation")
+	}
+
+	var r0 interface{}
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, func(db.Querier) (interface{}, error), pgx.TxIsoLevel) (interface{}, error)); ok {
+		return rf(ctx, txFunc, isolationLevel)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, func(db.Querier) (interface{}, error), pgx.TxIsoLevel) interface{}); ok {
+		r0 = rf(ctx, txFunc, isolationLevel)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(interface{})
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, func(db.Querier) (interface{}, error), pgx.TxIsoLevel) error); ok {
+		r1 = rf(ctx, txFunc, isolationLevel)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_ExecuteInTransactionWithIsolation_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ExecuteInTransactionWithIsolation'
+type Querier_ExecuteInTransactionWithIsolation_Call struct {
+	*mock.Call
+}
+
+// ExecuteInTransactionWithIsolation is a helper method to define mock.On call
+//   - ctx context.Context
+//   - txFunc func(db.Querier)(interface{} , error)
+//   - isolationLevel pgx.TxIsoLevel
+func (_e *Querier_Expecter) ExecuteInTransactionWithIsolation(ctx interface{}, txFunc interface{}, isolationLevel interface{}) *Querier_ExecuteInTransactionWithIsolation_Call {
+	return &Querier_ExecuteInTransactionWithIsolation_Call{Call: _e.mock.On("ExecuteInTransactionWithIsolation", ctx, txFunc, isolationLevel)}
+}
+
+func (_c *Querier_ExecuteInTransactionWithIsolation_Call) Run(run func(ctx context.Context, txFunc func(db.Querier) (interface{}, error), isolationLevel pgx.TxIsoLevel)) *Querier_ExecuteInTransactionWithIsolation_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(func(db.Querier) (interface{}, error)), args[2].(pgx.TxIsoLevel))
+	})
+	return _c
+}
+
+func (_c *Querier_ExecuteInTransactionWithIsolation_Call) Return(_a0 interface{}, _a1 error) *Querier_ExecuteInTransactionWithIsolation_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_ExecuteInTransactionWithIsolation_Call) RunAndReturn(run func(context.Context, func(db.Querier) (interface{}, error), pgx.TxIsoLevel) (interface{}, error)) *Querier_ExecuteInTransactionWithIsolation_Call {
 	_c.Call.Return(run)
 	return _c
 }

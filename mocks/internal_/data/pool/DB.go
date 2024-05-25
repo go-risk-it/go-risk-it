@@ -82,6 +82,65 @@ func (_c *DB_Begin_Call) RunAndReturn(run func(context.Context) (pgx.Tx, error))
 	return _c
 }
 
+// BeginTx provides a mock function with given fields: ctx, txOptions
+func (_m *DB) BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error) {
+	ret := _m.Called(ctx, txOptions)
+
+	if len(ret) == 0 {
+		panic("no return value specified for BeginTx")
+	}
+
+	var r0 pgx.Tx
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, pgx.TxOptions) (pgx.Tx, error)); ok {
+		return rf(ctx, txOptions)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, pgx.TxOptions) pgx.Tx); ok {
+		r0 = rf(ctx, txOptions)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(pgx.Tx)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, pgx.TxOptions) error); ok {
+		r1 = rf(ctx, txOptions)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DB_BeginTx_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BeginTx'
+type DB_BeginTx_Call struct {
+	*mock.Call
+}
+
+// BeginTx is a helper method to define mock.On call
+//   - ctx context.Context
+//   - txOptions pgx.TxOptions
+func (_e *DB_Expecter) BeginTx(ctx interface{}, txOptions interface{}) *DB_BeginTx_Call {
+	return &DB_BeginTx_Call{Call: _e.mock.On("BeginTx", ctx, txOptions)}
+}
+
+func (_c *DB_BeginTx_Call) Run(run func(ctx context.Context, txOptions pgx.TxOptions)) *DB_BeginTx_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(pgx.TxOptions))
+	})
+	return _c
+}
+
+func (_c *DB_BeginTx_Call) Return(_a0 pgx.Tx, _a1 error) *DB_BeginTx_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *DB_BeginTx_Call) RunAndReturn(run func(context.Context, pgx.TxOptions) (pgx.Tx, error)) *DB_BeginTx_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CopyFrom provides a mock function with given fields: ctx, tableName, columnNames, rowSrc
 func (_m *DB) CopyFrom(ctx context.Context, tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (int64, error) {
 	ret := _m.Called(ctx, tableName, columnNames, rowSrc)

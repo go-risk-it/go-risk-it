@@ -19,7 +19,8 @@ type Service interface {
 		gameID int64,
 		userID string,
 		region string,
-		troops int,
+		currentTroops int64,
+		desiredTroops int64,
 	) error
 	PerformDeployMoveQ(
 		ctx context.Context,
@@ -27,7 +28,8 @@ type Service interface {
 		gameID int64,
 		userID string,
 		region string,
-		troops int,
+		currentTroops int64,
+		desiredTroops int64,
 	) error
 }
 
@@ -69,10 +71,19 @@ func (s *ServiceImpl) PerformDeployMoveWithTx(
 	gameID int64,
 	userID string,
 	region string,
-	troops int,
+	currentTroops int64,
+	desiredTroops int64,
 ) error {
 	_, err := s.querier.ExecuteInTransaction(ctx, func(qtx db.Querier) (interface{}, error) {
-		return nil, s.PerformDeployMoveQ(ctx, qtx, gameID, userID, region, troops)
+		return nil, s.PerformDeployMoveQ(
+			ctx,
+			qtx,
+			gameID,
+			userID,
+			region,
+			currentTroops,
+			desiredTroops,
+		)
 	})
 	if err != nil {
 		return fmt.Errorf("failed to perform deploy move: %w", err)
@@ -97,7 +108,8 @@ func (s *ServiceImpl) PerformDeployMoveQ(
 	gameID int64,
 	userID string,
 	region string,
-	troops int,
+	currentTroops int64,
+	desiredTroops int64,
 ) error {
 	s.log.Infow(
 		"performing deploy move",
@@ -107,8 +119,10 @@ func (s *ServiceImpl) PerformDeployMoveQ(
 		userID,
 		"region",
 		region,
-		"troops",
-		troops,
+		"currentTroops",
+		currentTroops,
+		"desiredTroops",
+		desiredTroops,
 	)
 
 	players, err := s.playerService.GetPlayersQ(ctx, querier, gameID)
@@ -125,13 +139,18 @@ func (s *ServiceImpl) PerformDeployMoveQ(
 		return fmt.Errorf("turn check failed: %w", err)
 	}
 
-	if playerState.DeployableTroops < int64(troops) {
+	troops := desiredTroops - currentTroops
+	if playerState.DeployableTroops < troops {
 		return fmt.Errorf("not enough deployable troops")
 	}
 
 	regionState, err := s.getRegion(ctx, querier, gameID, region, userID)
 	if err != nil {
 		return fmt.Errorf("failed to get region: %w", err)
+	}
+
+	if regionState.Troops != currentTroops {
+		return fmt.Errorf("region has different number of troops than declared")
 	}
 
 	err = s.executeDeploy(ctx, querier, gameID, playerState, regionState, troops)
@@ -147,7 +166,7 @@ func (s *ServiceImpl) executeDeploy(ctx context.Context,
 	gameID int64,
 	player *sqlc.Player,
 	region *sqlc.GetRegionsByGameRow,
-	troops int,
+	troops int64,
 ) error {
 	s.log.Infow(
 		"deploying",
@@ -158,18 +177,24 @@ func (s *ServiceImpl) executeDeploy(ctx context.Context,
 		"troops",
 		troops,
 	)
+	// player has 5 deployable troops
+	// req1 -> decrease deployable troops by 3 (5 - 3 = 2)
+	// req2 -> decrease deployable troops by 4 (5 - 4 = 1)
+	// req 1 commit
+	// req 2 commit
+	// inconsistent state
 
-	err := s.playerService.DecreaseDeployableTroopsQ(ctx, querier, player, int64(troops))
+	err := s.playerService.DecreaseDeployableTroopsQ(ctx, querier, player, troops)
 	if err != nil {
 		return fmt.Errorf("failed to decrease deployable troops: %w", err)
 	}
 
-	err = s.regionService.IncreaseTroopsInRegion(ctx, querier, region.ID, int64(troops))
+	err = s.regionService.IncreaseTroopsInRegion(ctx, querier, region.ID, troops)
 	if err != nil {
 		return fmt.Errorf("failed to increase region troops: %w", err)
 	}
 
-	if player.DeployableTroops == int64(troops) {
+	if player.DeployableTroops == troops {
 		s.log.Infow("all deployable troops were deployed, advancing game phase", "gameID", gameID)
 
 		err = s.gameService.SetGamePhaseQ(ctx, querier, gameID, sqlc.PhaseATTACK)
@@ -193,7 +218,7 @@ func (s *ServiceImpl) getRegion(
 		return nil, fmt.Errorf("failed to get region: %w", err)
 	}
 
-	if result.PlayerName != userID {
+	if result.UserID != userID {
 		return nil, fmt.Errorf("region is not owned by player")
 	}
 

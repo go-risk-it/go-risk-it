@@ -23,17 +23,17 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
-// PerformDeployMoveQ provides a mock function with given fields: ctx, querier, gameID, userID, region, troops
-func (_m *Service) PerformDeployMoveQ(ctx context.Context, querier db.Querier, gameID int64, userID string, region string, troops int) error {
-	ret := _m.Called(ctx, querier, gameID, userID, region, troops)
+// PerformDeployMoveQ provides a mock function with given fields: ctx, querier, gameID, userID, region, currentTroops, desiredTroops
+func (_m *Service) PerformDeployMoveQ(ctx context.Context, querier db.Querier, gameID int64, userID string, region string, currentTroops int64, desiredTroops int64) error {
+	ret := _m.Called(ctx, querier, gameID, userID, region, currentTroops, desiredTroops)
 
 	if len(ret) == 0 {
 		panic("no return value specified for PerformDeployMoveQ")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, db.Querier, int64, string, string, int) error); ok {
-		r0 = rf(ctx, querier, gameID, userID, region, troops)
+	if rf, ok := ret.Get(0).(func(context.Context, db.Querier, int64, string, string, int64, int64) error); ok {
+		r0 = rf(ctx, querier, gameID, userID, region, currentTroops, desiredTroops)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -52,14 +52,15 @@ type Service_PerformDeployMoveQ_Call struct {
 //   - gameID int64
 //   - userID string
 //   - region string
-//   - troops int
-func (_e *Service_Expecter) PerformDeployMoveQ(ctx interface{}, querier interface{}, gameID interface{}, userID interface{}, region interface{}, troops interface{}) *Service_PerformDeployMoveQ_Call {
-	return &Service_PerformDeployMoveQ_Call{Call: _e.mock.On("PerformDeployMoveQ", ctx, querier, gameID, userID, region, troops)}
+//   - currentTroops int64
+//   - desiredTroops int64
+func (_e *Service_Expecter) PerformDeployMoveQ(ctx interface{}, querier interface{}, gameID interface{}, userID interface{}, region interface{}, currentTroops interface{}, desiredTroops interface{}) *Service_PerformDeployMoveQ_Call {
+	return &Service_PerformDeployMoveQ_Call{Call: _e.mock.On("PerformDeployMoveQ", ctx, querier, gameID, userID, region, currentTroops, desiredTroops)}
 }
 
-func (_c *Service_PerformDeployMoveQ_Call) Run(run func(ctx context.Context, querier db.Querier, gameID int64, userID string, region string, troops int)) *Service_PerformDeployMoveQ_Call {
+func (_c *Service_PerformDeployMoveQ_Call) Run(run func(ctx context.Context, querier db.Querier, gameID int64, userID string, region string, currentTroops int64, desiredTroops int64)) *Service_PerformDeployMoveQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(db.Querier), args[2].(int64), args[3].(string), args[4].(string), args[5].(int))
+		run(args[0].(context.Context), args[1].(db.Querier), args[2].(int64), args[3].(string), args[4].(string), args[5].(int64), args[6].(int64))
 	})
 	return _c
 }
@@ -69,22 +70,22 @@ func (_c *Service_PerformDeployMoveQ_Call) Return(_a0 error) *Service_PerformDep
 	return _c
 }
 
-func (_c *Service_PerformDeployMoveQ_Call) RunAndReturn(run func(context.Context, db.Querier, int64, string, string, int) error) *Service_PerformDeployMoveQ_Call {
+func (_c *Service_PerformDeployMoveQ_Call) RunAndReturn(run func(context.Context, db.Querier, int64, string, string, int64, int64) error) *Service_PerformDeployMoveQ_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// PerformDeployMoveWithTx provides a mock function with given fields: ctx, gameID, userID, region, troops
-func (_m *Service) PerformDeployMoveWithTx(ctx context.Context, gameID int64, userID string, region string, troops int) error {
-	ret := _m.Called(ctx, gameID, userID, region, troops)
+// PerformDeployMoveWithTx provides a mock function with given fields: ctx, gameID, userID, region, currentTroops, desiredTroops
+func (_m *Service) PerformDeployMoveWithTx(ctx context.Context, gameID int64, userID string, region string, currentTroops int64, desiredTroops int64) error {
+	ret := _m.Called(ctx, gameID, userID, region, currentTroops, desiredTroops)
 
 	if len(ret) == 0 {
 		panic("no return value specified for PerformDeployMoveWithTx")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, int) error); ok {
-		r0 = rf(ctx, gameID, userID, region, troops)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, int64, int64) error); ok {
+		r0 = rf(ctx, gameID, userID, region, currentTroops, desiredTroops)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -102,14 +103,15 @@ type Service_PerformDeployMoveWithTx_Call struct {
 //   - gameID int64
 //   - userID string
 //   - region string
-//   - troops int
-func (_e *Service_Expecter) PerformDeployMoveWithTx(ctx interface{}, gameID interface{}, userID interface{}, region interface{}, troops interface{}) *Service_PerformDeployMoveWithTx_Call {
-	return &Service_PerformDeployMoveWithTx_Call{Call: _e.mock.On("PerformDeployMoveWithTx", ctx, gameID, userID, region, troops)}
+//   - currentTroops int64
+//   - desiredTroops int64
+func (_e *Service_Expecter) PerformDeployMoveWithTx(ctx interface{}, gameID interface{}, userID interface{}, region interface{}, currentTroops interface{}, desiredTroops interface{}) *Service_PerformDeployMoveWithTx_Call {
+	return &Service_PerformDeployMoveWithTx_Call{Call: _e.mock.On("PerformDeployMoveWithTx", ctx, gameID, userID, region, currentTroops, desiredTroops)}
 }
 
-func (_c *Service_PerformDeployMoveWithTx_Call) Run(run func(ctx context.Context, gameID int64, userID string, region string, troops int)) *Service_PerformDeployMoveWithTx_Call {
+func (_c *Service_PerformDeployMoveWithTx_Call) Run(run func(ctx context.Context, gameID int64, userID string, region string, currentTroops int64, desiredTroops int64)) *Service_PerformDeployMoveWithTx_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(int64), args[2].(string), args[3].(string), args[4].(int))
+		run(args[0].(context.Context), args[1].(int64), args[2].(string), args[3].(string), args[4].(int64), args[5].(int64))
 	})
 	return _c
 }
@@ -119,7 +121,7 @@ func (_c *Service_PerformDeployMoveWithTx_Call) Return(_a0 error) *Service_Perfo
 	return _c
 }
 
-func (_c *Service_PerformDeployMoveWithTx_Call) RunAndReturn(run func(context.Context, int64, string, string, int) error) *Service_PerformDeployMoveWithTx_Call {
+func (_c *Service_PerformDeployMoveWithTx_Call) RunAndReturn(run func(context.Context, int64, string, string, int64, int64) error) *Service_PerformDeployMoveWithTx_Call {
 	_c.Call.Return(run)
 	return _c
 }

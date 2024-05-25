@@ -54,7 +54,7 @@ func convertRegions(regions []sqlc.GetRegionsByGameRow) []message.Region {
 func convertRegion(region sqlc.GetRegionsByGameRow) message.Region {
 	return message.Region{
 		ID:      region.ExternalReference,
-		OwnerID: region.PlayerName,
+		OwnerID: region.UserID,
 		Troops:  region.Troops,
 	}
 }

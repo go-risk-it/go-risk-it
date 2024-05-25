@@ -27,7 +27,32 @@ func (q *Queries) ExecuteInTransaction(
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
+	return q.executeTransaction(ctx, txFunc, transaction)
+}
+
+func (q *Queries) ExecuteInTransactionWithIsolation(
+	ctx context.Context,
+	txFunc func(Querier) (interface{}, error),
+	isolationLevel pgx.TxIsoLevel,
+) (interface{}, error) {
+	q.log.Infow("starting transaction", "isolation", isolationLevel)
+
+	transaction, err := q.db.BeginTx(ctx, pgx.TxOptions{IsoLevel: isolationLevel})
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+
+	return q.executeTransaction(ctx, txFunc, transaction)
+}
+
+func (q *Queries) executeTransaction(
+	ctx context.Context,
+	txFunc func(Querier) (interface{}, error),
+	transaction pgx.Tx,
+) (interface{}, error) {
 	q.log.Infow("started transaction")
+
+	var err error
 
 	defer func() {
 		if panicking := recover(); panicking != nil {

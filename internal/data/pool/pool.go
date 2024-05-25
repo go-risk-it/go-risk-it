@@ -96,6 +96,7 @@ type Transaction interface {
 type DB interface {
 	sqlc.DBTX
 	Begin(ctx context.Context) (pgx.Tx, error)
+	BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error)
 }
 
 var Module = fx.Options(

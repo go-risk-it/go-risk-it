@@ -33,7 +33,8 @@ func (c *MoveControllerImpl) PerformDeployMove(
 		gameID,
 		deployMove.UserID,
 		deployMove.RegionID,
-		deployMove.Troops,
+		deployMove.CurrentTroops,
+		deployMove.DesiredTroops,
 	); err != nil {
 		return fmt.Errorf("unable to perform deploy move: %w", err)
 	}
