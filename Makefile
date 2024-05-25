@@ -30,7 +30,7 @@ sqlc: ## Generate SQLC code to interact with the database
 
 mock: ## Generate mocks
 	@echo "Building..."
-	@source component-test/.env && docker compose run --rm mockery
+	@docker compose run --rm mockery
 
 destroy:
 	@echo "Destroying existing environment..."
