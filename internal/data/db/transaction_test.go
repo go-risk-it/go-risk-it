@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/pool"
+	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -18,7 +19,9 @@ func TestQueries_ExecuteInTransaction_ShouldRollbackIfPanic(t *testing.T) {
 	mockDB := pool.NewDB(t)
 	mockTransaction := pool.NewTransaction(t)
 
-	mockDB.EXPECT().Begin(ctx).Return(mockTransaction, nil)
+	mockDB.EXPECT().
+		BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted}).
+		Return(mockTransaction, nil)
 	mockTransaction.EXPECT().Rollback(ctx).Return(nil)
 
 	querier := db.New(mockDB, zap.NewNop().Sugar())
@@ -45,7 +48,9 @@ func TestQueries_ExecuteInTransaction_ShouldRollbackIfErr(t *testing.T) {
 	mockDB := pool.NewDB(t)
 	mockTransaction := pool.NewTransaction(t)
 
-	mockDB.EXPECT().Begin(ctx).Return(mockTransaction, nil)
+	mockDB.EXPECT().
+		BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted}).
+		Return(mockTransaction, nil)
 	mockTransaction.EXPECT().Rollback(ctx).Return(nil)
 
 	querier := db.New(mockDB, zap.NewNop().Sugar())
@@ -66,7 +71,9 @@ func TestQueries_ExecuteInTransaction_ShouldCommitIfNoErr(t *testing.T) {
 	mockDB := pool.NewDB(t)
 	mockTransaction := pool.NewTransaction(t)
 
-	mockDB.EXPECT().Begin(ctx).Return(mockTransaction, nil)
+	mockDB.EXPECT().
+		BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted}).
+		Return(mockTransaction, nil)
 	mockTransaction.EXPECT().Commit(ctx).Return(nil)
 
 	querier := db.New(mockDB, zap.NewNop().Sugar())
