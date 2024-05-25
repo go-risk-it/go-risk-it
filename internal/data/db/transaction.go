@@ -16,18 +16,12 @@ func (q *Queries) WithTx(tx pool.Transaction) Querier {
 	}
 }
 
+// ExecuteInTransaction with default isolation level (ReadCommitted).
 func (q *Queries) ExecuteInTransaction(
 	ctx context.Context,
 	txFunc func(Querier) (interface{}, error),
 ) (interface{}, error) {
-	q.log.Infow("starting transaction")
-
-	transaction, err := q.db.Begin(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to begin transaction: %w", err)
-	}
-
-	return q.executeTransaction(ctx, txFunc, transaction)
+	return q.ExecuteInTransactionWithIsolation(ctx, pgx.ReadCommitted, txFunc)
 }
 
 func (q *Queries) ExecuteInTransactionWithIsolation(
