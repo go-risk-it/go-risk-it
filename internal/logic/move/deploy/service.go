@@ -182,12 +182,6 @@ func (s *ServiceImpl) executeDeploy(ctx context.Context,
 		"troops",
 		troops,
 	)
-	// player has 5 deployable troops
-	// req1 -> decrease deployable troops by 3 (5 - 3 = 2)
-	// req2 -> decrease deployable troops by 4 (5 - 4 = 1)
-	// req 1 commit
-	// req 2 commit
-	// inconsistent state
 
 	err := s.playerService.DecreaseDeployableTroopsQ(ctx, querier, player, troops)
 	if err != nil {
