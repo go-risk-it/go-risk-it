@@ -21,13 +21,13 @@ class RiskItClient:
 
     def create_game(self, body) -> Response:
         return self.__post(
-            "/api/v1/game",
+            "/api/v1/games",
             body=body,
         )
 
     def deploy(self, game_id: int, body) -> Response:
         return self.__post(
-            f"/api/v1/game/{game_id}/move/deploy",
+            f"/api/v1/games/{game_id}/moves/deployments",
             body=body,
         )
 
