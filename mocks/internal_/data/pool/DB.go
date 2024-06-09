@@ -24,64 +24,6 @@ func (_m *DB) EXPECT() *DB_Expecter {
 	return &DB_Expecter{mock: &_m.Mock}
 }
 
-// Begin provides a mock function with given fields: ctx
-func (_m *DB) Begin(ctx context.Context) (pgx.Tx, error) {
-	ret := _m.Called(ctx)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Begin")
-	}
-
-	var r0 pgx.Tx
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (pgx.Tx, error)); ok {
-		return rf(ctx)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context) pgx.Tx); ok {
-		r0 = rf(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(pgx.Tx)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// DB_Begin_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Begin'
-type DB_Begin_Call struct {
-	*mock.Call
-}
-
-// Begin is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *DB_Expecter) Begin(ctx interface{}) *DB_Begin_Call {
-	return &DB_Begin_Call{Call: _e.mock.On("Begin", ctx)}
-}
-
-func (_c *DB_Begin_Call) Run(run func(ctx context.Context)) *DB_Begin_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
-	})
-	return _c
-}
-
-func (_c *DB_Begin_Call) Return(_a0 pgx.Tx, _a1 error) *DB_Begin_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *DB_Begin_Call) RunAndReturn(run func(context.Context) (pgx.Tx, error)) *DB_Begin_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // BeginTx provides a mock function with given fields: ctx, txOptions
 func (_m *DB) BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error) {
 	ret := _m.Called(ctx, txOptions)
