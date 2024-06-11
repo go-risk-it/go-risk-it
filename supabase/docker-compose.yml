@@ -197,7 +197,7 @@ services:
   # To use S3 backed storage: docker compose -f docker-compose.yml -f docker-compose.s3.yml up
   storage:
     container_name: supabase-storage
-    image: supabase/storage-api:v1.3.1@sha256:39e9bc4602a81f183ff7d8c9dea065d06430e5cba462455f1f8252d7346551cd
+    image: supabase/storage-api:v1.4.0@sha256:206f431f6478c4b948ef26cebf667d6edc6d743ac16b114c948e4fd854ad6214
     depends_on:
       db:
         # Disable this if you are using an external Postgres database
