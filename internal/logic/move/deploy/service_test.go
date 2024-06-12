@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/deploy"
+	"github.com/go-risk-it/go-risk-it/internal/logic/move/move"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/player"
@@ -73,11 +74,15 @@ func TestServiceImpl_DeployShouldFailWhenPlayerNotInGame(t *testing.T) {
 	err := service.PerformDeployMoveQ(
 		ctx,
 		querier,
-		gameID,
-		userID,
-		regionReference,
-		currentTroops,
-		desiredTroops,
+		move.Move[deploy.MoveData]{
+			UserID: userID,
+			GameID: gameID,
+			Payload: deploy.MoveData{
+				RegionID:      regionReference,
+				CurrentTroops: currentTroops,
+				DesiredTroops: desiredTroops,
+			},
+		},
 	)
 
 	require.Error(t, err)
@@ -105,7 +110,7 @@ func TestServiceImpl_DeployShouldFailOnTurnCheck(t *testing.T) {
 			"When incorrect phase",
 			sqlc.PhaseATTACK,
 			2,
-			"turn check failed: game is not in deploy phase",
+			"turn check failed: game is not in DEPLOY phase",
 		},
 	}
 	for _, test := range tests {
@@ -136,11 +141,15 @@ func TestServiceImpl_DeployShouldFailOnTurnCheck(t *testing.T) {
 			err := service.PerformDeployMoveQ(
 				ctx,
 				querier,
-				gameID,
-				userID,
-				regionReference,
-				currentTroops,
-				desiredTroops,
+				move.Move[deploy.MoveData]{
+					UserID: userID,
+					GameID: gameID,
+					Payload: deploy.MoveData{
+						RegionID:      regionReference,
+						CurrentTroops: currentTroops,
+						DesiredTroops: desiredTroops,
+					},
+				},
 			)
 
 			require.Error(t, err)
@@ -176,11 +185,15 @@ func TestServiceImpl_DeployShouldFailWhenPlayerDoesntHaveEnoughDeployableTroops(
 	err := service.PerformDeployMoveQ(
 		ctx,
 		querier,
-		gameID,
-		userID,
-		regionReference,
-		currentTroops,
-		desiredTroops,
+		move.Move[deploy.MoveData]{
+			UserID: userID,
+			GameID: gameID,
+			Payload: deploy.MoveData{
+				RegionID:      regionReference,
+				CurrentTroops: currentTroops,
+				DesiredTroops: desiredTroops,
+			},
+		},
 	)
 
 	require.Error(t, err)
@@ -251,11 +264,15 @@ func TestServiceImpl_DeployShouldFail(t *testing.T) {
 			err := service.PerformDeployMoveQ(
 				ctx,
 				querier,
-				gameID,
-				userID,
-				regionReference,
-				currentTroops,
-				desiredTroops,
+				move.Move[deploy.MoveData]{
+					UserID: userID,
+					GameID: gameID,
+					Payload: deploy.MoveData{
+						RegionID:      regionReference,
+						CurrentTroops: currentTroops,
+						DesiredTroops: desiredTroops,
+					},
+				},
 			)
 
 			require.Error(t, err)
@@ -351,11 +368,15 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 			err := service.PerformDeployMoveQ(
 				ctx,
 				querier,
-				gameID,
-				userID,
-				regionReference,
-				currentTroops,
-				desiredTroops,
+				move.Move[deploy.MoveData]{
+					UserID: userID,
+					GameID: gameID,
+					Payload: deploy.MoveData{
+						RegionID:      regionReference,
+						CurrentTroops: currentTroops,
+						DesiredTroops: desiredTroops,
+					},
+				},
 			)
 
 			require.NoError(t, err)
