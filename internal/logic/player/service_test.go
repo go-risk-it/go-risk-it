@@ -115,25 +115,22 @@ func TestServiceImpl_CreatePlayers_WithValidData(t *testing.T) {
 	// Set up expectations for InsertPlayers method
 	querier.On("InsertPlayers", ctx, []sqlc.InsertPlayersParams{
 		{
-			GameID:           gameID,
-			UserID:           "5a4fde41-4a68-4625-b42b-a9f5f938b394",
-			Name:             "francesco",
-			TurnIndex:        0,
-			DeployableTroops: 5,
+			GameID:    gameID,
+			UserID:    "5a4fde41-4a68-4625-b42b-a9f5f938b394",
+			Name:      "francesco",
+			TurnIndex: 0,
 		},
 		{
-			GameID:           gameID,
-			UserID:           "dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
-			Name:             "gabriele",
-			TurnIndex:        1,
-			DeployableTroops: 5,
+			GameID:    gameID,
+			UserID:    "dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
+			Name:      "gabriele",
+			TurnIndex: 1,
 		},
 		{
-			GameID:           gameID,
-			UserID:           "fc497971-de4d-49c2-842a-4af62ec9e858",
-			Name:             "giovanni",
-			TurnIndex:        2,
-			DeployableTroops: 5,
+			GameID:    gameID,
+			UserID:    "fc497971-de4d-49c2-842a-4af62ec9e858",
+			Name:      "giovanni",
+			TurnIndex: 2,
 		},
 	}).Return(int64(2), nil)
 
@@ -197,25 +194,22 @@ func TestServiceImpl_CreatePlayers_InsertPlayersError(t *testing.T) {
 	// Set up expectations for InsertPlayers method
 	querier.On("InsertPlayers", ctx, []sqlc.InsertPlayersParams{
 		{
-			GameID:           gameID,
-			UserID:           "5a4fde41-4a68-4625-b42b-a9f5f938b394",
-			Name:             "francesco",
-			TurnIndex:        0,
-			DeployableTroops: 5,
+			GameID:    gameID,
+			UserID:    "5a4fde41-4a68-4625-b42b-a9f5f938b394",
+			Name:      "francesco",
+			TurnIndex: 0,
 		},
 		{
-			GameID:           gameID,
-			UserID:           "dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
-			Name:             "gabriele",
-			TurnIndex:        1,
-			DeployableTroops: 5,
+			GameID:    gameID,
+			UserID:    "dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
+			Name:      "gabriele",
+			TurnIndex: 1,
 		},
 		{
-			GameID:           gameID,
-			UserID:           "fc497971-de4d-49c2-842a-4af62ec9e858",
-			Name:             "giovanni",
-			TurnIndex:        2,
-			DeployableTroops: 5,
+			GameID:    gameID,
+			UserID:    "fc497971-de4d-49c2-842a-4af62ec9e858",
+			Name:      "giovanni",
+			TurnIndex: 2,
 		},
 	}).Return(int64(0), errInsertPlayers)
 
@@ -252,25 +246,22 @@ func TestServiceImpl_CreatePlayers_GetPlayersByGameError(t *testing.T) {
 	// Set up expectations for InsertPlayers method
 	querier.On("InsertPlayers", ctx, []sqlc.InsertPlayersParams{
 		{
-			GameID:           gameID,
-			UserID:           "5a4fde41-4a68-4625-b42b-a9f5f938b394",
-			Name:             "francesco",
-			TurnIndex:        0,
-			DeployableTroops: 5,
+			GameID:    gameID,
+			UserID:    "5a4fde41-4a68-4625-b42b-a9f5f938b394",
+			Name:      "francesco",
+			TurnIndex: 0,
 		},
 		{
-			GameID:           gameID,
-			UserID:           "dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
-			Name:             "gabriele",
-			TurnIndex:        1,
-			DeployableTroops: 5,
+			GameID:    gameID,
+			UserID:    "dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
+			Name:      "gabriele",
+			TurnIndex: 1,
 		},
 		{
-			GameID:           gameID,
-			UserID:           "fc497971-de4d-49c2-842a-4af62ec9e858",
-			Name:             "giovanni",
-			TurnIndex:        2,
-			DeployableTroops: 5,
+			GameID:    gameID,
+			UserID:    "fc497971-de4d-49c2-842a-4af62ec9e858",
+			Name:      "giovanni",
+			TurnIndex: 2,
 		},
 	}).Return(int64(2), nil)
 

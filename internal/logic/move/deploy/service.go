@@ -113,6 +113,11 @@ func (s *ServiceImpl) PerformDeployMoveQ(
 		move,
 	)
 
+	game, err := s.gameService.GetGameStateQ(ctx, querier, move.GameID)
+	if err != nil {
+		return fmt.Errorf("failed to get game state: %w", err)
+	}
+
 	players, err := s.playerService.GetPlayersQ(ctx, querier, move.GameID)
 	if err != nil {
 		return fmt.Errorf("failed to get players: %w", err)
@@ -123,10 +128,8 @@ func (s *ServiceImpl) PerformDeployMoveQ(
 		return fmt.Errorf("player is not in game")
 	}
 
-	if err := s.checkTurn(
-		ctx,
-		querier,
-		move.GameID,
+	if err := checkTurn(
+		game,
 		int64(len(players)),
 		thisPlayer.TurnIndex,
 		sqlc.PhaseDEPLOY); err != nil {
@@ -134,7 +137,7 @@ func (s *ServiceImpl) PerformDeployMoveQ(
 	}
 
 	troops := move.Payload.DesiredTroops - move.Payload.CurrentTroops
-	if thisPlayer.DeployableTroops < troops {
+	if game.DeployableTroops < troops {
 		return fmt.Errorf("not enough deployable troops")
 	}
 
@@ -147,7 +150,7 @@ func (s *ServiceImpl) PerformDeployMoveQ(
 		return fmt.Errorf("region has different number of troops than declared")
 	}
 
-	err = s.executeDeploy(ctx, querier, move.GameID, thisPlayer, regionState, troops)
+	err = s.executeDeploy(ctx, querier, game, regionState, troops)
 	if err != nil {
 		return fmt.Errorf("failed to execute deploy: %w", err)
 	}
@@ -165,24 +168,24 @@ func extractPlayerFrom(players []sqlc.Player, userID string) *sqlc.Player {
 	return nil
 }
 
-func (s *ServiceImpl) executeDeploy(ctx context.Context,
+func (s *ServiceImpl) executeDeploy(
+	ctx context.Context,
 	querier db.Querier,
-	gameID int64,
-	player *sqlc.Player,
+	game *sqlc.Game,
 	region *sqlc.GetRegionsByGameRow,
 	troops int64,
 ) error {
 	s.log.Infow(
 		"deploying",
-		"player",
-		player.UserID,
+		"gameID",
+		game.ID,
 		"region",
 		region.ExternalReference,
 		"troops",
 		troops,
 	)
 
-	err := s.playerService.DecreaseDeployableTroopsQ(ctx, querier, player, troops)
+	err := s.gameService.DecreaseDeployableTroopsQ(ctx, querier, game, troops)
 	if err != nil {
 		return fmt.Errorf("failed to decrease deployable troops: %w", err)
 	}
@@ -192,10 +195,10 @@ func (s *ServiceImpl) executeDeploy(ctx context.Context,
 		return fmt.Errorf("failed to increase region troops: %w", err)
 	}
 
-	if player.DeployableTroops == troops {
-		s.log.Infow("all deployable troops were deployed, advancing game phase", "gameID", gameID)
+	if game.DeployableTroops == troops {
+		s.log.Infow("all deployable troops were deployed, advancing game phase", "gameID", game.ID)
 
-		err = s.gameService.SetGamePhaseQ(ctx, querier, gameID, sqlc.PhaseATTACK)
+		err = s.gameService.SetGamePhaseQ(ctx, querier, game.ID, sqlc.PhaseATTACK)
 		if err != nil {
 			return fmt.Errorf("failed to set game phase: %w", err)
 		}
@@ -204,25 +207,18 @@ func (s *ServiceImpl) executeDeploy(ctx context.Context,
 	return nil
 }
 
-func (s *ServiceImpl) checkTurn(
-	ctx context.Context,
-	querier db.Querier,
-	gameID int64,
+func checkTurn(
+	game *sqlc.Game,
 	playersInGame int64,
 	playerTurn int64,
 	phase sqlc.Phase,
 ) error {
-	gameState, err := s.gameService.GetGameStateQ(ctx, querier, gameID)
-	if err != nil {
-		return fmt.Errorf("failed to get game state: %w", err)
-	}
-
 	// move to specific services
-	if gameState.Phase != phase {
+	if game.Phase != phase {
 		return fmt.Errorf("game is not in %s phase", phase)
 	}
 
-	if gameState.Turn%playersInGame != playerTurn {
+	if game.Turn%playersInGame != playerTurn {
 		return fmt.Errorf("it is not the player's turn")
 	}
 

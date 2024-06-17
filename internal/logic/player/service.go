@@ -28,13 +28,6 @@ type Service interface {
 		[]sqlc.Player,
 		error,
 	)
-
-	DecreaseDeployableTroopsQ(
-		ctx context.Context,
-		querier db.Querier,
-		player *sqlc.Player,
-		troops int64,
-	) error
 }
 
 type ServiceImpl struct {
@@ -82,11 +75,10 @@ func (s *ServiceImpl) CreatePlayers(
 		playersParams = append(
 			playersParams,
 			sqlc.InsertPlayersParams{
-				GameID:           gameID,
-				UserID:           player.UserID,
-				Name:             player.Name,
-				TurnIndex:        turnIndex,
-				DeployableTroops: 5,
+				GameID:    gameID,
+				UserID:    player.UserID,
+				Name:      player.Name,
+				TurnIndex: turnIndex,
 			},
 		)
 		turnIndex += 1
@@ -104,29 +96,4 @@ func (s *ServiceImpl) CreatePlayers(
 	}
 
 	return result, nil
-}
-
-func (s *ServiceImpl) DecreaseDeployableTroopsQ(
-	ctx context.Context,
-	querier db.Querier,
-	player *sqlc.Player,
-	troops int64,
-) error {
-	s.log.Infow("decreasing deployable troops", "player", player, "troops", troops)
-
-	if player.DeployableTroops < troops {
-		return fmt.Errorf("player does not have enough troops to deploy")
-	}
-
-	err := querier.DecreaseDeployableTroops(ctx, sqlc.DecreaseDeployableTroopsParams{
-		ID:               player.ID,
-		DeployableTroops: troops,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to decrease deployable troops: %w", err)
-	}
-
-	s.log.Infow("decreased deployable troops", "player", player, "troops", troops)
-
-	return nil
 }

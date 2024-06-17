@@ -10,7 +10,7 @@ import (
 )
 
 const decreaseDeployableTroops = `-- name: DecreaseDeployableTroops :exec
-UPDATE player
+UPDATE game
 SET deployable_troops = deployable_troops - $2
 WHERE id = $1
 `
@@ -26,7 +26,7 @@ func (q *Queries) DecreaseDeployableTroops(ctx context.Context, arg DecreaseDepl
 }
 
 const getGame = `-- name: GetGame :one
-SELECT id, turn, phase
+SELECT id, turn, phase, deployable_troops
 FROM game
 WHERE id = $1
 `
@@ -34,12 +34,17 @@ WHERE id = $1
 func (q *Queries) GetGame(ctx context.Context, id int64) (Game, error) {
 	row := q.db.QueryRow(ctx, getGame, id)
 	var i Game
-	err := row.Scan(&i.ID, &i.Turn, &i.Phase)
+	err := row.Scan(
+		&i.ID,
+		&i.Turn,
+		&i.Phase,
+		&i.DeployableTroops,
+	)
 	return i, err
 }
 
 const getPlayerByUserId = `-- name: GetPlayerByUserId :one
-SELECT id, game_id, name, user_id, turn_index, deployable_troops
+SELECT id, game_id, name, user_id, turn_index
 FROM player
 WHERE user_id = $1
 `
@@ -53,13 +58,12 @@ func (q *Queries) GetPlayerByUserId(ctx context.Context, userID string) (Player,
 		&i.Name,
 		&i.UserID,
 		&i.TurnIndex,
-		&i.DeployableTroops,
 	)
 	return i, err
 }
 
 const getPlayersByGame = `-- name: GetPlayersByGame :many
-SELECT id, game_id, name, user_id, turn_index, deployable_troops
+SELECT id, game_id, name, user_id, turn_index
 FROM player
 WHERE game_id = $1
 `
@@ -79,7 +83,6 @@ func (q *Queries) GetPlayersByGame(ctx context.Context, gameID int64) ([]Player,
 			&i.Name,
 			&i.UserID,
 			&i.TurnIndex,
-			&i.DeployableTroops,
 		); err != nil {
 			return nil, err
 		}
@@ -148,24 +151,28 @@ func (q *Queries) IncreaseRegionTroops(ctx context.Context, arg IncreaseRegionTr
 }
 
 const insertGame = `-- name: InsertGame :one
-INSERT INTO game DEFAULT
-VALUES
-RETURNING id
+INSERT INTO game (deployable_troops)
+VALUES ($1)
+RETURNING id, turn, phase, deployable_troops
 `
 
-func (q *Queries) InsertGame(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, insertGame)
-	var id int64
-	err := row.Scan(&id)
-	return id, err
+func (q *Queries) InsertGame(ctx context.Context, deployableTroops int64) (Game, error) {
+	row := q.db.QueryRow(ctx, insertGame, deployableTroops)
+	var i Game
+	err := row.Scan(
+		&i.ID,
+		&i.Turn,
+		&i.Phase,
+		&i.DeployableTroops,
+	)
+	return i, err
 }
 
 type InsertPlayersParams struct {
-	GameID           int64
-	UserID           string
-	Name             string
-	TurnIndex        int64
-	DeployableTroops int64
+	GameID    int64
+	UserID    string
+	Name      string
+	TurnIndex int64
 }
 
 type InsertRegionsParams struct {

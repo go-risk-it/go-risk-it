@@ -53,9 +53,8 @@ func convertPlayers(players []sqlc.Player) []message.Player {
 
 func convertPlayer(player sqlc.Player) message.Player {
 	return message.Player{
-		UserID:         player.UserID,
-		Name:           player.Name,
-		Index:          player.TurnIndex,
-		TroopsToDeploy: player.DeployableTroops,
+		UserID: player.UserID,
+		Name:   player.Name,
+		Index:  player.TurnIndex,
 	}
 }

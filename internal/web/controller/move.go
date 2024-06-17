@@ -12,7 +12,9 @@ import (
 )
 
 type MoveController interface {
-	PerformDeployMove(ctx context.Context, gameID int64, deployMove request.DeployMove) error
+	PerformDeployMove(
+		ctx context.Context, gameID int64, userID string, deployMove request.DeployMove,
+	) error
 	PerformAttackMove(
 		ctx context.Context, gameID int64, userID string, attackMove request.AttackMove,
 	) error

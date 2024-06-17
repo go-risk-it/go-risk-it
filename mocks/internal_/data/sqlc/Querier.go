@@ -348,27 +348,27 @@ func (_c *Querier_IncreaseRegionTroops_Call) RunAndReturn(run func(context.Conte
 	return _c
 }
 
-// InsertGame provides a mock function with given fields: ctx
-func (_m *Querier) InsertGame(ctx context.Context) (int64, error) {
-	ret := _m.Called(ctx)
+// InsertGame provides a mock function with given fields: ctx, deployableTroops
+func (_m *Querier) InsertGame(ctx context.Context, deployableTroops int64) (sqlc.Game, error) {
+	ret := _m.Called(ctx, deployableTroops)
 
 	if len(ret) == 0 {
 		panic("no return value specified for InsertGame")
 	}
 
-	var r0 int64
+	var r0 sqlc.Game
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (int64, error)); ok {
-		return rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (sqlc.Game, error)); ok {
+		return rf(ctx, deployableTroops)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) int64); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, int64) sqlc.Game); ok {
+		r0 = rf(ctx, deployableTroops)
 	} else {
-		r0 = ret.Get(0).(int64)
+		r0 = ret.Get(0).(sqlc.Game)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(ctx, deployableTroops)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -383,23 +383,24 @@ type Querier_InsertGame_Call struct {
 
 // InsertGame is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *Querier_Expecter) InsertGame(ctx interface{}) *Querier_InsertGame_Call {
-	return &Querier_InsertGame_Call{Call: _e.mock.On("InsertGame", ctx)}
+//   - deployableTroops int64
+func (_e *Querier_Expecter) InsertGame(ctx interface{}, deployableTroops interface{}) *Querier_InsertGame_Call {
+	return &Querier_InsertGame_Call{Call: _e.mock.On("InsertGame", ctx, deployableTroops)}
 }
 
-func (_c *Querier_InsertGame_Call) Run(run func(ctx context.Context)) *Querier_InsertGame_Call {
+func (_c *Querier_InsertGame_Call) Run(run func(ctx context.Context, deployableTroops int64)) *Querier_InsertGame_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		run(args[0].(context.Context), args[1].(int64))
 	})
 	return _c
 }
 
-func (_c *Querier_InsertGame_Call) Return(_a0 int64, _a1 error) *Querier_InsertGame_Call {
+func (_c *Querier_InsertGame_Call) Return(_a0 sqlc.Game, _a1 error) *Querier_InsertGame_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_InsertGame_Call) RunAndReturn(run func(context.Context) (int64, error)) *Querier_InsertGame_Call {
+func (_c *Querier_InsertGame_Call) RunAndReturn(run func(context.Context, int64) (sqlc.Game, error)) *Querier_InsertGame_Call {
 	_c.Call.Return(run)
 	return _c
 }

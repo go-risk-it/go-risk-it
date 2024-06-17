@@ -59,13 +59,23 @@ func input() (int64, string, string, int64, int64, context.Context) {
 func TestServiceImpl_DeployShouldFailWhenPlayerNotInGame(t *testing.T) {
 	t.Parallel()
 
-	querier, playerService, _, _, service := setup(t)
+	querier, playerService, gameService, _, service := setup(t)
 	gameID, userID, regionReference, currentTroops, desiredTroops, ctx := input()
 
 	players := []sqlc.Player{
 		{ID: 420, TurnIndex: 0, GameID: 1, UserID: "Gabriele"},
 		{ID: 69, TurnIndex: 1, GameID: 1, UserID: "Francesco"},
 	}
+
+	gameService.
+		EXPECT().
+		GetGameStateQ(ctx, querier, gameID).
+		Return(&sqlc.Game{
+			ID:               gameID,
+			Phase:            sqlc.PhaseDEPLOY,
+			Turn:             1,
+			DeployableTroops: 5,
+		}, nil)
 	playerService.
 		EXPECT().
 		GetPlayersQ(ctx, querier, gameID).
@@ -165,9 +175,9 @@ func TestServiceImpl_DeployShouldFailWhenPlayerDoesntHaveEnoughDeployableTroops(
 	gameID, userID, regionReference, currentTroops, desiredTroops, ctx := input()
 
 	players := []sqlc.Player{
-		{ID: 420, TurnIndex: 0, GameID: 1, UserID: "Gabriele", DeployableTroops: 10},
-		{ID: 69, TurnIndex: 1, GameID: 1, UserID: "Francesco", DeployableTroops: 10},
-		{ID: 42069, TurnIndex: 2, GameID: 1, UserID: "Giovanni", DeployableTroops: 4},
+		{ID: 420, TurnIndex: 0, GameID: 1, UserID: "Gabriele"},
+		{ID: 69, TurnIndex: 1, GameID: 1, UserID: "Francesco"},
+		{ID: 42069, TurnIndex: 2, GameID: 1, UserID: "Giovanni"},
 	}
 	playerService.
 		EXPECT().
@@ -235,10 +245,18 @@ func TestServiceImpl_DeployShouldFail(t *testing.T) {
 			currentTroops := test.declaredTroops
 
 			players := []sqlc.Player{
-				{ID: 420, TurnIndex: 0, GameID: 1, UserID: "Gabriele", DeployableTroops: 10},
-				{ID: 69, TurnIndex: 1, GameID: 1, UserID: "Francesco", DeployableTroops: 10},
-				{ID: 42069, TurnIndex: 2, GameID: 1, UserID: "Giovanni", DeployableTroops: 5},
+				{ID: 420, TurnIndex: 0, GameID: 1, UserID: "Gabriele"},
+				{ID: 69, TurnIndex: 1, GameID: 1, UserID: "Francesco"},
+				{ID: 42069, TurnIndex: 2, GameID: 1, UserID: "Giovanni"},
 			}
+			gameService.EXPECT().
+				GetGameStateQ(ctx, querier, gameID).
+				Return(&sqlc.Game{
+					ID:               gameID,
+					Phase:            sqlc.PhaseDEPLOY,
+					Turn:             2,
+					DeployableTroops: 5,
+				}, nil)
 			playerService.
 				EXPECT().
 				GetPlayersQ(ctx, querier, gameID).
@@ -311,17 +329,16 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 			troops := desiredTroops - currentTroops
 
 			gabriele := sqlc.Player{
-				ID: 420, TurnIndex: 0, GameID: 1, UserID: "Gabriele", DeployableTroops: 15,
+				ID: 420, TurnIndex: 0, GameID: 1, UserID: "Gabriele",
 			}
 			francesco := sqlc.Player{
-				ID: 69, TurnIndex: 1, GameID: 1, UserID: "Francesco", DeployableTroops: 15,
+				ID: 69, TurnIndex: 1, GameID: 1, UserID: "Francesco",
 			}
 			giovanni := sqlc.Player{
-				ID:               42069,
-				TurnIndex:        2,
-				GameID:           1,
-				UserID:           "Giovanni",
-				DeployableTroops: test.deployableTroops,
+				ID:        42069,
+				TurnIndex: 2,
+				GameID:    1,
+				UserID:    "Giovanni",
 			}
 			players := []sqlc.Player{
 				gabriele,
@@ -329,18 +346,19 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 				giovanni,
 			}
 
+			game := &sqlc.Game{
+				ID:               gameID,
+				Phase:            sqlc.PhaseDEPLOY,
+				Turn:             2,
+				DeployableTroops: test.deployableTroops,
+			}
+			gameService.EXPECT().
+				GetGameStateQ(ctx, querier, gameID).
+				Return(game, nil)
 			playerService.
 				EXPECT().
 				GetPlayersQ(ctx, querier, gameID).
 				Return(players, nil)
-			gameService.
-				EXPECT().
-				GetGameStateQ(ctx, querier, gameID).
-				Return(&sqlc.Game{
-					ID:    gameID,
-					Phase: sqlc.PhaseDEPLOY,
-					Turn:  2,
-				}, nil)
 			regionService.
 				EXPECT().
 				GetRegionQ(ctx, querier, gameID, regionReference).
@@ -350,9 +368,9 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 					UserID:            "Giovanni",
 					Troops:            0,
 				}, nil)
-			playerService.
+			gameService.
 				EXPECT().
-				DecreaseDeployableTroopsQ(ctx, querier, &giovanni, troops).
+				DecreaseDeployableTroopsQ(ctx, querier, game, troops).
 				Return(nil)
 			regionService.
 				EXPECT().

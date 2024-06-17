@@ -23,17 +23,66 @@ func (_m *MoveController) EXPECT() *MoveController_Expecter {
 	return &MoveController_Expecter{mock: &_m.Mock}
 }
 
-// PerformDeployMove provides a mock function with given fields: ctx, gameID, deployMove
-func (_m *MoveController) PerformDeployMove(ctx context.Context, gameID int64, deployMove request.DeployMove) error {
-	ret := _m.Called(ctx, gameID, deployMove)
+// PerformAttackMove provides a mock function with given fields: ctx, gameID, userID, attackMove
+func (_m *MoveController) PerformAttackMove(ctx context.Context, gameID int64, userID string, attackMove request.AttackMove) error {
+	ret := _m.Called(ctx, gameID, userID, attackMove)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PerformAttackMove")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, request.AttackMove) error); ok {
+		r0 = rf(ctx, gameID, userID, attackMove)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MoveController_PerformAttackMove_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PerformAttackMove'
+type MoveController_PerformAttackMove_Call struct {
+	*mock.Call
+}
+
+// PerformAttackMove is a helper method to define mock.On call
+//   - ctx context.Context
+//   - gameID int64
+//   - userID string
+//   - attackMove request.AttackMove
+func (_e *MoveController_Expecter) PerformAttackMove(ctx interface{}, gameID interface{}, userID interface{}, attackMove interface{}) *MoveController_PerformAttackMove_Call {
+	return &MoveController_PerformAttackMove_Call{Call: _e.mock.On("PerformAttackMove", ctx, gameID, userID, attackMove)}
+}
+
+func (_c *MoveController_PerformAttackMove_Call) Run(run func(ctx context.Context, gameID int64, userID string, attackMove request.AttackMove)) *MoveController_PerformAttackMove_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int64), args[2].(string), args[3].(request.AttackMove))
+	})
+	return _c
+}
+
+func (_c *MoveController_PerformAttackMove_Call) Return(_a0 error) *MoveController_PerformAttackMove_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MoveController_PerformAttackMove_Call) RunAndReturn(run func(context.Context, int64, string, request.AttackMove) error) *MoveController_PerformAttackMove_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// PerformDeployMove provides a mock function with given fields: ctx, gameID, userID, deployMove
+func (_m *MoveController) PerformDeployMove(ctx context.Context, gameID int64, userID string, deployMove request.DeployMove) error {
+	ret := _m.Called(ctx, gameID, userID, deployMove)
 
 	if len(ret) == 0 {
 		panic("no return value specified for PerformDeployMove")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, request.DeployMove) error); ok {
-		r0 = rf(ctx, gameID, deployMove)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, request.DeployMove) error); ok {
+		r0 = rf(ctx, gameID, userID, deployMove)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -49,14 +98,15 @@ type MoveController_PerformDeployMove_Call struct {
 // PerformDeployMove is a helper method to define mock.On call
 //   - ctx context.Context
 //   - gameID int64
+//   - userID string
 //   - deployMove request.DeployMove
-func (_e *MoveController_Expecter) PerformDeployMove(ctx interface{}, gameID interface{}, deployMove interface{}) *MoveController_PerformDeployMove_Call {
-	return &MoveController_PerformDeployMove_Call{Call: _e.mock.On("PerformDeployMove", ctx, gameID, deployMove)}
+func (_e *MoveController_Expecter) PerformDeployMove(ctx interface{}, gameID interface{}, userID interface{}, deployMove interface{}) *MoveController_PerformDeployMove_Call {
+	return &MoveController_PerformDeployMove_Call{Call: _e.mock.On("PerformDeployMove", ctx, gameID, userID, deployMove)}
 }
 
-func (_c *MoveController_PerformDeployMove_Call) Run(run func(ctx context.Context, gameID int64, deployMove request.DeployMove)) *MoveController_PerformDeployMove_Call {
+func (_c *MoveController_PerformDeployMove_Call) Run(run func(ctx context.Context, gameID int64, userID string, deployMove request.DeployMove)) *MoveController_PerformDeployMove_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(int64), args[2].(request.DeployMove))
+		run(args[0].(context.Context), args[1].(int64), args[2].(string), args[3].(request.DeployMove))
 	})
 	return _c
 }
@@ -66,7 +116,7 @@ func (_c *MoveController_PerformDeployMove_Call) Return(_a0 error) *MoveControll
 	return _c
 }
 
-func (_c *MoveController_PerformDeployMove_Call) RunAndReturn(run func(context.Context, int64, request.DeployMove) error) *MoveController_PerformDeployMove_Call {
+func (_c *MoveController_PerformDeployMove_Call) RunAndReturn(run func(context.Context, int64, string, request.DeployMove) error) *MoveController_PerformDeployMove_Call {
 	_c.Call.Return(run)
 	return _c
 }

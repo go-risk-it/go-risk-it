@@ -33,7 +33,6 @@ func (r iteratorForInsertPlayers) Values() ([]interface{}, error) {
 		r.rows[0].UserID,
 		r.rows[0].Name,
 		r.rows[0].TurnIndex,
-		r.rows[0].DeployableTroops,
 	}, nil
 }
 
@@ -42,7 +41,7 @@ func (r iteratorForInsertPlayers) Err() error {
 }
 
 func (q *Queries) InsertPlayers(ctx context.Context, arg []InsertPlayersParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"player"}, []string{"game_id", "user_id", "name", "turn_index", "deployable_troops"}, &iteratorForInsertPlayers{rows: arg})
+	return q.db.CopyFrom(ctx, []string{"player"}, []string{"game_id", "user_id", "name", "turn_index"}, &iteratorForInsertPlayers{rows: arg})
 }
 
 // iteratorForInsertRegions implements pgx.CopyFromSource.

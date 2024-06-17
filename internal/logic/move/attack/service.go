@@ -8,7 +8,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/move"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/validation"
-	"github.com/go-risk-it/go-risk-it/internal/logic/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/region"
 	"github.com/go-risk-it/go-risk-it/internal/signals"
 	"github.com/jackc/pgx/v5"
@@ -39,7 +38,7 @@ type ServiceImpl struct {
 	log                     *zap.SugaredLogger
 	querier                 db.Querier
 	gameService             game.Service
-	playerService           player.Service
+	playerService           game.Service
 	regionService           region.Service
 	validationService       validation.Service
 	boardStateChangedSignal signals.BoardStateChangedSignal
@@ -50,7 +49,7 @@ func NewService(
 	que db.Querier,
 	log *zap.SugaredLogger,
 	gameService game.Service,
-	playerService player.Service,
+	playerService game.Service,
 	regionService region.Service,
 	validationService validation.Service,
 	boardStateChangedSignal signals.BoardStateChangedSignal,

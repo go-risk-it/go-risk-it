@@ -87,55 +87,6 @@ func (_c *Service_CreatePlayers_Call) RunAndReturn(run func(context.Context, db.
 	return _c
 }
 
-// DecreaseDeployableTroopsQ provides a mock function with given fields: ctx, querier, _a2, troops
-func (_m *Service) DecreaseDeployableTroopsQ(ctx context.Context, querier db.Querier, _a2 *sqlc.Player, troops int64) error {
-	ret := _m.Called(ctx, querier, _a2, troops)
-
-	if len(ret) == 0 {
-		panic("no return value specified for DecreaseDeployableTroopsQ")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, db.Querier, *sqlc.Player, int64) error); ok {
-		r0 = rf(ctx, querier, _a2, troops)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// Service_DecreaseDeployableTroopsQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DecreaseDeployableTroopsQ'
-type Service_DecreaseDeployableTroopsQ_Call struct {
-	*mock.Call
-}
-
-// DecreaseDeployableTroopsQ is a helper method to define mock.On call
-//   - ctx context.Context
-//   - querier db.Querier
-//   - _a2 *sqlc.Player
-//   - troops int64
-func (_e *Service_Expecter) DecreaseDeployableTroopsQ(ctx interface{}, querier interface{}, _a2 interface{}, troops interface{}) *Service_DecreaseDeployableTroopsQ_Call {
-	return &Service_DecreaseDeployableTroopsQ_Call{Call: _e.mock.On("DecreaseDeployableTroopsQ", ctx, querier, _a2, troops)}
-}
-
-func (_c *Service_DecreaseDeployableTroopsQ_Call) Run(run func(ctx context.Context, querier db.Querier, _a2 *sqlc.Player, troops int64)) *Service_DecreaseDeployableTroopsQ_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(db.Querier), args[2].(*sqlc.Player), args[3].(int64))
-	})
-	return _c
-}
-
-func (_c *Service_DecreaseDeployableTroopsQ_Call) Return(_a0 error) *Service_DecreaseDeployableTroopsQ_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Service_DecreaseDeployableTroopsQ_Call) RunAndReturn(run func(context.Context, db.Querier, *sqlc.Player, int64) error) *Service_DecreaseDeployableTroopsQ_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // GetPlayers provides a mock function with given fields: ctx, gameID
 func (_m *Service) GetPlayers(ctx context.Context, gameID int64) ([]sqlc.Player, error) {
 	ret := _m.Called(ctx, gameID)

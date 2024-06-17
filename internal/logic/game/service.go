@@ -27,6 +27,12 @@ type Service interface {
 	GetGameState(ctx context.Context, gameID int64) (*sqlc.Game, error)
 	GetGameStateQ(ctx context.Context, querier db.Querier, gameID int64) (*sqlc.Game, error)
 	SetGamePhaseQ(ctx context.Context, querier db.Querier, gameID int64, phase sqlc.Phase) error
+	DecreaseDeployableTroopsQ(
+		ctx context.Context,
+		querier db.Querier,
+		game *sqlc.Game,
+		troops int64,
+	) error
 }
 
 type ServiceImpl struct {
@@ -78,14 +84,14 @@ func (s *ServiceImpl) CreateGame(
 ) (int64, error) {
 	s.log.Debugw("creating game", "board", board, "players", players)
 
-	gameID, err := querier.InsertGame(ctx)
+	game, err := querier.InsertGame(ctx, 3)
 	if err != nil {
 		return -1, fmt.Errorf("failed to insert game: %w", err)
 	}
 
-	s.log.Debugw("inserted game", "id", gameID)
+	s.log.Debugw("inserted game", "id", game)
 
-	createdPlayers, err := s.playerService.CreatePlayers(ctx, querier, gameID, players)
+	createdPlayers, err := s.playerService.CreatePlayers(ctx, querier, game.ID, players)
 	if err != nil {
 		return -1, fmt.Errorf("failed to create players: %w", err)
 	}
@@ -97,7 +103,7 @@ func (s *ServiceImpl) CreateGame(
 
 	s.log.Debugw("successfully created game", "board", board, "players", players)
 
-	return gameID, nil
+	return game.ID, nil
 }
 
 func (s *ServiceImpl) GetGameState(
@@ -137,6 +143,31 @@ func (s *ServiceImpl) SetGamePhaseQ(
 	}
 
 	s.log.Infow("phase set", "gameID", gameID, "phase", phase)
+
+	return nil
+}
+
+func (s *ServiceImpl) DecreaseDeployableTroopsQ(
+	ctx context.Context,
+	querier db.Querier,
+	game *sqlc.Game,
+	troops int64,
+) error {
+	s.log.Infow("decreasing deployable troops", "gameID", game.ID, "troops", troops)
+
+	if game.DeployableTroops < troops {
+		return fmt.Errorf("player does not have enough troops to deploy")
+	}
+
+	err := querier.DecreaseDeployableTroops(ctx, sqlc.DecreaseDeployableTroopsParams{
+		ID:               game.ID,
+		DeployableTroops: troops,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to decrease deployable troops: %w", err)
+	}
+
+	s.log.Infow("decreased deployable troops", "gameID", game.ID, "troops", troops)
 
 	return nil
 }

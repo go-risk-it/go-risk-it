@@ -9,7 +9,6 @@ class Player:
     userId: str
     name: str
     index: int
-    troopsToDeploy: int
 
 
 @dataclass_json

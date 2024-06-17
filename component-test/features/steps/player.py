@@ -12,11 +12,9 @@ def extract_player(player_name: str, players: list[Player]) -> Player:
     raise Exception(f"Player {player_name} is not in game")
 
 
-@then("{player_name} has {deployable_troops} deployable troops")
-def step_impl(context: RiskItContext, player_name: str, deployable_troops: int):
-    player = extract_player(player_name, context.player_state.players)
-
-    assert int(player.troopsToDeploy) == int(deployable_troops)
+@then("There are {deployable_troops} deployable troops")
+def step_impl(context: RiskItContext, deployable_troops: int):
+    assert context.game_state.deployableTroops == int(deployable_troops)
 
 
 @then("it's {player_name}'s turn")

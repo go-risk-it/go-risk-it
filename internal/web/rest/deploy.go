@@ -45,7 +45,12 @@ func (h *DeployHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Requ
 		return
 	}
 
-	err = h.moveController.PerformDeployMove(req.Context(), int64(gameID), deployMoveRequest)
+	err = h.moveController.PerformDeployMove(
+		req.Context(),
+		int64(gameID),
+		deployMoveRequest.UserID,
+		deployMoveRequest,
+	)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 

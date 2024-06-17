@@ -64,8 +64,9 @@ func (c *GameControllerImpl) GetGameState(
 	}
 
 	return message.GameState{
-		GameID:       gameState.ID,
-		CurrentTurn:  gameState.Turn,
-		CurrentPhase: string(gameState.Phase),
+		GameID:           gameState.ID,
+		CurrentTurn:      gameState.Turn,
+		CurrentPhase:     string(gameState.Phase),
+		DeployableTroops: gameState.DeployableTroops,
 	}, nil
 }

@@ -53,7 +53,12 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 	}
 
 	// setup mocks
-	mockQuerier.EXPECT().InsertGame(ctx).Return(gameID, nil)
+	mockQuerier.EXPECT().InsertGame(ctx, int64(3)).Return(sqlc.Game{
+		ID:               gameID,
+		Turn:             1,
+		Phase:            sqlc.PhaseDEPLOY,
+		DeployableTroops: 3,
+	}, nil)
 	// mockDB.EXPECT().Begin(qctx).Return()
 
 	playerServiceMock := player.NewService(t)
@@ -104,7 +109,7 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 	}
 
 	// Set up expectations for InsertGame method
-	querier.On("InsertGame", ctx).Return(int64(0), errInsertGame)
+	querier.On("InsertGame", ctx, int64(3)).Return(sqlc.Game{}, errInsertGame)
 
 	// Call the method under test
 	gameID, err := service.CreateGame(ctx, querier, gameBoard, users)
@@ -140,7 +145,9 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 	}
 
 	// Set up expectations for InsertGame method
-	querier.On("InsertGame", ctx).Return(int64(1), nil)
+	querier.On("InsertGame", ctx, int64(3)).Return(sqlc.Game{
+		ID: 1,
+	}, nil)
 
 	// Set up expectations for CreatePlayers method
 	playerService.On("CreatePlayers", ctx, querier, int64(1), users).
