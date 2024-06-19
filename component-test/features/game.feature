@@ -26,13 +26,13 @@ Feature: Creating a game
     And there are 3 deployable troops
     And the game phase is DEPLOY
 
-    When francesco deploys 3 troops in eastern_australia
+    When francesco deploys 2 troops in eastern_australia
     Then all players receive all state updates
     And it's francesco's turn
-    And there are 2 deployable troops
+    And there are 1 deployable troops
     And the game phase is DEPLOY
 
-    When francesco deploys 2 troops in ontario
+    When francesco deploys 1 troops in ontario
     Then all players receive all state updates
     And it's francesco's turn
     And there are 0 deployable troops

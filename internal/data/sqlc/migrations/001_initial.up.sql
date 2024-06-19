@@ -9,12 +9,10 @@ CREATE TABLE game
     CONSTRAINT check_deployable_troops
         CHECK (
             CASE
-                WHEN phase = 'DEPLOY' THEN deployable_troops > 0
-                WHEN phase = 'CARDS' THEN deployable_troops >= 0
+                WHEN phase = 'DEPLOY' OR phase = 'CARDS' THEN deployable_troops >= 0
                 ELSE deployable_troops = 0
                 END
             )
-            DEFERRABLE
 );
 
 CREATE TABLE player
