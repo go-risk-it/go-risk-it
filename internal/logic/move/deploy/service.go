@@ -10,8 +10,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/move"
 	"github.com/go-risk-it/go-risk-it/internal/logic/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/region"
-	"github.com/go-risk-it/go-risk-it/internal/signals"
-	"github.com/jackc/pgx/v5"
 	"go.uber.org/zap"
 )
 
@@ -22,10 +20,7 @@ type MoveData struct {
 }
 
 type Service interface {
-	Perform(
-		ctx context.Context,
-		move move.Move[MoveData],
-	) error
+	move.Service[MoveData]
 	PerformDeployMoveQ(
 		ctx context.Context,
 		querier db.Querier,
@@ -34,14 +29,11 @@ type Service interface {
 }
 
 type ServiceImpl struct {
-	log                      *zap.SugaredLogger
-	querier                  db.Querier
-	gameService              game.Service
-	playerService            player.Service
-	regionService            region.Service
-	boardStateChangedSignal  signals.BoardStateChangedSignal
-	playerStateChangedSignal signals.PlayerStateChangedSignal
-	gameStateChangedSignal   signals.GameStateChangedSignal
+	log           *zap.SugaredLogger
+	querier       db.Querier
+	gameService   game.Service
+	playerService player.Service
+	regionService region.Service
 }
 
 func NewService(
@@ -50,50 +42,33 @@ func NewService(
 	gameService game.Service,
 	playerService player.Service,
 	regionService region.Service,
-	boardStateChangedSignal signals.BoardStateChangedSignal,
-	playerStateChangedSignal signals.PlayerStateChangedSignal,
-	gameStateChangedSignal signals.GameStateChangedSignal,
 ) *ServiceImpl {
 	return &ServiceImpl{
-		querier:                  que,
-		log:                      log,
-		gameService:              gameService,
-		playerService:            playerService,
-		regionService:            regionService,
-		boardStateChangedSignal:  boardStateChangedSignal,
-		playerStateChangedSignal: playerStateChangedSignal,
-		gameStateChangedSignal:   gameStateChangedSignal,
+		querier:       que,
+		log:           log,
+		gameService:   gameService,
+		playerService: playerService,
+		regionService: regionService,
 	}
 }
 
-func (s *ServiceImpl) Perform(
+func (s *ServiceImpl) MustAdvanceQ(
 	ctx context.Context,
+	querier db.Querier,
+	game *sqlc.Game,
+) bool {
+	return game.DeployableTroops == 0
+}
+
+func (s *ServiceImpl) PerformQ(
+	ctx context.Context,
+	querier db.Querier,
 	move move.Move[MoveData],
 ) error {
-	_, err := s.querier.ExecuteInTransactionWithIsolation(
-		ctx,
-		pgx.RepeatableRead,
-		func(qtx db.Querier) (interface{}, error) {
-			return nil, s.PerformDeployMoveQ(
-				ctx,
-				qtx,
-				move,
-			)
-		},
-	)
+	err := s.PerformDeployMoveQ(ctx, querier, move)
 	if err != nil {
 		return fmt.Errorf("failed to perform deploy move: %w", err)
 	}
-
-	go s.boardStateChangedSignal.Emit(ctx, signals.BoardStateChangedData{
-		GameID: move.GameID,
-	})
-	go s.playerStateChangedSignal.Emit(ctx, signals.PlayerStateChangedData{
-		GameID: move.GameID,
-	})
-	go s.gameStateChangedSignal.Emit(ctx, signals.GameStateChangedData{
-		GameID: move.GameID,
-	})
 
 	return nil
 }
@@ -193,15 +168,6 @@ func (s *ServiceImpl) executeDeploy(
 	err = s.regionService.IncreaseTroopsInRegion(ctx, querier, region.ID, troops)
 	if err != nil {
 		return fmt.Errorf("failed to increase region troops: %w", err)
-	}
-
-	if game.DeployableTroops == troops {
-		s.log.Infow("all deployable troops were deployed, advancing game phase", "gameID", game.ID)
-
-		err = s.gameService.SetGamePhaseQ(ctx, querier, game.ID, sqlc.PhaseATTACK)
-		if err != nil {
-			return fmt.Errorf("failed to set game phase: %w", err)
-		}
 	}
 
 	return nil

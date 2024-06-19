@@ -11,7 +11,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/player"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/region"
-	"github.com/go-risk-it/go-risk-it/mocks/internal_/signals"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -28,18 +27,12 @@ func setup(t *testing.T) (
 	playerService := player.NewService(t)
 	gameService := game.NewService(t)
 	regionService := region.NewService(t)
-	boardStateChangedSignal := signals.NewBoardStateChangedSignal(t)
-	playerStateChangedSignal := signals.NewPlayerStateChangedSignal(t)
-	gameStateChangedSignal := signals.NewGameStateChangedSignal(t)
 	service := deploy.NewService(
 		querier,
 		zap.NewNop().Sugar(),
 		gameService,
 		playerService,
 		regionService,
-		boardStateChangedSignal,
-		playerStateChangedSignal,
-		gameStateChangedSignal,
 	)
 
 	return querier, playerService, gameService, regionService, service
@@ -376,12 +369,6 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 				EXPECT().
 				IncreaseTroopsInRegion(ctx, querier, int64(1), troops).
 				Return(nil)
-			if test.deployableTroops == troops {
-				gameService.
-					EXPECT().
-					SetGamePhaseQ(ctx, querier, gameID, sqlc.PhaseATTACK).
-					Return(nil)
-			}
 
 			err := service.PerformDeployMoveQ(
 				ctx,

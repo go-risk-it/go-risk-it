@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
+	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/move"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/validation"
 	"github.com/go-risk-it/go-risk-it/internal/logic/region"
 	"github.com/go-risk-it/go-risk-it/internal/signals"
-	"github.com/jackc/pgx/v5"
 	"go.uber.org/zap"
 )
 
@@ -23,10 +23,7 @@ type MoveData struct {
 }
 
 type Service interface {
-	Perform(
-		ctx context.Context,
-		move move.Move[MoveData],
-	) error
+	move.Service[MoveData]
 	PerformAttackMoveQ(
 		ctx context.Context,
 		querier db.Querier,
@@ -67,21 +64,20 @@ func NewService(
 	}
 }
 
-func (s *ServiceImpl) Perform(
+func (s *ServiceImpl) MustAdvanceQ(
 	ctx context.Context,
+	querier db.Querier,
+	game *sqlc.Game,
+) bool {
+	return false
+}
+
+func (s *ServiceImpl) PerformQ(
+	ctx context.Context,
+	querier db.Querier,
 	move move.Move[MoveData],
 ) error {
-	_, err := s.querier.ExecuteInTransactionWithIsolation(
-		ctx,
-		pgx.RepeatableRead,
-		func(qtx db.Querier) (interface{}, error) {
-			return nil, s.PerformAttackMoveQ(
-				ctx,
-				qtx,
-				move,
-			)
-		},
-	)
+	err := s.PerformAttackMoveQ(ctx, querier, move)
 	if err != nil {
 		return fmt.Errorf("failed to perform deploy move: %w", err)
 	}

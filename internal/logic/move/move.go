@@ -3,6 +3,7 @@ package move
 import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/attack"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/deploy"
+	"github.com/go-risk-it/go-risk-it/internal/logic/move/orchestration"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/validation"
 	"go.uber.org/fx"
 )
@@ -20,6 +21,10 @@ var Module = fx.Options(
 		fx.Annotate(
 			validation.NewService,
 			fx.As(new(validation.Service)),
+		),
+		fx.Annotate(
+			orchestration.NewService,
+			fx.As(new(orchestration.Service)),
 		),
 	),
 )
