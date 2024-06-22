@@ -58,10 +58,6 @@ func NewService(
 	}
 }
 
-func (s *ServiceImpl) ValidatePhase(game *sqlc.Game) bool {
-	return game.Phase == sqlc.PhaseATTACK
-}
-
 func (s *ServiceImpl) MustAdvanceQ(
 	ctx context.Context,
 	querier db.Querier,

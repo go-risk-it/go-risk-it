@@ -24,7 +24,6 @@ type Performer[T any] interface {
 
 type Service[T any] interface {
 	Performer[T]
-	ValidatePhase(game *sqlc.Game) bool
 	MustAdvanceQ(
 		ctx context.Context,
 		querier db.Querier,

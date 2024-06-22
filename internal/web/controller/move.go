@@ -55,7 +55,7 @@ func (c *MoveControllerImpl) PerformDeployMove(
 		ctx,
 		gameID,
 		userID,
-		c.deployService.ValidatePhase,
+		sqlc.PhaseDEPLOY,
 		func(ctx context.Context, querier db.Querier, game *sqlc.Game) error {
 			err := c.deployService.PerformQ(ctx, querier, game, move.Move[deploy.MoveData]{
 				UserID: userID,
@@ -87,7 +87,7 @@ func (c *MoveControllerImpl) PerformAttackMove(
 		ctx,
 		gameID,
 		userID,
-		c.attackService.ValidatePhase,
+		sqlc.PhaseATTACK,
 		func(ctx context.Context, querier db.Querier, game *sqlc.Game) error {
 			err := c.attackService.PerformQ(ctx, querier, game, move.Move[attack.MoveData]{
 				UserID: userID,

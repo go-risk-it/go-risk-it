@@ -19,7 +19,7 @@ type Service interface {
 		ctx context.Context,
 		gameID int64,
 		userID string,
-		validatePhase func(game *sqlc.Game) bool,
+		phase sqlc.Phase,
 		perform func(ctx context.Context, querier db.Querier, game *sqlc.Game) error,
 	) error
 }
@@ -61,7 +61,7 @@ func (s *ServiceImpl) PerformMove(
 	ctx context.Context,
 	gameID int64,
 	userID string,
-	validatePhase func(game *sqlc.Game) bool,
+	phase sqlc.Phase,
 	perform func(ctx context.Context, querier db.Querier, game *sqlc.Game) error,
 ) error {
 	_, err := s.querier.ExecuteInTransactionWithIsolation(
@@ -73,7 +73,7 @@ func (s *ServiceImpl) PerformMove(
 				return nil, fmt.Errorf("unable to get game state: %w", err)
 			}
 
-			if !validatePhase(gameState) {
+			if gameState.Phase != phase {
 				return nil, fmt.Errorf("game is not in the correct phase to perform move")
 			}
 
