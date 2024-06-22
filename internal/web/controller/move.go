@@ -11,7 +11,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/attack"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/deploy"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/move"
-	"github.com/go-risk-it/go-risk-it/internal/logic/move/orchestration"
+	"github.com/go-risk-it/go-risk-it/internal/logic/move/orchestration/orchestration"
 	"go.uber.org/zap"
 )
 

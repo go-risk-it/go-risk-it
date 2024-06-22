@@ -9,6 +9,7 @@ import (
 )
 
 var Module = fx.Options(
+	orchestration.Module,
 	fx.Provide(
 		fx.Annotate(
 			deploy.NewService,
@@ -21,10 +22,6 @@ var Module = fx.Options(
 		fx.Annotate(
 			validation.NewService,
 			fx.As(new(validation.Service)),
-		),
-		fx.Annotate(
-			orchestration.NewService,
-			fx.As(new(orchestration.Service)),
 		),
 	),
 )
