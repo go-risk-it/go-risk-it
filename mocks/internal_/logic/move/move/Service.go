@@ -74,17 +74,17 @@ func (_c *Service_MustAdvanceQ_Call[T]) RunAndReturn(run func(context.Context, d
 	return _c
 }
 
-// PerformQ provides a mock function with given fields: ctx, querier, _a2, game
-func (_m *Service[T]) PerformQ(ctx context.Context, querier db.Querier, _a2 move.Move[T], game *sqlc.Game) error {
-	ret := _m.Called(ctx, querier, _a2, game)
+// PerformQ provides a mock function with given fields: ctx, querier, game, _a3
+func (_m *Service[T]) PerformQ(ctx context.Context, querier db.Querier, game *sqlc.Game, _a3 move.Move[T]) error {
+	ret := _m.Called(ctx, querier, game, _a3)
 
 	if len(ret) == 0 {
 		panic("no return value specified for PerformQ")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, db.Querier, move.Move[T], *sqlc.Game) error); ok {
-		r0 = rf(ctx, querier, _a2, game)
+	if rf, ok := ret.Get(0).(func(context.Context, db.Querier, *sqlc.Game, move.Move[T]) error); ok {
+		r0 = rf(ctx, querier, game, _a3)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -100,15 +100,15 @@ type Service_PerformQ_Call[T interface{}] struct {
 // PerformQ is a helper method to define mock.On call
 //   - ctx context.Context
 //   - querier db.Querier
-//   - _a2 move.Move[T]
 //   - game *sqlc.Game
-func (_e *Service_Expecter[T]) PerformQ(ctx interface{}, querier interface{}, _a2 interface{}, game interface{}) *Service_PerformQ_Call[T] {
-	return &Service_PerformQ_Call[T]{Call: _e.mock.On("PerformQ", ctx, querier, _a2, game)}
+//   - _a3 move.Move[T]
+func (_e *Service_Expecter[T]) PerformQ(ctx interface{}, querier interface{}, game interface{}, _a3 interface{}) *Service_PerformQ_Call[T] {
+	return &Service_PerformQ_Call[T]{Call: _e.mock.On("PerformQ", ctx, querier, game, _a3)}
 }
 
-func (_c *Service_PerformQ_Call[T]) Run(run func(ctx context.Context, querier db.Querier, _a2 move.Move[T], game *sqlc.Game)) *Service_PerformQ_Call[T] {
+func (_c *Service_PerformQ_Call[T]) Run(run func(ctx context.Context, querier db.Querier, game *sqlc.Game, _a3 move.Move[T])) *Service_PerformQ_Call[T] {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(db.Querier), args[2].(move.Move[T]), args[3].(*sqlc.Game))
+		run(args[0].(context.Context), args[1].(db.Querier), args[2].(*sqlc.Game), args[3].(move.Move[T]))
 	})
 	return _c
 }
@@ -118,7 +118,7 @@ func (_c *Service_PerformQ_Call[T]) Return(_a0 error) *Service_PerformQ_Call[T] 
 	return _c
 }
 
-func (_c *Service_PerformQ_Call[T]) RunAndReturn(run func(context.Context, db.Querier, move.Move[T], *sqlc.Game) error) *Service_PerformQ_Call[T] {
+func (_c *Service_PerformQ_Call[T]) RunAndReturn(run func(context.Context, db.Querier, *sqlc.Game, move.Move[T]) error) *Service_PerformQ_Call[T] {
 	_c.Call.Return(run)
 	return _c
 }

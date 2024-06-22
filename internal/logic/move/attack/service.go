@@ -73,8 +73,8 @@ func (s *ServiceImpl) MustAdvanceQ(
 func (s *ServiceImpl) PerformQ(
 	ctx context.Context,
 	querier db.Querier,
-	move move.Move[MoveData],
 	game *sqlc.Game,
+	move move.Move[MoveData],
 ) error {
 	s.log.Infow(
 		"performing attack move",

@@ -60,20 +60,15 @@ func TestServiceImpl_DeployShouldFailWhenPlayerDoesntHaveEnoughDeployableTroops(
 		Phase: sqlc.PhaseDEPLOY,
 		Turn:  2,
 	}
-	err := service.PerformQ(
-		ctx,
-		querier,
-		move.Move[deploy.MoveData]{
-			UserID: userID,
-			GameID: gameID,
-			Payload: deploy.MoveData{
-				RegionID:      regionReference,
-				CurrentTroops: currentTroops,
-				DesiredTroops: desiredTroops,
-			},
+	err := service.PerformQ(ctx, querier, game, move.Move[deploy.MoveData]{
+		UserID: userID,
+		GameID: gameID,
+		Payload: deploy.MoveData{
+			RegionID:      regionReference,
+			CurrentTroops: currentTroops,
+			DesiredTroops: desiredTroops,
 		},
-		game,
-	)
+	})
 
 	require.Error(t, err)
 	require.EqualError(t, err, "not enough deployable troops")
@@ -129,20 +124,15 @@ func TestServiceImpl_DeployShouldFail(t *testing.T) {
 					Troops:            0,
 				}, nil)
 
-			err := service.PerformQ(
-				ctx,
-				querier,
-				move.Move[deploy.MoveData]{
-					UserID: userID,
-					GameID: gameID,
-					Payload: deploy.MoveData{
-						RegionID:      regionReference,
-						CurrentTroops: currentTroops,
-						DesiredTroops: desiredTroops,
-					},
+			err := service.PerformQ(ctx, querier, game, move.Move[deploy.MoveData]{
+				UserID: userID,
+				GameID: gameID,
+				Payload: deploy.MoveData{
+					RegionID:      regionReference,
+					CurrentTroops: currentTroops,
+					DesiredTroops: desiredTroops,
 				},
-				game,
-			)
+			})
 
 			require.Error(t, err)
 			require.EqualError(t, err, test.expectedError)
@@ -221,20 +211,15 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 				IncreaseTroopsInRegion(ctx, querier, int64(1), troops).
 				Return(nil)
 
-			err := service.PerformQ(
-				ctx,
-				querier,
-				move.Move[deploy.MoveData]{
-					UserID: userID,
-					GameID: gameID,
-					Payload: deploy.MoveData{
-						RegionID:      regionReference,
-						CurrentTroops: currentTroops,
-						DesiredTroops: desiredTroops,
-					},
+			err := service.PerformQ(ctx, querier, game, move.Move[deploy.MoveData]{
+				UserID: userID,
+				GameID: gameID,
+				Payload: deploy.MoveData{
+					RegionID:      regionReference,
+					CurrentTroops: currentTroops,
+					DesiredTroops: desiredTroops,
 				},
-				game,
-			)
+			})
 
 			require.NoError(t, err)
 			gameService.AssertExpectations(t)

@@ -9,36 +9,110 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/attack"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/deploy"
+	"github.com/go-risk-it/go-risk-it/internal/logic/move/validation"
+	"github.com/go-risk-it/go-risk-it/internal/signals"
+	"github.com/jackc/pgx/v5"
 	"go.uber.org/zap"
 )
 
 type Service interface {
-	AdvancePhaseQ(
+	PerformMove(
 		ctx context.Context,
-		querier db.Querier,
-		gameID int64) error
+		gameID int64,
+		userID string,
+		validatePhase func(game *sqlc.Game) bool,
+		perform func(ctx context.Context, querier db.Querier, game *sqlc.Game) error,
+	) error
 }
 
 type ServiceImpl struct {
-	log           *zap.SugaredLogger
-	attackService attack.Service
-	deployService deploy.Service
-	gameService   game.Service
+	log                      *zap.SugaredLogger
+	querier                  db.Querier
+	attackService            attack.Service
+	deployService            deploy.Service
+	gameService              game.Service
+	validationService        validation.Service
+	boardStateChangedSignal  signals.BoardStateChangedSignal
+	playerStateChangedSignal signals.PlayerStateChangedSignal
+	gameStateChangedSignal   signals.GameStateChangedSignal
 }
 
-func NewService(log *zap.SugaredLogger,
+func NewService(
+	log *zap.SugaredLogger,
+	querier db.Querier,
 	attackService attack.Service,
 	deployService deploy.Service,
 	gameService game.Service,
+	validationService validation.Service,
+	boardStateChangedSignal signals.BoardStateChangedSignal,
+	playerStateChangedSignal signals.PlayerStateChangedSignal,
+	gameStateChangedSignal signals.GameStateChangedSignal,
 ) *ServiceImpl {
 	return &ServiceImpl{
-		log:           log,
-		attackService: attackService,
-		deployService: deployService, gameService: gameService,
+		log:                      log,
+		querier:                  querier,
+		attackService:            attackService,
+		deployService:            deployService,
+		gameService:              gameService,
+		validationService:        validationService,
+		boardStateChangedSignal:  boardStateChangedSignal,
+		playerStateChangedSignal: playerStateChangedSignal,
+		gameStateChangedSignal:   gameStateChangedSignal,
 	}
 }
 
-func (s *ServiceImpl) AdvancePhaseQ(
+func (s *ServiceImpl) PerformMove(
+	ctx context.Context,
+	gameID int64,
+	userID string,
+	validatePhase func(game *sqlc.Game) bool,
+	perform func(ctx context.Context, querier db.Querier, game *sqlc.Game) error,
+) error {
+	_, err := s.querier.ExecuteInTransactionWithIsolation(
+		ctx,
+		pgx.RepeatableRead,
+		func(querier db.Querier) (interface{}, error) {
+			gameState, err := s.gameService.GetGameStateQ(ctx, querier, gameID)
+			if err != nil {
+				return nil, fmt.Errorf("unable to get game state: %w", err)
+			}
+
+			if !validatePhase(gameState) {
+				return nil, fmt.Errorf("game is not in the correct phase to perform move")
+			}
+
+			if err := s.validationService.Validate(
+				ctx,
+				querier,
+				gameState,
+				userID); err != nil {
+				return nil, fmt.Errorf("invalid move: %w", err)
+			}
+
+			if err := perform(ctx, querier, gameState); err != nil {
+				return nil, fmt.Errorf("unable to perform move: %w", err)
+			}
+
+			if err := s.advancePhaseQ(
+				ctx,
+				querier,
+				gameID); err != nil {
+				return nil, fmt.Errorf("unable to advance phase: %w", err)
+			}
+
+			return struct{}{}, nil
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("unable to perform move: %w", err)
+	}
+
+	s.publishMoveResult(ctx, gameID)
+
+	return nil
+}
+
+func (s *ServiceImpl) advancePhaseQ(
 	ctx context.Context,
 	querier db.Querier,
 	gameID int64,
@@ -63,6 +137,18 @@ func (s *ServiceImpl) AdvancePhaseQ(
 	}
 
 	return nil
+}
+
+func (s *ServiceImpl) publishMoveResult(ctx context.Context, gameID int64) {
+	go s.boardStateChangedSignal.Emit(ctx, signals.BoardStateChangedData{
+		GameID: gameID,
+	})
+	go s.playerStateChangedSignal.Emit(ctx, signals.PlayerStateChangedData{
+		GameID: gameID,
+	})
+	go s.gameStateChangedSignal.Emit(ctx, signals.GameStateChangedData{
+		GameID: gameID,
+	})
 }
 
 func (s *ServiceImpl) walkToTargetPhase(

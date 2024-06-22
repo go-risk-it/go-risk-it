@@ -30,7 +30,7 @@ func (_m *GameController) CreateGame(ctx context.Context, _a1 request.CreateGame
 	ret := _m.Called(ctx, _a1)
 
 	if len(ret) == 0 {
-		panic("no return value specified for CreateGameQ")
+		panic("no return value specified for CreateGame")
 	}
 
 	var r0 int64
@@ -53,7 +53,7 @@ func (_m *GameController) CreateGame(ctx context.Context, _a1 request.CreateGame
 	return r0, r1
 }
 
-// GameController_CreateGame_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateGameQ'
+// GameController_CreateGame_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateGame'
 type GameController_CreateGame_Call struct {
 	*mock.Call
 }
@@ -62,7 +62,7 @@ type GameController_CreateGame_Call struct {
 //   - ctx context.Context
 //   - _a1 request.CreateGame
 func (_e *GameController_Expecter) CreateGame(ctx interface{}, _a1 interface{}) *GameController_CreateGame_Call {
-	return &GameController_CreateGame_Call{Call: _e.mock.On("CreateGameQ", ctx, _a1)}
+	return &GameController_CreateGame_Call{Call: _e.mock.On("CreateGame", ctx, _a1)}
 }
 
 func (_c *GameController_CreateGame_Call) Run(run func(ctx context.Context, _a1 request.CreateGame)) *GameController_CreateGame_Call {

@@ -17,14 +17,14 @@ type Performer[T any] interface {
 	PerformQ(
 		ctx context.Context,
 		querier db.Querier,
-		move Move[T],
 		game *sqlc.Game,
+		move Move[T],
 	) error
-	ValidatePhase(game *sqlc.Game) bool
 }
 
 type Service[T any] interface {
 	Performer[T]
+	ValidatePhase(game *sqlc.Game) bool
 	MustAdvanceQ(
 		ctx context.Context,
 		querier db.Querier,
