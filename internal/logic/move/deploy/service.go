@@ -21,11 +21,6 @@ type MoveData struct {
 
 type Service interface {
 	move.Service[MoveData]
-	PerformDeployMoveQ(
-		ctx context.Context,
-		querier db.Querier,
-		move move.Move[MoveData],
-	) error
 }
 
 type ServiceImpl struct {
@@ -61,19 +56,6 @@ func (s *ServiceImpl) MustAdvanceQ(
 }
 
 func (s *ServiceImpl) PerformQ(
-	ctx context.Context,
-	querier db.Querier,
-	move move.Move[MoveData],
-) error {
-	err := s.PerformDeployMoveQ(ctx, querier, move)
-	if err != nil {
-		return fmt.Errorf("failed to perform deploy move: %w", err)
-	}
-
-	return nil
-}
-
-func (s *ServiceImpl) PerformDeployMoveQ(
 	ctx context.Context,
 	querier db.Querier,
 	move move.Move[MoveData],

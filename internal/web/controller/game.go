@@ -41,7 +41,7 @@ func NewGameController(
 func (c *GameControllerImpl) CreateGame(
 	ctx context.Context, request request.CreateGame,
 ) (int64, error) {
-	gameBoard, err := c.boardService.FetchFromFile()
+	gameBoard, err := c.boardService.GetBoard()
 	if err != nil {
 		return -1, fmt.Errorf("failed to fetch board from file: %w", err)
 	}

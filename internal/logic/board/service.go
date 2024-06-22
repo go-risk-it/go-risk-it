@@ -5,47 +5,38 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"go.uber.org/zap"
 )
 
 type Service interface {
-	FetchFromFile() (*Board, error)
+	GetBoard() (*Board, error)
 }
 
 type ServiceImpl struct {
-	querier db.Querier
-	log     *zap.SugaredLogger
+	log        *zap.SugaredLogger
+	boardCache *Board
 }
 
-type Region struct {
-	ExternalReference string `json:"id"`
-	Name              string `json:"name"`
-	Continent         string `json:"continent"`
+func NewService(logger *zap.SugaredLogger) *ServiceImpl {
+	return &ServiceImpl{log: logger, boardCache: nil}
 }
 
-type Continent struct {
-	ExternalReference string `json:"id"`
-	Name              string `json:"name"`
-	BonusTroops       int    `json:"bonusTroops"`
+func (s *ServiceImpl) GetBoard() (*Board, error) {
+	if s.boardCache != nil {
+		return s.boardCache, nil
+	}
+
+	board, err := s.fetchFromFile()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get board: %w", err)
+	}
+
+	s.boardCache = board
+
+	return board, nil
 }
 
-type Border struct {
-	Source string `json:"source"`
-	Target string `json:"target"`
-}
-
-type Board struct {
-	Regions    []Region    `json:"layers"`
-	Continents []Continent `json:"continents"`
-	Borders    []Border    `json:"links"`
-}
-
-func NewService(q db.Querier, logger *zap.SugaredLogger) *ServiceImpl {
-	return &ServiceImpl{querier: q, log: logger}
-}
-
-func (s *ServiceImpl) FetchFromFile() (*Board, error) {
+func (s *ServiceImpl) fetchFromFile() (*Board, error) {
 	data, err := os.ReadFile("map.json")
 	if err != nil {
 		return nil, fmt.Errorf("error reading file: %w", err)

@@ -74,7 +74,7 @@ func TestServiceImpl_DeployShouldFailWhenPlayerNotInGame(t *testing.T) {
 		GetPlayersQ(ctx, querier, gameID).
 		Return(players, nil)
 
-	err := service.PerformDeployMoveQ(
+	err := service.PerformQ(
 		ctx,
 		querier,
 		move.Move[deploy.MoveData]{
@@ -141,7 +141,7 @@ func TestServiceImpl_DeployShouldFailOnTurnCheck(t *testing.T) {
 					Turn:  test.turn,
 				}, nil)
 
-			err := service.PerformDeployMoveQ(
+			err := service.PerformQ(
 				ctx,
 				querier,
 				move.Move[deploy.MoveData]{
@@ -185,7 +185,7 @@ func TestServiceImpl_DeployShouldFailWhenPlayerDoesntHaveEnoughDeployableTroops(
 			Turn:  2,
 		}, nil)
 
-	err := service.PerformDeployMoveQ(
+	err := service.PerformQ(
 		ctx,
 		querier,
 		move.Move[deploy.MoveData]{
@@ -272,7 +272,7 @@ func TestServiceImpl_DeployShouldFail(t *testing.T) {
 					Troops:            0,
 				}, nil)
 
-			err := service.PerformDeployMoveQ(
+			err := service.PerformQ(
 				ctx,
 				querier,
 				move.Move[deploy.MoveData]{
@@ -370,7 +370,7 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 				IncreaseTroopsInRegion(ctx, querier, int64(1), troops).
 				Return(nil)
 
-			err := service.PerformDeployMoveQ(
+			err := service.PerformQ(
 				ctx,
 				querier,
 				move.Move[deploy.MoveData]{

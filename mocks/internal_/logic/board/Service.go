@@ -20,12 +20,12 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
-// FetchFromFile provides a mock function with given fields:
-func (_m *Service) FetchFromFile() (*board.Board, error) {
+// GetBoard provides a mock function with given fields:
+func (_m *Service) GetBoard() (*board.Board, error) {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for FetchFromFile")
+		panic("no return value specified for GetBoard")
 	}
 
 	var r0 *board.Board
@@ -50,29 +50,29 @@ func (_m *Service) FetchFromFile() (*board.Board, error) {
 	return r0, r1
 }
 
-// Service_FetchFromFile_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FetchFromFile'
-type Service_FetchFromFile_Call struct {
+// Service_GetBoard_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetBoard'
+type Service_GetBoard_Call struct {
 	*mock.Call
 }
 
-// FetchFromFile is a helper method to define mock.On call
-func (_e *Service_Expecter) FetchFromFile() *Service_FetchFromFile_Call {
-	return &Service_FetchFromFile_Call{Call: _e.mock.On("FetchFromFile")}
+// GetBoard is a helper method to define mock.On call
+func (_e *Service_Expecter) GetBoard() *Service_GetBoard_Call {
+	return &Service_GetBoard_Call{Call: _e.mock.On("GetBoard")}
 }
 
-func (_c *Service_FetchFromFile_Call) Run(run func()) *Service_FetchFromFile_Call {
+func (_c *Service_GetBoard_Call) Run(run func()) *Service_GetBoard_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *Service_FetchFromFile_Call) Return(_a0 *board.Board, _a1 error) *Service_FetchFromFile_Call {
+func (_c *Service_GetBoard_Call) Return(_a0 *board.Board, _a1 error) *Service_GetBoard_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_FetchFromFile_Call) RunAndReturn(run func() (*board.Board, error)) *Service_FetchFromFile_Call {
+func (_c *Service_GetBoard_Call) RunAndReturn(run func() (*board.Board, error)) *Service_GetBoard_Call {
 	_c.Call.Return(run)
 	return _c
 }

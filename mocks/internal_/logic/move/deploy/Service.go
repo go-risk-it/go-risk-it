@@ -76,54 +76,6 @@ func (_c *Service_MustAdvanceQ_Call) RunAndReturn(run func(context.Context, db.Q
 	return _c
 }
 
-// PerformDeployMoveQ provides a mock function with given fields: ctx, querier, _a2
-func (_m *Service) PerformDeployMoveQ(ctx context.Context, querier db.Querier, _a2 move.Move[deploy.MoveData]) error {
-	ret := _m.Called(ctx, querier, _a2)
-
-	if len(ret) == 0 {
-		panic("no return value specified for PerformDeployMoveQ")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, db.Querier, move.Move[deploy.MoveData]) error); ok {
-		r0 = rf(ctx, querier, _a2)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// Service_PerformDeployMoveQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PerformDeployMoveQ'
-type Service_PerformDeployMoveQ_Call struct {
-	*mock.Call
-}
-
-// PerformDeployMoveQ is a helper method to define mock.On call
-//   - ctx context.Context
-//   - querier db.Querier
-//   - _a2 move.Move[deploy.MoveData]
-func (_e *Service_Expecter) PerformDeployMoveQ(ctx interface{}, querier interface{}, _a2 interface{}) *Service_PerformDeployMoveQ_Call {
-	return &Service_PerformDeployMoveQ_Call{Call: _e.mock.On("PerformDeployMoveQ", ctx, querier, _a2)}
-}
-
-func (_c *Service_PerformDeployMoveQ_Call) Run(run func(ctx context.Context, querier db.Querier, _a2 move.Move[deploy.MoveData])) *Service_PerformDeployMoveQ_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(db.Querier), args[2].(move.Move[deploy.MoveData]))
-	})
-	return _c
-}
-
-func (_c *Service_PerformDeployMoveQ_Call) Return(_a0 error) *Service_PerformDeployMoveQ_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Service_PerformDeployMoveQ_Call) RunAndReturn(run func(context.Context, db.Querier, move.Move[deploy.MoveData]) error) *Service_PerformDeployMoveQ_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // PerformQ provides a mock function with given fields: ctx, querier, _a2
 func (_m *Service) PerformQ(ctx context.Context, querier db.Querier, _a2 move.Move[deploy.MoveData]) error {
 	ret := _m.Called(ctx, querier, _a2)
