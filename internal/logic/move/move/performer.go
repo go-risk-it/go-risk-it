@@ -18,7 +18,9 @@ type Performer[T any] interface {
 		ctx context.Context,
 		querier db.Querier,
 		move Move[T],
+		game *sqlc.Game,
 	) error
+	ValidatePhase(game *sqlc.Game) bool
 }
 
 type Service[T any] interface {

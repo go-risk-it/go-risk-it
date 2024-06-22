@@ -22,12 +22,12 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
-// OrchestrateQ provides a mock function with given fields: ctx, querier, gameID
-func (_m *Service) OrchestrateQ(ctx context.Context, querier db.Querier, gameID int64) error {
+// AdvancePhaseQ provides a mock function with given fields: ctx, querier, gameID
+func (_m *Service) AdvancePhaseQ(ctx context.Context, querier db.Querier, gameID int64) error {
 	ret := _m.Called(ctx, querier, gameID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for OrchestrateQ")
+		panic("no return value specified for AdvancePhaseQ")
 	}
 
 	var r0 error
@@ -40,32 +40,32 @@ func (_m *Service) OrchestrateQ(ctx context.Context, querier db.Querier, gameID 
 	return r0
 }
 
-// Service_OrchestrateQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OrchestrateQ'
-type Service_OrchestrateQ_Call struct {
+// Service_AdvancePhaseQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AdvancePhaseQ'
+type Service_AdvancePhaseQ_Call struct {
 	*mock.Call
 }
 
-// OrchestrateQ is a helper method to define mock.On call
+// AdvancePhaseQ is a helper method to define mock.On call
 //   - ctx context.Context
 //   - querier db.Querier
 //   - gameID int64
-func (_e *Service_Expecter) OrchestrateQ(ctx interface{}, querier interface{}, gameID interface{}) *Service_OrchestrateQ_Call {
-	return &Service_OrchestrateQ_Call{Call: _e.mock.On("OrchestrateQ", ctx, querier, gameID)}
+func (_e *Service_Expecter) AdvancePhaseQ(ctx interface{}, querier interface{}, gameID interface{}) *Service_AdvancePhaseQ_Call {
+	return &Service_AdvancePhaseQ_Call{Call: _e.mock.On("AdvancePhaseQ", ctx, querier, gameID)}
 }
 
-func (_c *Service_OrchestrateQ_Call) Run(run func(ctx context.Context, querier db.Querier, gameID int64)) *Service_OrchestrateQ_Call {
+func (_c *Service_AdvancePhaseQ_Call) Run(run func(ctx context.Context, querier db.Querier, gameID int64)) *Service_AdvancePhaseQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(db.Querier), args[2].(int64))
 	})
 	return _c
 }
 
-func (_c *Service_OrchestrateQ_Call) Return(_a0 error) *Service_OrchestrateQ_Call {
+func (_c *Service_AdvancePhaseQ_Call) Return(_a0 error) *Service_AdvancePhaseQ_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Service_OrchestrateQ_Call) RunAndReturn(run func(context.Context, db.Querier, int64) error) *Service_OrchestrateQ_Call {
+func (_c *Service_AdvancePhaseQ_Call) RunAndReturn(run func(context.Context, db.Querier, int64) error) *Service_AdvancePhaseQ_Call {
 	_c.Call.Return(run)
 	return _c
 }

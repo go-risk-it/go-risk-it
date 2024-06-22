@@ -74,17 +74,17 @@ func (_c *Service_MustAdvanceQ_Call[T]) RunAndReturn(run func(context.Context, d
 	return _c
 }
 
-// PerformQ provides a mock function with given fields: ctx, querier, _a2
-func (_m *Service[T]) PerformQ(ctx context.Context, querier db.Querier, _a2 move.Move[T]) error {
-	ret := _m.Called(ctx, querier, _a2)
+// PerformQ provides a mock function with given fields: ctx, querier, _a2, game
+func (_m *Service[T]) PerformQ(ctx context.Context, querier db.Querier, _a2 move.Move[T], game *sqlc.Game) error {
+	ret := _m.Called(ctx, querier, _a2, game)
 
 	if len(ret) == 0 {
 		panic("no return value specified for PerformQ")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, db.Querier, move.Move[T]) error); ok {
-		r0 = rf(ctx, querier, _a2)
+	if rf, ok := ret.Get(0).(func(context.Context, db.Querier, move.Move[T], *sqlc.Game) error); ok {
+		r0 = rf(ctx, querier, _a2, game)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -101,13 +101,14 @@ type Service_PerformQ_Call[T interface{}] struct {
 //   - ctx context.Context
 //   - querier db.Querier
 //   - _a2 move.Move[T]
-func (_e *Service_Expecter[T]) PerformQ(ctx interface{}, querier interface{}, _a2 interface{}) *Service_PerformQ_Call[T] {
-	return &Service_PerformQ_Call[T]{Call: _e.mock.On("PerformQ", ctx, querier, _a2)}
+//   - game *sqlc.Game
+func (_e *Service_Expecter[T]) PerformQ(ctx interface{}, querier interface{}, _a2 interface{}, game interface{}) *Service_PerformQ_Call[T] {
+	return &Service_PerformQ_Call[T]{Call: _e.mock.On("PerformQ", ctx, querier, _a2, game)}
 }
 
-func (_c *Service_PerformQ_Call[T]) Run(run func(ctx context.Context, querier db.Querier, _a2 move.Move[T])) *Service_PerformQ_Call[T] {
+func (_c *Service_PerformQ_Call[T]) Run(run func(ctx context.Context, querier db.Querier, _a2 move.Move[T], game *sqlc.Game)) *Service_PerformQ_Call[T] {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(db.Querier), args[2].(move.Move[T]))
+		run(args[0].(context.Context), args[1].(db.Querier), args[2].(move.Move[T]), args[3].(*sqlc.Game))
 	})
 	return _c
 }
@@ -117,7 +118,53 @@ func (_c *Service_PerformQ_Call[T]) Return(_a0 error) *Service_PerformQ_Call[T] 
 	return _c
 }
 
-func (_c *Service_PerformQ_Call[T]) RunAndReturn(run func(context.Context, db.Querier, move.Move[T]) error) *Service_PerformQ_Call[T] {
+func (_c *Service_PerformQ_Call[T]) RunAndReturn(run func(context.Context, db.Querier, move.Move[T], *sqlc.Game) error) *Service_PerformQ_Call[T] {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ValidatePhase provides a mock function with given fields: game
+func (_m *Service[T]) ValidatePhase(game *sqlc.Game) bool {
+	ret := _m.Called(game)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ValidatePhase")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(*sqlc.Game) bool); ok {
+		r0 = rf(game)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// Service_ValidatePhase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ValidatePhase'
+type Service_ValidatePhase_Call[T interface{}] struct {
+	*mock.Call
+}
+
+// ValidatePhase is a helper method to define mock.On call
+//   - game *sqlc.Game
+func (_e *Service_Expecter[T]) ValidatePhase(game interface{}) *Service_ValidatePhase_Call[T] {
+	return &Service_ValidatePhase_Call[T]{Call: _e.mock.On("ValidatePhase", game)}
+}
+
+func (_c *Service_ValidatePhase_Call[T]) Run(run func(game *sqlc.Game)) *Service_ValidatePhase_Call[T] {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*sqlc.Game))
+	})
+	return _c
+}
+
+func (_c *Service_ValidatePhase_Call[T]) Return(_a0 bool) *Service_ValidatePhase_Call[T] {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Service_ValidatePhase_Call[T]) RunAndReturn(run func(*sqlc.Game) bool) *Service_ValidatePhase_Call[T] {
 	_c.Call.Return(run)
 	return _c
 }

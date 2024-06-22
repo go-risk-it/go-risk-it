@@ -49,142 +49,17 @@ func input() (int64, string, string, int64, int64, context.Context) {
 	return gameID, userID, regionReference, int64(currentTroops), int64(desiredTroops), ctx
 }
 
-func TestServiceImpl_DeployShouldFailWhenPlayerNotInGame(t *testing.T) {
-	t.Parallel()
-
-	querier, playerService, gameService, _, service := setup(t)
-	gameID, userID, regionReference, currentTroops, desiredTroops, ctx := input()
-
-	players := []sqlc.Player{
-		{ID: 420, TurnIndex: 0, GameID: 1, UserID: "Gabriele"},
-		{ID: 69, TurnIndex: 1, GameID: 1, UserID: "Francesco"},
-	}
-
-	gameService.
-		EXPECT().
-		GetGameStateQ(ctx, querier, gameID).
-		Return(&sqlc.Game{
-			ID:               gameID,
-			Phase:            sqlc.PhaseDEPLOY,
-			Turn:             1,
-			DeployableTroops: 5,
-		}, nil)
-	playerService.
-		EXPECT().
-		GetPlayersQ(ctx, querier, gameID).
-		Return(players, nil)
-
-	err := service.PerformQ(
-		ctx,
-		querier,
-		move.Move[deploy.MoveData]{
-			UserID: userID,
-			GameID: gameID,
-			Payload: deploy.MoveData{
-				RegionID:      regionReference,
-				CurrentTroops: currentTroops,
-				DesiredTroops: desiredTroops,
-			},
-		},
-	)
-
-	require.Error(t, err)
-	require.EqualError(t, err, "player is not in game")
-}
-
-func TestServiceImpl_DeployShouldFailOnTurnCheck(t *testing.T) {
-	t.Parallel()
-
-	type inputType struct {
-		name        string
-		phase       sqlc.Phase
-		turn        int64
-		expectedErr string
-	}
-
-	tests := []inputType{
-		{
-			"When not player's turn",
-			sqlc.PhaseDEPLOY,
-			1,
-			"turn check failed: it is not the player's turn",
-		},
-		{
-			"When incorrect phase",
-			sqlc.PhaseATTACK,
-			2,
-			"turn check failed: game is not in DEPLOY phase",
-		},
-	}
-	for _, test := range tests {
-		test := test
-		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
-			querier, playerService, gameService, _, service := setup(t)
-			gameID, userID, regionReference, currentTroops, desiredTroops, ctx := input()
-
-			players := []sqlc.Player{
-				{ID: 420, TurnIndex: 0, GameID: 1, UserID: "Gabriele"},
-				{ID: 69, TurnIndex: 1, GameID: 1, UserID: "Francesco"},
-				{ID: 42069, TurnIndex: 2, GameID: 1, UserID: "Giovanni"},
-			}
-			playerService.
-				EXPECT().
-				GetPlayersQ(ctx, querier, gameID).
-				Return(players, nil)
-			gameService.
-				EXPECT().
-				GetGameStateQ(ctx, querier, gameID).
-				Return(&sqlc.Game{
-					ID:    gameID,
-					Phase: test.phase,
-					Turn:  test.turn,
-				}, nil)
-
-			err := service.PerformQ(
-				ctx,
-				querier,
-				move.Move[deploy.MoveData]{
-					UserID: userID,
-					GameID: gameID,
-					Payload: deploy.MoveData{
-						RegionID:      regionReference,
-						CurrentTroops: currentTroops,
-						DesiredTroops: desiredTroops,
-					},
-				},
-			)
-
-			require.Error(t, err)
-			require.EqualError(t, err, test.expectedErr)
-		})
-	}
-}
-
 func TestServiceImpl_DeployShouldFailWhenPlayerDoesntHaveEnoughDeployableTroops(t *testing.T) {
 	t.Parallel()
 
-	querier, playerService, gameService, _, service := setup(t)
+	querier, _, _, _, service := setup(t)
 	gameID, userID, regionReference, currentTroops, desiredTroops, ctx := input()
 
-	players := []sqlc.Player{
-		{ID: 420, TurnIndex: 0, GameID: 1, UserID: "Gabriele"},
-		{ID: 69, TurnIndex: 1, GameID: 1, UserID: "Francesco"},
-		{ID: 42069, TurnIndex: 2, GameID: 1, UserID: "Giovanni"},
+	game := &sqlc.Game{
+		ID:    gameID,
+		Phase: sqlc.PhaseDEPLOY,
+		Turn:  2,
 	}
-	playerService.
-		EXPECT().
-		GetPlayersQ(ctx, querier, gameID).
-		Return(players, nil)
-	gameService.
-		EXPECT().
-		GetGameStateQ(ctx, querier, gameID).
-		Return(&sqlc.Game{
-			ID:    gameID,
-			Phase: sqlc.PhaseDEPLOY,
-			Turn:  2,
-		}, nil)
-
 	err := service.PerformQ(
 		ctx,
 		querier,
@@ -197,6 +72,7 @@ func TestServiceImpl_DeployShouldFailWhenPlayerDoesntHaveEnoughDeployableTroops(
 				DesiredTroops: desiredTroops,
 			},
 		},
+		game,
 	)
 
 	require.Error(t, err)
@@ -232,36 +108,17 @@ func TestServiceImpl_DeployShouldFail(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, playerService, gameService, regionService, service := setup(t)
+			querier, _, _, regionService, service := setup(t)
 			gameID, userID, regionReference, _, desiredTroops, ctx := input()
 
 			currentTroops := test.declaredTroops
 
-			players := []sqlc.Player{
-				{ID: 420, TurnIndex: 0, GameID: 1, UserID: "Gabriele"},
-				{ID: 69, TurnIndex: 1, GameID: 1, UserID: "Francesco"},
-				{ID: 42069, TurnIndex: 2, GameID: 1, UserID: "Giovanni"},
+			game := &sqlc.Game{
+				ID:               gameID,
+				Phase:            sqlc.PhaseDEPLOY,
+				Turn:             2,
+				DeployableTroops: 5,
 			}
-			gameService.EXPECT().
-				GetGameStateQ(ctx, querier, gameID).
-				Return(&sqlc.Game{
-					ID:               gameID,
-					Phase:            sqlc.PhaseDEPLOY,
-					Turn:             2,
-					DeployableTroops: 5,
-				}, nil)
-			playerService.
-				EXPECT().
-				GetPlayersQ(ctx, querier, gameID).
-				Return(players, nil)
-			gameService.
-				EXPECT().
-				GetGameStateQ(ctx, querier, gameID).
-				Return(&sqlc.Game{
-					ID:    gameID,
-					Phase: sqlc.PhaseDEPLOY,
-					Turn:  2,
-				}, nil)
 			regionService.
 				EXPECT().
 				GetRegionQ(ctx, querier, gameID, regionReference).
@@ -284,6 +141,7 @@ func TestServiceImpl_DeployShouldFail(t *testing.T) {
 						DesiredTroops: desiredTroops,
 					},
 				},
+				game,
 			)
 
 			require.Error(t, err)
@@ -321,23 +179,23 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 			gameID, userID, regionReference, currentTroops, desiredTroops, ctx := input()
 			troops := desiredTroops - currentTroops
 
-			gabriele := sqlc.Player{
-				ID: 420, TurnIndex: 0, GameID: 1, UserID: "Gabriele",
-			}
-			francesco := sqlc.Player{
-				ID: 69, TurnIndex: 1, GameID: 1, UserID: "Francesco",
-			}
-			giovanni := sqlc.Player{
-				ID:        42069,
-				TurnIndex: 2,
-				GameID:    1,
-				UserID:    "Giovanni",
-			}
-			players := []sqlc.Player{
-				gabriele,
-				francesco,
-				giovanni,
-			}
+			// gabriele := sqlc.Player{
+			//	ID: 420, TurnIndex: 0, GameID: 1, UserID: "Gabriele",
+			//}
+			// francesco := sqlc.Player{
+			//	ID: 69, TurnIndex: 1, GameID: 1, UserID: "Francesco",
+			//}
+			// giovanni := sqlc.Player{
+			//	ID:        42069,
+			//	TurnIndex: 2,
+			//	GameID:    1,
+			//	UserID:    "Giovanni",
+			//}
+			// players := []sqlc.Player{
+			//	gabriele,
+			//	francesco,
+			//	giovanni,
+			//}
 
 			game := &sqlc.Game{
 				ID:               gameID,
@@ -345,13 +203,6 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 				Turn:             2,
 				DeployableTroops: test.deployableTroops,
 			}
-			gameService.EXPECT().
-				GetGameStateQ(ctx, querier, gameID).
-				Return(game, nil)
-			playerService.
-				EXPECT().
-				GetPlayersQ(ctx, querier, gameID).
-				Return(players, nil)
 			regionService.
 				EXPECT().
 				GetRegionQ(ctx, querier, gameID, regionReference).
@@ -382,6 +233,7 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 						DesiredTroops: desiredTroops,
 					},
 				},
+				game,
 			)
 
 			require.NoError(t, err)

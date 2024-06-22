@@ -2,7 +2,6 @@ package attack
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
@@ -24,11 +23,6 @@ type MoveData struct {
 
 type Service interface {
 	move.Service[MoveData]
-	PerformAttackMoveQ(
-		ctx context.Context,
-		querier db.Querier,
-		move move.Move[MoveData],
-	) error
 }
 
 type ServiceImpl struct {
@@ -64,6 +58,10 @@ func NewService(
 	}
 }
 
+func (s *ServiceImpl) ValidatePhase(game *sqlc.Game) bool {
+	return game.Phase == sqlc.PhaseATTACK
+}
+
 func (s *ServiceImpl) MustAdvanceQ(
 	ctx context.Context,
 	querier db.Querier,
@@ -76,26 +74,7 @@ func (s *ServiceImpl) PerformQ(
 	ctx context.Context,
 	querier db.Querier,
 	move move.Move[MoveData],
-) error {
-	err := s.PerformAttackMoveQ(ctx, querier, move)
-	if err != nil {
-		return fmt.Errorf("failed to perform deploy move: %w", err)
-	}
-
-	go s.boardStateChangedSignal.Emit(ctx, signals.BoardStateChangedData{
-		GameID: move.GameID,
-	})
-	go s.gameStateChangedSignal.Emit(ctx, signals.GameStateChangedData{
-		GameID: move.GameID,
-	})
-
-	return nil
-}
-
-func (s *ServiceImpl) PerformAttackMoveQ(
-	ctx context.Context,
-	querier db.Querier,
-	move move.Move[MoveData],
+	game *sqlc.Game,
 ) error {
 	s.log.Infow(
 		"performing attack move",

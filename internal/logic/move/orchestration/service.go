@@ -13,7 +13,7 @@ import (
 )
 
 type Service interface {
-	OrchestrateQ(
+	AdvancePhaseQ(
 		ctx context.Context,
 		querier db.Querier,
 		gameID int64) error
@@ -38,7 +38,7 @@ func NewService(log *zap.SugaredLogger,
 	}
 }
 
-func (s *ServiceImpl) OrchestrateQ(
+func (s *ServiceImpl) AdvancePhaseQ(
 	ctx context.Context,
 	querier db.Querier,
 	gameID int64,
