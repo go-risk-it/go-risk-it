@@ -19,7 +19,7 @@ type Service interface {
 		board *board.Board,
 		players []request.Player,
 	) (int64, error)
-	CreateGame(
+	CreateGameQ(
 		ctx context.Context,
 		querier db.Querier,
 		board *board.Board,
@@ -62,7 +62,7 @@ func (s *ServiceImpl) CreateGameWithTx(
 	players []request.Player,
 ) (int64, error) {
 	gameID, err := s.querier.ExecuteInTransaction(ctx, func(qtx db.Querier) (interface{}, error) {
-		return s.CreateGame(ctx, qtx, board, players)
+		return s.CreateGameQ(ctx, qtx, board, players)
 	})
 	if err != nil {
 		return -1, fmt.Errorf("failed to create game: %w", err)
@@ -76,7 +76,7 @@ func (s *ServiceImpl) CreateGameWithTx(
 	return gameIDInt, nil
 }
 
-func (s *ServiceImpl) CreateGame(
+func (s *ServiceImpl) CreateGameQ(
 	ctx context.Context,
 	querier db.Querier,
 	board *board.Board,

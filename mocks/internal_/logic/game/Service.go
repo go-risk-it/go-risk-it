@@ -30,11 +30,11 @@ func (_m *Service) EXPECT() *Service_Expecter {
 }
 
 // CreateGame provides a mock function with given fields: ctx, querier, _a2, players
-func (_m *Service) CreateGame(ctx context.Context, querier db.Querier, _a2 *board.Board, players []request.Player) (int64, error) {
+func (_m *Service) CreateGameQ(ctx context.Context, querier db.Querier, _a2 *board.Board, players []request.Player) (int64, error) {
 	ret := _m.Called(ctx, querier, _a2, players)
 
 	if len(ret) == 0 {
-		panic("no return value specified for CreateGame")
+		panic("no return value specified for CreateGameQ")
 	}
 
 	var r0 int64
@@ -57,7 +57,7 @@ func (_m *Service) CreateGame(ctx context.Context, querier db.Querier, _a2 *boar
 	return r0, r1
 }
 
-// Service_CreateGame_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateGame'
+// Service_CreateGame_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateGameQ'
 type Service_CreateGame_Call struct {
 	*mock.Call
 }
@@ -68,7 +68,7 @@ type Service_CreateGame_Call struct {
 //   - _a2 *board.Board
 //   - players []request.Player
 func (_e *Service_Expecter) CreateGame(ctx interface{}, querier interface{}, _a2 interface{}, players interface{}) *Service_CreateGame_Call {
-	return &Service_CreateGame_Call{Call: _e.mock.On("CreateGame", ctx, querier, _a2, players)}
+	return &Service_CreateGame_Call{Call: _e.mock.On("CreateGameQ", ctx, querier, _a2, players)}
 }
 
 func (_c *Service_CreateGame_Call) Run(run func(ctx context.Context, querier db.Querier, _a2 *board.Board, players []request.Player)) *Service_CreateGame_Call {

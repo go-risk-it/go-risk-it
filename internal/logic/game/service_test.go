@@ -81,7 +81,7 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 		regionServiceMock,
 	)
 
-	gameID, err := service.CreateGame(ctx, mockQuerier, gameBoard, users)
+	gameID, err := service.CreateGameQ(ctx, mockQuerier, gameBoard, users)
 
 	require.NoError(t, err)
 	require.Equal(t, int64(1), gameID)
@@ -112,7 +112,7 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 	querier.On("InsertGame", ctx, int64(3)).Return(sqlc.Game{}, errInsertGame)
 
 	// Call the method under test
-	gameID, err := service.CreateGame(ctx, querier, gameBoard, users)
+	gameID, err := service.CreateGameQ(ctx, querier, gameBoard, users)
 
 	// Assert the result
 	require.Error(t, err)
@@ -154,7 +154,7 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 		Return(nil, errCreatePlayers)
 
 	// Call the method under test
-	gameID, err := service.CreateGame(ctx, querier, gameBoard, users)
+	gameID, err := service.CreateGameQ(ctx, querier, gameBoard, users)
 
 	// Assert the result
 	require.Error(t, err)
