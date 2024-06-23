@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 )
 
 type malformedRequestError struct {
@@ -129,15 +130,15 @@ func decode[T any](dec *json.Decoder, dst T) error {
 	return nil
 }
 
-func WriteResponse(writer http.ResponseWriter, body []byte, status int) error {
+func WriteResponse(writer http.ResponseWriter, log *zap.SugaredLogger, body []byte, status int) {
 	writer.WriteHeader(status)
+
+	log.Debugw("writing response", "status", status, "body", string(body))
 
 	_, err := writer.Write(body)
 	if err != nil {
-		return fmt.Errorf("failed to write response: %w", err)
+		log.Errorw("unable to write response", "error", err)
 	}
-
-	return nil
 }
 
 func extractGameID(req *http.Request) (int, error) {
@@ -156,9 +157,5 @@ var Module = fx.Options(
 		AsRoute(NewDeployHandler),
 		AsRoute(NewGameHandler),
 		AsRoute(NewWebSocketHandler),
-		fx.Annotate(
-			NewServeMux,
-			fx.ParamTags(`group:"routes"`),
-		),
 	),
 )

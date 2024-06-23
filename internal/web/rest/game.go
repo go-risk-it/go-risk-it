@@ -54,10 +54,5 @@ func (h *GameHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	err = WriteResponse(writer, createGameResponse, http.StatusCreated)
-	if err != nil {
-		h.log.Errorw("unable to write response", "error", err)
-
-		return
-	}
+	WriteResponse(writer, h.log, createGameResponse, http.StatusCreated)
 }

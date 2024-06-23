@@ -1,14 +1,16 @@
-package rest
+package mux
 
 import (
 	"net/http"
 
 	"github.com/go-risk-it/go-risk-it/internal/web/middleware"
+	"github.com/go-risk-it/go-risk-it/internal/web/rest"
+	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
 
 func NewServeMux(
-	routes []Route,
+	routes []rest.Route,
 	authMiddleware middleware.AuthMiddleware,
 	websocketAuthMiddleware middleware.WebsocketHeaderConversionMiddleware,
 	log *zap.SugaredLogger,
@@ -26,3 +28,12 @@ func NewServeMux(
 
 	return mux
 }
+
+var Module = fx.Options(
+	fx.Provide(
+		fx.Annotate(
+			NewServeMux,
+			fx.ParamTags(`group:"routes"`),
+		),
+	),
+)

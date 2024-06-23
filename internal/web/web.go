@@ -5,6 +5,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/web/fetchers"
 	"github.com/go-risk-it/go-risk-it/internal/web/handlers"
 	"github.com/go-risk-it/go-risk-it/internal/web/middleware"
+	"github.com/go-risk-it/go-risk-it/internal/web/mux"
 	"github.com/go-risk-it/go-risk-it/internal/web/nbio"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws"
@@ -12,12 +13,13 @@ import (
 )
 
 var Module = fx.Options(
-	nbio.Module,
 	controller.Module,
 	fetchers.Module,
-	ws.Module,
-	rest.Module,
 	middleware.Module,
+	mux.Module,
+	nbio.Module,
+	rest.Module,
+	ws.Module,
 	fx.Invoke(
 		handlers.HandleBoardStateChanged,
 		handlers.HandleGameStateChanged,

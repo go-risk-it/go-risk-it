@@ -39,10 +39,5 @@ func (h *ResetHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	err = rest.WriteResponse(writer, []byte{}, http.StatusNoContent)
-	if err != nil {
-		h.log.Errorw("unable to write response", "error", err)
-
-		return
-	}
+	rest.WriteResponse(writer, h.log, []byte{}, http.StatusNoContent)
 }
