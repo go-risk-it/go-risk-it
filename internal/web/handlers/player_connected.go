@@ -41,7 +41,7 @@ func HandlePlayerConnected(
 		for i := 0; i < len(params.Fetchers); i++ {
 			select {
 			case state := <-stateChannel:
-				params.Log.Infow("got state, writing message", "state", state)
+				params.Log.Infow("got state, writing message", "gameID", data.GameID)
 
 				err := data.Connection.WriteMessage(websocket.TextMessage, state)
 				if err != nil {

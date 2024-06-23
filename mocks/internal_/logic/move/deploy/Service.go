@@ -125,52 +125,6 @@ func (_c *Service_PerformQ_Call) RunAndReturn(run func(context.Context, db.Queri
 	return _c
 }
 
-// ValidatePhase provides a mock function with given fields: game
-func (_m *Service) ValidatePhase(game *sqlc.Game) bool {
-	ret := _m.Called(game)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ValidatePhase")
-	}
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(*sqlc.Game) bool); ok {
-		r0 = rf(game)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	return r0
-}
-
-// Service_ValidatePhase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ValidatePhase'
-type Service_ValidatePhase_Call struct {
-	*mock.Call
-}
-
-// ValidatePhase is a helper method to define mock.On call
-//   - game *sqlc.Game
-func (_e *Service_Expecter) ValidatePhase(game interface{}) *Service_ValidatePhase_Call {
-	return &Service_ValidatePhase_Call{Call: _e.mock.On("ValidatePhase", game)}
-}
-
-func (_c *Service_ValidatePhase_Call) Run(run func(game *sqlc.Game)) *Service_ValidatePhase_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*sqlc.Game))
-	})
-	return _c
-}
-
-func (_c *Service_ValidatePhase_Call) Return(_a0 bool) *Service_ValidatePhase_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Service_ValidatePhase_Call) RunAndReturn(run func(*sqlc.Game) bool) *Service_ValidatePhase_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // NewService creates a new instance of Service. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewService(t interface {

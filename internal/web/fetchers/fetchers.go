@@ -28,7 +28,7 @@ func FetchState[T any](
 		log.Errorf("unable to fetch state: %v", err)
 	}
 
-	log.Debugw("got state", "state", state)
+	log.Debugw("got state", "gameID", gameID)
 
 	rawResponse, err := message.BuildMessage(messageType, state)
 	if err != nil {

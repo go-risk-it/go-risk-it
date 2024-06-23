@@ -45,11 +45,9 @@ func (m *AuthMiddlewareImpl) Wrap(handler http.Handler) http.Handler {
 			return
 		}
 
-		m.log.Debugw("Token is valid", "token", tokenString)
+		m.log.Debugw("Auth token is valid")
 
-		if claims, ok := token.Claims.(jwt.MapClaims); ok {
-			m.log.Debugw("Claims", "claims", claims)
-		} else {
+		if _, ok := token.Claims.(jwt.MapClaims); !ok {
 			m.log.Error("Failed to parse claims")
 
 			return

@@ -120,7 +120,7 @@ func (s *ServiceImpl) GetRegionsQ(
 		return nil, fmt.Errorf("failed to get regions: %w", err)
 	}
 
-	s.log.Debugw("got regions", "regions", regions)
+	s.log.Debugw("got regions", "regions", len(regions))
 
 	return regions, nil
 }

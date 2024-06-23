@@ -29,7 +29,7 @@ type Service interface {
 		phase sqlc.Phase,
 		userID string,
 		perform func(ctx context.Context, querier db.Querier, game *sqlc.Game) error,
-	) (interface{}, error)
+	) error
 }
 type ServiceImpl struct {
 	log                      *zap.SugaredLogger
