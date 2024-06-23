@@ -22,8 +22,15 @@ type Service interface {
 		phase sqlc.Phase,
 		perform func(ctx context.Context, querier db.Querier, game *sqlc.Game) error,
 	) error
+	PerformMoveQ(
+		ctx context.Context,
+		querier db.Querier,
+		gameID int64,
+		phase sqlc.Phase,
+		userID string,
+		perform func(ctx context.Context, querier db.Querier, game *sqlc.Game) error,
+	) (interface{}, error)
 }
-
 type ServiceImpl struct {
 	log                      *zap.SugaredLogger
 	querier                  db.Querier
@@ -68,32 +75,8 @@ func (s *ServiceImpl) PerformMove(
 		ctx,
 		pgx.RepeatableRead,
 		func(querier db.Querier) (interface{}, error) {
-			gameState, err := s.gameService.GetGameStateQ(ctx, querier, gameID)
-			if err != nil {
-				return nil, fmt.Errorf("unable to get game state: %w", err)
-			}
-
-			if gameState.Phase != phase {
-				return nil, fmt.Errorf("game is not in the correct phase to perform move")
-			}
-
-			if err := s.validationService.Validate(
-				ctx,
-				querier,
-				gameState,
-				userID); err != nil {
-				return nil, fmt.Errorf("invalid move: %w", err)
-			}
-
-			if err := perform(ctx, querier, gameState); err != nil {
+			if err := s.PerformMoveQ(ctx, querier, gameID, phase, userID, perform); err != nil {
 				return nil, fmt.Errorf("unable to perform move: %w", err)
-			}
-
-			if err := s.phaseService.AdvanceQ(
-				ctx,
-				querier,
-				gameID); err != nil {
-				return nil, fmt.Errorf("unable to advance phase: %w", err)
 			}
 
 			return struct{}{}, nil
@@ -104,6 +87,45 @@ func (s *ServiceImpl) PerformMove(
 	}
 
 	s.publishMoveResult(ctx, gameID)
+
+	return nil
+}
+
+func (s *ServiceImpl) PerformMoveQ(
+	ctx context.Context,
+	querier db.Querier,
+	gameID int64,
+	phase sqlc.Phase,
+	userID string,
+	perform func(ctx context.Context, querier db.Querier, game *sqlc.Game) error,
+) error {
+	gameState, err := s.gameService.GetGameStateQ(ctx, querier, gameID)
+	if err != nil {
+		return fmt.Errorf("unable to get game state: %w", err)
+	}
+
+	if gameState.Phase != phase {
+		return fmt.Errorf("game is not in the correct phase to perform move")
+	}
+
+	if err := s.validationService.Validate(
+		ctx,
+		querier,
+		gameState,
+		userID); err != nil {
+		return fmt.Errorf("invalid move: %w", err)
+	}
+
+	if err := perform(ctx, querier, gameState); err != nil {
+		return fmt.Errorf("unable to perform move: %w", err)
+	}
+
+	if err := s.phaseService.AdvanceQ(
+		ctx,
+		querier,
+		gameID); err != nil {
+		return fmt.Errorf("unable to advance phase: %w", err)
+	}
 
 	return nil
 }
