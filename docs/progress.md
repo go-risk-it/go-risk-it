@@ -28,15 +28,16 @@
 - [ ] Improve region-to-player assignment
 - [ ] Improve troops-region assignment
 - [ ] Check if game is ended
-- [ ] Figure out authentication
+- [x] Figure out authentication
 - [ ] When fetching state and the game is not there, err should be returned but instead we get empty array for player state and board state. Decouple state fetching from message broadcasting for better handling
 
 **Front-end**
 
 - [x] Understand how to start with frontend
 - [x] Display full state
-- [ ] Implement deploy-move API
-- [ ] Figure out how to specify GameID when connecting via websockets (after OnOpen, send a "subscribe" message with GameID?)
+- [x] Implement deploy-move API
+- [x] Figure out how to specify GameID when connecting via websockets (after OnOpen, send a "subscribe" message with GameID?)
+      - Send subscribe message after game is created
 
 **Server: Architecture**
 
@@ -67,5 +68,5 @@
 **Server: Auth**
 
 - [ ] Figure out TLS for websockets
-- [ ] Store playerID and authToken in HTTP request headers
-- [ ] Figure out where and how to store user credentials
+- [x] Store playerID and authToken in HTTP request headers
+- [x] Figure out where and how to store user credentials
