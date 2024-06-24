@@ -95,7 +95,7 @@ type BoardStateChangedSignal_Emit_Call struct {
 }
 
 // Emit is a helper method to define mock.On call
-//   - ctx context.Context
+//   - ctx risk_context.Context
 //   - payload logicsignals.BoardStateChangedData
 func (_e *BoardStateChangedSignal_Expecter) Emit(ctx interface{}, payload interface{}) *BoardStateChangedSignal_Emit_Call {
 	return &BoardStateChangedSignal_Emit_Call{Call: _e.mock.On("Emit", ctx, payload)}

@@ -57,7 +57,7 @@ type Controller_GetGameState_Call struct {
 }
 
 // GetGameState is a helper method to define mock.On call
-//   - ctx context.Context
+//   - ctx risk_context.Context
 //   - gameID int64
 func (_e *Controller_Expecter) GetGameState(ctx interface{}, gameID interface{}) *Controller_GetGameState_Call {
 	return &Controller_GetGameState_Call{Call: _e.mock.On("GetGameState", ctx, gameID)}

@@ -46,7 +46,7 @@ type Service_PerformDeployMoveQ_Call struct {
 }
 
 // PerformDeployMoveQ is a helper method to define mock.On call
-//   - ctx context.Context
+//   - ctx risk_context.Context
 //   - querier db.Querier
 //   - gameID int64
 //   - player string
@@ -97,7 +97,7 @@ type Service_PerformDeployMoveWithTx_Call struct {
 }
 
 // PerformDeployMoveWithTx is a helper method to define mock.On call
-//   - ctx context.Context
+//   - ctx risk_context.Context
 //   - gameID int64
 //   - player string
 //   - region string

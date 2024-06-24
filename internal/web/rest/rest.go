@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 
+	"github.com/go-risk-it/go-risk-it/internal/riskcontext"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -141,20 +141,26 @@ func WriteResponse(writer http.ResponseWriter, log *zap.SugaredLogger, body []by
 	}
 }
 
-func extractGameID(req *http.Request) (int, error) {
-	gameIDStr := req.PathValue("id")
-
-	gameID, err := strconv.Atoi(gameIDStr)
-	if err != nil {
-		return 0, fmt.Errorf("invalid game id: %w", err)
+func extractGameID(req *http.Request) (int64, error) {
+	if gameID, ok := req.Context().Value(riskcontext.GameIDKey).(int64); ok {
+		return gameID, nil
 	}
 
-	return gameID, nil
+	return -1, fmt.Errorf("invalid game id")
+}
+
+func extractUserID(req *http.Request) (string, error) {
+	if userID, ok := req.Context().Value(riskcontext.UserIDKey).(string); ok {
+		return userID, nil
+	}
+
+	return "", fmt.Errorf("invalid user id")
 }
 
 var Module = fx.Options(
 	fx.Provide(
 		AsRoute(NewDeployHandler),
+		AsRoute(NewAttackHandler),
 		AsRoute(NewGameHandler),
 		AsRoute(NewWebSocketHandler),
 	),

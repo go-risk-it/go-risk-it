@@ -5,11 +5,12 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/go-risk-it/go-risk-it/internal/web/rest"
 	"go.uber.org/zap"
 )
 
 type WebsocketHeaderConversionMiddleware interface {
-	Wrap(handler http.Handler) http.Handler
+	Wrap(route rest.Route) rest.Route
 }
 
 type WebsocketHeaderConversionMiddlewareImpl struct {
@@ -30,22 +31,24 @@ func NewWebsocketAuthMiddleware(log *zap.SugaredLogger) WebsocketHeaderConversio
 //	"risk-it.websocket.auth.token, <token>" in the Sec-WebSocket-Protocol header.
 //
 // See: https://stackoverflow.com/questions/4361173/http-headers-in-websockets-client-api/77060459
-func (m *WebsocketHeaderConversionMiddlewareImpl) Wrap(handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		subprotocol := request.Header.Get("Sec-WebSocket-Protocol")
-		if subprotocol != "" {
-			token, err := extractToken(subprotocol)
-			if err != nil {
-				m.log.Errorw("unable to extract token from subprotocol", "error", err)
+func (m *WebsocketHeaderConversionMiddlewareImpl) Wrap(route rest.Route) rest.Route {
+	return rest.NewRoute(
+		route.Pattern(),
+		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+			subprotocol := request.Header.Get("Sec-WebSocket-Protocol")
+			if subprotocol != "" {
+				token, err := extractToken(subprotocol)
+				if err != nil {
+					m.log.Errorw("unable to extract token from subprotocol", "error", err)
 
-				return
+					return
+				}
+
+				request.Header.Set("Authorization", "Bearer "+token)
 			}
 
-			request.Header.Set("Authorization", "Bearer "+token)
-		}
-
-		handler.ServeHTTP(writer, request)
-	})
+			route.ServeHTTP(writer, request)
+		}))
 }
 
 func extractToken(subprotocol string) (string, error) {

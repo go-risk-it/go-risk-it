@@ -12,5 +12,9 @@ var Module = fx.Options(
 			NewWebsocketAuthMiddleware,
 			fx.As(new(WebsocketHeaderConversionMiddleware)),
 		),
+		fx.Annotate(
+			NewGameMiddleware,
+			fx.As(new(GameMiddleware)),
+		),
 	),
 )

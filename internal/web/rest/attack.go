@@ -9,8 +9,7 @@ import (
 )
 
 type AttackHandler interface {
-	Pattern() string
-	ServeHTTP(w http.ResponseWriter, r *http.Request)
+	Route
 }
 
 type AttackHandlerImpl struct {
@@ -33,29 +32,5 @@ func (h *AttackHandlerImpl) Pattern() string {
 }
 
 func (h *AttackHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	gameID, err := extractGameID(req)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
-
-		return
-	}
-
-	deployMoveRequest, err := decodeRequest[request.AttackMove](writer, req)
-	if err != nil {
-		return
-	}
-
-	err = h.moveController.PerformAttackMove(
-		req.Context(),
-		int64(gameID),
-		"gianfranco",
-		deployMoveRequest,
-	)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-
-		return
-	}
-
-	WriteResponse(writer, h.log, []byte{}, http.StatusNoContent)
+	serveMove[request.AttackMove](h.log, writer, req, h.moveController.PerformAttackMove)
 }

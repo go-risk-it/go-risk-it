@@ -48,11 +48,11 @@ type Service_PerformMove_Call struct {
 }
 
 // PerformMove is a helper method to define mock.On call
-//   - ctx context.Context
+//   - ctx risk_context.Context
 //   - gameID int64
 //   - userID string
 //   - validatePhase func(*sqlc.Game) bool
-//   - perform func(context.Context , db.Querier , *sqlc.Game) error
+//   - perform func(risk_context.Context , db.Querier , *sqlc.Game) error
 func (_e *Service_Expecter) PerformMove(ctx interface{}, gameID interface{}, userID interface{}, validatePhase interface{}, perform interface{}) *Service_PerformMove_Call {
 	return &Service_PerformMove_Call{Call: _e.mock.On("PerformMove", ctx, gameID, userID, validatePhase, perform)}
 }

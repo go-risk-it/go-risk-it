@@ -3,8 +3,7 @@
 package middleware
 
 import (
-	http "net/http"
-
+	rest "github.com/go-risk-it/go-risk-it/internal/web/rest"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -21,20 +20,20 @@ func (_m *AuthMiddleware) EXPECT() *AuthMiddleware_Expecter {
 	return &AuthMiddleware_Expecter{mock: &_m.Mock}
 }
 
-// Wrap provides a mock function with given fields: handler
-func (_m *AuthMiddleware) Wrap(handler http.Handler) http.Handler {
-	ret := _m.Called(handler)
+// Wrap provides a mock function with given fields: route
+func (_m *AuthMiddleware) Wrap(route rest.Route) rest.Route {
+	ret := _m.Called(route)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Wrap")
 	}
 
-	var r0 http.Handler
-	if rf, ok := ret.Get(0).(func(http.Handler) http.Handler); ok {
-		r0 = rf(handler)
+	var r0 rest.Route
+	if rf, ok := ret.Get(0).(func(rest.Route) rest.Route); ok {
+		r0 = rf(route)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Handler)
+			r0 = ret.Get(0).(rest.Route)
 		}
 	}
 
@@ -47,24 +46,24 @@ type AuthMiddleware_Wrap_Call struct {
 }
 
 // Wrap is a helper method to define mock.On call
-//   - handler http.Handler
-func (_e *AuthMiddleware_Expecter) Wrap(handler interface{}) *AuthMiddleware_Wrap_Call {
-	return &AuthMiddleware_Wrap_Call{Call: _e.mock.On("Wrap", handler)}
+//   - route rest.Route
+func (_e *AuthMiddleware_Expecter) Wrap(route interface{}) *AuthMiddleware_Wrap_Call {
+	return &AuthMiddleware_Wrap_Call{Call: _e.mock.On("Wrap", route)}
 }
 
-func (_c *AuthMiddleware_Wrap_Call) Run(run func(handler http.Handler)) *AuthMiddleware_Wrap_Call {
+func (_c *AuthMiddleware_Wrap_Call) Run(run func(route rest.Route)) *AuthMiddleware_Wrap_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(http.Handler))
+		run(args[0].(rest.Route))
 	})
 	return _c
 }
 
-func (_c *AuthMiddleware_Wrap_Call) Return(_a0 http.Handler) *AuthMiddleware_Wrap_Call {
+func (_c *AuthMiddleware_Wrap_Call) Return(_a0 rest.Route) *AuthMiddleware_Wrap_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *AuthMiddleware_Wrap_Call) RunAndReturn(run func(http.Handler) http.Handler) *AuthMiddleware_Wrap_Call {
+func (_c *AuthMiddleware_Wrap_Call) RunAndReturn(run func(rest.Route) rest.Route) *AuthMiddleware_Wrap_Call {
 	_c.Call.Return(run)
 	return _c
 }

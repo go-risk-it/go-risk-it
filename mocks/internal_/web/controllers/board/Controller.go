@@ -56,7 +56,7 @@ type Controller_GetBoardState_Call struct {
 }
 
 // GetBoardState is a helper method to define mock.On call
-//   - ctx context.Context
+//   - ctx risk_context.Context
 //   - gameID int64
 func (_e *Controller_Expecter) GetBoardState(ctx interface{}, gameID interface{}) *Controller_GetBoardState_Call {
 	return &Controller_GetBoardState_Call{Call: _e.mock.On("GetBoardState", ctx, gameID)}

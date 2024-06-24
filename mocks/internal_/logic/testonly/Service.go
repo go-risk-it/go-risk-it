@@ -45,7 +45,7 @@ type Service_TruncateTables_Call struct {
 }
 
 // TruncateTables is a helper method to define mock.On call
-//   - ctx context.Context
+//   - ctx risk_context.Context
 func (_e *Service_Expecter) TruncateTables(ctx interface{}) *Service_TruncateTables_Call {
 	return &Service_TruncateTables_Call{Call: _e.mock.On("TruncateTables", ctx)}
 }

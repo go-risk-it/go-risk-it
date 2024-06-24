@@ -45,7 +45,7 @@ type TestOnlyController_ResetState_Call struct {
 }
 
 // ResetState is a helper method to define mock.On call
-//   - ctx context.Context
+//   - ctx risk_context.Context
 func (_e *TestOnlyController_Expecter) ResetState(ctx interface{}) *TestOnlyController_ResetState_Call {
 	return &TestOnlyController_ResetState_Call{Call: _e.mock.On("ResetState", ctx)}
 }

@@ -66,9 +66,9 @@ func (_c *AttackHandler_Pattern_Call) RunAndReturn(run func() string) *AttackHan
 	return _c
 }
 
-// ServeHTTP provides a mock function with given fields: w, r
-func (_m *AttackHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	_m.Called(w, r)
+// ServeHTTP provides a mock function with given fields: _a0, _a1
+func (_m *AttackHandler) ServeHTTP(_a0 http.ResponseWriter, _a1 *http.Request) {
+	_m.Called(_a0, _a1)
 }
 
 // AttackHandler_ServeHTTP_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ServeHTTP'
@@ -77,13 +77,13 @@ type AttackHandler_ServeHTTP_Call struct {
 }
 
 // ServeHTTP is a helper method to define mock.On call
-//   - w http.ResponseWriter
-//   - r *http.Request
-func (_e *AttackHandler_Expecter) ServeHTTP(w interface{}, r interface{}) *AttackHandler_ServeHTTP_Call {
-	return &AttackHandler_ServeHTTP_Call{Call: _e.mock.On("ServeHTTP", w, r)}
+//   - _a0 http.ResponseWriter
+//   - _a1 *http.Request
+func (_e *AttackHandler_Expecter) ServeHTTP(_a0 interface{}, _a1 interface{}) *AttackHandler_ServeHTTP_Call {
+	return &AttackHandler_ServeHTTP_Call{Call: _e.mock.On("ServeHTTP", _a0, _a1)}
 }
 
-func (_c *AttackHandler_ServeHTTP_Call) Run(run func(w http.ResponseWriter, r *http.Request)) *AttackHandler_ServeHTTP_Call {
+func (_c *AttackHandler_ServeHTTP_Call) Run(run func(_a0 http.ResponseWriter, _a1 *http.Request)) *AttackHandler_ServeHTTP_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(http.ResponseWriter), args[1].(*http.Request))
 	})
