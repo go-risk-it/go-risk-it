@@ -25,11 +25,11 @@ func (_m *Service) EXPECT() *Service_Expecter {
 }
 
 // PerformMove provides a mock function with given fields: ctx, gameID, userID, phase, perform
-func (_m *Service) PerformMove(ctx context.Context, gameID int64, userID string, phase sqlc.Phase, perform func(context.Context, db.Querier, *sqlc.Game) error) error {
+func (_m *Service) OrchestrateMove(ctx context.Context, gameID int64, userID string, phase sqlc.Phase, perform func(context.Context, db.Querier, *sqlc.Game) error) error {
 	ret := _m.Called(ctx, gameID, userID, phase, perform)
 
 	if len(ret) == 0 {
-		panic("no return value specified for PerformMove")
+		panic("no return value specified for OrchestrateMove")
 	}
 
 	var r0 error
@@ -42,7 +42,7 @@ func (_m *Service) PerformMove(ctx context.Context, gameID int64, userID string,
 	return r0
 }
 
-// Service_PerformMove_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PerformMove'
+// Service_PerformMove_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OrchestrateMove'
 type Service_PerformMove_Call struct {
 	*mock.Call
 }
@@ -54,7 +54,7 @@ type Service_PerformMove_Call struct {
 //   - phase sqlc.Phase
 //   - perform func(context.Context , db.Querier , *sqlc.Game) error
 func (_e *Service_Expecter) PerformMove(ctx interface{}, gameID interface{}, userID interface{}, phase interface{}, perform interface{}) *Service_PerformMove_Call {
-	return &Service_PerformMove_Call{Call: _e.mock.On("PerformMove", ctx, gameID, userID, phase, perform)}
+	return &Service_PerformMove_Call{Call: _e.mock.On("OrchestrateMove", ctx, gameID, userID, phase, perform)}
 }
 
 func (_c *Service_PerformMove_Call) Run(run func(ctx context.Context, gameID int64, userID string, phase sqlc.Phase, perform func(context.Context, db.Querier, *sqlc.Game) error)) *Service_PerformMove_Call {
@@ -75,11 +75,11 @@ func (_c *Service_PerformMove_Call) RunAndReturn(run func(context.Context, int64
 }
 
 // PerformMoveQ provides a mock function with given fields: ctx, querier, gameID, phase, userID, perform
-func (_m *Service) PerformMoveQ(ctx context.Context, querier db.Querier, gameID int64, phase sqlc.Phase, userID string, perform func(context.Context, db.Querier, *sqlc.Game) error) error {
+func (_m *Service) OrchestrateMoveQ(ctx context.Context, querier db.Querier, gameID int64, phase sqlc.Phase, userID string, perform func(context.Context, db.Querier, *sqlc.Game) error) error {
 	ret := _m.Called(ctx, querier, gameID, phase, userID, perform)
 
 	if len(ret) == 0 {
-		panic("no return value specified for PerformMoveQ")
+		panic("no return value specified for OrchestrateMoveQ")
 	}
 
 	var r0 error
@@ -92,7 +92,7 @@ func (_m *Service) PerformMoveQ(ctx context.Context, querier db.Querier, gameID 
 	return r0
 }
 
-// Service_PerformMoveQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PerformMoveQ'
+// Service_PerformMoveQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OrchestrateMoveQ'
 type Service_PerformMoveQ_Call struct {
 	*mock.Call
 }
@@ -105,7 +105,7 @@ type Service_PerformMoveQ_Call struct {
 //   - userID string
 //   - perform func(context.Context , db.Querier , *sqlc.Game) error
 func (_e *Service_Expecter) PerformMoveQ(ctx interface{}, querier interface{}, gameID interface{}, phase interface{}, userID interface{}, perform interface{}) *Service_PerformMoveQ_Call {
-	return &Service_PerformMoveQ_Call{Call: _e.mock.On("PerformMoveQ", ctx, querier, gameID, phase, userID, perform)}
+	return &Service_PerformMoveQ_Call{Call: _e.mock.On("OrchestrateMoveQ", ctx, querier, gameID, phase, userID, perform)}
 }
 
 func (_c *Service_PerformMoveQ_Call) Run(run func(ctx context.Context, querier db.Querier, gameID int64, phase sqlc.Phase, userID string, perform func(context.Context, db.Querier, *sqlc.Game) error)) *Service_PerformMoveQ_Call {

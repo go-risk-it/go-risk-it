@@ -140,7 +140,7 @@ func TestServiceImpl_PerformMove(t *testing.T) {
 			performFunc := func(ctx context.Context, querier db.Querier, game *sqlc.Game) error {
 				return test.performError
 			}
-			err := service.PerformMoveQ(
+			err := service.OrchestrateMoveQ(
 				ctx,
 				querier,
 				gameID,

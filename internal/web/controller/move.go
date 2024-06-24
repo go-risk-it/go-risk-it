@@ -51,7 +51,7 @@ func NewMoveController(
 func (c *MoveControllerImpl) PerformDeployMove(
 	ctx context.Context, gameID int64, userID string, deployMove request.DeployMove,
 ) error {
-	err := c.orchestrationService.PerformMove(
+	err := c.orchestrationService.OrchestrateMove(
 		ctx,
 		gameID,
 		userID,
@@ -83,7 +83,7 @@ func (c *MoveControllerImpl) PerformDeployMove(
 func (c *MoveControllerImpl) PerformAttackMove(
 	ctx context.Context, gameID int64, userID string, attackMove request.AttackMove,
 ) error {
-	err := c.orchestrationService.PerformMove(
+	err := c.orchestrationService.OrchestrateMove(
 		ctx,
 		gameID,
 		userID,

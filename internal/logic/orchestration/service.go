@@ -15,14 +15,14 @@ import (
 )
 
 type Service interface {
-	PerformMove(
+	OrchestrateMove(
 		ctx context.Context,
 		gameID int64,
 		userID string,
 		phase sqlc.Phase,
 		perform func(ctx context.Context, querier db.Querier, game *sqlc.Game) error,
 	) error
-	PerformMoveQ(
+	OrchestrateMoveQ(
 		ctx context.Context,
 		querier db.Querier,
 		gameID int64,
@@ -64,7 +64,7 @@ func NewService(
 	}
 }
 
-func (s *ServiceImpl) PerformMove(
+func (s *ServiceImpl) OrchestrateMove(
 	ctx context.Context,
 	gameID int64,
 	userID string,
@@ -74,8 +74,8 @@ func (s *ServiceImpl) PerformMove(
 	_, err := s.querier.ExecuteInTransactionWithIsolation(
 		ctx,
 		pgx.RepeatableRead,
-		func(querier db.Querier) (interface{}, error) {
-			if err := s.PerformMoveQ(ctx, querier, gameID, phase, userID, perform); err != nil {
+		func(q db.Querier) (interface{}, error) {
+			if err := s.OrchestrateMoveQ(ctx, q, gameID, phase, userID, perform); err != nil {
 				return nil, fmt.Errorf("unable to perform move: %w", err)
 			}
 
@@ -91,7 +91,7 @@ func (s *ServiceImpl) PerformMove(
 	return nil
 }
 
-func (s *ServiceImpl) PerformMoveQ(
+func (s *ServiceImpl) OrchestrateMoveQ(
 	ctx context.Context,
 	querier db.Querier,
 	gameID int64,
