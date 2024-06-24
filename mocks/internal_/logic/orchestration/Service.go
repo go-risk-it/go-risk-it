@@ -3,10 +3,10 @@
 package orchestration
 
 import (
-	context "context"
-
 	db "github.com/go-risk-it/go-risk-it/internal/data/db"
 	mock "github.com/stretchr/testify/mock"
+
+	riskcontext "github.com/go-risk-it/go-risk-it/internal/riskcontext"
 
 	sqlc "github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 )
@@ -24,17 +24,17 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
-// PerformMove provides a mock function with given fields: ctx, gameID, userID, phase, perform
-func (_m *Service) OrchestrateMove(ctx context.Context, gameID int64, userID string, phase sqlc.Phase, perform func(context.Context, db.Querier, *sqlc.Game) error) error {
-	ret := _m.Called(ctx, gameID, userID, phase, perform)
+// OrchestrateMove provides a mock function with given fields: ctx, phase, perform
+func (_m *Service) OrchestrateMove(ctx riskcontext.MoveContext, phase sqlc.Phase, perform func(riskcontext.MoveContext, db.Querier, *sqlc.Game) error) error {
+	ret := _m.Called(ctx, phase, perform)
 
 	if len(ret) == 0 {
 		panic("no return value specified for OrchestrateMove")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, sqlc.Phase, func(context.Context, db.Querier, *sqlc.Game) error) error); ok {
-		r0 = rf(ctx, gameID, userID, phase, perform)
+	if rf, ok := ret.Get(0).(func(riskcontext.MoveContext, sqlc.Phase, func(riskcontext.MoveContext, db.Querier, *sqlc.Game) error) error); ok {
+		r0 = rf(ctx, phase, perform)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -42,49 +42,47 @@ func (_m *Service) OrchestrateMove(ctx context.Context, gameID int64, userID str
 	return r0
 }
 
-// Service_PerformMove_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OrchestrateMove'
-type Service_PerformMove_Call struct {
+// Service_OrchestrateMove_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OrchestrateMove'
+type Service_OrchestrateMove_Call struct {
 	*mock.Call
 }
 
-// PerformMove is a helper method to define mock.On call
-//   - ctx context.Context
-//   - gameID int64
-//   - userID string
+// OrchestrateMove is a helper method to define mock.On call
+//   - ctx riskcontext.MoveContext
 //   - phase sqlc.Phase
-//   - perform func(context.Context , db.Querier , *sqlc.Game) error
-func (_e *Service_Expecter) PerformMove(ctx interface{}, gameID interface{}, userID interface{}, phase interface{}, perform interface{}) *Service_PerformMove_Call {
-	return &Service_PerformMove_Call{Call: _e.mock.On("OrchestrateMove", ctx, gameID, userID, phase, perform)}
+//   - perform func(riskcontext.MoveContext , db.Querier , *sqlc.Game) error
+func (_e *Service_Expecter) OrchestrateMove(ctx interface{}, phase interface{}, perform interface{}) *Service_OrchestrateMove_Call {
+	return &Service_OrchestrateMove_Call{Call: _e.mock.On("OrchestrateMove", ctx, phase, perform)}
 }
 
-func (_c *Service_PerformMove_Call) Run(run func(ctx context.Context, gameID int64, userID string, phase sqlc.Phase, perform func(context.Context, db.Querier, *sqlc.Game) error)) *Service_PerformMove_Call {
+func (_c *Service_OrchestrateMove_Call) Run(run func(ctx riskcontext.MoveContext, phase sqlc.Phase, perform func(riskcontext.MoveContext, db.Querier, *sqlc.Game) error)) *Service_OrchestrateMove_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(int64), args[2].(string), args[3].(sqlc.Phase), args[4].(func(context.Context, db.Querier, *sqlc.Game) error))
+		run(args[0].(riskcontext.MoveContext), args[1].(sqlc.Phase), args[2].(func(riskcontext.MoveContext, db.Querier, *sqlc.Game) error))
 	})
 	return _c
 }
 
-func (_c *Service_PerformMove_Call) Return(_a0 error) *Service_PerformMove_Call {
+func (_c *Service_OrchestrateMove_Call) Return(_a0 error) *Service_OrchestrateMove_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Service_PerformMove_Call) RunAndReturn(run func(context.Context, int64, string, sqlc.Phase, func(context.Context, db.Querier, *sqlc.Game) error) error) *Service_PerformMove_Call {
+func (_c *Service_OrchestrateMove_Call) RunAndReturn(run func(riskcontext.MoveContext, sqlc.Phase, func(riskcontext.MoveContext, db.Querier, *sqlc.Game) error) error) *Service_OrchestrateMove_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// PerformMoveQ provides a mock function with given fields: ctx, querier, gameID, phase, userID, perform
-func (_m *Service) OrchestrateMoveQ(ctx context.Context, querier db.Querier, gameID int64, phase sqlc.Phase, userID string, perform func(context.Context, db.Querier, *sqlc.Game) error) error {
-	ret := _m.Called(ctx, querier, gameID, phase, userID, perform)
+// OrchestrateMoveQ provides a mock function with given fields: ctx, querier, phase, perform
+func (_m *Service) OrchestrateMoveQ(ctx riskcontext.MoveContext, querier db.Querier, phase sqlc.Phase, perform func(riskcontext.MoveContext, db.Querier, *sqlc.Game) error) error {
+	ret := _m.Called(ctx, querier, phase, perform)
 
 	if len(ret) == 0 {
 		panic("no return value specified for OrchestrateMoveQ")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, db.Querier, int64, sqlc.Phase, string, func(context.Context, db.Querier, *sqlc.Game) error) error); ok {
-		r0 = rf(ctx, querier, gameID, phase, userID, perform)
+	if rf, ok := ret.Get(0).(func(riskcontext.MoveContext, db.Querier, sqlc.Phase, func(riskcontext.MoveContext, db.Querier, *sqlc.Game) error) error); ok {
+		r0 = rf(ctx, querier, phase, perform)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -92,35 +90,33 @@ func (_m *Service) OrchestrateMoveQ(ctx context.Context, querier db.Querier, gam
 	return r0
 }
 
-// Service_PerformMoveQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OrchestrateMoveQ'
-type Service_PerformMoveQ_Call struct {
+// Service_OrchestrateMoveQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OrchestrateMoveQ'
+type Service_OrchestrateMoveQ_Call struct {
 	*mock.Call
 }
 
-// PerformMoveQ is a helper method to define mock.On call
-//   - ctx context.Context
+// OrchestrateMoveQ is a helper method to define mock.On call
+//   - ctx riskcontext.MoveContext
 //   - querier db.Querier
-//   - gameID int64
 //   - phase sqlc.Phase
-//   - userID string
-//   - perform func(context.Context , db.Querier , *sqlc.Game) error
-func (_e *Service_Expecter) PerformMoveQ(ctx interface{}, querier interface{}, gameID interface{}, phase interface{}, userID interface{}, perform interface{}) *Service_PerformMoveQ_Call {
-	return &Service_PerformMoveQ_Call{Call: _e.mock.On("OrchestrateMoveQ", ctx, querier, gameID, phase, userID, perform)}
+//   - perform func(riskcontext.MoveContext , db.Querier , *sqlc.Game) error
+func (_e *Service_Expecter) OrchestrateMoveQ(ctx interface{}, querier interface{}, phase interface{}, perform interface{}) *Service_OrchestrateMoveQ_Call {
+	return &Service_OrchestrateMoveQ_Call{Call: _e.mock.On("OrchestrateMoveQ", ctx, querier, phase, perform)}
 }
 
-func (_c *Service_PerformMoveQ_Call) Run(run func(ctx context.Context, querier db.Querier, gameID int64, phase sqlc.Phase, userID string, perform func(context.Context, db.Querier, *sqlc.Game) error)) *Service_PerformMoveQ_Call {
+func (_c *Service_OrchestrateMoveQ_Call) Run(run func(ctx riskcontext.MoveContext, querier db.Querier, phase sqlc.Phase, perform func(riskcontext.MoveContext, db.Querier, *sqlc.Game) error)) *Service_OrchestrateMoveQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(db.Querier), args[2].(int64), args[3].(sqlc.Phase), args[4].(string), args[5].(func(context.Context, db.Querier, *sqlc.Game) error))
+		run(args[0].(riskcontext.MoveContext), args[1].(db.Querier), args[2].(sqlc.Phase), args[3].(func(riskcontext.MoveContext, db.Querier, *sqlc.Game) error))
 	})
 	return _c
 }
 
-func (_c *Service_PerformMoveQ_Call) Return(_a0 error) *Service_PerformMoveQ_Call {
+func (_c *Service_OrchestrateMoveQ_Call) Return(_a0 error) *Service_OrchestrateMoveQ_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Service_PerformMoveQ_Call) RunAndReturn(run func(context.Context, db.Querier, int64, sqlc.Phase, string, func(context.Context, db.Querier, *sqlc.Game) error) error) *Service_PerformMoveQ_Call {
+func (_c *Service_OrchestrateMoveQ_Call) RunAndReturn(run func(riskcontext.MoveContext, db.Querier, sqlc.Phase, func(riskcontext.MoveContext, db.Querier, *sqlc.Game) error) error) *Service_OrchestrateMoveQ_Call {
 	_c.Call.Return(run)
 	return _c
 }

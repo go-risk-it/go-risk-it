@@ -3,10 +3,10 @@
 package validation
 
 import (
-	context "context"
-
 	db "github.com/go-risk-it/go-risk-it/internal/data/db"
 	mock "github.com/stretchr/testify/mock"
+
+	riskcontext "github.com/go-risk-it/go-risk-it/internal/riskcontext"
 
 	sqlc "github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 )
@@ -24,17 +24,17 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
-// Validate provides a mock function with given fields: ctx, querier, game, userID
-func (_m *Service) Validate(ctx context.Context, querier db.Querier, game *sqlc.Game, userID string) error {
-	ret := _m.Called(ctx, querier, game, userID)
+// Validate provides a mock function with given fields: ctx, querier, game
+func (_m *Service) Validate(ctx riskcontext.MoveContext, querier db.Querier, game *sqlc.Game) error {
+	ret := _m.Called(ctx, querier, game)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Validate")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, db.Querier, *sqlc.Game, string) error); ok {
-		r0 = rf(ctx, querier, game, userID)
+	if rf, ok := ret.Get(0).(func(riskcontext.MoveContext, db.Querier, *sqlc.Game) error); ok {
+		r0 = rf(ctx, querier, game)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -48,17 +48,16 @@ type Service_Validate_Call struct {
 }
 
 // Validate is a helper method to define mock.On call
-//   - ctx context.Context
+//   - ctx riskcontext.MoveContext
 //   - querier db.Querier
 //   - game *sqlc.Game
-//   - userID string
-func (_e *Service_Expecter) Validate(ctx interface{}, querier interface{}, game interface{}, userID interface{}) *Service_Validate_Call {
-	return &Service_Validate_Call{Call: _e.mock.On("Validate", ctx, querier, game, userID)}
+func (_e *Service_Expecter) Validate(ctx interface{}, querier interface{}, game interface{}) *Service_Validate_Call {
+	return &Service_Validate_Call{Call: _e.mock.On("Validate", ctx, querier, game)}
 }
 
-func (_c *Service_Validate_Call) Run(run func(ctx context.Context, querier db.Querier, game *sqlc.Game, userID string)) *Service_Validate_Call {
+func (_c *Service_Validate_Call) Run(run func(ctx riskcontext.MoveContext, querier db.Querier, game *sqlc.Game)) *Service_Validate_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(db.Querier), args[2].(*sqlc.Game), args[3].(string))
+		run(args[0].(riskcontext.MoveContext), args[1].(db.Querier), args[2].(*sqlc.Game))
 	})
 	return _c
 }
@@ -68,7 +67,7 @@ func (_c *Service_Validate_Call) Return(_a0 error) *Service_Validate_Call {
 	return _c
 }
 
-func (_c *Service_Validate_Call) RunAndReturn(run func(context.Context, db.Querier, *sqlc.Game, string) error) *Service_Validate_Call {
+func (_c *Service_Validate_Call) RunAndReturn(run func(riskcontext.MoveContext, db.Querier, *sqlc.Game) error) *Service_Validate_Call {
 	_c.Call.Return(run)
 	return _c
 }

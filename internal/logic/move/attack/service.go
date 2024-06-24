@@ -1,19 +1,18 @@
 package attack
 
 import (
-	"context"
-
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/performer"
 	"github.com/go-risk-it/go-risk-it/internal/logic/orchestration/validation"
 	"github.com/go-risk-it/go-risk-it/internal/logic/region"
+	"github.com/go-risk-it/go-risk-it/internal/riskcontext"
 	"github.com/go-risk-it/go-risk-it/internal/signals"
 	"go.uber.org/zap"
 )
 
-type MoveData struct {
+type Move struct {
 	SourceRegionID  string
 	TargetRegionID  string
 	TroopsInSource  int64
@@ -22,7 +21,7 @@ type MoveData struct {
 }
 
 type Service interface {
-	performer.Service[MoveData]
+	performer.Service[Move]
 }
 
 type ServiceImpl struct {
@@ -35,6 +34,8 @@ type ServiceImpl struct {
 	boardStateChangedSignal signals.BoardStateChangedSignal
 	gameStateChangedSignal  signals.GameStateChangedSignal
 }
+
+var _ Service = &ServiceImpl{}
 
 func NewService(
 	que db.Querier,
@@ -59,7 +60,7 @@ func NewService(
 }
 
 func (s *ServiceImpl) MustAdvanceQ(
-	ctx context.Context,
+	ctx riskcontext.MoveContext,
 	querier db.Querier,
 	game *sqlc.Game,
 ) bool {
@@ -67,10 +68,10 @@ func (s *ServiceImpl) MustAdvanceQ(
 }
 
 func (s *ServiceImpl) PerformQ(
-	ctx context.Context,
+	ctx riskcontext.MoveContext,
 	querier db.Querier,
 	game *sqlc.Game,
-	move performer.Move[MoveData],
+	move Move,
 ) error {
 	s.log.Infow(
 		"performing attack move",

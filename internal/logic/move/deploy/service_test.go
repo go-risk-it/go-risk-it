@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/deploy"
-	"github.com/go-risk-it/go-risk-it/internal/logic/move/performer"
+	"github.com/go-risk-it/go-risk-it/internal/riskcontext"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/player"
@@ -38,36 +38,38 @@ func setup(t *testing.T) (
 	return querier, playerService, gameService, regionService, service
 }
 
-func input() (int64, string, string, int64, int64, context.Context) {
+func input() (string, int64, int64, riskcontext.MoveContext) {
 	gameID := int64(1)
 	userID := "Giovanni"
 	regionReference := "greenland"
 	currentTroops := 0
 	desiredTroops := 5
-	ctx := context.Background()
+	ctx := riskcontext.WithGameID(
+		riskcontext.WithUserID(
+			context.Background(),
+			userID,
+		),
+		gameID,
+	)
 
-	return gameID, userID, regionReference, int64(currentTroops), int64(desiredTroops), ctx
+	return regionReference, int64(currentTroops), int64(desiredTroops), ctx
 }
 
 func TestServiceImpl_DeployShouldFailWhenPlayerDoesntHaveEnoughDeployableTroops(t *testing.T) {
 	t.Parallel()
 
 	querier, _, _, _, service := setup(t)
-	gameID, userID, regionReference, currentTroops, desiredTroops, ctx := input()
+	regionReference, currentTroops, desiredTroops, ctx := input()
 
 	game := &sqlc.Game{
-		ID:    gameID,
+		ID:    ctx.GameID(),
 		Phase: sqlc.PhaseDEPLOY,
 		Turn:  2,
 	}
-	err := service.PerformQ(ctx, querier, game, performer.Move[deploy.MoveData]{
-		UserID: userID,
-		GameID: gameID,
-		Payload: deploy.MoveData{
-			RegionID:      regionReference,
-			CurrentTroops: currentTroops,
-			DesiredTroops: desiredTroops,
-		},
+	err := service.PerformQ(ctx, querier, game, deploy.Move{
+		RegionID:      regionReference,
+		CurrentTroops: currentTroops,
+		DesiredTroops: desiredTroops,
 	})
 
 	require.Error(t, err)
@@ -104,19 +106,19 @@ func TestServiceImpl_DeployShouldFail(t *testing.T) {
 			t.Parallel()
 
 			querier, _, _, regionService, service := setup(t)
-			gameID, userID, regionReference, _, desiredTroops, ctx := input()
+			regionReference, _, desiredTroops, ctx := input()
 
 			currentTroops := test.declaredTroops
 
 			game := &sqlc.Game{
-				ID:               gameID,
+				ID:               ctx.GameID(),
 				Phase:            sqlc.PhaseDEPLOY,
 				Turn:             2,
 				DeployableTroops: 5,
 			}
 			regionService.
 				EXPECT().
-				GetRegionQ(ctx, querier, gameID, regionReference).
+				GetRegionQ(ctx, querier, ctx.GameID(), regionReference).
 				Return(&sqlc.GetRegionsByGameRow{
 					ID:                1,
 					ExternalReference: "greenland",
@@ -124,14 +126,10 @@ func TestServiceImpl_DeployShouldFail(t *testing.T) {
 					Troops:            0,
 				}, nil)
 
-			err := service.PerformQ(ctx, querier, game, performer.Move[deploy.MoveData]{
-				UserID: userID,
-				GameID: gameID,
-				Payload: deploy.MoveData{
-					RegionID:      regionReference,
-					CurrentTroops: currentTroops,
-					DesiredTroops: desiredTroops,
-				},
+			err := service.PerformQ(ctx, querier, game, deploy.Move{
+				RegionID:      regionReference,
+				CurrentTroops: currentTroops,
+				DesiredTroops: desiredTroops,
 			})
 
 			require.Error(t, err)
@@ -166,36 +164,18 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 			querier, playerService, gameService, regionService, service := setup(
 				t,
 			)
-			gameID, userID, regionReference, currentTroops, desiredTroops, ctx := input()
+			regionReference, currentTroops, desiredTroops, ctx := input()
 			troops := desiredTroops - currentTroops
 
-			// gabriele := sqlc.Player{
-			//	ID: 420, TurnIndex: 0, GameID: 1, UserID: "Gabriele",
-			//}
-			// francesco := sqlc.Player{
-			//	ID: 69, TurnIndex: 1, GameID: 1, UserID: "Francesco",
-			//}
-			// giovanni := sqlc.Player{
-			//	ID:        42069,
-			//	TurnIndex: 2,
-			//	GameID:    1,
-			//	UserID:    "Giovanni",
-			//}
-			// players := []sqlc.Player{
-			//	gabriele,
-			//	francesco,
-			//	giovanni,
-			//}
-
 			game := &sqlc.Game{
-				ID:               gameID,
+				ID:               ctx.GameID(),
 				Phase:            sqlc.PhaseDEPLOY,
 				Turn:             2,
 				DeployableTroops: test.deployableTroops,
 			}
 			regionService.
 				EXPECT().
-				GetRegionQ(ctx, querier, gameID, regionReference).
+				GetRegionQ(ctx, querier, ctx.GameID(), regionReference).
 				Return(&sqlc.GetRegionsByGameRow{
 					ID:                1,
 					ExternalReference: "greenland",
@@ -211,14 +191,10 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 				IncreaseTroopsInRegion(ctx, querier, int64(1), troops).
 				Return(nil)
 
-			err := service.PerformQ(ctx, querier, game, performer.Move[deploy.MoveData]{
-				UserID: userID,
-				GameID: gameID,
-				Payload: deploy.MoveData{
-					RegionID:      regionReference,
-					CurrentTroops: currentTroops,
-					DesiredTroops: desiredTroops,
-				},
+			err := service.PerformQ(ctx, querier, game, deploy.Move{
+				RegionID:      regionReference,
+				CurrentTroops: currentTroops,
+				DesiredTroops: desiredTroops,
 			})
 
 			require.NoError(t, err)

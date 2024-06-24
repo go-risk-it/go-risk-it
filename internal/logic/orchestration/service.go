@@ -1,7 +1,6 @@
 package orchestration
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
@@ -9,6 +8,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game"
 	"github.com/go-risk-it/go-risk-it/internal/logic/orchestration/phase"
 	"github.com/go-risk-it/go-risk-it/internal/logic/orchestration/validation"
+	"github.com/go-risk-it/go-risk-it/internal/riskcontext"
 	"github.com/go-risk-it/go-risk-it/internal/signals"
 	"github.com/jackc/pgx/v5"
 	"go.uber.org/zap"
@@ -16,19 +16,15 @@ import (
 
 type Service interface {
 	OrchestrateMove(
-		ctx context.Context,
-		gameID int64,
-		userID string,
+		ctx riskcontext.MoveContext,
 		phase sqlc.Phase,
-		perform func(ctx context.Context, querier db.Querier, game *sqlc.Game) error,
+		perform func(ctx riskcontext.MoveContext, querier db.Querier, game *sqlc.Game) error,
 	) error
 	OrchestrateMoveQ(
-		ctx context.Context,
+		ctx riskcontext.MoveContext,
 		querier db.Querier,
-		gameID int64,
 		phase sqlc.Phase,
-		userID string,
-		perform func(ctx context.Context, querier db.Querier, game *sqlc.Game) error,
+		perform func(ctx riskcontext.MoveContext, querier db.Querier, game *sqlc.Game) error,
 	) error
 }
 type ServiceImpl struct {
@@ -65,17 +61,15 @@ func NewService(
 }
 
 func (s *ServiceImpl) OrchestrateMove(
-	ctx context.Context,
-	gameID int64,
-	userID string,
+	ctx riskcontext.MoveContext,
 	phase sqlc.Phase,
-	perform func(ctx context.Context, querier db.Querier, game *sqlc.Game) error,
+	perform func(ctx riskcontext.MoveContext, querier db.Querier, game *sqlc.Game) error,
 ) error {
 	_, err := s.querier.ExecuteInTransactionWithIsolation(
 		ctx,
 		pgx.RepeatableRead,
 		func(q db.Querier) (interface{}, error) {
-			if err := s.OrchestrateMoveQ(ctx, q, gameID, phase, userID, perform); err != nil {
+			if err := s.OrchestrateMoveQ(ctx, q, phase, perform); err != nil {
 				return nil, fmt.Errorf("unable to perform move: %w", err)
 			}
 
@@ -86,20 +80,18 @@ func (s *ServiceImpl) OrchestrateMove(
 		return fmt.Errorf("unable to perform move: %w", err)
 	}
 
-	s.publishMoveResult(ctx, gameID)
+	s.publishMoveResult(ctx)
 
 	return nil
 }
 
 func (s *ServiceImpl) OrchestrateMoveQ(
-	ctx context.Context,
+	ctx riskcontext.MoveContext,
 	querier db.Querier,
-	gameID int64,
 	phase sqlc.Phase,
-	userID string,
-	perform func(ctx context.Context, querier db.Querier, game *sqlc.Game) error,
+	perform func(ctx riskcontext.MoveContext, querier db.Querier, game *sqlc.Game) error,
 ) error {
-	gameState, err := s.gameService.GetGameStateQ(ctx, querier, gameID)
+	gameState, err := s.gameService.GetGameStateQ(ctx, querier, ctx.GameID())
 	if err != nil {
 		return fmt.Errorf("unable to get game state: %w", err)
 	}
@@ -108,11 +100,7 @@ func (s *ServiceImpl) OrchestrateMoveQ(
 		return fmt.Errorf("game is not in the correct phase to perform move")
 	}
 
-	if err := s.validationService.Validate(
-		ctx,
-		querier,
-		gameState,
-		userID); err != nil {
+	if err := s.validationService.Validate(ctx, querier, gameState); err != nil {
 		return fmt.Errorf("invalid move: %w", err)
 	}
 
@@ -120,24 +108,21 @@ func (s *ServiceImpl) OrchestrateMoveQ(
 		return fmt.Errorf("unable to perform move: %w", err)
 	}
 
-	if err := s.phaseService.AdvanceQ(
-		ctx,
-		querier,
-		gameID); err != nil {
+	if err := s.phaseService.AdvanceQ(ctx, querier); err != nil {
 		return fmt.Errorf("unable to advance phase: %w", err)
 	}
 
 	return nil
 }
 
-func (s *ServiceImpl) publishMoveResult(ctx context.Context, gameID int64) {
+func (s *ServiceImpl) publishMoveResult(ctx riskcontext.MoveContext) {
 	go s.boardStateChangedSignal.Emit(ctx, signals.BoardStateChangedData{
-		GameID: gameID,
+		GameID: ctx.GameID(),
 	})
 	go s.playerStateChangedSignal.Emit(ctx, signals.PlayerStateChangedData{
-		GameID: gameID,
+		GameID: ctx.GameID(),
 	})
 	go s.gameStateChangedSignal.Emit(ctx, signals.GameStateChangedData{
-		GameID: gameID,
+		GameID: ctx.GameID(),
 	})
 }

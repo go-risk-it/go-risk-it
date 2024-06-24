@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -34,6 +33,8 @@ func (g *GameMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 	return route.NewRoute(
 		routeToWrap.Pattern(),
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+			g.log.Debug("Applying game middleware")
+
 			gameID, err := extractGameID(request)
 			if err != nil {
 				http.Error(writer, err.Error(), http.StatusBadRequest)
@@ -41,16 +42,23 @@ func (g *GameMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 				return
 			}
 
+			userContext, ok := request.Context().(riskcontext.UserContext)
+			if !ok {
+				http.Error(writer, "invalid user context", http.StatusInternalServerError)
+
+				return
+			}
+
 			routeToWrap.ServeHTTP(
 				writer,
 				request.WithContext(
-					context.WithValue(request.Context(), riskcontext.GameIDKey, int64(gameID)),
+					riskcontext.WithGameID(userContext, gameID),
 				),
 			)
 		}))
 }
 
-func extractGameID(req *http.Request) (int, error) {
+func extractGameID(req *http.Request) (int64, error) {
 	gameIDStr := req.PathValue("id")
 
 	gameID, err := strconv.Atoi(gameIDStr)
@@ -58,5 +66,5 @@ func extractGameID(req *http.Request) (int, error) {
 		return -1, fmt.Errorf("invalid game id: %w", err)
 	}
 
-	return gameID, nil
+	return int64(gameID), nil
 }

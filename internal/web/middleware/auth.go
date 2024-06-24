@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -36,6 +35,8 @@ func (m *AuthMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 	return route.NewRoute(
 		routeToWrap.Pattern(),
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+			m.log.Debug("Applying auth middleware")
+
 			authHeader := request.Header.Get("Authorization") // Bearer <token>
 			tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
@@ -86,7 +87,7 @@ func (m *AuthMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 			routeToWrap.ServeHTTP(
 				writer,
 				request.WithContext(
-					context.WithValue(request.Context(), riskcontext.UserIDKey, subject),
+					riskcontext.WithUserID(request.Context(), subject),
 				),
 			)
 		}))

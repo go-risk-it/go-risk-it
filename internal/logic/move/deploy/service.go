@@ -10,17 +10,18 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/performer"
 	"github.com/go-risk-it/go-risk-it/internal/logic/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/region"
+	"github.com/go-risk-it/go-risk-it/internal/riskcontext"
 	"go.uber.org/zap"
 )
 
-type MoveData struct {
+type Move struct {
 	RegionID      string
 	CurrentTroops int64
 	DesiredTroops int64
 }
 
 type Service interface {
-	performer.Service[MoveData]
+	performer.Service[Move]
 }
 
 type ServiceImpl struct {
@@ -30,6 +31,8 @@ type ServiceImpl struct {
 	playerService player.Service
 	regionService region.Service
 }
+
+var _ Service = &ServiceImpl{}
 
 func NewService(
 	que db.Querier,
@@ -48,7 +51,7 @@ func NewService(
 }
 
 func (s *ServiceImpl) MustAdvanceQ(
-	_ context.Context,
+	_ riskcontext.MoveContext,
 	_ db.Querier,
 	game *sqlc.Game,
 ) bool {
@@ -56,32 +59,32 @@ func (s *ServiceImpl) MustAdvanceQ(
 }
 
 func (s *ServiceImpl) PerformQ(
-	ctx context.Context,
+	ctx riskcontext.MoveContext,
 	querier db.Querier,
 	game *sqlc.Game,
-	move performer.Move[MoveData],
+	move Move,
 ) error {
 	s.log.Infow(
 		"performing deploy move",
 		"gameID",
-		move.GameID,
+		ctx.GameID(),
 		"userID",
-		move.UserID,
+		ctx.UserID(),
 		"move",
 		move,
 	)
 
-	troops := move.Payload.DesiredTroops - move.Payload.CurrentTroops
+	troops := move.DesiredTroops - move.CurrentTroops
 	if game.DeployableTroops < troops {
 		return fmt.Errorf("not enough deployable troops")
 	}
 
-	regionState, err := s.getRegion(ctx, querier, move.GameID, move.Payload.RegionID, move.UserID)
+	regionState, err := s.getRegion(ctx, querier, move.RegionID)
 	if err != nil {
 		return fmt.Errorf("failed to get region: %w", err)
 	}
 
-	if regionState.Troops != move.Payload.CurrentTroops {
+	if regionState.Troops != move.CurrentTroops {
 		return fmt.Errorf("region has different number of troops than declared")
 	}
 
@@ -124,18 +127,16 @@ func (s *ServiceImpl) executeDeploy(
 }
 
 func (s *ServiceImpl) getRegion(
-	ctx context.Context,
+	ctx riskcontext.MoveContext,
 	querier db.Querier,
-	gameID int64,
 	region string,
-	userID string,
 ) (*sqlc.GetRegionsByGameRow, error) {
-	result, err := s.regionService.GetRegionQ(ctx, querier, gameID, region)
+	result, err := s.regionService.GetRegionQ(ctx, querier, ctx.GameID(), region)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get region: %w", err)
 	}
 
-	if result.UserID != userID {
+	if result.UserID != ctx.UserID() {
 		return nil, fmt.Errorf("region is not owned by player")
 	}
 

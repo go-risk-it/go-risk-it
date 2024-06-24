@@ -21,9 +21,14 @@ func NewServeMux(
 
 	for _, route := range routes {
 		mux.Handle(route.Pattern(),
-			gameMiddleware.Wrap(
-				websocketAuthMiddleware.Wrap(
-					authMiddleware.Wrap(route))))
+			websocketAuthMiddleware.Wrap(
+				authMiddleware.Wrap(
+					gameMiddleware.Wrap(
+						route,
+					),
+				),
+			),
+		)
 
 		routeNames = append(routeNames, route.Pattern())
 	}

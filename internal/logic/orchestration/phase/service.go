@@ -1,7 +1,6 @@
 package phase
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
@@ -9,21 +8,13 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/attack"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/deploy"
+	"github.com/go-risk-it/go-risk-it/internal/riskcontext"
 	"go.uber.org/zap"
 )
 
 type Service interface {
-	AdvanceQ(
-		ctx context.Context,
-		querier db.Querier,
-		gameID int64,
-	) error
-	SetGamePhaseQ(
-		ctx context.Context,
-		querier db.Querier,
-		gameID int64,
-		phase sqlc.Phase,
-	) error
+	AdvanceQ(ctx riskcontext.MoveContext, querier db.Querier) error
+	SetGamePhaseQ(ctx riskcontext.MoveContext, querier db.Querier, phase sqlc.Phase) error
 }
 
 type ServiceImpl struct {
@@ -32,6 +23,8 @@ type ServiceImpl struct {
 	deployService deploy.Service
 	gameService   game.Service
 }
+
+var _ Service = &ServiceImpl{}
 
 func NewService(
 	log *zap.SugaredLogger,
@@ -48,46 +41,49 @@ func NewService(
 }
 
 func (s *ServiceImpl) SetGamePhaseQ(
-	ctx context.Context,
+	ctx riskcontext.MoveContext,
 	querier db.Querier,
-	gameID int64,
 	phase sqlc.Phase,
 ) error {
-	s.log.Infow("setting phase", "gameID", gameID, "phase", phase)
+	s.log.Infow("setting phase", "gameID", ctx.GameID(), "phase", phase)
 
 	err := querier.SetGamePhase(ctx, sqlc.SetGamePhaseParams{
 		Phase: phase,
-		ID:    gameID,
+		ID:    ctx.GameID(),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to set phase: %w", err)
 	}
 
-	s.log.Infow("phase set", "gameID", gameID, "phase", phase)
+	s.log.Infow("phase set", "gameID", ctx.GameID(), "phase", phase)
 
 	return nil
 }
 
-func (s *ServiceImpl) AdvanceQ(
-	ctx context.Context,
-	querier db.Querier,
-	gameID int64,
-) error {
-	gameState, err := s.gameService.GetGameStateQ(ctx, querier, gameID)
+func (s *ServiceImpl) AdvanceQ(ctx riskcontext.MoveContext, querier db.Querier) error {
+	gameState, err := s.gameService.GetGameStateQ(ctx, querier, ctx.GameID())
 	if err != nil {
 		return fmt.Errorf("failed to get game state: %w", err)
 	}
 
-	s.log.Infow("Walking to target phase", "gameID", gameID, "from", gameState.Phase)
+	s.log.Infow("Walking to target phase", "gameID", ctx.GameID(), "from", gameState.Phase)
 
 	targetPhase := s.walkToTargetPhase(ctx, querier, gameState)
 	if targetPhase == gameState.Phase {
 		return nil
 	}
 
-	s.log.Infow("Advancing phase", "gameID", gameID, "from", gameState.Phase, "to", targetPhase)
+	s.log.Infow(
+		"Advancing phase",
+		"gameID",
+		ctx.GameID(),
+		"from",
+		gameState.Phase,
+		"to",
+		targetPhase,
+	)
 
-	err = s.SetGamePhaseQ(ctx, querier, gameID, targetPhase)
+	err = s.SetGamePhaseQ(ctx, querier, targetPhase)
 	if err != nil {
 		return fmt.Errorf("failed to set game phase: %w", err)
 	}
@@ -96,7 +92,7 @@ func (s *ServiceImpl) AdvanceQ(
 }
 
 func (s *ServiceImpl) walkToTargetPhase(
-	ctx context.Context,
+	ctx riskcontext.MoveContext,
 	querier db.Querier,
 	gameState *sqlc.Game,
 ) sqlc.Phase {

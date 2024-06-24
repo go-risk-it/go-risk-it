@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/orchestration/validation"
+	"github.com/go-risk-it/go-risk-it/internal/riskcontext"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/player"
 	"github.com/stretchr/testify/require"
@@ -25,19 +26,25 @@ func setup(t *testing.T) (
 	return querier, playerService, service
 }
 
-func input() (int64, string, context.Context) {
+func input() riskcontext.MoveContext {
 	gameID := int64(1)
 	userID := "Giovanni"
-	ctx := context.Background()
+	ctx := riskcontext.WithGameID(
+		riskcontext.WithUserID(
+			context.Background(),
+			userID,
+		),
+		gameID,
+	)
 
-	return gameID, userID, ctx
+	return ctx
 }
 
 func TestServiceImpl_ShouldFailWhenPlayerNotInGame(t *testing.T) {
 	t.Parallel()
 
 	querier, playerService, service := setup(t)
-	gameID, userID, ctx := input()
+	ctx := input()
 
 	players := []sqlc.Player{
 		{ID: 420, TurnIndex: 0, GameID: 1, UserID: "Gabriele"},
@@ -45,7 +52,7 @@ func TestServiceImpl_ShouldFailWhenPlayerNotInGame(t *testing.T) {
 	}
 
 	game := &sqlc.Game{
-		ID:               gameID,
+		ID:               ctx.GameID(),
 		Phase:            sqlc.PhaseDEPLOY,
 		Turn:             1,
 		DeployableTroops: 5,
@@ -53,15 +60,10 @@ func TestServiceImpl_ShouldFailWhenPlayerNotInGame(t *testing.T) {
 
 	playerService.
 		EXPECT().
-		GetPlayersQ(ctx, querier, gameID).
+		GetPlayersQ(ctx, querier, ctx.GameID()).
 		Return(players, nil)
 
-	err := service.Validate(
-		ctx,
-		querier,
-		game,
-		userID,
-	)
+	err := service.Validate(ctx, querier, game)
 
 	require.Error(t, err)
 	require.EqualError(t, err, "player is not in game")
@@ -90,7 +92,7 @@ func TestServiceImpl_ShouldFailOnTurnCheck(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			querier, playerService, service := setup(t)
-			gameID, userID, ctx := input()
+			ctx := input()
 
 			players := []sqlc.Player{
 				{ID: 420, TurnIndex: 0, GameID: 1, UserID: "Gabriele"},
@@ -99,20 +101,15 @@ func TestServiceImpl_ShouldFailOnTurnCheck(t *testing.T) {
 			}
 			playerService.
 				EXPECT().
-				GetPlayersQ(ctx, querier, gameID).
+				GetPlayersQ(ctx, querier, ctx.GameID()).
 				Return(players, nil)
 			game := &sqlc.Game{
-				ID:    gameID,
+				ID:    ctx.GameID(),
 				Phase: test.phase,
 				Turn:  test.turn,
 			}
 
-			err := service.Validate(
-				ctx,
-				querier,
-				game,
-				userID,
-			)
+			err := service.Validate(ctx, querier, game)
 
 			require.Error(t, err)
 			require.EqualError(t, err, test.expectedErr)

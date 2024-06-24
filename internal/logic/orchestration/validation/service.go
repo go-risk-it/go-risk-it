@@ -1,22 +1,17 @@
 package validation
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/player"
+	"github.com/go-risk-it/go-risk-it/internal/riskcontext"
 	"go.uber.org/zap"
 )
 
 type Service interface {
-	Validate(
-		ctx context.Context,
-		querier db.Querier,
-		game *sqlc.Game,
-		userID string,
-	) error
+	Validate(ctx riskcontext.MoveContext, querier db.Querier, game *sqlc.Game) error
 }
 
 type ServiceImpl struct {
@@ -32,17 +27,16 @@ func NewService(
 }
 
 func (s *ServiceImpl) Validate(
-	ctx context.Context,
+	ctx riskcontext.MoveContext,
 	querier db.Querier,
 	game *sqlc.Game,
-	userID string,
 ) error {
 	players, err := s.playerService.GetPlayersQ(ctx, querier, game.ID)
 	if err != nil {
 		return fmt.Errorf("failed to get players: %w", err)
 	}
 
-	thisPlayer := extractPlayerFrom(players, userID)
+	thisPlayer := extractPlayerFrom(players, ctx.UserID())
 	if thisPlayer == nil {
 		return fmt.Errorf("player is not in game")
 	}

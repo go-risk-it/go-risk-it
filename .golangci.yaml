@@ -44,6 +44,10 @@ linters:
   # See the dedicated "linters" documentation section.
   enable-all: true
   disable:
+    # context
+    - containedctx
+    - contextcheck
+    # error
     - depguard
     - gochecknoglobals
     - gomnd
