@@ -7,7 +7,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game"
-	"github.com/go-risk-it/go-risk-it/internal/logic/move/performer"
+	"github.com/go-risk-it/go-risk-it/internal/logic/move/performer/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/region"
 	"github.com/go-risk-it/go-risk-it/internal/riskcontext"
@@ -21,7 +21,7 @@ type Move struct {
 }
 
 type Service interface {
-	performer.Service[Move]
+	service.Service[Move]
 }
 
 type ServiceImpl struct {

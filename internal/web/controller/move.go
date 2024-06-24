@@ -7,9 +7,10 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game"
-	"github.com/go-risk-it/go-risk-it/internal/logic/move/attack"
-	"github.com/go-risk-it/go-risk-it/internal/logic/move/deploy"
-	"github.com/go-risk-it/go-risk-it/internal/logic/orchestration"
+	"github.com/go-risk-it/go-risk-it/internal/logic/move/orchestration"
+	"github.com/go-risk-it/go-risk-it/internal/logic/move/performer/attack"
+	"github.com/go-risk-it/go-risk-it/internal/logic/move/performer/deploy"
+	"github.com/go-risk-it/go-risk-it/internal/logic/move/performer/service"
 	"github.com/go-risk-it/go-risk-it/internal/riskcontext"
 	"go.uber.org/zap"
 )
@@ -43,6 +44,20 @@ func NewMoveController(
 	}
 }
 
+func getPerformerFunc[T any](
+	performer service.Performer[T],
+	move T,
+) func(ctx riskcontext.MoveContext, querier db.Querier, game *sqlc.Game) error {
+	return func(ctx riskcontext.MoveContext, querier db.Querier, game *sqlc.Game) error {
+		err := performer.PerformQ(ctx, querier, game, move)
+		if err != nil {
+			return fmt.Errorf("unable to perform move: %w", err)
+		}
+
+		return nil
+	}
+}
+
 func (c *MoveControllerImpl) PerformDeployMove(
 	ctx riskcontext.MoveContext,
 	deployMove request.DeployMove,
@@ -50,18 +65,11 @@ func (c *MoveControllerImpl) PerformDeployMove(
 	err := c.orchestrationService.OrchestrateMove(
 		ctx,
 		sqlc.PhaseDEPLOY,
-		func(ctx riskcontext.MoveContext, querier db.Querier, game *sqlc.Game) error {
-			err := c.deployService.PerformQ(ctx, querier, game, deploy.Move{
-				RegionID:      deployMove.RegionID,
-				CurrentTroops: deployMove.CurrentTroops,
-				DesiredTroops: deployMove.DesiredTroops,
-			})
-			if err != nil {
-				return fmt.Errorf("unable to perform deploy move: %w", err)
-			}
-
-			return nil
-		},
+		getPerformerFunc(c.deployService, deploy.Move{
+			RegionID:      deployMove.RegionID,
+			CurrentTroops: deployMove.CurrentTroops,
+			DesiredTroops: deployMove.DesiredTroops,
+		}),
 	)
 	if err != nil {
 		return fmt.Errorf("unable to perform deploy move: %w", err)
@@ -77,20 +85,13 @@ func (c *MoveControllerImpl) PerformAttackMove(
 	err := c.orchestrationService.OrchestrateMove(
 		ctx,
 		sqlc.PhaseATTACK,
-		func(ctx riskcontext.MoveContext, querier db.Querier, game *sqlc.Game) error {
-			err := c.attackService.PerformQ(ctx, querier, game, attack.Move{
-				SourceRegionID:  attackMove.SourceRegionID,
-				TargetRegionID:  attackMove.TargetRegionID,
-				TroopsInSource:  attackMove.TroopsInSource,
-				TroopsInTarget:  attackMove.TroopsInTarget,
-				AttackingTroops: attackMove.AttackingTroops,
-			})
-			if err != nil {
-				return fmt.Errorf("unable to perform attack move: %w", err)
-			}
-
-			return nil
-		},
+		getPerformerFunc(c.attackService, attack.Move{
+			SourceRegionID:  attackMove.SourceRegionID,
+			TargetRegionID:  attackMove.TargetRegionID,
+			TroopsInSource:  attackMove.TroopsInSource,
+			TroopsInTarget:  attackMove.TroopsInTarget,
+			AttackingTroops: attackMove.AttackingTroops,
+		}),
 	)
 	if err != nil {
 		return fmt.Errorf("unable to perform attack move: %w", err)

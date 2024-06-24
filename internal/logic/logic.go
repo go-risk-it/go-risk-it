@@ -4,7 +4,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move"
-	"github.com/go-risk-it/go-risk-it/internal/logic/orchestration"
 	"github.com/go-risk-it/go-risk-it/internal/logic/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/region"
 	"github.com/go-risk-it/go-risk-it/internal/logic/region/assignment"
@@ -16,7 +15,6 @@ var Module = fx.Options(
 	game.Module,
 	move.Module,
 	signals.Module,
-	orchestration.Module,
 	fx.Provide(
 		fx.Annotate(
 			assignment.NewAssignmentService,

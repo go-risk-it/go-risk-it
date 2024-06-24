@@ -7,12 +7,12 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/logic/orchestration"
+	"github.com/go-risk-it/go-risk-it/internal/logic/move/orchestration"
 	"github.com/go-risk-it/go-risk-it/internal/riskcontext"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/pool"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game"
-	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/orchestration/phase"
-	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/orchestration/validation"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/move/orchestration/phase"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/move/orchestration/validation"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )

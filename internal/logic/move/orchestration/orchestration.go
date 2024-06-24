@@ -1,8 +1,8 @@
 package orchestration
 
 import (
-	"github.com/go-risk-it/go-risk-it/internal/logic/orchestration/phase"
-	"github.com/go-risk-it/go-risk-it/internal/logic/orchestration/validation"
+	"github.com/go-risk-it/go-risk-it/internal/logic/move/orchestration/phase"
+	"github.com/go-risk-it/go-risk-it/internal/logic/move/orchestration/validation"
 	"go.uber.org/fx"
 )
 

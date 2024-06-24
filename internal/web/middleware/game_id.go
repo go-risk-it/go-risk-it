@@ -26,7 +26,7 @@ func NewGameMiddleware(log *zap.SugaredLogger) GameMiddleware {
 }
 
 func (g *GameMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
-	if !strings.HasPrefix(routeToWrap.Pattern(), "/api/v1/games/{id}/") {
+	if !strings.HasPrefix(routeToWrap.Pattern(), "/api/v1/games/{id}") {
 		return routeToWrap
 	}
 
