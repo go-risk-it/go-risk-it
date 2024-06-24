@@ -20,9 +20,9 @@ func (_m *AuthMiddleware) EXPECT() *AuthMiddleware_Expecter {
 	return &AuthMiddleware_Expecter{mock: &_m.Mock}
 }
 
-// Wrap provides a mock function with given fields: _a0
-func (_m *AuthMiddleware) Wrap(_a0 route.Route) route.Route {
-	ret := _m.Called(_a0)
+// Wrap provides a mock function with given fields: routeToWrap
+func (_m *AuthMiddleware) Wrap(routeToWrap route.Route) route.Route {
+	ret := _m.Called(routeToWrap)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Wrap")
@@ -30,7 +30,7 @@ func (_m *AuthMiddleware) Wrap(_a0 route.Route) route.Route {
 
 	var r0 route.Route
 	if rf, ok := ret.Get(0).(func(route.Route) route.Route); ok {
-		r0 = rf(_a0)
+		r0 = rf(routeToWrap)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(route.Route)
@@ -46,12 +46,12 @@ type AuthMiddleware_Wrap_Call struct {
 }
 
 // Wrap is a helper method to define mock.On call
-//   - _a0 route.Route
-func (_e *AuthMiddleware_Expecter) Wrap(_a0 interface{}) *AuthMiddleware_Wrap_Call {
-	return &AuthMiddleware_Wrap_Call{Call: _e.mock.On("Wrap", _a0)}
+//   - routeToWrap route.Route
+func (_e *AuthMiddleware_Expecter) Wrap(routeToWrap interface{}) *AuthMiddleware_Wrap_Call {
+	return &AuthMiddleware_Wrap_Call{Call: _e.mock.On("Wrap", routeToWrap)}
 }
 
-func (_c *AuthMiddleware_Wrap_Call) Run(run func(_a0 route.Route)) *AuthMiddleware_Wrap_Call {
+func (_c *AuthMiddleware_Wrap_Call) Run(run func(routeToWrap route.Route)) *AuthMiddleware_Wrap_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(route.Route))
 	})

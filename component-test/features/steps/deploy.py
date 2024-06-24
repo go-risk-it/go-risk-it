@@ -8,7 +8,6 @@ from util.http_assertions import assert_2xx
 def step_impl(context: RiskItContext, player: str, troops: int, region: str):
     current_troops = context.board_state.regions[region].troops
     request = {
-        "userId": context.players[player].user.id,
         "regionId": region,
         "currentTroops": current_troops,
         "desiredTroops": current_troops + int(troops),
