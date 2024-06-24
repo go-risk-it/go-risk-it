@@ -41,7 +41,7 @@ func (m *AuthMiddlewareImpl) Wrap(route rest.Route) rest.Route {
 			}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 			if err != nil {
 				m.log.Errorw("failed to parse token", "token", tokenString, "err", err)
-				rest.WriteResponse(writer, m.log, marshalError(err), http.StatusUnauthorized)
+				rest.WriteResponse(writer, marshalError(err), http.StatusUnauthorized)
 
 				return
 			}
@@ -50,7 +50,6 @@ func (m *AuthMiddlewareImpl) Wrap(route rest.Route) rest.Route {
 				m.log.Errorw("invalid token", "token", tokenString)
 				rest.WriteResponse(
 					writer,
-					m.log,
 					marshalError(fmt.Errorf("invalid token")),
 					http.StatusUnauthorized,
 				)
@@ -64,7 +63,6 @@ func (m *AuthMiddlewareImpl) Wrap(route rest.Route) rest.Route {
 				m.log.Error("failed to parse claims")
 				rest.WriteResponse(
 					writer,
-					m.log,
 					marshalError(fmt.Errorf("failed to parse claims")),
 					http.StatusUnauthorized,
 				)
@@ -77,7 +75,6 @@ func (m *AuthMiddlewareImpl) Wrap(route rest.Route) rest.Route {
 				m.log.Errorw("failed to get subject", "err", err)
 				rest.WriteResponse(
 					writer,
-					m.log,
 					marshalError(fmt.Errorf("failed to extract UserID")),
 					http.StatusUnauthorized,
 				)

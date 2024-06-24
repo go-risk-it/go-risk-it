@@ -54,5 +54,5 @@ func (h *GameHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	WriteResponse(writer, h.log, createGameResponse, http.StatusCreated)
+	WriteResponse(writer, createGameResponse, http.StatusCreated)
 }

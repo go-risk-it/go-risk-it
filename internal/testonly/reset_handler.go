@@ -39,5 +39,5 @@ func (h *ResetHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	rest.WriteResponse(writer, h.log, []byte{}, http.StatusNoContent)
+	rest.WriteResponse(writer, []byte{}, http.StatusNoContent)
 }

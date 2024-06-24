@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/riskcontext"
 	"go.uber.org/fx"
-	"go.uber.org/zap"
 )
 
 type malformedRequestError struct {
@@ -130,14 +129,12 @@ func decode[T any](dec *json.Decoder, dst T) error {
 	return nil
 }
 
-func WriteResponse(writer http.ResponseWriter, log *zap.SugaredLogger, body []byte, status int) {
+func WriteResponse(writer http.ResponseWriter, body []byte, status int) {
 	writer.WriteHeader(status)
-
-	log.Debugw("writing response", "status", status, "body", string(body))
 
 	_, err := writer.Write(body)
 	if err != nil {
-		log.Errorw("unable to write response", "error", err)
+		panic(err)
 	}
 }
 

@@ -3,12 +3,9 @@ package rest
 import (
 	"context"
 	"net/http"
-
-	"go.uber.org/zap"
 )
 
 func serveMove[T any](
-	log *zap.SugaredLogger,
 	writer http.ResponseWriter,
 	req *http.Request,
 	perform func(ctx context.Context, gameID int64, userID string, move T) error,
@@ -32,5 +29,5 @@ func serveMove[T any](
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 	}
 
-	WriteResponse(writer, log, []byte{}, http.StatusNoContent)
+	WriteResponse(writer, []byte{}, http.StatusNoContent)
 }
