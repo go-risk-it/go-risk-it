@@ -20,7 +20,8 @@ func NewServeMux(
 	routeNames := make([]string, 0, len(routes))
 
 	for _, route := range routes {
-		mux.Handle(route.Pattern(),
+		mux.Handle(
+			route.Pattern(),
 			websocketAuthMiddleware.Wrap(
 				authMiddleware.Wrap(
 					gameMiddleware.Wrap(
