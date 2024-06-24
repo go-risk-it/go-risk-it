@@ -1,4 +1,4 @@
-package rest
+package game
 
 import (
 	"encoding/json"
@@ -7,35 +7,38 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/response"
 	"github.com/go-risk-it/go-risk-it/internal/web/controller"
+	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
+	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 	"go.uber.org/zap"
 )
 
-type GameHandler interface {
-	Pattern() string
-	ServeHTTP(w http.ResponseWriter, r *http.Request)
+type Handler interface {
+	route.Route
 }
 
-type GameHandlerImpl struct {
+type HandlerImpl struct {
 	log            *zap.SugaredLogger
 	gameController controller.GameController
 }
 
+var _ Handler = (*HandlerImpl)(nil)
+
 func NewGameHandler(
 	log *zap.SugaredLogger,
 	gameController controller.GameController,
-) *GameHandlerImpl {
-	return &GameHandlerImpl{
+) *HandlerImpl {
+	return &HandlerImpl{
 		log:            log,
 		gameController: gameController,
 	}
 }
 
-func (h *GameHandlerImpl) Pattern() string {
+func (h *HandlerImpl) Pattern() string {
 	return "/api/v1/games"
 }
 
-func (h *GameHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	createGameRequest, err := decodeRequest[request.CreateGame](writer, req)
+func (h *HandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
+	createGameRequest, err := restutils.DecodeRequest[request.CreateGame](writer, req)
 	if err != nil {
 		return
 	}
@@ -54,5 +57,5 @@ func (h *GameHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	WriteResponse(writer, createGameResponse, http.StatusCreated)
+	restutils.WriteResponse(writer, createGameResponse, http.StatusCreated)
 }

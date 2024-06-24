@@ -5,17 +5,19 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/go-risk-it/go-risk-it/internal/web/rest"
+	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	"go.uber.org/zap"
 )
 
 type WebsocketHeaderConversionMiddleware interface {
-	Wrap(route rest.Route) rest.Route
+	Middleware
 }
 
 type WebsocketHeaderConversionMiddlewareImpl struct {
 	log *zap.SugaredLogger
 }
+
+var _ WebsocketHeaderConversionMiddleware = (*WebsocketHeaderConversionMiddlewareImpl)(nil)
 
 func NewWebsocketAuthMiddleware(log *zap.SugaredLogger) WebsocketHeaderConversionMiddleware {
 	return &WebsocketHeaderConversionMiddlewareImpl{
@@ -31,9 +33,9 @@ func NewWebsocketAuthMiddleware(log *zap.SugaredLogger) WebsocketHeaderConversio
 //	"risk-it.websocket.auth.token, <token>" in the Sec-WebSocket-Protocol header.
 //
 // See: https://stackoverflow.com/questions/4361173/http-headers-in-websockets-client-api/77060459
-func (m *WebsocketHeaderConversionMiddlewareImpl) Wrap(route rest.Route) rest.Route {
-	return rest.NewRoute(
-		route.Pattern(),
+func (m *WebsocketHeaderConversionMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
+	return route.NewRoute(
+		routeToWrap.Pattern(),
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			subprotocol := request.Header.Get("Sec-WebSocket-Protocol")
 			if subprotocol != "" {
@@ -47,7 +49,7 @@ func (m *WebsocketHeaderConversionMiddlewareImpl) Wrap(route rest.Route) rest.Ro
 				request.Header.Set("Authorization", "Bearer "+token)
 			}
 
-			route.ServeHTTP(writer, request)
+			routeToWrap.ServeHTTP(writer, request)
 		}))
 }
 

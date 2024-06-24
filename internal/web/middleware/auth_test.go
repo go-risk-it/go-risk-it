@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
 	"github.com/go-risk-it/go-risk-it/internal/web/middleware"
-	"github.com/go-risk-it/go-risk-it/internal/web/rest"
+	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -72,7 +72,7 @@ func TestAuthMiddleware_Wrap(t *testing.T) {
 			middleware, responseWriter := setup(t)
 
 			wrappedHandler := middleware.Wrap(
-				rest.NewRoute(
+				route.NewRoute(
 					"/",
 					http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 						writer.WriteHeader(http.StatusOK)

@@ -1,7 +1,7 @@
 package testonly
 
 import (
-	"github.com/go-risk-it/go-risk-it/internal/web/rest"
+	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	"go.uber.org/fx"
 )
 
@@ -15,6 +15,6 @@ var Module = fx.Options(
 			NewService,
 			fx.As(new(Service)),
 		),
-		rest.AsRoute(NewResetHandler),
+		route.AsRoute(NewResetHandler),
 	),
 )

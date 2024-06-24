@@ -3,7 +3,7 @@
 package middleware
 
 import (
-	rest "github.com/go-risk-it/go-risk-it/internal/web/rest"
+	route "github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -20,20 +20,20 @@ func (_m *WebsocketHeaderConversionMiddleware) EXPECT() *WebsocketHeaderConversi
 	return &WebsocketHeaderConversionMiddleware_Expecter{mock: &_m.Mock}
 }
 
-// Wrap provides a mock function with given fields: route
-func (_m *WebsocketHeaderConversionMiddleware) Wrap(route rest.Route) rest.Route {
-	ret := _m.Called(route)
+// Wrap provides a mock function with given fields: _a0
+func (_m *WebsocketHeaderConversionMiddleware) Wrap(_a0 route.Route) route.Route {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Wrap")
 	}
 
-	var r0 rest.Route
-	if rf, ok := ret.Get(0).(func(rest.Route) rest.Route); ok {
-		r0 = rf(route)
+	var r0 route.Route
+	if rf, ok := ret.Get(0).(func(route.Route) route.Route); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(rest.Route)
+			r0 = ret.Get(0).(route.Route)
 		}
 	}
 
@@ -46,24 +46,24 @@ type WebsocketHeaderConversionMiddleware_Wrap_Call struct {
 }
 
 // Wrap is a helper method to define mock.On call
-//   - route rest.Route
-func (_e *WebsocketHeaderConversionMiddleware_Expecter) Wrap(route interface{}) *WebsocketHeaderConversionMiddleware_Wrap_Call {
-	return &WebsocketHeaderConversionMiddleware_Wrap_Call{Call: _e.mock.On("Wrap", route)}
+//   - _a0 route.Route
+func (_e *WebsocketHeaderConversionMiddleware_Expecter) Wrap(_a0 interface{}) *WebsocketHeaderConversionMiddleware_Wrap_Call {
+	return &WebsocketHeaderConversionMiddleware_Wrap_Call{Call: _e.mock.On("Wrap", _a0)}
 }
 
-func (_c *WebsocketHeaderConversionMiddleware_Wrap_Call) Run(run func(route rest.Route)) *WebsocketHeaderConversionMiddleware_Wrap_Call {
+func (_c *WebsocketHeaderConversionMiddleware_Wrap_Call) Run(run func(_a0 route.Route)) *WebsocketHeaderConversionMiddleware_Wrap_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(rest.Route))
+		run(args[0].(route.Route))
 	})
 	return _c
 }
 
-func (_c *WebsocketHeaderConversionMiddleware_Wrap_Call) Return(_a0 rest.Route) *WebsocketHeaderConversionMiddleware_Wrap_Call {
+func (_c *WebsocketHeaderConversionMiddleware_Wrap_Call) Return(_a0 route.Route) *WebsocketHeaderConversionMiddleware_Wrap_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *WebsocketHeaderConversionMiddleware_Wrap_Call) RunAndReturn(run func(rest.Route) rest.Route) *WebsocketHeaderConversionMiddleware_Wrap_Call {
+func (_c *WebsocketHeaderConversionMiddleware_Wrap_Call) RunAndReturn(run func(route.Route) route.Route) *WebsocketHeaderConversionMiddleware_Wrap_Call {
 	_c.Call.Return(run)
 	return _c
 }

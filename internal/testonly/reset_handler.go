@@ -3,7 +3,7 @@ package testonly
 import (
 	"net/http"
 
-	"github.com/go-risk-it/go-risk-it/internal/web/rest"
+	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 	"go.uber.org/zap"
 )
 
@@ -39,5 +39,5 @@ func (h *ResetHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	rest.WriteResponse(writer, []byte{}, http.StatusNoContent)
+	restutils.WriteResponse(writer, []byte{}, http.StatusNoContent)
 }

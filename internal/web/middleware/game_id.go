@@ -8,29 +8,31 @@ import (
 	"strings"
 
 	"github.com/go-risk-it/go-risk-it/internal/riskcontext"
-	"github.com/go-risk-it/go-risk-it/internal/web/rest"
+	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	"go.uber.org/zap"
 )
 
 type GameMiddleware interface {
-	Wrap(route rest.Route) rest.Route
+	Middleware
 }
 
 type GameMiddlewareImpl struct {
 	log *zap.SugaredLogger
 }
 
+var _ GameMiddleware = (*GameMiddlewareImpl)(nil)
+
 func NewGameMiddleware(log *zap.SugaredLogger) GameMiddleware {
 	return &GameMiddlewareImpl{log: log}
 }
 
-func (g *GameMiddlewareImpl) Wrap(route rest.Route) rest.Route {
-	if !strings.HasPrefix(route.Pattern(), "/api/v1/games/{id}/") {
-		return route
+func (g *GameMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
+	if !strings.HasPrefix(routeToWrap.Pattern(), "/api/v1/games/{id}/") {
+		return routeToWrap
 	}
 
-	return rest.NewRoute(
-		route.Pattern(),
+	return route.NewRoute(
+		routeToWrap.Pattern(),
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			gameID, err := extractGameID(request)
 			if err != nil {
@@ -39,7 +41,7 @@ func (g *GameMiddlewareImpl) Wrap(route rest.Route) rest.Route {
 				return
 			}
 
-			route.ServeHTTP(
+			routeToWrap.ServeHTTP(
 				writer,
 				request.WithContext(
 					context.WithValue(request.Context(), riskcontext.GameIDKey, int64(gameID)),

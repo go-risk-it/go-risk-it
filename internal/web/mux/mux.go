@@ -4,13 +4,13 @@ import (
 	"net/http"
 
 	"github.com/go-risk-it/go-risk-it/internal/web/middleware"
-	"github.com/go-risk-it/go-risk-it/internal/web/rest"
+	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
 
 func NewServeMux(
-	routes []rest.Route,
+	routes []route.Route,
 	authMiddleware middleware.AuthMiddleware,
 	gameMiddleware middleware.GameMiddleware,
 	websocketAuthMiddleware middleware.WebsocketHeaderConversionMiddleware,

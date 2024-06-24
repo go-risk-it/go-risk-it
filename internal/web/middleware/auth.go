@@ -8,19 +8,22 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
 	"github.com/go-risk-it/go-risk-it/internal/riskcontext"
-	"github.com/go-risk-it/go-risk-it/internal/web/rest"
+	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
+	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 	"github.com/golang-jwt/jwt/v5"
 	"go.uber.org/zap"
 )
 
 type AuthMiddleware interface {
-	Wrap(route rest.Route) rest.Route
+	Middleware
 }
 
 type AuthMiddlewareImpl struct {
 	log       *zap.SugaredLogger
 	jwtConfig config.JwtConfig
 }
+
+var _ AuthMiddleware = (*AuthMiddlewareImpl)(nil)
 
 func NewAuthMiddleware(log *zap.SugaredLogger, jwtConfig config.JwtConfig) AuthMiddleware {
 	return &AuthMiddlewareImpl{
@@ -29,9 +32,9 @@ func NewAuthMiddleware(log *zap.SugaredLogger, jwtConfig config.JwtConfig) AuthM
 	}
 }
 
-func (m *AuthMiddlewareImpl) Wrap(route rest.Route) rest.Route {
-	return rest.NewRoute(
-		route.Pattern(),
+func (m *AuthMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
+	return route.NewRoute(
+		routeToWrap.Pattern(),
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			authHeader := request.Header.Get("Authorization") // Bearer <token>
 			tokenString := strings.TrimPrefix(authHeader, "Bearer ")
@@ -41,14 +44,14 @@ func (m *AuthMiddlewareImpl) Wrap(route rest.Route) rest.Route {
 			}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 			if err != nil {
 				m.log.Errorw("failed to parse token", "token", tokenString, "err", err)
-				rest.WriteResponse(writer, marshalError(err), http.StatusUnauthorized)
+				restutils.WriteResponse(writer, marshalError(err), http.StatusUnauthorized)
 
 				return
 			}
 
 			if !token.Valid {
 				m.log.Errorw("invalid token", "token", tokenString)
-				rest.WriteResponse(
+				restutils.WriteResponse(
 					writer,
 					marshalError(fmt.Errorf("invalid token")),
 					http.StatusUnauthorized,
@@ -61,7 +64,7 @@ func (m *AuthMiddlewareImpl) Wrap(route rest.Route) rest.Route {
 
 			if _, ok := token.Claims.(jwt.MapClaims); !ok {
 				m.log.Error("failed to parse claims")
-				rest.WriteResponse(
+				restutils.WriteResponse(
 					writer,
 					marshalError(fmt.Errorf("failed to parse claims")),
 					http.StatusUnauthorized,
@@ -73,14 +76,14 @@ func (m *AuthMiddlewareImpl) Wrap(route rest.Route) rest.Route {
 			subject, err := token.Claims.GetSubject()
 			if err != nil {
 				m.log.Errorw("failed to get subject", "err", err)
-				rest.WriteResponse(
+				restutils.WriteResponse(
 					writer,
 					marshalError(fmt.Errorf("failed to extract UserID")),
 					http.StatusUnauthorized,
 				)
 			}
 
-			route.ServeHTTP(
+			routeToWrap.ServeHTTP(
 				writer,
 				request.WithContext(
 					context.WithValue(request.Context(), riskcontext.UserIDKey, subject),

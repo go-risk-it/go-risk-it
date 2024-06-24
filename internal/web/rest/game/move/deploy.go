@@ -1,14 +1,15 @@
-package rest
+package move
 
 import (
 	"net/http"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/web/controller"
+	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 )
 
 type DeployHandler interface {
-	Route
+	route.Route
 }
 
 type DeployHandlerImpl struct {
