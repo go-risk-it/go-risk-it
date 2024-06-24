@@ -25,7 +25,7 @@ func NewAttackHandler(moveController controller.MoveController) *AttackHandlerIm
 }
 
 func (h *AttackHandlerImpl) Pattern() string {
-	return "/api/v1/games/{id}/moves/attacks"
+	return "/api/v1/games/{id}/move/attacks"
 }
 
 func (h *AttackHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {

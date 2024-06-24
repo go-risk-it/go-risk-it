@@ -26,7 +26,6 @@ type Service interface {
 		players []request.Player) (int64, error)
 	GetGameState(ctx context.Context, gameID int64) (*sqlc.Game, error)
 	GetGameStateQ(ctx context.Context, querier db.Querier, gameID int64) (*sqlc.Game, error)
-	SetGamePhaseQ(ctx context.Context, querier db.Querier, gameID int64, phase sqlc.Phase) error
 	DecreaseDeployableTroopsQ(
 		ctx context.Context,
 		querier db.Querier,
@@ -124,27 +123,6 @@ func (s *ServiceImpl) GetGameStateQ(
 	}
 
 	return &game, nil
-}
-
-func (s *ServiceImpl) SetGamePhaseQ(
-	ctx context.Context,
-	querier db.Querier,
-	gameID int64,
-	phase sqlc.Phase,
-) error {
-	s.log.Infow("setting phase", "gameID", gameID, "phase", phase)
-
-	err := querier.SetGamePhase(ctx, sqlc.SetGamePhaseParams{
-		Phase: phase,
-		ID:    gameID,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to set phase: %w", err)
-	}
-
-	s.log.Infow("phase set", "gameID", gameID, "phase", phase)
-
-	return nil
 }
 
 func (s *ServiceImpl) DecreaseDeployableTroopsQ(

@@ -6,8 +6,8 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game"
-	"github.com/go-risk-it/go-risk-it/internal/logic/move/move"
-	"github.com/go-risk-it/go-risk-it/internal/logic/move/validation"
+	"github.com/go-risk-it/go-risk-it/internal/logic/move/performer"
+	"github.com/go-risk-it/go-risk-it/internal/logic/orchestration/validation"
 	"github.com/go-risk-it/go-risk-it/internal/logic/region"
 	"github.com/go-risk-it/go-risk-it/internal/signals"
 	"go.uber.org/zap"
@@ -22,7 +22,7 @@ type MoveData struct {
 }
 
 type Service interface {
-	move.Service[MoveData]
+	performer.Service[MoveData]
 }
 
 type ServiceImpl struct {
@@ -70,7 +70,7 @@ func (s *ServiceImpl) PerformQ(
 	ctx context.Context,
 	querier db.Querier,
 	game *sqlc.Game,
-	move move.Move[MoveData],
+	move performer.Move[MoveData],
 ) error {
 	s.log.Infow(
 		"performing attack move",

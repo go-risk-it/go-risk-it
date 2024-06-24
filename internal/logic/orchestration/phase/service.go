@@ -18,6 +18,12 @@ type Service interface {
 		querier db.Querier,
 		gameID int64,
 	) error
+	SetGamePhaseQ(
+		ctx context.Context,
+		querier db.Querier,
+		gameID int64,
+		phase sqlc.Phase,
+	) error
 }
 
 type ServiceImpl struct {
@@ -41,6 +47,27 @@ func NewService(
 	}
 }
 
+func (s *ServiceImpl) SetGamePhaseQ(
+	ctx context.Context,
+	querier db.Querier,
+	gameID int64,
+	phase sqlc.Phase,
+) error {
+	s.log.Infow("setting phase", "gameID", gameID, "phase", phase)
+
+	err := querier.SetGamePhase(ctx, sqlc.SetGamePhaseParams{
+		Phase: phase,
+		ID:    gameID,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to set phase: %w", err)
+	}
+
+	s.log.Infow("phase set", "gameID", gameID, "phase", phase)
+
+	return nil
+}
+
 func (s *ServiceImpl) AdvanceQ(
 	ctx context.Context,
 	querier db.Querier,
@@ -60,7 +87,7 @@ func (s *ServiceImpl) AdvanceQ(
 
 	s.log.Infow("Advancing phase", "gameID", gameID, "from", gameState.Phase, "to", targetPhase)
 
-	err = s.gameService.SetGamePhaseQ(ctx, querier, gameID, targetPhase)
+	err = s.SetGamePhaseQ(ctx, querier, gameID, targetPhase)
 	if err != nil {
 		return fmt.Errorf("failed to set game phase: %w", err)
 	}

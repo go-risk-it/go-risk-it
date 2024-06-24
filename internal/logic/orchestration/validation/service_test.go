@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/logic/move/validation"
+	"github.com/go-risk-it/go-risk-it/internal/logic/orchestration/validation"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/player"
 	"github.com/stretchr/testify/require"

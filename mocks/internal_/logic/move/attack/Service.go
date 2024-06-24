@@ -11,7 +11,7 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
-	move "github.com/go-risk-it/go-risk-it/internal/logic/move/move"
+	performer "github.com/go-risk-it/go-risk-it/internal/logic/move/performer"
 
 	sqlc "github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 )
@@ -77,17 +77,17 @@ func (_c *Service_MustAdvanceQ_Call) RunAndReturn(run func(context.Context, db.Q
 	return _c
 }
 
-// PerformQ provides a mock function with given fields: ctx, querier, game, _a3
-func (_m *Service) PerformQ(ctx context.Context, querier db.Querier, game *sqlc.Game, _a3 move.Move[attack.MoveData]) error {
-	ret := _m.Called(ctx, querier, game, _a3)
+// PerformQ provides a mock function with given fields: ctx, querier, game, move
+func (_m *Service) PerformQ(ctx context.Context, querier db.Querier, game *sqlc.Game, move performer.Move[attack.MoveData]) error {
+	ret := _m.Called(ctx, querier, game, move)
 
 	if len(ret) == 0 {
 		panic("no return value specified for PerformQ")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, db.Querier, *sqlc.Game, move.Move[attack.MoveData]) error); ok {
-		r0 = rf(ctx, querier, game, _a3)
+	if rf, ok := ret.Get(0).(func(context.Context, db.Querier, *sqlc.Game, performer.Move[attack.MoveData]) error); ok {
+		r0 = rf(ctx, querier, game, move)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -104,14 +104,14 @@ type Service_PerformQ_Call struct {
 //   - ctx context.Context
 //   - querier db.Querier
 //   - game *sqlc.Game
-//   - _a3 move.Move[attack.MoveData]
-func (_e *Service_Expecter) PerformQ(ctx interface{}, querier interface{}, game interface{}, _a3 interface{}) *Service_PerformQ_Call {
-	return &Service_PerformQ_Call{Call: _e.mock.On("PerformQ", ctx, querier, game, _a3)}
+//   - move performer.Move[attack.MoveData]
+func (_e *Service_Expecter) PerformQ(ctx interface{}, querier interface{}, game interface{}, move interface{}) *Service_PerformQ_Call {
+	return &Service_PerformQ_Call{Call: _e.mock.On("PerformQ", ctx, querier, game, move)}
 }
 
-func (_c *Service_PerformQ_Call) Run(run func(ctx context.Context, querier db.Querier, game *sqlc.Game, _a3 move.Move[attack.MoveData])) *Service_PerformQ_Call {
+func (_c *Service_PerformQ_Call) Run(run func(ctx context.Context, querier db.Querier, game *sqlc.Game, move performer.Move[attack.MoveData])) *Service_PerformQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(db.Querier), args[2].(*sqlc.Game), args[3].(move.Move[attack.MoveData]))
+		run(args[0].(context.Context), args[1].(db.Querier), args[2].(*sqlc.Game), args[3].(performer.Move[attack.MoveData]))
 	})
 	return _c
 }
@@ -121,7 +121,7 @@ func (_c *Service_PerformQ_Call) Return(_a0 error) *Service_PerformQ_Call {
 	return _c
 }
 
-func (_c *Service_PerformQ_Call) RunAndReturn(run func(context.Context, db.Querier, *sqlc.Game, move.Move[attack.MoveData]) error) *Service_PerformQ_Call {
+func (_c *Service_PerformQ_Call) RunAndReturn(run func(context.Context, db.Querier, *sqlc.Game, performer.Move[attack.MoveData]) error) *Service_PerformQ_Call {
 	_c.Call.Return(run)
 	return _c
 }

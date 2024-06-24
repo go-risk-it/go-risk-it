@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/deploy"
-	"github.com/go-risk-it/go-risk-it/internal/logic/move/move"
+	"github.com/go-risk-it/go-risk-it/internal/logic/move/performer"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/player"
@@ -60,7 +60,7 @@ func TestServiceImpl_DeployShouldFailWhenPlayerDoesntHaveEnoughDeployableTroops(
 		Phase: sqlc.PhaseDEPLOY,
 		Turn:  2,
 	}
-	err := service.PerformQ(ctx, querier, game, move.Move[deploy.MoveData]{
+	err := service.PerformQ(ctx, querier, game, performer.Move[deploy.MoveData]{
 		UserID: userID,
 		GameID: gameID,
 		Payload: deploy.MoveData{
@@ -124,7 +124,7 @@ func TestServiceImpl_DeployShouldFail(t *testing.T) {
 					Troops:            0,
 				}, nil)
 
-			err := service.PerformQ(ctx, querier, game, move.Move[deploy.MoveData]{
+			err := service.PerformQ(ctx, querier, game, performer.Move[deploy.MoveData]{
 				UserID: userID,
 				GameID: gameID,
 				Payload: deploy.MoveData{
@@ -211,7 +211,7 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 				IncreaseTroopsInRegion(ctx, querier, int64(1), troops).
 				Return(nil)
 
-			err := service.PerformQ(ctx, querier, game, move.Move[deploy.MoveData]{
+			err := service.PerformQ(ctx, querier, game, performer.Move[deploy.MoveData]{
 				UserID: userID,
 				GameID: gameID,
 				Payload: deploy.MoveData{

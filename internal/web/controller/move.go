@@ -10,8 +10,8 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/attack"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/deploy"
-	"github.com/go-risk-it/go-risk-it/internal/logic/move/move"
-	"github.com/go-risk-it/go-risk-it/internal/logic/move/orchestration/orchestration"
+	"github.com/go-risk-it/go-risk-it/internal/logic/move/performer"
+	"github.com/go-risk-it/go-risk-it/internal/logic/orchestration"
 	"go.uber.org/zap"
 )
 
@@ -57,7 +57,7 @@ func (c *MoveControllerImpl) PerformDeployMove(
 		userID,
 		sqlc.PhaseDEPLOY,
 		func(ctx context.Context, querier db.Querier, game *sqlc.Game) error {
-			err := c.deployService.PerformQ(ctx, querier, game, move.Move[deploy.MoveData]{
+			err := c.deployService.PerformQ(ctx, querier, game, performer.Move[deploy.MoveData]{
 				UserID: userID,
 				GameID: gameID,
 				Payload: deploy.MoveData{
@@ -89,7 +89,7 @@ func (c *MoveControllerImpl) PerformAttackMove(
 		userID,
 		sqlc.PhaseATTACK,
 		func(ctx context.Context, querier db.Querier, game *sqlc.Game) error {
-			err := c.attackService.PerformQ(ctx, querier, game, move.Move[attack.MoveData]{
+			err := c.attackService.PerformQ(ctx, querier, game, performer.Move[attack.MoveData]{
 				UserID: userID,
 				GameID: gameID,
 				Payload: attack.MoveData{
