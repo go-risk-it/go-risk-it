@@ -7,7 +7,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/api/game/message"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	playerController "github.com/go-risk-it/go-risk-it/internal/web/controller"
-	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/player"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -19,7 +19,7 @@ func TestControllerImpl_GetPlayerState(t *testing.T) {
 	logger := zap.NewExample().Sugar()
 	playerService := player.NewService(t)
 
-	// Initialize the service under test
+	// Initialize the gamestate under test
 	controller := playerController.NewPlayerController(logger, playerService)
 
 	// Set up test data

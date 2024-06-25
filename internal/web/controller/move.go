@@ -7,11 +7,11 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game"
-	"github.com/go-risk-it/go-risk-it/internal/logic/move/orchestration"
-	"github.com/go-risk-it/go-risk-it/internal/logic/move/performer/attack"
-	"github.com/go-risk-it/go-risk-it/internal/logic/move/performer/deploy"
-	"github.com/go-risk-it/go-risk-it/internal/logic/move/performer/service"
+	service2 "github.com/go-risk-it/go-risk-it/internal/logic/game/gamestate"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/attack"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/deploy"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/service"
 	"go.uber.org/zap"
 )
 
@@ -24,7 +24,7 @@ type MoveControllerImpl struct {
 	log                  *zap.SugaredLogger
 	attackService        attack.Service
 	deployService        deploy.Service
-	gameService          game.Service
+	gameService          service2.Service
 	orchestrationService orchestration.Service
 }
 
@@ -32,7 +32,7 @@ func NewMoveController(
 	log *zap.SugaredLogger,
 	attackService attack.Service,
 	deployService deploy.Service,
-	gameService game.Service,
+	gameService service2.Service,
 	orchestrationService orchestration.Service,
 ) *MoveControllerImpl {
 	return &MoveControllerImpl{

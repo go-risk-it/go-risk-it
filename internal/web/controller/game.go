@@ -6,9 +6,9 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/message"
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
-	"github.com/go-risk-it/go-risk-it/internal/logic/board"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game"
-	"github.com/go-risk-it/go-risk-it/internal/logic/player"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/gamestate"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"go.uber.org/zap"
 )
 
@@ -19,14 +19,14 @@ type GameController interface {
 
 type GameControllerImpl struct {
 	log           *zap.SugaredLogger
-	gameService   game.Service
+	gameService   gamestate.Service
 	playerService player.Service
 	boardService  board.Service
 }
 
 func NewGameController(
 	log *zap.SugaredLogger,
-	gameService game.Service,
+	gameService gamestate.Service,
 	boardService board.Service,
 	playerService player.Service,
 ) *GameControllerImpl {

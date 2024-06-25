@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/signals"
+	"github.com/go-risk-it/go-risk-it/internal/logic/signals"
 	"github.com/go-risk-it/go-risk-it/internal/web/fetchers"
 	"github.com/lesismal/nbio/nbhttp/websocket"
 	"go.uber.org/fx"

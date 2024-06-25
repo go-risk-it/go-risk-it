@@ -7,8 +7,8 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/api/game/message"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	boardController "github.com/go-risk-it/go-risk-it/internal/web/controller"
-	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/board"
-	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/region"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/board"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -21,7 +21,7 @@ func TestBoardControllerImpl_GetBoardState(t *testing.T) {
 	boardService := board.NewService(t)
 	regionService := region.NewService(t)
 
-	// Initialize the service under test
+	// Initialize the gamestate under test
 	controller := boardController.NewBoardController(log, boardService, regionService)
 
 	// Set up test data

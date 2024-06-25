@@ -291,7 +291,7 @@ services:
       - ./volumes/functions:/home/deno/functions:Z
     command:
       - start
-      - --main-service
+      - --main-gamestate
       - /home/deno/functions/main
 
   analytics:

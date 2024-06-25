@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/message"
-	sqlc "github.com/go-risk-it/go-risk-it/internal/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/logic/board"
-	"github.com/go-risk-it/go-risk-it/internal/logic/region"
+	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
 	"go.uber.org/zap"
 )
 
