@@ -9,6 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v4
     - name: Repo Visualizer
       uses: githubocto/repo-visualizer@0.9.1
       with:
