@@ -3,10 +3,10 @@
 package phase
 
 import (
+	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
 	db "github.com/go-risk-it/go-risk-it/internal/data/db"
-	mock "github.com/stretchr/testify/mock"
 
-	riskcontext "github.com/go-risk-it/go-risk-it/internal/riskcontext"
+	mock "github.com/stretchr/testify/mock"
 
 	sqlc "github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 )
@@ -24,17 +24,17 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
-// AdvanceQ provides a mock function with given fields: ctx, querier
-func (_m *Service) AdvanceQ(ctx riskcontext.MoveContext, querier db.Querier) error {
-	ret := _m.Called(ctx, querier)
+// AdvanceQ provides a mock function with given fields: _a0, querier
+func (_m *Service) AdvanceQ(_a0 ctx.MoveContext, querier db.Querier) error {
+	ret := _m.Called(_a0, querier)
 
 	if len(ret) == 0 {
 		panic("no return value specified for AdvanceQ")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(riskcontext.MoveContext, db.Querier) error); ok {
-		r0 = rf(ctx, querier)
+	if rf, ok := ret.Get(0).(func(ctx.MoveContext, db.Querier) error); ok {
+		r0 = rf(_a0, querier)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -48,15 +48,15 @@ type Service_AdvanceQ_Call struct {
 }
 
 // AdvanceQ is a helper method to define mock.On call
-//   - ctx riskcontext.MoveContext
+//   - _a0 ctx.MoveContext
 //   - querier db.Querier
-func (_e *Service_Expecter) AdvanceQ(ctx interface{}, querier interface{}) *Service_AdvanceQ_Call {
-	return &Service_AdvanceQ_Call{Call: _e.mock.On("AdvanceQ", ctx, querier)}
+func (_e *Service_Expecter) AdvanceQ(_a0 interface{}, querier interface{}) *Service_AdvanceQ_Call {
+	return &Service_AdvanceQ_Call{Call: _e.mock.On("AdvanceQ", _a0, querier)}
 }
 
-func (_c *Service_AdvanceQ_Call) Run(run func(ctx riskcontext.MoveContext, querier db.Querier)) *Service_AdvanceQ_Call {
+func (_c *Service_AdvanceQ_Call) Run(run func(_a0 ctx.MoveContext, querier db.Querier)) *Service_AdvanceQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(riskcontext.MoveContext), args[1].(db.Querier))
+		run(args[0].(ctx.MoveContext), args[1].(db.Querier))
 	})
 	return _c
 }
@@ -66,22 +66,22 @@ func (_c *Service_AdvanceQ_Call) Return(_a0 error) *Service_AdvanceQ_Call {
 	return _c
 }
 
-func (_c *Service_AdvanceQ_Call) RunAndReturn(run func(riskcontext.MoveContext, db.Querier) error) *Service_AdvanceQ_Call {
+func (_c *Service_AdvanceQ_Call) RunAndReturn(run func(ctx.MoveContext, db.Querier) error) *Service_AdvanceQ_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// SetGamePhaseQ provides a mock function with given fields: ctx, querier, _a2
-func (_m *Service) SetGamePhaseQ(ctx riskcontext.MoveContext, querier db.Querier, _a2 sqlc.Phase) error {
-	ret := _m.Called(ctx, querier, _a2)
+// SetGamePhaseQ provides a mock function with given fields: _a0, querier, _a2
+func (_m *Service) SetGamePhaseQ(_a0 ctx.MoveContext, querier db.Querier, _a2 sqlc.Phase) error {
+	ret := _m.Called(_a0, querier, _a2)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SetGamePhaseQ")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(riskcontext.MoveContext, db.Querier, sqlc.Phase) error); ok {
-		r0 = rf(ctx, querier, _a2)
+	if rf, ok := ret.Get(0).(func(ctx.MoveContext, db.Querier, sqlc.Phase) error); ok {
+		r0 = rf(_a0, querier, _a2)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -95,16 +95,16 @@ type Service_SetGamePhaseQ_Call struct {
 }
 
 // SetGamePhaseQ is a helper method to define mock.On call
-//   - ctx riskcontext.MoveContext
+//   - _a0 ctx.MoveContext
 //   - querier db.Querier
 //   - _a2 sqlc.Phase
-func (_e *Service_Expecter) SetGamePhaseQ(ctx interface{}, querier interface{}, _a2 interface{}) *Service_SetGamePhaseQ_Call {
-	return &Service_SetGamePhaseQ_Call{Call: _e.mock.On("SetGamePhaseQ", ctx, querier, _a2)}
+func (_e *Service_Expecter) SetGamePhaseQ(_a0 interface{}, querier interface{}, _a2 interface{}) *Service_SetGamePhaseQ_Call {
+	return &Service_SetGamePhaseQ_Call{Call: _e.mock.On("SetGamePhaseQ", _a0, querier, _a2)}
 }
 
-func (_c *Service_SetGamePhaseQ_Call) Run(run func(ctx riskcontext.MoveContext, querier db.Querier, _a2 sqlc.Phase)) *Service_SetGamePhaseQ_Call {
+func (_c *Service_SetGamePhaseQ_Call) Run(run func(_a0 ctx.MoveContext, querier db.Querier, _a2 sqlc.Phase)) *Service_SetGamePhaseQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(riskcontext.MoveContext), args[1].(db.Querier), args[2].(sqlc.Phase))
+		run(args[0].(ctx.MoveContext), args[1].(db.Querier), args[2].(sqlc.Phase))
 	})
 	return _c
 }
@@ -114,7 +114,7 @@ func (_c *Service_SetGamePhaseQ_Call) Return(_a0 error) *Service_SetGamePhaseQ_C
 	return _c
 }
 
-func (_c *Service_SetGamePhaseQ_Call) RunAndReturn(run func(riskcontext.MoveContext, db.Querier, sqlc.Phase) error) *Service_SetGamePhaseQ_Call {
+func (_c *Service_SetGamePhaseQ_Call) RunAndReturn(run func(ctx.MoveContext, db.Querier, sqlc.Phase) error) *Service_SetGamePhaseQ_Call {
 	_c.Call.Return(run)
 	return _c
 }

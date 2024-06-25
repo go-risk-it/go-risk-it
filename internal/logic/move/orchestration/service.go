@@ -3,12 +3,12 @@ package orchestration
 import (
 	"fmt"
 
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/orchestration/phase"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/orchestration/validation"
-	"github.com/go-risk-it/go-risk-it/internal/riskcontext"
 	"github.com/go-risk-it/go-risk-it/internal/signals"
 	"github.com/jackc/pgx/v5"
 	"go.uber.org/zap"
@@ -16,15 +16,15 @@ import (
 
 type Service interface {
 	OrchestrateMove(
-		ctx riskcontext.MoveContext,
+		ctx ctx.MoveContext,
 		phase sqlc.Phase,
-		perform func(ctx riskcontext.MoveContext, querier db.Querier, game *sqlc.Game) error,
+		perform func(ctx ctx.MoveContext, querier db.Querier, game *sqlc.Game) error,
 	) error
 	OrchestrateMoveQ(
-		ctx riskcontext.MoveContext,
+		ctx ctx.MoveContext,
 		querier db.Querier,
 		phase sqlc.Phase,
-		perform func(ctx riskcontext.MoveContext, querier db.Querier, game *sqlc.Game) error,
+		perform func(ctx ctx.MoveContext, querier db.Querier, game *sqlc.Game) error,
 	) error
 }
 type ServiceImpl struct {
@@ -61,9 +61,9 @@ func NewService(
 }
 
 func (s *ServiceImpl) OrchestrateMove(
-	ctx riskcontext.MoveContext,
+	ctx ctx.MoveContext,
 	phase sqlc.Phase,
-	perform func(ctx riskcontext.MoveContext, querier db.Querier, game *sqlc.Game) error,
+	perform func(ctx ctx.MoveContext, querier db.Querier, game *sqlc.Game) error,
 ) error {
 	_, err := s.querier.ExecuteInTransactionWithIsolation(
 		ctx,
@@ -86,10 +86,10 @@ func (s *ServiceImpl) OrchestrateMove(
 }
 
 func (s *ServiceImpl) OrchestrateMoveQ(
-	ctx riskcontext.MoveContext,
+	ctx ctx.MoveContext,
 	querier db.Querier,
 	phase sqlc.Phase,
-	perform func(ctx riskcontext.MoveContext, querier db.Querier, game *sqlc.Game) error,
+	perform func(ctx ctx.MoveContext, querier db.Querier, game *sqlc.Game) error,
 ) error {
 	gameState, err := s.gameService.GetGameStateQ(ctx, querier, ctx.GameID())
 	if err != nil {
@@ -115,7 +115,7 @@ func (s *ServiceImpl) OrchestrateMoveQ(
 	return nil
 }
 
-func (s *ServiceImpl) publishMoveResult(ctx riskcontext.MoveContext) {
+func (s *ServiceImpl) publishMoveResult(ctx ctx.MoveContext) {
 	go s.boardStateChangedSignal.Emit(ctx, signals.BoardStateChangedData{
 		GameID: ctx.GameID(),
 	})

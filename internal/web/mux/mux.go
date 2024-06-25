@@ -13,6 +13,7 @@ func NewServeMux(
 	routes []route.Route,
 	authMiddleware middleware.AuthMiddleware,
 	gameMiddleware middleware.GameMiddleware,
+	logMiddleware middleware.LogMiddleware,
 	websocketAuthMiddleware middleware.WebsocketHeaderConversionMiddleware,
 	log *zap.SugaredLogger,
 ) *http.ServeMux {
@@ -22,10 +23,12 @@ func NewServeMux(
 	for _, route := range routes {
 		mux.Handle(
 			route.Pattern(),
-			websocketAuthMiddleware.Wrap(
-				authMiddleware.Wrap(
-					gameMiddleware.Wrap(
-						route,
+			logMiddleware.Wrap(
+				websocketAuthMiddleware.Wrap(
+					authMiddleware.Wrap(
+						gameMiddleware.Wrap(
+							route,
+						),
 					),
 				),
 			),

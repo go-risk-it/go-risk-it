@@ -3,7 +3,7 @@ package move
 import (
 	"net/http"
 
-	"github.com/go-risk-it/go-risk-it/internal/riskcontext"
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 	"go.uber.org/fx"
@@ -19,14 +19,14 @@ var Module = fx.Options(
 func serveMove[T any](
 	writer http.ResponseWriter,
 	req *http.Request,
-	perform func(ctx riskcontext.MoveContext, move T) error,
+	perform func(ctx ctx.MoveContext, move T) error,
 ) {
 	moveRequest, err := restutils.DecodeRequest[T](writer, req)
 	if err != nil {
 		return
 	}
 
-	moveContext, ok := req.Context().(riskcontext.MoveContext)
+	moveContext, ok := req.Context().(ctx.MoveContext)
 	if !ok {
 		http.Error(writer, "invalid move context", http.StatusInternalServerError)
 

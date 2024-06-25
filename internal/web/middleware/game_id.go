@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-risk-it/go-risk-it/internal/riskcontext"
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	"go.uber.org/zap"
 )
@@ -42,18 +42,24 @@ func (g *GameMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 				return
 			}
 
-			userContext, ok := request.Context().(riskcontext.UserContext)
+			userContext, ok := request.Context().(ctx.UserContext)
 			if !ok {
 				http.Error(writer, "invalid user context", http.StatusInternalServerError)
 
 				return
 			}
 
+			gameContext := ctx.WithGameID(
+				ctx.WithLog(
+					userContext,
+					userContext.Log().With("gameID", gameID),
+				),
+				gameID,
+			)
+
 			routeToWrap.ServeHTTP(
 				writer,
-				request.WithContext(
-					riskcontext.WithGameID(userContext, gameID),
-				),
+				request.WithContext(ctx.NewMoveContext(userContext, gameContext)),
 			)
 		}))
 }

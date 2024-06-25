@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/orchestration/validation"
-	"github.com/go-risk-it/go-risk-it/internal/riskcontext"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/player"
 	"github.com/stretchr/testify/require"
@@ -26,18 +26,14 @@ func setup(t *testing.T) (
 	return querier, playerService, service
 }
 
-func input() riskcontext.MoveContext {
+func input() ctx.MoveContext {
 	gameID := int64(1)
 	userID := "Giovanni"
-	ctx := riskcontext.WithGameID(
-		riskcontext.WithUserID(
-			context.Background(),
-			userID,
-		),
-		gameID,
-	)
+	userContext := ctx.WithUserID(ctx.WithLog(context.Background(), zap.NewNop().Sugar()), userID)
 
-	return ctx
+	gameContext := ctx.WithGameID(userContext, gameID)
+
+	return ctx.NewMoveContext(userContext, gameContext)
 }
 
 func TestServiceImpl_ShouldFailWhenPlayerNotInGame(t *testing.T) {

@@ -23,5 +23,9 @@ var Module = fx.Options(
 			NewGameMiddleware,
 			fx.As(new(GameMiddleware)),
 		),
+		fx.Annotate(
+			NewLogMiddleware,
+			fx.As(new(LogMiddleware)),
+		),
 	),
 )

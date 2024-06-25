@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/middleware"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	"github.com/stretchr/testify/require"
@@ -41,19 +42,19 @@ func TestAuthMiddleware_Wrap(t *testing.T) {
 		{
 			"Should fail when token can't be parsed",
 			"asd",
-			"{\"error\": \"token is malformed: token contains an invalid number of segments\"}",
+			"failed to parse token: token is malformed: token contains an invalid number of segments\n",
 			http.StatusUnauthorized,
 		},
 		{
 			"Should fail when token is invalid",
 			"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.AEqWPXS_88UL5a0bTWDj9OZdd83fZV03xsNMUdPZeg8",
-			"{\"error\": \"token signature is invalid: signature is invalid\"}",
+			"failed to parse token: token signature is invalid: signature is invalid\n",
 			http.StatusUnauthorized,
 		},
 		{
 			"Should fail when token is expired",
 			"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjk2MTc2MTE3M30.qg2HxtFJf72fWP12IGVsUsbwNLaOSI9Kr3Ws-cjrlPo",
-			"{\"error\": \"token has invalid claims: token is expired\"}",
+			"failed to parse token: token has invalid claims: token is expired\n",
 			http.StatusUnauthorized,
 		},
 		{
@@ -79,7 +80,7 @@ func TestAuthMiddleware_Wrap(t *testing.T) {
 					})))
 
 			request, _ := http.NewRequestWithContext(
-				context.Background(),
+				ctx.WithLog(context.Background(), zap.NewNop().Sugar()),
 				http.MethodGet,
 				"/",
 				nil,
@@ -89,8 +90,8 @@ func TestAuthMiddleware_Wrap(t *testing.T) {
 
 			wrappedHandler.ServeHTTP(responseWriter, request)
 
-			require.Equal(t, test.expectedCode, responseWriter.Code)
 			require.Equal(t, test.expectedError, responseWriter.Body.String())
+			require.Equal(t, test.expectedCode, responseWriter.Code)
 		})
 	}
 }

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/orchestration"
-	"github.com/go-risk-it/go-risk-it/internal/riskcontext"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/pool"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/move/orchestration/phase"
@@ -44,18 +44,15 @@ func setup(t *testing.T) (
 	return querier, gameService, phaseService, validationService, service
 }
 
-func input() riskcontext.MoveContext {
+func input() ctx.MoveContext {
 	gameID := int64(1)
 	userID := "23011836-df7e-4421-bdbf-b9c07b22eb64"
-	ctx := riskcontext.WithGameID(
-		riskcontext.WithUserID(
-			context.Background(),
-			userID,
-		),
-		gameID,
-	)
 
-	return ctx
+	userContext := ctx.WithUserID(ctx.WithLog(context.Background(), zap.NewNop().Sugar()), userID)
+
+	gameContext := ctx.WithGameID(userContext, gameID)
+
+	return ctx.NewMoveContext(userContext, gameContext)
 }
 
 func TestServiceImpl_PerformMove(t *testing.T) {
@@ -118,10 +115,10 @@ func TestServiceImpl_PerformMove(t *testing.T) {
 			t.Parallel()
 
 			querier, gameService, phaseService, validationService, service := setup(t)
-			ctx := input()
+			context := input()
 
 			game := &sqlc.Game{
-				ID:               ctx.GameID(),
+				ID:               context.GameID(),
 				Phase:            sqlc.PhaseDEPLOY,
 				Turn:             2,
 				DeployableTroops: 5,
@@ -129,26 +126,26 @@ func TestServiceImpl_PerformMove(t *testing.T) {
 
 			gameService.
 				EXPECT().
-				GetGameStateQ(ctx, querier, ctx.GameID()).
+				GetGameStateQ(context, querier, context.GameID()).
 				Return(game, nil)
 
 			if test.phase == sqlc.PhaseDEPLOY {
 				validationService.
 					EXPECT().
-					Validate(ctx, querier, game).
+					Validate(context, querier, game).
 					Return(test.validationError)
 				if test.validationError == nil && test.performError == nil {
 					phaseService.
 						EXPECT().
-						AdvanceQ(ctx, querier).
+						AdvanceQ(context, querier).
 						Return(test.advanceError)
 				}
 			}
 
-			performFunc := func(ctx riskcontext.MoveContext, querier db.Querier, game *sqlc.Game) error {
+			performFunc := func(c ctx.MoveContext, querier db.Querier, game *sqlc.Game) error {
 				return test.performError
 			}
-			err := service.OrchestrateMoveQ(ctx, querier, test.phase, performFunc)
+			err := service.OrchestrateMoveQ(context, querier, test.phase, performFunc)
 
 			if test.phase == sqlc.PhaseDEPLOY &&
 				test.validationError == nil &&

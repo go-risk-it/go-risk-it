@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game"
@@ -11,13 +12,12 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/performer/attack"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/performer/deploy"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/performer/service"
-	"github.com/go-risk-it/go-risk-it/internal/riskcontext"
 	"go.uber.org/zap"
 )
 
 type MoveController interface {
-	PerformDeployMove(ctx riskcontext.MoveContext, deployMove request.DeployMove) error
-	PerformAttackMove(ctx riskcontext.MoveContext, attackMove request.AttackMove) error
+	PerformDeployMove(ctx ctx.MoveContext, deployMove request.DeployMove) error
+	PerformAttackMove(ctx ctx.MoveContext, attackMove request.AttackMove) error
 }
 
 type MoveControllerImpl struct {
@@ -47,8 +47,8 @@ func NewMoveController(
 func getPerformerFunc[T any](
 	performer service.Performer[T],
 	move T,
-) func(ctx riskcontext.MoveContext, querier db.Querier, game *sqlc.Game) error {
-	return func(ctx riskcontext.MoveContext, querier db.Querier, game *sqlc.Game) error {
+) func(ctx ctx.MoveContext, querier db.Querier, game *sqlc.Game) error {
+	return func(ctx ctx.MoveContext, querier db.Querier, game *sqlc.Game) error {
 		err := performer.PerformQ(ctx, querier, game, move)
 		if err != nil {
 			return fmt.Errorf("unable to perform move: %w", err)
@@ -59,7 +59,7 @@ func getPerformerFunc[T any](
 }
 
 func (c *MoveControllerImpl) PerformDeployMove(
-	ctx riskcontext.MoveContext,
+	ctx ctx.MoveContext,
 	deployMove request.DeployMove,
 ) error {
 	err := c.orchestrationService.OrchestrateMove(
@@ -79,7 +79,7 @@ func (c *MoveControllerImpl) PerformDeployMove(
 }
 
 func (c *MoveControllerImpl) PerformAttackMove(
-	ctx riskcontext.MoveContext,
+	ctx ctx.MoveContext,
 	attackMove request.AttackMove,
 ) error {
 	err := c.orchestrationService.OrchestrateMove(

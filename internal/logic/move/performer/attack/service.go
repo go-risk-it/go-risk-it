@@ -1,12 +1,12 @@
 package attack
 
 import (
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/performer/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/region"
-	"github.com/go-risk-it/go-risk-it/internal/riskcontext"
 	"github.com/go-risk-it/go-risk-it/internal/signals"
 	"go.uber.org/zap"
 )
@@ -56,7 +56,7 @@ func NewService(
 }
 
 func (s *ServiceImpl) MustAdvanceQ(
-	ctx riskcontext.MoveContext,
+	ctx ctx.MoveContext,
 	querier db.Querier,
 	game *sqlc.Game,
 ) bool {
@@ -64,15 +64,12 @@ func (s *ServiceImpl) MustAdvanceQ(
 }
 
 func (s *ServiceImpl) PerformQ(
-	ctx riskcontext.MoveContext,
+	ctx ctx.MoveContext,
 	querier db.Querier,
 	game *sqlc.Game,
 	move Move,
 ) error {
-	s.log.Infow(
-		"performing attack move",
-		"move", move,
-	)
+	s.log.Infow("performing attack move", "move", move)
 
 	return nil
 }

@@ -1,16 +1,15 @@
 package deploy
 
 import (
-	"context"
 	"fmt"
 
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/performer/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/region"
-	"github.com/go-risk-it/go-risk-it/internal/riskcontext"
 	"go.uber.org/zap"
 )
 
@@ -51,7 +50,7 @@ func NewService(
 }
 
 func (s *ServiceImpl) MustAdvanceQ(
-	_ riskcontext.MoveContext,
+	_ ctx.MoveContext,
 	_ db.Querier,
 	game *sqlc.Game,
 ) bool {
@@ -59,20 +58,12 @@ func (s *ServiceImpl) MustAdvanceQ(
 }
 
 func (s *ServiceImpl) PerformQ(
-	ctx riskcontext.MoveContext,
+	ctx ctx.MoveContext,
 	querier db.Querier,
 	game *sqlc.Game,
 	move Move,
 ) error {
-	s.log.Infow(
-		"performing deploy move",
-		"gameID",
-		ctx.GameID(),
-		"userID",
-		ctx.UserID(),
-		"move",
-		move,
-	)
+	ctx.Log().Infow("performing deploy move", "move", move)
 
 	troops := move.DesiredTroops - move.CurrentTroops
 	if game.DeployableTroops < troops {
@@ -97,16 +88,14 @@ func (s *ServiceImpl) PerformQ(
 }
 
 func (s *ServiceImpl) executeDeploy(
-	ctx context.Context,
+	ctx ctx.MoveContext,
 	querier db.Querier,
 	game *sqlc.Game,
 	region *sqlc.GetRegionsByGameRow,
 	troops int64,
 ) error {
-	s.log.Infow(
-		"deploying",
-		"gameID",
-		game.ID,
+	ctx.Log().Infow(
+		"executing deploy",
 		"region",
 		region.ExternalReference,
 		"troops",
@@ -127,7 +116,7 @@ func (s *ServiceImpl) executeDeploy(
 }
 
 func (s *ServiceImpl) getRegion(
-	ctx riskcontext.MoveContext,
+	ctx ctx.MoveContext,
 	querier db.Querier,
 	region string,
 ) (*sqlc.GetRegionsByGameRow, error) {

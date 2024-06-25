@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/performer/deploy"
-	"github.com/go-risk-it/go-risk-it/internal/riskcontext"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/player"
@@ -38,21 +38,24 @@ func setup(t *testing.T) (
 	return querier, playerService, gameService, regionService, service
 }
 
-func input() (string, int64, int64, riskcontext.MoveContext) {
+func input() (string, int64, int64, ctx.MoveContext) {
 	gameID := int64(1)
 	userID := "Giovanni"
 	regionReference := "greenland"
 	currentTroops := 0
 	desiredTroops := 5
-	ctx := riskcontext.WithGameID(
-		riskcontext.WithUserID(
-			context.Background(),
-			userID,
-		),
-		gameID,
-	)
+	userContext := ctx.WithUserID(ctx.WithLog(context.Background(), zap.NewNop().Sugar()), userID)
 
-	return regionReference, int64(currentTroops), int64(desiredTroops), ctx
+	gameContext := ctx.WithGameID(userContext, gameID)
+
+	return regionReference, int64(
+			currentTroops,
+		), int64(
+			desiredTroops,
+		), ctx.NewMoveContext(
+			userContext,
+			gameContext,
+		)
 }
 
 func TestServiceImpl_DeployShouldFailWhenPlayerDoesntHaveEnoughDeployableTroops(t *testing.T) {

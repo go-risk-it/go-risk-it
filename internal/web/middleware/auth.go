@@ -6,9 +6,8 @@ import (
 	"strings"
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
-	"github.com/go-risk-it/go-risk-it/internal/riskcontext"
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
-	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 	"github.com/golang-jwt/jwt/v5"
 	"go.uber.org/zap"
 )
@@ -37,62 +36,60 @@ func (m *AuthMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			m.log.Debug("Applying auth middleware")
 
-			authHeader := request.Header.Get("Authorization") // Bearer <token>
-			tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-
-			token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-				return m.jwtConfig.Secret, nil
-			}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
+			subject, err := m.verifyJWT(request)
 			if err != nil {
-				m.log.Errorw("failed to parse token", "token", tokenString, "err", err)
-				restutils.WriteResponse(writer, marshalError(err), http.StatusUnauthorized)
-
-				return
-			}
-
-			if !token.Valid {
-				m.log.Errorw("invalid token", "token", tokenString)
-				restutils.WriteResponse(
-					writer,
-					marshalError(fmt.Errorf("invalid token")),
-					http.StatusUnauthorized,
-				)
+				http.Error(writer, err.Error(), http.StatusUnauthorized)
 
 				return
 			}
 
 			m.log.Debugw("Auth token is valid")
 
-			if _, ok := token.Claims.(jwt.MapClaims); !ok {
-				m.log.Error("failed to parse claims")
-				restutils.WriteResponse(
-					writer,
-					marshalError(fmt.Errorf("failed to parse claims")),
-					http.StatusUnauthorized,
-				)
+			logContext, ok := request.Context().(ctx.LogContext)
+			if !ok {
+				http.Error(writer, "invalid log context", http.StatusInternalServerError)
 
 				return
 			}
 
-			subject, err := token.Claims.GetSubject()
-			if err != nil {
-				m.log.Errorw("failed to get subject", "err", err)
-				restutils.WriteResponse(
-					writer,
-					marshalError(fmt.Errorf("failed to extract UserID")),
-					http.StatusUnauthorized,
-				)
-			}
+			userContext := ctx.WithUserID(
+				ctx.WithLog(
+					request.Context(),
+					logContext.Log().With("userID", subject),
+				),
+				subject,
+			)
 
 			routeToWrap.ServeHTTP(
 				writer,
-				request.WithContext(
-					riskcontext.WithUserID(request.Context(), subject),
-				),
+				request.WithContext(userContext),
 			)
 		}))
 }
 
-func marshalError(err error) []byte {
-	return []byte(fmt.Sprintf(`{"error": "%s"}`, err.Error()))
+func (m *AuthMiddlewareImpl) verifyJWT(request *http.Request) (string, error) {
+	authHeader := request.Header.Get("Authorization") // Bearer <token>
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return m.jwtConfig.Secret, nil
+	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
+	if err != nil {
+		return "", fmt.Errorf("failed to parse token: %w", err)
+	}
+
+	if !token.Valid {
+		return "", fmt.Errorf("invalid token")
+	}
+
+	if _, ok := token.Claims.(jwt.MapClaims); !ok {
+		return "", fmt.Errorf("failed to parse claims")
+	}
+
+	subject, err := token.Claims.GetSubject()
+	if err != nil {
+		return "", fmt.Errorf("failed to extract UserID")
+	}
+
+	return subject, nil
 }

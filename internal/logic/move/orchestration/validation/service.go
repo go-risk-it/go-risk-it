@@ -3,15 +3,15 @@ package validation
 import (
 	"fmt"
 
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/player"
-	"github.com/go-risk-it/go-risk-it/internal/riskcontext"
 	"go.uber.org/zap"
 )
 
 type Service interface {
-	Validate(ctx riskcontext.MoveContext, querier db.Querier, game *sqlc.Game) error
+	Validate(ctx ctx.MoveContext, querier db.Querier, game *sqlc.Game) error
 }
 
 type ServiceImpl struct {
@@ -27,7 +27,7 @@ func NewService(
 }
 
 func (s *ServiceImpl) Validate(
-	ctx riskcontext.MoveContext,
+	ctx ctx.MoveContext,
 	querier db.Querier,
 	game *sqlc.Game,
 ) error {
