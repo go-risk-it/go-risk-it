@@ -80,11 +80,11 @@ func (c *MoveControllerImpl) PerformAttackMove(
 		ctx,
 		sqlc.PhaseATTACK,
 		getPerformerFunc(c.attackService, attack.Move{
-			SourceRegionID:  attackMove.SourceRegionID,
-			TargetRegionID:  attackMove.TargetRegionID,
-			TroopsInSource:  attackMove.TroopsInSource,
-			TroopsInTarget:  attackMove.TroopsInTarget,
-			AttackingTroops: attackMove.AttackingTroops,
+			AttackingRegionID: attackMove.SourceRegionID,
+			DefendingRegionID: attackMove.TargetRegionID,
+			TroopsInSource:    attackMove.TroopsInSource,
+			TroopsInTarget:    attackMove.TroopsInTarget,
+			AttackingTroops:   attackMove.AttackingTroops,
 		}),
 	)
 	if err != nil {

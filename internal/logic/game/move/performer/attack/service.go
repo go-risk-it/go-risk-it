@@ -1,21 +1,21 @@
 package attack
 
 import (
+	"fmt"
+
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
-	service2 "github.com/go-risk-it/go-risk-it/internal/logic/game/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
-	"github.com/go-risk-it/go-risk-it/internal/logic/signals"
 )
 
 type Move struct {
-	SourceRegionID  string
-	TargetRegionID  string
-	TroopsInSource  int64
-	TroopsInTarget  int64
-	AttackingTroops int64
+	AttackingRegionID string
+	DefendingRegionID string
+	TroopsInSource    int64
+	TroopsInTarget    int64
+	AttackingTroops   int64
 }
 
 type Service interface {
@@ -23,31 +23,14 @@ type Service interface {
 }
 
 type ServiceImpl struct {
-	querier                 db.Querier
-	gameService             service2.Service
-	playerService           service2.Service
-	regionService           region.Service
-	boardStateChangedSignal signals.BoardStateChangedSignal
-	gameStateChangedSignal  signals.GameStateChangedSignal
+	regionService region.Service
 }
 
 var _ Service = &ServiceImpl{}
 
-func NewService(
-	que db.Querier,
-	gameService service2.Service,
-	playerService service2.Service,
-	regionService region.Service,
-	boardStateChangedSignal signals.BoardStateChangedSignal,
-	gameStateChangedSignal signals.GameStateChangedSignal,
-) *ServiceImpl {
+func NewService(regionService region.Service) *ServiceImpl {
 	return &ServiceImpl{
-		querier:                 que,
-		gameService:             gameService,
-		playerService:           playerService,
-		regionService:           regionService,
-		boardStateChangedSignal: boardStateChangedSignal,
-		gameStateChangedSignal:  gameStateChangedSignal,
+		regionService: regionService,
 	}
 }
 
@@ -66,6 +49,42 @@ func (s *ServiceImpl) PerformQ(
 	move Move,
 ) error {
 	ctx.Log().Infow("performing attack move", "move", move)
+
+	attackingRegion, err := s.regionService.GetRegionQ(ctx, querier, move.AttackingRegionID)
+	if err != nil {
+		return fmt.Errorf("unable to get attacking region: %w", err)
+	}
+
+	defendingRegion, err := s.regionService.GetRegionQ(ctx, querier, move.DefendingRegionID)
+	if err != nil {
+		return fmt.Errorf("unable to get defending region: %w", err)
+	}
+
+	if attackingRegion.UserID != ctx.UserID() {
+		return fmt.Errorf("attacking region is not owned by player")
+	}
+
+	if defendingRegion.UserID == ctx.UserID() {
+		return fmt.Errorf("cannot attack your own region")
+	}
+
+	if move.AttackingTroops < 1 {
+		return fmt.Errorf("at least one troop is required to attack")
+	}
+
+	if attackingRegion.Troops <= move.AttackingTroops {
+		return fmt.Errorf("attacking region does not have enough troops")
+	}
+
+	if defendingRegion.Troops < 1 {
+		ctx.Log().Errorw(
+			"attempt to attack a region with no troops",
+			"region",
+			defendingRegion.ExternalReference,
+		)
+
+		return fmt.Errorf("defending region does not have enough troops")
+	}
 
 	return nil
 }

@@ -76,7 +76,7 @@ func (_c *Service_CreateRegions_Call) RunAndReturn(run func(ctx.UserContext, db.
 }
 
 // GetRegionQ provides a mock function with given fields: _a0, querier, _a2
-func (_m *Service) GetRegionQ(_a0 ctx.GameContext, querier db.Querier, _a2 string) (*sqlc.GetRegionsByGameRow, error) {
+func (_m *Service) GetRegionQ(_a0 ctx.MoveContext, querier db.Querier, _a2 string) (*sqlc.GetRegionsByGameRow, error) {
 	ret := _m.Called(_a0, querier, _a2)
 
 	if len(ret) == 0 {
@@ -85,10 +85,10 @@ func (_m *Service) GetRegionQ(_a0 ctx.GameContext, querier db.Querier, _a2 strin
 
 	var r0 *sqlc.GetRegionsByGameRow
 	var r1 error
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, string) (*sqlc.GetRegionsByGameRow, error)); ok {
+	if rf, ok := ret.Get(0).(func(ctx.MoveContext, db.Querier, string) (*sqlc.GetRegionsByGameRow, error)); ok {
 		return rf(_a0, querier, _a2)
 	}
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, string) *sqlc.GetRegionsByGameRow); ok {
+	if rf, ok := ret.Get(0).(func(ctx.MoveContext, db.Querier, string) *sqlc.GetRegionsByGameRow); ok {
 		r0 = rf(_a0, querier, _a2)
 	} else {
 		if ret.Get(0) != nil {
@@ -96,7 +96,7 @@ func (_m *Service) GetRegionQ(_a0 ctx.GameContext, querier db.Querier, _a2 strin
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(ctx.GameContext, db.Querier, string) error); ok {
+	if rf, ok := ret.Get(1).(func(ctx.MoveContext, db.Querier, string) error); ok {
 		r1 = rf(_a0, querier, _a2)
 	} else {
 		r1 = ret.Error(1)
@@ -111,16 +111,16 @@ type Service_GetRegionQ_Call struct {
 }
 
 // GetRegionQ is a helper method to define mock.On call
-//   - _a0 ctx.GameContext
+//   - _a0 ctx.MoveContext
 //   - querier db.Querier
 //   - _a2 string
 func (_e *Service_Expecter) GetRegionQ(_a0 interface{}, querier interface{}, _a2 interface{}) *Service_GetRegionQ_Call {
 	return &Service_GetRegionQ_Call{Call: _e.mock.On("GetRegionQ", _a0, querier, _a2)}
 }
 
-func (_c *Service_GetRegionQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, _a2 string)) *Service_GetRegionQ_Call {
+func (_c *Service_GetRegionQ_Call) Run(run func(_a0 ctx.MoveContext, querier db.Querier, _a2 string)) *Service_GetRegionQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(string))
+		run(args[0].(ctx.MoveContext), args[1].(db.Querier), args[2].(string))
 	})
 	return _c
 }
@@ -130,7 +130,7 @@ func (_c *Service_GetRegionQ_Call) Return(_a0 *sqlc.GetRegionsByGameRow, _a1 err
 	return _c
 }
 
-func (_c *Service_GetRegionQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, string) (*sqlc.GetRegionsByGameRow, error)) *Service_GetRegionQ_Call {
+func (_c *Service_GetRegionQ_Call) RunAndReturn(run func(ctx.MoveContext, db.Querier, string) (*sqlc.GetRegionsByGameRow, error)) *Service_GetRegionQ_Call {
 	_c.Call.Return(run)
 	return _c
 }

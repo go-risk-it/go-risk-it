@@ -88,7 +88,7 @@ func TestServiceImpl_DeployShouldFail(t *testing.T) {
 			"When region is not owned by player",
 			"Gabriele",
 			0,
-			"failed to get region: region is not owned by player",
+			"region is not owned by player",
 		},
 		{
 			"When amount of troops declared is wrong",

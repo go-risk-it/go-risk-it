@@ -66,16 +66,20 @@ func (s *ServiceImpl) PerformQ(
 		return fmt.Errorf("not enough deployable troops")
 	}
 
-	regionState, err := s.getRegion(ctx, querier, move.RegionID)
+	thisRegion, err := s.regionService.GetRegionQ(ctx, querier, move.RegionID)
 	if err != nil {
 		return fmt.Errorf("failed to get region: %w", err)
 	}
 
-	if regionState.Troops != move.CurrentTroops {
+	if thisRegion.UserID != ctx.UserID() {
+		return fmt.Errorf("region is not owned by player")
+	}
+
+	if thisRegion.Troops != move.CurrentTroops {
 		return fmt.Errorf("region has different number of troops than declared")
 	}
 
-	if err := s.executeDeploy(ctx, querier, regionState, troops); err != nil {
+	if err := s.executeDeploy(ctx, querier, thisRegion, troops); err != nil {
 		return fmt.Errorf("failed to execute deploy: %w", err)
 	}
 
@@ -113,23 +117,6 @@ func (s *ServiceImpl) executeDeploy(
 	)
 
 	return nil
-}
-
-func (s *ServiceImpl) getRegion(
-	ctx ctx.MoveContext,
-	querier db.Querier,
-	region string,
-) (*sqlc.GetRegionsByGameRow, error) {
-	result, err := s.regionService.GetRegionQ(ctx, querier, region)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get region: %w", err)
-	}
-
-	if result.UserID != ctx.UserID() {
-		return nil, fmt.Errorf("region is not owned by player")
-	}
-
-	return result, nil
 }
 
 func (s *ServiceImpl) decreaseDeployableTroopsQ(

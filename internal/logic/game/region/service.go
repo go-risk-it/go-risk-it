@@ -25,7 +25,7 @@ type Service interface {
 	) error
 
 	GetRegionQ(
-		ctx ctx.GameContext,
+		ctx ctx.MoveContext,
 		querier db.Querier,
 		region string,
 	) (*sqlc.GetRegionsByGameRow, error)
@@ -112,7 +112,7 @@ func (s *ServiceImpl) GetRegionsQ(
 }
 
 func (s *ServiceImpl) GetRegionQ(
-	ctx ctx.GameContext,
+	ctx ctx.MoveContext,
 	querier db.Querier,
 	region string,
 ) (*sqlc.GetRegionsByGameRow, error) {
