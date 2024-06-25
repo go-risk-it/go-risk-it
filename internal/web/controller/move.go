@@ -12,7 +12,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/attack"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/deploy"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/service"
-	"go.uber.org/zap"
 )
 
 type MoveController interface {
@@ -21,7 +20,6 @@ type MoveController interface {
 }
 
 type MoveControllerImpl struct {
-	log                  *zap.SugaredLogger
 	attackService        attack.Service
 	deployService        deploy.Service
 	gameService          service2.Service
@@ -29,14 +27,12 @@ type MoveControllerImpl struct {
 }
 
 func NewMoveController(
-	log *zap.SugaredLogger,
 	attackService attack.Service,
 	deployService deploy.Service,
 	gameService service2.Service,
 	orchestrationService orchestration.Service,
 ) *MoveControllerImpl {
 	return &MoveControllerImpl{
-		log:                  log,
 		attackService:        attackService,
 		deployService:        deployService,
 		gameService:          gameService,

@@ -11,7 +11,6 @@ import (
 func (q *Queries) WithTx(tx pool.Transaction) Querier {
 	return &Queries{
 		Queries: q.Queries.WithTx(tx),
-		log:     q.log,
 		db:      q.db,
 	}
 }
@@ -29,7 +28,7 @@ func (q *Queries) ExecuteInTransactionWithIsolation(
 	isolationLevel pgx.TxIsoLevel,
 	txFunc func(Querier) (interface{}, error),
 ) (interface{}, error) {
-	q.log.Infow("starting transaction", "isolation", isolationLevel)
+	ctx.Log().Infow("starting transaction", "isolation", isolationLevel)
 
 	transaction, err := q.db.BeginTx(ctx, pgx.TxOptions{IsoLevel: isolationLevel})
 	if err != nil {
@@ -44,13 +43,13 @@ func (q *Queries) executeTransaction(
 	txFunc func(Querier) (interface{}, error),
 	transaction pgx.Tx,
 ) (interface{}, error) {
-	q.log.Infow("started transaction")
+	ctx.Log().Infow("started transaction")
 
 	var err error
 
 	defer func() {
 		if panicking := recover(); panicking != nil {
-			q.log.Errorw("panic in transaction, rolling back", "panic", panicking)
+			ctx.Log().Errorw("panic in transaction, rolling back", "panic", panicking)
 			q.rollback(transaction, ctx)
 
 			panic(panicking) // re-throw panic after Rollback
@@ -59,9 +58,9 @@ func (q *Queries) executeTransaction(
 		} else {
 			err = transaction.Commit(ctx) // err is nil; if Commit returns error update err
 			if err != nil {
-				q.log.Errorw("failed to commit transaction", "err", err)
+				ctx.Log().Errorw("failed to commit transaction", "err", err)
 			} else {
-				q.log.Infow("committed transaction")
+				ctx.Log().Infow("committed transaction")
 			}
 		}
 	}()
@@ -72,12 +71,12 @@ func (q *Queries) executeTransaction(
 }
 
 func (q *Queries) rollback(transaction pgx.Tx, ctx ctx.LogContext) {
-	q.log.Infow("rolling back transaction")
+	ctx.Log().Infow("rolling back transaction")
 
 	err := transaction.Rollback(ctx)
 	if err != nil {
-		q.log.Errorf("failed to rollback transaction: %v", err)
+		ctx.Log().Errorf("failed to rollback transaction: %v", err)
 	}
 
-	q.log.Infow("rolled back transaction")
+	ctx.Log().Infow("rolled back transaction")
 }

@@ -27,13 +27,7 @@ func setup(t *testing.T) (
 	playerService := player.NewService(t)
 	gameService := gamestate.NewService(t)
 	regionService := region.NewService(t)
-	service := deploy.NewService(
-		querier,
-		zap.NewNop().Sugar(),
-		gameService,
-		playerService,
-		regionService,
-	)
+	service := deploy.NewService(querier, gameService, playerService, regionService)
 
 	return querier, playerService, gameService, regionService, service
 }

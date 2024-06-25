@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	"go.uber.org/zap"
 )
 
 type Controller interface {
@@ -12,16 +11,11 @@ type Controller interface {
 }
 
 type ControllerImpl struct {
-	log             *zap.SugaredLogger
 	testOnlyService Service
 }
 
-func NewController(
-	log *zap.SugaredLogger,
-	testOnlyService Service,
-) *ControllerImpl {
+func NewController(testOnlyService Service) *ControllerImpl {
 	return &ControllerImpl{
-		log:             log,
 		testOnlyService: testOnlyService,
 	}
 }

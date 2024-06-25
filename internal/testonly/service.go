@@ -6,7 +6,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/config"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/pool"
-	"go.uber.org/zap"
 )
 
 type Service interface {
@@ -14,17 +13,12 @@ type Service interface {
 }
 
 type ServiceImpl struct {
-	log      *zap.SugaredLogger
 	pool     pool.DB
 	dbConfig config.DatabaseConfig
 	tables   []string
 }
 
-func NewService(
-	log *zap.SugaredLogger,
-	pool pool.DB,
-	dbConfig config.DatabaseConfig,
-) *ServiceImpl {
+func NewService(pool pool.DB, dbConfig config.DatabaseConfig) *ServiceImpl {
 	tables := []string{
 		"player",
 		"game",
@@ -33,14 +27,14 @@ func NewService(
 		"mission",
 	}
 
-	return &ServiceImpl{log: log, pool: pool, dbConfig: dbConfig, tables: tables}
+	return &ServiceImpl{pool: pool, dbConfig: dbConfig, tables: tables}
 }
 
 func (s *ServiceImpl) TruncateTables(ctx ctx.LogContext) error {
-	s.log.Infow("Truncating tables", "tables", s.tables)
+	ctx.Log().Infow("Truncating tables", "tables", s.tables)
 
 	for _, table := range s.tables {
-		s.log.Infow("Truncating table", "table", table)
+		ctx.Log().Infow("Truncating table", "table", table)
 
 		_, err := s.pool.Exec(ctx, fmt.Sprintf("TRUNCATE %s CASCADE", table))
 		if err != nil {
@@ -48,7 +42,7 @@ func (s *ServiceImpl) TruncateTables(ctx ctx.LogContext) error {
 		}
 	}
 
-	s.log.Infow("Truncated tables", "tables", s.tables)
+	ctx.Log().Infow("Truncated tables", "tables", s.tables)
 
 	return nil
 }

@@ -18,7 +18,7 @@ func (c *userContext) UserID() string {
 
 func WithUserID(ctx LogContext, userID string) UserContext {
 	return &userContext{
-		LogContext: ctx,
+		LogContext: WithLog(ctx, ctx.Log().With("userID", userID)),
 		userID:     userID,
 	}
 }

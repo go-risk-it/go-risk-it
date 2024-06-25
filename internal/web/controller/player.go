@@ -7,7 +7,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
-	"go.uber.org/zap"
 )
 
 type PlayerController interface {
@@ -15,29 +14,22 @@ type PlayerController interface {
 }
 
 type PlayerControllerImpl struct {
-	log           *zap.SugaredLogger
 	playerService player.Service
 }
 
-func NewPlayerController(
-	log *zap.SugaredLogger,
-	playerService player.Service,
-) *PlayerControllerImpl {
-	return &PlayerControllerImpl{
-		log:           log,
-		playerService: playerService,
-	}
+func NewPlayerController(playerService player.Service) *PlayerControllerImpl {
+	return &PlayerControllerImpl{playerService: playerService}
 }
 
 func (c *PlayerControllerImpl) GetPlayerState(ctx ctx.GameContext) (message.PlayersState, error) {
-	c.log.Infow("fetching players")
+	ctx.Log().Infow("fetching players")
 
 	players, err := c.playerService.GetPlayers(ctx)
 	if err != nil {
 		return message.PlayersState{}, fmt.Errorf("unable to get players: %w", err)
 	}
 
-	c.log.Infow("got players", "players", players)
+	ctx.Log().Infow("got players", "players", players)
 
 	return message.PlayersState{Players: convertPlayers(players)}, nil
 }

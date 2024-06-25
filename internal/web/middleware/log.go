@@ -28,11 +28,14 @@ func (m *LogMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 	return route.NewRoute(
 		routeToWrap.Pattern(),
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-			m.log.Debug("applying log middleware")
+			ctx := ctx.WithLog(request.Context(), m.log)
+			ctx.Log().Debug("applying log middleware")
+
+			ctx.Log().Infow("incoming HTTP request", "method", request.Method, "url", request.URL)
 
 			routeToWrap.ServeHTTP(
 				writer,
-				request.WithContext(ctx.WithLog(request.Context(), m.log)),
+				request.WithContext(ctx),
 			)
 		}),
 	)

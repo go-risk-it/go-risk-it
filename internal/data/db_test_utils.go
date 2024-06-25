@@ -17,7 +17,6 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
-	"go.uber.org/zap"
 )
 
 var errGetPath = errors.New("failed to get path")
@@ -54,7 +53,7 @@ func GetQuerier(ctx ctx.LogContext) (db.Querier, error) {
 		return nil, fmt.Errorf("failed to create database pool: %w", err)
 	}
 
-	return db.New(pool, zap.NewNop().Sugar()), nil
+	return db.New(pool), nil
 }
 
 func setupPostgresTestcontainer(ctx ctx.LogContext) (string, error) {

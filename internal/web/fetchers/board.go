@@ -7,7 +7,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/web/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 	"go.uber.org/fx"
-	"go.uber.org/zap"
 )
 
 type BoardFetcher interface {
@@ -15,7 +14,6 @@ type BoardFetcher interface {
 }
 
 type BoardFetcherImpl struct {
-	log             *zap.SugaredLogger
 	boardController controller.BoardController
 }
 
@@ -28,12 +26,8 @@ type BoardFetcherResult struct {
 	Fetcher      Fetcher `group:"fetchers"`
 }
 
-func NewBoardFetcher(
-	log *zap.SugaredLogger,
-	boardController controller.BoardController,
-) BoardFetcherResult {
+func NewBoardFetcher(boardController controller.BoardController) BoardFetcherResult {
 	res := &BoardFetcherImpl{
-		log:             log,
 		boardController: boardController,
 	}
 

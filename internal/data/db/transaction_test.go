@@ -25,7 +25,7 @@ func TestQueries_ExecuteInTransaction_ShouldRollbackIfPanic(t *testing.T) {
 		Return(mockTransaction, nil)
 	mockTransaction.EXPECT().Rollback(logContext).Return(nil)
 
-	querier := db.New(mockDB, zap.NewNop().Sugar())
+	querier := db.New(mockDB)
 
 	defer func() {
 		if r := recover(); r == nil {
@@ -57,7 +57,7 @@ func TestQueries_ExecuteInTransaction_ShouldRollbackIfErr(t *testing.T) {
 		Return(mockTransaction, nil)
 	mockTransaction.EXPECT().Rollback(ctx).Return(nil)
 
-	querier := db.New(mockDB, zap.NewNop().Sugar())
+	querier := db.New(mockDB)
 
 	_, err := querier.ExecuteInTransaction(ctx, func(querier db.Querier) (interface{}, error) {
 		return nil, fmt.Errorf("test")
@@ -80,7 +80,7 @@ func TestQueries_ExecuteInTransaction_ShouldCommitIfNoErr(t *testing.T) {
 		Return(mockTransaction, nil)
 	mockTransaction.EXPECT().Commit(ctx).Return(nil)
 
-	querier := db.New(mockDB, zap.NewNop().Sugar())
+	querier := db.New(mockDB)
 
 	_, err := querier.ExecuteInTransaction(ctx, func(querier db.Querier) (interface{}, error) {
 		return -1, nil

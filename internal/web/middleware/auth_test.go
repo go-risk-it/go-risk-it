@@ -21,7 +21,7 @@ func setup(t *testing.T) (middleware.AuthMiddleware, *httptest.ResponseRecorder)
 	jwtConfig := config.JwtConfig{
 		Secret: []byte("secret"),
 	}
-	middleware := middleware.NewAuthMiddleware(zap.NewNop().Sugar(), jwtConfig)
+	middleware := middleware.NewAuthMiddleware(jwtConfig)
 
 	responseWriter := httptest.NewRecorder()
 

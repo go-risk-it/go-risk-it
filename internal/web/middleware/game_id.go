@@ -62,13 +62,7 @@ func buildMoveContext(request *http.Request, gameID int64) (*http.Request, error
 		return nil, fmt.Errorf("user context not found")
 	}
 
-	gameContext := ctx.WithGameID(
-		ctx.WithLog(
-			userContext,
-			userContext.Log().With("gameID", gameID),
-		),
-		gameID,
-	)
+	gameContext := ctx.WithGameID(userContext, gameID)
 
 	return request.WithContext(ctx.NewMoveContext(userContext, gameContext)), nil
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
-	"go.uber.org/zap"
 )
 
 type Move struct {
@@ -24,7 +23,6 @@ type Service interface {
 }
 
 type ServiceImpl struct {
-	log           *zap.SugaredLogger
 	querier       db.Querier
 	gameService   service2.Service
 	playerService player.Service
@@ -34,15 +32,13 @@ type ServiceImpl struct {
 var _ Service = &ServiceImpl{}
 
 func NewService(
-	que db.Querier,
-	log *zap.SugaredLogger,
+	querier db.Querier,
 	gameService service2.Service,
 	playerService player.Service,
 	regionService region.Service,
 ) *ServiceImpl {
 	return &ServiceImpl{
-		querier:       que,
-		log:           log,
+		querier:       querier,
 		gameService:   gameService,
 		playerService: playerService,
 		regionService: regionService,

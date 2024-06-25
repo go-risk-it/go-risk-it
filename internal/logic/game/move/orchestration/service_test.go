@@ -26,7 +26,7 @@ func setup(t *testing.T) (
 ) {
 	t.Helper()
 	mockDB := pool.NewDB(t)
-	querier := db.New(mockDB, zap.NewNop().Sugar())
+	querier := db.New(mockDB)
 	gameService := gamestate.NewService(t)
 	phaseService := phase.NewService(t)
 	validationService := validation.NewService(t)

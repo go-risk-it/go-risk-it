@@ -23,7 +23,7 @@ func TestBoardControllerImpl_GetBoardState(t *testing.T) {
 	regionService := region.NewService(t)
 
 	// Initialize the gamestate under test
-	controller := boardController.NewBoardController(log, boardService, regionService)
+	controller := boardController.NewBoardController(boardService, regionService)
 
 	// Set up test data
 	gameID := int64(1)

@@ -18,7 +18,6 @@ type Upgrader interface {
 
 type UpgraderImpl struct {
 	*websocket.Upgrader
-	log               *zap.SugaredLogger
 	connectionManager Manager
 	messageHandler    Handler
 }
@@ -32,7 +31,6 @@ func New(
 	//exhaustruct:ignore
 	upgrader := UpgraderImpl{
 		Upgrader:          websocket.NewUpgrader(),
-		log:               log,
 		connectionManager: connectionManager,
 		messageHandler:    messageHandler,
 	}

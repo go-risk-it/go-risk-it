@@ -18,7 +18,7 @@ func (c *gameContext) GameID() int64 {
 
 func WithGameID(ctx LogContext, gameID int64) GameContext {
 	return &gameContext{
-		LogContext: ctx,
+		LogContext: WithLog(ctx, ctx.Log().With("gameID", gameID)),
 		gameID:     gameID,
 	}
 }

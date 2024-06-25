@@ -9,7 +9,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	"github.com/golang-jwt/jwt/v5"
-	"go.uber.org/zap"
 )
 
 type AuthMiddleware interface {
@@ -17,24 +16,27 @@ type AuthMiddleware interface {
 }
 
 type AuthMiddlewareImpl struct {
-	log       *zap.SugaredLogger
 	jwtConfig config.JwtConfig
 }
 
 var _ AuthMiddleware = (*AuthMiddlewareImpl)(nil)
 
-func NewAuthMiddleware(log *zap.SugaredLogger, jwtConfig config.JwtConfig) AuthMiddleware {
-	return &AuthMiddlewareImpl{
-		log:       log,
-		jwtConfig: jwtConfig,
-	}
+func NewAuthMiddleware(jwtConfig config.JwtConfig) AuthMiddleware {
+	return &AuthMiddlewareImpl{jwtConfig: jwtConfig}
 }
 
 func (m *AuthMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 	return route.NewRoute(
 		routeToWrap.Pattern(),
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-			m.log.Debug("applying auth middleware")
+			logContext, ok := request.Context().(ctx.LogContext)
+			if !ok {
+				http.Error(writer, "invalid log context", http.StatusInternalServerError)
+
+				return
+			}
+
+			logContext.Log().Debug("applying auth middleware")
 
 			subject, err := m.verifyJWT(request)
 			if err != nil {
@@ -43,22 +45,9 @@ func (m *AuthMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 				return
 			}
 
-			m.log.Debugw("Auth token is valid")
+			logContext.Log().Debugw("Auth token is valid")
 
-			logContext, ok := request.Context().(ctx.LogContext)
-			if !ok {
-				http.Error(writer, "invalid log context", http.StatusInternalServerError)
-
-				return
-			}
-
-			userContext := ctx.WithUserID(
-				ctx.WithLog(
-					request.Context(),
-					logContext.Log().With("userID", subject),
-				),
-				subject,
-			)
+			userContext := ctx.WithUserID(logContext, subject)
 
 			routeToWrap.ServeHTTP(
 				writer,

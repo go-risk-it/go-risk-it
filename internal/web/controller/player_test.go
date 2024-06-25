@@ -21,7 +21,7 @@ func TestControllerImpl_GetPlayerState(t *testing.T) {
 	playerService := player.NewService(t)
 
 	// Initialize the gamestate under test
-	controller := playerController.NewPlayerController(logger, playerService)
+	controller := playerController.NewPlayerController(playerService)
 
 	// Set up test data
 	gameID := int64(1)

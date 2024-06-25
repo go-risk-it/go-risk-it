@@ -5,7 +5,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/pool"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/jackc/pgx/v5"
-	"go.uber.org/zap"
 )
 
 type Querier interface {
@@ -24,14 +23,12 @@ var _ Querier = (*Queries)(nil)
 
 type Queries struct {
 	*sqlc.Queries
-	log *zap.SugaredLogger
-	db  pool.DB
+	db pool.DB
 }
 
-func New(db pool.DB, log *zap.SugaredLogger) Querier {
+func New(db pool.DB) Querier {
 	return &Queries{
 		Queries: sqlc.New(db),
-		log:     log,
 		db:      db,
 	}
 }

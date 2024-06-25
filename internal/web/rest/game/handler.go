@@ -11,7 +11,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/web/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
-	"go.uber.org/zap"
 )
 
 type Handler interface {
@@ -19,18 +18,13 @@ type Handler interface {
 }
 
 type HandlerImpl struct {
-	log            *zap.SugaredLogger
 	gameController controller.GameController
 }
 
 var _ Handler = (*HandlerImpl)(nil)
 
-func NewGameHandler(
-	log *zap.SugaredLogger,
-	gameController controller.GameController,
-) *HandlerImpl {
+func NewGameHandler(gameController controller.GameController) *HandlerImpl {
 	return &HandlerImpl{
-		log:            log,
 		gameController: gameController,
 	}
 }

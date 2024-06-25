@@ -8,7 +8,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
-	"go.uber.org/zap"
 )
 
 type BoardController interface {
@@ -16,21 +15,19 @@ type BoardController interface {
 }
 
 type BoardControllerImpl struct {
-	log           *zap.SugaredLogger
 	boardService  board.Service
 	regionService region.Service
 }
 
 func NewBoardController(
-	log *zap.SugaredLogger,
 	boardService board.Service,
 	regionService region.Service,
 ) *BoardControllerImpl {
-	return &BoardControllerImpl{log: log, boardService: boardService, regionService: regionService}
+	return &BoardControllerImpl{boardService: boardService, regionService: regionService}
 }
 
 func (c *BoardControllerImpl) GetBoardState(ctx ctx.GameContext) (message.BoardState, error) {
-	c.log.Infow("getting board state")
+	ctx.Log().Infow("getting board state")
 
 	regions, err := c.regionService.GetRegions(ctx)
 	if err != nil {
