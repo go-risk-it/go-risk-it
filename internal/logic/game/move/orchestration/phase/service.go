@@ -57,7 +57,7 @@ func (s *ServiceImpl) SetGamePhaseQ(
 }
 
 func (s *ServiceImpl) AdvanceQ(ctx ctx.MoveContext, querier db.Querier) error {
-	gameState, err := s.gameService.GetGameStateQ(ctx, querier, ctx.GameID())
+	gameState, err := s.gameService.GetGameStateQ(ctx, querier)
 	if err != nil {
 		return fmt.Errorf("failed to get game state: %w", err)
 	}

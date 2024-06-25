@@ -24,6 +24,8 @@ type MoveControllerImpl struct {
 	orchestrationService orchestration.Service
 }
 
+var _ MoveController = (*MoveControllerImpl)(nil)
+
 func NewMoveController(
 	attackService attack.Service,
 	deployService deploy.Service,

@@ -17,6 +17,8 @@ type BoardControllerImpl struct {
 	regionService region.Service
 }
 
+var _ BoardController = (*BoardControllerImpl)(nil)
+
 func NewBoardController(regionService region.Service) *BoardControllerImpl {
 	return &BoardControllerImpl{regionService: regionService}
 }

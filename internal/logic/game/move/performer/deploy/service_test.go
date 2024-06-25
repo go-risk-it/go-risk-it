@@ -177,15 +177,18 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 					ID:                1,
 					ExternalReference: "greenland",
 					UserID:            "Giovanni",
-					Troops:            0,
+					Troops:            currentTroops,
 				}, nil)
-			gameService.
-				EXPECT().
-				DecreaseDeployableTroopsQ(ctx, querier, game, troops).
-				Return(nil)
 			regionService.
 				EXPECT().
 				IncreaseTroopsInRegion(ctx, querier, int64(1), troops).
+				Return(nil)
+			querier.
+				EXPECT().
+				DecreaseDeployableTroops(ctx, sqlc.DecreaseDeployableTroopsParams{
+					ID:               ctx.GameID(),
+					DeployableTroops: desiredTroops - currentTroops,
+				}).
 				Return(nil)
 
 			err := service.PerformQ(ctx, querier, game, deploy.Move{

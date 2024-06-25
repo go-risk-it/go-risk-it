@@ -125,7 +125,7 @@ func TestServiceImpl_PerformMove(t *testing.T) {
 
 			gameService.
 				EXPECT().
-				GetGameStateQ(context, querier, context.GameID()).
+				GetGameStateQ(context, querier).
 				Return(game, nil)
 
 			if test.phase == sqlc.PhaseDEPLOY {

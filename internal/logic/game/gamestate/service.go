@@ -23,14 +23,8 @@ type Service interface {
 		querier db.Querier,
 		board *board.Board,
 		players []request.Player) (int64, error)
-	GetGameState(ctx ctx.LogContext, gameID int64) (*sqlc.Game, error)
-	GetGameStateQ(ctx ctx.LogContext, querier db.Querier, gameID int64) (*sqlc.Game, error)
-	DecreaseDeployableTroopsQ(
-		ctx ctx.UserContext,
-		querier db.Querier,
-		game *sqlc.Game,
-		troops int64,
-	) error
+	GetGameState(ctx ctx.GameContext) (*sqlc.Game, error)
+	GetGameStateQ(ctx ctx.GameContext, querier db.Querier) (*sqlc.Game, error)
 }
 
 type ServiceImpl struct {
@@ -103,47 +97,15 @@ func (s *ServiceImpl) CreateGameQ(
 	return game.ID, nil
 }
 
-func (s *ServiceImpl) GetGameState(
-	ctx ctx.LogContext,
-	gameID int64,
-) (*sqlc.Game, error) {
-	return s.GetGameStateQ(ctx, s.querier, gameID)
+func (s *ServiceImpl) GetGameState(ctx ctx.GameContext) (*sqlc.Game, error) {
+	return s.GetGameStateQ(ctx, s.querier)
 }
 
-func (s *ServiceImpl) GetGameStateQ(
-	ctx ctx.LogContext,
-	querier db.Querier,
-	gameID int64,
-) (*sqlc.Game, error) {
-	game, err := querier.GetGame(ctx, gameID)
+func (s *ServiceImpl) GetGameStateQ(ctx ctx.GameContext, querier db.Querier) (*sqlc.Game, error) {
+	game, err := querier.GetGame(ctx, ctx.GameID())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get game: %w", err)
 	}
 
 	return &game, nil
-}
-
-func (s *ServiceImpl) DecreaseDeployableTroopsQ(
-	ctx ctx.UserContext,
-	querier db.Querier,
-	game *sqlc.Game,
-	troops int64,
-) error {
-	ctx.Log().Infow("decreasing deployable troops", "gameID", game.ID, "troops", troops)
-
-	if game.DeployableTroops < troops {
-		return fmt.Errorf("player does not have enough troops to deploy")
-	}
-
-	err := querier.DecreaseDeployableTroops(ctx, sqlc.DecreaseDeployableTroopsParams{
-		ID:               game.ID,
-		DeployableTroops: troops,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to decrease deployable troops: %w", err)
-	}
-
-	ctx.Log().Infow("decreased deployable troops", "gameID", game.ID, "troops", troops)
-
-	return nil
 }

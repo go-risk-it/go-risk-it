@@ -188,8 +188,8 @@ func TestServiceImpl_GetGameState(t *testing.T) {
 	service := gamestate.NewService(querier, playerService, regionService)
 
 	// Set up test data
-	ctx := ctx.WithLog(context.Background(), logger)
 	gameID := int64(1)
+	ctx := ctx.WithGameID(ctx.WithLog(context.Background(), logger), gameID)
 
 	// Set up expectations for GetGame method
 	querier.On("GetGame", ctx, gameID).Return(sqlc.Game{
@@ -199,7 +199,7 @@ func TestServiceImpl_GetGameState(t *testing.T) {
 	}, nil)
 
 	// Call the method under test
-	result, err := service.GetGameState(ctx, gameID)
+	result, err := service.GetGameState(ctx)
 
 	// Assert the result
 	require.NoError(t, err)

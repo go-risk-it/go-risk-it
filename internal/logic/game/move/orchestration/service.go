@@ -91,7 +91,7 @@ func (s *ServiceImpl) OrchestrateMoveQ(
 ) error {
 	ctx.Log().Infow("orchestrating move", "phase", phase)
 
-	gameState, err := s.gameService.GetGameStateQ(ctx, querier, ctx.GameID())
+	gameState, err := s.gameService.GetGameStateQ(ctx, querier)
 	if err != nil {
 		return fmt.Errorf("unable to get game state: %w", err)
 	}

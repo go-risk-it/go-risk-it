@@ -29,7 +29,7 @@ type ServiceImpl struct {
 	regionService region.Service
 }
 
-var _ Service = &ServiceImpl{}
+var _ Service = (*ServiceImpl)(nil)
 
 func NewService(
 	querier db.Querier,
@@ -75,8 +75,7 @@ func (s *ServiceImpl) PerformQ(
 		return fmt.Errorf("region has different number of troops than declared")
 	}
 
-	err = s.executeDeploy(ctx, querier, game, regionState, troops)
-	if err != nil {
+	if err := s.executeDeploy(ctx, querier, regionState, troops); err != nil {
 		return fmt.Errorf("failed to execute deploy: %w", err)
 	}
 
@@ -86,7 +85,6 @@ func (s *ServiceImpl) PerformQ(
 func (s *ServiceImpl) executeDeploy(
 	ctx ctx.MoveContext,
 	querier db.Querier,
-	game *sqlc.Game,
 	region *sqlc.GetRegionsByGameRow,
 	troops int64,
 ) error {
@@ -98,15 +96,21 @@ func (s *ServiceImpl) executeDeploy(
 		troops,
 	)
 
-	err := s.gameService.DecreaseDeployableTroopsQ(ctx, querier, game, troops)
-	if err != nil {
+	if err := s.decreaseDeployableTroopsQ(ctx, querier, troops); err != nil {
 		return fmt.Errorf("failed to decrease deployable troops: %w", err)
 	}
 
-	err = s.regionService.IncreaseTroopsInRegion(ctx, querier, region.ID, troops)
-	if err != nil {
+	if err := s.regionService.IncreaseTroopsInRegion(ctx, querier, region.ID, troops); err != nil {
 		return fmt.Errorf("failed to increase region troops: %w", err)
 	}
+
+	ctx.Log().Infow(
+		"deploy executed successfully",
+		"region",
+		region.ExternalReference,
+		"troops",
+		troops,
+	)
 
 	return nil
 }
@@ -126,4 +130,24 @@ func (s *ServiceImpl) getRegion(
 	}
 
 	return result, nil
+}
+
+func (s *ServiceImpl) decreaseDeployableTroopsQ(
+	ctx ctx.MoveContext,
+	querier db.Querier,
+	troops int64,
+) error {
+	ctx.Log().Infow("decreasing deployable troops", "troops", troops)
+
+	err := querier.DecreaseDeployableTroops(ctx, sqlc.DecreaseDeployableTroopsParams{
+		ID:               ctx.GameID(),
+		DeployableTroops: troops,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to decrease deployable troops: %w", err)
+	}
+
+	ctx.Log().Infow("decreased deployable troops", "troops", troops)
+
+	return nil
 }

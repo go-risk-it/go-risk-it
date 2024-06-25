@@ -17,6 +17,8 @@ type PlayerControllerImpl struct {
 	playerService player.Service
 }
 
+var _ PlayerController = (*PlayerControllerImpl)(nil)
+
 func NewPlayerController(playerService player.Service) *PlayerControllerImpl {
 	return &PlayerControllerImpl{playerService: playerService}
 }

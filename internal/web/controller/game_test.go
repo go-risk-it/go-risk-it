@@ -30,11 +30,14 @@ func TestGameControllerImpl_GetGameState(t *testing.T) {
 	gameID := int64(1)
 
 	// Set up expectations for GetGameState method
-	gameService.On("GetGameState", ctx, gameID).Return(&sqlc.Game{
-		ID:    gameID,
-		Turn:  0,
-		Phase: "CARDS",
-	}, nil)
+	gameService.
+		EXPECT().
+		GetGameState(ctx).
+		Return(&sqlc.Game{
+			ID:    gameID,
+			Turn:  0,
+			Phase: "CARDS",
+		}, nil)
 
 	// Call the method under test
 	gameState, err := controller.GetGameState(ctx)

@@ -20,6 +20,8 @@ type GameControllerImpl struct {
 	boardService board.Service
 }
 
+var _ GameController = (*GameControllerImpl)(nil)
+
 func NewGameController(
 	gameService gamestate.Service,
 	boardService board.Service,
@@ -49,7 +51,7 @@ func (c *GameControllerImpl) CreateGame(
 func (c *GameControllerImpl) GetGameState(ctx ctx.GameContext) (message.GameState, error) {
 	ctx.Log().Infow("fetching game state")
 
-	gameState, err := c.gameService.GetGameState(ctx, ctx.GameID())
+	gameState, err := c.gameService.GetGameState(ctx)
 	if err != nil {
 		return message.GameState{}, fmt.Errorf("failed to get game state: %w", err)
 	}
