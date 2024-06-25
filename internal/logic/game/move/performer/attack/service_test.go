@@ -26,16 +26,14 @@ func setup(t *testing.T) (
 	return querier, regionService, service
 }
 
-func input() (string, string, ctx.MoveContext) {
+func input() ctx.MoveContext {
 	gameID := int64(1)
 	userID := "giovanni"
-	attackingRegion := "greenland"
-	defendingRegion := "iceland"
 	userContext := ctx.WithUserID(ctx.WithLog(context.Background(), zap.NewNop().Sugar()), userID)
 
 	gameContext := ctx.WithGameID(userContext, gameID)
 
-	return attackingRegion, defendingRegion, ctx.NewMoveContext(
+	return ctx.NewMoveContext(
 		userContext,
 		gameContext,
 	)
@@ -45,18 +43,26 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 	t.Parallel()
 
 	type inputType struct {
-		name                 string
-		troopsInSource       int64
-		troopsInTarget       int64
-		attackingTroops      int64
-		attackingRegionOwner string
-		defendingRegionOwner string
-		expectedError        string
+		name                   string
+		attackingRegion        string
+		defendingRegion        string
+		declaredTroopsInSource int64
+		declaredTroopsInTarget int64
+		troopsInSource         int64
+		troopsInTarget         int64
+		attackingTroops        int64
+		attackingRegionOwner   string
+		defendingRegionOwner   string
+		expectedError          string
 	}
 
 	tests := []inputType{
 		{
 			"When attacking region is not owned by player",
+			"greenland",
+			"iceland",
+			5,
+			5,
 			5,
 			5,
 			3,
@@ -66,6 +72,10 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 		},
 		{
 			"When both regions are owned by the same player",
+			"greenland",
+			"iceland",
+			5,
+			5,
 			5,
 			5,
 			3,
@@ -75,6 +85,10 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 		},
 		{
 			"When attacking region has zero troops",
+			"greenland",
+			"iceland",
+			0,
+			5,
 			0,
 			5,
 			3,
@@ -84,6 +98,10 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 		},
 		{
 			"When attacking region does not have enough troops",
+			"greenland",
+			"iceland",
+			3,
+			5,
 			3,
 			5,
 			3,
@@ -93,6 +111,10 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 		},
 		{
 			"When attacking with zero troops",
+			"greenland",
+			"iceland",
+			3,
+			5,
 			3,
 			5,
 			0,
@@ -102,12 +124,55 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 		},
 		{
 			"When attacking a region that has zero troops",
+			"greenland",
+			"iceland",
+			4,
+			0,
 			4,
 			0,
 			3,
 			"giovanni",
 			"gabriele",
 			"defending region does not have enough troops",
+		},
+		{
+			"When attacking region doesn't have the declared number of troops",
+			"greenland",
+			"iceland",
+			4,
+			3,
+			5,
+			3,
+			3,
+			"giovanni",
+			"gabriele",
+			"attacking region doesn't have the declared number of troops",
+		},
+		{
+			"When defending region doesn't have the declared number of troops",
+			"greenland",
+			"iceland",
+			4,
+			3,
+			4,
+			4,
+			3,
+			"giovanni",
+			"gabriele",
+			"defending region doesn't have the declared number of troops",
+		},
+		{
+			"When attacking and defending regions are not neighbours",
+			"greenland",
+			"siam",
+			4,
+			3,
+			4,
+			3,
+			3,
+			"giovanni",
+			"gabriele",
+			"attacking region cannot reach defending region",
 		},
 	}
 	for _, test := range tests {
@@ -116,7 +181,7 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 			t.Parallel()
 
 			querier, regionService, service := setup(t)
-			attackingRegion, defendingRegion, ctx := input()
+			ctx := input()
 
 			game := &sqlc.Game{
 				ID:               ctx.GameID(),
@@ -126,28 +191,28 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 			}
 			regionService.
 				EXPECT().
-				GetRegionQ(ctx, querier, attackingRegion).
+				GetRegionQ(ctx, querier, test.attackingRegion).
 				Return(&sqlc.GetRegionsByGameRow{
 					ID:                1,
-					ExternalReference: attackingRegion,
+					ExternalReference: test.attackingRegion,
 					UserID:            test.attackingRegionOwner,
 					Troops:            test.troopsInSource,
 				}, nil)
 			regionService.
 				EXPECT().
-				GetRegionQ(ctx, querier, defendingRegion).
+				GetRegionQ(ctx, querier, test.defendingRegion).
 				Return(&sqlc.GetRegionsByGameRow{
 					ID:                2,
-					ExternalReference: defendingRegion,
+					ExternalReference: test.defendingRegion,
 					UserID:            test.defendingRegionOwner,
 					Troops:            test.troopsInTarget,
 				}, nil)
 
 			err := service.PerformQ(ctx, querier, game, attack.Move{
-				AttackingRegionID: attackingRegion,
-				DefendingRegionID: defendingRegion,
-				TroopsInSource:    test.troopsInSource,
-				TroopsInTarget:    test.troopsInTarget,
+				AttackingRegionID: test.attackingRegion,
+				DefendingRegionID: test.defendingRegion,
+				TroopsInSource:    test.declaredTroopsInSource,
+				TroopsInTarget:    test.declaredTroopsInTarget,
 				AttackingTroops:   test.attackingTroops,
 			})
 

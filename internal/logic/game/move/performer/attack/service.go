@@ -45,7 +45,7 @@ func (s *ServiceImpl) MustAdvanceQ(
 func (s *ServiceImpl) PerformQ(
 	ctx ctx.MoveContext,
 	querier db.Querier,
-	game *sqlc.Game,
+	_ *sqlc.Game,
 	move Move,
 ) error {
 	ctx.Log().Infow("performing attack move", "move", move)
@@ -78,12 +78,20 @@ func (s *ServiceImpl) PerformQ(
 
 	if defendingRegion.Troops < 1 {
 		ctx.Log().Errorw(
-			"attempt to attack a region with no troops",
+			"attempting to attack a region with no troops",
 			"region",
 			defendingRegion.ExternalReference,
 		)
 
 		return fmt.Errorf("defending region does not have enough troops")
+	}
+
+	if attackingRegion.Troops != move.TroopsInSource {
+		return fmt.Errorf("attacking region doesn't have the declared number of troops")
+	}
+
+	if defendingRegion.Troops != move.TroopsInTarget {
+		return fmt.Errorf("defending region doesn't have the declared number of troops")
 	}
 
 	return nil
