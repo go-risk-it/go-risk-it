@@ -69,7 +69,7 @@ func (s *ServiceImpl) PerformQ(
 	game *sqlc.Game,
 	move Move,
 ) error {
-	s.log.Infow("performing attack move", "move", move)
+	ctx.Log().Infow("performing attack move", "move", move)
 
 	return nil
 }

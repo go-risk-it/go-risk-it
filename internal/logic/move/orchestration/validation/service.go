@@ -45,6 +45,8 @@ func (s *ServiceImpl) Validate(
 		return fmt.Errorf("turn check failed: %w", err)
 	}
 
+	ctx.Log().Infow("turn check passed")
+
 	return nil
 }
 

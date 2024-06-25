@@ -91,6 +91,8 @@ func (s *ServiceImpl) OrchestrateMoveQ(
 	phase sqlc.Phase,
 	perform func(ctx ctx.MoveContext, querier db.Querier, game *sqlc.Game) error,
 ) error {
+	ctx.Log().Infow("orchestrating move", "phase", phase)
+
 	gameState, err := s.gameService.GetGameStateQ(ctx, querier, ctx.GameID())
 	if err != nil {
 		return fmt.Errorf("unable to get game state: %w", err)
@@ -111,6 +113,8 @@ func (s *ServiceImpl) OrchestrateMoveQ(
 	if err := s.phaseService.AdvanceQ(ctx, querier); err != nil {
 		return fmt.Errorf("unable to advance phase: %w", err)
 	}
+
+	ctx.Log().Infow("move performed", "phase", phase)
 
 	return nil
 }

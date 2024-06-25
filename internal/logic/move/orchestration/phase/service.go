@@ -9,7 +9,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/performer/attack"
 	"github.com/go-risk-it/go-risk-it/internal/logic/move/performer/deploy"
-	"go.uber.org/zap"
 )
 
 type Service interface {
@@ -18,7 +17,6 @@ type Service interface {
 }
 
 type ServiceImpl struct {
-	log           *zap.SugaredLogger
 	attackService attack.Service
 	deployService deploy.Service
 	gameService   game.Service
@@ -27,13 +25,11 @@ type ServiceImpl struct {
 var _ Service = &ServiceImpl{}
 
 func NewService(
-	log *zap.SugaredLogger,
 	attackService attack.Service,
 	deployService deploy.Service,
 	gameService game.Service,
 ) *ServiceImpl {
 	return &ServiceImpl{
-		log:           log,
 		attackService: attackService,
 		deployService: deployService,
 		gameService:   gameService,
@@ -45,7 +41,7 @@ func (s *ServiceImpl) SetGamePhaseQ(
 	querier db.Querier,
 	phase sqlc.Phase,
 ) error {
-	s.log.Infow("setting phase", "phase", phase)
+	ctx.Log().Infow("setting phase", "phase", phase)
 
 	err := querier.SetGamePhase(ctx, sqlc.SetGamePhaseParams{
 		Phase: phase,
@@ -55,7 +51,7 @@ func (s *ServiceImpl) SetGamePhaseQ(
 		return fmt.Errorf("failed to set phase: %w", err)
 	}
 
-	s.log.Infow("phase set", "phase", phase)
+	ctx.Log().Infow("phase set", "phase", phase)
 
 	return nil
 }
@@ -66,14 +62,14 @@ func (s *ServiceImpl) AdvanceQ(ctx ctx.MoveContext, querier db.Querier) error {
 		return fmt.Errorf("failed to get game state: %w", err)
 	}
 
-	s.log.Infow("Walking to target phase", "from", gameState.Phase)
+	ctx.Log().Infow("Walking to target phase", "from", gameState.Phase)
 
 	targetPhase := s.walkToTargetPhase(ctx, querier, gameState)
 	if targetPhase == gameState.Phase {
 		return nil
 	}
 
-	s.log.Infow(
+	ctx.Log().Infow(
 		"Advancing phase",
 		"from",
 		gameState.Phase,
@@ -103,7 +99,7 @@ func (s *ServiceImpl) walkToTargetPhase(
 		switch targetPhase {
 		case sqlc.PhaseDEPLOY:
 			if s.deployService.MustAdvanceQ(ctx, querier, gameState) {
-				s.log.Infow(
+				ctx.Log().Infow(
 					"deploy must advance",
 					"phase",
 					gameState.Phase,
@@ -114,7 +110,7 @@ func (s *ServiceImpl) walkToTargetPhase(
 			}
 		case sqlc.PhaseATTACK:
 			if s.attackService.MustAdvanceQ(ctx, querier, gameState) {
-				s.log.Infow(
+				ctx.Log().Infow(
 					"attack must advance",
 					"phase",
 					gameState.Phase,
