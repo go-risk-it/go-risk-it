@@ -6,7 +6,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/api/game/message"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
 )
 
@@ -15,15 +14,11 @@ type BoardController interface {
 }
 
 type BoardControllerImpl struct {
-	boardService  board.Service
 	regionService region.Service
 }
 
-func NewBoardController(
-	boardService board.Service,
-	regionService region.Service,
-) *BoardControllerImpl {
-	return &BoardControllerImpl{boardService: boardService, regionService: regionService}
+func NewBoardController(regionService region.Service) *BoardControllerImpl {
+	return &BoardControllerImpl{regionService: regionService}
 }
 
 func (c *BoardControllerImpl) GetBoardState(ctx ctx.GameContext) (message.BoardState, error) {

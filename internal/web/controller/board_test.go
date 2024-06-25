@@ -8,7 +8,6 @@ import (
 	ctx2 "github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	boardController "github.com/go-risk-it/go-risk-it/internal/web/controller"
-	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -19,11 +18,10 @@ func TestBoardControllerImpl_GetBoardState(t *testing.T) {
 
 	// Initialize dependencies
 	log := zap.NewNop().Sugar()
-	boardService := board.NewService(t)
 	regionService := region.NewService(t)
 
 	// Initialize the gamestate under test
-	controller := boardController.NewBoardController(boardService, regionService)
+	controller := boardController.NewBoardController(regionService)
 
 	// Set up test data
 	gameID := int64(1)

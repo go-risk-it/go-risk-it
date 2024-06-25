@@ -7,7 +7,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
-	service2 "github.com/go-risk-it/go-risk-it/internal/logic/game/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/attack"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/deploy"
@@ -22,20 +21,17 @@ type MoveController interface {
 type MoveControllerImpl struct {
 	attackService        attack.Service
 	deployService        deploy.Service
-	gameService          service2.Service
 	orchestrationService orchestration.Service
 }
 
 func NewMoveController(
 	attackService attack.Service,
 	deployService deploy.Service,
-	gameService service2.Service,
 	orchestrationService orchestration.Service,
 ) *MoveControllerImpl {
 	return &MoveControllerImpl{
 		attackService:        attackService,
 		deployService:        deployService,
-		gameService:          gameService,
 		orchestrationService: orchestrationService,
 	}
 }

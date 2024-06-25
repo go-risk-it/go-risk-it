@@ -1,7 +1,6 @@
 package assignment
 
 import (
-	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 )
@@ -12,14 +11,12 @@ type Service interface {
 	AssignRegionsToPlayers(players []sqlc.Player, regions []board.Region) RegionAssignment
 }
 
-type ServiceImpl struct {
-	q db.Querier
-}
+type ServiceImpl struct{}
 
 var _ Service = (*ServiceImpl)(nil)
 
-func NewAssignmentService(querier db.Querier) *ServiceImpl {
-	return &ServiceImpl{q: querier}
+func NewAssignmentService() *ServiceImpl {
+	return &ServiceImpl{}
 }
 
 func (s *ServiceImpl) AssignRegionsToPlayers(
