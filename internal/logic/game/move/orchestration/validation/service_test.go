@@ -21,7 +21,7 @@ func setup(t *testing.T) (
 	t.Helper()
 	querier := db.NewQuerier(t)
 	playerService := player.NewService(t)
-	service := validation.NewService(zap.NewNop().Sugar(), playerService)
+	service := validation.NewService(playerService)
 
 	return querier, playerService, service
 }
@@ -56,7 +56,7 @@ func TestServiceImpl_ShouldFailWhenPlayerNotInGame(t *testing.T) {
 
 	playerService.
 		EXPECT().
-		GetPlayersQ(ctx, querier, ctx.GameID()).
+		GetPlayersQ(ctx, querier).
 		Return(players, nil)
 
 	err := service.Validate(ctx, querier, game)
@@ -97,7 +97,7 @@ func TestServiceImpl_ShouldFailOnTurnCheck(t *testing.T) {
 			}
 			playerService.
 				EXPECT().
-				GetPlayersQ(ctx, querier, ctx.GameID()).
+				GetPlayersQ(ctx, querier).
 				Return(players, nil)
 			game := &sqlc.Game{
 				ID:    ctx.GameID(),

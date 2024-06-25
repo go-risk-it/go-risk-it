@@ -34,7 +34,7 @@ func (m *AuthMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 	return route.NewRoute(
 		routeToWrap.Pattern(),
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-			m.log.Debug("Applying auth middleware")
+			m.log.Debug("applying auth middleware")
 
 			subject, err := m.verifyJWT(request)
 			if err != nil {

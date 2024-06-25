@@ -3,6 +3,7 @@ package testonly
 import (
 	"net/http"
 
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 	"go.uber.org/zap"
 )
@@ -32,7 +33,7 @@ func (h *ResetHandlerImpl) Pattern() string {
 }
 
 func (h *ResetHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	err := h.testOnlyController.ResetState(req.Context())
+	err := h.testOnlyController.ResetState(ctx.WithLog(req.Context(), h.log))
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 

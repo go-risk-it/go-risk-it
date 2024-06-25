@@ -1,16 +1,16 @@
 package testonly
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/pool"
 	"go.uber.org/zap"
 )
 
 type Service interface {
-	TruncateTables(ctx context.Context) error
+	TruncateTables(ctx ctx.LogContext) error
 }
 
 type ServiceImpl struct {
@@ -36,7 +36,7 @@ func NewService(
 	return &ServiceImpl{log: log, pool: pool, dbConfig: dbConfig, tables: tables}
 }
 
-func (s *ServiceImpl) TruncateTables(ctx context.Context) error {
+func (s *ServiceImpl) TruncateTables(ctx ctx.LogContext) error {
 	s.log.Infow("Truncating tables", "tables", s.tables)
 
 	for _, table := range s.tables {

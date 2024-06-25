@@ -1,15 +1,14 @@
 package region
 
 import (
-	"context"
 	"errors"
 	"fmt"
 
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region/assignment"
-	"go.uber.org/zap"
 )
 
 var (
@@ -19,55 +18,44 @@ var (
 
 type Service interface {
 	CreateRegions(
-		ctx context.Context,
+		ctx ctx.UserContext,
 		querier db.Querier,
 		players []sqlc.Player,
 		regions []board.Region,
 	) error
 
 	GetRegionQ(
-		ctx context.Context,
+		ctx ctx.GameContext,
 		querier db.Querier,
-		gameID int64,
 		region string,
 	) (*sqlc.GetRegionsByGameRow, error)
-	GetRegions(
-		ctx context.Context,
-		gameID int64,
-	) ([]sqlc.GetRegionsByGameRow, error)
-	GetRegionsQ(
-		ctx context.Context,
-		querier db.Querier,
-		gameID int64,
-	) ([]sqlc.GetRegionsByGameRow, error)
+	GetRegions(ctx ctx.GameContext) ([]sqlc.GetRegionsByGameRow, error)
+	GetRegionsQ(ctx ctx.GameContext, querier db.Querier) ([]sqlc.GetRegionsByGameRow, error)
 	IncreaseTroopsInRegion(
-		ctx context.Context,
+		ctx ctx.MoveContext,
 		querier db.Querier,
 		regionID int64,
 		troops int64,
 	) error
 }
 type ServiceImpl struct {
-	log               *zap.SugaredLogger
 	querier           db.Querier
 	assignmentService assignment.Service
 }
 
-func NewService(
-	log *zap.SugaredLogger,
-	querier db.Querier,
-	assignmentService assignment.Service,
-) *ServiceImpl {
-	return &ServiceImpl{log: log, querier: querier, assignmentService: assignmentService}
+var _ Service = (*ServiceImpl)(nil)
+
+func NewService(querier db.Querier, assignmentService assignment.Service) *ServiceImpl {
+	return &ServiceImpl{querier: querier, assignmentService: assignmentService}
 }
 
 func (s *ServiceImpl) CreateRegions(
-	ctx context.Context,
+	ctx ctx.UserContext,
 	querier db.Querier,
 	players []sqlc.Player,
 	regions []board.Region,
 ) error {
-	s.log.Infow("creating regions", "players_size", len(players), "regions_size", len(regions))
+	ctx.Log().Infow("creating regions", "players_size", len(players), "regions_size", len(regions))
 
 	if len(players) == 0 {
 		return ErrNoPlayers
@@ -96,44 +84,41 @@ func (s *ServiceImpl) CreateRegions(
 		return fmt.Errorf("failed to insert regions: %w", err)
 	}
 
-	s.log.Infow("created regions", "players", players, "regions", regions)
+	ctx.Log().Infow("created regions", "players", players, "regions", regions)
 
 	return nil
 }
 
 func (s *ServiceImpl) GetRegions(
-	ctx context.Context,
-	gameID int64,
+	ctx ctx.GameContext,
 ) ([]sqlc.GetRegionsByGameRow, error) {
-	return s.GetRegionsQ(ctx, s.querier, gameID)
+	return s.GetRegionsQ(ctx, s.querier)
 }
 
 func (s *ServiceImpl) GetRegionsQ(
-	ctx context.Context,
+	ctx ctx.GameContext,
 	querier db.Querier,
-	gameID int64,
 ) ([]sqlc.GetRegionsByGameRow, error) {
-	s.log.Infow("fetching regions", "game_id", gameID)
+	ctx.Log().Infow("fetching regions")
 
-	regions, err := querier.GetRegionsByGame(ctx, gameID)
+	regions, err := querier.GetRegionsByGame(ctx, ctx.GameID())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get regions: %w", err)
 	}
 
-	s.log.Debugw("got regions", "regions", len(regions))
+	ctx.Log().Debugw("got regions", "regions", len(regions))
 
 	return regions, nil
 }
 
 func (s *ServiceImpl) GetRegionQ(
-	ctx context.Context,
+	ctx ctx.GameContext,
 	querier db.Querier,
-	gameID int64,
 	region string,
 ) (*sqlc.GetRegionsByGameRow, error) {
-	s.log.Infow("fetching region", "region", region, "game_id", gameID)
+	ctx.Log().Infow("fetching region", "region", region)
 
-	regions, err := s.GetRegionsQ(ctx, querier, gameID)
+	regions, err := s.GetRegionsQ(ctx, querier)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get regions: %w", err)
 	}
@@ -160,12 +145,12 @@ func extractRegionFrom(
 }
 
 func (s *ServiceImpl) IncreaseTroopsInRegion(
-	ctx context.Context,
+	ctx ctx.MoveContext,
 	querier db.Querier,
 	regionID int64,
 	troops int64,
 ) error {
-	s.log.Infow("increasing region troops", "region_id", regionID, "troops", troops)
+	ctx.Log().Infow("increasing region troops", "region_id", regionID, "troops", troops)
 
 	err := querier.IncreaseRegionTroops(ctx, sqlc.IncreaseRegionTroopsParams{
 		ID:     regionID,
@@ -175,7 +160,7 @@ func (s *ServiceImpl) IncreaseTroopsInRegion(
 		return fmt.Errorf("failed to increase region troops: %w", err)
 	}
 
-	s.log.Infow("increased region troops", "region_id", regionID, "troops", troops)
+	ctx.Log().Infow("increased region troops", "region_id", regionID, "troops", troops)
 
 	return nil
 }

@@ -1,14 +1,14 @@
 package testonly
 
 import (
-	"context"
 	"fmt"
 
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"go.uber.org/zap"
 )
 
 type Controller interface {
-	ResetState(ctx context.Context) error
+	ResetState(ctx ctx.LogContext) error
 }
 
 type ControllerImpl struct {
@@ -26,7 +26,7 @@ func NewController(
 	}
 }
 
-func (c *ControllerImpl) ResetState(ctx context.Context) error {
+func (c *ControllerImpl) ResetState(ctx ctx.LogContext) error {
 	err := c.testOnlyService.TruncateTables(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to truncate tables: %w", err)

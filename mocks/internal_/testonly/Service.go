@@ -3,8 +3,7 @@
 package testonly
 
 import (
-	context "context"
-
+	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -21,17 +20,17 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
-// TruncateTables provides a mock function with given fields: ctx
-func (_m *Service) TruncateTables(ctx context.Context) error {
-	ret := _m.Called(ctx)
+// TruncateTables provides a mock function with given fields: _a0
+func (_m *Service) TruncateTables(_a0 ctx.LogContext) error {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for TruncateTables")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(ctx.LogContext) error); ok {
+		r0 = rf(_a0)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -45,14 +44,14 @@ type Service_TruncateTables_Call struct {
 }
 
 // TruncateTables is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *Service_Expecter) TruncateTables(ctx interface{}) *Service_TruncateTables_Call {
-	return &Service_TruncateTables_Call{Call: _e.mock.On("TruncateTables", ctx)}
+//   - _a0 ctx.LogContext
+func (_e *Service_Expecter) TruncateTables(_a0 interface{}) *Service_TruncateTables_Call {
+	return &Service_TruncateTables_Call{Call: _e.mock.On("TruncateTables", _a0)}
 }
 
-func (_c *Service_TruncateTables_Call) Run(run func(ctx context.Context)) *Service_TruncateTables_Call {
+func (_c *Service_TruncateTables_Call) Run(run func(_a0 ctx.LogContext)) *Service_TruncateTables_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		run(args[0].(ctx.LogContext))
 	})
 	return _c
 }
@@ -62,7 +61,7 @@ func (_c *Service_TruncateTables_Call) Return(_a0 error) *Service_TruncateTables
 	return _c
 }
 
-func (_c *Service_TruncateTables_Call) RunAndReturn(run func(context.Context) error) *Service_TruncateTables_Call {
+func (_c *Service_TruncateTables_Call) RunAndReturn(run func(ctx.LogContext) error) *Service_TruncateTables_Call {
 	_c.Call.Return(run)
 	return _c
 }

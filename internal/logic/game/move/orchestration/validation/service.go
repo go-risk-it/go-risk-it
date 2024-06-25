@@ -7,7 +7,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
-	"go.uber.org/zap"
 )
 
 type Service interface {
@@ -15,15 +14,13 @@ type Service interface {
 }
 
 type ServiceImpl struct {
-	log           *zap.SugaredLogger
 	playerService player.Service
 }
 
-func NewService(
-	log *zap.SugaredLogger,
-	playerService player.Service,
-) *ServiceImpl {
-	return &ServiceImpl{log: log, playerService: playerService}
+var _ Service = (*ServiceImpl)(nil)
+
+func NewService(playerService player.Service) *ServiceImpl {
+	return &ServiceImpl{playerService: playerService}
 }
 
 func (s *ServiceImpl) Validate(
@@ -31,7 +28,9 @@ func (s *ServiceImpl) Validate(
 	querier db.Querier,
 	game *sqlc.Game,
 ) error {
-	players, err := s.playerService.GetPlayersQ(ctx, querier, game.ID)
+	ctx.Log().Infow("performing generic move validation")
+
+	players, err := s.playerService.GetPlayersQ(ctx, querier)
 	if err != nil {
 		return fmt.Errorf("failed to get players: %w", err)
 	}
@@ -45,7 +44,7 @@ func (s *ServiceImpl) Validate(
 		return fmt.Errorf("turn check failed: %w", err)
 	}
 
-	ctx.Log().Infow("turn check passed")
+	ctx.Log().Infow("generic move validation passed")
 
 	return nil
 }

@@ -1,11 +1,11 @@
 package db
 
 import (
-	"context"
 	"fmt"
 
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/pool"
-	pgx "github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5"
 )
 
 func (q *Queries) WithTx(tx pool.Transaction) Querier {
@@ -18,14 +18,14 @@ func (q *Queries) WithTx(tx pool.Transaction) Querier {
 
 // ExecuteInTransaction with default isolation level (ReadCommitted).
 func (q *Queries) ExecuteInTransaction(
-	ctx context.Context,
+	ctx ctx.LogContext,
 	txFunc func(Querier) (interface{}, error),
 ) (interface{}, error) {
 	return q.ExecuteInTransactionWithIsolation(ctx, pgx.ReadCommitted, txFunc)
 }
 
 func (q *Queries) ExecuteInTransactionWithIsolation(
-	ctx context.Context,
+	ctx ctx.LogContext,
 	isolationLevel pgx.TxIsoLevel,
 	txFunc func(Querier) (interface{}, error),
 ) (interface{}, error) {
@@ -40,7 +40,7 @@ func (q *Queries) ExecuteInTransactionWithIsolation(
 }
 
 func (q *Queries) executeTransaction(
-	ctx context.Context,
+	ctx ctx.LogContext,
 	txFunc func(Querier) (interface{}, error),
 	transaction pgx.Tx,
 ) (interface{}, error) {
@@ -71,7 +71,7 @@ func (q *Queries) executeTransaction(
 	return result, err
 }
 
-func (q *Queries) rollback(transaction pgx.Tx, ctx context.Context) {
+func (q *Queries) rollback(transaction pgx.Tx, ctx ctx.LogContext) {
 	q.log.Infow("rolling back transaction")
 
 	err := transaction.Rollback(ctx)

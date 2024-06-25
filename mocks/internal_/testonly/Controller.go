@@ -3,8 +3,7 @@
 package testonly
 
 import (
-	context "context"
-
+	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -21,17 +20,17 @@ func (_m *Controller) EXPECT() *Controller_Expecter {
 	return &Controller_Expecter{mock: &_m.Mock}
 }
 
-// ResetState provides a mock function with given fields: ctx
-func (_m *Controller) ResetState(ctx context.Context) error {
-	ret := _m.Called(ctx)
+// ResetState provides a mock function with given fields: _a0
+func (_m *Controller) ResetState(_a0 ctx.LogContext) error {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ResetState")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(ctx.LogContext) error); ok {
+		r0 = rf(_a0)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -45,14 +44,14 @@ type Controller_ResetState_Call struct {
 }
 
 // ResetState is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *Controller_Expecter) ResetState(ctx interface{}) *Controller_ResetState_Call {
-	return &Controller_ResetState_Call{Call: _e.mock.On("ResetState", ctx)}
+//   - _a0 ctx.LogContext
+func (_e *Controller_Expecter) ResetState(_a0 interface{}) *Controller_ResetState_Call {
+	return &Controller_ResetState_Call{Call: _e.mock.On("ResetState", _a0)}
 }
 
-func (_c *Controller_ResetState_Call) Run(run func(ctx context.Context)) *Controller_ResetState_Call {
+func (_c *Controller_ResetState_Call) Run(run func(_a0 ctx.LogContext)) *Controller_ResetState_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		run(args[0].(ctx.LogContext))
 	})
 	return _c
 }
@@ -62,7 +61,7 @@ func (_c *Controller_ResetState_Call) Return(_a0 error) *Controller_ResetState_C
 	return _c
 }
 
-func (_c *Controller_ResetState_Call) RunAndReturn(run func(context.Context) error) *Controller_ResetState_Call {
+func (_c *Controller_ResetState_Call) RunAndReturn(run func(ctx.LogContext) error) *Controller_ResetState_Call {
 	_c.Call.Return(run)
 	return _c
 }

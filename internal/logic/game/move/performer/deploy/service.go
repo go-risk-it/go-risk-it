@@ -120,7 +120,7 @@ func (s *ServiceImpl) getRegion(
 	querier db.Querier,
 	region string,
 ) (*sqlc.GetRegionsByGameRow, error) {
-	result, err := s.regionService.GetRegionQ(ctx, querier, ctx.GameID(), region)
+	result, err := s.regionService.GetRegionQ(ctx, querier, region)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get region: %w", err)
 	}

@@ -11,7 +11,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/validation"
 	"github.com/go-risk-it/go-risk-it/internal/logic/signals"
 	"github.com/jackc/pgx/v5"
-	"go.uber.org/zap"
 )
 
 type Service interface {
@@ -28,7 +27,6 @@ type Service interface {
 	) error
 }
 type ServiceImpl struct {
-	log                      *zap.SugaredLogger
 	querier                  db.Querier
 	gameService              gamestate.Service
 	phaseService             phase.Service
@@ -38,8 +36,9 @@ type ServiceImpl struct {
 	gameStateChangedSignal   signals.GameStateChangedSignal
 }
 
+var _ Service = (*ServiceImpl)(nil)
+
 func NewService(
-	log *zap.SugaredLogger,
 	querier db.Querier,
 	phaseWalkingService phase.Service,
 	gameService gamestate.Service,
@@ -49,7 +48,6 @@ func NewService(
 	gameStateChangedSignal signals.GameStateChangedSignal,
 ) *ServiceImpl {
 	return &ServiceImpl{
-		log:                      log,
 		querier:                  querier,
 		phaseService:             phaseWalkingService,
 		gameService:              gameService,

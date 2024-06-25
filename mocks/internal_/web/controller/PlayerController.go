@@ -3,10 +3,8 @@
 package controller
 
 import (
-	context "context"
-
 	message "github.com/go-risk-it/go-risk-it/internal/api/game/message"
-
+	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -23,9 +21,9 @@ func (_m *PlayerController) EXPECT() *PlayerController_Expecter {
 	return &PlayerController_Expecter{mock: &_m.Mock}
 }
 
-// GetPlayerState provides a mock function with given fields: ctx, gameID
-func (_m *PlayerController) GetPlayerState(ctx context.Context, gameID int64) (message.PlayersState, error) {
-	ret := _m.Called(ctx, gameID)
+// GetPlayerState provides a mock function with given fields: _a0
+func (_m *PlayerController) GetPlayerState(_a0 ctx.GameContext) (message.PlayersState, error) {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetPlayerState")
@@ -33,17 +31,17 @@ func (_m *PlayerController) GetPlayerState(ctx context.Context, gameID int64) (m
 
 	var r0 message.PlayersState
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) (message.PlayersState, error)); ok {
-		return rf(ctx, gameID)
+	if rf, ok := ret.Get(0).(func(ctx.GameContext) (message.PlayersState, error)); ok {
+		return rf(_a0)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64) message.PlayersState); ok {
-		r0 = rf(ctx, gameID)
+	if rf, ok := ret.Get(0).(func(ctx.GameContext) message.PlayersState); ok {
+		r0 = rf(_a0)
 	} else {
 		r0 = ret.Get(0).(message.PlayersState)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
-		r1 = rf(ctx, gameID)
+	if rf, ok := ret.Get(1).(func(ctx.GameContext) error); ok {
+		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -57,15 +55,14 @@ type PlayerController_GetPlayerState_Call struct {
 }
 
 // GetPlayerState is a helper method to define mock.On call
-//   - ctx context.Context
-//   - gameID int64
-func (_e *PlayerController_Expecter) GetPlayerState(ctx interface{}, gameID interface{}) *PlayerController_GetPlayerState_Call {
-	return &PlayerController_GetPlayerState_Call{Call: _e.mock.On("GetPlayerState", ctx, gameID)}
+//   - _a0 ctx.GameContext
+func (_e *PlayerController_Expecter) GetPlayerState(_a0 interface{}) *PlayerController_GetPlayerState_Call {
+	return &PlayerController_GetPlayerState_Call{Call: _e.mock.On("GetPlayerState", _a0)}
 }
 
-func (_c *PlayerController_GetPlayerState_Call) Run(run func(ctx context.Context, gameID int64)) *PlayerController_GetPlayerState_Call {
+func (_c *PlayerController_GetPlayerState_Call) Run(run func(_a0 ctx.GameContext)) *PlayerController_GetPlayerState_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(int64))
+		run(args[0].(ctx.GameContext))
 	})
 	return _c
 }
@@ -75,7 +72,7 @@ func (_c *PlayerController_GetPlayerState_Call) Return(_a0 message.PlayersState,
 	return _c
 }
 
-func (_c *PlayerController_GetPlayerState_Call) RunAndReturn(run func(context.Context, int64) (message.PlayersState, error)) *PlayerController_GetPlayerState_Call {
+func (_c *PlayerController_GetPlayerState_Call) RunAndReturn(run func(ctx.GameContext) (message.PlayersState, error)) *PlayerController_GetPlayerState_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -5,7 +5,9 @@ package db
 import (
 	context "context"
 
+	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
 	db "github.com/go-risk-it/go-risk-it/internal/data/db"
+
 	mock "github.com/stretchr/testify/mock"
 
 	pgx "github.com/jackc/pgx/v5"
@@ -26,9 +28,9 @@ func (_m *Querier) EXPECT() *Querier_Expecter {
 	return &Querier_Expecter{mock: &_m.Mock}
 }
 
-// DecreaseDeployableTroops provides a mock function with given fields: ctx, arg
-func (_m *Querier) DecreaseDeployableTroops(ctx context.Context, arg sqlc.DecreaseDeployableTroopsParams) error {
-	ret := _m.Called(ctx, arg)
+// DecreaseDeployableTroops provides a mock function with given fields: _a0, arg
+func (_m *Querier) DecreaseDeployableTroops(_a0 context.Context, arg sqlc.DecreaseDeployableTroopsParams) error {
+	ret := _m.Called(_a0, arg)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DecreaseDeployableTroops")
@@ -36,7 +38,7 @@ func (_m *Querier) DecreaseDeployableTroops(ctx context.Context, arg sqlc.Decrea
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, sqlc.DecreaseDeployableTroopsParams) error); ok {
-		r0 = rf(ctx, arg)
+		r0 = rf(_a0, arg)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -50,13 +52,13 @@ type Querier_DecreaseDeployableTroops_Call struct {
 }
 
 // DecreaseDeployableTroops is a helper method to define mock.On call
-//   - ctx context.Context
+//   - _a0 context.Context
 //   - arg sqlc.DecreaseDeployableTroopsParams
-func (_e *Querier_Expecter) DecreaseDeployableTroops(ctx interface{}, arg interface{}) *Querier_DecreaseDeployableTroops_Call {
-	return &Querier_DecreaseDeployableTroops_Call{Call: _e.mock.On("DecreaseDeployableTroops", ctx, arg)}
+func (_e *Querier_Expecter) DecreaseDeployableTroops(_a0 interface{}, arg interface{}) *Querier_DecreaseDeployableTroops_Call {
+	return &Querier_DecreaseDeployableTroops_Call{Call: _e.mock.On("DecreaseDeployableTroops", _a0, arg)}
 }
 
-func (_c *Querier_DecreaseDeployableTroops_Call) Run(run func(ctx context.Context, arg sqlc.DecreaseDeployableTroopsParams)) *Querier_DecreaseDeployableTroops_Call {
+func (_c *Querier_DecreaseDeployableTroops_Call) Run(run func(_a0 context.Context, arg sqlc.DecreaseDeployableTroopsParams)) *Querier_DecreaseDeployableTroops_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(sqlc.DecreaseDeployableTroopsParams))
 	})
@@ -73,9 +75,9 @@ func (_c *Querier_DecreaseDeployableTroops_Call) RunAndReturn(run func(context.C
 	return _c
 }
 
-// ExecuteInTransaction provides a mock function with given fields: ctx, txFunc
-func (_m *Querier) ExecuteInTransaction(ctx context.Context, txFunc func(db.Querier) (interface{}, error)) (interface{}, error) {
-	ret := _m.Called(ctx, txFunc)
+// ExecuteInTransaction provides a mock function with given fields: _a0, txFunc
+func (_m *Querier) ExecuteInTransaction(_a0 ctx.LogContext, txFunc func(db.Querier) (interface{}, error)) (interface{}, error) {
+	ret := _m.Called(_a0, txFunc)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ExecuteInTransaction")
@@ -83,19 +85,19 @@ func (_m *Querier) ExecuteInTransaction(ctx context.Context, txFunc func(db.Quer
 
 	var r0 interface{}
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, func(db.Querier) (interface{}, error)) (interface{}, error)); ok {
-		return rf(ctx, txFunc)
+	if rf, ok := ret.Get(0).(func(ctx.LogContext, func(db.Querier) (interface{}, error)) (interface{}, error)); ok {
+		return rf(_a0, txFunc)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, func(db.Querier) (interface{}, error)) interface{}); ok {
-		r0 = rf(ctx, txFunc)
+	if rf, ok := ret.Get(0).(func(ctx.LogContext, func(db.Querier) (interface{}, error)) interface{}); ok {
+		r0 = rf(_a0, txFunc)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(interface{})
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, func(db.Querier) (interface{}, error)) error); ok {
-		r1 = rf(ctx, txFunc)
+	if rf, ok := ret.Get(1).(func(ctx.LogContext, func(db.Querier) (interface{}, error)) error); ok {
+		r1 = rf(_a0, txFunc)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -109,15 +111,15 @@ type Querier_ExecuteInTransaction_Call struct {
 }
 
 // ExecuteInTransaction is a helper method to define mock.On call
-//   - ctx context.Context
+//   - _a0 ctx.LogContext
 //   - txFunc func(db.Querier)(interface{} , error)
-func (_e *Querier_Expecter) ExecuteInTransaction(ctx interface{}, txFunc interface{}) *Querier_ExecuteInTransaction_Call {
-	return &Querier_ExecuteInTransaction_Call{Call: _e.mock.On("ExecuteInTransaction", ctx, txFunc)}
+func (_e *Querier_Expecter) ExecuteInTransaction(_a0 interface{}, txFunc interface{}) *Querier_ExecuteInTransaction_Call {
+	return &Querier_ExecuteInTransaction_Call{Call: _e.mock.On("ExecuteInTransaction", _a0, txFunc)}
 }
 
-func (_c *Querier_ExecuteInTransaction_Call) Run(run func(ctx context.Context, txFunc func(db.Querier) (interface{}, error))) *Querier_ExecuteInTransaction_Call {
+func (_c *Querier_ExecuteInTransaction_Call) Run(run func(_a0 ctx.LogContext, txFunc func(db.Querier) (interface{}, error))) *Querier_ExecuteInTransaction_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(func(db.Querier) (interface{}, error)))
+		run(args[0].(ctx.LogContext), args[1].(func(db.Querier) (interface{}, error)))
 	})
 	return _c
 }
@@ -127,14 +129,14 @@ func (_c *Querier_ExecuteInTransaction_Call) Return(_a0 interface{}, _a1 error) 
 	return _c
 }
 
-func (_c *Querier_ExecuteInTransaction_Call) RunAndReturn(run func(context.Context, func(db.Querier) (interface{}, error)) (interface{}, error)) *Querier_ExecuteInTransaction_Call {
+func (_c *Querier_ExecuteInTransaction_Call) RunAndReturn(run func(ctx.LogContext, func(db.Querier) (interface{}, error)) (interface{}, error)) *Querier_ExecuteInTransaction_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// ExecuteInTransactionWithIsolation provides a mock function with given fields: ctx, isolationLevel, txFunc
-func (_m *Querier) ExecuteInTransactionWithIsolation(ctx context.Context, isolationLevel pgx.TxIsoLevel, txFunc func(db.Querier) (interface{}, error)) (interface{}, error) {
-	ret := _m.Called(ctx, isolationLevel, txFunc)
+// ExecuteInTransactionWithIsolation provides a mock function with given fields: _a0, isolationLevel, txFunc
+func (_m *Querier) ExecuteInTransactionWithIsolation(_a0 ctx.LogContext, isolationLevel pgx.TxIsoLevel, txFunc func(db.Querier) (interface{}, error)) (interface{}, error) {
+	ret := _m.Called(_a0, isolationLevel, txFunc)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ExecuteInTransactionWithIsolation")
@@ -142,19 +144,19 @@ func (_m *Querier) ExecuteInTransactionWithIsolation(ctx context.Context, isolat
 
 	var r0 interface{}
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, pgx.TxIsoLevel, func(db.Querier) (interface{}, error)) (interface{}, error)); ok {
-		return rf(ctx, isolationLevel, txFunc)
+	if rf, ok := ret.Get(0).(func(ctx.LogContext, pgx.TxIsoLevel, func(db.Querier) (interface{}, error)) (interface{}, error)); ok {
+		return rf(_a0, isolationLevel, txFunc)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, pgx.TxIsoLevel, func(db.Querier) (interface{}, error)) interface{}); ok {
-		r0 = rf(ctx, isolationLevel, txFunc)
+	if rf, ok := ret.Get(0).(func(ctx.LogContext, pgx.TxIsoLevel, func(db.Querier) (interface{}, error)) interface{}); ok {
+		r0 = rf(_a0, isolationLevel, txFunc)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(interface{})
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, pgx.TxIsoLevel, func(db.Querier) (interface{}, error)) error); ok {
-		r1 = rf(ctx, isolationLevel, txFunc)
+	if rf, ok := ret.Get(1).(func(ctx.LogContext, pgx.TxIsoLevel, func(db.Querier) (interface{}, error)) error); ok {
+		r1 = rf(_a0, isolationLevel, txFunc)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -168,16 +170,16 @@ type Querier_ExecuteInTransactionWithIsolation_Call struct {
 }
 
 // ExecuteInTransactionWithIsolation is a helper method to define mock.On call
-//   - ctx context.Context
+//   - _a0 ctx.LogContext
 //   - isolationLevel pgx.TxIsoLevel
 //   - txFunc func(db.Querier)(interface{} , error)
-func (_e *Querier_Expecter) ExecuteInTransactionWithIsolation(ctx interface{}, isolationLevel interface{}, txFunc interface{}) *Querier_ExecuteInTransactionWithIsolation_Call {
-	return &Querier_ExecuteInTransactionWithIsolation_Call{Call: _e.mock.On("ExecuteInTransactionWithIsolation", ctx, isolationLevel, txFunc)}
+func (_e *Querier_Expecter) ExecuteInTransactionWithIsolation(_a0 interface{}, isolationLevel interface{}, txFunc interface{}) *Querier_ExecuteInTransactionWithIsolation_Call {
+	return &Querier_ExecuteInTransactionWithIsolation_Call{Call: _e.mock.On("ExecuteInTransactionWithIsolation", _a0, isolationLevel, txFunc)}
 }
 
-func (_c *Querier_ExecuteInTransactionWithIsolation_Call) Run(run func(ctx context.Context, isolationLevel pgx.TxIsoLevel, txFunc func(db.Querier) (interface{}, error))) *Querier_ExecuteInTransactionWithIsolation_Call {
+func (_c *Querier_ExecuteInTransactionWithIsolation_Call) Run(run func(_a0 ctx.LogContext, isolationLevel pgx.TxIsoLevel, txFunc func(db.Querier) (interface{}, error))) *Querier_ExecuteInTransactionWithIsolation_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(pgx.TxIsoLevel), args[2].(func(db.Querier) (interface{}, error)))
+		run(args[0].(ctx.LogContext), args[1].(pgx.TxIsoLevel), args[2].(func(db.Querier) (interface{}, error)))
 	})
 	return _c
 }
@@ -187,14 +189,14 @@ func (_c *Querier_ExecuteInTransactionWithIsolation_Call) Return(_a0 interface{}
 	return _c
 }
 
-func (_c *Querier_ExecuteInTransactionWithIsolation_Call) RunAndReturn(run func(context.Context, pgx.TxIsoLevel, func(db.Querier) (interface{}, error)) (interface{}, error)) *Querier_ExecuteInTransactionWithIsolation_Call {
+func (_c *Querier_ExecuteInTransactionWithIsolation_Call) RunAndReturn(run func(ctx.LogContext, pgx.TxIsoLevel, func(db.Querier) (interface{}, error)) (interface{}, error)) *Querier_ExecuteInTransactionWithIsolation_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetGame provides a mock function with given fields: ctx, id
-func (_m *Querier) GetGame(ctx context.Context, id int64) (sqlc.Game, error) {
-	ret := _m.Called(ctx, id)
+// GetGame provides a mock function with given fields: _a0, id
+func (_m *Querier) GetGame(_a0 context.Context, id int64) (sqlc.Game, error) {
+	ret := _m.Called(_a0, id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetGame")
@@ -203,16 +205,16 @@ func (_m *Querier) GetGame(ctx context.Context, id int64) (sqlc.Game, error) {
 	var r0 sqlc.Game
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, int64) (sqlc.Game, error)); ok {
-		return rf(ctx, id)
+		return rf(_a0, id)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, int64) sqlc.Game); ok {
-		r0 = rf(ctx, id)
+		r0 = rf(_a0, id)
 	} else {
 		r0 = ret.Get(0).(sqlc.Game)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
-		r1 = rf(ctx, id)
+		r1 = rf(_a0, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -226,13 +228,13 @@ type Querier_GetGame_Call struct {
 }
 
 // GetGame is a helper method to define mock.On call
-//   - ctx context.Context
+//   - _a0 context.Context
 //   - id int64
-func (_e *Querier_Expecter) GetGame(ctx interface{}, id interface{}) *Querier_GetGame_Call {
-	return &Querier_GetGame_Call{Call: _e.mock.On("GetGame", ctx, id)}
+func (_e *Querier_Expecter) GetGame(_a0 interface{}, id interface{}) *Querier_GetGame_Call {
+	return &Querier_GetGame_Call{Call: _e.mock.On("GetGame", _a0, id)}
 }
 
-func (_c *Querier_GetGame_Call) Run(run func(ctx context.Context, id int64)) *Querier_GetGame_Call {
+func (_c *Querier_GetGame_Call) Run(run func(_a0 context.Context, id int64)) *Querier_GetGame_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(int64))
 	})
@@ -249,9 +251,9 @@ func (_c *Querier_GetGame_Call) RunAndReturn(run func(context.Context, int64) (s
 	return _c
 }
 
-// GetPlayerByUserId provides a mock function with given fields: ctx, userID
-func (_m *Querier) GetPlayerByUserId(ctx context.Context, userID string) (sqlc.Player, error) {
-	ret := _m.Called(ctx, userID)
+// GetPlayerByUserId provides a mock function with given fields: _a0, userID
+func (_m *Querier) GetPlayerByUserId(_a0 context.Context, userID string) (sqlc.Player, error) {
+	ret := _m.Called(_a0, userID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetPlayerByUserId")
@@ -260,16 +262,16 @@ func (_m *Querier) GetPlayerByUserId(ctx context.Context, userID string) (sqlc.P
 	var r0 sqlc.Player
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (sqlc.Player, error)); ok {
-		return rf(ctx, userID)
+		return rf(_a0, userID)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) sqlc.Player); ok {
-		r0 = rf(ctx, userID)
+		r0 = rf(_a0, userID)
 	} else {
 		r0 = ret.Get(0).(sqlc.Player)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, userID)
+		r1 = rf(_a0, userID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -283,13 +285,13 @@ type Querier_GetPlayerByUserId_Call struct {
 }
 
 // GetPlayerByUserId is a helper method to define mock.On call
-//   - ctx context.Context
+//   - _a0 context.Context
 //   - userID string
-func (_e *Querier_Expecter) GetPlayerByUserId(ctx interface{}, userID interface{}) *Querier_GetPlayerByUserId_Call {
-	return &Querier_GetPlayerByUserId_Call{Call: _e.mock.On("GetPlayerByUserId", ctx, userID)}
+func (_e *Querier_Expecter) GetPlayerByUserId(_a0 interface{}, userID interface{}) *Querier_GetPlayerByUserId_Call {
+	return &Querier_GetPlayerByUserId_Call{Call: _e.mock.On("GetPlayerByUserId", _a0, userID)}
 }
 
-func (_c *Querier_GetPlayerByUserId_Call) Run(run func(ctx context.Context, userID string)) *Querier_GetPlayerByUserId_Call {
+func (_c *Querier_GetPlayerByUserId_Call) Run(run func(_a0 context.Context, userID string)) *Querier_GetPlayerByUserId_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string))
 	})
@@ -306,9 +308,9 @@ func (_c *Querier_GetPlayerByUserId_Call) RunAndReturn(run func(context.Context,
 	return _c
 }
 
-// GetPlayersByGame provides a mock function with given fields: ctx, gameID
-func (_m *Querier) GetPlayersByGame(ctx context.Context, gameID int64) ([]sqlc.Player, error) {
-	ret := _m.Called(ctx, gameID)
+// GetPlayersByGame provides a mock function with given fields: _a0, gameID
+func (_m *Querier) GetPlayersByGame(_a0 context.Context, gameID int64) ([]sqlc.Player, error) {
+	ret := _m.Called(_a0, gameID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetPlayersByGame")
@@ -317,10 +319,10 @@ func (_m *Querier) GetPlayersByGame(ctx context.Context, gameID int64) ([]sqlc.P
 	var r0 []sqlc.Player
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, int64) ([]sqlc.Player, error)); ok {
-		return rf(ctx, gameID)
+		return rf(_a0, gameID)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, int64) []sqlc.Player); ok {
-		r0 = rf(ctx, gameID)
+		r0 = rf(_a0, gameID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]sqlc.Player)
@@ -328,7 +330,7 @@ func (_m *Querier) GetPlayersByGame(ctx context.Context, gameID int64) ([]sqlc.P
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
-		r1 = rf(ctx, gameID)
+		r1 = rf(_a0, gameID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -342,13 +344,13 @@ type Querier_GetPlayersByGame_Call struct {
 }
 
 // GetPlayersByGame is a helper method to define mock.On call
-//   - ctx context.Context
+//   - _a0 context.Context
 //   - gameID int64
-func (_e *Querier_Expecter) GetPlayersByGame(ctx interface{}, gameID interface{}) *Querier_GetPlayersByGame_Call {
-	return &Querier_GetPlayersByGame_Call{Call: _e.mock.On("GetPlayersByGame", ctx, gameID)}
+func (_e *Querier_Expecter) GetPlayersByGame(_a0 interface{}, gameID interface{}) *Querier_GetPlayersByGame_Call {
+	return &Querier_GetPlayersByGame_Call{Call: _e.mock.On("GetPlayersByGame", _a0, gameID)}
 }
 
-func (_c *Querier_GetPlayersByGame_Call) Run(run func(ctx context.Context, gameID int64)) *Querier_GetPlayersByGame_Call {
+func (_c *Querier_GetPlayersByGame_Call) Run(run func(_a0 context.Context, gameID int64)) *Querier_GetPlayersByGame_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(int64))
 	})
@@ -365,9 +367,9 @@ func (_c *Querier_GetPlayersByGame_Call) RunAndReturn(run func(context.Context, 
 	return _c
 }
 
-// GetRegionsByGame provides a mock function with given fields: ctx, id
-func (_m *Querier) GetRegionsByGame(ctx context.Context, id int64) ([]sqlc.GetRegionsByGameRow, error) {
-	ret := _m.Called(ctx, id)
+// GetRegionsByGame provides a mock function with given fields: _a0, id
+func (_m *Querier) GetRegionsByGame(_a0 context.Context, id int64) ([]sqlc.GetRegionsByGameRow, error) {
+	ret := _m.Called(_a0, id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetRegionsByGame")
@@ -376,10 +378,10 @@ func (_m *Querier) GetRegionsByGame(ctx context.Context, id int64) ([]sqlc.GetRe
 	var r0 []sqlc.GetRegionsByGameRow
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, int64) ([]sqlc.GetRegionsByGameRow, error)); ok {
-		return rf(ctx, id)
+		return rf(_a0, id)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, int64) []sqlc.GetRegionsByGameRow); ok {
-		r0 = rf(ctx, id)
+		r0 = rf(_a0, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]sqlc.GetRegionsByGameRow)
@@ -387,7 +389,7 @@ func (_m *Querier) GetRegionsByGame(ctx context.Context, id int64) ([]sqlc.GetRe
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
-		r1 = rf(ctx, id)
+		r1 = rf(_a0, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -401,13 +403,13 @@ type Querier_GetRegionsByGame_Call struct {
 }
 
 // GetRegionsByGame is a helper method to define mock.On call
-//   - ctx context.Context
+//   - _a0 context.Context
 //   - id int64
-func (_e *Querier_Expecter) GetRegionsByGame(ctx interface{}, id interface{}) *Querier_GetRegionsByGame_Call {
-	return &Querier_GetRegionsByGame_Call{Call: _e.mock.On("GetRegionsByGame", ctx, id)}
+func (_e *Querier_Expecter) GetRegionsByGame(_a0 interface{}, id interface{}) *Querier_GetRegionsByGame_Call {
+	return &Querier_GetRegionsByGame_Call{Call: _e.mock.On("GetRegionsByGame", _a0, id)}
 }
 
-func (_c *Querier_GetRegionsByGame_Call) Run(run func(ctx context.Context, id int64)) *Querier_GetRegionsByGame_Call {
+func (_c *Querier_GetRegionsByGame_Call) Run(run func(_a0 context.Context, id int64)) *Querier_GetRegionsByGame_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(int64))
 	})
@@ -424,9 +426,9 @@ func (_c *Querier_GetRegionsByGame_Call) RunAndReturn(run func(context.Context, 
 	return _c
 }
 
-// IncreaseRegionTroops provides a mock function with given fields: ctx, arg
-func (_m *Querier) IncreaseRegionTroops(ctx context.Context, arg sqlc.IncreaseRegionTroopsParams) error {
-	ret := _m.Called(ctx, arg)
+// IncreaseRegionTroops provides a mock function with given fields: _a0, arg
+func (_m *Querier) IncreaseRegionTroops(_a0 context.Context, arg sqlc.IncreaseRegionTroopsParams) error {
+	ret := _m.Called(_a0, arg)
 
 	if len(ret) == 0 {
 		panic("no return value specified for IncreaseRegionTroops")
@@ -434,7 +436,7 @@ func (_m *Querier) IncreaseRegionTroops(ctx context.Context, arg sqlc.IncreaseRe
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, sqlc.IncreaseRegionTroopsParams) error); ok {
-		r0 = rf(ctx, arg)
+		r0 = rf(_a0, arg)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -448,13 +450,13 @@ type Querier_IncreaseRegionTroops_Call struct {
 }
 
 // IncreaseRegionTroops is a helper method to define mock.On call
-//   - ctx context.Context
+//   - _a0 context.Context
 //   - arg sqlc.IncreaseRegionTroopsParams
-func (_e *Querier_Expecter) IncreaseRegionTroops(ctx interface{}, arg interface{}) *Querier_IncreaseRegionTroops_Call {
-	return &Querier_IncreaseRegionTroops_Call{Call: _e.mock.On("IncreaseRegionTroops", ctx, arg)}
+func (_e *Querier_Expecter) IncreaseRegionTroops(_a0 interface{}, arg interface{}) *Querier_IncreaseRegionTroops_Call {
+	return &Querier_IncreaseRegionTroops_Call{Call: _e.mock.On("IncreaseRegionTroops", _a0, arg)}
 }
 
-func (_c *Querier_IncreaseRegionTroops_Call) Run(run func(ctx context.Context, arg sqlc.IncreaseRegionTroopsParams)) *Querier_IncreaseRegionTroops_Call {
+func (_c *Querier_IncreaseRegionTroops_Call) Run(run func(_a0 context.Context, arg sqlc.IncreaseRegionTroopsParams)) *Querier_IncreaseRegionTroops_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(sqlc.IncreaseRegionTroopsParams))
 	})
@@ -471,9 +473,9 @@ func (_c *Querier_IncreaseRegionTroops_Call) RunAndReturn(run func(context.Conte
 	return _c
 }
 
-// InsertGame provides a mock function with given fields: ctx, deployableTroops
-func (_m *Querier) InsertGame(ctx context.Context, deployableTroops int64) (sqlc.Game, error) {
-	ret := _m.Called(ctx, deployableTroops)
+// InsertGame provides a mock function with given fields: _a0, deployableTroops
+func (_m *Querier) InsertGame(_a0 context.Context, deployableTroops int64) (sqlc.Game, error) {
+	ret := _m.Called(_a0, deployableTroops)
 
 	if len(ret) == 0 {
 		panic("no return value specified for InsertGame")
@@ -482,16 +484,16 @@ func (_m *Querier) InsertGame(ctx context.Context, deployableTroops int64) (sqlc
 	var r0 sqlc.Game
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, int64) (sqlc.Game, error)); ok {
-		return rf(ctx, deployableTroops)
+		return rf(_a0, deployableTroops)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, int64) sqlc.Game); ok {
-		r0 = rf(ctx, deployableTroops)
+		r0 = rf(_a0, deployableTroops)
 	} else {
 		r0 = ret.Get(0).(sqlc.Game)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
-		r1 = rf(ctx, deployableTroops)
+		r1 = rf(_a0, deployableTroops)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -505,13 +507,13 @@ type Querier_InsertGame_Call struct {
 }
 
 // InsertGame is a helper method to define mock.On call
-//   - ctx context.Context
+//   - _a0 context.Context
 //   - deployableTroops int64
-func (_e *Querier_Expecter) InsertGame(ctx interface{}, deployableTroops interface{}) *Querier_InsertGame_Call {
-	return &Querier_InsertGame_Call{Call: _e.mock.On("InsertGame", ctx, deployableTroops)}
+func (_e *Querier_Expecter) InsertGame(_a0 interface{}, deployableTroops interface{}) *Querier_InsertGame_Call {
+	return &Querier_InsertGame_Call{Call: _e.mock.On("InsertGame", _a0, deployableTroops)}
 }
 
-func (_c *Querier_InsertGame_Call) Run(run func(ctx context.Context, deployableTroops int64)) *Querier_InsertGame_Call {
+func (_c *Querier_InsertGame_Call) Run(run func(_a0 context.Context, deployableTroops int64)) *Querier_InsertGame_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(int64))
 	})
@@ -528,9 +530,9 @@ func (_c *Querier_InsertGame_Call) RunAndReturn(run func(context.Context, int64)
 	return _c
 }
 
-// InsertPlayers provides a mock function with given fields: ctx, arg
-func (_m *Querier) InsertPlayers(ctx context.Context, arg []sqlc.InsertPlayersParams) (int64, error) {
-	ret := _m.Called(ctx, arg)
+// InsertPlayers provides a mock function with given fields: _a0, arg
+func (_m *Querier) InsertPlayers(_a0 context.Context, arg []sqlc.InsertPlayersParams) (int64, error) {
+	ret := _m.Called(_a0, arg)
 
 	if len(ret) == 0 {
 		panic("no return value specified for InsertPlayers")
@@ -539,16 +541,16 @@ func (_m *Querier) InsertPlayers(ctx context.Context, arg []sqlc.InsertPlayersPa
 	var r0 int64
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, []sqlc.InsertPlayersParams) (int64, error)); ok {
-		return rf(ctx, arg)
+		return rf(_a0, arg)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, []sqlc.InsertPlayersParams) int64); ok {
-		r0 = rf(ctx, arg)
+		r0 = rf(_a0, arg)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, []sqlc.InsertPlayersParams) error); ok {
-		r1 = rf(ctx, arg)
+		r1 = rf(_a0, arg)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -562,13 +564,13 @@ type Querier_InsertPlayers_Call struct {
 }
 
 // InsertPlayers is a helper method to define mock.On call
-//   - ctx context.Context
+//   - _a0 context.Context
 //   - arg []sqlc.InsertPlayersParams
-func (_e *Querier_Expecter) InsertPlayers(ctx interface{}, arg interface{}) *Querier_InsertPlayers_Call {
-	return &Querier_InsertPlayers_Call{Call: _e.mock.On("InsertPlayers", ctx, arg)}
+func (_e *Querier_Expecter) InsertPlayers(_a0 interface{}, arg interface{}) *Querier_InsertPlayers_Call {
+	return &Querier_InsertPlayers_Call{Call: _e.mock.On("InsertPlayers", _a0, arg)}
 }
 
-func (_c *Querier_InsertPlayers_Call) Run(run func(ctx context.Context, arg []sqlc.InsertPlayersParams)) *Querier_InsertPlayers_Call {
+func (_c *Querier_InsertPlayers_Call) Run(run func(_a0 context.Context, arg []sqlc.InsertPlayersParams)) *Querier_InsertPlayers_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].([]sqlc.InsertPlayersParams))
 	})
@@ -585,9 +587,9 @@ func (_c *Querier_InsertPlayers_Call) RunAndReturn(run func(context.Context, []s
 	return _c
 }
 
-// InsertRegions provides a mock function with given fields: ctx, arg
-func (_m *Querier) InsertRegions(ctx context.Context, arg []sqlc.InsertRegionsParams) (int64, error) {
-	ret := _m.Called(ctx, arg)
+// InsertRegions provides a mock function with given fields: _a0, arg
+func (_m *Querier) InsertRegions(_a0 context.Context, arg []sqlc.InsertRegionsParams) (int64, error) {
+	ret := _m.Called(_a0, arg)
 
 	if len(ret) == 0 {
 		panic("no return value specified for InsertRegions")
@@ -596,16 +598,16 @@ func (_m *Querier) InsertRegions(ctx context.Context, arg []sqlc.InsertRegionsPa
 	var r0 int64
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, []sqlc.InsertRegionsParams) (int64, error)); ok {
-		return rf(ctx, arg)
+		return rf(_a0, arg)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, []sqlc.InsertRegionsParams) int64); ok {
-		r0 = rf(ctx, arg)
+		r0 = rf(_a0, arg)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, []sqlc.InsertRegionsParams) error); ok {
-		r1 = rf(ctx, arg)
+		r1 = rf(_a0, arg)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -619,13 +621,13 @@ type Querier_InsertRegions_Call struct {
 }
 
 // InsertRegions is a helper method to define mock.On call
-//   - ctx context.Context
+//   - _a0 context.Context
 //   - arg []sqlc.InsertRegionsParams
-func (_e *Querier_Expecter) InsertRegions(ctx interface{}, arg interface{}) *Querier_InsertRegions_Call {
-	return &Querier_InsertRegions_Call{Call: _e.mock.On("InsertRegions", ctx, arg)}
+func (_e *Querier_Expecter) InsertRegions(_a0 interface{}, arg interface{}) *Querier_InsertRegions_Call {
+	return &Querier_InsertRegions_Call{Call: _e.mock.On("InsertRegions", _a0, arg)}
 }
 
-func (_c *Querier_InsertRegions_Call) Run(run func(ctx context.Context, arg []sqlc.InsertRegionsParams)) *Querier_InsertRegions_Call {
+func (_c *Querier_InsertRegions_Call) Run(run func(_a0 context.Context, arg []sqlc.InsertRegionsParams)) *Querier_InsertRegions_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].([]sqlc.InsertRegionsParams))
 	})
@@ -642,9 +644,9 @@ func (_c *Querier_InsertRegions_Call) RunAndReturn(run func(context.Context, []s
 	return _c
 }
 
-// SetGamePhase provides a mock function with given fields: ctx, arg
-func (_m *Querier) SetGamePhase(ctx context.Context, arg sqlc.SetGamePhaseParams) error {
-	ret := _m.Called(ctx, arg)
+// SetGamePhase provides a mock function with given fields: _a0, arg
+func (_m *Querier) SetGamePhase(_a0 context.Context, arg sqlc.SetGamePhaseParams) error {
+	ret := _m.Called(_a0, arg)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SetGamePhase")
@@ -652,7 +654,7 @@ func (_m *Querier) SetGamePhase(ctx context.Context, arg sqlc.SetGamePhaseParams
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, sqlc.SetGamePhaseParams) error); ok {
-		r0 = rf(ctx, arg)
+		r0 = rf(_a0, arg)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -666,13 +668,13 @@ type Querier_SetGamePhase_Call struct {
 }
 
 // SetGamePhase is a helper method to define mock.On call
-//   - ctx context.Context
+//   - _a0 context.Context
 //   - arg sqlc.SetGamePhaseParams
-func (_e *Querier_Expecter) SetGamePhase(ctx interface{}, arg interface{}) *Querier_SetGamePhase_Call {
-	return &Querier_SetGamePhase_Call{Call: _e.mock.On("SetGamePhase", ctx, arg)}
+func (_e *Querier_Expecter) SetGamePhase(_a0 interface{}, arg interface{}) *Querier_SetGamePhase_Call {
+	return &Querier_SetGamePhase_Call{Call: _e.mock.On("SetGamePhase", _a0, arg)}
 }
 
-func (_c *Querier_SetGamePhase_Call) Run(run func(ctx context.Context, arg sqlc.SetGamePhaseParams)) *Querier_SetGamePhase_Call {
+func (_c *Querier_SetGamePhase_Call) Run(run func(_a0 context.Context, arg sqlc.SetGamePhaseParams)) *Querier_SetGamePhase_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(sqlc.SetGamePhaseParams))
 	})

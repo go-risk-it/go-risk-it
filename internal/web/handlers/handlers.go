@@ -1,30 +1,23 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
-	"time"
 
-	"go.uber.org/zap"
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 )
 
 func fetchStateAndBroadcast(
-	ctx context.Context,
-	gameID int64,
-	log *zap.SugaredLogger,
-	fetcher func(context.Context, int64, chan json.RawMessage),
+	ctx ctx.GameContext,
+	fetcher func(ctx.GameContext, chan json.RawMessage),
 	broadcast func(int64, json.RawMessage),
 ) {
-	childCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-
 	channel := make(chan json.RawMessage)
-	go fetcher(childCtx, gameID, channel)
+	go fetcher(ctx, channel)
 
 	select {
 	case msg := <-channel:
-		broadcast(gameID, msg)
-	case <-childCtx.Done():
-		log.Errorf("timeout while fetching state: %v", ctx.Err())
+		broadcast(ctx.GameID(), msg)
+	case <-ctx.Done():
+		ctx.Log().Errorf("timeout while fetching state: %v", ctx.Err())
 	}
 }

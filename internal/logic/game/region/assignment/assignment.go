@@ -4,7 +4,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
-	"go.uber.org/zap"
 )
 
 type RegionAssignment map[board.Region]sqlc.Player
@@ -14,12 +13,13 @@ type Service interface {
 }
 
 type ServiceImpl struct {
-	q   db.Querier
-	log *zap.SugaredLogger
+	q db.Querier
 }
 
-func NewAssignmentService(querier db.Querier, logger *zap.SugaredLogger) *ServiceImpl {
-	return &ServiceImpl{q: querier, log: logger}
+var _ Service = (*ServiceImpl)(nil)
+
+func NewAssignmentService(querier db.Querier) *ServiceImpl {
+	return &ServiceImpl{q: querier}
 }
 
 func (s *ServiceImpl) AssignRegionsToPlayers(

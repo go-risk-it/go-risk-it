@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/signals"
 	"github.com/go-risk-it/go-risk-it/internal/web/fetchers"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/connection"
@@ -15,13 +16,12 @@ func HandleGameStateChanged(
 	connectionManager connection.Manager,
 	signal signals.GameStateChangedSignal,
 ) {
-	signal.AddListener(func(ctx context.Context, data signals.GameStateChangedData) {
-		log.Infow("handling game state changed", "gameID", data.GameID)
+	signal.AddListener(func(context context.Context, data signals.GameStateChangedData) {
+		ctx := ctx.WithGameID(ctx.WithLog(context, log), data.GameID)
 
+		ctx.Log().Infow("handling game state changed")
 		fetchStateAndBroadcast(
 			ctx,
-			data.GameID,
-			log,
 			gameStateFetcher.FetchState,
 			connectionManager.Broadcast)
 	})

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/message"
+	ctx2 "github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	boardController "github.com/go-risk-it/go-risk-it/internal/web/controller"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/board"
@@ -17,7 +18,7 @@ func TestBoardControllerImpl_GetBoardState(t *testing.T) {
 	t.Parallel()
 
 	// Initialize dependencies
-	log := zap.NewExample().Sugar()
+	log := zap.NewNop().Sugar()
 	boardService := board.NewService(t)
 	regionService := region.NewService(t)
 
@@ -25,11 +26,11 @@ func TestBoardControllerImpl_GetBoardState(t *testing.T) {
 	controller := boardController.NewBoardController(log, boardService, regionService)
 
 	// Set up test data
-	ctx := context.Background()
 	gameID := int64(1)
+	ctx := ctx2.WithGameID(ctx2.WithLog(context.Background(), log), gameID)
 
 	// Set up expectations for GetRegions method
-	regionService.On("GetRegions", ctx, gameID).Return([]sqlc.GetRegionsByGameRow{
+	regionService.On("GetRegions", ctx).Return([]sqlc.GetRegionsByGameRow{
 		{ExternalReference: "alaska", UserID: "francesco", Troops: 3},
 		{ExternalReference: "northwest_territory", UserID: "gabriele", Troops: 3},
 		{ExternalReference: "greenland", UserID: "giovanni", Troops: 3},
@@ -37,7 +38,7 @@ func TestBoardControllerImpl_GetBoardState(t *testing.T) {
 	}, nil)
 
 	// Call the method under test
-	boardState, err := controller.GetBoardState(ctx, gameID)
+	boardState, err := controller.GetBoardState(ctx)
 
 	// Assert the result
 	require.NoError(t, err)

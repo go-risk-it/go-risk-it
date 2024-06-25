@@ -1,18 +1,17 @@
 package player
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
-	"go.uber.org/zap"
 )
 
 type Service interface {
 	CreatePlayers(
-		ctx context.Context,
+		ctx ctx.UserContext,
 		querier db.Querier,
 		gameID int64,
 		players []request.Player,
@@ -20,53 +19,42 @@ type Service interface {
 		[]sqlc.Player,
 		error,
 	)
-	GetPlayers(ctx context.Context, gameID int64) (
-		[]sqlc.Player,
-		error,
-	)
-	GetPlayersQ(ctx context.Context, querier db.Querier, gameID int64) (
-		[]sqlc.Player,
-		error,
-	)
+	GetPlayers(ctx ctx.GameContext) ([]sqlc.Player, error)
+	GetPlayersQ(ctx ctx.GameContext, querier db.Querier) ([]sqlc.Player, error)
 }
 
 type ServiceImpl struct {
-	log     *zap.SugaredLogger
 	querier db.Querier
 }
 
-func NewService(log *zap.SugaredLogger, querier db.Querier) *ServiceImpl {
-	return &ServiceImpl{log: log, querier: querier}
+var _ Service = (*ServiceImpl)(nil)
+
+func NewService(querier db.Querier) *ServiceImpl {
+	return &ServiceImpl{querier: querier}
 }
 
-func (s *ServiceImpl) GetPlayers(ctx context.Context, gameID int64) (
-	[]sqlc.Player,
-	error,
-) {
-	return s.GetPlayersQ(ctx, s.querier, gameID)
+func (s *ServiceImpl) GetPlayers(ctx ctx.GameContext) ([]sqlc.Player, error) {
+	return s.GetPlayersQ(ctx, s.querier)
 }
 
-func (s *ServiceImpl) GetPlayersQ(ctx context.Context, querier db.Querier, gameID int64) (
-	[]sqlc.Player,
-	error,
-) {
-	result, err := querier.GetPlayersByGame(ctx, gameID)
+func (s *ServiceImpl) GetPlayersQ(ctx ctx.GameContext, querier db.Querier) ([]sqlc.Player, error) {
+	result, err := querier.GetPlayersByGame(ctx, ctx.GameID())
 	if err != nil {
 		return result, fmt.Errorf("failed to get players: %w", err)
 	}
 
-	s.log.Infow("got players", "gameID", gameID)
+	ctx.Log().Infow("got players")
 
 	return result, nil
 }
 
 func (s *ServiceImpl) CreatePlayers(
-	ctx context.Context,
+	ctx ctx.UserContext,
 	querier db.Querier,
 	gameID int64,
 	players []request.Player,
 ) ([]sqlc.Player, error) {
-	s.log.Infow("creating players", "gameID", gameID, "players", players)
+	ctx.Log().Infow("creating players", "gameID", gameID, "players", players)
 
 	turnIndex := int64(0)
 	playersParams := make([]sqlc.InsertPlayersParams, 0, len(players))
@@ -88,7 +76,7 @@ func (s *ServiceImpl) CreatePlayers(
 		return nil, fmt.Errorf("failed to insert players: %w", err)
 	}
 
-	s.log.Infow("created players", "gameId", gameID, "players", players)
+	ctx.Log().Infow("created players", "gameId", gameID, "players", players)
 
 	result, err := querier.GetPlayersByGame(ctx, gameID)
 	if err != nil {

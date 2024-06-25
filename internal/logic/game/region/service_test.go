@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	ctx2 "github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
@@ -24,10 +25,10 @@ func TestServiceImpl_CreateRegions(t *testing.T) {
 	assignmentService := assignment.NewService(t)
 
 	// Initialize the gamestate under test
-	service := region.NewService(logger, querier, assignmentService)
+	service := region.NewService(querier, assignmentService)
 
 	// Set up test data
-	ctx := context.Background()
+	ctx := ctx2.WithUserID(ctx2.WithLog(context.Background(), logger), "francesco")
 	players := []sqlc.Player{
 		{ID: 1, GameID: 1, UserID: "francesco", TurnIndex: 0},
 		{ID: 2, GameID: 1, UserID: "gabriele", TurnIndex: 1},
@@ -78,10 +79,10 @@ func TestServiceImpl_CreateRegions_NoPlayers(t *testing.T) {
 	assignmentService := assignment.NewService(t)
 
 	// Initialize the gamestate under test
-	service := region.NewService(logger, querier, assignmentService)
+	service := region.NewService(querier, assignmentService)
 
 	// Set up test data
-	ctx := context.Background()
+	ctx := ctx2.WithUserID(ctx2.WithLog(context.Background(), logger), "francesco")
 
 	var (
 		players []sqlc.Player
@@ -107,10 +108,10 @@ func TestServiceImpl_CreateRegions_PlayersNotInSameGame(t *testing.T) {
 	assignmentService := assignment.NewService(t)
 
 	// Initialize the gamestate under test
-	service := region.NewService(logger, querier, assignmentService)
+	service := region.NewService(querier, assignmentService)
 
 	// Set up test data
-	ctx := context.Background()
+	ctx := ctx2.WithUserID(ctx2.WithLog(context.Background(), logger), "francesco")
 	players := []sqlc.Player{
 		{ID: 1, GameID: 1, UserID: "francesco", TurnIndex: 0},
 		{ID: 2, GameID: 2, UserID: "gabriele", TurnIndex: 1},
@@ -138,10 +139,10 @@ func TestServiceImpl_CreateRegions_InsertRegionsError(t *testing.T) {
 	assignmentService := assignment.NewService(t)
 
 	// Initialize the gamestate under test
-	service := region.NewService(logger, querier, assignmentService)
+	service := region.NewService(querier, assignmentService)
 
 	// Set up test data
-	ctx := context.Background()
+	ctx := ctx2.WithUserID(ctx2.WithLog(context.Background(), logger), "francesco")
 	players := []sqlc.Player{
 		{ID: 1, GameID: 1, UserID: "francesco", TurnIndex: 0},
 		{ID: 2, GameID: 1, UserID: "gabriele", TurnIndex: 1},

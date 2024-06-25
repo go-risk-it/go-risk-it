@@ -1,11 +1,11 @@
 package controller
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/message"
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
@@ -13,8 +13,8 @@ import (
 )
 
 type GameController interface {
-	CreateGame(ctx context.Context, request request.CreateGame) (int64, error)
-	GetGameState(ctx context.Context, gameID int64) (message.GameState, error)
+	CreateGame(ctx ctx.UserContext, request request.CreateGame) (int64, error)
+	GetGameState(ctx ctx.GameContext) (message.GameState, error)
 }
 
 type GameControllerImpl struct {
@@ -39,7 +39,7 @@ func NewGameController(
 }
 
 func (c *GameControllerImpl) CreateGame(
-	ctx context.Context, request request.CreateGame,
+	ctx ctx.UserContext, request request.CreateGame,
 ) (int64, error) {
 	gameBoard, err := c.boardService.GetBoard()
 	if err != nil {
@@ -54,11 +54,10 @@ func (c *GameControllerImpl) CreateGame(
 	return gameID, nil
 }
 
-func (c *GameControllerImpl) GetGameState(
-	ctx context.Context,
-	gameID int64,
-) (message.GameState, error) {
-	gameState, err := c.gameService.GetGameState(ctx, gameID)
+func (c *GameControllerImpl) GetGameState(ctx ctx.GameContext) (message.GameState, error) {
+	ctx.Log().Infow("fetching game state")
+
+	gameState, err := c.gameService.GetGameState(ctx, ctx.GameID())
 	if err != nil {
 		return message.GameState{}, fmt.Errorf("failed to get game state: %w", err)
 	}

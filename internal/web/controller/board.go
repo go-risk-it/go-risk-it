@@ -1,10 +1,10 @@
 package controller
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/message"
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
@@ -12,7 +12,7 @@ import (
 )
 
 type BoardController interface {
-	GetBoardState(ctx context.Context, gameID int64) (message.BoardState, error)
+	GetBoardState(ctx ctx.GameContext) (message.BoardState, error)
 }
 
 type BoardControllerImpl struct {
@@ -29,12 +29,10 @@ func NewBoardController(
 	return &BoardControllerImpl{log: log, boardService: boardService, regionService: regionService}
 }
 
-func (c *BoardControllerImpl) GetBoardState(
-	ctx context.Context, gameID int64,
-) (message.BoardState, error) {
-	c.log.Infow("getting board state", "gameID", gameID)
+func (c *BoardControllerImpl) GetBoardState(ctx ctx.GameContext) (message.BoardState, error) {
+	c.log.Infow("getting board state")
 
-	regions, err := c.regionService.GetRegions(ctx, gameID)
+	regions, err := c.regionService.GetRegions(ctx)
 	if err != nil {
 		return message.BoardState{}, fmt.Errorf("unable to get regions: %w", err)
 	}

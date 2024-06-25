@@ -17,6 +17,8 @@ type ServiceImpl struct {
 	boardCache *Board
 }
 
+var _ Service = (*ServiceImpl)(nil)
+
 func NewService(logger *zap.SugaredLogger) *ServiceImpl {
 	return &ServiceImpl{log: logger, boardCache: nil}
 }

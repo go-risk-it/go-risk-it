@@ -3,10 +3,8 @@
 package controller
 
 import (
-	context "context"
-
 	message "github.com/go-risk-it/go-risk-it/internal/api/game/message"
-
+	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -23,9 +21,9 @@ func (_m *BoardController) EXPECT() *BoardController_Expecter {
 	return &BoardController_Expecter{mock: &_m.Mock}
 }
 
-// GetBoardState provides a mock function with given fields: ctx, gameID
-func (_m *BoardController) GetBoardState(ctx context.Context, gameID int64) (message.BoardState, error) {
-	ret := _m.Called(ctx, gameID)
+// GetBoardState provides a mock function with given fields: _a0
+func (_m *BoardController) GetBoardState(_a0 ctx.GameContext) (message.BoardState, error) {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetBoardState")
@@ -33,17 +31,17 @@ func (_m *BoardController) GetBoardState(ctx context.Context, gameID int64) (mes
 
 	var r0 message.BoardState
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) (message.BoardState, error)); ok {
-		return rf(ctx, gameID)
+	if rf, ok := ret.Get(0).(func(ctx.GameContext) (message.BoardState, error)); ok {
+		return rf(_a0)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64) message.BoardState); ok {
-		r0 = rf(ctx, gameID)
+	if rf, ok := ret.Get(0).(func(ctx.GameContext) message.BoardState); ok {
+		r0 = rf(_a0)
 	} else {
 		r0 = ret.Get(0).(message.BoardState)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
-		r1 = rf(ctx, gameID)
+	if rf, ok := ret.Get(1).(func(ctx.GameContext) error); ok {
+		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -57,15 +55,14 @@ type BoardController_GetBoardState_Call struct {
 }
 
 // GetBoardState is a helper method to define mock.On call
-//   - ctx context.Context
-//   - gameID int64
-func (_e *BoardController_Expecter) GetBoardState(ctx interface{}, gameID interface{}) *BoardController_GetBoardState_Call {
-	return &BoardController_GetBoardState_Call{Call: _e.mock.On("GetBoardState", ctx, gameID)}
+//   - _a0 ctx.GameContext
+func (_e *BoardController_Expecter) GetBoardState(_a0 interface{}) *BoardController_GetBoardState_Call {
+	return &BoardController_GetBoardState_Call{Call: _e.mock.On("GetBoardState", _a0)}
 }
 
-func (_c *BoardController_GetBoardState_Call) Run(run func(ctx context.Context, gameID int64)) *BoardController_GetBoardState_Call {
+func (_c *BoardController_GetBoardState_Call) Run(run func(_a0 ctx.GameContext)) *BoardController_GetBoardState_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(int64))
+		run(args[0].(ctx.GameContext))
 	})
 	return _c
 }
@@ -75,7 +72,7 @@ func (_c *BoardController_GetBoardState_Call) Return(_a0 message.BoardState, _a1
 	return _c
 }
 
-func (_c *BoardController_GetBoardState_Call) RunAndReturn(run func(context.Context, int64) (message.BoardState, error)) *BoardController_GetBoardState_Call {
+func (_c *BoardController_GetBoardState_Call) RunAndReturn(run func(ctx.GameContext) (message.BoardState, error)) *BoardController_GetBoardState_Call {
 	_c.Call.Return(run)
 	return _c
 }

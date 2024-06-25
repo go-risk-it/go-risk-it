@@ -1,8 +1,7 @@
 package db
 
 import (
-	"context"
-
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/pool"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/jackc/pgx/v5"
@@ -12,10 +11,10 @@ import (
 type Querier interface {
 	sqlc.Querier
 	ExecuteInTransaction(
-		ctx context.Context,
+		ctx ctx.LogContext,
 		txFunc func(Querier) (interface{}, error)) (interface{}, error)
 	ExecuteInTransactionWithIsolation(
-		ctx context.Context,
+		ctx ctx.LogContext,
 		isolationLevel pgx.TxIsoLevel,
 		txFunc func(Querier) (interface{}, error),
 	) (interface{}, error)

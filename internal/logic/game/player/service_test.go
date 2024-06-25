@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
+	ctx2 "github.com/go-risk-it/go-risk-it/internal/ctx"
 	sqlc "github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
@@ -26,11 +27,11 @@ func TestServiceImpl_GetPlayersByGame(t *testing.T) {
 	querier := db.NewQuerier(t)
 
 	// Initialize the gamestate under test
-	service := player.NewService(logger, querier)
+	service := player.NewService(querier)
 
 	// Set up test data
-	ctx := context.Background()
 	gameID := int64(1)
+	ctx := ctx2.WithGameID(ctx2.WithLog(context.Background(), logger), gameID)
 
 	player1 := sqlc.Player{
 		ID:        1,
@@ -56,7 +57,7 @@ func TestServiceImpl_GetPlayersByGame(t *testing.T) {
 	}, nil)
 
 	// Call the method under test
-	result, err := service.GetPlayers(ctx, gameID)
+	result, err := service.GetPlayers(ctx)
 
 	// Assert the result
 	require.NoError(t, err)
@@ -76,17 +77,17 @@ func TestServiceImpl_GetPlayersByGame_WithError(t *testing.T) {
 	querier := db.NewQuerier(t)
 
 	// Initialize the gamestate under test
-	service := player.NewService(logger, querier)
+	service := player.NewService(querier)
 
 	// Set up test data
-	ctx := context.Background()
 	gameID := int64(1)
+	ctx := ctx2.WithGameID(ctx2.WithLog(context.Background(), logger), gameID)
 
 	// Set up expectations for GetGame method
 	querier.On("GetPlayersByGame", ctx, gameID).Return(nil, errGetPlayersByGame)
 
 	// Call the method under test
-	result, err := service.GetPlayers(ctx, gameID)
+	result, err := service.GetPlayers(ctx)
 
 	// Assert the result
 	require.Error(t, err)
@@ -101,11 +102,14 @@ func TestServiceImpl_CreatePlayers_WithValidData(t *testing.T) {
 	querier := db.NewQuerier(t)
 
 	// Initialize the gamestate under test
-	service := player.NewService(logger, querier)
+	service := player.NewService(querier)
 
 	// Set up test data
-	ctx := context.Background()
 	gameID := int64(1)
+	ctx := ctx2.WithUserID(
+		ctx2.WithLog(context.Background(), logger),
+		"5a4fde41-4a68-4625-b42b-a9f5f938b394",
+	)
 	users := []request.Player{
 		{UserID: "5a4fde41-4a68-4625-b42b-a9f5f938b394", Name: "francesco"},
 		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "gabriele"},
@@ -180,11 +184,14 @@ func TestServiceImpl_CreatePlayers_InsertPlayersError(t *testing.T) {
 	querier := db.NewQuerier(t)
 
 	// Initialize the gamestate under test
-	service := player.NewService(logger, querier)
+	service := player.NewService(querier)
 
 	// Set up test data
-	ctx := context.Background()
 	gameID := int64(1)
+	ctx := ctx2.WithUserID(
+		ctx2.WithLog(context.Background(), logger),
+		"5a4fde41-4a68-4625-b42b-a9f5f938b394",
+	)
 	users := []request.Player{
 		{UserID: "5a4fde41-4a68-4625-b42b-a9f5f938b394", Name: "francesco"},
 		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "gabriele"},
@@ -232,11 +239,14 @@ func TestServiceImpl_CreatePlayers_GetPlayersByGameError(t *testing.T) {
 	querier := db.NewQuerier(t)
 
 	// Initialize the gamestate under test
-	service := player.NewService(logger, querier)
+	service := player.NewService(querier)
 
 	// Set up test data
-	ctx := context.Background()
 	gameID := int64(1)
+	ctx := ctx2.WithUserID(
+		ctx2.WithLog(context.Background(), logger),
+		"5a4fde41-4a68-4625-b42b-a9f5f938b394",
+	)
 	users := []request.Player{
 		{UserID: "5a4fde41-4a68-4625-b42b-a9f5f938b394", Name: "francesco"},
 		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "gabriele"},

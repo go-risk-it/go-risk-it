@@ -1,38 +1,35 @@
 package fetchers
 
 import (
-	"context"
 	"encoding/json"
 
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 	"go.uber.org/fx"
-	"go.uber.org/zap"
 )
 
 type Fetcher interface {
-	FetchState(ctx context.Context, gameID int64, stateChannel chan json.RawMessage)
+	FetchState(ctx ctx.GameContext, stateChannel chan json.RawMessage)
 }
 
 func FetchState[T any](
-	ctx context.Context,
-	log *zap.SugaredLogger,
-	gameID int64,
+	ctx ctx.GameContext,
 	messageType message.Type,
-	fetcherFunc func(context.Context, int64) (T, error),
+	fetcherFunc func(ctx.GameContext) (T, error),
 	stateChannel chan json.RawMessage,
 ) {
-	log.Infow("fetching state", "gameID", gameID, "messageType", messageType)
+	ctx.Log().Infow("fetching state", "messageType", messageType)
 
-	state, err := fetcherFunc(ctx, gameID)
+	state, err := fetcherFunc(ctx)
 	if err != nil {
-		log.Errorf("unable to fetch state: %v", err)
+		ctx.Log().Errorf("unable to fetch state: %v", err)
 	}
 
-	log.Debugw("got state", "gameID", gameID)
+	ctx.Log().Debugw("got state")
 
 	rawResponse, err := message.BuildMessage(messageType, state)
 	if err != nil {
-		log.Errorf("unable to build message: %v", err)
+		ctx.Log().Errorf("unable to build message: %v", err)
 	}
 
 	stateChannel <- rawResponse

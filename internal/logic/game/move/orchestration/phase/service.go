@@ -62,7 +62,7 @@ func (s *ServiceImpl) AdvanceQ(ctx ctx.MoveContext, querier db.Querier) error {
 		return fmt.Errorf("failed to get game state: %w", err)
 	}
 
-	ctx.Log().Infow("Walking to target phase", "from", gameState.Phase)
+	ctx.Log().Infow("walking to target phase", "from", gameState.Phase)
 
 	targetPhase := s.walkToTargetPhase(ctx, querier, gameState)
 	if targetPhase == gameState.Phase {
@@ -70,7 +70,7 @@ func (s *ServiceImpl) AdvanceQ(ctx ctx.MoveContext, querier db.Querier) error {
 	}
 
 	ctx.Log().Infow(
-		"Advancing phase",
+		"advancing phase",
 		"from",
 		gameState.Phase,
 		"to",

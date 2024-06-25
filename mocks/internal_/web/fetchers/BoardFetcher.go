@@ -3,7 +3,7 @@
 package fetchers
 
 import (
-	context "context"
+	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
 
 	json "encoding/json"
 
@@ -23,9 +23,9 @@ func (_m *BoardFetcher) EXPECT() *BoardFetcher_Expecter {
 	return &BoardFetcher_Expecter{mock: &_m.Mock}
 }
 
-// FetchState provides a mock function with given fields: ctx, gameID, stateChannel
-func (_m *BoardFetcher) FetchState(ctx context.Context, gameID int64, stateChannel chan json.RawMessage) {
-	_m.Called(ctx, gameID, stateChannel)
+// FetchState provides a mock function with given fields: _a0, stateChannel
+func (_m *BoardFetcher) FetchState(_a0 ctx.GameContext, stateChannel chan json.RawMessage) {
+	_m.Called(_a0, stateChannel)
 }
 
 // BoardFetcher_FetchState_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FetchState'
@@ -34,16 +34,15 @@ type BoardFetcher_FetchState_Call struct {
 }
 
 // FetchState is a helper method to define mock.On call
-//   - ctx context.Context
-//   - gameID int64
+//   - _a0 ctx.GameContext
 //   - stateChannel chan json.RawMessage
-func (_e *BoardFetcher_Expecter) FetchState(ctx interface{}, gameID interface{}, stateChannel interface{}) *BoardFetcher_FetchState_Call {
-	return &BoardFetcher_FetchState_Call{Call: _e.mock.On("FetchState", ctx, gameID, stateChannel)}
+func (_e *BoardFetcher_Expecter) FetchState(_a0 interface{}, stateChannel interface{}) *BoardFetcher_FetchState_Call {
+	return &BoardFetcher_FetchState_Call{Call: _e.mock.On("FetchState", _a0, stateChannel)}
 }
 
-func (_c *BoardFetcher_FetchState_Call) Run(run func(ctx context.Context, gameID int64, stateChannel chan json.RawMessage)) *BoardFetcher_FetchState_Call {
+func (_c *BoardFetcher_FetchState_Call) Run(run func(_a0 ctx.GameContext, stateChannel chan json.RawMessage)) *BoardFetcher_FetchState_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(int64), args[2].(chan json.RawMessage))
+		run(args[0].(ctx.GameContext), args[1].(chan json.RawMessage))
 	})
 	return _c
 }
@@ -53,7 +52,7 @@ func (_c *BoardFetcher_FetchState_Call) Return() *BoardFetcher_FetchState_Call {
 	return _c
 }
 
-func (_c *BoardFetcher_FetchState_Call) RunAndReturn(run func(context.Context, int64, chan json.RawMessage)) *BoardFetcher_FetchState_Call {
+func (_c *BoardFetcher_FetchState_Call) RunAndReturn(run func(ctx.GameContext, chan json.RawMessage)) *BoardFetcher_FetchState_Call {
 	_c.Call.Return(run)
 	return _c
 }

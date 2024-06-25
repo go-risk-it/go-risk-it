@@ -1,17 +1,17 @@
 package controller
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/message"
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"go.uber.org/zap"
 )
 
 type PlayerController interface {
-	GetPlayerState(ctx context.Context, gameID int64) (message.PlayersState, error)
+	GetPlayerState(ctx ctx.GameContext) (message.PlayersState, error)
 }
 
 type PlayerControllerImpl struct {
@@ -29,10 +29,10 @@ func NewPlayerController(
 	}
 }
 
-func (c *PlayerControllerImpl) GetPlayerState(
-	ctx context.Context, gameID int64,
-) (message.PlayersState, error) {
-	players, err := c.playerService.GetPlayers(ctx, gameID)
+func (c *PlayerControllerImpl) GetPlayerState(ctx ctx.GameContext) (message.PlayersState, error) {
+	c.log.Infow("fetching players")
+
+	players, err := c.playerService.GetPlayers(ctx)
 	if err != nil {
 		return message.PlayersState{}, fmt.Errorf("unable to get players: %w", err)
 	}

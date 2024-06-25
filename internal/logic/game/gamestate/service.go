@@ -1,33 +1,32 @@
 package gamestate
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
-	"go.uber.org/zap"
 )
 
 type Service interface {
 	CreateGameWithTx(
-		ctx context.Context,
+		ctx ctx.UserContext,
 		board *board.Board,
 		players []request.Player,
 	) (int64, error)
 	CreateGameQ(
-		ctx context.Context,
+		ctx ctx.UserContext,
 		querier db.Querier,
 		board *board.Board,
 		players []request.Player) (int64, error)
-	GetGameState(ctx context.Context, gameID int64) (*sqlc.Game, error)
-	GetGameStateQ(ctx context.Context, querier db.Querier, gameID int64) (*sqlc.Game, error)
+	GetGameState(ctx ctx.LogContext, gameID int64) (*sqlc.Game, error)
+	GetGameStateQ(ctx ctx.LogContext, querier db.Querier, gameID int64) (*sqlc.Game, error)
 	DecreaseDeployableTroopsQ(
-		ctx context.Context,
+		ctx ctx.UserContext,
 		querier db.Querier,
 		game *sqlc.Game,
 		troops int64,
@@ -35,20 +34,19 @@ type Service interface {
 }
 
 type ServiceImpl struct {
-	log           *zap.SugaredLogger
 	querier       db.Querier
 	playerService player.Service
 	regionService region.Service
 }
 
+var _ Service = (*ServiceImpl)(nil)
+
 func NewService(
-	logger *zap.SugaredLogger,
 	querier db.Querier,
 	playerService player.Service,
 	regionService region.Service,
 ) *ServiceImpl {
 	return &ServiceImpl{
-		log:           logger,
 		querier:       querier,
 		playerService: playerService,
 		regionService: regionService,
@@ -56,7 +54,7 @@ func NewService(
 }
 
 func (s *ServiceImpl) CreateGameWithTx(
-	ctx context.Context,
+	ctx ctx.UserContext,
 	board *board.Board,
 	players []request.Player,
 ) (int64, error) {
@@ -76,19 +74,19 @@ func (s *ServiceImpl) CreateGameWithTx(
 }
 
 func (s *ServiceImpl) CreateGameQ(
-	ctx context.Context,
+	ctx ctx.UserContext,
 	querier db.Querier,
 	board *board.Board,
 	players []request.Player,
 ) (int64, error) {
-	s.log.Debugw("creating game", "board", board, "players", players)
+	ctx.Log().Debugw("creating game", "board", board, "players", players)
 
 	game, err := querier.InsertGame(ctx, 3)
 	if err != nil {
 		return -1, fmt.Errorf("failed to insert game: %w", err)
 	}
 
-	s.log.Debugw("inserted game", "id", game)
+	ctx.Log().Debugw("inserted game", "id", game)
 
 	createdPlayers, err := s.playerService.CreatePlayers(ctx, querier, game.ID, players)
 	if err != nil {
@@ -100,20 +98,20 @@ func (s *ServiceImpl) CreateGameQ(
 		return -1, fmt.Errorf("failed to create regions: %w", err)
 	}
 
-	s.log.Debugw("successfully created game", "board", board, "players", players)
+	ctx.Log().Debugw("successfully created game", "board", board, "players", players)
 
 	return game.ID, nil
 }
 
 func (s *ServiceImpl) GetGameState(
-	ctx context.Context,
+	ctx ctx.LogContext,
 	gameID int64,
 ) (*sqlc.Game, error) {
 	return s.GetGameStateQ(ctx, s.querier, gameID)
 }
 
 func (s *ServiceImpl) GetGameStateQ(
-	ctx context.Context,
+	ctx ctx.LogContext,
 	querier db.Querier,
 	gameID int64,
 ) (*sqlc.Game, error) {
@@ -126,12 +124,12 @@ func (s *ServiceImpl) GetGameStateQ(
 }
 
 func (s *ServiceImpl) DecreaseDeployableTroopsQ(
-	ctx context.Context,
+	ctx ctx.UserContext,
 	querier db.Querier,
 	game *sqlc.Game,
 	troops int64,
 ) error {
-	s.log.Infow("decreasing deployable troops", "gameID", game.ID, "troops", troops)
+	ctx.Log().Infow("decreasing deployable troops", "gameID", game.ID, "troops", troops)
 
 	if game.DeployableTroops < troops {
 		return fmt.Errorf("player does not have enough troops to deploy")
@@ -145,7 +143,7 @@ func (s *ServiceImpl) DecreaseDeployableTroopsQ(
 		return fmt.Errorf("failed to decrease deployable troops: %w", err)
 	}
 
-	s.log.Infow("decreased deployable troops", "gameID", game.ID, "troops", troops)
+	ctx.Log().Infow("decreased deployable troops", "gameID", game.ID, "troops", troops)
 
 	return nil
 }

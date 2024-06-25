@@ -31,7 +31,6 @@ func setup(t *testing.T) (
 	phaseService := phase.NewService(t)
 	validationService := validation.NewService(t)
 	service := orchestration.NewService(
-		zap.NewNop().Sugar(),
 		querier,
 		phaseService,
 		gameService,

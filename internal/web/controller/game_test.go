@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/message"
+	ctx2 "github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	gameController "github.com/go-risk-it/go-risk-it/internal/web/controller"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/board"
@@ -27,7 +28,7 @@ func TestGameControllerImpl_GetGameState(t *testing.T) {
 	controller := gameController.NewGameController(log, gameService, boardService, playerService)
 
 	// Set up test data
-	ctx := context.Background()
+	ctx := ctx2.WithGameID(ctx2.WithLog(context.Background(), log), 1)
 	gameID := int64(1)
 
 	// Set up expectations for GetGameState method
@@ -38,7 +39,7 @@ func TestGameControllerImpl_GetGameState(t *testing.T) {
 	}, nil)
 
 	// Call the method under test
-	gameState, err := controller.GetGameState(ctx, gameID)
+	gameState, err := controller.GetGameState(ctx)
 
 	// Assert the result
 	require.NoError(t, err)

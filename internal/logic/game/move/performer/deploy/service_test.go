@@ -121,7 +121,7 @@ func TestServiceImpl_DeployShouldFail(t *testing.T) {
 			}
 			regionService.
 				EXPECT().
-				GetRegionQ(ctx, querier, ctx.GameID(), regionReference).
+				GetRegionQ(ctx, querier, regionReference).
 				Return(&sqlc.GetRegionsByGameRow{
 					ID:                1,
 					ExternalReference: "greenland",
@@ -178,7 +178,7 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 			}
 			regionService.
 				EXPECT().
-				GetRegionQ(ctx, querier, ctx.GameID(), regionReference).
+				GetRegionQ(ctx, querier, regionReference).
 				Return(&sqlc.GetRegionsByGameRow{
 					ID:                1,
 					ExternalReference: "greenland",

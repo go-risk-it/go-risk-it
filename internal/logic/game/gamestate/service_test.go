@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/gamestate"
@@ -30,7 +31,10 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 		{UserID: "fc497971-de4d-49c2-842a-4af62ec9e858", Name: "Giovanni"},
 		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "Gabriele"},
 	}
-	ctx := context.Background()
+	context := ctx.WithUserID(
+		ctx.WithLog(context.Background(), zap.NewExample().Sugar()),
+		"dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
+	)
 
 	mockQuerier := db.NewQuerier(t)
 
@@ -53,7 +57,7 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 	}
 
 	// setup mocks
-	mockQuerier.EXPECT().InsertGame(ctx, int64(3)).Return(sqlc.Game{
+	mockQuerier.EXPECT().InsertGame(context, int64(3)).Return(sqlc.Game{
 		ID:               gameID,
 		Turn:             1,
 		Phase:            sqlc.PhaseDEPLOY,
@@ -64,24 +68,23 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 	playerServiceMock := player.NewService(t)
 	playerServiceMock.
 		EXPECT().
-		CreatePlayers(ctx, mockQuerier, gameID, users).
+		CreatePlayers(context, mockQuerier, gameID, users).
 		Return(players, nil)
 
 	regionServiceMock := region.NewService(t)
 	regionServiceMock.
 		EXPECT().
-		CreateRegions(ctx, mockQuerier, players, regions).
+		CreateRegions(context, mockQuerier, players, regions).
 		Return(nil)
 
 	// Initialize the gamestate
 	service := gamestate.NewService(
-		zap.NewExample().Sugar(),
 		mockQuerier,
 		playerServiceMock,
 		regionServiceMock,
 	)
 
-	gameID, err := service.CreateGameQ(ctx, mockQuerier, gameBoard, users)
+	gameID, err := service.CreateGameQ(context, mockQuerier, gameBoard, users)
 
 	require.NoError(t, err)
 	require.Equal(t, int64(1), gameID)
@@ -98,10 +101,13 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 	querier := db.NewQuerier(t)
 
 	// Initialize the gamestate under test
-	service := gamestate.NewService(logger, querier, playerService, regionService)
+	service := gamestate.NewService(querier, playerService, regionService)
 
 	// Set up test data
-	ctx := context.Background()
+	ctx := ctx.WithUserID(
+		ctx.WithLog(context.Background(), logger),
+		"dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
+	)
 	gameBoard := &board.Board{} //nolint:exhaustivestruct
 	users := []request.Player{
 		{UserID: "fc497971-de4d-49c2-842a-4af62ec9e858", Name: "user1"},
@@ -134,10 +140,13 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 	regionService := region.NewService(t)
 
 	// Initialize the gamestate under test
-	service := gamestate.NewService(logger, querier, playerService, regionService)
+	service := gamestate.NewService(querier, playerService, regionService)
 
 	// Set up test data
-	ctx := context.Background()
+	ctx := ctx.WithUserID(
+		ctx.WithLog(context.Background(), logger),
+		"dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
+	)
 	gameBoard := &board.Board{}
 	users := []request.Player{
 		{UserID: "fc497971-de4d-49c2-842a-4af62ec9e858", Name: "user1"},
@@ -176,10 +185,10 @@ func TestServiceImpl_GetGameState(t *testing.T) {
 	regionService := region.NewService(t)
 
 	// Initialize the gamestate under test
-	service := gamestate.NewService(logger, querier, playerService, regionService)
+	service := gamestate.NewService(querier, playerService, regionService)
 
 	// Set up test data
-	ctx := context.Background()
+	ctx := ctx.WithLog(context.Background(), logger)
 	gameID := int64(1)
 
 	// Set up expectations for GetGame method

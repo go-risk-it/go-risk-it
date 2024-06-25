@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/pool"
 	"github.com/jackc/pgx/v5"
@@ -15,14 +16,14 @@ import (
 func TestQueries_ExecuteInTransaction_ShouldRollbackIfPanic(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	logContext := ctx.WithLog(context.Background(), zap.NewNop().Sugar())
 	mockDB := pool.NewDB(t)
 	mockTransaction := pool.NewTransaction(t)
 
 	mockDB.EXPECT().
-		BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted}).
+		BeginTx(logContext, pgx.TxOptions{IsoLevel: pgx.ReadCommitted}).
 		Return(mockTransaction, nil)
-	mockTransaction.EXPECT().Rollback(ctx).Return(nil)
+	mockTransaction.EXPECT().Rollback(logContext).Return(nil)
 
 	querier := db.New(mockDB, zap.NewNop().Sugar())
 
@@ -32,9 +33,12 @@ func TestQueries_ExecuteInTransaction_ShouldRollbackIfPanic(t *testing.T) {
 		}
 	}()
 
-	_, err := querier.ExecuteInTransaction(ctx, func(querier db.Querier) (interface{}, error) {
-		panic("test")
-	})
+	_, err := querier.ExecuteInTransaction(
+		logContext,
+		func(querier db.Querier) (interface{}, error) {
+			panic("test")
+		},
+	)
 	require.Error(t, err)
 
 	mockDB.AssertExpectations(t)
@@ -44,7 +48,7 @@ func TestQueries_ExecuteInTransaction_ShouldRollbackIfPanic(t *testing.T) {
 func TestQueries_ExecuteInTransaction_ShouldRollbackIfErr(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx := ctx.WithLog(context.Background(), zap.NewNop().Sugar())
 	mockDB := pool.NewDB(t)
 	mockTransaction := pool.NewTransaction(t)
 
@@ -67,7 +71,7 @@ func TestQueries_ExecuteInTransaction_ShouldRollbackIfErr(t *testing.T) {
 func TestQueries_ExecuteInTransaction_ShouldCommitIfNoErr(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx := ctx.WithLog(context.Background(), zap.NewNop().Sugar())
 	mockDB := pool.NewDB(t)
 	mockTransaction := pool.NewTransaction(t)
 

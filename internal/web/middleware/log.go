@@ -28,7 +28,7 @@ func (m *LogMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 	return route.NewRoute(
 		routeToWrap.Pattern(),
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-			m.log.Debug("Applying log middleware")
+			m.log.Debug("applying log middleware")
 
 			routeToWrap.ServeHTTP(
 				writer,

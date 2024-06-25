@@ -1,13 +1,12 @@
 package fetchers
 
 import (
-	"context"
 	"encoding/json"
 
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 	"go.uber.org/fx"
-	"go.uber.org/zap"
 )
 
 type GameFetcher interface {
@@ -15,7 +14,6 @@ type GameFetcher interface {
 }
 
 type GameFetcherImpl struct {
-	log            *zap.SugaredLogger
 	gameController controller.GameController
 }
 
@@ -27,11 +25,9 @@ type GameFetcherResult struct {
 }
 
 func NewGameFetcher(
-	log *zap.SugaredLogger,
 	gameController controller.GameController,
 ) GameFetcherResult {
 	res := &GameFetcherImpl{
-		log:            log,
 		gameController: gameController,
 	}
 
@@ -41,17 +37,11 @@ func NewGameFetcher(
 	}
 }
 
-func (f *GameFetcherImpl) FetchState(
-	ctx context.Context,
-	gameID int64,
-	messageChannel chan json.RawMessage,
-) {
+func (f *GameFetcherImpl) FetchState(context ctx.GameContext, stateChannel chan json.RawMessage) {
 	FetchState(
-		ctx,
-		f.log,
-		gameID,
+		context,
 		message.GameState,
 		f.gameController.GetGameState,
-		messageChannel,
+		stateChannel,
 	)
 }
