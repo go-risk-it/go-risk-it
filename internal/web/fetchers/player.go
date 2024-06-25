@@ -16,6 +16,8 @@ type PlayerFetcherImpl struct {
 	playerController controller.PlayerController
 }
 
+var _ PlayerFetcher = (*PlayerFetcherImpl)(nil)
+
 type PlayerFetcherResult struct {
 	fx.Out
 

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/signals"
 	"github.com/go-risk-it/go-risk-it/internal/web/fetchers"
 	"github.com/lesismal/nbio/nbhttp/websocket"
@@ -12,9 +13,9 @@ import (
 )
 
 type Manager interface {
-	ConnectPlayer(connection *websocket.Conn, gameID int64)
+	ConnectPlayer(ctx ctx.GameContext, connection *websocket.Conn)
+	Broadcast(ctx ctx.GameContext, message json.RawMessage)
 	DisconnectPlayer(connection *websocket.Conn, gameID int64)
-	Broadcast(gameID int64, message json.RawMessage)
 }
 
 type ManagerImpl struct {
@@ -23,6 +24,8 @@ type ManagerImpl struct {
 	fetchers              []fetchers.Fetcher
 	playerConnectedSignal signals.PlayerConnectedSignal
 }
+
+var _ Manager = (*ManagerImpl)(nil)
 
 func NewManager(
 	fetchers []fetchers.Fetcher,
@@ -37,30 +40,26 @@ func NewManager(
 	}
 }
 
-func (m *ManagerImpl) Broadcast(gameID int64, message json.RawMessage) {
-	gameConnections, ok := m.gameConnections[gameID]
+func (m *ManagerImpl) Broadcast(ctx ctx.GameContext, message json.RawMessage) {
+	gameConnections, ok := m.gameConnections[ctx.GameID()]
 	if !ok {
-		m.log.Errorw("no connections for given game", "gameId", gameID)
+		ctx.Log().Errorw("no connections for given game")
 
 		return
 	}
 
 	if len(gameConnections) == 0 {
-		m.log.Warnw("no connections for given game", "gameId", gameID)
+		ctx.Log().Warnw("no connections for given game")
 
 		return
 	}
 
-	m.log.Infof(
-		"broadcasting message to %d players for game %d",
-		len(gameConnections),
-		gameID,
-	)
+	ctx.Log().Infof("broadcasting message to %d players", len(gameConnections))
 
 	for i := range gameConnections {
 		err := gameConnections[i].WriteMessage(websocket.TextMessage, message)
 		if err != nil {
-			m.log.Errorw("unable to write message", "error", err)
+			ctx.Log().Errorw("unable to write message", "error", err)
 		}
 	}
 }
@@ -109,19 +108,18 @@ func findIndexToRemove(
 	return -1, fmt.Errorf("unable to find index to remove")
 }
 
-func (m *ManagerImpl) ConnectPlayer(connection *websocket.Conn, gameID int64) {
-	m.log.Infow(
+func (m *ManagerImpl) ConnectPlayer(ctx ctx.GameContext, connection *websocket.Conn) {
+	ctx.Log().Infow(
 		"Connecting player",
-		"remoteAddress", connection.RemoteAddr().String(),
-		"gameID", gameID)
+		"remoteAddress", connection.RemoteAddr().String())
 
-	m.gameConnections[gameID] = append(m.gameConnections[gameID], connection)
+	m.gameConnections[ctx.GameID()] = append(m.gameConnections[ctx.GameID()], connection)
 
 	m.playerConnectedSignal.Emit(context.Background(), signals.PlayerConnectedData{
 		Connection: connection,
-		GameID:     gameID,
+		GameID:     ctx.GameID(),
 	})
-	m.log.Infow("Connected player", "currentConnections", len(m.gameConnections[gameID]))
+	ctx.Log().Infow("Connected player", "currentConnections", len(m.gameConnections[ctx.GameID()]))
 }
 
 func removeIndex[T any](s []T, index int) []T {

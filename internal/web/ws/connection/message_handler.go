@@ -1,9 +1,11 @@
 package connection
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
+	ctx2 "github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 	"github.com/lesismal/nbio/nbhttp/websocket"
 	"go.uber.org/zap"
@@ -60,7 +62,8 @@ func (m *HandlerImpl) handleMessage(
 	requestMessage message.Message,
 	connection *websocket.Conn,
 ) error {
-	m.log.Infow("Received message", "requestMessage", requestMessage)
+	ctx := ctx2.WithLog(context.Background(), m.log)
+	ctx.Log().Infow("Received message", "requestMessage", requestMessage)
 
 	switch requestMessage.Type {
 	case message.Subscribe:
@@ -71,7 +74,9 @@ func (m *HandlerImpl) handleMessage(
 			return fmt.Errorf("unable to unmarshal json: %w", err)
 		}
 
-		m.connectionManager.ConnectPlayer(connection, joinGamePayload.GameID)
+		gameContext := ctx2.WithGameID(ctx, joinGamePayload.GameID)
+
+		m.connectionManager.ConnectPlayer(gameContext, connection)
 
 		return nil
 	default:

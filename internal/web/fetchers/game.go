@@ -17,6 +17,8 @@ type GameFetcherImpl struct {
 	gameController controller.GameController
 }
 
+var _ GameFetcher = (*GameFetcherImpl)(nil)
+
 type GameFetcherResult struct {
 	fx.Out
 

@@ -19,6 +19,8 @@ type BoardFetcherImpl struct {
 	boardController controller.BoardController
 }
 
+var _ BoardFetcher = (*BoardFetcherImpl)(nil)
+
 type BoardFetcherResult struct {
 	fx.Out
 
