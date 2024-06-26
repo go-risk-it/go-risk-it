@@ -21,6 +21,9 @@ type Move struct {
 
 type Service interface {
 	service.Service[Move]
+
+	HasConqueredQ() bool
+	ContinueAttackQ() bool
 }
 
 type ServiceImpl struct {
@@ -93,7 +96,7 @@ func (s *ServiceImpl) validate(
 		return fmt.Errorf("attacking region cannot reach defending region")
 	}
 
-	ctx.Log().Infow("neighbours check passed")
+	ctx.Log().Infow("attack move validation passed", "move", move)
 
 	return nil
 }
@@ -170,4 +173,12 @@ func checkDeclaredValues(
 	ctx.Log().Infow("declared values check passed")
 
 	return nil
+}
+
+func (s *ServiceImpl) HasConqueredQ() bool {
+	return false
+}
+
+func (s *ServiceImpl) ContinueAttackQ() bool {
+	return false
 }
