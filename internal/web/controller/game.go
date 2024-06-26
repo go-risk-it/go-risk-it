@@ -35,12 +35,12 @@ func NewGameController(
 func (c *GameControllerImpl) CreateGame(
 	ctx ctx.UserContext, request request.CreateGame,
 ) (int64, error) {
-	gameBoard, err := c.boardService.GetBoard()
+	regions, err := c.boardService.GetBoardRegions(ctx)
 	if err != nil {
-		return -1, fmt.Errorf("failed to fetch board from file: %w", err)
+		return -1, fmt.Errorf("failed to get board regions: %w", err)
 	}
 
-	gameID, err := c.gameService.CreateGameWithTx(ctx, gameBoard, request.Players)
+	gameID, err := c.gameService.CreateGameWithTx(ctx, regions, request.Players)
 	if err != nil {
 		return -1, fmt.Errorf("failed to create game: %w", err)
 	}

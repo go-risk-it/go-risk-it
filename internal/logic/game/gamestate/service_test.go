@@ -8,7 +8,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/gamestate"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
@@ -43,17 +42,11 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 		{ID: 69, TurnIndex: 2, GameID: gameID, UserID: "Gabriele"},
 	}
 
-	regions := []board.Region{
-		{ExternalReference: "netherlands", Name: "Netherlands", Continent: "1"},
-		{ExternalReference: "italy", Name: "Italy", Continent: "1"},
-		{ExternalReference: "tasin", Name: "Tasin", Continent: "2"},
-		{ExternalReference: "samon", Name: "Samon", Continent: "3"},
-	}
-
-	gameBoard := &board.Board{
-		Regions:    regions,
-		Continents: []board.Continent{},
-		Borders:    []board.Border{},
+	regions := []string{
+		"netherlands",
+		"italy",
+		"tasin",
+		"samon",
 	}
 
 	// setup mocks
@@ -84,7 +77,7 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 		regionServiceMock,
 	)
 
-	gameID, err := service.CreateGameQ(context, mockQuerier, gameBoard, users)
+	gameID, err := service.CreateGameQ(context, mockQuerier, regions, users)
 
 	require.NoError(t, err)
 	require.Equal(t, int64(1), gameID)
@@ -108,7 +101,6 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 		ctx.WithLog(context.Background(), logger),
 		"dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
 	)
-	gameBoard := &board.Board{} //nolint:exhaustivestruct
 	users := []request.Player{
 		{UserID: "fc497971-de4d-49c2-842a-4af62ec9e858", Name: "user1"},
 		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "user2"},
@@ -118,7 +110,7 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 	querier.On("InsertGame", ctx, int64(3)).Return(sqlc.Game{}, errInsertGame)
 
 	// Call the method under test
-	gameID, err := service.CreateGameQ(ctx, querier, gameBoard, users)
+	gameID, err := service.CreateGameQ(ctx, querier, []string{}, users)
 
 	// Assert the result
 	require.Error(t, err)
@@ -147,7 +139,6 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 		ctx.WithLog(context.Background(), logger),
 		"dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
 	)
-	gameBoard := &board.Board{}
 	users := []request.Player{
 		{UserID: "fc497971-de4d-49c2-842a-4af62ec9e858", Name: "user1"},
 		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "user2"},
@@ -163,7 +154,7 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 		Return(nil, errCreatePlayers)
 
 	// Call the method under test
-	gameID, err := service.CreateGameQ(ctx, querier, gameBoard, users)
+	gameID, err := service.CreateGameQ(ctx, querier, []string{}, users)
 
 	// Assert the result
 	require.Error(t, err)

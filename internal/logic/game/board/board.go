@@ -4,26 +4,26 @@ import (
 	"go.uber.org/fx"
 )
 
-type Region struct {
+type RegionDto struct {
 	ExternalReference string `json:"id"`
 	Name              string `json:"name"`
 	Continent         string `json:"continent"`
 }
-type Continent struct {
+type ContinentDto struct {
 	ExternalReference string `json:"id"`
 	Name              string `json:"name"`
 	BonusTroops       int    `json:"bonusTroops"`
 }
 
-type Border struct {
+type BorderDto struct {
 	Source string `json:"source"`
 	Target string `json:"target"`
 }
 
-type Board struct {
-	Regions    []Region    `json:"layers"`
-	Continents []Continent `json:"continents"`
-	Borders    []Border    `json:"links"`
+type BoardDto struct {
+	Regions    []RegionDto    `json:"layers"`
+	Continents []ContinentDto `json:"continents"`
+	Borders    []BorderDto    `json:"links"`
 }
 
 var Module = fx.Options(

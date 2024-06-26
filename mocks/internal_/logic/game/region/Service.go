@@ -4,8 +4,6 @@ package region
 
 import (
 	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
-	board "github.com/go-risk-it/go-risk-it/internal/logic/game/board"
-
 	db "github.com/go-risk-it/go-risk-it/internal/data/db"
 
 	mock "github.com/stretchr/testify/mock"
@@ -27,7 +25,7 @@ func (_m *Service) EXPECT() *Service_Expecter {
 }
 
 // CreateRegions provides a mock function with given fields: _a0, querier, players, regions
-func (_m *Service) CreateRegions(_a0 ctx.UserContext, querier db.Querier, players []sqlc.Player, regions []board.Region) error {
+func (_m *Service) CreateRegions(_a0 ctx.UserContext, querier db.Querier, players []sqlc.Player, regions []string) error {
 	ret := _m.Called(_a0, querier, players, regions)
 
 	if len(ret) == 0 {
@@ -35,7 +33,7 @@ func (_m *Service) CreateRegions(_a0 ctx.UserContext, querier db.Querier, player
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(ctx.UserContext, db.Querier, []sqlc.Player, []board.Region) error); ok {
+	if rf, ok := ret.Get(0).(func(ctx.UserContext, db.Querier, []sqlc.Player, []string) error); ok {
 		r0 = rf(_a0, querier, players, regions)
 	} else {
 		r0 = ret.Error(0)
@@ -53,14 +51,14 @@ type Service_CreateRegions_Call struct {
 //   - _a0 ctx.UserContext
 //   - querier db.Querier
 //   - players []sqlc.Player
-//   - regions []board.Region
+//   - regions []string
 func (_e *Service_Expecter) CreateRegions(_a0 interface{}, querier interface{}, players interface{}, regions interface{}) *Service_CreateRegions_Call {
 	return &Service_CreateRegions_Call{Call: _e.mock.On("CreateRegions", _a0, querier, players, regions)}
 }
 
-func (_c *Service_CreateRegions_Call) Run(run func(_a0 ctx.UserContext, querier db.Querier, players []sqlc.Player, regions []board.Region)) *Service_CreateRegions_Call {
+func (_c *Service_CreateRegions_Call) Run(run func(_a0 ctx.UserContext, querier db.Querier, players []sqlc.Player, regions []string)) *Service_CreateRegions_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.UserContext), args[1].(db.Querier), args[2].([]sqlc.Player), args[3].([]board.Region))
+		run(args[0].(ctx.UserContext), args[1].(db.Querier), args[2].([]sqlc.Player), args[3].([]string))
 	})
 	return _c
 }
@@ -70,7 +68,7 @@ func (_c *Service_CreateRegions_Call) Return(_a0 error) *Service_CreateRegions_C
 	return _c
 }
 
-func (_c *Service_CreateRegions_Call) RunAndReturn(run func(ctx.UserContext, db.Querier, []sqlc.Player, []board.Region) error) *Service_CreateRegions_Call {
+func (_c *Service_CreateRegions_Call) RunAndReturn(run func(ctx.UserContext, db.Querier, []sqlc.Player, []string) error) *Service_CreateRegions_Call {
 	_c.Call.Return(run)
 	return _c
 }

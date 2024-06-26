@@ -3,9 +3,7 @@
 package assignment
 
 import (
-	board "github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	assignment "github.com/go-risk-it/go-risk-it/internal/logic/game/region/assignment"
-
 	mock "github.com/stretchr/testify/mock"
 
 	sqlc "github.com/go-risk-it/go-risk-it/internal/data/sqlc"
@@ -25,7 +23,7 @@ func (_m *Service) EXPECT() *Service_Expecter {
 }
 
 // AssignRegionsToPlayers provides a mock function with given fields: players, regions
-func (_m *Service) AssignRegionsToPlayers(players []sqlc.Player, regions []board.Region) assignment.RegionAssignment {
+func (_m *Service) AssignRegionsToPlayers(players []sqlc.Player, regions []string) assignment.RegionAssignment {
 	ret := _m.Called(players, regions)
 
 	if len(ret) == 0 {
@@ -33,7 +31,7 @@ func (_m *Service) AssignRegionsToPlayers(players []sqlc.Player, regions []board
 	}
 
 	var r0 assignment.RegionAssignment
-	if rf, ok := ret.Get(0).(func([]sqlc.Player, []board.Region) assignment.RegionAssignment); ok {
+	if rf, ok := ret.Get(0).(func([]sqlc.Player, []string) assignment.RegionAssignment); ok {
 		r0 = rf(players, regions)
 	} else {
 		if ret.Get(0) != nil {
@@ -51,14 +49,14 @@ type Service_AssignRegionsToPlayers_Call struct {
 
 // AssignRegionsToPlayers is a helper method to define mock.On call
 //   - players []sqlc.Player
-//   - regions []board.Region
+//   - regions []string
 func (_e *Service_Expecter) AssignRegionsToPlayers(players interface{}, regions interface{}) *Service_AssignRegionsToPlayers_Call {
 	return &Service_AssignRegionsToPlayers_Call{Call: _e.mock.On("AssignRegionsToPlayers", players, regions)}
 }
 
-func (_c *Service_AssignRegionsToPlayers_Call) Run(run func(players []sqlc.Player, regions []board.Region)) *Service_AssignRegionsToPlayers_Call {
+func (_c *Service_AssignRegionsToPlayers_Call) Run(run func(players []sqlc.Player, regions []string)) *Service_AssignRegionsToPlayers_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]sqlc.Player), args[1].([]board.Region))
+		run(args[0].([]sqlc.Player), args[1].([]string))
 	})
 	return _c
 }
@@ -68,7 +66,7 @@ func (_c *Service_AssignRegionsToPlayers_Call) Return(_a0 assignment.RegionAssig
 	return _c
 }
 
-func (_c *Service_AssignRegionsToPlayers_Call) RunAndReturn(run func([]sqlc.Player, []board.Region) assignment.RegionAssignment) *Service_AssignRegionsToPlayers_Call {
+func (_c *Service_AssignRegionsToPlayers_Call) RunAndReturn(run func([]sqlc.Player, []string) assignment.RegionAssignment) *Service_AssignRegionsToPlayers_Call {
 	_c.Call.Return(run)
 	return _c
 }

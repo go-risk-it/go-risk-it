@@ -3,7 +3,7 @@
 package board
 
 import (
-	board "github.com/go-risk-it/go-risk-it/internal/logic/game/board"
+	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -20,29 +20,29 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
-// GetBoard provides a mock function with given fields:
-func (_m *Service) GetBoard() (*board.Board, error) {
-	ret := _m.Called()
+// GetBoardRegions provides a mock function with given fields: _a0
+func (_m *Service) GetBoardRegions(_a0 ctx.LogContext) ([]string, error) {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetBoard")
+		panic("no return value specified for GetBoardRegions")
 	}
 
-	var r0 *board.Board
+	var r0 []string
 	var r1 error
-	if rf, ok := ret.Get(0).(func() (*board.Board, error)); ok {
-		return rf()
+	if rf, ok := ret.Get(0).(func(ctx.LogContext) ([]string, error)); ok {
+		return rf(_a0)
 	}
-	if rf, ok := ret.Get(0).(func() *board.Board); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(ctx.LogContext) []string); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*board.Board)
+			r0 = ret.Get(0).([]string)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
+	if rf, ok := ret.Get(1).(func(ctx.LogContext) error); ok {
+		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -50,29 +50,30 @@ func (_m *Service) GetBoard() (*board.Board, error) {
 	return r0, r1
 }
 
-// Service_GetBoard_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetBoard'
-type Service_GetBoard_Call struct {
+// Service_GetBoardRegions_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetBoardRegions'
+type Service_GetBoardRegions_Call struct {
 	*mock.Call
 }
 
-// GetBoard is a helper method to define mock.On call
-func (_e *Service_Expecter) GetBoard() *Service_GetBoard_Call {
-	return &Service_GetBoard_Call{Call: _e.mock.On("GetBoard")}
+// GetBoardRegions is a helper method to define mock.On call
+//   - _a0 ctx.LogContext
+func (_e *Service_Expecter) GetBoardRegions(_a0 interface{}) *Service_GetBoardRegions_Call {
+	return &Service_GetBoardRegions_Call{Call: _e.mock.On("GetBoardRegions", _a0)}
 }
 
-func (_c *Service_GetBoard_Call) Run(run func()) *Service_GetBoard_Call {
+func (_c *Service_GetBoardRegions_Call) Run(run func(_a0 ctx.LogContext)) *Service_GetBoardRegions_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(ctx.LogContext))
 	})
 	return _c
 }
 
-func (_c *Service_GetBoard_Call) Return(_a0 *board.Board, _a1 error) *Service_GetBoard_Call {
+func (_c *Service_GetBoardRegions_Call) Return(_a0 []string, _a1 error) *Service_GetBoardRegions_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_GetBoard_Call) RunAndReturn(run func() (*board.Board, error)) *Service_GetBoard_Call {
+func (_c *Service_GetBoardRegions_Call) RunAndReturn(run func(ctx.LogContext) ([]string, error)) *Service_GetBoardRegions_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -7,7 +7,6 @@ import (
 
 	ctx2 "github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
 	assignment2 "github.com/go-risk-it/go-risk-it/internal/logic/game/region/assignment"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
@@ -34,16 +33,18 @@ func TestServiceImpl_CreateRegions(t *testing.T) {
 		{ID: 2, GameID: 1, UserID: "gabriele", TurnIndex: 1},
 		{ID: 3, GameID: 1, UserID: "giovanni", TurnIndex: 2},
 	}
-	regions := []board.Region{
-		{ExternalReference: "alaska", Name: "Alaska"},
-		{ExternalReference: "northwest_territory", Name: "Northwest Territory"},
-		{ExternalReference: "greenland", Name: "Greenland"},
-		{ExternalReference: "alberta", Name: "Alberta"},
-		{ExternalReference: "ontario", Name: "Ontario"},
+	regions := []string{
+		"alaska",
+		"northwest_territory",
+		"greenland",
+		"alberta",
+		"ontario",
 	}
 
 	// Set up expectations for AssignRegionsToPlayers method
-	assignmentService.On("AssignRegionsToPlayers", players, regions).
+	assignmentService.
+		EXPECT().
+		AssignRegionsToPlayers(players, regions).
 		Return(assignment2.RegionAssignment{
 			regions[0]: players[0],
 			regions[1]: players[1],
@@ -86,7 +87,7 @@ func TestServiceImpl_CreateRegions_NoPlayers(t *testing.T) {
 
 	var (
 		players []sqlc.Player
-		regions []board.Region
+		regions []string
 	)
 
 	// Call the method under test
@@ -118,7 +119,7 @@ func TestServiceImpl_CreateRegions_PlayersNotInSameGame(t *testing.T) {
 		{ID: 3, GameID: 1, UserID: "giovanni", TurnIndex: 2},
 	}
 
-	var regions []board.Region
+	var regions []string
 
 	// Call the method under test
 	err := service.CreateRegions(ctx, querier, players, regions)
@@ -148,12 +149,12 @@ func TestServiceImpl_CreateRegions_InsertRegionsError(t *testing.T) {
 		{ID: 2, GameID: 1, UserID: "gabriele", TurnIndex: 1},
 		{ID: 3, GameID: 1, UserID: "giovanni", TurnIndex: 2},
 	}
-	regions := []board.Region{
-		{ExternalReference: "alaska", Name: "Alaska"},
-		{ExternalReference: "northwest_territory", Name: "Northwest Territory"},
-		{ExternalReference: "greenland", Name: "Greenland"},
-		{ExternalReference: "alberta", Name: "Alberta"},
-		{ExternalReference: "ontario", Name: "Ontario"},
+	regions := []string{
+		"alaska",
+		"northwest_territory",
+		"greenland",
+		"alberta",
+		"ontario",
 	}
 
 	// Set up expectations for AssignRegionsToPlayers method

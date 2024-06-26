@@ -7,7 +7,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region/assignment"
 )
 
@@ -21,7 +20,7 @@ type Service interface {
 		ctx ctx.UserContext,
 		querier db.Querier,
 		players []sqlc.Player,
-		regions []board.Region,
+		regions []string,
 	) error
 
 	GetRegionQ(
@@ -53,7 +52,7 @@ func (s *ServiceImpl) CreateRegions(
 	ctx ctx.UserContext,
 	querier db.Querier,
 	players []sqlc.Player,
-	regions []board.Region,
+	regions []string,
 ) error {
 	ctx.Log().Infow("creating regions", "players_size", len(players), "regions_size", len(regions))
 
@@ -74,7 +73,7 @@ func (s *ServiceImpl) CreateRegions(
 
 	for _, region := range regions {
 		regionsParams = append(regionsParams, sqlc.InsertRegionsParams{
-			ExternalReference: region.ExternalReference,
+			ExternalReference: region,
 			PlayerID:          regionToPlayer[region].ID,
 			Troops:            3,
 		})
