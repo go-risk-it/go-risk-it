@@ -21,7 +21,7 @@ func (_m *Service) EXPECT() *Service_Expecter {
 }
 
 // AreNeighbours provides a mock function with given fields: context, source, target
-func (_m *Service) AreNeighbours(context ctx.LogContext, source string, target string) bool {
+func (_m *Service) AreNeighbours(context ctx.LogContext, source string, target string) (bool, error) {
 	ret := _m.Called(context, source, target)
 
 	if len(ret) == 0 {
@@ -29,13 +29,23 @@ func (_m *Service) AreNeighbours(context ctx.LogContext, source string, target s
 	}
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(ctx.LogContext, string, string) (bool, error)); ok {
+		return rf(context, source, target)
+	}
 	if rf, ok := ret.Get(0).(func(ctx.LogContext, string, string) bool); ok {
 		r0 = rf(context, source, target)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(ctx.LogContext, string, string) error); ok {
+		r1 = rf(context, source, target)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Service_AreNeighbours_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AreNeighbours'
@@ -58,18 +68,18 @@ func (_c *Service_AreNeighbours_Call) Run(run func(context ctx.LogContext, sourc
 	return _c
 }
 
-func (_c *Service_AreNeighbours_Call) Return(_a0 bool) *Service_AreNeighbours_Call {
-	_c.Call.Return(_a0)
+func (_c *Service_AreNeighbours_Call) Return(_a0 bool, _a1 error) *Service_AreNeighbours_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_AreNeighbours_Call) RunAndReturn(run func(ctx.LogContext, string, string) bool) *Service_AreNeighbours_Call {
+func (_c *Service_AreNeighbours_Call) RunAndReturn(run func(ctx.LogContext, string, string) (bool, error)) *Service_AreNeighbours_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // CanPlayerReach provides a mock function with given fields: context, source, target
-func (_m *Service) CanPlayerReach(context ctx.MoveContext, source string, target string) bool {
+func (_m *Service) CanPlayerReach(context ctx.MoveContext, source string, target string) (bool, error) {
 	ret := _m.Called(context, source, target)
 
 	if len(ret) == 0 {
@@ -77,13 +87,23 @@ func (_m *Service) CanPlayerReach(context ctx.MoveContext, source string, target
 	}
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(ctx.MoveContext, string, string) (bool, error)); ok {
+		return rf(context, source, target)
+	}
 	if rf, ok := ret.Get(0).(func(ctx.MoveContext, string, string) bool); ok {
 		r0 = rf(context, source, target)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(ctx.MoveContext, string, string) error); ok {
+		r1 = rf(context, source, target)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Service_CanPlayerReach_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CanPlayerReach'
@@ -106,12 +126,12 @@ func (_c *Service_CanPlayerReach_Call) Run(run func(context ctx.MoveContext, sou
 	return _c
 }
 
-func (_c *Service_CanPlayerReach_Call) Return(_a0 bool) *Service_CanPlayerReach_Call {
-	_c.Call.Return(_a0)
+func (_c *Service_CanPlayerReach_Call) Return(_a0 bool, _a1 error) *Service_CanPlayerReach_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_CanPlayerReach_Call) RunAndReturn(run func(ctx.MoveContext, string, string) bool) *Service_CanPlayerReach_Call {
+func (_c *Service_CanPlayerReach_Call) RunAndReturn(run func(ctx.MoveContext, string, string) (bool, error)) *Service_CanPlayerReach_Call {
 	_c.Call.Return(run)
 	return _c
 }

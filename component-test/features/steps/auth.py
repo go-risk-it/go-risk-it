@@ -13,7 +13,5 @@ def step_impl(context: RiskItContext, player: str):
 
     response = context.supabase_client.sign_up(email, password)
     user = User(id=response.user.id, email=email, password=password)
-    context.players[player] = Player(
-        user=user, name=player, jwt=response.session.access_token
-    )
+    context.players[player] = Player(user=user, name=player, jwt=response.session.access_token)
     context.risk_it_clients[player] = RiskItClient(context.players[player])

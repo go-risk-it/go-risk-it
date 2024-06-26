@@ -32,7 +32,7 @@ def before_all(context: RiskItContext):
         timeout=10,
     )
 
-    LOGGER.info("Starting gamestate")
+    LOGGER.info("Starting service")
     context.service_runner.start()
     LOGGER.info("Service started")
 

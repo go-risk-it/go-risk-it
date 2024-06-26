@@ -8,7 +8,7 @@ Feature: Creating a game
 
   Scenario: Create game, connect players and make some moves
     Given a game is created with the following players
-      | player      |
+      | player    |
       | francesco |
       | gabriele  |
       | giovanni  |
@@ -26,13 +26,13 @@ Feature: Creating a game
     And there are 3 deployable troops
     And the game phase is DEPLOY
 
-    When francesco deploys 2 troops in eastern_australia
+    When francesco deploys 2 troops in southern_europe
     Then all players receive all state updates
     And it's francesco's turn
     And there are 1 deployable troops
     And the game phase is DEPLOY
 
-    When francesco deploys 1 troops in eastern_australia
+    When francesco deploys 1 troops in southern_europe
     Then all players receive all state updates
     And it's francesco's turn
     And there are 0 deployable troops

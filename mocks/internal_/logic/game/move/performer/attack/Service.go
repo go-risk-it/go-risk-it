@@ -26,6 +26,96 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
+// ContinueAttackQ provides a mock function with given fields:
+func (_m *Service) ContinueAttackQ() bool {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for ContinueAttackQ")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// Service_ContinueAttackQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ContinueAttackQ'
+type Service_ContinueAttackQ_Call struct {
+	*mock.Call
+}
+
+// ContinueAttackQ is a helper method to define mock.On call
+func (_e *Service_Expecter) ContinueAttackQ() *Service_ContinueAttackQ_Call {
+	return &Service_ContinueAttackQ_Call{Call: _e.mock.On("ContinueAttackQ")}
+}
+
+func (_c *Service_ContinueAttackQ_Call) Run(run func()) *Service_ContinueAttackQ_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Service_ContinueAttackQ_Call) Return(_a0 bool) *Service_ContinueAttackQ_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Service_ContinueAttackQ_Call) RunAndReturn(run func() bool) *Service_ContinueAttackQ_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// HasConqueredQ provides a mock function with given fields:
+func (_m *Service) HasConqueredQ() bool {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for HasConqueredQ")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// Service_HasConqueredQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HasConqueredQ'
+type Service_HasConqueredQ_Call struct {
+	*mock.Call
+}
+
+// HasConqueredQ is a helper method to define mock.On call
+func (_e *Service_Expecter) HasConqueredQ() *Service_HasConqueredQ_Call {
+	return &Service_HasConqueredQ_Call{Call: _e.mock.On("HasConqueredQ")}
+}
+
+func (_c *Service_HasConqueredQ_Call) Run(run func()) *Service_HasConqueredQ_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Service_HasConqueredQ_Call) Return(_a0 bool) *Service_HasConqueredQ_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Service_HasConqueredQ_Call) RunAndReturn(run func() bool) *Service_HasConqueredQ_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // MustAdvanceQ provides a mock function with given fields: _a0, querier, game
 func (_m *Service) MustAdvanceQ(_a0 ctx.MoveContext, querier db.Querier, game *sqlc.Game) bool {
 	ret := _m.Called(_a0, querier, game)

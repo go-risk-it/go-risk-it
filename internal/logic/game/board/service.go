@@ -13,8 +13,8 @@ import (
 
 type Service interface {
 	GetBoardRegions(ctx ctx.LogContext) ([]string, error)
-	AreNeighbours(context ctx.LogContext, source string, target string) bool
-	CanPlayerReach(context ctx.MoveContext, source string, target string) bool
+	AreNeighbours(context ctx.LogContext, source string, target string) (bool, error)
+	CanPlayerReach(context ctx.MoveContext, source string, target string) (bool, error)
 }
 
 type ServiceImpl struct {
@@ -24,17 +24,25 @@ type ServiceImpl struct {
 
 var _ Service = (*ServiceImpl)(nil)
 
-func (s *ServiceImpl) AreNeighbours(context ctx.LogContext, source string, target string) bool {
+func (s *ServiceImpl) AreNeighbours(
+	context ctx.LogContext,
+	source string,
+	target string,
+) (bool, error) {
 	graph, err := s.getGraph(context)
 	if err != nil {
-		return false
+		return false, fmt.Errorf("failed to get graph: %w", err)
 	}
 
-	return graph.AreNeighbours(source, target)
+	return graph.AreNeighbours(source, target), nil
 }
 
-func (s *ServiceImpl) CanPlayerReach(context ctx.MoveContext, source string, target string) bool {
-	return false
+func (s *ServiceImpl) CanPlayerReach(
+	context ctx.MoveContext,
+	source string,
+	target string,
+) (bool, error) {
+	return false, nil
 }
 
 var _ Service = (*ServiceImpl)(nil)

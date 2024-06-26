@@ -88,11 +88,16 @@ func (s *ServiceImpl) validate(
 		return fmt.Errorf("troops check failed: %w", err)
 	}
 
-	if !s.boardService.AreNeighbours(
+	areNeighbours, err := s.boardService.AreNeighbours(
 		ctx,
 		attackingRegion.ExternalReference,
 		defendingRegion.ExternalReference,
-	) {
+	)
+	if err != nil {
+		return fmt.Errorf("unable to check if regions are neighbours: %w", err)
+	}
+
+	if !areNeighbours {
 		return fmt.Errorf("attacking region cannot reach defending region")
 	}
 

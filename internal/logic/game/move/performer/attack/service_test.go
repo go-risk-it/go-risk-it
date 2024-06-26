@@ -224,7 +224,7 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 				boardService.
 					EXPECT().
 					AreNeighbours(ctx, test.attackingRegion, test.defendingRegion).
-					Return(false)
+					Return(false, nil)
 			}
 
 			err := service.PerformQ(ctx, querier, game, attack.Move{
