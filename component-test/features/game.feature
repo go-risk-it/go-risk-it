@@ -26,13 +26,13 @@ Feature: Creating a game
     And there are 3 deployable troops
     And the game phase is DEPLOY
 
-    When francesco deploys 2 troops in southern_europe
+    When francesco deploys 2 troops in western_united_states
     Then all players receive all state updates
     And it's francesco's turn
     And there are 1 deployable troops
     And the game phase is DEPLOY
 
-    When francesco deploys 1 troops in southern_europe
+    When francesco deploys 1 troops in western_united_states
     Then all players receive all state updates
     And it's francesco's turn
     And there are 0 deployable troops

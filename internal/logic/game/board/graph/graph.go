@@ -2,6 +2,7 @@ package graph
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board/dto"
@@ -27,6 +28,8 @@ func (g *GraphImpl) GetRegions() []string {
 	for region := range g.Edges {
 		result = append(result, region)
 	}
+
+	slices.Sort(result)
 
 	return result
 }

@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
-	"strconv"
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
@@ -23,13 +21,13 @@ func NewConnectionPool(
 ) *pgxpool.Pool {
 	pool, err := pgxpool.New(
 		context.Background(),
-		buildConnectionString(config),
+		config.BuildConnectionString(),
 	)
 	if err != nil {
 		panic("Unable to create connection pool")
 	}
 
-	log.Infow("created connection pool", "connstr", buildConnectionString(config))
+	log.Infow("created connection pool")
 
 	lifecycle.Append(
 		fx.Hook{
@@ -45,31 +43,13 @@ func NewConnectionPool(
 	return pool
 }
 
-func buildConnectionString(config config.DatabaseConfig) string {
-	hostPort := net.JoinHostPort(config.Host, strconv.Itoa(config.Port))
-
-	result := fmt.Sprintf(
-		"postgresql://%s:%s@%s/%s",
-		config.User,
-		config.Password,
-		hostPort,
-		config.Name,
-	)
-
-	if config.DisableSSL {
-		result += "?sslmode=disable"
-	}
-
-	return result
-}
-
 func executeMigrations(
 	log *zap.SugaredLogger,
 	config config.DatabaseConfig,
 ) error {
-	log.Infow("preparing to execute migrations", "connstr", buildConnectionString(config))
+	log.Infow("preparing to execute migrations")
 
-	migr, err := migrate.New("file://migrations", buildConnectionString(config))
+	migr, err := migrate.New("file://migrations", config.BuildConnectionString())
 	if err != nil {
 		return fmt.Errorf("failed to connect to DB for migrations: %w", err)
 	}
