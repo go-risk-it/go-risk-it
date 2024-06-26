@@ -1,6 +1,8 @@
 package graph
 
 import (
+	"fmt"
+
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board/dto"
 )
@@ -31,7 +33,12 @@ func (g *GraphImpl) GetRegions() []string {
 
 var _ Graph = (*GraphImpl)(nil)
 
-func New(board *dto.Board) *GraphImpl {
+func New(board *dto.Board) (*GraphImpl, error) {
+	err := validate(board)
+	if err != nil {
+		return nil, fmt.Errorf("invalid board: %w", err)
+	}
+
 	topG := &GraphImpl{
 		Edges: make(map[string]map[string]struct{}),
 	}
@@ -45,7 +52,59 @@ func New(board *dto.Board) *GraphImpl {
 		topG.Edges[border.Target][border.Source] = struct{}{}
 	}
 
-	return topG
+	return topG, nil
+}
+
+func validate(board *dto.Board) error {
+	if len(board.Regions) == 0 {
+		return fmt.Errorf("no regions")
+	}
+
+	if len(board.Borders) == 0 {
+		return fmt.Errorf("no borders")
+	}
+
+	regionNames := make(map[string]struct{})
+	for _, region := range board.Regions {
+		if _, ok := regionNames[region.ExternalReference]; ok {
+			return fmt.Errorf("duplicate region")
+		}
+
+		regionNames[region.ExternalReference] = struct{}{}
+	}
+
+	err := validateBorders(board, regionNames)
+	if err != nil {
+		return fmt.Errorf("invalid borders: %w", err)
+	}
+
+	return nil
+}
+
+func validateBorders(board *dto.Board, regionNames map[string]struct{}) error {
+	for _, border := range board.Borders {
+		if border.Source == "" {
+			return fmt.Errorf("empty source")
+		}
+
+		if border.Target == "" {
+			return fmt.Errorf("empty target")
+		}
+
+		if border.Source == border.Target {
+			return fmt.Errorf("self-loop")
+		}
+
+		if _, ok := regionNames[border.Source]; !ok {
+			return fmt.Errorf("unknown source %v", border.Source)
+		}
+
+		if _, ok := regionNames[border.Target]; !ok {
+			return fmt.Errorf("unknown target %v", border.Target)
+		}
+	}
+
+	return nil
 }
 
 func (g *GraphImpl) AreNeighbours(source string, target string) bool {

@@ -74,7 +74,10 @@ func (s *ServiceImpl) getGraph(ctx ctx.LogContext) (graph.Graph, error) {
 		return nil, fmt.Errorf("failed to get boardDto: %w", err)
 	}
 
-	s.graph = graph.New(boardDto)
+	s.graph, err = graph.New(boardDto)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create graph: %w", err)
+	}
 
 	ctx.Log().Infow("graph cache updated")
 
