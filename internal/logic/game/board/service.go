@@ -11,13 +11,21 @@ import (
 
 type Service interface {
 	GetBoardRegions(ctx ctx.LogContext) ([]string, error)
-	// AreNeighbours(context ctx.LogContext, source string, target string) bool
-	// CanPlayerReach(context ctx.MoveContext, source string, target string) bool
+	AreNeighbours(context ctx.LogContext, source string, target string) bool
+	CanPlayerReach(context ctx.MoveContext, source string, target string) bool
 }
 
 type ServiceImpl struct {
 	log        *zap.SugaredLogger
 	boardCache *BoardDto
+}
+
+func (s *ServiceImpl) AreNeighbours(context ctx.LogContext, source string, target string) bool {
+	return false
+}
+
+func (s *ServiceImpl) CanPlayerReach(context ctx.MoveContext, source string, target string) bool {
+	return false
 }
 
 var _ Service = (*ServiceImpl)(nil)
@@ -84,13 +92,3 @@ func (s *ServiceImpl) fetchFromFile(ctx ctx.LogContext) (*BoardDto, error) {
 
 	return board, nil
 }
-
-// func (s *ServiceImpl) AreNeighbours(context ctx.LogContext, source string, target string) bool {
-//	// TODO implement me
-//	panic("implement me")
-//}
-//
-// func (s *ServiceImpl) CanReach(context ctx.MoveContext, source string, target string) bool {
-//	// TODO implement me
-//	panic("implement me")
-//}

@@ -20,6 +20,102 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
+// AreNeighbours provides a mock function with given fields: context, source, target
+func (_m *Service) AreNeighbours(context ctx.LogContext, source string, target string) bool {
+	ret := _m.Called(context, source, target)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AreNeighbours")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(ctx.LogContext, string, string) bool); ok {
+		r0 = rf(context, source, target)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// Service_AreNeighbours_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AreNeighbours'
+type Service_AreNeighbours_Call struct {
+	*mock.Call
+}
+
+// AreNeighbours is a helper method to define mock.On call
+//   - context ctx.LogContext
+//   - source string
+//   - target string
+func (_e *Service_Expecter) AreNeighbours(context interface{}, source interface{}, target interface{}) *Service_AreNeighbours_Call {
+	return &Service_AreNeighbours_Call{Call: _e.mock.On("AreNeighbours", context, source, target)}
+}
+
+func (_c *Service_AreNeighbours_Call) Run(run func(context ctx.LogContext, source string, target string)) *Service_AreNeighbours_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.LogContext), args[1].(string), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *Service_AreNeighbours_Call) Return(_a0 bool) *Service_AreNeighbours_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Service_AreNeighbours_Call) RunAndReturn(run func(ctx.LogContext, string, string) bool) *Service_AreNeighbours_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// CanPlayerReach provides a mock function with given fields: context, source, target
+func (_m *Service) CanPlayerReach(context ctx.MoveContext, source string, target string) bool {
+	ret := _m.Called(context, source, target)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CanPlayerReach")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(ctx.MoveContext, string, string) bool); ok {
+		r0 = rf(context, source, target)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// Service_CanPlayerReach_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CanPlayerReach'
+type Service_CanPlayerReach_Call struct {
+	*mock.Call
+}
+
+// CanPlayerReach is a helper method to define mock.On call
+//   - context ctx.MoveContext
+//   - source string
+//   - target string
+func (_e *Service_Expecter) CanPlayerReach(context interface{}, source interface{}, target interface{}) *Service_CanPlayerReach_Call {
+	return &Service_CanPlayerReach_Call{Call: _e.mock.On("CanPlayerReach", context, source, target)}
+}
+
+func (_c *Service_CanPlayerReach_Call) Run(run func(context ctx.MoveContext, source string, target string)) *Service_CanPlayerReach_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.MoveContext), args[1].(string), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *Service_CanPlayerReach_Call) Return(_a0 bool) *Service_CanPlayerReach_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Service_CanPlayerReach_Call) RunAndReturn(run func(ctx.MoveContext, string, string) bool) *Service_CanPlayerReach_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetBoardRegions provides a mock function with given fields: _a0
 func (_m *Service) GetBoardRegions(_a0 ctx.LogContext) ([]string, error) {
 	ret := _m.Called(_a0)

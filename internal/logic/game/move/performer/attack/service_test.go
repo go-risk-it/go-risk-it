@@ -8,6 +8,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/attack"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -15,15 +16,17 @@ import (
 
 func setup(t *testing.T) (
 	*db.Querier,
+	*board.Service,
 	*region.Service,
 	*attack.ServiceImpl,
 ) {
 	t.Helper()
 	querier := db.NewQuerier(t)
+	boardService := board.NewService(t)
 	regionService := region.NewService(t)
-	service := attack.NewService(regionService)
+	service := attack.NewService(boardService, regionService)
 
-	return querier, regionService, service
+	return querier, boardService, regionService, service
 }
 
 func input() ctx.MoveContext {
@@ -53,6 +56,7 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 		attackingTroops        int64
 		attackingRegionOwner   string
 		defendingRegionOwner   string
+		regionsAreNeighboring  bool
 		expectedError          string
 	}
 
@@ -68,7 +72,8 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 			3,
 			"gabriele",
 			"giovanni",
-			"attacking region is not owned by player",
+			true,
+			"validation failed: region ownership check failed: attacking region is not owned by player",
 		},
 		{
 			"When both regions are owned by the same player",
@@ -81,7 +86,8 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 			3,
 			"giovanni",
 			"giovanni",
-			"cannot attack your own region",
+			true,
+			"validation failed: region ownership check failed: cannot attack your own region",
 		},
 		{
 			"When attacking region has zero troops",
@@ -94,7 +100,8 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 			3,
 			"giovanni",
 			"gabriele",
-			"attacking region does not have enough troops",
+			true,
+			"validation failed: troops check failed: attacking region does not have enough troops",
 		},
 		{
 			"When attacking region does not have enough troops",
@@ -107,7 +114,8 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 			3,
 			"giovanni",
 			"gabriele",
-			"attacking region does not have enough troops",
+			true,
+			"validation failed: troops check failed: attacking region does not have enough troops",
 		},
 		{
 			"When attacking with zero troops",
@@ -120,7 +128,8 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 			0,
 			"giovanni",
 			"gabriele",
-			"at least one troop is required to attack",
+			true,
+			"validation failed: troops check failed: at least one troop is required to attack",
 		},
 		{
 			"When attacking a region that has zero troops",
@@ -133,7 +142,8 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 			3,
 			"giovanni",
 			"gabriele",
-			"defending region does not have enough troops",
+			true,
+			"validation failed: troops check failed: defending region does not have enough troops",
 		},
 		{
 			"When attacking region doesn't have the declared number of troops",
@@ -146,7 +156,8 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 			3,
 			"giovanni",
 			"gabriele",
-			"attacking region doesn't have the declared number of troops",
+			true,
+			"validation failed: troops check failed: declared values are invalid: attacking region doesn't have the declared number of troops",
 		},
 		{
 			"When defending region doesn't have the declared number of troops",
@@ -159,7 +170,8 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 			3,
 			"giovanni",
 			"gabriele",
-			"defending region doesn't have the declared number of troops",
+			true,
+			"validation failed: troops check failed: declared values are invalid: defending region doesn't have the declared number of troops",
 		},
 		{
 			"When attacking and defending regions are not neighbours",
@@ -172,7 +184,8 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 			3,
 			"giovanni",
 			"gabriele",
-			"attacking region cannot reach defending region",
+			false,
+			"validation failed: attacking region cannot reach defending region",
 		},
 	}
 	for _, test := range tests {
@@ -180,7 +193,7 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, regionService, service := setup(t)
+			querier, boardService, regionService, service := setup(t)
 			ctx := input()
 
 			game := &sqlc.Game{
@@ -207,6 +220,12 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 					UserID:            test.defendingRegionOwner,
 					Troops:            test.troopsInTarget,
 				}, nil)
+			if !test.regionsAreNeighboring {
+				boardService.
+					EXPECT().
+					AreNeighbours(ctx, test.attackingRegion, test.defendingRegion).
+					Return(false)
+			}
 
 			err := service.PerformQ(ctx, querier, game, attack.Move{
 				AttackingRegionID: test.attackingRegion,

@@ -6,6 +6,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
 )
@@ -23,13 +24,15 @@ type Service interface {
 }
 
 type ServiceImpl struct {
+	boardService  board.Service
 	regionService region.Service
 }
 
 var _ Service = &ServiceImpl{}
 
-func NewService(regionService region.Service) *ServiceImpl {
+func NewService(boardService board.Service, regionService region.Service) *ServiceImpl {
 	return &ServiceImpl{
+		boardService:  boardService,
 		regionService: regionService,
 	}
 }
@@ -50,6 +53,20 @@ func (s *ServiceImpl) PerformQ(
 ) error {
 	ctx.Log().Infow("performing attack move", "move", move)
 
+	if err := s.validate(ctx, querier, move); err != nil {
+		return fmt.Errorf("validation failed: %w", err)
+	}
+
+	return nil
+}
+
+func (s *ServiceImpl) validate(
+	ctx ctx.MoveContext,
+	querier db.Querier,
+	move Move,
+) error {
+	ctx.Log().Infow("validating attack move", "move", move)
+
 	attackingRegion, err := s.regionService.GetRegionQ(ctx, querier, move.AttackingRegionID)
 	if err != nil {
 		return fmt.Errorf("unable to get attacking region: %w", err)
@@ -60,13 +77,34 @@ func (s *ServiceImpl) PerformQ(
 		return fmt.Errorf("unable to get defending region: %w", err)
 	}
 
-	if attackingRegion.UserID != ctx.UserID() {
-		return fmt.Errorf("attacking region is not owned by player")
+	if err := checkRegionOwnership(ctx, attackingRegion, defendingRegion); err != nil {
+		return fmt.Errorf("region ownership check failed: %w", err)
 	}
 
-	if defendingRegion.UserID == ctx.UserID() {
-		return fmt.Errorf("cannot attack your own region")
+	if err := checkTroops(ctx, attackingRegion, defendingRegion, move); err != nil {
+		return fmt.Errorf("troops check failed: %w", err)
 	}
+
+	if !s.boardService.AreNeighbours(
+		ctx,
+		attackingRegion.ExternalReference,
+		defendingRegion.ExternalReference,
+	) {
+		return fmt.Errorf("attacking region cannot reach defending region")
+	}
+
+	ctx.Log().Infow("neighbours check passed")
+
+	return nil
+}
+
+func checkTroops(
+	ctx ctx.MoveContext,
+	attackingRegion *sqlc.GetRegionsByGameRow,
+	defendingRegion *sqlc.GetRegionsByGameRow,
+	move Move,
+) error {
+	ctx.Log().Infow("checking troops")
 
 	if move.AttackingTroops < 1 {
 		return fmt.Errorf("at least one troop is required to attack")
@@ -86,6 +124,41 @@ func (s *ServiceImpl) PerformQ(
 		return fmt.Errorf("defending region does not have enough troops")
 	}
 
+	if err := checkDeclaredValues(ctx, attackingRegion, defendingRegion, move); err != nil {
+		return fmt.Errorf("declared values are invalid: %w", err)
+	}
+
+	ctx.Log().Infow("troops check passed")
+
+	return nil
+}
+
+func checkRegionOwnership(
+	ctx ctx.MoveContext,
+	attackingRegion *sqlc.GetRegionsByGameRow,
+	defendingRegion *sqlc.GetRegionsByGameRow,
+) error {
+	ctx.Log().Infow("checking region ownership")
+
+	if attackingRegion.UserID != ctx.UserID() {
+		return fmt.Errorf("attacking region is not owned by player")
+	}
+
+	if defendingRegion.UserID == ctx.UserID() {
+		return fmt.Errorf("cannot attack your own region")
+	}
+
+	ctx.Log().Infow("region ownership check passed")
+
+	return nil
+}
+
+func checkDeclaredValues(
+	ctx ctx.MoveContext,
+	attackingRegion *sqlc.GetRegionsByGameRow,
+	defendingRegion *sqlc.GetRegionsByGameRow,
+	move Move,
+) error {
 	if attackingRegion.Troops != move.TroopsInSource {
 		return fmt.Errorf("attacking region doesn't have the declared number of troops")
 	}
@@ -93,6 +166,8 @@ func (s *ServiceImpl) PerformQ(
 	if defendingRegion.Troops != move.TroopsInTarget {
 		return fmt.Errorf("defending region doesn't have the declared number of troops")
 	}
+
+	ctx.Log().Infow("declared values check passed")
 
 	return nil
 }
