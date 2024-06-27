@@ -1,7 +1,10 @@
 database:
   host: aws-0-eu-central-1.pooler.supabase.com
-  port: 5432
-  name: postgres
-  user: postgres.aioorjdmravxznadmtie
-  password: fake_pw
+  port:
+  name:
+  user:
+  password:
   disable_ssl: false
+
+jwt:
+  secret:

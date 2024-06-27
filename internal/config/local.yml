@@ -2,7 +2,7 @@ database:
   host: supabase-db
   port:
   name:
-  user: postgres
+  user:
   password:
   disable_ssl: true
 
