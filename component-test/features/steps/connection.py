@@ -16,7 +16,7 @@ def step_impl(context: RiskItContext, player: str):
     conn = create_connection(
         "ws://localhost:8000/ws",
         timeout=2,
-        header=["Authorization: Bearer " + context.players[player].jwt],
+        header=["Authorization: Bearer " + context.players[player].user.jwt],
     )
     context.players[player].connection = conn
     conn.send(build_subscribe_message(context.game_id))

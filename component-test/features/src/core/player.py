@@ -10,5 +10,4 @@ from src.core.user import User
 class Player:
     user: User
     name: str
-    jwt: str
     connection: Optional[WebSocket] = None

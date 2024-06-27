@@ -40,6 +40,6 @@ run: destroy ## Run the application
 	@echo "Spinning up new environment..."
 	@docker compose up --build --detach
 
-cp: destroy ## Run component tests
+cp: ## Run component tests
 	@echo "Running component tests..."
 	@cd component-test; poetry run behave

@@ -8,7 +8,7 @@ from src.client.supabase_client import SupabaseClient
 from src.core.context import RiskItContext
 from src.core.player import Player
 from src.core.runner import ServiceRunner
-from src.core.user import User
+from util.readiness import RestReadinessCheck
 
 LOGGER = logging.getLogger(__name__)
 
@@ -30,6 +30,7 @@ def before_all(context: RiskItContext):
         start_command=start_command,
         path="../",
         timeout=10,
+        readiness_check=RestReadinessCheck(["http://localhost:8080/status"]),
     )
 
     LOGGER.info("Starting service")
@@ -41,15 +42,10 @@ def before_all(context: RiskItContext):
     setup_admin_account(context)
 
 
-def setup_admin_account(context):
-    response = context.supabase_client.sign_up("admin@admin.admin", "secret_password")
-    admin_user = User(id="asd", email="admin@admin.admin", password="secret_password")
-    admin = Player(
-        user=admin_user,
-        name="admin",
-        jwt=response.session.access_token,
-    )
-    context.admin_http_client = RiskItClient(admin)
+def setup_admin_account(context: RiskItContext):
+    user = context.supabase_client.get_user("admin@admin.admin", "secret_password")
+
+    context.admin_http_client = RiskItClient(Player(user, "admin"))
 
 
 def before_scenario(context: RiskItContext, _):
