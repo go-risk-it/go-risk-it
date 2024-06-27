@@ -4,6 +4,8 @@ on:
   push:
     branches: [ "main" ]
   merge_group:
+permissions:
+  contents: write
 
 jobs:
   build:
