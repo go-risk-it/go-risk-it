@@ -40,7 +40,14 @@ class SupabaseClient:
             credentials=dict(email=email, password=password)
         )
 
-    def __sign_in(self, email: str, password: str) -> AuthResponse:
-        return self.client.auth.sign_in_with_password(
-            credentials=dict(email=email, password=password)
-        )
+    def __sign_in(self, email: str, password: str) -> AuthResponse | None:
+        try:
+            response = self.client.auth.sign_in_with_password(
+                credentials=dict(email=email, password=password)
+            )
+
+            return response
+        except Exception as error:
+            LOGGER.info(error)
+
+        return None
