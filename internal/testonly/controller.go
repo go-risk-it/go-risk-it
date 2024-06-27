@@ -14,6 +14,8 @@ type ControllerImpl struct {
 	testOnlyService Service
 }
 
+var _ Controller = (*ControllerImpl)(nil)
+
 func NewController(testOnlyService Service) *ControllerImpl {
 	return &ControllerImpl{
 		testOnlyService: testOnlyService,

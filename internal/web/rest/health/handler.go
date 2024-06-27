@@ -51,6 +51,10 @@ func (h *HandlerImpl) Pattern() string {
 	return "/status"
 }
 
+func (h *HandlerImpl) RequiresAuth() bool {
+	return false
+}
+
 func (h *HandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	h.Handler().ServeHTTP(writer, req)
 }

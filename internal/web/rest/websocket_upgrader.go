@@ -3,19 +3,21 @@ package rest
 import (
 	"net/http"
 
+	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/connection"
 	"go.uber.org/zap"
 )
 
 type WebSocketUpgraderHandler interface {
-	Pattern() string
-	ServeHTTP(w http.ResponseWriter, r *http.Request)
+	route.Route
 }
 
 type WebSocketUpgraderHandlerImpl struct {
 	upgrader connection.Upgrader
 	log      *zap.SugaredLogger
 }
+
+var _ WebSocketUpgraderHandler = (*WebSocketUpgraderHandlerImpl)(nil)
 
 func NewWebSocketHandler(
 	upgrader connection.Upgrader,
@@ -26,6 +28,10 @@ func NewWebSocketHandler(
 
 func (h *WebSocketUpgraderHandlerImpl) Pattern() string {
 	return "/ws"
+}
+
+func (h *WebSocketUpgraderHandlerImpl) RequiresAuth() bool {
+	return true
 }
 
 func (h *WebSocketUpgraderHandlerImpl) ServeHTTP(w http.ResponseWriter, r *http.Request) {

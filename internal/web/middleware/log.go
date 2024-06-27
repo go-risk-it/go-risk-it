@@ -27,6 +27,7 @@ func NewLogMiddleware(log *zap.SugaredLogger) LogMiddleware {
 func (m *LogMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 	return route.NewRoute(
 		routeToWrap.Pattern(),
+		routeToWrap.RequiresAuth(),
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			ctx := ctx.WithLog(request.Context(), m.log)
 			ctx.Log().Debug("applying log middleware")
@@ -37,6 +38,5 @@ func (m *LogMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 				writer,
 				request.WithContext(ctx),
 			)
-		}),
-	)
+		}))
 }

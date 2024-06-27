@@ -28,6 +28,10 @@ func (h *AttackHandlerImpl) Pattern() string {
 	return "/api/v1/games/{id}/move/attacks"
 }
 
+func (h *AttackHandlerImpl) RequiresAuth() bool {
+	return true
+}
+
 func (h *AttackHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	serveMove[request.AttackMove](writer, req, h.moveController.PerformAttackMove)
 }

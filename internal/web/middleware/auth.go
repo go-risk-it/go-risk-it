@@ -26,8 +26,13 @@ func NewAuthMiddleware(jwtConfig config.JwtConfig) AuthMiddleware {
 }
 
 func (m *AuthMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
+	if !routeToWrap.RequiresAuth() {
+		return routeToWrap
+	}
+
 	return route.NewRoute(
 		routeToWrap.Pattern(),
+		routeToWrap.RequiresAuth(),
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			logContext, ok := request.Context().(ctx.LogContext)
 			if !ok {

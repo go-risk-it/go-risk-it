@@ -36,6 +36,7 @@ func NewWebsocketAuthMiddleware(log *zap.SugaredLogger) WebsocketHeaderConversio
 func (m *WebsocketHeaderConversionMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 	return route.NewRoute(
 		routeToWrap.Pattern(),
+		routeToWrap.RequiresAuth(),
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			subprotocol := request.Header.Get("Sec-WebSocket-Protocol")
 			if subprotocol != "" {

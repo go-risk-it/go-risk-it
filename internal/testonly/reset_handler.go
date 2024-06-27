@@ -4,19 +4,21 @@ import (
 	"net/http"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 	"go.uber.org/zap"
 )
 
 type ResetHandler interface {
-	Pattern() string
-	ServeHTTP(w http.ResponseWriter, r *http.Request)
+	route.Route
 }
 
 type ResetHandlerImpl struct {
 	log                *zap.SugaredLogger
 	testOnlyController Controller
 }
+
+var _ ResetHandler = (*ResetHandlerImpl)(nil)
 
 func NewResetHandler(
 	log *zap.SugaredLogger,
@@ -30,6 +32,10 @@ func NewResetHandler(
 
 func (h *ResetHandlerImpl) Pattern() string {
 	return "/api/1/reset"
+}
+
+func (h *ResetHandlerImpl) RequiresAuth() bool {
+	return true
 }
 
 func (h *ResetHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {

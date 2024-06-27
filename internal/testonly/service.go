@@ -18,6 +18,8 @@ type ServiceImpl struct {
 	tables   []string
 }
 
+var _ Service = (*ServiceImpl)(nil)
+
 func NewService(pool pool.DB, dbConfig config.DatabaseConfig) *ServiceImpl {
 	tables := []string{
 		"player",

@@ -33,6 +33,10 @@ func (h *HandlerImpl) Pattern() string {
 	return "/api/v1/games"
 }
 
+func (h *HandlerImpl) RequiresAuth() bool {
+	return true
+}
+
 func (h *HandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	createGameRequest, err := restutils.DecodeRequest[request.CreateGame](writer, req)
 	if err != nil {

@@ -31,3 +31,7 @@ func (h *DeployHandlerImpl) Pattern() string {
 func (h *DeployHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	serveMove[request.DeployMove](writer, req, h.moveController.PerformDeployMove)
 }
+
+func (h *DeployHandlerImpl) RequiresAuth() bool {
+	return true
+}

@@ -32,6 +32,7 @@ func (g *GameMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 
 	return route.NewRoute(
 		routeToWrap.Pattern(),
+		routeToWrap.RequiresAuth(),
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			g.log.Debug("applying game middleware")
 

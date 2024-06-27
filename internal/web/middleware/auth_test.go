@@ -75,6 +75,7 @@ func TestAuthMiddleware_Wrap(t *testing.T) {
 			wrappedHandler := middleware.Wrap(
 				route.NewRoute(
 					"/",
+					true,
 					http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 						writer.WriteHeader(http.StatusOK)
 					})))

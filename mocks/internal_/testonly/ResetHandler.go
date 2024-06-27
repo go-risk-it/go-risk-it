@@ -66,9 +66,54 @@ func (_c *ResetHandler_Pattern_Call) RunAndReturn(run func() string) *ResetHandl
 	return _c
 }
 
-// ServeHTTP provides a mock function with given fields: w, r
-func (_m *ResetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	_m.Called(w, r)
+// RequiresAuth provides a mock function with given fields:
+func (_m *ResetHandler) RequiresAuth() bool {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for RequiresAuth")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// ResetHandler_RequiresAuth_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RequiresAuth'
+type ResetHandler_RequiresAuth_Call struct {
+	*mock.Call
+}
+
+// RequiresAuth is a helper method to define mock.On call
+func (_e *ResetHandler_Expecter) RequiresAuth() *ResetHandler_RequiresAuth_Call {
+	return &ResetHandler_RequiresAuth_Call{Call: _e.mock.On("RequiresAuth")}
+}
+
+func (_c *ResetHandler_RequiresAuth_Call) Run(run func()) *ResetHandler_RequiresAuth_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ResetHandler_RequiresAuth_Call) Return(_a0 bool) *ResetHandler_RequiresAuth_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ResetHandler_RequiresAuth_Call) RunAndReturn(run func() bool) *ResetHandler_RequiresAuth_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ServeHTTP provides a mock function with given fields: _a0, _a1
+func (_m *ResetHandler) ServeHTTP(_a0 http.ResponseWriter, _a1 *http.Request) {
+	_m.Called(_a0, _a1)
 }
 
 // ResetHandler_ServeHTTP_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ServeHTTP'
@@ -77,13 +122,13 @@ type ResetHandler_ServeHTTP_Call struct {
 }
 
 // ServeHTTP is a helper method to define mock.On call
-//   - w http.ResponseWriter
-//   - r *http.Request
-func (_e *ResetHandler_Expecter) ServeHTTP(w interface{}, r interface{}) *ResetHandler_ServeHTTP_Call {
-	return &ResetHandler_ServeHTTP_Call{Call: _e.mock.On("ServeHTTP", w, r)}
+//   - _a0 http.ResponseWriter
+//   - _a1 *http.Request
+func (_e *ResetHandler_Expecter) ServeHTTP(_a0 interface{}, _a1 interface{}) *ResetHandler_ServeHTTP_Call {
+	return &ResetHandler_ServeHTTP_Call{Call: _e.mock.On("ServeHTTP", _a0, _a1)}
 }
 
-func (_c *ResetHandler_ServeHTTP_Call) Run(run func(w http.ResponseWriter, r *http.Request)) *ResetHandler_ServeHTTP_Call {
+func (_c *ResetHandler_ServeHTTP_Call) Run(run func(_a0 http.ResponseWriter, _a1 *http.Request)) *ResetHandler_ServeHTTP_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(http.ResponseWriter), args[1].(*http.Request))
 	})
