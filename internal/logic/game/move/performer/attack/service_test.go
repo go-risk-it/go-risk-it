@@ -18,6 +18,7 @@ import (
 func setup(t *testing.T) (
 	*db.Querier,
 	*board.Service,
+	*dice.Service,
 	*region.Service,
 	*attack.ServiceImpl,
 ) {
@@ -28,13 +29,17 @@ func setup(t *testing.T) (
 	regionService := region.NewService(t)
 	service := attack.NewService(boardService, diceService, regionService)
 
-	return querier, boardService, regionService, service
+	return querier, boardService, diceService, regionService, service
 }
 
 func input() ctx.MoveContext {
 	gameID := int64(1)
 	userID := "giovanni"
-	userContext := ctx.WithUserID(ctx.WithLog(context.Background(), zap.NewNop().Sugar()), userID)
+
+	userContext := ctx.WithUserID(
+		ctx.WithLog(context.Background(), zap.NewExample().Sugar()),
+		userID,
+	)
 
 	gameContext := ctx.WithGameID(userContext, gameID)
 
@@ -195,15 +200,9 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, boardService, regionService, service := setup(t)
+			querier, boardService, _, regionService, service := setup(t)
 			ctx := input()
 
-			game := &sqlc.Game{
-				ID:               ctx.GameID(),
-				Phase:            sqlc.PhaseDEPLOY,
-				Turn:             2,
-				DeployableTroops: 5,
-			}
 			regionService.
 				EXPECT().
 				GetRegionQ(ctx, querier, test.attackingRegion).
@@ -229,7 +228,7 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 					Return(false, nil)
 			}
 
-			err := service.PerformQ(ctx, querier, game, attack.Move{
+			err := service.PerformQ(ctx, querier, nil, attack.Move{
 				AttackingRegionID: test.attackingRegion,
 				DefendingRegionID: test.defendingRegion,
 				TroopsInSource:    test.declaredTroopsInSource,
@@ -239,6 +238,169 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 
 			require.Error(t, err)
 			require.EqualError(t, err, test.expectedError)
+		})
+	}
+}
+
+func TestServiceImpl_AttackShouldUpdateRegionTroops(t *testing.T) {
+	t.Parallel()
+
+	type inputType struct {
+		name                       string
+		attackingTroops            int64
+		defendingTroops            int64
+		troopsInDefendingRegion    int64
+		attackDices                []int
+		defenseDices               []int
+		expectedAttackerCasualties int64
+		expectedDefenderCasualties int64
+	}
+
+	tests := []inputType{
+		{
+			"When one attack dice is strictly worse",
+			1,
+			2,
+			2,
+			[]int{1},
+			[]int{2, 3},
+			1,
+			0,
+		},
+		{
+			"When one attack dice is equal or worse",
+			1,
+			2,
+			2,
+			[]int{2},
+			[]int{2, 3},
+			1,
+			0,
+		},
+		{
+			"When one attacker dice is better than a defender, but worse than the corresponding",
+			2,
+			2,
+			2,
+			[]int{3, 5},
+			[]int{4, 5},
+			2,
+			0,
+		},
+		{
+			"When both have losses",
+			2,
+			2,
+			2,
+			[]int{3, 5},
+			[]int{2, 5},
+			1,
+			1,
+		},
+		{
+			"When attacker wins all",
+			2,
+			2,
+			2,
+			[]int{3, 5},
+			[]int{2, 4},
+			0,
+			2,
+		},
+		{
+			"When in tie, defender wins",
+			2,
+			2,
+			2,
+			[]int{3, 5},
+			[]int{3, 5},
+			2,
+			0,
+		},
+		{
+			"When attacking with less than 3 troops and region has at least 3, should outnumber",
+			2,
+			3,
+			3,
+			[]int{3, 5},
+			[]int{3, 4, 5},
+			2,
+			0,
+		},
+		{
+			"When defending region has more than 3 troops",
+			3,
+			3,
+			10,
+			[]int{3, 5, 6},
+			[]int{3, 4, 5},
+			1,
+			2,
+		},
+	}
+
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			querier, boardService, diceService, regionService, service := setup(t)
+			ctx := input()
+
+			attackingRegion := "greenland"
+			defendingRegion := "iceland"
+			troopsInAttackingRegion := int64(4)
+
+			regionService.
+				EXPECT().
+				GetRegionQ(ctx, querier, attackingRegion).
+				Return(&sqlc.GetRegionsByGameRow{
+					ID:                1,
+					ExternalReference: attackingRegion,
+					UserID:            "giovanni",
+					Troops:            troopsInAttackingRegion,
+				}, nil)
+			regionService.
+				EXPECT().
+				GetRegionQ(ctx, querier, defendingRegion).
+				Return(&sqlc.GetRegionsByGameRow{
+					ID:                2,
+					ExternalReference: defendingRegion,
+					UserID:            "gabriele",
+					Troops:            test.troopsInDefendingRegion,
+				}, nil)
+			boardService.
+				EXPECT().
+				AreNeighbours(ctx, attackingRegion, defendingRegion).
+				Return(true, nil)
+			diceService.
+				EXPECT().
+				Roll(len(test.attackDices)).
+				Return(test.attackDices).
+				Once()
+			diceService.
+				EXPECT().
+				Roll(len(test.defenseDices)).
+				Return(test.defenseDices).
+				Once()
+			regionService.
+				EXPECT().
+				UpdateTroopsInRegion(ctx, querier, int64(1), -test.expectedAttackerCasualties).
+				Return(nil)
+			regionService.
+				EXPECT().
+				UpdateTroopsInRegion(ctx, querier, int64(2), -test.expectedDefenderCasualties).
+				Return(nil)
+
+			err := service.PerformQ(ctx, querier, nil, attack.Move{
+				AttackingRegionID: attackingRegion,
+				DefendingRegionID: defendingRegion,
+				TroopsInSource:    troopsInAttackingRegion,
+				TroopsInTarget:    test.troopsInDefendingRegion,
+				AttackingTroops:   test.attackingTroops,
+			})
+
+			require.NoError(t, err)
 		})
 	}
 }

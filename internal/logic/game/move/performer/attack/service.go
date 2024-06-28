@@ -95,7 +95,7 @@ func (s *ServiceImpl) perform(
 	move Move,
 ) error {
 	attackDices := s.diceService.Roll(int(move.AttackingTroops))
-	defenseDices := s.diceService.Roll(int(max(defendingRegion.Troops, 3)))
+	defenseDices := s.diceService.Roll(int(min(defendingRegion.Troops, 3)))
 
 	ctx.Log().Infow("rolled dices", "attack", attackDices, "defense", defenseDices)
 
