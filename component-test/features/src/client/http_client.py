@@ -34,6 +34,12 @@ class RiskItClient:
             body=body,
         )
 
+    def attack(self, game_id: int, body) -> Response:
+        return self.__post(
+            f"/api/v1/games/{game_id}/moves/attacks",
+            body=body,
+        )
+
     def deploy(self, game_id: int, body) -> Response:
         return self.__post(
             f"/api/v1/games/{game_id}/moves/deployments",

@@ -150,7 +150,7 @@ func (s *ServiceImpl) UpdateTroopsInRegion(
 	troopsToAdd int64,
 ) error {
 	if troopsToAdd == 0 {
-		ctx.Log().Infow("no troopsToAdd to update")
+		ctx.Log().Infow("no troops to update")
 
 		return nil
 	}

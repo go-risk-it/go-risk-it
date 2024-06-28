@@ -25,7 +25,7 @@ func NewAttackHandler(moveController controller.MoveController) *AttackHandlerIm
 }
 
 func (h *AttackHandlerImpl) Pattern() string {
-	return "/api/v1/games/{id}/move/attacks"
+	return "/api/v1/games/{id}/moves/attacks"
 }
 
 func (h *AttackHandlerImpl) RequiresAuth() bool {
