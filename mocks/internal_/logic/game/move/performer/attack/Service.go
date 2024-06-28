@@ -26,17 +26,17 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
-// ContinueAttackQ provides a mock function with given fields:
-func (_m *Service) ContinueAttackQ() bool {
-	ret := _m.Called()
+// CanContinueAttackingQ provides a mock function with given fields: _a0, querier
+func (_m *Service) CanContinueAttackingQ(_a0 ctx.MoveContext, querier db.Querier) bool {
+	ret := _m.Called(_a0, querier)
 
 	if len(ret) == 0 {
-		panic("no return value specified for ContinueAttackQ")
+		panic("no return value specified for CanContinueAttackingQ")
 	}
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func() bool); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(ctx.MoveContext, db.Querier) bool); ok {
+		r0 = rf(_a0, querier)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
@@ -44,44 +44,46 @@ func (_m *Service) ContinueAttackQ() bool {
 	return r0
 }
 
-// Service_ContinueAttackQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ContinueAttackQ'
-type Service_ContinueAttackQ_Call struct {
+// Service_CanContinueAttackingQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CanContinueAttackingQ'
+type Service_CanContinueAttackingQ_Call struct {
 	*mock.Call
 }
 
-// ContinueAttackQ is a helper method to define mock.On call
-func (_e *Service_Expecter) ContinueAttackQ() *Service_ContinueAttackQ_Call {
-	return &Service_ContinueAttackQ_Call{Call: _e.mock.On("ContinueAttackQ")}
+// CanContinueAttackingQ is a helper method to define mock.On call
+//   - _a0 ctx.MoveContext
+//   - querier db.Querier
+func (_e *Service_Expecter) CanContinueAttackingQ(_a0 interface{}, querier interface{}) *Service_CanContinueAttackingQ_Call {
+	return &Service_CanContinueAttackingQ_Call{Call: _e.mock.On("CanContinueAttackingQ", _a0, querier)}
 }
 
-func (_c *Service_ContinueAttackQ_Call) Run(run func()) *Service_ContinueAttackQ_Call {
+func (_c *Service_CanContinueAttackingQ_Call) Run(run func(_a0 ctx.MoveContext, querier db.Querier)) *Service_CanContinueAttackingQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(ctx.MoveContext), args[1].(db.Querier))
 	})
 	return _c
 }
 
-func (_c *Service_ContinueAttackQ_Call) Return(_a0 bool) *Service_ContinueAttackQ_Call {
+func (_c *Service_CanContinueAttackingQ_Call) Return(_a0 bool) *Service_CanContinueAttackingQ_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Service_ContinueAttackQ_Call) RunAndReturn(run func() bool) *Service_ContinueAttackQ_Call {
+func (_c *Service_CanContinueAttackingQ_Call) RunAndReturn(run func(ctx.MoveContext, db.Querier) bool) *Service_CanContinueAttackingQ_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// HasConqueredQ provides a mock function with given fields:
-func (_m *Service) HasConqueredQ() bool {
-	ret := _m.Called()
+// HasConqueredQ provides a mock function with given fields: _a0, querier
+func (_m *Service) HasConqueredQ(_a0 ctx.MoveContext, querier db.Querier) bool {
+	ret := _m.Called(_a0, querier)
 
 	if len(ret) == 0 {
 		panic("no return value specified for HasConqueredQ")
 	}
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func() bool); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(ctx.MoveContext, db.Querier) bool); ok {
+		r0 = rf(_a0, querier)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
@@ -95,13 +97,15 @@ type Service_HasConqueredQ_Call struct {
 }
 
 // HasConqueredQ is a helper method to define mock.On call
-func (_e *Service_Expecter) HasConqueredQ() *Service_HasConqueredQ_Call {
-	return &Service_HasConqueredQ_Call{Call: _e.mock.On("HasConqueredQ")}
+//   - _a0 ctx.MoveContext
+//   - querier db.Querier
+func (_e *Service_Expecter) HasConqueredQ(_a0 interface{}, querier interface{}) *Service_HasConqueredQ_Call {
+	return &Service_HasConqueredQ_Call{Call: _e.mock.On("HasConqueredQ", _a0, querier)}
 }
 
-func (_c *Service_HasConqueredQ_Call) Run(run func()) *Service_HasConqueredQ_Call {
+func (_c *Service_HasConqueredQ_Call) Run(run func(_a0 ctx.MoveContext, querier db.Querier)) *Service_HasConqueredQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(ctx.MoveContext), args[1].(db.Querier))
 	})
 	return _c
 }
@@ -111,7 +115,7 @@ func (_c *Service_HasConqueredQ_Call) Return(_a0 bool) *Service_HasConqueredQ_Ca
 	return _c
 }
 
-func (_c *Service_HasConqueredQ_Call) RunAndReturn(run func() bool) *Service_HasConqueredQ_Call {
+func (_c *Service_HasConqueredQ_Call) RunAndReturn(run func(ctx.MoveContext, db.Querier) bool) *Service_HasConqueredQ_Call {
 	_c.Call.Return(run)
 	return _c
 }

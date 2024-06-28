@@ -13,4 +13,3 @@ WHERE g.id = $1;
 UPDATE region
 SET troops = troops + $2
 WHERE id = $1;
-

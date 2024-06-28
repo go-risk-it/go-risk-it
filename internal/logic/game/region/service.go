@@ -30,11 +30,11 @@ type Service interface {
 	) (*sqlc.GetRegionsByGameRow, error)
 	GetRegions(ctx ctx.GameContext) ([]sqlc.GetRegionsByGameRow, error)
 	GetRegionsQ(ctx ctx.GameContext, querier db.Querier) ([]sqlc.GetRegionsByGameRow, error)
-	IncreaseTroopsInRegion(
+	UpdateTroopsInRegion(
 		ctx ctx.MoveContext,
 		querier db.Querier,
 		regionID int64,
-		troops int64,
+		troopsToAdd int64,
 	) error
 }
 type ServiceImpl struct {
@@ -143,23 +143,34 @@ func extractRegionFrom(
 	return nil
 }
 
-func (s *ServiceImpl) IncreaseTroopsInRegion(
+func (s *ServiceImpl) UpdateTroopsInRegion(
 	ctx ctx.MoveContext,
 	querier db.Querier,
 	regionID int64,
-	troops int64,
+	troopsToAdd int64,
 ) error {
-	ctx.Log().Infow("increasing region troops", "region_id", regionID, "troops", troops)
+	if troopsToAdd == 0 {
+		ctx.Log().Infow("no troopsToAdd to update")
+
+		return nil
+	}
+
+	action := "increas"
+	if troopsToAdd < 0 {
+		action = "decreas"
+	}
+
+	ctx.Log().Infof("%sing region troops", action)
 
 	err := querier.IncreaseRegionTroops(ctx, sqlc.IncreaseRegionTroopsParams{
 		ID:     regionID,
-		Troops: troops,
+		Troops: troopsToAdd,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to increase region troops: %w", err)
+		return fmt.Errorf("failed to %se region troops: %w", action, err)
 	}
 
-	ctx.Log().Infow("increased region troops", "region_id", regionID, "troops", troops)
+	ctx.Log().Infof("%sed region troops", action)
 
 	return nil
 }

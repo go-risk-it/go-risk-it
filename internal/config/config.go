@@ -1,9 +1,6 @@
 package config
 
 import (
-	"fmt"
-	"net"
-	"strconv"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -15,40 +12,10 @@ import (
 	"go.uber.org/zap"
 )
 
-type DatabaseConfig struct {
-	Host       string `koanf:"host"`
-	Port       int    `koanf:"port"`
-	Name       string `koanf:"name"`
-	User       string `koanf:"user"`
-	Password   string `koanf:"password"`
-	DisableSSL bool   `koanf:"disable_ssl"`
-}
-
-func (c *DatabaseConfig) BuildConnectionString() string {
-	hostPort := net.JoinHostPort(c.Host, strconv.Itoa(c.Port))
-
-	result := fmt.Sprintf(
-		"postgresql://%s:%s@%s/%s",
-		c.User,
-		c.Password,
-		hostPort,
-		c.Name,
-	)
-
-	if c.DisableSSL {
-		result += "?sslmode=disable"
-	}
-
-	return result
-}
-
-type JwtConfig struct {
-	Secret []byte `koanf:"secret"`
-}
-
 type Config struct {
 	Jwt      JwtConfig
 	Database DatabaseConfig
+	Dice     DiceConfig
 }
 
 type Result struct {
@@ -56,6 +23,7 @@ type Result struct {
 
 	JwtConfig      JwtConfig
 	DatabaseConfig DatabaseConfig
+	DiceConfig     DiceConfig
 }
 
 func newConfig(log *zap.SugaredLogger) Result {
@@ -79,6 +47,7 @@ func newConfig(log *zap.SugaredLogger) Result {
 	return Result{
 		JwtConfig:      config.Jwt,
 		DatabaseConfig: config.Database,
+		DiceConfig:     config.Dice,
 	}
 }
 

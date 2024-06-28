@@ -2,11 +2,13 @@ package attack
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/dice"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
 )
@@ -22,20 +24,26 @@ type Move struct {
 type Service interface {
 	service.Service[Move]
 
-	HasConqueredQ() bool
-	ContinueAttackQ() bool
+	HasConqueredQ(ctx ctx.MoveContext, querier db.Querier) bool
+	CanContinueAttackingQ(ctx ctx.MoveContext, querier db.Querier) bool
 }
 
 type ServiceImpl struct {
 	boardService  board.Service
+	diceService   dice.Service
 	regionService region.Service
 }
 
 var _ Service = &ServiceImpl{}
 
-func NewService(boardService board.Service, regionService region.Service) *ServiceImpl {
+func NewService(
+	boardService board.Service,
+	diceService dice.Service,
+	regionService region.Service,
+) *ServiceImpl {
 	return &ServiceImpl{
 		boardService:  boardService,
+		diceService:   diceService,
 		regionService: regionService,
 	}
 }
@@ -56,20 +64,6 @@ func (s *ServiceImpl) PerformQ(
 ) error {
 	ctx.Log().Infow("performing attack move", "move", move)
 
-	if err := s.validate(ctx, querier, move); err != nil {
-		return fmt.Errorf("validation failed: %w", err)
-	}
-
-	return nil
-}
-
-func (s *ServiceImpl) validate(
-	ctx ctx.MoveContext,
-	querier db.Querier,
-	move Move,
-) error {
-	ctx.Log().Infow("validating attack move", "move", move)
-
 	attackingRegion, err := s.regionService.GetRegionQ(ctx, querier, move.AttackingRegionID)
 	if err != nil {
 		return fmt.Errorf("unable to get attacking region: %w", err)
@@ -79,6 +73,98 @@ func (s *ServiceImpl) validate(
 	if err != nil {
 		return fmt.Errorf("unable to get defending region: %w", err)
 	}
+
+	if err := s.validate(ctx, attackingRegion, defendingRegion, move); err != nil {
+		return fmt.Errorf("validation failed: %w", err)
+	}
+
+	if err := s.perform(ctx, querier, attackingRegion, defendingRegion, move); err != nil {
+		return fmt.Errorf("unable to perform attack move: %w", err)
+	}
+
+	ctx.Log().Infow("attack executed successfully")
+
+	return nil
+}
+
+func (s *ServiceImpl) perform(
+	ctx ctx.MoveContext,
+	querier db.Querier,
+	attackingRegion *sqlc.GetRegionsByGameRow,
+	defendingRegion *sqlc.GetRegionsByGameRow,
+	move Move,
+) error {
+	attackDices := s.diceService.Roll(int(move.AttackingTroops))
+	defenseDices := s.diceService.Roll(int(max(defendingRegion.Troops, 3)))
+
+	ctx.Log().Infow("rolled dices", "attack", attackDices, "defense", defenseDices)
+
+	casualties := computeCasualties(ctx, attackDices, defenseDices)
+
+	ctx.Log().Infow("updating region troops")
+
+	if err := s.regionService.UpdateTroopsInRegion(
+		ctx,
+		querier,
+		attackingRegion.ID,
+		-casualties.attacking,
+	); err != nil {
+		return fmt.Errorf("failed to decrease troops in attacking region: %w", err)
+	}
+
+	if err := s.regionService.UpdateTroopsInRegion(
+		ctx,
+		querier,
+		defendingRegion.ID,
+		-casualties.defending,
+	); err != nil {
+		return fmt.Errorf("failed to decrease troops in defending region: %w", err)
+	}
+
+	return nil
+}
+
+type casualties struct {
+	attacking int64
+	defending int64
+}
+
+func computeCasualties(ctx ctx.MoveContext, attackDices, defenseDices []int) *casualties {
+	casualties := &casualties{}
+
+	slices.SortFunc(attackDices, descending)
+	slices.SortFunc(defenseDices, descending)
+
+	matches := min(len(attackDices), len(defenseDices))
+	for i := 0; i < matches; i++ {
+		if attackDices[i] > defenseDices[i] {
+			casualties.defending++
+		} else {
+			casualties.attacking++
+		}
+	}
+
+	ctx.Log().Infow(
+		"casualties",
+		"attacking",
+		casualties.attacking,
+		"defending",
+		casualties.defending)
+
+	return casualties
+}
+
+func descending(a, b int) int {
+	return b - a
+}
+
+func (s *ServiceImpl) validate(
+	ctx ctx.MoveContext,
+	attackingRegion *sqlc.GetRegionsByGameRow,
+	defendingRegion *sqlc.GetRegionsByGameRow,
+	move Move,
+) error {
+	ctx.Log().Infow("validating attack move", "move", move)
 
 	if err := checkRegionOwnership(ctx, attackingRegion, defendingRegion); err != nil {
 		return fmt.Errorf("region ownership check failed: %w", err)
@@ -180,10 +266,10 @@ func checkDeclaredValues(
 	return nil
 }
 
-func (s *ServiceImpl) HasConqueredQ() bool {
+func (s *ServiceImpl) HasConqueredQ(ctx ctx.MoveContext, querier db.Querier) bool {
 	return false
 }
 
-func (s *ServiceImpl) ContinueAttackQ() bool {
+func (s *ServiceImpl) CanContinueAttackingQ(ctx ctx.MoveContext, querier db.Querier) bool {
 	return false
 }

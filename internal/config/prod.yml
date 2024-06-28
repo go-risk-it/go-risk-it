@@ -8,3 +8,6 @@ database:
 
 jwt:
   secret:
+
+dice:
+  roll_strategy: random

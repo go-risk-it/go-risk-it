@@ -15,6 +15,8 @@ issues:
         - dogsled
         - lll
 linters-settings:
+  exhaustive:
+    default-signifies-exhaustive: true
   lll:
     line-length: 99
     tab-width: 4
@@ -25,8 +27,9 @@ linters-settings:
   gocritic:
     disabled-checks:
       - singleCaseSwitch
-  exhaustive:
-    default-signifies-exhaustive: true
+  gosec:
+    excludes:
+      - G404
 #  exhaustruct:
 #    # List of regular expressions to match struct packages and their names.
 #    # Regular expressions must match complete canonical struct package/name/structname.

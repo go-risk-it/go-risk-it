@@ -104,7 +104,7 @@ func (s *ServiceImpl) executeDeploy(
 		return fmt.Errorf("failed to decrease deployable troops: %w", err)
 	}
 
-	if err := s.regionService.IncreaseTroopsInRegion(ctx, querier, region.ID, troops); err != nil {
+	if err := s.regionService.UpdateTroopsInRegion(ctx, querier, region.ID, troops); err != nil {
 		return fmt.Errorf("failed to increase region troops: %w", err)
 	}
 
