@@ -8,7 +8,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/attack"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/deploy"
 )
 
 type Service interface {
@@ -18,20 +17,14 @@ type Service interface {
 
 type ServiceImpl struct {
 	attackService attack.Service
-	deployService deploy.Service
 	gameService   gamestate.Service
 }
 
 var _ Service = &ServiceImpl{}
 
-func NewService(
-	attackService attack.Service,
-	deployService deploy.Service,
-	gameService gamestate.Service,
-) *ServiceImpl {
+func NewService(attackService attack.Service, gameService gamestate.Service) *ServiceImpl {
 	return &ServiceImpl{
 		attackService: attackService,
-		deployService: deployService,
 		gameService:   gameService,
 	}
 }
@@ -57,6 +50,8 @@ func (s *ServiceImpl) SetGamePhaseQ(
 }
 
 func (s *ServiceImpl) AdvanceQ(ctx ctx.MoveContext, querier db.Querier) error {
+	ctx.Log().Infow("checking if phase needs to be advanced")
+
 	gameState, err := s.gameService.GetGameStateQ(ctx, querier)
 	if err != nil {
 		return fmt.Errorf("failed to get game state: %w", err)
@@ -64,8 +59,14 @@ func (s *ServiceImpl) AdvanceQ(ctx ctx.MoveContext, querier db.Querier) error {
 
 	ctx.Log().Infow("walking to target phase", "from", gameState.Phase)
 
-	targetPhase := s.walkToTargetPhase(ctx, querier, gameState)
+	targetPhase, err := s.walkToTargetPhase(ctx, querier, gameState)
+	if err != nil {
+		return fmt.Errorf("failed to walk to target phase: %w", err)
+	}
+
 	if targetPhase == gameState.Phase {
+		ctx.Log().Infow("no need to advance phase")
+
 		return nil
 	}
 
@@ -89,7 +90,7 @@ func (s *ServiceImpl) walkToTargetPhase(
 	ctx ctx.MoveContext,
 	querier db.Querier,
 	gameState *sqlc.Game,
-) sqlc.Phase {
+) (sqlc.Phase, error) {
 	targetPhase := gameState.Phase
 
 	mustAdvance := true
@@ -109,23 +110,12 @@ func (s *ServiceImpl) walkToTargetPhase(
 				mustAdvance = true
 			}
 		case sqlc.PhaseATTACK:
-			if s.hasConquered(ctx, querier) {
-				ctx.Log().Infow(
-					"attack has conquered, must advance phase",
-					"phase",
-					gameState.Phase,
-				)
+			targetPhase, err := s.getTargetPhaseForAttack(ctx, querier)
+			if err != nil {
+				return targetPhase, fmt.Errorf("failed to get target phase for attack: %w", err)
+			}
 
-				targetPhase = sqlc.PhaseCONQUER
-				mustAdvance = true
-			} else if !s.canKeepAttacking(ctx, querier) {
-				ctx.Log().Infow(
-					"cannot keep attacking, must advance phase",
-					"phase",
-					gameState.Phase,
-				)
-
-				targetPhase = sqlc.PhaseREINFORCE
+			if targetPhase != sqlc.PhaseATTACK {
 				mustAdvance = true
 			}
 		case sqlc.PhaseCONQUER:
@@ -134,35 +124,36 @@ func (s *ServiceImpl) walkToTargetPhase(
 		}
 	}
 
-	return targetPhase
+	return targetPhase, nil
 }
 
-func (s *ServiceImpl) hasConquered(ctx ctx.MoveContext, querier db.Querier) bool {
+func (s *ServiceImpl) getTargetPhaseForAttack(
+	ctx ctx.MoveContext,
+	querier db.Querier,
+) (sqlc.Phase, error) {
+	targetPhase := sqlc.PhaseATTACK
+
 	hasConquered, err := s.attackService.HasConqueredQ(ctx, querier)
 	if err != nil {
-		ctx.Log().Errorw(
-			"failed to check if attack has conquered",
-			"error",
-			err,
-		)
-
-		return false
+		return targetPhase, fmt.Errorf("failed to check if attack has conquered: %w", err)
 	}
 
-	return hasConquered
-}
+	if hasConquered {
+		ctx.Log().Infow("cannot continue attacking, must advance phase to CONQUER")
 
-func (s *ServiceImpl) canKeepAttacking(ctx ctx.MoveContext, querier db.Querier) bool {
+		return sqlc.PhaseCONQUER, nil
+	}
+
 	canContinueAttacking, err := s.attackService.CanContinueAttackingQ(ctx, querier)
 	if err != nil {
-		ctx.Log().Errorw(
-			"failed to check if attack can continue",
-			"error",
-			err,
-		)
-
-		return false
+		return targetPhase, fmt.Errorf("failed to check if attack can continue: %w", err)
 	}
 
-	return canContinueAttacking
+	if !canContinueAttacking {
+		ctx.Log().Infow("cannot continue attacking, must advance phase to REINFORCE")
+
+		return sqlc.PhaseREINFORCE, nil
+	}
+
+	return targetPhase, nil
 }
