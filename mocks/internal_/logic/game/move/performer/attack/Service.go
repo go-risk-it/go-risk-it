@@ -140,54 +140,6 @@ func (_c *Service_HasConqueredQ_Call) RunAndReturn(run func(ctx.MoveContext, db.
 	return _c
 }
 
-// MustAdvanceQ provides a mock function with given fields: _a0, querier, game
-func (_m *Service) MustAdvanceQ(_a0 ctx.MoveContext, querier db.Querier, game *sqlc.Game) bool {
-	ret := _m.Called(_a0, querier, game)
-
-	if len(ret) == 0 {
-		panic("no return value specified for MustAdvanceQ")
-	}
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(ctx.MoveContext, db.Querier, *sqlc.Game) bool); ok {
-		r0 = rf(_a0, querier, game)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	return r0
-}
-
-// Service_MustAdvanceQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MustAdvanceQ'
-type Service_MustAdvanceQ_Call struct {
-	*mock.Call
-}
-
-// MustAdvanceQ is a helper method to define mock.On call
-//   - _a0 ctx.MoveContext
-//   - querier db.Querier
-//   - game *sqlc.Game
-func (_e *Service_Expecter) MustAdvanceQ(_a0 interface{}, querier interface{}, game interface{}) *Service_MustAdvanceQ_Call {
-	return &Service_MustAdvanceQ_Call{Call: _e.mock.On("MustAdvanceQ", _a0, querier, game)}
-}
-
-func (_c *Service_MustAdvanceQ_Call) Run(run func(_a0 ctx.MoveContext, querier db.Querier, game *sqlc.Game)) *Service_MustAdvanceQ_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.MoveContext), args[1].(db.Querier), args[2].(*sqlc.Game))
-	})
-	return _c
-}
-
-func (_c *Service_MustAdvanceQ_Call) Return(_a0 bool) *Service_MustAdvanceQ_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Service_MustAdvanceQ_Call) RunAndReturn(run func(ctx.MoveContext, db.Querier, *sqlc.Game) bool) *Service_MustAdvanceQ_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // PerformQ provides a mock function with given fields: _a0, querier, game, move
 func (_m *Service) PerformQ(_a0 ctx.MoveContext, querier db.Querier, game *sqlc.Game, move attack.Move) error {
 	ret := _m.Called(_a0, querier, game, move)

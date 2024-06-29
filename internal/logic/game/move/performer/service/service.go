@@ -12,5 +12,4 @@ type Performer[T any] interface {
 
 type Service[T any] interface {
 	Performer[T]
-	MustAdvanceQ(ctx ctx.MoveContext, querier db.Querier, game *sqlc.Game) bool
 }

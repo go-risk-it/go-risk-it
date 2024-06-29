@@ -98,7 +98,7 @@ func (s *ServiceImpl) walkToTargetPhase(
 
 		switch targetPhase {
 		case sqlc.PhaseDEPLOY:
-			if s.deployService.MustAdvanceQ(ctx, querier, gameState) {
+			if gameState.DeployableTroops == 0 {
 				ctx.Log().Infow(
 					"deploy must advance",
 					"phase",
@@ -111,7 +111,7 @@ func (s *ServiceImpl) walkToTargetPhase(
 		case sqlc.PhaseATTACK:
 			if s.hasConquered(ctx, querier) {
 				ctx.Log().Infow(
-					"attack has conquered",
+					"attack has conquered, must advance phase",
 					"phase",
 					gameState.Phase,
 				)

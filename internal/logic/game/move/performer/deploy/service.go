@@ -45,14 +45,6 @@ func NewService(
 	}
 }
 
-func (s *ServiceImpl) MustAdvanceQ(
-	_ ctx.MoveContext,
-	_ db.Querier,
-	game *sqlc.Game,
-) bool {
-	return game.DeployableTroops == 0
-}
-
 func (s *ServiceImpl) PerformQ(
 	ctx ctx.MoveContext,
 	querier db.Querier,
