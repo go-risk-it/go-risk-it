@@ -15,7 +15,7 @@ services:
       service: kong
 
   migrate:
-    image: migrate/migrate:latest
+    image: migrate/migrate:latest@sha256:de154de4b7f9d0d751aacb1ec6023f5fc96f874eb88b65d050f761a33376aa4b
     volumes:
       - ./internal/data/sqlc/migrations:/migrations
     command: -verbose -path=/migrations/ -database postgresql://postgres:password@postgres:5432/risk-it?sslmode=disable up
@@ -24,7 +24,7 @@ services:
         condition: service_healthy
 
   sqlc:
-    image: sqlc/sqlc:latest
+    image: sqlc/sqlc:latest@sha256:8c4b8578328b35754c89ed6ccea5fa62db9f14f341a691c4876740ce2c189a54
     env_file:
       - component-test/.env
     volumes:
