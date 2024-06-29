@@ -27,7 +27,7 @@ func (_m *Service) EXPECT() *Service_Expecter {
 }
 
 // CanContinueAttackingQ provides a mock function with given fields: _a0, querier
-func (_m *Service) CanContinueAttackingQ(_a0 ctx.MoveContext, querier db.Querier) bool {
+func (_m *Service) CanContinueAttackingQ(_a0 ctx.MoveContext, querier db.Querier) (bool, error) {
 	ret := _m.Called(_a0, querier)
 
 	if len(ret) == 0 {
@@ -35,13 +35,23 @@ func (_m *Service) CanContinueAttackingQ(_a0 ctx.MoveContext, querier db.Querier
 	}
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(ctx.MoveContext, db.Querier) (bool, error)); ok {
+		return rf(_a0, querier)
+	}
 	if rf, ok := ret.Get(0).(func(ctx.MoveContext, db.Querier) bool); ok {
 		r0 = rf(_a0, querier)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(ctx.MoveContext, db.Querier) error); ok {
+		r1 = rf(_a0, querier)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Service_CanContinueAttackingQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CanContinueAttackingQ'
@@ -63,18 +73,18 @@ func (_c *Service_CanContinueAttackingQ_Call) Run(run func(_a0 ctx.MoveContext, 
 	return _c
 }
 
-func (_c *Service_CanContinueAttackingQ_Call) Return(_a0 bool) *Service_CanContinueAttackingQ_Call {
-	_c.Call.Return(_a0)
+func (_c *Service_CanContinueAttackingQ_Call) Return(_a0 bool, _a1 error) *Service_CanContinueAttackingQ_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_CanContinueAttackingQ_Call) RunAndReturn(run func(ctx.MoveContext, db.Querier) bool) *Service_CanContinueAttackingQ_Call {
+func (_c *Service_CanContinueAttackingQ_Call) RunAndReturn(run func(ctx.MoveContext, db.Querier) (bool, error)) *Service_CanContinueAttackingQ_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // HasConqueredQ provides a mock function with given fields: _a0, querier
-func (_m *Service) HasConqueredQ(_a0 ctx.MoveContext, querier db.Querier) bool {
+func (_m *Service) HasConqueredQ(_a0 ctx.MoveContext, querier db.Querier) (bool, error) {
 	ret := _m.Called(_a0, querier)
 
 	if len(ret) == 0 {
@@ -82,13 +92,23 @@ func (_m *Service) HasConqueredQ(_a0 ctx.MoveContext, querier db.Querier) bool {
 	}
 
 	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(ctx.MoveContext, db.Querier) (bool, error)); ok {
+		return rf(_a0, querier)
+	}
 	if rf, ok := ret.Get(0).(func(ctx.MoveContext, db.Querier) bool); ok {
 		r0 = rf(_a0, querier)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(ctx.MoveContext, db.Querier) error); ok {
+		r1 = rf(_a0, querier)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Service_HasConqueredQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HasConqueredQ'
@@ -110,12 +130,12 @@ func (_c *Service_HasConqueredQ_Call) Run(run func(_a0 ctx.MoveContext, querier 
 	return _c
 }
 
-func (_c *Service_HasConqueredQ_Call) Return(_a0 bool) *Service_HasConqueredQ_Call {
-	_c.Call.Return(_a0)
+func (_c *Service_HasConqueredQ_Call) Return(_a0 bool, _a1 error) *Service_HasConqueredQ_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_HasConqueredQ_Call) RunAndReturn(run func(ctx.MoveContext, db.Querier) bool) *Service_HasConqueredQ_Call {
+func (_c *Service_HasConqueredQ_Call) RunAndReturn(run func(ctx.MoveContext, db.Querier) (bool, error)) *Service_HasConqueredQ_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -24,8 +24,8 @@ type Move struct {
 type Service interface {
 	service.Service[Move]
 
-	HasConqueredQ(ctx ctx.MoveContext, querier db.Querier) bool
-	CanContinueAttackingQ(ctx ctx.MoveContext, querier db.Querier) bool
+	HasConqueredQ(ctx ctx.MoveContext, querier db.Querier) (bool, error)
+	CanContinueAttackingQ(ctx ctx.MoveContext, querier db.Querier) (bool, error)
 }
 
 type ServiceImpl struct {
@@ -266,10 +266,52 @@ func checkDeclaredValues(
 	return nil
 }
 
-func (s *ServiceImpl) HasConqueredQ(ctx ctx.MoveContext, querier db.Querier) bool {
-	return false
+// HasConqueredQ returns true if the player has conquered any region.
+// This is detected by checking that there is exactly one region
+// (non owned by the player) that has 0 troops.
+func (s *ServiceImpl) HasConqueredQ(ctx ctx.MoveContext, querier db.Querier) (bool, error) {
+	regions, err := s.regionService.GetRegionsQ(ctx, querier)
+	if err != nil {
+		return false, fmt.Errorf("failed to get regions: %w", err)
+	}
+
+	ctx.Log().Infow("checking if player has conquered any region", "regions", len(regions))
+
+	for _, region := range regions {
+		if region.UserID != ctx.UserID() && region.Troops == 0 {
+			ctx.Log().Infow("player has conquered a region", "region", region.ExternalReference)
+
+			return true, nil
+		}
+	}
+
+	ctx.Log().Infow("player has not conquered any region")
+
+	return false, nil
 }
 
-func (s *ServiceImpl) CanContinueAttackingQ(ctx ctx.MoveContext, querier db.Querier) bool {
-	return false
+// CanContinueAttackingQ returns true if the player does not have any attack move available.
+// This is detected by checking that all of the regions owned by the player have exactly 1 troop.
+func (s *ServiceImpl) CanContinueAttackingQ(
+	ctx ctx.MoveContext,
+	querier db.Querier,
+) (bool, error) {
+	regions, err := s.regionService.GetRegionsQ(ctx, querier)
+	if err != nil {
+		return false, fmt.Errorf("failed to get regions: %w", err)
+	}
+
+	ctx.Log().Infow("checking if player can continue attacking", "regions", len(regions))
+
+	for _, region := range regions {
+		if region.UserID == ctx.UserID() && region.Troops > 1 {
+			ctx.Log().Infow("player can continue attacking")
+
+			return true, nil
+		}
+	}
+
+	ctx.Log().Infow("player can not continue attacking")
+
+	return false, nil
 }

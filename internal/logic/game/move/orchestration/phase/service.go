@@ -109,9 +109,18 @@ func (s *ServiceImpl) walkToTargetPhase(
 				mustAdvance = true
 			}
 		case sqlc.PhaseATTACK:
-			if s.attackService.MustAdvanceQ(ctx, querier, gameState) {
+			if s.hasConquered(ctx, querier) {
 				ctx.Log().Infow(
-					"attack must advance",
+					"attack has conquered",
+					"phase",
+					gameState.Phase,
+				)
+
+				targetPhase = sqlc.PhaseCONQUER
+				mustAdvance = true
+			} else if !s.canKeepAttacking(ctx, querier) {
+				ctx.Log().Infow(
+					"cannot keep attacking, must advance phase",
 					"phase",
 					gameState.Phase,
 				)
@@ -119,10 +128,41 @@ func (s *ServiceImpl) walkToTargetPhase(
 				targetPhase = sqlc.PhaseREINFORCE
 				mustAdvance = true
 			}
+		case sqlc.PhaseCONQUER:
 		case sqlc.PhaseREINFORCE:
 		case sqlc.PhaseCARDS:
 		}
 	}
 
 	return targetPhase
+}
+
+func (s *ServiceImpl) hasConquered(ctx ctx.MoveContext, querier db.Querier) bool {
+	hasConquered, err := s.attackService.HasConqueredQ(ctx, querier)
+	if err != nil {
+		ctx.Log().Errorw(
+			"failed to check if attack has conquered",
+			"error",
+			err,
+		)
+
+		return false
+	}
+
+	return hasConquered
+}
+
+func (s *ServiceImpl) canKeepAttacking(ctx ctx.MoveContext, querier db.Querier) bool {
+	canContinueAttacking, err := s.attackService.CanContinueAttackingQ(ctx, querier)
+	if err != nil {
+		ctx.Log().Errorw(
+			"failed to check if attack can continue",
+			"error",
+			err,
+		)
+
+		return false
+	}
+
+	return canContinueAttacking
 }

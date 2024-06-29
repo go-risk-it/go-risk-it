@@ -17,6 +17,7 @@ const (
 	PhaseCARDS     Phase = "CARDS"
 	PhaseDEPLOY    Phase = "DEPLOY"
 	PhaseATTACK    Phase = "ATTACK"
+	PhaseCONQUER   Phase = "CONQUER"
 	PhaseREINFORCE Phase = "REINFORCE"
 )
 

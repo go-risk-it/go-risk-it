@@ -404,3 +404,159 @@ func TestServiceImpl_AttackShouldUpdateRegionTroops(t *testing.T) {
 		})
 	}
 }
+
+func TestServiceImpl_HasConqueredQ(t *testing.T) {
+	t.Parallel()
+
+	type inputType struct {
+		name     string
+		regions  []sqlc.GetRegionsByGameRow
+		expected bool
+	}
+
+	tests := []inputType{
+		{
+			"When nothing was conquered",
+			[]sqlc.GetRegionsByGameRow{
+				{
+					ID:                1,
+					ExternalReference: "greenland",
+					UserID:            "giovanni",
+					Troops:            4,
+				},
+				{
+					ID:                2,
+					ExternalReference: "iceland",
+					UserID:            "gabriele",
+					Troops:            5,
+				},
+			},
+			false,
+		},
+		{
+			"When a region is conquered, but it's owned by the attacker",
+			[]sqlc.GetRegionsByGameRow{
+				{
+					ID:                1,
+					ExternalReference: "greenland",
+					UserID:            "giovanni",
+					Troops:            4,
+				},
+				{
+					ID:                2,
+					ExternalReference: "iceland",
+					UserID:            "giovanni",
+					Troops:            0,
+				},
+			},
+			false,
+		},
+		{
+			"When a region is conquered, and it's not owned by the attacker",
+			[]sqlc.GetRegionsByGameRow{
+				{
+					ID:                1,
+					ExternalReference: "greenland",
+					UserID:            "giovanni",
+					Troops:            4,
+				},
+				{
+					ID:                2,
+					ExternalReference: "iceland",
+					UserID:            "gabriele",
+					Troops:            0,
+				},
+			},
+			true,
+		},
+	}
+
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			querier, _, _, regionService, service := setup(t)
+			ctx := input()
+
+			regionService.
+				EXPECT().
+				GetRegionsQ(ctx, querier).
+				Return(test.regions, nil)
+
+			result, err := service.HasConqueredQ(ctx, querier)
+
+			require.NoError(t, err)
+			require.Equal(t, test.expected, result)
+		})
+	}
+}
+
+func TestServiceImpl_CanContinueAttackingQ(t *testing.T) {
+	t.Parallel()
+
+	type inputType struct {
+		name     string
+		regions  []sqlc.GetRegionsByGameRow
+		expected bool
+	}
+
+	tests := []inputType{
+		{
+			"When player still has troops",
+			[]sqlc.GetRegionsByGameRow{
+				{
+					ID:                1,
+					ExternalReference: "greenland",
+					UserID:            "giovanni",
+					Troops:            4,
+				},
+				{
+					ID:                2,
+					ExternalReference: "iceland",
+					UserID:            "gabriele",
+					Troops:            5,
+				},
+			},
+			true,
+		},
+		{
+			"When player doesn't have troops anymore",
+			[]sqlc.GetRegionsByGameRow{
+				{
+					ID:                1,
+					ExternalReference: "greenland",
+					UserID:            "giovanni",
+					Troops:            1,
+				},
+				{
+					ID:                2,
+					ExternalReference: "iceland",
+					UserID:            "gabriele",
+					Troops:            2,
+				},
+			},
+			false,
+		},
+	}
+
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			querier, _, _, regionService, service := setup(t)
+			ctx := input()
+
+			regionService.
+				EXPECT().
+				GetRegionsQ(ctx, querier).
+				Return(test.regions, nil)
+
+			result, err := service.CanContinueAttackingQ(ctx, querier)
+
+			require.NoError(t, err)
+			require.Equal(t, test.expected, result)
+		})
+	}
+}
