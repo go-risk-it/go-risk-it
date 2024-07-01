@@ -20,7 +20,7 @@ func TestControllerImpl_GetPlayerState(t *testing.T) {
 	logger := zap.NewExample().Sugar()
 	playerService := player.NewService(t)
 
-	// Initialize the gamestate under test
+	// Initialize the state under test
 	controller := playerController.NewPlayerController(playerService)
 
 	// Set up test data

@@ -23,7 +23,7 @@ func TestServiceImpl_CreateRegions(t *testing.T) {
 	querier := db.NewQuerier(t)
 	assignmentService := assignment.NewService(t)
 
-	// Initialize the gamestate under test
+	// Initialize the state under test
 	service := region.NewService(querier, assignmentService)
 
 	// Set up test data
@@ -79,7 +79,7 @@ func TestServiceImpl_CreateRegions_NoPlayers(t *testing.T) {
 	querier := db.NewQuerier(t)
 	assignmentService := assignment.NewService(t)
 
-	// Initialize the gamestate under test
+	// Initialize the state under test
 	service := region.NewService(querier, assignmentService)
 
 	// Set up test data
@@ -108,7 +108,7 @@ func TestServiceImpl_CreateRegions_PlayersNotInSameGame(t *testing.T) {
 	querier := db.NewQuerier(t)
 	assignmentService := assignment.NewService(t)
 
-	// Initialize the gamestate under test
+	// Initialize the state under test
 	service := region.NewService(querier, assignmentService)
 
 	// Set up test data
@@ -139,7 +139,7 @@ func TestServiceImpl_CreateRegions_InsertRegionsError(t *testing.T) {
 	querier := db.NewQuerier(t)
 	assignmentService := assignment.NewService(t)
 
-	// Initialize the gamestate under test
+	// Initialize the state under test
 	service := region.NewService(querier, assignmentService)
 
 	// Set up test data

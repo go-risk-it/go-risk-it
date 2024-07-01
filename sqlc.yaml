@@ -3,7 +3,7 @@ sql:
   - engine: "postgresql"
     queries:
       - "internal/logic/game/board"
-      - "internal/logic/game/gamestate"
+      - "internal/logic/game/state"
       - "internal/logic/game/player"
       - "internal/logic/game/region"
     schema: "internal/data/sqlc/migrations"

@@ -6,8 +6,8 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/attack"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 )
 
 type Service interface {
@@ -17,12 +17,12 @@ type Service interface {
 
 type ServiceImpl struct {
 	attackService attack.Service
-	gameService   gamestate.Service
+	gameService   state.Service
 }
 
 var _ Service = &ServiceImpl{}
 
-func NewService(attackService attack.Service, gameService gamestate.Service) *ServiceImpl {
+func NewService(attackService attack.Service, gameService state.Service) *ServiceImpl {
 	return &ServiceImpl{
 		attackService: attackService,
 		gameService:   gameService,
@@ -139,7 +139,7 @@ func (s *ServiceImpl) getTargetPhaseForAttack(
 	}
 
 	if hasConquered {
-		ctx.Log().Infow("cannot continue attacking, must advance phase to CONQUER")
+		ctx.Log().Infow("must advance phase to CONQUER")
 
 		return sqlc.PhaseCONQUER, nil
 	}

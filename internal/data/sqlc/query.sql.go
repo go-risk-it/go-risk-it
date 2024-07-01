@@ -10,9 +10,13 @@ import (
 )
 
 const decreaseDeployableTroops = `-- name: DecreaseDeployableTroops :exec
-UPDATE game
-SET deployable_troops = deployable_troops - $2
-WHERE id = $1
+UPDATE deploy_phase
+SET deploy_phase.deployable_troops = deploy_phase.deployable_troops - $2
+WHERE deploy_phase.id = (select dp.id
+                         from game g
+                                  join phase p on g.current_phase_id = p.id
+                                  join deploy_phase dp on p.id = dp.phase_id
+                         where g.id = $1)
 `
 
 type DecreaseDeployableTroopsParams struct {
@@ -26,7 +30,7 @@ func (q *Queries) DecreaseDeployableTroops(ctx context.Context, arg DecreaseDepl
 }
 
 const getGame = `-- name: GetGame :one
-SELECT id, turn, phase, deployable_troops
+SELECT id, current_phase_id
 FROM game
 WHERE id = $1
 `
@@ -34,12 +38,7 @@ WHERE id = $1
 func (q *Queries) GetGame(ctx context.Context, id int64) (Game, error) {
 	row := q.db.QueryRow(ctx, getGame, id)
 	var i Game
-	err := row.Scan(
-		&i.ID,
-		&i.Turn,
-		&i.Phase,
-		&i.DeployableTroops,
-	)
+	err := row.Scan(&i.ID, &i.CurrentPhaseID)
 	return i, err
 }
 
@@ -151,20 +150,15 @@ func (q *Queries) IncreaseRegionTroops(ctx context.Context, arg IncreaseRegionTr
 }
 
 const insertGame = `-- name: InsertGame :one
-INSERT INTO game (deployable_troops)
-VALUES ($1)
-RETURNING id, turn, phase, deployable_troops
+INSERT INTO game DEFAULT
+VALUES
+RETURNING id, current_phase_id
 `
 
-func (q *Queries) InsertGame(ctx context.Context, deployableTroops int64) (Game, error) {
-	row := q.db.QueryRow(ctx, insertGame, deployableTroops)
+func (q *Queries) InsertGame(ctx context.Context) (Game, error) {
+	row := q.db.QueryRow(ctx, insertGame)
 	var i Game
-	err := row.Scan(
-		&i.ID,
-		&i.Turn,
-		&i.Phase,
-		&i.DeployableTroops,
-	)
+	err := row.Scan(&i.ID, &i.CurrentPhaseID)
 	return i, err
 }
 
@@ -183,16 +177,16 @@ type InsertRegionsParams struct {
 
 const setGamePhase = `-- name: SetGamePhase :exec
 UPDATE game
-SET phase = $2
+SET current_phase_id = $2
 WHERE id = $1
 `
 
 type SetGamePhaseParams struct {
-	ID    int64
-	Phase Phase
+	ID             int64
+	CurrentPhaseID int64
 }
 
 func (q *Queries) SetGamePhase(ctx context.Context, arg SetGamePhaseParams) error {
-	_, err := q.db.Exec(ctx, setGamePhase, arg.ID, arg.Phase)
+	_, err := q.db.Exec(ctx, setGamePhase, arg.ID, arg.CurrentPhaseID)
 	return err
 }

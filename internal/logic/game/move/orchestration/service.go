@@ -6,9 +6,9 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/phase"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/validation"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/internal/logic/signals"
 	"github.com/jackc/pgx/v5"
 )
@@ -28,7 +28,7 @@ type Service interface {
 }
 type ServiceImpl struct {
 	querier                  db.Querier
-	gameService              gamestate.Service
+	gameService              state.Service
 	phaseService             phase.Service
 	validationService        validation.Service
 	boardStateChangedSignal  signals.BoardStateChangedSignal
@@ -41,7 +41,7 @@ var _ Service = (*ServiceImpl)(nil)
 func NewService(
 	querier db.Querier,
 	phaseWalkingService phase.Service,
-	gameService gamestate.Service,
+	gameService state.Service,
 	validationService validation.Service,
 	boardStateChangedSignal signals.BoardStateChangedSignal,
 	playerStateChangedSignal signals.PlayerStateChangedSignal,

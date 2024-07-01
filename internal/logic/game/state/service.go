@@ -1,4 +1,4 @@
-package gamestate
+package state
 
 import (
 	"fmt"
@@ -10,6 +10,18 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
 )
+
+type Phase[T any] struct {
+	Type T
+}
+
+type DeployPhase struct {
+	Phase[DEPLOY]
+}
+
+type Game struct {
+	ID int64
+}
 
 type Service interface {
 	CreateGameWithTx(
@@ -75,7 +87,7 @@ func (s *ServiceImpl) CreateGameQ(
 ) (int64, error) {
 	ctx.Log().Debugw("creating game", "regions", len(regions), "players", len(players))
 
-	game, err := querier.InsertGame(ctx, 3)
+	game, err := querier.InsertGame(ctx)
 	if err != nil {
 		return -1, fmt.Errorf("failed to insert game: %w", err)
 	}

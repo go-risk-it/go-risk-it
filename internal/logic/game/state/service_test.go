@@ -1,4 +1,4 @@
-package gamestate_test
+package state_test
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/gamestate"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region"
@@ -70,8 +70,8 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 		CreateRegions(context, mockQuerier, players, regions).
 		Return(nil)
 
-	// Initialize the gamestate
-	service := gamestate.NewService(
+	// Initialize the state
+	service := state.NewService(
 		mockQuerier,
 		playerServiceMock,
 		regionServiceMock,
@@ -93,8 +93,8 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 	regionService := region.NewService(t)
 	querier := db.NewQuerier(t)
 
-	// Initialize the gamestate under test
-	service := gamestate.NewService(querier, playerService, regionService)
+	// Initialize the state under test
+	service := state.NewService(querier, playerService, regionService)
 
 	// Set up test data
 	ctx := ctx.WithUserID(
@@ -131,8 +131,8 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 	playerService := player.NewService(t)
 	regionService := region.NewService(t)
 
-	// Initialize the gamestate under test
-	service := gamestate.NewService(querier, playerService, regionService)
+	// Initialize the state under test
+	service := state.NewService(querier, playerService, regionService)
 
 	// Set up test data
 	ctx := ctx.WithUserID(
@@ -175,8 +175,8 @@ func TestServiceImpl_GetGameState(t *testing.T) {
 	playerService := player.NewService(t)
 	regionService := region.NewService(t)
 
-	// Initialize the gamestate under test
-	service := gamestate.NewService(querier, playerService, regionService)
+	// Initialize the state under test
+	service := state.NewService(querier, playerService, regionService)
 
 	// Set up test data
 	gameID := int64(1)

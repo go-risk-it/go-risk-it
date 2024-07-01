@@ -1,18 +1,10 @@
-CREATE TYPE phase AS ENUM ('CARDS', 'DEPLOY', 'ATTACK', 'CONQUER', 'REINFORCE');
+CREATE TYPE phase_type AS ENUM ('CARDS', 'DEPLOY', 'ATTACK', 'CONQUER', 'REINFORCE');
 
 CREATE TABLE game
 (
-    id                BIGSERIAL PRIMARY KEY,
-    turn              BIGINT NOT NULL DEFAULT 0,
-    phase             phase  NOT NULL DEFAULT 'DEPLOY',
-    deployable_troops BIGINT NOT NULL DEFAULT 0,
-    CONSTRAINT check_deployable_troops
-        CHECK (
-            CASE
-                WHEN phase = 'DEPLOY' OR phase = 'CARDS' THEN deployable_troops >= 0
-                ELSE deployable_troops = 0
-                END
-            )
+    id               BIGSERIAL PRIMARY KEY,
+    current_phase_id BIGINT NOT NULL,
+    FOREIGN KEY (current_phase_id) REFERENCES phase (id) DEFERRABLE
 );
 
 CREATE TABLE player
@@ -51,4 +43,36 @@ CREATE TABLE mission
     id        BIGSERIAL PRIMARY KEY,
     player_id BIGINT NOT NULL,
     FOREIGN KEY (player_id) REFERENCES player (id)
+);
+
+CREATE TABLE phase
+(
+    id      BIGSERIAL PRIMARY KEY,
+    game_id BIGINT     NOT NULL,
+    type    phase_type NOT NULL,
+    turn    BIGINT     NOT NULL,
+    FOREIGN KEY (game_id) REFERENCES game (id),
+    CONSTRAINT turn_must_be_positive CHECK (turn >= 0)
+);
+
+CREATE TABLE deploy_phase
+(
+    id                BIGSERIAL PRIMARY KEY,
+    phase_id          BIGINT NOT NULL,
+    deployable_troops BIGINT NOT NULL,
+    FOREIGN KEY (phase_id) REFERENCES phase (id),
+    CONSTRAINT check_deployable_troops CHECK (deployable_troops >= 0)
+);
+
+CREATE TABLE conquer_phase
+(
+    id               BIGSERIAL PRIMARY KEY,
+    phase_id         BIGINT NOT NULL,
+    source_region_id BIGINT NOT NULL,
+    target_region_id BIGINT NOT NULL,
+    minimum_troops   BIGINT NOT NULL,
+    FOREIGN KEY (phase_id) REFERENCES phase (id),
+    FOREIGN KEY (source_region_id) REFERENCES region (id),
+    FOREIGN KEY (target_region_id) REFERENCES region (id),
+    CONSTRAINT check_minimum_troops CHECK (minimum_troops > 0 AND minimum_troops <= 3)
 );

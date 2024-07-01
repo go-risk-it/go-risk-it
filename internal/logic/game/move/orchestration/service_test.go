@@ -76,7 +76,7 @@ func TestServiceImpl_PerformMove(t *testing.T) {
 			"game is not in the correct phase to perform move",
 		},
 		{
-			"Should fail when validation gamestate fails",
+			"Should fail when validation state fails",
 			sqlc.PhaseDEPLOY,
 			fmt.Errorf("validation error"),
 			nil,

@@ -1,4 +1,4 @@
-package gamestate
+package state
 
 import "go.uber.org/fx"
 

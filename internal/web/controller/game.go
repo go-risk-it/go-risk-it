@@ -7,7 +7,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/gamestate"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 )
 
 type GameController interface {
@@ -16,14 +16,14 @@ type GameController interface {
 }
 
 type GameControllerImpl struct {
-	gameService  gamestate.Service
+	gameService  state.Service
 	boardService board.Service
 }
 
 var _ GameController = (*GameControllerImpl)(nil)
 
 func NewGameController(
-	gameService gamestate.Service,
+	gameService state.Service,
 	boardService board.Service,
 ) *GameControllerImpl {
 	return &GameControllerImpl{

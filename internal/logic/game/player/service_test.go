@@ -26,7 +26,7 @@ func TestServiceImpl_GetPlayersByGame(t *testing.T) {
 	logger := zap.NewExample().Sugar()
 	querier := db.NewQuerier(t)
 
-	// Initialize the gamestate under test
+	// Initialize the state under test
 	service := player.NewService(querier)
 
 	// Set up test data
@@ -76,7 +76,7 @@ func TestServiceImpl_GetPlayersByGame_WithError(t *testing.T) {
 	logger := zap.NewExample().Sugar()
 	querier := db.NewQuerier(t)
 
-	// Initialize the gamestate under test
+	// Initialize the state under test
 	service := player.NewService(querier)
 
 	// Set up test data
@@ -101,7 +101,7 @@ func TestServiceImpl_CreatePlayers_WithValidData(t *testing.T) {
 	logger := zap.NewExample().Sugar()
 	querier := db.NewQuerier(t)
 
-	// Initialize the gamestate under test
+	// Initialize the state under test
 	service := player.NewService(querier)
 
 	// Set up test data
@@ -183,7 +183,7 @@ func TestServiceImpl_CreatePlayers_InsertPlayersError(t *testing.T) {
 	logger := zap.NewExample().Sugar()
 	querier := db.NewQuerier(t)
 
-	// Initialize the gamestate under test
+	// Initialize the state under test
 	service := player.NewService(querier)
 
 	// Set up test data
@@ -238,7 +238,7 @@ func TestServiceImpl_CreatePlayers_GetPlayersByGameError(t *testing.T) {
 	logger := zap.NewExample().Sugar()
 	querier := db.NewQuerier(t)
 
-	// Initialize the gamestate under test
+	// Initialize the state under test
 	service := player.NewService(querier)
 
 	// Set up test data

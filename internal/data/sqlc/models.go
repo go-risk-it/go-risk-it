@@ -11,49 +11,49 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type Phase string
+type PhaseType string
 
 const (
-	PhaseCARDS     Phase = "CARDS"
-	PhaseDEPLOY    Phase = "DEPLOY"
-	PhaseATTACK    Phase = "ATTACK"
-	PhaseCONQUER   Phase = "CONQUER"
-	PhaseREINFORCE Phase = "REINFORCE"
+	PhaseTypeCARDS     PhaseType = "CARDS"
+	PhaseTypeDEPLOY    PhaseType = "DEPLOY"
+	PhaseTypeATTACK    PhaseType = "ATTACK"
+	PhaseTypeCONQUER   PhaseType = "CONQUER"
+	PhaseTypeREINFORCE PhaseType = "REINFORCE"
 )
 
-func (e *Phase) Scan(src interface{}) error {
+func (e *PhaseType) Scan(src interface{}) error {
 	switch s := src.(type) {
 	case []byte:
-		*e = Phase(s)
+		*e = PhaseType(s)
 	case string:
-		*e = Phase(s)
+		*e = PhaseType(s)
 	default:
-		return fmt.Errorf("unsupported scan type for Phase: %T", src)
+		return fmt.Errorf("unsupported scan type for PhaseType: %T", src)
 	}
 	return nil
 }
 
-type NullPhase struct {
-	Phase Phase
-	Valid bool // Valid is true if Phase is not NULL
+type NullPhaseType struct {
+	PhaseType PhaseType
+	Valid     bool // Valid is true if PhaseType is not NULL
 }
 
 // Scan implements the Scanner interface.
-func (ns *NullPhase) Scan(value interface{}) error {
+func (ns *NullPhaseType) Scan(value interface{}) error {
 	if value == nil {
-		ns.Phase, ns.Valid = "", false
+		ns.PhaseType, ns.Valid = "", false
 		return nil
 	}
 	ns.Valid = true
-	return ns.Phase.Scan(value)
+	return ns.PhaseType.Scan(value)
 }
 
 // Value implements the driver Valuer interface.
-func (ns NullPhase) Value() (driver.Value, error) {
+func (ns NullPhaseType) Value() (driver.Value, error) {
 	if !ns.Valid {
 		return nil, nil
 	}
-	return string(ns.Phase), nil
+	return string(ns.PhaseType), nil
 }
 
 type Card struct {
@@ -62,16 +62,35 @@ type Card struct {
 	RegionID int64
 }
 
-type Game struct {
+type ConquerPhase struct {
+	ID             int64
+	PhaseID        int64
+	SourceRegionID int64
+	TargetRegionID int64
+	MinimumTroops  int64
+}
+
+type DeployPhase struct {
 	ID               int64
-	Turn             int64
-	Phase            Phase
+	PhaseID          int64
 	DeployableTroops int64
+}
+
+type Game struct {
+	ID             int64
+	CurrentPhaseID int64
 }
 
 type Mission struct {
 	ID       int64
 	PlayerID int64
+}
+
+type Phase struct {
+	ID     int64
+	GameID int64
+	Type   PhaseType
+	Turn   int64
 }
 
 type Player struct {

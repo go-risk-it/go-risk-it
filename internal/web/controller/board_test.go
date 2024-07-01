@@ -20,7 +20,7 @@ func TestBoardControllerImpl_GetBoardState(t *testing.T) {
 	log := zap.NewNop().Sugar()
 	regionService := region.NewService(t)
 
-	// Initialize the gamestate under test
+	// Initialize the state under test
 	controller := boardController.NewBoardController(regionService)
 
 	// Set up test data

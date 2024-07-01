@@ -22,7 +22,7 @@ func TestGameControllerImpl_GetGameState(t *testing.T) {
 	gameService := gamestate.NewService(t)
 	boardService := board.NewService(t)
 
-	// Initialize the gamestate under test
+	// Initialize the state under test
 	controller := gameController.NewGameController(gameService, boardService)
 
 	// Set up test data
