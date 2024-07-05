@@ -78,7 +78,7 @@ type DeployPhase struct {
 
 type Game struct {
 	ID             int64
-	CurrentPhaseID int64
+	CurrentPhaseID pgtype.Int8
 }
 
 type Mission struct {

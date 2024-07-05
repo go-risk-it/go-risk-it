@@ -28,8 +28,9 @@ sqlc: ## Generate SQLC code to interact with the database
 	@echo "Building..."
 	@docker compose run --rm sqlc
 
-mock: ## Generate mocks
+mock: destroy ## Generate mocks
 	@echo "Building..."
+	@rm -rf mocks
 	@docker compose run --rm mockery
 
 destroy:

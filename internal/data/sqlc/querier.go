@@ -10,12 +10,15 @@ import (
 
 type Querier interface {
 	DecreaseDeployableTroops(ctx context.Context, arg DecreaseDeployableTroopsParams) error
-	GetGame(ctx context.Context, id int64) (Game, error)
+	GetDeployableTroops(ctx context.Context, id int64) (int64, error)
+	GetGame(ctx context.Context, id int64) (GetGameRow, error)
 	GetPlayerByUserId(ctx context.Context, userID string) (Player, error)
 	GetPlayersByGame(ctx context.Context, gameID int64) ([]Player, error)
 	GetRegionsByGame(ctx context.Context, id int64) ([]GetRegionsByGameRow, error)
 	IncreaseRegionTroops(ctx context.Context, arg IncreaseRegionTroopsParams) error
+	InsertDeployPhase(ctx context.Context, arg InsertDeployPhaseParams) (DeployPhase, error)
 	InsertGame(ctx context.Context) (Game, error)
+	InsertPhase(ctx context.Context, arg InsertPhaseParams) (Phase, error)
 	InsertPlayers(ctx context.Context, arg []InsertPlayersParams) (int64, error)
 	InsertRegions(ctx context.Context, arg []InsertRegionsParams) (int64, error)
 	SetGamePhase(ctx context.Context, arg SetGamePhaseParams) error

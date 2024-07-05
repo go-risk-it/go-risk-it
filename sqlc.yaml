@@ -6,6 +6,9 @@ sql:
       - "internal/logic/game/state"
       - "internal/logic/game/player"
       - "internal/logic/game/region"
+      - "internal/logic/game/move/performer/deploy"
+      - "internal/logic/game/move/orchestration/phase"
+      - "internal/logic/game/creation"
     schema: "internal/data/sqlc/migrations"
     gen:
       go:

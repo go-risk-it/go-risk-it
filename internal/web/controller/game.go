@@ -6,7 +6,9 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/api/game/message"
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/creation"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 )
 
@@ -16,19 +18,22 @@ type GameController interface {
 }
 
 type GameControllerImpl struct {
-	gameService  state.Service
-	boardService board.Service
+	boardService    board.Service
+	creationService creation.Service
+	gameService     state.Service
 }
 
 var _ GameController = (*GameControllerImpl)(nil)
 
 func NewGameController(
-	gameService state.Service,
 	boardService board.Service,
+	creationService creation.Service,
+	gameService state.Service,
 ) *GameControllerImpl {
 	return &GameControllerImpl{
-		gameService:  gameService,
-		boardService: boardService,
+		boardService:    boardService,
+		creationService: creationService,
+		gameService:     gameService,
 	}
 }
 
@@ -40,7 +45,7 @@ func (c *GameControllerImpl) CreateGame(
 		return -1, fmt.Errorf("failed to get board regions: %w", err)
 	}
 
-	gameID, err := c.gameService.CreateGameWithTx(ctx, regions, request.Players)
+	gameID, err := c.creationService.CreateGameWithTx(ctx, regions, request.Players)
 	if err != nil {
 		return -1, fmt.Errorf("failed to create game: %w", err)
 	}
@@ -57,9 +62,23 @@ func (c *GameControllerImpl) GetGameState(ctx ctx.GameContext) (message.GameStat
 	}
 
 	return message.GameState{
-		GameID:           gameState.ID,
-		CurrentTurn:      gameState.Turn,
-		CurrentPhase:     string(gameState.Phase),
-		DeployableTroops: gameState.DeployableTroops,
+		ID:           gameState.ID,
+		CurrentTurn:  gameState.CurrentTurn,
+		CurrentPhase: convertPhase(gameState.CurrentPhase),
 	}, nil
+}
+
+func convertPhase(phase sqlc.PhaseType) message.Phase {
+	switch phase {
+	case sqlc.PhaseTypeCARDS:
+		return message.Cards
+	case sqlc.PhaseTypeDEPLOY:
+		return message.Deploy
+	case sqlc.PhaseTypeATTACK:
+		return message.Attack
+	case sqlc.PhaseTypeCONQUER:
+		return message.Conquer
+	default:
+		return ""
+	}
 }

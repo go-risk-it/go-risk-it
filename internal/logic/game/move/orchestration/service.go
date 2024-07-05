@@ -16,14 +16,14 @@ import (
 type Service interface {
 	OrchestrateMove(
 		ctx ctx.MoveContext,
-		phase sqlc.Phase,
-		perform func(ctx ctx.MoveContext, querier db.Querier, game *sqlc.Game) error,
+		phase sqlc.PhaseType,
+		perform func(ctx ctx.MoveContext, querier db.Querier, game *state.Game) error,
 	) error
 	OrchestrateMoveQ(
 		ctx ctx.MoveContext,
 		querier db.Querier,
-		phase sqlc.Phase,
-		perform func(ctx ctx.MoveContext, querier db.Querier, game *sqlc.Game) error,
+		phase sqlc.PhaseType,
+		perform func(ctx ctx.MoveContext, querier db.Querier, game *state.Game) error,
 	) error
 }
 type ServiceImpl struct {
@@ -60,8 +60,8 @@ func NewService(
 
 func (s *ServiceImpl) OrchestrateMove(
 	ctx ctx.MoveContext,
-	phase sqlc.Phase,
-	perform func(ctx ctx.MoveContext, querier db.Querier, game *sqlc.Game) error,
+	phase sqlc.PhaseType,
+	perform func(ctx ctx.MoveContext, querier db.Querier, game *state.Game) error,
 ) error {
 	_, err := s.querier.ExecuteInTransactionWithIsolation(
 		ctx,
@@ -86,8 +86,8 @@ func (s *ServiceImpl) OrchestrateMove(
 func (s *ServiceImpl) OrchestrateMoveQ(
 	ctx ctx.MoveContext,
 	querier db.Querier,
-	phase sqlc.Phase,
-	perform func(ctx ctx.MoveContext, querier db.Querier, game *sqlc.Game) error,
+	phase sqlc.PhaseType,
+	perform func(ctx ctx.MoveContext, querier db.Querier, game *state.Game) error,
 ) error {
 	ctx.Log().Infow("orchestrating move", "phase", phase)
 
@@ -96,7 +96,7 @@ func (s *ServiceImpl) OrchestrateMoveQ(
 		return fmt.Errorf("unable to get game state: %w", err)
 	}
 
-	if gameState.Phase != phase {
+	if gameState.CurrentPhase != phase {
 		return fmt.Errorf("game is not in the correct phase to perform move")
 	}
 

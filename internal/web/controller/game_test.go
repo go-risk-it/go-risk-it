@@ -7,9 +7,11 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/api/game/message"
 	ctx2 "github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	gameController "github.com/go-risk-it/go-risk-it/internal/web/controller"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/board"
-	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/gamestate"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/creation"
+	gamestate "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/state"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -19,11 +21,12 @@ func TestGameControllerImpl_GetGameState(t *testing.T) {
 
 	// Initialize dependencies
 	log := zap.NewExample().Sugar()
-	gameService := gamestate.NewService(t)
 	boardService := board.NewService(t)
+	creationService := creation.NewService(t)
+	gameService := gamestate.NewService(t)
 
 	// Initialize the state under test
-	controller := gameController.NewGameController(gameService, boardService)
+	controller := gameController.NewGameController(boardService, creationService, gameService)
 
 	// Set up test data
 	ctx := ctx2.WithGameID(ctx2.WithLog(context.Background(), log), 1)
@@ -33,10 +36,10 @@ func TestGameControllerImpl_GetGameState(t *testing.T) {
 	gameService.
 		EXPECT().
 		GetGameState(ctx).
-		Return(&sqlc.Game{
-			ID:    gameID,
-			Turn:  0,
-			Phase: "CARDS",
+		Return(&state.Game{
+			ID:           gameID,
+			CurrentTurn:  0,
+			CurrentPhase: sqlc.PhaseTypeCARDS,
 		}, nil)
 
 	// Call the method under test
@@ -45,9 +48,9 @@ func TestGameControllerImpl_GetGameState(t *testing.T) {
 	// Assert the result
 	require.NoError(t, err)
 	require.Equal(t, message.GameState{
-		GameID:       gameID,
+		ID:           gameID,
 		CurrentTurn:  0,
-		CurrentPhase: "CARDS",
+		CurrentPhase: message.Cards,
 	}, gameState)
 
 	gameService.AssertExpectations(t)

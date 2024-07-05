@@ -9,7 +9,6 @@ class GameStateData:
     gameId: int
     currentTurn: int
     currentPhase: str
-    deployableTroops: int
 
 
 @dataclass

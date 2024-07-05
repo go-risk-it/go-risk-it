@@ -71,17 +71,79 @@ func (_c *Service_AdvanceQ_Call) RunAndReturn(run func(ctx.MoveContext, db.Queri
 	return _c
 }
 
-// SetGamePhaseQ provides a mock function with given fields: _a0, querier, _a2
-func (_m *Service) SetGamePhaseQ(_a0 ctx.MoveContext, querier db.Querier, _a2 sqlc.Phase) error {
-	ret := _m.Called(_a0, querier, _a2)
+// CreateDeployPhaseQ provides a mock function with given fields: _a0, querier, gameID, turn, deployableTroops
+func (_m *Service) CreateDeployPhaseQ(_a0 ctx.UserContext, querier db.Querier, gameID int64, turn int64, deployableTroops int64) (*sqlc.DeployPhase, error) {
+	ret := _m.Called(_a0, querier, gameID, turn, deployableTroops)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateDeployPhaseQ")
+	}
+
+	var r0 *sqlc.DeployPhase
+	var r1 error
+	if rf, ok := ret.Get(0).(func(ctx.UserContext, db.Querier, int64, int64, int64) (*sqlc.DeployPhase, error)); ok {
+		return rf(_a0, querier, gameID, turn, deployableTroops)
+	}
+	if rf, ok := ret.Get(0).(func(ctx.UserContext, db.Querier, int64, int64, int64) *sqlc.DeployPhase); ok {
+		r0 = rf(_a0, querier, gameID, turn, deployableTroops)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*sqlc.DeployPhase)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(ctx.UserContext, db.Querier, int64, int64, int64) error); ok {
+		r1 = rf(_a0, querier, gameID, turn, deployableTroops)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Service_CreateDeployPhaseQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateDeployPhaseQ'
+type Service_CreateDeployPhaseQ_Call struct {
+	*mock.Call
+}
+
+// CreateDeployPhaseQ is a helper method to define mock.On call
+//   - _a0 ctx.UserContext
+//   - querier db.Querier
+//   - gameID int64
+//   - turn int64
+//   - deployableTroops int64
+func (_e *Service_Expecter) CreateDeployPhaseQ(_a0 interface{}, querier interface{}, gameID interface{}, turn interface{}, deployableTroops interface{}) *Service_CreateDeployPhaseQ_Call {
+	return &Service_CreateDeployPhaseQ_Call{Call: _e.mock.On("CreateDeployPhaseQ", _a0, querier, gameID, turn, deployableTroops)}
+}
+
+func (_c *Service_CreateDeployPhaseQ_Call) Run(run func(_a0 ctx.UserContext, querier db.Querier, gameID int64, turn int64, deployableTroops int64)) *Service_CreateDeployPhaseQ_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.UserContext), args[1].(db.Querier), args[2].(int64), args[3].(int64), args[4].(int64))
+	})
+	return _c
+}
+
+func (_c *Service_CreateDeployPhaseQ_Call) Return(_a0 *sqlc.DeployPhase, _a1 error) *Service_CreateDeployPhaseQ_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Service_CreateDeployPhaseQ_Call) RunAndReturn(run func(ctx.UserContext, db.Querier, int64, int64, int64) (*sqlc.DeployPhase, error)) *Service_CreateDeployPhaseQ_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SetGamePhaseQ provides a mock function with given fields: _a0, querier, gameID, phaseID
+func (_m *Service) SetGamePhaseQ(_a0 ctx.UserContext, querier db.Querier, gameID int64, phaseID int64) error {
+	ret := _m.Called(_a0, querier, gameID, phaseID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SetGamePhaseQ")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(ctx.MoveContext, db.Querier, sqlc.Phase) error); ok {
-		r0 = rf(_a0, querier, _a2)
+	if rf, ok := ret.Get(0).(func(ctx.UserContext, db.Querier, int64, int64) error); ok {
+		r0 = rf(_a0, querier, gameID, phaseID)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -95,16 +157,17 @@ type Service_SetGamePhaseQ_Call struct {
 }
 
 // SetGamePhaseQ is a helper method to define mock.On call
-//   - _a0 ctx.MoveContext
+//   - _a0 ctx.UserContext
 //   - querier db.Querier
-//   - _a2 sqlc.Phase
-func (_e *Service_Expecter) SetGamePhaseQ(_a0 interface{}, querier interface{}, _a2 interface{}) *Service_SetGamePhaseQ_Call {
-	return &Service_SetGamePhaseQ_Call{Call: _e.mock.On("SetGamePhaseQ", _a0, querier, _a2)}
+//   - gameID int64
+//   - phaseID int64
+func (_e *Service_Expecter) SetGamePhaseQ(_a0 interface{}, querier interface{}, gameID interface{}, phaseID interface{}) *Service_SetGamePhaseQ_Call {
+	return &Service_SetGamePhaseQ_Call{Call: _e.mock.On("SetGamePhaseQ", _a0, querier, gameID, phaseID)}
 }
 
-func (_c *Service_SetGamePhaseQ_Call) Run(run func(_a0 ctx.MoveContext, querier db.Querier, _a2 sqlc.Phase)) *Service_SetGamePhaseQ_Call {
+func (_c *Service_SetGamePhaseQ_Call) Run(run func(_a0 ctx.UserContext, querier db.Querier, gameID int64, phaseID int64)) *Service_SetGamePhaseQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.MoveContext), args[1].(db.Querier), args[2].(sqlc.Phase))
+		run(args[0].(ctx.UserContext), args[1].(db.Querier), args[2].(int64), args[3].(int64))
 	})
 	return _c
 }
@@ -114,7 +177,7 @@ func (_c *Service_SetGamePhaseQ_Call) Return(_a0 error) *Service_SetGamePhaseQ_C
 	return _c
 }
 
-func (_c *Service_SetGamePhaseQ_Call) RunAndReturn(run func(ctx.MoveContext, db.Querier, sqlc.Phase) error) *Service_SetGamePhaseQ_Call {
+func (_c *Service_SetGamePhaseQ_Call) RunAndReturn(run func(ctx.UserContext, db.Querier, int64, int64) error) *Service_SetGamePhaseQ_Call {
 	_c.Call.Return(run)
 	return _c
 }

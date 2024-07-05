@@ -69,23 +69,80 @@ func (_c *Querier_DecreaseDeployableTroops_Call) RunAndReturn(run func(context.C
 	return _c
 }
 
+// GetDeployableTroops provides a mock function with given fields: ctx, id
+func (_m *Querier) GetDeployableTroops(ctx context.Context, id int64) (int64, error) {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetDeployableTroops")
+	}
+
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (int64, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int64) int64); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_GetDeployableTroops_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetDeployableTroops'
+type Querier_GetDeployableTroops_Call struct {
+	*mock.Call
+}
+
+// GetDeployableTroops is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id int64
+func (_e *Querier_Expecter) GetDeployableTroops(ctx interface{}, id interface{}) *Querier_GetDeployableTroops_Call {
+	return &Querier_GetDeployableTroops_Call{Call: _e.mock.On("GetDeployableTroops", ctx, id)}
+}
+
+func (_c *Querier_GetDeployableTroops_Call) Run(run func(ctx context.Context, id int64)) *Querier_GetDeployableTroops_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int64))
+	})
+	return _c
+}
+
+func (_c *Querier_GetDeployableTroops_Call) Return(_a0 int64, _a1 error) *Querier_GetDeployableTroops_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_GetDeployableTroops_Call) RunAndReturn(run func(context.Context, int64) (int64, error)) *Querier_GetDeployableTroops_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetGame provides a mock function with given fields: ctx, id
-func (_m *Querier) GetGame(ctx context.Context, id int64) (sqlc.Game, error) {
+func (_m *Querier) GetGame(ctx context.Context, id int64) (sqlc.GetGameRow, error) {
 	ret := _m.Called(ctx, id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetGame")
 	}
 
-	var r0 sqlc.Game
+	var r0 sqlc.GetGameRow
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) (sqlc.Game, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (sqlc.GetGameRow, error)); ok {
 		return rf(ctx, id)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64) sqlc.Game); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64) sqlc.GetGameRow); ok {
 		r0 = rf(ctx, id)
 	} else {
-		r0 = ret.Get(0).(sqlc.Game)
+		r0 = ret.Get(0).(sqlc.GetGameRow)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
@@ -116,12 +173,12 @@ func (_c *Querier_GetGame_Call) Run(run func(ctx context.Context, id int64)) *Qu
 	return _c
 }
 
-func (_c *Querier_GetGame_Call) Return(_a0 sqlc.Game, _a1 error) *Querier_GetGame_Call {
+func (_c *Querier_GetGame_Call) Return(_a0 sqlc.GetGameRow, _a1 error) *Querier_GetGame_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_GetGame_Call) RunAndReturn(run func(context.Context, int64) (sqlc.Game, error)) *Querier_GetGame_Call {
+func (_c *Querier_GetGame_Call) RunAndReturn(run func(context.Context, int64) (sqlc.GetGameRow, error)) *Querier_GetGame_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -348,9 +405,66 @@ func (_c *Querier_IncreaseRegionTroops_Call) RunAndReturn(run func(context.Conte
 	return _c
 }
 
-// InsertGame provides a mock function with given fields: ctx, deployableTroops
-func (_m *Querier) InsertGame(ctx context.Context, deployableTroops int64) (sqlc.Game, error) {
-	ret := _m.Called(ctx, deployableTroops)
+// InsertDeployPhase provides a mock function with given fields: ctx, arg
+func (_m *Querier) InsertDeployPhase(ctx context.Context, arg sqlc.InsertDeployPhaseParams) (sqlc.DeployPhase, error) {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for InsertDeployPhase")
+	}
+
+	var r0 sqlc.DeployPhase
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.InsertDeployPhaseParams) (sqlc.DeployPhase, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.InsertDeployPhaseParams) sqlc.DeployPhase); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(sqlc.DeployPhase)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, sqlc.InsertDeployPhaseParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_InsertDeployPhase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertDeployPhase'
+type Querier_InsertDeployPhase_Call struct {
+	*mock.Call
+}
+
+// InsertDeployPhase is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg sqlc.InsertDeployPhaseParams
+func (_e *Querier_Expecter) InsertDeployPhase(ctx interface{}, arg interface{}) *Querier_InsertDeployPhase_Call {
+	return &Querier_InsertDeployPhase_Call{Call: _e.mock.On("InsertDeployPhase", ctx, arg)}
+}
+
+func (_c *Querier_InsertDeployPhase_Call) Run(run func(ctx context.Context, arg sqlc.InsertDeployPhaseParams)) *Querier_InsertDeployPhase_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(sqlc.InsertDeployPhaseParams))
+	})
+	return _c
+}
+
+func (_c *Querier_InsertDeployPhase_Call) Return(_a0 sqlc.DeployPhase, _a1 error) *Querier_InsertDeployPhase_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_InsertDeployPhase_Call) RunAndReturn(run func(context.Context, sqlc.InsertDeployPhaseParams) (sqlc.DeployPhase, error)) *Querier_InsertDeployPhase_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// InsertGame provides a mock function with given fields: ctx
+func (_m *Querier) InsertGame(ctx context.Context) (sqlc.Game, error) {
+	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for InsertGame")
@@ -358,17 +472,17 @@ func (_m *Querier) InsertGame(ctx context.Context, deployableTroops int64) (sqlc
 
 	var r0 sqlc.Game
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) (sqlc.Game, error)); ok {
-		return rf(ctx, deployableTroops)
+	if rf, ok := ret.Get(0).(func(context.Context) (sqlc.Game, error)); ok {
+		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64) sqlc.Game); ok {
-		r0 = rf(ctx, deployableTroops)
+	if rf, ok := ret.Get(0).(func(context.Context) sqlc.Game); ok {
+		r0 = rf(ctx)
 	} else {
 		r0 = ret.Get(0).(sqlc.Game)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
-		r1 = rf(ctx, deployableTroops)
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -383,14 +497,13 @@ type Querier_InsertGame_Call struct {
 
 // InsertGame is a helper method to define mock.On call
 //   - ctx context.Context
-//   - deployableTroops int64
-func (_e *Querier_Expecter) InsertGame(ctx interface{}, deployableTroops interface{}) *Querier_InsertGame_Call {
-	return &Querier_InsertGame_Call{Call: _e.mock.On("InsertGame", ctx, deployableTroops)}
+func (_e *Querier_Expecter) InsertGame(ctx interface{}) *Querier_InsertGame_Call {
+	return &Querier_InsertGame_Call{Call: _e.mock.On("InsertGame", ctx)}
 }
 
-func (_c *Querier_InsertGame_Call) Run(run func(ctx context.Context, deployableTroops int64)) *Querier_InsertGame_Call {
+func (_c *Querier_InsertGame_Call) Run(run func(ctx context.Context)) *Querier_InsertGame_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(int64))
+		run(args[0].(context.Context))
 	})
 	return _c
 }
@@ -400,7 +513,64 @@ func (_c *Querier_InsertGame_Call) Return(_a0 sqlc.Game, _a1 error) *Querier_Ins
 	return _c
 }
 
-func (_c *Querier_InsertGame_Call) RunAndReturn(run func(context.Context, int64) (sqlc.Game, error)) *Querier_InsertGame_Call {
+func (_c *Querier_InsertGame_Call) RunAndReturn(run func(context.Context) (sqlc.Game, error)) *Querier_InsertGame_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// InsertPhase provides a mock function with given fields: ctx, arg
+func (_m *Querier) InsertPhase(ctx context.Context, arg sqlc.InsertPhaseParams) (sqlc.Phase, error) {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for InsertPhase")
+	}
+
+	var r0 sqlc.Phase
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.InsertPhaseParams) (sqlc.Phase, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.InsertPhaseParams) sqlc.Phase); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(sqlc.Phase)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, sqlc.InsertPhaseParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_InsertPhase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertPhase'
+type Querier_InsertPhase_Call struct {
+	*mock.Call
+}
+
+// InsertPhase is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg sqlc.InsertPhaseParams
+func (_e *Querier_Expecter) InsertPhase(ctx interface{}, arg interface{}) *Querier_InsertPhase_Call {
+	return &Querier_InsertPhase_Call{Call: _e.mock.On("InsertPhase", ctx, arg)}
+}
+
+func (_c *Querier_InsertPhase_Call) Run(run func(ctx context.Context, arg sqlc.InsertPhaseParams)) *Querier_InsertPhase_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(sqlc.InsertPhaseParams))
+	})
+	return _c
+}
+
+func (_c *Querier_InsertPhase_Call) Return(_a0 sqlc.Phase, _a1 error) *Querier_InsertPhase_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_InsertPhase_Call) RunAndReturn(run func(context.Context, sqlc.InsertPhaseParams) (sqlc.Phase, error)) *Querier_InsertPhase_Call {
 	_c.Call.Return(run)
 	return _c
 }

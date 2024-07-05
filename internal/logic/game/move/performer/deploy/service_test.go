@@ -7,10 +7,11 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/deploy"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
-	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/gamestate"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region"
+	gamestate "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/state"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -58,11 +59,14 @@ func TestServiceImpl_DeployShouldFailWhenPlayerDoesntHaveEnoughDeployableTroops(
 	querier, _, _, _, service := setup(t)
 	regionReference, currentTroops, desiredTroops, ctx := input()
 
-	game := &sqlc.Game{
-		ID:    ctx.GameID(),
-		Phase: sqlc.PhaseDEPLOY,
-		Turn:  2,
+	game := &state.Game{
+		ID:           ctx.GameID(),
+		CurrentPhase: sqlc.PhaseTypeDEPLOY,
+		CurrentTurn:  2,
 	}
+
+	querier.EXPECT().GetDeployableTroops(ctx, game.ID).Return(int64(0), nil)
+
 	err := service.PerformQ(ctx, querier, game, deploy.Move{
 		RegionID:      regionReference,
 		CurrentTroops: currentTroops,
@@ -107,12 +111,14 @@ func TestServiceImpl_DeployShouldFail(t *testing.T) {
 
 			currentTroops := test.declaredTroops
 
-			game := &sqlc.Game{
-				ID:               ctx.GameID(),
-				Phase:            sqlc.PhaseDEPLOY,
-				Turn:             2,
-				DeployableTroops: 5,
+			game := &state.Game{
+				ID:           ctx.GameID(),
+				CurrentPhase: sqlc.PhaseTypeDEPLOY,
+				CurrentTurn:  2,
 			}
+
+			querier.EXPECT().GetDeployableTroops(ctx, game.ID).Return(int64(5), nil)
+
 			regionService.
 				EXPECT().
 				GetRegionQ(ctx, querier, regionReference).
@@ -164,12 +170,14 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 			regionReference, currentTroops, desiredTroops, ctx := input()
 			troops := desiredTroops - currentTroops
 
-			game := &sqlc.Game{
-				ID:               ctx.GameID(),
-				Phase:            sqlc.PhaseDEPLOY,
-				Turn:             2,
-				DeployableTroops: test.deployableTroops,
+			game := &state.Game{
+				ID:           ctx.GameID(),
+				CurrentPhase: sqlc.PhaseTypeDEPLOY,
+				CurrentTurn:  2,
 			}
+
+			querier.EXPECT().GetDeployableTroops(ctx, game.ID).Return(test.deployableTroops, nil)
+
 			regionService.
 				EXPECT().
 				GetRegionQ(ctx, querier, regionReference).

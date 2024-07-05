@@ -7,6 +7,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/validation"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
 	"github.com/stretchr/testify/require"
@@ -47,11 +48,10 @@ func TestServiceImpl_ShouldFailWhenPlayerNotInGame(t *testing.T) {
 		{ID: 69, TurnIndex: 1, GameID: 1, UserID: "Francesco"},
 	}
 
-	game := &sqlc.Game{
-		ID:               ctx.GameID(),
-		Phase:            sqlc.PhaseDEPLOY,
-		Turn:             1,
-		DeployableTroops: 5,
+	game := &state.Game{
+		ID:           ctx.GameID(),
+		CurrentPhase: sqlc.PhaseTypeDEPLOY,
+		CurrentTurn:  1,
 	}
 
 	playerService.
@@ -70,7 +70,7 @@ func TestServiceImpl_ShouldFailOnTurnCheck(t *testing.T) {
 
 	type inputType struct {
 		name        string
-		phase       sqlc.Phase
+		phase       sqlc.PhaseType
 		turn        int64
 		expectedErr string
 	}
@@ -78,7 +78,7 @@ func TestServiceImpl_ShouldFailOnTurnCheck(t *testing.T) {
 	tests := []inputType{
 		{
 			"When not player's turn",
-			sqlc.PhaseDEPLOY,
+			sqlc.PhaseTypeDEPLOY,
 			1,
 			"turn check failed: it is not the player's turn",
 		},
@@ -99,10 +99,10 @@ func TestServiceImpl_ShouldFailOnTurnCheck(t *testing.T) {
 				EXPECT().
 				GetPlayersQ(ctx, querier).
 				Return(players, nil)
-			game := &sqlc.Game{
-				ID:    ctx.GameID(),
-				Phase: test.phase,
-				Turn:  test.turn,
+			game := &state.Game{
+				ID:           ctx.GameID(),
+				CurrentPhase: test.phase,
+				CurrentTurn:  test.turn,
 			}
 
 			err := service.Validate(ctx, querier, game)

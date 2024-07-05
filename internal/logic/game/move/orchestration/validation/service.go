@@ -7,10 +7,11 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 )
 
 type Service interface {
-	Validate(ctx ctx.MoveContext, querier db.Querier, game *sqlc.Game) error
+	Validate(ctx ctx.MoveContext, querier db.Querier, game *state.Game) error
 }
 
 type ServiceImpl struct {
@@ -23,11 +24,7 @@ func NewService(playerService player.Service) *ServiceImpl {
 	return &ServiceImpl{playerService: playerService}
 }
 
-func (s *ServiceImpl) Validate(
-	ctx ctx.MoveContext,
-	querier db.Querier,
-	game *sqlc.Game,
-) error {
+func (s *ServiceImpl) Validate(ctx ctx.MoveContext, querier db.Querier, game *state.Game) error {
 	ctx.Log().Infow("performing generic move validation")
 
 	players, err := s.playerService.GetPlayersQ(ctx, querier)
@@ -50,11 +47,11 @@ func (s *ServiceImpl) Validate(
 }
 
 func (s *ServiceImpl) checkTurn(
-	game *sqlc.Game,
+	game *state.Game,
 	playersInGame int64,
 	playerTurn int64,
 ) error {
-	if game.Turn%playersInGame != playerTurn {
+	if game.CurrentTurn%playersInGame != playerTurn {
 		return fmt.Errorf("it is not the player's turn")
 	}
 

@@ -9,10 +9,11 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/pool"
-	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/gamestate"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/move/orchestration/phase"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/move/orchestration/validation"
+	gamestate "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/state"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -59,7 +60,7 @@ func TestServiceImpl_PerformMove(t *testing.T) {
 
 	type inputType struct {
 		name            string
-		phase           sqlc.Phase
+		phase           sqlc.PhaseType
 		validationError error
 		performError    error
 		advanceError    error
@@ -69,7 +70,7 @@ func TestServiceImpl_PerformMove(t *testing.T) {
 	tests := []inputType{
 		{
 			"Should fail when game is not in the correct phase",
-			sqlc.PhaseATTACK,
+			sqlc.PhaseTypeATTACK,
 			nil,
 			nil,
 			nil,
@@ -77,7 +78,7 @@ func TestServiceImpl_PerformMove(t *testing.T) {
 		},
 		{
 			"Should fail when validation state fails",
-			sqlc.PhaseDEPLOY,
+			sqlc.PhaseTypeDEPLOY,
 			fmt.Errorf("validation error"),
 			nil,
 			nil,
@@ -85,7 +86,7 @@ func TestServiceImpl_PerformMove(t *testing.T) {
 		},
 		{
 			"Should fail when perform function fails",
-			sqlc.PhaseDEPLOY,
+			sqlc.PhaseTypeDEPLOY,
 			nil,
 			fmt.Errorf("perform error"),
 			nil,
@@ -93,7 +94,7 @@ func TestServiceImpl_PerformMove(t *testing.T) {
 		},
 		{
 			"Should fail when unable to advance phase",
-			sqlc.PhaseDEPLOY,
+			sqlc.PhaseTypeDEPLOY,
 			nil,
 			nil,
 			fmt.Errorf("advance error"),
@@ -101,7 +102,7 @@ func TestServiceImpl_PerformMove(t *testing.T) {
 		},
 		{
 			"Should succeed and advance phase",
-			sqlc.PhaseDEPLOY,
+			sqlc.PhaseTypeDEPLOY,
 			nil,
 			nil,
 			nil,
@@ -116,11 +117,10 @@ func TestServiceImpl_PerformMove(t *testing.T) {
 			querier, gameService, phaseService, validationService, service := setup(t)
 			context := input()
 
-			game := &sqlc.Game{
-				ID:               context.GameID(),
-				Phase:            sqlc.PhaseDEPLOY,
-				Turn:             2,
-				DeployableTroops: 5,
+			game := &state.Game{
+				ID:           context.GameID(),
+				CurrentPhase: sqlc.PhaseTypeDEPLOY,
+				CurrentTurn:  2,
 			}
 
 			gameService.
@@ -128,7 +128,7 @@ func TestServiceImpl_PerformMove(t *testing.T) {
 				GetGameStateQ(context, querier).
 				Return(game, nil)
 
-			if test.phase == sqlc.PhaseDEPLOY {
+			if test.phase == sqlc.PhaseTypeDEPLOY {
 				validationService.
 					EXPECT().
 					Validate(context, querier, game).
@@ -141,12 +141,12 @@ func TestServiceImpl_PerformMove(t *testing.T) {
 				}
 			}
 
-			performFunc := func(c ctx.MoveContext, querier db.Querier, game *sqlc.Game) error {
+			performFunc := func(c ctx.MoveContext, querier db.Querier, game *state.Game) error {
 				return test.performError
 			}
 			err := service.OrchestrateMoveQ(context, querier, test.phase, performFunc)
 
-			if test.phase == sqlc.PhaseDEPLOY &&
+			if test.phase == sqlc.PhaseTypeDEPLOY &&
 				test.validationError == nil &&
 				test.performError == nil &&
 				test.advanceError == nil {

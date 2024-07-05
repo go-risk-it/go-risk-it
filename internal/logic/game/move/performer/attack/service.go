@@ -11,6 +11,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/dice"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 )
 
 type Move struct {
@@ -59,7 +60,7 @@ func (s *ServiceImpl) MustAdvanceQ(
 func (s *ServiceImpl) PerformQ(
 	ctx ctx.MoveContext,
 	querier db.Querier,
-	_ *sqlc.Game,
+	game *state.Game,
 	move Move,
 ) error {
 	ctx.Log().Infow("performing attack move", "move", move)

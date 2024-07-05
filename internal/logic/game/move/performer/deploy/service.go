@@ -9,7 +9,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
-	service2 "github.com/go-risk-it/go-risk-it/internal/logic/game/state"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 )
 
 type Move struct {
@@ -20,11 +20,12 @@ type Move struct {
 
 type Service interface {
 	service.Service[Move]
+	GetDeployableTroops(ctx ctx.MoveContext, querier db.Querier) (int64, error)
 }
 
 type ServiceImpl struct {
 	querier       db.Querier
-	gameService   service2.Service
+	gameService   state.Service
 	playerService player.Service
 	regionService region.Service
 }
@@ -33,7 +34,7 @@ var _ Service = (*ServiceImpl)(nil)
 
 func NewService(
 	querier db.Querier,
-	gameService service2.Service,
+	gameService state.Service,
 	playerService player.Service,
 	regionService region.Service,
 ) *ServiceImpl {
@@ -48,13 +49,18 @@ func NewService(
 func (s *ServiceImpl) PerformQ(
 	ctx ctx.MoveContext,
 	querier db.Querier,
-	game *sqlc.Game,
+	game *state.Game,
 	move Move,
 ) error {
 	ctx.Log().Infow("performing deploy move", "move", move)
 
+	deployableTroops, err := s.GetDeployableTroops(ctx, querier)
+	if err != nil {
+		return fmt.Errorf("failed to get deployable troops: %w", err)
+	}
+
 	troops := move.DesiredTroops - move.CurrentTroops
-	if game.DeployableTroops < troops {
+	if deployableTroops < troops {
 		return fmt.Errorf("not enough deployable troops")
 	}
 
@@ -76,6 +82,19 @@ func (s *ServiceImpl) PerformQ(
 	}
 
 	return nil
+}
+
+func (s *ServiceImpl) GetDeployableTroops(ctx ctx.MoveContext, querier db.Querier) (int64, error) {
+	ctx.Log().Infow("getting deployable troops")
+
+	deployableTroops, err := querier.GetDeployableTroops(ctx, ctx.GameID())
+	if err != nil {
+		return 0, fmt.Errorf("failed to get deployable troops: %w", err)
+	}
+
+	ctx.Log().Infow("got deployable troops", "troops", deployableTroops)
+
+	return deployableTroops, nil
 }
 
 func (s *ServiceImpl) executeDeploy(

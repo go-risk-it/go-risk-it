@@ -1,10 +1,10 @@
 CREATE TYPE phase_type AS ENUM ('CARDS', 'DEPLOY', 'ATTACK', 'CONQUER', 'REINFORCE');
 
+
 CREATE TABLE game
 (
     id               BIGSERIAL PRIMARY KEY,
-    current_phase_id BIGINT NOT NULL,
-    FOREIGN KEY (current_phase_id) REFERENCES phase (id) DEFERRABLE
+    current_phase_id BIGINT
 );
 
 CREATE TABLE player
@@ -54,6 +54,9 @@ CREATE TABLE phase
     FOREIGN KEY (game_id) REFERENCES game (id),
     CONSTRAINT turn_must_be_positive CHECK (turn >= 0)
 );
+
+ALTER TABLE game
+    ADD FOREIGN KEY (current_phase_id) REFERENCES phase (id);
 
 CREATE TABLE deploy_phase
 (

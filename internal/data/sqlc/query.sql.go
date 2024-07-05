@@ -7,6 +7,8 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const decreaseDeployableTroops = `-- name: DecreaseDeployableTroops :exec
@@ -29,16 +31,36 @@ func (q *Queries) DecreaseDeployableTroops(ctx context.Context, arg DecreaseDepl
 	return err
 }
 
-const getGame = `-- name: GetGame :one
-SELECT id, current_phase_id
-FROM game
-WHERE id = $1
+const getDeployableTroops = `-- name: GetDeployableTroops :one
+SELECT deploy_phase.deployable_troops
+FROM game JOIN phase ON game.current_phase_id = phase.id JOIN deploy_phase ON phase.id = deploy_phase.phase_id
+WHERE game.id = $1
 `
 
-func (q *Queries) GetGame(ctx context.Context, id int64) (Game, error) {
+func (q *Queries) GetDeployableTroops(ctx context.Context, id int64) (int64, error) {
+	row := q.db.QueryRow(ctx, getDeployableTroops, id)
+	var deployable_troops int64
+	err := row.Scan(&deployable_troops)
+	return deployable_troops, err
+}
+
+const getGame = `-- name: GetGame :one
+SELECT game.id, phase.type AS current_phase, phase.turn
+FROM game
+         JOIN phase ON game.current_phase_id = phase.id
+WHERE game.id = $1
+`
+
+type GetGameRow struct {
+	ID           int64
+	CurrentPhase PhaseType
+	Turn         int64
+}
+
+func (q *Queries) GetGame(ctx context.Context, id int64) (GetGameRow, error) {
 	row := q.db.QueryRow(ctx, getGame, id)
-	var i Game
-	err := row.Scan(&i.ID, &i.CurrentPhaseID)
+	var i GetGameRow
+	err := row.Scan(&i.ID, &i.CurrentPhase, &i.Turn)
 	return i, err
 }
 
@@ -149,6 +171,24 @@ func (q *Queries) IncreaseRegionTroops(ctx context.Context, arg IncreaseRegionTr
 	return err
 }
 
+const insertDeployPhase = `-- name: InsertDeployPhase :one
+INSERT INTO deploy_phase (phase_id, deployable_troops)
+VALUES ($1, $2)
+RETURNING id, phase_id, deployable_troops
+`
+
+type InsertDeployPhaseParams struct {
+	PhaseID          int64
+	DeployableTroops int64
+}
+
+func (q *Queries) InsertDeployPhase(ctx context.Context, arg InsertDeployPhaseParams) (DeployPhase, error) {
+	row := q.db.QueryRow(ctx, insertDeployPhase, arg.PhaseID, arg.DeployableTroops)
+	var i DeployPhase
+	err := row.Scan(&i.ID, &i.PhaseID, &i.DeployableTroops)
+	return i, err
+}
+
 const insertGame = `-- name: InsertGame :one
 INSERT INTO game DEFAULT
 VALUES
@@ -159,6 +199,30 @@ func (q *Queries) InsertGame(ctx context.Context) (Game, error) {
 	row := q.db.QueryRow(ctx, insertGame)
 	var i Game
 	err := row.Scan(&i.ID, &i.CurrentPhaseID)
+	return i, err
+}
+
+const insertPhase = `-- name: InsertPhase :one
+INSERT INTO phase (game_id, type, turn)
+VALUES ($1, $2, $3)
+RETURNING id, game_id, type, turn
+`
+
+type InsertPhaseParams struct {
+	GameID int64
+	Type   PhaseType
+	Turn   int64
+}
+
+func (q *Queries) InsertPhase(ctx context.Context, arg InsertPhaseParams) (Phase, error) {
+	row := q.db.QueryRow(ctx, insertPhase, arg.GameID, arg.Type, arg.Turn)
+	var i Phase
+	err := row.Scan(
+		&i.ID,
+		&i.GameID,
+		&i.Type,
+		&i.Turn,
+	)
 	return i, err
 }
 
@@ -183,7 +247,7 @@ WHERE id = $1
 
 type SetGamePhaseParams struct {
 	ID             int64
-	CurrentPhaseID int64
+	CurrentPhaseID pgtype.Int8
 }
 
 func (q *Queries) SetGamePhase(ctx context.Context, arg SetGamePhaseParams) error {
