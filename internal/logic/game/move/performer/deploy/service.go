@@ -46,12 +46,7 @@ func NewService(
 	}
 }
 
-func (s *ServiceImpl) PerformQ(
-	ctx ctx.MoveContext,
-	querier db.Querier,
-	game *state.Game,
-	move Move,
-) error {
+func (s *ServiceImpl) PerformQ(ctx ctx.MoveContext, querier db.Querier, move Move) error {
 	ctx.Log().Infow("performing deploy move", "move", move)
 
 	deployableTroops, err := s.GetDeployableTroops(ctx, querier)

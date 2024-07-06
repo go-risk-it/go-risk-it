@@ -11,7 +11,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/attack"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/deploy"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/service"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 )
 
 type MoveController interface {
@@ -42,9 +41,9 @@ func NewMoveController(
 func getPerformerFunc[T any](
 	performer service.Performer[T],
 	move T,
-) func(ctx ctx.MoveContext, querier db.Querier, game *state.Game) error {
-	return func(ctx ctx.MoveContext, querier db.Querier, game *state.Game) error {
-		err := performer.PerformQ(ctx, querier, game, move)
+) func(ctx ctx.MoveContext, querier db.Querier) error {
+	return func(ctx ctx.MoveContext, querier db.Querier) error {
+		err := performer.PerformQ(ctx, querier, move)
 		if err != nil {
 			return fmt.Errorf("unable to perform move: %w", err)
 		}

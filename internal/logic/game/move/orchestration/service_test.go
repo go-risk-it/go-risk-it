@@ -141,7 +141,7 @@ func TestServiceImpl_PerformMove(t *testing.T) {
 				}
 			}
 
-			performFunc := func(c ctx.MoveContext, querier db.Querier, game *state.Game) error {
+			performFunc := func(c ctx.MoveContext, querier db.Querier) error {
 				return test.performError
 			}
 			err := service.OrchestrateMoveQ(context, querier, test.phase, performFunc)

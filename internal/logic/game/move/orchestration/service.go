@@ -6,8 +6,8 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/phase"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/validation"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/internal/logic/signals"
 	"github.com/jackc/pgx/v5"
@@ -17,13 +17,13 @@ type Service interface {
 	OrchestrateMove(
 		ctx ctx.MoveContext,
 		phase sqlc.PhaseType,
-		perform func(ctx ctx.MoveContext, querier db.Querier, game *state.Game) error,
+		perform func(ctx ctx.MoveContext, querier db.Querier) error,
 	) error
 	OrchestrateMoveQ(
 		ctx ctx.MoveContext,
 		querier db.Querier,
 		phase sqlc.PhaseType,
-		perform func(ctx ctx.MoveContext, querier db.Querier, game *state.Game) error,
+		perform func(ctx ctx.MoveContext, querier db.Querier) error,
 	) error
 }
 type ServiceImpl struct {
@@ -61,7 +61,7 @@ func NewService(
 func (s *ServiceImpl) OrchestrateMove(
 	ctx ctx.MoveContext,
 	phase sqlc.PhaseType,
-	perform func(ctx ctx.MoveContext, querier db.Querier, game *state.Game) error,
+	perform func(ctx ctx.MoveContext, querier db.Querier) error,
 ) error {
 	_, err := s.querier.ExecuteInTransactionWithIsolation(
 		ctx,
@@ -87,7 +87,7 @@ func (s *ServiceImpl) OrchestrateMoveQ(
 	ctx ctx.MoveContext,
 	querier db.Querier,
 	phase sqlc.PhaseType,
-	perform func(ctx ctx.MoveContext, querier db.Querier, game *state.Game) error,
+	perform func(ctx ctx.MoveContext, querier db.Querier) error,
 ) error {
 	ctx.Log().Infow("orchestrating move", "phase", phase)
 
@@ -104,7 +104,7 @@ func (s *ServiceImpl) OrchestrateMoveQ(
 		return fmt.Errorf("invalid move: %w", err)
 	}
 
-	if err := perform(ctx, querier, gameState); err != nil {
+	if err := perform(ctx, querier); err != nil {
 		return fmt.Errorf("unable to perform move: %w", err)
 	}
 

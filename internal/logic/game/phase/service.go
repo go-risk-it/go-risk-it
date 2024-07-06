@@ -6,8 +6,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/attack"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/deploy"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -25,22 +23,16 @@ type Service interface {
 }
 
 type ServiceImpl struct {
-	attackService attack.Service
-	deployService deploy.Service
-	gameService   state.Service
+	gameService state.Service
+	phaseWalker Walker
 }
 
 var _ Service = &ServiceImpl{}
 
-func NewService(
-	attackService attack.Service,
-	deployService deploy.Service,
-	gameService state.Service,
-) *ServiceImpl {
+func NewService(gameService state.Service, phaseWalker Walker) *ServiceImpl {
 	return &ServiceImpl{
-		attackService: attackService,
-		deployService: deployService,
-		gameService:   gameService,
+		gameService: gameService,
+		phaseWalker: phaseWalker,
 	}
 }
 
@@ -75,7 +67,7 @@ func (s *ServiceImpl) AdvanceQ(ctx ctx.MoveContext, querier db.Querier) error {
 
 	ctx.Log().Infow("walking to target phase", "from", gameState.CurrentPhase)
 
-	targetPhaseType, err := s.walkToTargetPhase(ctx, querier, gameState)
+	targetPhaseType, err := s.phaseWalker.WalkToTargetPhase(ctx, querier, gameState)
 	if err != nil {
 		return fmt.Errorf("failed to walk to target phase: %w", err)
 	}
@@ -107,83 +99,6 @@ func (s *ServiceImpl) AdvanceQ(ctx ctx.MoveContext, querier db.Querier) error {
 	}
 
 	return nil
-}
-
-func (s *ServiceImpl) walkToTargetPhase(
-	ctx ctx.MoveContext,
-	querier db.Querier,
-	gameState *state.Game,
-) (sqlc.PhaseType, error) {
-	targetPhase := gameState.CurrentPhase
-
-	mustAdvance := true
-	for mustAdvance {
-		mustAdvance = false
-
-		switch targetPhase {
-		case sqlc.PhaseTypeDEPLOY:
-			deployableTroops, err := s.deployService.GetDeployableTroops(ctx, querier)
-			if err != nil {
-				return targetPhase, fmt.Errorf("failed to get deployable troops: %w", err)
-			}
-
-			if deployableTroops == 0 {
-				ctx.Log().Infow(
-					"deploy must advance",
-					"phase",
-					gameState.CurrentPhase,
-				)
-
-				targetPhase = sqlc.PhaseTypeATTACK
-				mustAdvance = true
-			}
-		case sqlc.PhaseTypeATTACK:
-			targetPhase, err := s.getTargetPhaseForAttack(ctx, querier)
-			if err != nil {
-				return targetPhase, fmt.Errorf("failed to get target phase for attack: %w", err)
-			}
-
-			if targetPhase != sqlc.PhaseTypeATTACK {
-				mustAdvance = true
-			}
-		case sqlc.PhaseTypeCONQUER:
-		case sqlc.PhaseTypeREINFORCE:
-		case sqlc.PhaseTypeCARDS:
-		}
-	}
-
-	return targetPhase, nil
-}
-
-func (s *ServiceImpl) getTargetPhaseForAttack(
-	ctx ctx.MoveContext,
-	querier db.Querier,
-) (sqlc.PhaseType, error) {
-	targetPhase := sqlc.PhaseTypeATTACK
-
-	hasConquered, err := s.attackService.HasConqueredQ(ctx, querier)
-	if err != nil {
-		return targetPhase, fmt.Errorf("failed to check if attack has conquered: %w", err)
-	}
-
-	if hasConquered {
-		ctx.Log().Infow("must advance phase to CONQUER")
-
-		return sqlc.PhaseTypeCONQUER, nil
-	}
-
-	canContinueAttacking, err := s.attackService.CanContinueAttackingQ(ctx, querier)
-	if err != nil {
-		return targetPhase, fmt.Errorf("failed to check if attack can continue: %w", err)
-	}
-
-	if !canContinueAttacking {
-		ctx.Log().Infow("cannot continue attacking, must advance phase to REINFORCE")
-
-		return sqlc.PhaseTypeREINFORCE, nil
-	}
-
-	return targetPhase, nil
 }
 
 func (s *ServiceImpl) CreateDeployPhaseQ(
