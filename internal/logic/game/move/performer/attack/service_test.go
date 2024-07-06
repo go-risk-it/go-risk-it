@@ -9,7 +9,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/attack"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/board"
-	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/move/dice"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/move/performer/dice"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"

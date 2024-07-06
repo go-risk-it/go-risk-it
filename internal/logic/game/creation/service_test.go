@@ -61,8 +61,8 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 	phaseServiceMock := phase.NewService(t)
 	phaseServiceMock.
 		EXPECT().
-		CreateDeployPhaseQ(context, mockQuerier, gameID, int64(0), int64(3)).
-		Return(&sqlc.DeployPhase{PhaseID: 1}, nil)
+		CreateNewPhaseQ(context, mockQuerier, gameID, int64(0), sqlc.PhaseTypeDEPLOY).
+		Return(int64(1), nil)
 
 	phaseServiceMock.
 		EXPECT().
@@ -171,8 +171,8 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 
 	phaseService.
 		EXPECT().
-		CreateDeployPhaseQ(ctx, querier, gameID, int64(0), int64(3)).
-		Return(&sqlc.DeployPhase{PhaseID: 1}, nil)
+		CreateNewPhaseQ(ctx, querier, gameID, int64(0), sqlc.PhaseTypeDEPLOY).
+		Return(int64(1), nil)
 
 	phaseService.
 		EXPECT().

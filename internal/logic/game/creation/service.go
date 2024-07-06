@@ -6,6 +6,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
+	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
@@ -83,12 +84,18 @@ func (s *ServiceImpl) CreateGameQ(
 
 	ctx.Log().Debugw("inserted game, creating initial phase", "gameID", game.ID)
 
-	initialPhase, err := s.phaseService.CreateDeployPhaseQ(ctx, querier, game.ID, 0, 3)
+	initialPhaseID, err := s.phaseService.CreateNewPhaseQ(
+		ctx,
+		querier,
+		game.ID,
+		0,
+		sqlc.PhaseTypeDEPLOY,
+	)
 	if err != nil {
 		return -1, fmt.Errorf("failed to create initial phase: %w", err)
 	}
 
-	err = s.phaseService.SetGamePhaseQ(ctx, querier, game.ID, initialPhase.PhaseID)
+	err = s.phaseService.SetGamePhaseQ(ctx, querier, game.ID, initialPhaseID)
 	if err != nil {
 		return -1, fmt.Errorf("failed to set game phase: %w", err)
 	}

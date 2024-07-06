@@ -71,29 +71,27 @@ func (_c *Service_AdvanceQ_Call) RunAndReturn(run func(ctx.MoveContext, db.Queri
 	return _c
 }
 
-// CreateDeployPhaseQ provides a mock function with given fields: _a0, querier, gameID, turn, deployableTroops
-func (_m *Service) CreateDeployPhaseQ(_a0 ctx.UserContext, querier db.Querier, gameID int64, turn int64, deployableTroops int64) (*sqlc.DeployPhase, error) {
-	ret := _m.Called(_a0, querier, gameID, turn, deployableTroops)
+// CreateNewPhaseQ provides a mock function with given fields: _a0, querier, gameID, turn, phaseType
+func (_m *Service) CreateNewPhaseQ(_a0 ctx.UserContext, querier db.Querier, gameID int64, turn int64, phaseType sqlc.PhaseType) (int64, error) {
+	ret := _m.Called(_a0, querier, gameID, turn, phaseType)
 
 	if len(ret) == 0 {
-		panic("no return value specified for CreateDeployPhaseQ")
+		panic("no return value specified for CreateNewPhaseQ")
 	}
 
-	var r0 *sqlc.DeployPhase
+	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(ctx.UserContext, db.Querier, int64, int64, int64) (*sqlc.DeployPhase, error)); ok {
-		return rf(_a0, querier, gameID, turn, deployableTroops)
+	if rf, ok := ret.Get(0).(func(ctx.UserContext, db.Querier, int64, int64, sqlc.PhaseType) (int64, error)); ok {
+		return rf(_a0, querier, gameID, turn, phaseType)
 	}
-	if rf, ok := ret.Get(0).(func(ctx.UserContext, db.Querier, int64, int64, int64) *sqlc.DeployPhase); ok {
-		r0 = rf(_a0, querier, gameID, turn, deployableTroops)
+	if rf, ok := ret.Get(0).(func(ctx.UserContext, db.Querier, int64, int64, sqlc.PhaseType) int64); ok {
+		r0 = rf(_a0, querier, gameID, turn, phaseType)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*sqlc.DeployPhase)
-		}
+		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(ctx.UserContext, db.Querier, int64, int64, int64) error); ok {
-		r1 = rf(_a0, querier, gameID, turn, deployableTroops)
+	if rf, ok := ret.Get(1).(func(ctx.UserContext, db.Querier, int64, int64, sqlc.PhaseType) error); ok {
+		r1 = rf(_a0, querier, gameID, turn, phaseType)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -101,34 +99,34 @@ func (_m *Service) CreateDeployPhaseQ(_a0 ctx.UserContext, querier db.Querier, g
 	return r0, r1
 }
 
-// Service_CreateDeployPhaseQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateDeployPhaseQ'
-type Service_CreateDeployPhaseQ_Call struct {
+// Service_CreateNewPhaseQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateNewPhaseQ'
+type Service_CreateNewPhaseQ_Call struct {
 	*mock.Call
 }
 
-// CreateDeployPhaseQ is a helper method to define mock.On call
+// CreateNewPhaseQ is a helper method to define mock.On call
 //   - _a0 ctx.UserContext
 //   - querier db.Querier
 //   - gameID int64
 //   - turn int64
-//   - deployableTroops int64
-func (_e *Service_Expecter) CreateDeployPhaseQ(_a0 interface{}, querier interface{}, gameID interface{}, turn interface{}, deployableTroops interface{}) *Service_CreateDeployPhaseQ_Call {
-	return &Service_CreateDeployPhaseQ_Call{Call: _e.mock.On("CreateDeployPhaseQ", _a0, querier, gameID, turn, deployableTroops)}
+//   - phaseType sqlc.PhaseType
+func (_e *Service_Expecter) CreateNewPhaseQ(_a0 interface{}, querier interface{}, gameID interface{}, turn interface{}, phaseType interface{}) *Service_CreateNewPhaseQ_Call {
+	return &Service_CreateNewPhaseQ_Call{Call: _e.mock.On("CreateNewPhaseQ", _a0, querier, gameID, turn, phaseType)}
 }
 
-func (_c *Service_CreateDeployPhaseQ_Call) Run(run func(_a0 ctx.UserContext, querier db.Querier, gameID int64, turn int64, deployableTroops int64)) *Service_CreateDeployPhaseQ_Call {
+func (_c *Service_CreateNewPhaseQ_Call) Run(run func(_a0 ctx.UserContext, querier db.Querier, gameID int64, turn int64, phaseType sqlc.PhaseType)) *Service_CreateNewPhaseQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.UserContext), args[1].(db.Querier), args[2].(int64), args[3].(int64), args[4].(int64))
+		run(args[0].(ctx.UserContext), args[1].(db.Querier), args[2].(int64), args[3].(int64), args[4].(sqlc.PhaseType))
 	})
 	return _c
 }
 
-func (_c *Service_CreateDeployPhaseQ_Call) Return(_a0 *sqlc.DeployPhase, _a1 error) *Service_CreateDeployPhaseQ_Call {
+func (_c *Service_CreateNewPhaseQ_Call) Return(_a0 int64, _a1 error) *Service_CreateNewPhaseQ_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_CreateDeployPhaseQ_Call) RunAndReturn(run func(ctx.UserContext, db.Querier, int64, int64, int64) (*sqlc.DeployPhase, error)) *Service_CreateDeployPhaseQ_Call {
+func (_c *Service_CreateNewPhaseQ_Call) RunAndReturn(run func(ctx.UserContext, db.Querier, int64, int64, sqlc.PhaseType) (int64, error)) *Service_CreateNewPhaseQ_Call {
 	_c.Call.Return(run)
 	return _c
 }

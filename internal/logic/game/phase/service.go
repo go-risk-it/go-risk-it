@@ -14,13 +14,12 @@ import (
 type Service interface {
 	AdvanceQ(ctx ctx.MoveContext, querier db.Querier) error
 	SetGamePhaseQ(ctx ctx.UserContext, querier db.Querier, gameID int64, phaseID int64) error
-	CreateDeployPhaseQ(
+	CreateNewPhaseQ(
 		ctx ctx.UserContext,
 		querier db.Querier,
-		gameID int64,
-		turn int64,
-		deployableTroops int64,
-	) (*sqlc.DeployPhase, error)
+		gameID, turn int64,
+		phaseType sqlc.PhaseType,
+	) (int64, error)
 }
 
 type ServiceImpl struct {
@@ -85,14 +84,18 @@ func (s *ServiceImpl) AdvanceQ(ctx ctx.MoveContext, querier db.Querier) error {
 		targetPhaseType,
 	)
 
-	// TODO: Create phase
-	targetPhase := sqlc.Phase{
-		ID:   0,
-		Type: targetPhaseType,
-		Turn: gameState.CurrentTurn,
+	targetPhaseID, err := s.CreateNewPhaseQ(
+		ctx,
+		querier,
+		gameState.ID,
+		gameState.CurrentTurn,
+		targetPhaseType,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create new phase: %w", err)
 	}
 
-	err = s.SetGamePhaseQ(ctx, querier, ctx.GameID(), targetPhase.ID)
+	err = s.SetGamePhaseQ(ctx, querier, ctx.GameID(), targetPhaseID)
 	if err != nil {
 		return fmt.Errorf("failed to set game phase: %w", err)
 	}
@@ -100,34 +103,80 @@ func (s *ServiceImpl) AdvanceQ(ctx ctx.MoveContext, querier db.Querier) error {
 	return nil
 }
 
-func (s *ServiceImpl) CreateDeployPhaseQ(
+func (s *ServiceImpl) CreateNewPhaseQ(
+	ctx ctx.UserContext,
+	querier db.Querier,
+	gameID, turn int64,
+	phaseType sqlc.PhaseType,
+) (int64, error) {
+	var (
+		phaseID int64
+		err     error
+	)
+
+	switch phaseType {
+	case sqlc.PhaseTypeDEPLOY:
+		phaseID, err = s.createDeployPhaseQ(ctx, querier, gameID, turn)
+	case sqlc.PhaseTypeATTACK:
+		phaseID, err = s.createAttackPhaseQ(ctx, querier, gameID, turn)
+	default:
+		err = fmt.Errorf("unsupported phase type: %v", phaseType)
+	}
+
+	if err != nil {
+		return -1, fmt.Errorf("failed to create deploy phase: %w", err)
+	}
+
+	return phaseID, nil
+}
+
+func (s *ServiceImpl) createDeployPhaseQ(
 	ctx ctx.UserContext,
 	querier db.Querier,
 	gameID int64,
 	turn int64,
-	deployableTroops int64,
-) (*sqlc.DeployPhase, error) {
+) (int64, error) {
 	ctx.Log().Infow("creating deploy phase", "gameID", gameID, "turn", turn)
 
-	phase, err := s.createPhaseQ(ctx, querier, gameID, sqlc.PhaseTypeDEPLOY, turn)
+	phase, err := s.insertPhaseQ(ctx, querier, gameID, sqlc.PhaseTypeDEPLOY, turn)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create deploy phase: %w", err)
+		return -1, fmt.Errorf("failed to create deploy phase: %w", err)
 	}
+
+	deployableTroops := int64(3)
 
 	deployPhase, err := querier.InsertDeployPhase(ctx, sqlc.InsertDeployPhaseParams{
 		PhaseID:          phase.ID,
 		DeployableTroops: deployableTroops,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create deploy phase: %w", err)
+		return -1, fmt.Errorf("failed to create deploy phase: %w", err)
 	}
 
 	ctx.Log().Infow("deploy phase created", "phase", deployPhase)
 
-	return &deployPhase, nil
+	return deployPhase.PhaseID, nil
 }
 
-func (s *ServiceImpl) createPhaseQ(
+func (s *ServiceImpl) createAttackPhaseQ(
+	ctx ctx.UserContext,
+	querier db.Querier,
+	gameID int64,
+	turn int64,
+) (int64, error) {
+	ctx.Log().Infow("creating attack phase", "gameID", gameID, "turn", turn)
+
+	phase, err := s.insertPhaseQ(ctx, querier, gameID, sqlc.PhaseTypeATTACK, turn)
+	if err != nil {
+		return -1, fmt.Errorf("failed to create attack phase: %w", err)
+	}
+
+	ctx.Log().Infow("attack phase created", "phase", phase)
+
+	return phase.ID, nil
+}
+
+func (s *ServiceImpl) insertPhaseQ(
 	ctx ctx.UserContext,
 	querier db.Querier,
 	gameID int64,
