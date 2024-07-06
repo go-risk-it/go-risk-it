@@ -6,6 +6,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase/walker"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -24,12 +25,12 @@ type Service interface {
 
 type ServiceImpl struct {
 	gameService state.Service
-	phaseWalker Walker
+	phaseWalker walker.Service
 }
 
 var _ Service = &ServiceImpl{}
 
-func NewService(gameService state.Service, phaseWalker Walker) *ServiceImpl {
+func NewService(gameService state.Service, phaseWalker walker.Service) *ServiceImpl {
 	return &ServiceImpl{
 		gameService: gameService,
 		phaseWalker: phaseWalker,
@@ -67,7 +68,7 @@ func (s *ServiceImpl) AdvanceQ(ctx ctx.MoveContext, querier db.Querier) error {
 
 	ctx.Log().Infow("walking to target phase", "from", gameState.CurrentPhase)
 
-	targetPhaseType, err := s.phaseWalker.WalkToTargetPhase(ctx, querier, gameState)
+	targetPhaseType, err := s.phaseWalker.WalkToTargetPhase(ctx, querier, gameState.CurrentPhase)
 	if err != nil {
 		return fmt.Errorf("failed to walk to target phase: %w", err)
 	}
