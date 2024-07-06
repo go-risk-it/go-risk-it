@@ -10,7 +10,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/creation"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
-	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/move/orchestration/phase"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/phase"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region"
 	"github.com/jackc/pgx/v5/pgtype"

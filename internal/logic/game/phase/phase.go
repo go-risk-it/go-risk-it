@@ -6,8 +6,8 @@ import (
 )
 
 var Module = fx.Options(
+	walker.Module,
 	fx.Provide(
-		walker.Module,
 		fx.Annotate(
 			NewService,
 			fx.As(new(Service)),

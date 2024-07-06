@@ -38,7 +38,7 @@ func (w *ServiceImpl) WalkToTargetPhase(
 	querier db.Querier,
 	currentPhase sqlc.PhaseType,
 ) (sqlc.PhaseType, error) {
-	ctx.Log().Infow("walking", "from", currentPhase)
+	ctx.Log().Infow("walking to target phase", "from", currentPhase)
 
 	walker, err := w.getWalker(currentPhase)
 	if err != nil {
