@@ -74,27 +74,23 @@ func (s *ServiceImpl) CreateGameQ(
 	regions []string,
 	players []request.Player,
 ) (int64, error) {
-	ctx.Log().Debugw("creating game", "regions", len(regions), "players", len(players))
+	ctx.Log().Infow("creating game", "regions", len(regions), "players", len(players))
 
 	game, err := querier.InsertGame(ctx)
 	if err != nil {
 		return -1, fmt.Errorf("failed to insert game: %w", err)
 	}
 
-	ctx.Log().Debugw("inserted game", "gameID", game.ID)
-
-	ctx.Log().Debugw("creating initialPhase", "gameID", game.ID)
+	ctx.Log().Debugw("inserted game, creating initial phase", "gameID", game.ID)
 
 	initialPhase, err := s.phaseService.CreateDeployPhaseQ(ctx, querier, game.ID, 0, 3)
 	if err != nil {
-		return -1, fmt.Errorf("failed to create initialPhase: %w", err)
+		return -1, fmt.Errorf("failed to create initial phase: %w", err)
 	}
-
-	ctx.Log().Debugw("Setting game initialPhase", "gameID", game.ID, "initialPhase", initialPhase)
 
 	err = s.phaseService.SetGamePhaseQ(ctx, querier, game.ID, initialPhase.PhaseID)
 	if err != nil {
-		return -1, fmt.Errorf("failed to set game initialPhase: %w", err)
+		return -1, fmt.Errorf("failed to set game phase: %w", err)
 	}
 
 	createdPlayers, err := s.playerService.CreatePlayers(ctx, querier, game.ID, players)
@@ -107,7 +103,7 @@ func (s *ServiceImpl) CreateGameQ(
 		return -1, fmt.Errorf("failed to create regions: %w", err)
 	}
 
-	ctx.Log().Debugw("successfully created game", "regions", len(regions), "players", len(players))
+	ctx.Log().Infow("successfully created game", "regions", len(regions), "players", len(players))
 
 	return game.ID, nil
 }

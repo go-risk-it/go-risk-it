@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/dice/roller"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/dice/roller"
 )
 
 func Test_Random_Roll_ReturnsFromSource(t *testing.T) {

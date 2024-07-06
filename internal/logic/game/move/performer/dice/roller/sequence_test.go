@@ -3,7 +3,7 @@ package roller_test
 import (
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/dice/roller"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/dice/roller"
 )
 
 func Test_Sequence_Roll_ReturnsSequence(t *testing.T) {

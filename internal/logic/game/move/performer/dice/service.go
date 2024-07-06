@@ -4,7 +4,7 @@ import (
 	"math/rand"
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/dice/roller"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/dice/roller"
 )
 
 type Service interface {
