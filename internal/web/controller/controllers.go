@@ -22,5 +22,9 @@ var Module = fx.Options(
 			NewPlayerController,
 			fx.As(new(PlayerController)),
 		),
+		fx.Annotate(
+			NewPhaseController,
+			fx.As(new(PhaseController)),
+		),
 	),
 )

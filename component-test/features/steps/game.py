@@ -28,4 +28,4 @@ def step_impl(context: RiskItContext, phase: str):
     if phase not in valid_phases:
         raise ValueError(f"Unknown phase: {phase}")
 
-    assert context.game_state.currentPhase == phase
+    assert context.game_state.phase == phase

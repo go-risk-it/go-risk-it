@@ -31,7 +31,7 @@ func (q *Queries) DecreaseDeployableTroops(ctx context.Context, arg DecreaseDepl
 	return err
 }
 
-const getDeployableTroops = `-- name: GetDeployableTroops :one
+const getDeployableTroops = `-- name: GetDeployableTroopsQ :one
 SELECT deploy_phase.deployable_troops
 FROM game JOIN phase ON game.current_phase_id = phase.id JOIN deploy_phase ON phase.id = deploy_phase.phase_id
 WHERE game.id = $1

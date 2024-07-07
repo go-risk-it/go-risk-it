@@ -6,8 +6,11 @@ import (
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/internal/logic/signals"
 	"github.com/go-risk-it/go-risk-it/internal/web/fetchers"
+	"github.com/go-risk-it/go-risk-it/internal/web/fetchers/phase"
 	"github.com/lesismal/nbio/nbhttp/websocket"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -16,9 +19,11 @@ import (
 type PlayerConnectedHandlerParams struct {
 	fx.In
 
-	Fetchers []fetchers.Fetcher `group:"fetchers"`
-	Log      *zap.SugaredLogger
-	Signal   signals.PlayerConnectedSignal
+	Fetchers           []fetchers.Fetcher `group:"fetchers"`
+	Log                *zap.SugaredLogger
+	Signal             signals.PlayerConnectedSignal
+	GameService        state.Service
+	DeployPhaseFetcher phase.DeployPhaseFetcher
 }
 
 func HandlePlayerConnected(
@@ -40,7 +45,23 @@ func HandlePlayerConnected(
 			go fetcher.FetchState(gameContext, stateChannel)
 		}
 
-		for i := 0; i < len(params.Fetchers); i++ {
+		gameState, err := params.GameService.GetGameState(gameContext)
+		if err != nil {
+			gameContext.Log().Errorf("failed to get game state: %v", err)
+
+			return
+		}
+
+		switch gameState.Phase {
+		case sqlc.PhaseTypeDEPLOY:
+			go params.DeployPhaseFetcher.FetchState(gameContext, gameState, stateChannel)
+		default:
+			gameContext.Log().Errorf("unknown phase type: %v", gameState.Phase)
+
+			return
+		}
+
+		for i := 0; i < len(params.Fetchers)+1; i++ {
 			select {
 			case state := <-stateChannel:
 				gameContext.Log().Infow("got state, writing message")

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/web/fetchers/phase"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 	"go.uber.org/fx"
 )
@@ -36,8 +37,8 @@ func FetchState[T any](
 }
 
 var Module = fx.Options(
+	phase.Module,
 	fx.Provide(
-		NewGameFetcher,
 		NewBoardFetcher,
 		NewPlayerFetcher,
 	),

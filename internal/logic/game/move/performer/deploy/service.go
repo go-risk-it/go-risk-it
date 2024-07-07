@@ -20,7 +20,8 @@ type Move struct {
 
 type Service interface {
 	service.Service[Move]
-	GetDeployableTroops(ctx ctx.MoveContext, querier db.Querier) (int64, error)
+	GetDeployableTroops(ctx ctx.GameContext) (int64, error)
+	GetDeployableTroopsQ(ctx ctx.GameContext, querier db.Querier) (int64, error)
 }
 
 type ServiceImpl struct {
@@ -49,7 +50,7 @@ func NewService(
 func (s *ServiceImpl) PerformQ(ctx ctx.MoveContext, querier db.Querier, move Move) error {
 	ctx.Log().Infow("performing deploy move", "move", move)
 
-	deployableTroops, err := s.GetDeployableTroops(ctx, querier)
+	deployableTroops, err := s.GetDeployableTroopsQ(ctx, querier)
 	if err != nil {
 		return fmt.Errorf("failed to get deployable troops: %w", err)
 	}
@@ -79,7 +80,14 @@ func (s *ServiceImpl) PerformQ(ctx ctx.MoveContext, querier db.Querier, move Mov
 	return nil
 }
 
-func (s *ServiceImpl) GetDeployableTroops(ctx ctx.MoveContext, querier db.Querier) (int64, error) {
+func (s *ServiceImpl) GetDeployableTroops(ctx ctx.GameContext) (int64, error) {
+	return s.GetDeployableTroopsQ(ctx, s.querier)
+}
+
+func (s *ServiceImpl) GetDeployableTroopsQ(
+	ctx ctx.GameContext,
+	querier db.Querier,
+) (int64, error) {
 	ctx.Log().Infow("getting deployable troops")
 
 	deployableTroops, err := querier.GetDeployableTroops(ctx, ctx.GameID())

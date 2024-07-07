@@ -9,9 +9,9 @@ import (
 )
 
 type Game struct {
-	ID           int64          `json:"id"`
-	CurrentTurn  int64          `json:"currentTurn"`
-	CurrentPhase sqlc.PhaseType `json:"currentPhase"`
+	ID    int64
+	Turn  int64
+	Phase sqlc.PhaseType
 }
 
 type Service interface {
@@ -44,8 +44,8 @@ func (s *ServiceImpl) GetGameStateQ(ctx ctx.GameContext, querier db.Querier) (*G
 	}
 
 	return &Game{
-		ID:           game.ID,
-		CurrentTurn:  game.Turn,
-		CurrentPhase: game.CurrentPhase,
+		ID:    game.ID,
+		Turn:  game.Turn,
+		Phase: game.CurrentPhase,
 	}, nil
 }

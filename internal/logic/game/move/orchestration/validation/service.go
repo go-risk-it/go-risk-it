@@ -51,7 +51,7 @@ func (s *ServiceImpl) checkTurn(
 	playersInGame int64,
 	playerTurn int64,
 ) error {
-	if game.CurrentTurn%playersInGame != playerTurn {
+	if game.Turn%playersInGame != playerTurn {
 		return fmt.Errorf("it is not the player's turn")
 	}
 

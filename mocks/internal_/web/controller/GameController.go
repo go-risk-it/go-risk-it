@@ -3,7 +3,6 @@
 package controller
 
 import (
-	message "github.com/go-risk-it/go-risk-it/internal/api/game/message"
 	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
 	mock "github.com/stretchr/testify/mock"
 
@@ -76,62 +75,6 @@ func (_c *GameController_CreateGame_Call) Return(_a0 int64, _a1 error) *GameCont
 }
 
 func (_c *GameController_CreateGame_Call) RunAndReturn(run func(ctx.UserContext, request.CreateGame) (int64, error)) *GameController_CreateGame_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetGameState provides a mock function with given fields: _a0
-func (_m *GameController) GetGameState(_a0 ctx.GameContext) (message.GameState, error) {
-	ret := _m.Called(_a0)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetGameState")
-	}
-
-	var r0 message.GameState
-	var r1 error
-	if rf, ok := ret.Get(0).(func(ctx.GameContext) (message.GameState, error)); ok {
-		return rf(_a0)
-	}
-	if rf, ok := ret.Get(0).(func(ctx.GameContext) message.GameState); ok {
-		r0 = rf(_a0)
-	} else {
-		r0 = ret.Get(0).(message.GameState)
-	}
-
-	if rf, ok := ret.Get(1).(func(ctx.GameContext) error); ok {
-		r1 = rf(_a0)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GameController_GetGameState_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetGameState'
-type GameController_GetGameState_Call struct {
-	*mock.Call
-}
-
-// GetGameState is a helper method to define mock.On call
-//   - _a0 ctx.GameContext
-func (_e *GameController_Expecter) GetGameState(_a0 interface{}) *GameController_GetGameState_Call {
-	return &GameController_GetGameState_Call{Call: _e.mock.On("GetGameState", _a0)}
-}
-
-func (_c *GameController_GetGameState_Call) Run(run func(_a0 ctx.GameContext)) *GameController_GetGameState_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.GameContext))
-	})
-	return _c
-}
-
-func (_c *GameController_GetGameState_Call) Return(_a0 message.GameState, _a1 error) *GameController_GetGameState_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *GameController_GetGameState_Call) RunAndReturn(run func(ctx.GameContext) (message.GameState, error)) *GameController_GetGameState_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -60,9 +60,9 @@ func TestServiceImpl_DeployShouldFailWhenPlayerDoesntHaveEnoughDeployableTroops(
 	regionReference, currentTroops, desiredTroops, ctx := input()
 
 	game := &state.Game{
-		ID:           ctx.GameID(),
-		CurrentPhase: sqlc.PhaseTypeDEPLOY,
-		CurrentTurn:  2,
+		ID:    ctx.GameID(),
+		Phase: sqlc.PhaseTypeDEPLOY,
+		Turn:  2,
 	}
 
 	querier.EXPECT().GetDeployableTroops(ctx, game.ID).Return(int64(0), nil)
@@ -112,9 +112,9 @@ func TestServiceImpl_DeployShouldFail(t *testing.T) {
 			currentTroops := test.declaredTroops
 
 			game := &state.Game{
-				ID:           ctx.GameID(),
-				CurrentPhase: sqlc.PhaseTypeDEPLOY,
-				CurrentTurn:  2,
+				ID:    ctx.GameID(),
+				Phase: sqlc.PhaseTypeDEPLOY,
+				Turn:  2,
 			}
 
 			querier.EXPECT().GetDeployableTroops(ctx, game.ID).Return(int64(5), nil)
@@ -171,9 +171,9 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 			troops := desiredTroops - currentTroops
 
 			game := &state.Game{
-				ID:           ctx.GameID(),
-				CurrentPhase: sqlc.PhaseTypeDEPLOY,
-				CurrentTurn:  2,
+				ID:    ctx.GameID(),
+				Phase: sqlc.PhaseTypeDEPLOY,
+				Turn:  2,
 			}
 
 			querier.EXPECT().GetDeployableTroops(ctx, game.ID).Return(test.deployableTroops, nil)

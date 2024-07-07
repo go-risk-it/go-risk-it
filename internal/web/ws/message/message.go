@@ -8,10 +8,13 @@ import (
 type Type string
 
 const (
-	Subscribe   Type = "subscribe"
-	GameState   Type = "gameState"
-	BoardState  Type = "boardState"
-	PlayerState Type = "playerState"
+	Subscribe         Type = "subscribe"
+	GameState         Type = "gameState"
+	BoardState        Type = "boardState"
+	PlayerState       Type = "playerState"
+	DeployPhaseState  Type = "deployPhaseState"
+	AttackPhaseState  Type = "attackPhaseState"
+	ConquerPhaseState Type = "conquerPhaseState"
 )
 
 type SubscribePayload struct {

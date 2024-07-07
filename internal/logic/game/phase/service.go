@@ -65,12 +65,12 @@ func (s *ServiceImpl) AdvanceQ(ctx ctx.MoveContext, querier db.Querier) error {
 		return fmt.Errorf("failed to get game state: %w", err)
 	}
 
-	targetPhaseType, err := s.phaseWalker.WalkToTargetPhase(ctx, querier, gameState.CurrentPhase)
+	targetPhaseType, err := s.phaseWalker.WalkToTargetPhase(ctx, querier, gameState.Phase)
 	if err != nil {
 		return fmt.Errorf("failed to walk to target phase: %w", err)
 	}
 
-	if targetPhaseType == gameState.CurrentPhase {
+	if targetPhaseType == gameState.Phase {
 		ctx.Log().Infow("no need to advance phase")
 
 		return nil
@@ -79,7 +79,7 @@ func (s *ServiceImpl) AdvanceQ(ctx ctx.MoveContext, querier db.Querier) error {
 	ctx.Log().Infow(
 		"advancing phase",
 		"from",
-		gameState.CurrentPhase,
+		gameState.Phase,
 		"to",
 		targetPhaseType,
 	)
@@ -88,7 +88,7 @@ func (s *ServiceImpl) AdvanceQ(ctx ctx.MoveContext, querier db.Querier) error {
 		ctx,
 		querier,
 		gameState.ID,
-		gameState.CurrentTurn,
+		gameState.Turn,
 		targetPhaseType,
 	)
 	if err != nil {

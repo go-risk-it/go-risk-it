@@ -1,15 +1,15 @@
 package message
 
-type Phase string
+type PhaseType string
 
 const (
-	Cards   Phase = "cards"
-	Deploy  Phase = "deploy"
-	Attack  Phase = "attack"
-	Conquer Phase = "conquer"
+	Cards   PhaseType = "cards"
+	Deploy  PhaseType = "deploy"
+	Attack  PhaseType = "attack"
+	Conquer PhaseType = "conquer"
 )
 
-type DeployPhase struct {
+type DeployPhaseState struct {
 	DeployableTroops int64 `json:"deployableTroops"`
 }
 
@@ -19,8 +19,17 @@ type ConquerPhase struct {
 	MinTroopsToMove   int64  `json:"minTroopsToMove"`
 }
 
-type GameState struct {
-	ID           int64 `json:"id"`
-	CurrentTurn  int64 `json:"currentTurn"`
-	CurrentPhase Phase `json:"currentPhase"`
+type PhaseState interface {
+	DeployPhaseState | ConquerPhase
+}
+
+type Phase[T PhaseState] struct {
+	Type  PhaseType `json:"type"`
+	State T         `json:"state"`
+}
+
+type GameState[T PhaseState] struct {
+	ID    int64    `json:"id"`
+	Turn  int64    `json:"turn"`
+	Phase Phase[T] `json:"phase"`
 }

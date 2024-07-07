@@ -96,7 +96,7 @@ func (s *ServiceImpl) OrchestrateMoveQ(
 		return fmt.Errorf("unable to get game state: %w", err)
 	}
 
-	if gameState.CurrentPhase != phase {
+	if gameState.Phase != phase {
 		return fmt.Errorf("game is not in the correct phase to perform move")
 	}
 

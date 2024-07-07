@@ -49,9 +49,9 @@ func TestServiceImpl_ShouldFailWhenPlayerNotInGame(t *testing.T) {
 	}
 
 	game := &state.Game{
-		ID:           ctx.GameID(),
-		CurrentPhase: sqlc.PhaseTypeDEPLOY,
-		CurrentTurn:  1,
+		ID:    ctx.GameID(),
+		Phase: sqlc.PhaseTypeDEPLOY,
+		Turn:  1,
 	}
 
 	playerService.
@@ -100,9 +100,9 @@ func TestServiceImpl_ShouldFailOnTurnCheck(t *testing.T) {
 				GetPlayersQ(ctx, querier).
 				Return(players, nil)
 			game := &state.Game{
-				ID:           ctx.GameID(),
-				CurrentPhase: test.phase,
-				CurrentTurn:  test.turn,
+				ID:    ctx.GameID(),
+				Phase: test.phase,
+				Turn:  test.turn,
 			}
 
 			err := service.Validate(ctx, querier, game)

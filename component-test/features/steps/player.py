@@ -14,12 +14,12 @@ def extract_player(player_name: str, players: list[Player]) -> Player:
 
 @then("There are {deployable_troops} deployable troops")
 def step_impl(context: RiskItContext, deployable_troops: int):
-    assert context.game_state.deployableTroops == int(deployable_troops)
+    assert context.deploy_phase_state.deployableTroops == int(deployable_troops)
 
 
 @then("it's {player_name}'s turn")
 def step_impl(context: RiskItContext, player_name: str):
-    turn = context.game_state.currentTurn
+    turn = context.game_state.turn
     players = context.player_state.players
     player = extract_player(player_name, players)
 

@@ -118,9 +118,9 @@ func TestServiceImpl_PerformMove(t *testing.T) {
 			context := input()
 
 			game := &state.Game{
-				ID:           context.GameID(),
-				CurrentPhase: sqlc.PhaseTypeDEPLOY,
-				CurrentTurn:  2,
+				ID:    context.GameID(),
+				Phase: sqlc.PhaseTypeDEPLOY,
+				Turn:  2,
 			}
 
 			gameService.

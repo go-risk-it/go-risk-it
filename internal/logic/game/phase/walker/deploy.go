@@ -29,7 +29,7 @@ func (w *DeployPhaseWalkerImpl) Walk(
 	ctx ctx.MoveContext,
 	querier db.Querier,
 ) (sqlc.PhaseType, error) {
-	deployableTroops, err := w.deployService.GetDeployableTroops(ctx, querier)
+	deployableTroops, err := w.deployService.GetDeployableTroopsQ(ctx, querier)
 	if err != nil {
 		return sqlc.PhaseTypeDEPLOY, fmt.Errorf("failed to get deployable troops: %w", err)
 	}
