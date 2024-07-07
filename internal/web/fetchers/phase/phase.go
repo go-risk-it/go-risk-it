@@ -40,6 +40,6 @@ func FetchState[T message.PhaseState](
 
 var Module = fx.Options(
 	fx.Provide(
-		fx.Annotate(NewDeployPhaseFetcher, fx.As(new(Fetcher))),
+		fx.Annotate(NewDeployPhaseFetcher, fx.As(new(DeployPhaseFetcher))),
 	),
 )
