@@ -14,6 +14,10 @@ type PhaseController interface {
 		ctx ctx.GameContext,
 		game *state.Game,
 	) (messaging.GameState[messaging.DeployPhaseState], error)
+	GetAttackPhaseState(
+		ctx ctx.GameContext,
+		game *state.Game,
+	) (messaging.GameState[messaging.EmptyState], error)
 }
 
 type PhaseControllerImpl struct {
@@ -54,4 +58,30 @@ func (c *PhaseControllerImpl) GetDeployPhaseState(
 			},
 		},
 	}, nil
+}
+
+func (c *PhaseControllerImpl) GetAttackPhaseState(
+	ctx ctx.GameContext,
+	game *state.Game,
+) (messaging.GameState[messaging.EmptyState], error) {
+	ctx.Log().Infow("fetching attack phase phaseState")
+
+	return c.getEmptyPhaseState(ctx, game, messaging.Attack), nil
+}
+
+func (c *PhaseControllerImpl) getEmptyPhaseState(
+	ctx ctx.GameContext,
+	game *state.Game,
+	phaseType messaging.PhaseType,
+) messaging.GameState[messaging.EmptyState] {
+	ctx.Log().Infow("fetching empty phase state")
+
+	return messaging.GameState[messaging.EmptyState]{
+		ID:   game.ID,
+		Turn: game.Turn,
+		Phase: messaging.Phase[messaging.EmptyState]{
+			Type:  phaseType,
+			State: messaging.EmptyState{},
+		},
+	}
 }
