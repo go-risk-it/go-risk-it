@@ -1,12 +1,19 @@
+import dataclasses
+
 from behave.runner import Context
 
-from src.api.board_state_message import IndexedBoardStateData
+from src.api.board_state_message import Region
 from src.api.game_state_message import GameStateData
 from src.api.player_state_message import PlayerStateData
 from src.client.http_client import RiskItClient
 from src.client.supabase_client import SupabaseClient
 from src.core.player import Player
 from src.core.runner import ServiceRunner
+
+
+class IndexedBoardStateData:
+    def __init__(self, regions: list[Region]):
+        self.regions = {region.id: region for region in regions}
 
 
 class RiskItContext(Context):

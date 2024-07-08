@@ -1,15 +1,14 @@
 import json
 import logging
-from typing import Union
 
 from behave import *
 from websocket import create_connection
 
-from src.api.board_state_message import BoardStateMessage, BoardStateData, IndexedBoardStateData
+from src.api.board_state_message import BoardStateMessage
 from src.api.game_state_message import GameStateMessage
-from src.api.player_state_message import PlayerStateMessage, PlayerStateData
+from src.api.player_state_message import PlayerStateMessage
 from src.api.subscribe_message import build_subscribe_message
-from src.core.context import RiskItContext
+from src.core.context import RiskItContext, IndexedBoardStateData
 
 LOGGER = logging.getLogger(__name__)
 
@@ -27,31 +26,24 @@ def step_impl(context: RiskItContext, player: str):
 
 def deserialize(
         context: RiskItContext, message: str
-) -> Union[BoardStateMessage, GameStateMessage, PlayerStateMessage]:
+) -> None:
     parsed_message = json.loads(message)
     message_type = parsed_message["type"]
 
     LOGGER.info(f"Received message: {message}")
 
-    if message_type == "gameState":
-        game_state_message = GameStateMessage.parse_obj(parsed_message)
-        context.game_state = game_state_message.data
-        return game_state_message
-    elif message_type == "playerState":
-        player_state_message = PlayerStateMessage(**parsed_message)
-        context.player_state = PlayerStateData.schema().load(player_state_message.data)
-        return player_state_message
-    elif message_type == "boardState":
-        board_state_message = BoardStateMessage(**parsed_message)
-        board_state = BoardStateData.schema().load(board_state_message.data)
-        context.board_state = IndexedBoardStateData(
-            regions={
-                region.id: region
-                for region in board_state.regions
-            })
-        return board_state
-
-    raise ValueError(f"Unknown message type: {message_type}")
+    match message_type:
+        case "gameState":
+            game_state_message = GameStateMessage.parse_obj(parsed_message)
+            context.game_state = game_state_message.data
+        case "playerState":
+            player_state_message = PlayerStateMessage.parse_obj(parsed_message)
+            context.player_state = player_state_message.data
+        case "boardState":
+            board_state_message = BoardStateMessage.parse_obj(parsed_message)
+            context.board_state = IndexedBoardStateData(board_state_message.data.regions)
+        case _:
+            raise ValueError(f"Unknown message type: {message_type}")
 
 
 def receive_all_state_updates(context: RiskItContext, player: str):

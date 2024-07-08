@@ -1,28 +1,16 @@
-from dataclasses import dataclass
-
-from dataclasses_json import dataclass_json
+from pydantic import BaseModel
 
 
-@dataclass_json
-@dataclass
-class Region:
+class Region(BaseModel):
     id: str
     ownerId: str
     troops: int
 
 
-@dataclass_json
-@dataclass
-class BoardStateData:
+class BoardStateData(BaseModel):
     regions: list[Region]
 
 
-@dataclass
-class BoardStateMessage:
+class BoardStateMessage(BaseModel):
     type: str
     data: BoardStateData
-
-
-@dataclass
-class IndexedBoardStateData:
-    regions: dict[str, Region]

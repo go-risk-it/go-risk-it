@@ -1,23 +1,16 @@
-from dataclasses import dataclass
-
-from dataclasses_json import dataclass_json
+from pydantic import BaseModel
 
 
-@dataclass_json
-@dataclass
-class Player:
+class Player(BaseModel):
     userId: str
     name: str
     index: int
 
 
-@dataclass_json
-@dataclass
-class PlayerStateData:
+class PlayerStateData(BaseModel):
     players: list[Player]
 
 
-@dataclass
-class PlayerStateMessage:
+class PlayerStateMessage(BaseModel):
     type: str
     data: PlayerStateData

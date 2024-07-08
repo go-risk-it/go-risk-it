@@ -1,15 +1,11 @@
-import dataclasses
-import json
-from dataclasses import dataclass
+from pydantic import BaseModel
 
 
-@dataclass
-class SubscribeData:
+class SubscribeData(BaseModel):
     gameId: int
 
 
-@dataclass
-class SubscribeMessage:
+class SubscribeMessage(BaseModel):
     type: str
     data: SubscribeData
 
@@ -17,4 +13,4 @@ class SubscribeMessage:
 def build_subscribe_message(game_id) -> str:
     message = SubscribeMessage(type="subscribe", data=SubscribeData(gameId=game_id))
 
-    return json.dumps(dataclasses.asdict(message))
+    return message.model_dump_json()
