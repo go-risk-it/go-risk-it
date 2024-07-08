@@ -13,8 +13,10 @@ def extract_player(player_name: str, players: list[Player]) -> Player:
 
 
 @then("There are {deployable_troops} deployable troops")
-def step_impl(context: RiskItContext, deployable_troops: int):
-    assert context.deploy_phase_state.deployableTroops == int(deployable_troops)
+def step_impl(context: RiskItContext, deployable_troops: str):
+    assert context.game_state.deploy_phase.deployableTroops == int(deployable_troops), \
+        (f"Expected {deployable_troops} deployable troops, "
+         f"but got {context.game_state.deploy_phase.deployableTroops}")
 
 
 @then("it's {player_name}'s turn")

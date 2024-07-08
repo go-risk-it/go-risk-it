@@ -49,6 +49,6 @@ def assert_error(http_response: Response, status, error_message):
     assert_status(http_response, status)
     response_body = http_response.json()
     assert_that(
-        response_body["error"]["message"],
+        response_body["error"]["messaging"],
         equal_to(error_message),
     )

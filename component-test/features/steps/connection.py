@@ -1,14 +1,17 @@
 import json
+import logging
 from typing import Union
 
 from behave import *
 from websocket import create_connection
 
 from src.api.board_state_message import BoardStateMessage, BoardStateData, IndexedBoardStateData
-from src.api.game_state_message import GameStateMessage, GameStateData
+from src.api.game_state_message import GameStateMessage
 from src.api.player_state_message import PlayerStateMessage, PlayerStateData
 from src.api.subscribe_message import build_subscribe_message
 from src.core.context import RiskItContext
+
+LOGGER = logging.getLogger(__name__)
 
 
 @when("{player} connects to the game")
@@ -28,9 +31,11 @@ def deserialize(
     parsed_message = json.loads(message)
     message_type = parsed_message["type"]
 
+    LOGGER.info(f"Received message: {message}")
+
     if message_type == "gameState":
-        game_state_message = GameStateMessage(**parsed_message)
-        context.game_state = GameStateData.schema().load(game_state_message.data)
+        game_state_message = GameStateMessage.parse_obj(parsed_message)
+        context.game_state = game_state_message.data
         return game_state_message
     elif message_type == "playerState":
         player_state_message = PlayerStateMessage(**parsed_message)

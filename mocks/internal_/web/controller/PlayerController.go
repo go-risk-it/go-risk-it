@@ -3,7 +3,7 @@
 package controller
 
 import (
-	message "github.com/go-risk-it/go-risk-it/internal/api/game/message"
+	messaging "github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
 	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -22,22 +22,22 @@ func (_m *PlayerController) EXPECT() *PlayerController_Expecter {
 }
 
 // GetPlayerState provides a mock function with given fields: _a0
-func (_m *PlayerController) GetPlayerState(_a0 ctx.GameContext) (message.PlayersState, error) {
+func (_m *PlayerController) GetPlayerState(_a0 ctx.GameContext) (messaging.PlayersState, error) {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetPlayerState")
 	}
 
-	var r0 message.PlayersState
+	var r0 messaging.PlayersState
 	var r1 error
-	if rf, ok := ret.Get(0).(func(ctx.GameContext) (message.PlayersState, error)); ok {
+	if rf, ok := ret.Get(0).(func(ctx.GameContext) (messaging.PlayersState, error)); ok {
 		return rf(_a0)
 	}
-	if rf, ok := ret.Get(0).(func(ctx.GameContext) message.PlayersState); ok {
+	if rf, ok := ret.Get(0).(func(ctx.GameContext) messaging.PlayersState); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(message.PlayersState)
+		r0 = ret.Get(0).(messaging.PlayersState)
 	}
 
 	if rf, ok := ret.Get(1).(func(ctx.GameContext) error); ok {
@@ -67,12 +67,12 @@ func (_c *PlayerController_GetPlayerState_Call) Run(run func(_a0 ctx.GameContext
 	return _c
 }
 
-func (_c *PlayerController_GetPlayerState_Call) Return(_a0 message.PlayersState, _a1 error) *PlayerController_GetPlayerState_Call {
+func (_c *PlayerController_GetPlayerState_Call) Return(_a0 messaging.PlayersState, _a1 error) *PlayerController_GetPlayerState_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *PlayerController_GetPlayerState_Call) RunAndReturn(run func(ctx.GameContext) (message.PlayersState, error)) *PlayerController_GetPlayerState_Call {
+func (_c *PlayerController_GetPlayerState_Call) RunAndReturn(run func(ctx.GameContext) (messaging.PlayersState, error)) *PlayerController_GetPlayerState_Call {
 	_c.Call.Return(run)
 	return _c
 }

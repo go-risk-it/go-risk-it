@@ -1,4 +1,4 @@
-package message
+package messaging
 
 type Region struct {
 	ID      string `json:"id"`

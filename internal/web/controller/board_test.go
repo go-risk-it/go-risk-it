@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/api/game/message"
+	"github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
 	ctx2 "github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	boardController "github.com/go-risk-it/go-risk-it/internal/web/controller"
@@ -40,8 +40,8 @@ func TestBoardControllerImpl_GetBoardState(t *testing.T) {
 
 	// Assert the result
 	require.NoError(t, err)
-	require.Equal(t, message.BoardState{
-		Regions: []message.Region{
+	require.Equal(t, messaging.BoardState{
+		Regions: []messaging.Region{
 			{ID: "alaska", OwnerID: "francesco", Troops: 3},
 			{ID: "northwest_territory", OwnerID: "gabriele", Troops: 3},
 			{ID: "greenland", OwnerID: "giovanni", Troops: 3},

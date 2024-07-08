@@ -3,7 +3,7 @@ package phase
 import (
 	"encoding/json"
 
-	"github.com/go-risk-it/go-risk-it/internal/api/game/message"
+	"github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	wsmessage "github.com/go-risk-it/go-risk-it/internal/web/ws/message"
@@ -14,11 +14,11 @@ type Fetcher interface {
 	FetchState(ctx ctx.GameContext, game *state.Game, stateChannel chan json.RawMessage)
 }
 
-func FetchState[T message.PhaseState](
+func FetchState[T messaging.PhaseState](
 	ctx ctx.GameContext,
 	game *state.Game,
 	messageType wsmessage.Type,
-	fetcherFunc func(ctx.GameContext, *state.Game) (message.GameState[T], error),
+	fetcherFunc func(ctx.GameContext, *state.Game) (messaging.GameState[T], error),
 	stateChannel chan json.RawMessage,
 ) {
 	ctx.Log().Infow("fetching gameState", "messageType", messageType)
@@ -41,5 +41,6 @@ func FetchState[T message.PhaseState](
 var Module = fx.Options(
 	fx.Provide(
 		fx.Annotate(NewDeployPhaseFetcher, fx.As(new(DeployPhaseFetcher))),
+		fx.Annotate(NewEmptyPhaseFetcher, fx.As(new(EmptyPhaseFetcher))),
 	),
 )

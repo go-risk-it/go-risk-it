@@ -1,9 +1,8 @@
 from behave import *
 
+from src.api.game_state_message import PhaseType
 from src.core.context import RiskItContext
 from util.http_assertions import assert_2xx
-
-valid_phases = {"CARDS", "DEPLOY", "ATTACK", "REINFORCE"}
 
 
 @given("a game is created with the following players")
@@ -25,7 +24,5 @@ def step_impl(context: RiskItContext):
 
 @then("the game phase is {phase}")
 def step_impl(context: RiskItContext, phase: str):
-    if phase not in valid_phases:
-        raise ValueError(f"Unknown phase: {phase}")
-
-    assert context.game_state.phase == phase
+    assert context.game_state.phase.type == phase, \
+        f"Expected phase {phase}, but got {context.game_state.phase.type}"

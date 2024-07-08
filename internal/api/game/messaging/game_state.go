@@ -1,4 +1,4 @@
-package message
+package messaging
 
 type PhaseType string
 
@@ -8,6 +8,8 @@ const (
 	Attack  PhaseType = "attack"
 	Conquer PhaseType = "conquer"
 )
+
+type EmptyState struct{}
 
 type DeployPhaseState struct {
 	DeployableTroops int64 `json:"deployableTroops"`
@@ -20,7 +22,7 @@ type ConquerPhase struct {
 }
 
 type PhaseState interface {
-	DeployPhaseState | ConquerPhase
+	EmptyState | DeployPhaseState | ConquerPhase
 }
 
 type Phase[T PhaseState] struct {

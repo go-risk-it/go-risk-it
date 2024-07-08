@@ -92,7 +92,7 @@ transforms:
           .metadata.timestamp = parsed.time
           .metadata = merge!(.metadata, parsed)
       }
-  # PostgREST logs are structured so we separate timestamp from message using regex
+  # PostgREST logs are structured so we separate timestamp from messaging using regex
   rest_logs:
     type: remap
     inputs:

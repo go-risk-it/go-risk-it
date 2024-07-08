@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/api/game/message"
+	"github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
 	ctx2 "github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	playerController "github.com/go-risk-it/go-risk-it/internal/web/controller"
@@ -38,8 +38,8 @@ func TestControllerImpl_GetPlayerState(t *testing.T) {
 
 	// Assert the result
 	require.NoError(t, err)
-	require.Equal(t, message.PlayersState{
-		Players: []message.Player{
+	require.Equal(t, messaging.PlayersState{
+		Players: []messaging.Player{
 			{UserID: "user1", Index: 0},
 			{UserID: "user2", Index: 1},
 		},

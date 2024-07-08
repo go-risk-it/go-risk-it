@@ -24,22 +24,21 @@ Feature: Creating a game
 
     And it's francesco's turn
     And there are 3 deployable troops
-    And the game phase is DEPLOY
+    And the game phase is deploy
 
     When francesco deploys 2 troops in western_united_states
     Then all players receive all state updates
     And it's francesco's turn
     And there are 1 deployable troops
-    And the game phase is DEPLOY
+    And the game phase is deploy
 
     When francesco deploys 1 troops in western_united_states
     Then all players receive all state updates
     And it's francesco's turn
-    And there are 0 deployable troops
-    And the game phase is ATTACK
+    And the game phase is attack
 
     When francesco attacks from western_united_states to eastern_united_states with 1 troops
     Then all players receive all state updates
     And it's francesco's turn
-    And the game phase is ATTACK
+    And the game phase is attack
 

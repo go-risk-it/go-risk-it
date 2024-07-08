@@ -3,12 +3,12 @@ sql:
   - engine: "postgresql"
     queries:
       - "internal/logic/game/board"
-      - "internal/logic/game/state"
+      - "internal/logic/game/creation"
+      - "internal/logic/game/move/performer/deploy"
+      - "internal/logic/game/phase"
       - "internal/logic/game/player"
       - "internal/logic/game/region"
-      - "internal/logic/game/move/performer/deploy"
-      - "internal/logic/game/move/orchestration/phase"
-      - "internal/logic/game/creation"
+      - "internal/logic/game/state"
     schema: "internal/data/sqlc/migrations"
     gen:
       go:

@@ -3,7 +3,7 @@ package controller
 import (
 	"fmt"
 
-	"github.com/go-risk-it/go-risk-it/internal/api/game/message"
+	"github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/deploy"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
@@ -13,7 +13,7 @@ type PhaseController interface {
 	GetDeployPhaseState(
 		ctx ctx.GameContext,
 		game *state.Game,
-	) (message.GameState[message.DeployPhaseState], error)
+	) (messaging.GameState[messaging.DeployPhaseState], error)
 }
 
 type PhaseControllerImpl struct {
@@ -33,23 +33,23 @@ func NewPhaseController(
 func (c *PhaseControllerImpl) GetDeployPhaseState(
 	ctx ctx.GameContext,
 	game *state.Game,
-) (message.GameState[message.DeployPhaseState], error) {
+) (messaging.GameState[messaging.DeployPhaseState], error) {
 	ctx.Log().Infow("fetching deploy phase state")
 
 	deployableTroops, err := c.deployService.GetDeployableTroops(ctx)
 	if err != nil {
-		return message.GameState[message.DeployPhaseState]{}, fmt.Errorf(
+		return messaging.GameState[messaging.DeployPhaseState]{}, fmt.Errorf(
 			"failed to get deployable troops: %w",
 			err,
 		)
 	}
 
-	return message.GameState[message.DeployPhaseState]{
+	return messaging.GameState[messaging.DeployPhaseState]{
 		ID:   game.ID,
 		Turn: game.Turn,
-		Phase: message.Phase[message.DeployPhaseState]{
-			Type: message.Deploy,
-			State: message.DeployPhaseState{
+		Phase: messaging.Phase[messaging.DeployPhaseState]{
+			Type: messaging.Deploy,
+			State: messaging.DeployPhaseState{
 				DeployableTroops: deployableTroops,
 			},
 		},

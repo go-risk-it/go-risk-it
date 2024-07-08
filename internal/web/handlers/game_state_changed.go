@@ -17,6 +17,7 @@ func HandleGameStateChanged(
 	log *zap.SugaredLogger,
 	gameService state.Service,
 	deployPhaseFetcher phase.DeployPhaseFetcher,
+	emptyPhaseFetcher phase.EmptyPhaseFetcher,
 	connectionManager connection.Manager,
 	signal signals.GameStateChangedSignal,
 ) {
@@ -34,6 +35,8 @@ func HandleGameStateChanged(
 		switch gameState.Phase {
 		case sqlc.PhaseTypeDEPLOY:
 			fetcher = deployPhaseFetcher
+		case sqlc.PhaseTypeATTACK:
+			fetcher = emptyPhaseFetcher
 		default:
 			gameContext.Log().Errorf("unknown phase type: %v", gameState.Phase)
 

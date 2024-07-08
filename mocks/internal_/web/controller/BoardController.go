@@ -3,7 +3,7 @@
 package controller
 
 import (
-	message "github.com/go-risk-it/go-risk-it/internal/api/game/message"
+	messaging "github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
 	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -22,22 +22,22 @@ func (_m *BoardController) EXPECT() *BoardController_Expecter {
 }
 
 // GetBoardState provides a mock function with given fields: _a0
-func (_m *BoardController) GetBoardState(_a0 ctx.GameContext) (message.BoardState, error) {
+func (_m *BoardController) GetBoardState(_a0 ctx.GameContext) (messaging.BoardState, error) {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetBoardState")
 	}
 
-	var r0 message.BoardState
+	var r0 messaging.BoardState
 	var r1 error
-	if rf, ok := ret.Get(0).(func(ctx.GameContext) (message.BoardState, error)); ok {
+	if rf, ok := ret.Get(0).(func(ctx.GameContext) (messaging.BoardState, error)); ok {
 		return rf(_a0)
 	}
-	if rf, ok := ret.Get(0).(func(ctx.GameContext) message.BoardState); ok {
+	if rf, ok := ret.Get(0).(func(ctx.GameContext) messaging.BoardState); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(message.BoardState)
+		r0 = ret.Get(0).(messaging.BoardState)
 	}
 
 	if rf, ok := ret.Get(1).(func(ctx.GameContext) error); ok {
@@ -67,12 +67,12 @@ func (_c *BoardController_GetBoardState_Call) Run(run func(_a0 ctx.GameContext))
 	return _c
 }
 
-func (_c *BoardController_GetBoardState_Call) Return(_a0 message.BoardState, _a1 error) *BoardController_GetBoardState_Call {
+func (_c *BoardController_GetBoardState_Call) Return(_a0 messaging.BoardState, _a1 error) *BoardController_GetBoardState_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *BoardController_GetBoardState_Call) RunAndReturn(run func(ctx.GameContext) (message.BoardState, error)) *BoardController_GetBoardState_Call {
+func (_c *BoardController_GetBoardState_Call) RunAndReturn(run func(ctx.GameContext) (messaging.BoardState, error)) *BoardController_GetBoardState_Call {
 	_c.Call.Return(run)
 	return _c
 }

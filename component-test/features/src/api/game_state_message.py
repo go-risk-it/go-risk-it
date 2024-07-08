@@ -1,44 +1,69 @@
-from dataclasses import dataclass
+import enum
+from typing import TypeVar, Generic
 
-from dataclasses_json import dataclass_json
+from pydantic import BaseModel, field_validator
 
 
-@dataclass_json
-@dataclass
-class DeployPhaseStateData:
+class PhaseType(str, enum.Enum):
+    CARDS = 'cards'
+    DEPLOY = 'deploy'
+    ATTACK = 'attack'
+    CONQUER = 'conquer'
+    REINFORCE = 'reinforce'
+
+
+class EmptyStateData(BaseModel):
+    pass
+
+
+class DeployPhaseStateData(BaseModel):
     deployableTroops: int
 
 
-@dataclass
-class DeployPhaseStateMessage:
-    type: str
-    data: DeployPhaseStateData
-
-
-@dataclass_json
-@dataclass
-class ConquerPhaseStateData:
+class ConquerPhaseStateData(BaseModel):
     attackingRegionId: int
     defendingRegionId: int
     minTroopsToMove: int
 
 
-@dataclass_json
-@dataclass
-class ConquerPhaseStateMessage:
-    type: str
-    data: ConquerPhaseStateData
+T = TypeVar('T', EmptyStateData, DeployPhaseStateData, ConquerPhaseStateData)
 
 
-@dataclass_json
-@dataclass
-class GameStateData:
+class Phase(BaseModel, Generic[T]):
+    type: PhaseType
+    state: T
+
+    @field_validator('state', mode='before')
+    def validate_state(cls, value, info):
+        assert 'type' in info.data, f'Missing type field in data {info.data}'
+        phase_type = info.data['type']
+        if phase_type == 'deploy':
+            return DeployPhaseStateData(**value)
+        if phase_type == 'attack':
+            return EmptyStateData(**value)
+        elif phase_type == 'conquer':
+            return ConquerPhaseStateData(**value)
+        else:
+            raise ValueError(f'Unknown phase type: {phase_type}')
+
+
+class GameStateData(BaseModel, Generic[T]):
     id: int
     turn: int
-    phase: str
+    phase: Phase[T]
+
+    @property
+    def deploy_phase(self) -> DeployPhaseStateData:
+        assert self.phase.type == 'deploy' and isinstance(self.phase.state, DeployPhaseStateData), \
+            f"Expected deploy phase, but got {self.phase.type}"
+        return self.phase.state
+
+    @property
+    def conquer_phase(self) -> ConquerPhaseStateData:
+        assert self.phase.type == 'conquer' and isinstance(self.phase.state, ConquerPhaseStateData)
+        return self.phase.state
 
 
-@dataclass
-class GameStateMessage:
+class GameStateMessage(BaseModel, Generic[T]):
     type: str
-    data: GameStateData
+    data: GameStateData[T]

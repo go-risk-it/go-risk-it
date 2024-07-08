@@ -1,4 +1,4 @@
-package message
+package messaging
 
 type Player struct {
 	UserID string `json:"userId"`
