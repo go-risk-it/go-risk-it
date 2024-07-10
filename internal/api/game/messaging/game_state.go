@@ -15,14 +15,14 @@ type DeployPhaseState struct {
 	DeployableTroops int64 `json:"deployableTroops"`
 }
 
-type ConquerPhase struct {
+type ConquerPhaseState struct {
 	AttackingRegionID string `json:"attackingRegionId"`
 	DefendingRegionID string `json:"defendingRegionId"`
 	MinTroopsToMove   int64  `json:"minTroopsToMove"`
 }
 
 type PhaseState interface {
-	EmptyState | DeployPhaseState | ConquerPhase
+	EmptyState | DeployPhaseState | ConquerPhaseState
 }
 
 type Phase[T PhaseState] struct {
