@@ -4,7 +4,7 @@ import (
 	"math/rand"
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/dice/roller"
+	roller2 "github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack/dice/roller"
 )
 
 type Service interface {
@@ -12,7 +12,7 @@ type Service interface {
 }
 
 type ServiceImpl struct {
-	roller roller.Roller
+	roller roller2.Roller
 }
 
 var _ Service = (*ServiceImpl)(nil)
@@ -31,12 +31,12 @@ func New(diceConfig config.DiceConfig) *ServiceImpl {
 	return &ServiceImpl{roller: getDiceRoller(diceConfig)}
 }
 
-func getDiceRoller(diceConfig config.DiceConfig) roller.Roller {
+func getDiceRoller(diceConfig config.DiceConfig) roller2.Roller {
 	switch diceConfig.RollStrategy {
 	case "fixed":
-		return roller.WithSequence([]int{1})
+		return roller2.WithSequence([]int{1})
 	case "random":
-		return roller.WithRandomSource(rand.NewSource(0))
+		return roller2.WithRandomSource(rand.NewSource(0))
 	default:
 		panic("unknown roll strategy: " + diceConfig.RollStrategy)
 	}

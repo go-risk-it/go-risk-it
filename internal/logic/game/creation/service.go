@@ -7,7 +7,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/cards"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
 )
@@ -28,7 +28,7 @@ type Service interface {
 
 type ServiceImpl struct {
 	querier       db.Querier
-	phaseService  phase.Service
+	cardsService  cards.Service
 	playerService player.Service
 	regionService region.Service
 }
@@ -37,13 +37,13 @@ var _ Service = (*ServiceImpl)(nil)
 
 func NewService(
 	querier db.Querier,
-	phaseService phase.Service,
+	cardsService cards.Service,
 	playerService player.Service,
 	regionService region.Service,
 ) *ServiceImpl {
 	return &ServiceImpl{
 		querier:       querier,
-		phaseService:  phaseService,
+		cardsService:  cardsService,
 		playerService: playerService,
 		regionService: regionService,
 	}
@@ -70,47 +70,44 @@ func (s *ServiceImpl) CreateGameWithTx(
 }
 
 func (s *ServiceImpl) CreateGameQ(
-	ctx ctx.UserContext,
+	cont ctx.UserContext,
 	querier db.Querier,
 	regions []string,
 	players []request.Player,
 ) (int64, error) {
-	ctx.Log().Infow("creating game", "regions", len(regions), "players", len(players))
+	cont.Log().Infow("creating game", "regions", len(regions), "players", len(players))
 
-	game, err := querier.InsertGame(ctx)
+	game, err := querier.InsertGame(cont)
 	if err != nil {
 		return -1, fmt.Errorf("failed to insert game: %w", err)
 	}
 
-	ctx.Log().Debugw("inserted game, creating initial phase", "gameID", game.ID)
+	cont.Log().Debugw("inserted game, creating initial phase", "gameID", game.ID)
 
-	initialPhaseID, err := s.phaseService.CreateNewPhaseQ(
-		ctx,
+	gameContext := ctx.WithGameID(cont, game.ID)
+	moveContext := ctx.NewMoveContext(cont, gameContext)
+
+	err = s.cardsService.AdvanceQ(
+		moveContext,
 		querier,
-		game.ID,
-		0,
 		sqlc.PhaseTypeDEPLOY,
+		cards.Move{},
 	)
 	if err != nil {
 		return -1, fmt.Errorf("failed to create initial phase: %w", err)
 	}
 
-	err = s.phaseService.SetGamePhaseQ(ctx, querier, game.ID, initialPhaseID)
-	if err != nil {
-		return -1, fmt.Errorf("failed to set game phase: %w", err)
-	}
-
-	createdPlayers, err := s.playerService.CreatePlayers(ctx, querier, game.ID, players)
+	createdPlayers, err := s.playerService.CreatePlayers(cont, querier, game.ID, players)
 	if err != nil {
 		return -1, fmt.Errorf("failed to create players: %w", err)
 	}
 
-	err = s.regionService.CreateRegions(ctx, querier, createdPlayers, regions)
+	err = s.regionService.CreateRegions(cont, querier, createdPlayers, regions)
 	if err != nil {
 		return -1, fmt.Errorf("failed to create regions: %w", err)
 	}
 
-	ctx.Log().Infow("successfully created game", "regions", len(regions), "players", len(players))
+	cont.Log().Infow("successfully created game", "regions", len(regions), "players", len(players))
 
 	return game.ID, nil
 }

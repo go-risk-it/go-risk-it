@@ -24,17 +24,17 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
-// OrchestrateMove provides a mock function with given fields: _a0, phase, perform
-func (_m *Service) OrchestrateMove(_a0 ctx.MoveContext, phase sqlc.PhaseType, perform func(ctx.MoveContext, db.Querier) error) error {
-	ret := _m.Called(_a0, phase, perform)
+// OrchestrateMove provides a mock function with given fields: _a0, phase, perform, walk, advance
+func (_m *Service) OrchestrateMove(_a0 ctx.MoveContext, phase sqlc.PhaseType, perform func(ctx.MoveContext, db.Querier) error, walk func(ctx.MoveContext, db.Querier) (sqlc.PhaseType, error), advance func(ctx.MoveContext, db.Querier, sqlc.PhaseType) error) error {
+	ret := _m.Called(_a0, phase, perform, walk, advance)
 
 	if len(ret) == 0 {
 		panic("no return value specified for OrchestrateMove")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(ctx.MoveContext, sqlc.PhaseType, func(ctx.MoveContext, db.Querier) error) error); ok {
-		r0 = rf(_a0, phase, perform)
+	if rf, ok := ret.Get(0).(func(ctx.MoveContext, sqlc.PhaseType, func(ctx.MoveContext, db.Querier) error, func(ctx.MoveContext, db.Querier) (sqlc.PhaseType, error), func(ctx.MoveContext, db.Querier, sqlc.PhaseType) error) error); ok {
+		r0 = rf(_a0, phase, perform, walk, advance)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -51,13 +51,15 @@ type Service_OrchestrateMove_Call struct {
 //   - _a0 ctx.MoveContext
 //   - phase sqlc.PhaseType
 //   - perform func(ctx.MoveContext , db.Querier) error
-func (_e *Service_Expecter) OrchestrateMove(_a0 interface{}, phase interface{}, perform interface{}) *Service_OrchestrateMove_Call {
-	return &Service_OrchestrateMove_Call{Call: _e.mock.On("OrchestrateMove", _a0, phase, perform)}
+//   - walk func(ctx.MoveContext , db.Querier)(sqlc.PhaseType , error)
+//   - advance func(ctx.MoveContext , db.Querier , sqlc.PhaseType) error
+func (_e *Service_Expecter) OrchestrateMove(_a0 interface{}, phase interface{}, perform interface{}, walk interface{}, advance interface{}) *Service_OrchestrateMove_Call {
+	return &Service_OrchestrateMove_Call{Call: _e.mock.On("OrchestrateMove", _a0, phase, perform, walk, advance)}
 }
 
-func (_c *Service_OrchestrateMove_Call) Run(run func(_a0 ctx.MoveContext, phase sqlc.PhaseType, perform func(ctx.MoveContext, db.Querier) error)) *Service_OrchestrateMove_Call {
+func (_c *Service_OrchestrateMove_Call) Run(run func(_a0 ctx.MoveContext, phase sqlc.PhaseType, perform func(ctx.MoveContext, db.Querier) error, walk func(ctx.MoveContext, db.Querier) (sqlc.PhaseType, error), advance func(ctx.MoveContext, db.Querier, sqlc.PhaseType) error)) *Service_OrchestrateMove_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.MoveContext), args[1].(sqlc.PhaseType), args[2].(func(ctx.MoveContext, db.Querier) error))
+		run(args[0].(ctx.MoveContext), args[1].(sqlc.PhaseType), args[2].(func(ctx.MoveContext, db.Querier) error), args[3].(func(ctx.MoveContext, db.Querier) (sqlc.PhaseType, error)), args[4].(func(ctx.MoveContext, db.Querier, sqlc.PhaseType) error))
 	})
 	return _c
 }
@@ -67,22 +69,22 @@ func (_c *Service_OrchestrateMove_Call) Return(_a0 error) *Service_OrchestrateMo
 	return _c
 }
 
-func (_c *Service_OrchestrateMove_Call) RunAndReturn(run func(ctx.MoveContext, sqlc.PhaseType, func(ctx.MoveContext, db.Querier) error) error) *Service_OrchestrateMove_Call {
+func (_c *Service_OrchestrateMove_Call) RunAndReturn(run func(ctx.MoveContext, sqlc.PhaseType, func(ctx.MoveContext, db.Querier) error, func(ctx.MoveContext, db.Querier) (sqlc.PhaseType, error), func(ctx.MoveContext, db.Querier, sqlc.PhaseType) error) error) *Service_OrchestrateMove_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// OrchestrateMoveQ provides a mock function with given fields: _a0, querier, phase, perform
-func (_m *Service) OrchestrateMoveQ(_a0 ctx.MoveContext, querier db.Querier, phase sqlc.PhaseType, perform func(ctx.MoveContext, db.Querier) error) error {
-	ret := _m.Called(_a0, querier, phase, perform)
+// OrchestrateMoveQ provides a mock function with given fields: _a0, querier, phase, perform, walk, advance
+func (_m *Service) OrchestrateMoveQ(_a0 ctx.MoveContext, querier db.Querier, phase sqlc.PhaseType, perform func(ctx.MoveContext, db.Querier) error, walk func(ctx.MoveContext, db.Querier) (sqlc.PhaseType, error), advance func(ctx.MoveContext, db.Querier, sqlc.PhaseType) error) error {
+	ret := _m.Called(_a0, querier, phase, perform, walk, advance)
 
 	if len(ret) == 0 {
 		panic("no return value specified for OrchestrateMoveQ")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(ctx.MoveContext, db.Querier, sqlc.PhaseType, func(ctx.MoveContext, db.Querier) error) error); ok {
-		r0 = rf(_a0, querier, phase, perform)
+	if rf, ok := ret.Get(0).(func(ctx.MoveContext, db.Querier, sqlc.PhaseType, func(ctx.MoveContext, db.Querier) error, func(ctx.MoveContext, db.Querier) (sqlc.PhaseType, error), func(ctx.MoveContext, db.Querier, sqlc.PhaseType) error) error); ok {
+		r0 = rf(_a0, querier, phase, perform, walk, advance)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -100,13 +102,15 @@ type Service_OrchestrateMoveQ_Call struct {
 //   - querier db.Querier
 //   - phase sqlc.PhaseType
 //   - perform func(ctx.MoveContext , db.Querier) error
-func (_e *Service_Expecter) OrchestrateMoveQ(_a0 interface{}, querier interface{}, phase interface{}, perform interface{}) *Service_OrchestrateMoveQ_Call {
-	return &Service_OrchestrateMoveQ_Call{Call: _e.mock.On("OrchestrateMoveQ", _a0, querier, phase, perform)}
+//   - walk func(ctx.MoveContext , db.Querier)(sqlc.PhaseType , error)
+//   - advance func(ctx.MoveContext , db.Querier , sqlc.PhaseType) error
+func (_e *Service_Expecter) OrchestrateMoveQ(_a0 interface{}, querier interface{}, phase interface{}, perform interface{}, walk interface{}, advance interface{}) *Service_OrchestrateMoveQ_Call {
+	return &Service_OrchestrateMoveQ_Call{Call: _e.mock.On("OrchestrateMoveQ", _a0, querier, phase, perform, walk, advance)}
 }
 
-func (_c *Service_OrchestrateMoveQ_Call) Run(run func(_a0 ctx.MoveContext, querier db.Querier, phase sqlc.PhaseType, perform func(ctx.MoveContext, db.Querier) error)) *Service_OrchestrateMoveQ_Call {
+func (_c *Service_OrchestrateMoveQ_Call) Run(run func(_a0 ctx.MoveContext, querier db.Querier, phase sqlc.PhaseType, perform func(ctx.MoveContext, db.Querier) error, walk func(ctx.MoveContext, db.Querier) (sqlc.PhaseType, error), advance func(ctx.MoveContext, db.Querier, sqlc.PhaseType) error)) *Service_OrchestrateMoveQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.MoveContext), args[1].(db.Querier), args[2].(sqlc.PhaseType), args[3].(func(ctx.MoveContext, db.Querier) error))
+		run(args[0].(ctx.MoveContext), args[1].(db.Querier), args[2].(sqlc.PhaseType), args[3].(func(ctx.MoveContext, db.Querier) error), args[4].(func(ctx.MoveContext, db.Querier) (sqlc.PhaseType, error)), args[5].(func(ctx.MoveContext, db.Querier, sqlc.PhaseType) error))
 	})
 	return _c
 }
@@ -116,7 +120,7 @@ func (_c *Service_OrchestrateMoveQ_Call) Return(_a0 error) *Service_OrchestrateM
 	return _c
 }
 
-func (_c *Service_OrchestrateMoveQ_Call) RunAndReturn(run func(ctx.MoveContext, db.Querier, sqlc.PhaseType, func(ctx.MoveContext, db.Querier) error) error) *Service_OrchestrateMoveQ_Call {
+func (_c *Service_OrchestrateMoveQ_Call) RunAndReturn(run func(ctx.MoveContext, db.Querier, sqlc.PhaseType, func(ctx.MoveContext, db.Querier) error, func(ctx.MoveContext, db.Querier) (sqlc.PhaseType, error), func(ctx.MoveContext, db.Querier, sqlc.PhaseType) error) error) *Service_OrchestrateMoveQ_Call {
 	_c.Call.Return(run)
 	return _c
 }

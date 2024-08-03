@@ -7,7 +7,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/validation"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/internal/logic/signals"
 	"github.com/jackc/pgx/v5"
@@ -17,19 +16,22 @@ type Service interface {
 	OrchestrateMove(
 		ctx ctx.MoveContext,
 		phase sqlc.PhaseType,
-		perform func(ctx ctx.MoveContext, querier db.Querier) error,
+		perform func(ctx.MoveContext, db.Querier) error,
+		walk func(ctx.MoveContext, db.Querier) (sqlc.PhaseType, error),
+		advance func(ctx.MoveContext, db.Querier, sqlc.PhaseType) error,
 	) error
 	OrchestrateMoveQ(
 		ctx ctx.MoveContext,
 		querier db.Querier,
 		phase sqlc.PhaseType,
-		perform func(ctx ctx.MoveContext, querier db.Querier) error,
+		perform func(ctx.MoveContext, db.Querier) error,
+		walk func(ctx.MoveContext, db.Querier) (sqlc.PhaseType, error),
+		advance func(ctx.MoveContext, db.Querier, sqlc.PhaseType) error,
 	) error
 }
 type ServiceImpl struct {
 	querier                  db.Querier
 	gameService              state.Service
-	phaseService             phase.Service
 	validationService        validation.Service
 	boardStateChangedSignal  signals.BoardStateChangedSignal
 	playerStateChangedSignal signals.PlayerStateChangedSignal
@@ -40,7 +42,6 @@ var _ Service = (*ServiceImpl)(nil)
 
 func NewService(
 	querier db.Querier,
-	phaseWalkingService phase.Service,
 	gameService state.Service,
 	validationService validation.Service,
 	boardStateChangedSignal signals.BoardStateChangedSignal,
@@ -49,7 +50,6 @@ func NewService(
 ) *ServiceImpl {
 	return &ServiceImpl{
 		querier:                  querier,
-		phaseService:             phaseWalkingService,
 		gameService:              gameService,
 		validationService:        validationService,
 		boardStateChangedSignal:  boardStateChangedSignal,
@@ -61,13 +61,15 @@ func NewService(
 func (s *ServiceImpl) OrchestrateMove(
 	ctx ctx.MoveContext,
 	phase sqlc.PhaseType,
-	perform func(ctx ctx.MoveContext, querier db.Querier) error,
+	perform func(ctx.MoveContext, db.Querier) error,
+	walk func(ctx.MoveContext, db.Querier) (sqlc.PhaseType, error),
+	advance func(ctx.MoveContext, db.Querier, sqlc.PhaseType) error,
 ) error {
 	_, err := s.querier.ExecuteInTransactionWithIsolation(
 		ctx,
 		pgx.RepeatableRead,
 		func(q db.Querier) (interface{}, error) {
-			if err := s.OrchestrateMoveQ(ctx, q, phase, perform); err != nil {
+			if err := s.OrchestrateMoveQ(ctx, q, phase, perform, walk, advance); err != nil {
 				return nil, fmt.Errorf("unable to perform move: %w", err)
 			}
 
@@ -87,7 +89,9 @@ func (s *ServiceImpl) OrchestrateMoveQ(
 	ctx ctx.MoveContext,
 	querier db.Querier,
 	phase sqlc.PhaseType,
-	perform func(ctx ctx.MoveContext, querier db.Querier) error,
+	perform func(ctx.MoveContext, db.Querier) error,
+	walk func(ctx.MoveContext, db.Querier) (sqlc.PhaseType, error),
+	advance func(ctx.MoveContext, db.Querier, sqlc.PhaseType) error,
 ) error {
 	ctx.Log().Infow("orchestrating move", "phase", phase)
 
@@ -108,11 +112,20 @@ func (s *ServiceImpl) OrchestrateMoveQ(
 		return fmt.Errorf("unable to perform move: %w", err)
 	}
 
-	if err := s.phaseService.AdvanceQ(ctx, querier); err != nil {
-		return fmt.Errorf("unable to advance phase: %w", err)
+	targetPhase, err := walk(ctx, querier)
+	if err != nil {
+		return fmt.Errorf("unable to walk phase: %w", err)
 	}
 
-	ctx.Log().Infow("move performed", "phase", phase)
+	if targetPhase == phase {
+		ctx.Log().Infow("no need to advance")
+
+		return nil
+	}
+
+	if err := advance(ctx, querier, targetPhase); err != nil {
+		return fmt.Errorf("unable to advance move: %w", err)
+	}
 
 	return nil
 }

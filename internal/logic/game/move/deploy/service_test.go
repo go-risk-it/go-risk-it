@@ -6,9 +6,10 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/performer/deploy"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/deploy"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/phase"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region"
 	gamestate "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/state"
@@ -27,8 +28,9 @@ func setup(t *testing.T) (
 	querier := db.NewQuerier(t)
 	playerService := player.NewService(t)
 	gameService := gamestate.NewService(t)
+	phaseService := phase.NewService(t)
 	regionService := region.NewService(t)
-	service := deploy.NewService(querier, gameService, playerService, regionService)
+	service := deploy.NewService(querier, gameService, phaseService, playerService, regionService)
 
 	return querier, playerService, gameService, regionService, service
 }

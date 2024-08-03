@@ -9,8 +9,9 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/creation"
+	cards2 "github.com/go-risk-it/go-risk-it/internal/logic/game/move/cards"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
-	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/phase"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/move/cards"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -56,17 +57,13 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 		ID:             gameID,
 		CurrentPhaseID: pgtype.Int8{Int64: 0, Valid: true},
 	}, nil)
-	// mockDB.EXPECT().Begin(qctx).Return()
 
-	phaseServiceMock := phase.NewService(t)
-	phaseServiceMock.
-		EXPECT().
-		CreateNewPhaseQ(context, mockQuerier, gameID, int64(0), sqlc.PhaseTypeDEPLOY).
-		Return(int64(1), nil)
+	moveContext := ctx.NewMoveContext(context, ctx.WithGameID(context, gameID))
 
-	phaseServiceMock.
+	cardsServiceMock := cards.NewService(t)
+	cardsServiceMock.
 		EXPECT().
-		SetGamePhaseQ(context, mockQuerier, gameID, int64(1)).
+		AdvanceQ(moveContext, mockQuerier, sqlc.PhaseTypeDEPLOY, cards2.Move{}).
 		Return(nil)
 
 	playerServiceMock := player.NewService(t)
@@ -84,7 +81,7 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 	// Initialize the state
 	service := creation.NewService(
 		mockQuerier,
-		phaseServiceMock,
+		cardsServiceMock,
 		playerServiceMock,
 		regionServiceMock,
 	)
@@ -101,13 +98,13 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 
 	// Initialize dependencies
 	logger := zap.NewExample().Sugar()
-	phaseService := phase.NewService(t)
+	cardsService := cards.NewService(t)
 	playerService := player.NewService(t)
 	regionService := region.NewService(t)
 	querier := db.NewQuerier(t)
 
 	// Initialize the state under test
-	service := creation.NewService(querier, phaseService, playerService, regionService)
+	service := creation.NewService(querier, cardsService, playerService, regionService)
 
 	// Set up test data
 	ctx := ctx.WithUserID(
@@ -143,15 +140,15 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 	// Initialize dependencies
 	logger := zap.NewExample().Sugar()
 	querier := db.NewQuerier(t)
-	phaseService := phase.NewService(t)
+	cardsService := cards.NewService(t)
 	playerService := player.NewService(t)
 	regionService := region.NewService(t)
 
 	// Initialize the state under test
-	service := creation.NewService(querier, phaseService, playerService, regionService)
+	service := creation.NewService(querier, cardsService, playerService, regionService)
 
 	// Set up test data
-	ctx := ctx.WithUserID(
+	context := ctx.WithUserID(
 		ctx.WithLog(context.Background(), logger),
 		"dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
 	)
@@ -164,29 +161,24 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 	// Set up expectations for InsertGame method
 	querier.
 		EXPECT().
-		InsertGame(ctx).
+		InsertGame(context).
 		Return(sqlc.Game{
 			ID: gameID,
 		}, nil)
 
-	phaseService.
-		EXPECT().
-		CreateNewPhaseQ(ctx, querier, gameID, int64(0), sqlc.PhaseTypeDEPLOY).
-		Return(int64(1), nil)
-
-	phaseService.
-		EXPECT().
-		SetGamePhaseQ(ctx, querier, gameID, int64(1)).
+	moveContext := ctx.NewMoveContext(context, ctx.WithGameID(context, gameID))
+	cardsService.EXPECT().
+		AdvanceQ(moveContext, querier, sqlc.PhaseTypeDEPLOY, cards2.Move{}).
 		Return(nil)
 
 	// Set up expectations for CreatePlayers method
 	playerService.
 		EXPECT().
-		CreatePlayers(ctx, querier, int64(1), users).
+		CreatePlayers(context, querier, int64(1), users).
 		Return(nil, errCreatePlayers)
 
 	// Call the method under test
-	gameID, err := service.CreateGameQ(ctx, querier, []string{}, users)
+	gameID, err := service.CreateGameQ(context, querier, []string{}, users)
 
 	// Assert the result
 	require.Error(t, err)

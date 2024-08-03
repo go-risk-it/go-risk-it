@@ -31,15 +31,7 @@ func setup(t *testing.T) (
 	gameService := gamestate.NewService(t)
 	phaseService := phase.NewService(t)
 	validationService := validation.NewService(t)
-	service := orchestration.NewService(
-		querier,
-		phaseService,
-		gameService,
-		validationService,
-		nil,
-		nil,
-		nil,
-	)
+	service := orchestration.NewService(querier, gameService, validationService, nil, nil, nil)
 
 	return querier, gameService, phaseService, validationService, service
 }
@@ -61,8 +53,10 @@ func TestServiceImpl_PerformMove(t *testing.T) {
 	type inputType struct {
 		name            string
 		phase           sqlc.PhaseType
+		targetPhase     sqlc.PhaseType
 		validationError error
 		performError    error
+		walkError       error
 		advanceError    error
 		error           string
 	}
@@ -71,6 +65,8 @@ func TestServiceImpl_PerformMove(t *testing.T) {
 		{
 			"Should fail when game is not in the correct phase",
 			sqlc.PhaseTypeATTACK,
+			sqlc.PhaseTypeATTACK,
+			nil,
 			nil,
 			nil,
 			nil,
@@ -79,7 +75,9 @@ func TestServiceImpl_PerformMove(t *testing.T) {
 		{
 			"Should fail when validation state fails",
 			sqlc.PhaseTypeDEPLOY,
+			sqlc.PhaseTypeDEPLOY,
 			fmt.Errorf("validation error"),
+			nil,
 			nil,
 			nil,
 			"invalid move: validation error",
@@ -87,22 +85,38 @@ func TestServiceImpl_PerformMove(t *testing.T) {
 		{
 			"Should fail when perform function fails",
 			sqlc.PhaseTypeDEPLOY,
+			sqlc.PhaseTypeDEPLOY,
 			nil,
 			fmt.Errorf("perform error"),
+			nil,
 			nil,
 			"unable to perform move: perform error",
 		},
 		{
-			"Should fail when unable to advance phase",
+			"Should fail when unable to walk to target phase",
+			sqlc.PhaseTypeDEPLOY,
 			sqlc.PhaseTypeDEPLOY,
 			nil,
 			nil,
+			fmt.Errorf("walk error"),
+			nil,
+			"unable to walk phase: walk error",
+		},
+		{
+			"Should fail when unable to advance phase",
+			sqlc.PhaseTypeDEPLOY,
+			sqlc.PhaseTypeATTACK,
+			nil,
+			nil,
+			nil,
 			fmt.Errorf("advance error"),
-			"unable to advance phase: advance error",
+			"unable to advance move: advance error",
 		},
 		{
 			"Should succeed and advance phase",
 			sqlc.PhaseTypeDEPLOY,
+			sqlc.PhaseTypeDEPLOY,
+			nil,
 			nil,
 			nil,
 			nil,
@@ -114,7 +128,7 @@ func TestServiceImpl_PerformMove(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, gameService, phaseService, validationService, service := setup(t)
+			querier, gameService, _, validationService, service := setup(t)
 			context := input()
 
 			game := &state.Game{
@@ -133,22 +147,31 @@ func TestServiceImpl_PerformMove(t *testing.T) {
 					EXPECT().
 					Validate(context, querier, game).
 					Return(test.validationError)
-				if test.validationError == nil && test.performError == nil {
-					phaseService.
-						EXPECT().
-						AdvanceQ(context, querier).
-						Return(test.advanceError)
-				}
 			}
 
 			performFunc := func(c ctx.MoveContext, querier db.Querier) error {
 				return test.performError
 			}
-			err := service.OrchestrateMoveQ(context, querier, test.phase, performFunc)
+			walkerFunc := func(c ctx.MoveContext, querier db.Querier) (sqlc.PhaseType, error) {
+				return test.targetPhase, test.walkError
+			}
+			advancerFunc := func(c ctx.MoveContext, querier db.Querier, phase sqlc.PhaseType) error {
+				return test.advanceError
+			}
+
+			err := service.OrchestrateMoveQ(
+				context,
+				querier,
+				test.phase,
+				performFunc,
+				walkerFunc,
+				advancerFunc,
+			)
 
 			if test.phase == sqlc.PhaseTypeDEPLOY &&
 				test.validationError == nil &&
 				test.performError == nil &&
+				test.walkError == nil &&
 				test.advanceError == nil {
 				require.NoError(t, err)
 
