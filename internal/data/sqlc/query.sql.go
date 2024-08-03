@@ -256,3 +256,19 @@ func (q *Queries) SetGamePhase(ctx context.Context, arg SetGamePhaseParams) erro
 	_, err := q.db.Exec(ctx, setGamePhase, arg.ID, arg.CurrentPhaseID)
 	return err
 }
+
+const updateGamePhase = `-- name: UpdateGamePhase :exec
+UPDATE game
+SET current_phase_id = $1
+WHERE id = $2
+`
+
+type UpdateGamePhaseParams struct {
+	CurrentPhaseID pgtype.Int8
+	ID             int64
+}
+
+func (q *Queries) UpdateGamePhase(ctx context.Context, arg UpdateGamePhaseParams) error {
+	_, err := q.db.Exec(ctx, updateGamePhase, arg.CurrentPhaseID, arg.ID)
+	return err
+}

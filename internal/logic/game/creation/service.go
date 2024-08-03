@@ -7,9 +7,9 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/cards"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Service interface {
@@ -28,7 +28,6 @@ type Service interface {
 
 type ServiceImpl struct {
 	querier       db.Querier
-	cardsService  cards.Service
 	playerService player.Service
 	regionService region.Service
 }
@@ -37,13 +36,11 @@ var _ Service = (*ServiceImpl)(nil)
 
 func NewService(
 	querier db.Querier,
-	cardsService cards.Service,
 	playerService player.Service,
 	regionService region.Service,
 ) *ServiceImpl {
 	return &ServiceImpl{
 		querier:       querier,
-		cardsService:  cardsService,
 		playerService: playerService,
 		regionService: regionService,
 	}
@@ -84,17 +81,37 @@ func (s *ServiceImpl) CreateGameQ(
 
 	cont.Log().Debugw("inserted game, creating initial phase", "gameID", game.ID)
 
-	gameContext := ctx.WithGameID(cont, game.ID)
-	moveContext := ctx.NewMoveContext(cont, gameContext)
-
-	err = s.cardsService.AdvanceQ(
-		moveContext,
-		querier,
-		sqlc.PhaseTypeDEPLOY,
-		cards.Move{},
-	)
+	phase, err := querier.InsertPhase(cont, sqlc.InsertPhaseParams{
+		GameID: game.ID,
+		Type:   sqlc.PhaseTypeDEPLOY,
+		Turn:   0,
+	})
 	if err != nil {
 		return -1, fmt.Errorf("failed to create initial phase: %w", err)
+	}
+
+	cont.Log().
+		Infow("updating game phase", "gameID", game.ID, "phaseID", phase.ID)
+
+	if err = querier.UpdateGamePhase(cont, sqlc.UpdateGamePhaseParams{
+		CurrentPhaseID: pgtype.Int8{Int64: phase.ID, Valid: true},
+		ID:             game.ID,
+	}); err != nil {
+		cont.Log().Warnw("failed to update game phase", "err", err)
+
+		return -1, fmt.Errorf("failed to update game phase: %w", err)
+	}
+
+	cont.Log().Infow("updated phase, creating deploy phase")
+
+	deployableTroops := int64(3)
+
+	_, err = querier.InsertDeployPhase(cont, sqlc.InsertDeployPhaseParams{
+		PhaseID:          phase.ID,
+		DeployableTroops: deployableTroops,
+	})
+	if err != nil {
+		return -1, fmt.Errorf("failed to create deploy phase: %w", err)
 	}
 
 	createdPlayers, err := s.playerService.CreatePlayers(cont, querier, game.ID, players)

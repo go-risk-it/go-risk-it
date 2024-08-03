@@ -40,6 +40,8 @@ func (s *ServiceImpl) GetGameState(ctx ctx.GameContext) (*Game, error) {
 func (s *ServiceImpl) GetGameStateQ(ctx ctx.GameContext, querier db.Querier) (*Game, error) {
 	game, err := querier.GetGame(ctx, ctx.GameID())
 	if err != nil {
+		ctx.Log().Warnw("failed to get game", "err", err)
+
 		return nil, fmt.Errorf("failed to get game: %w", err)
 	}
 

@@ -9,9 +9,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/creation"
-	cards2 "github.com/go-risk-it/go-risk-it/internal/logic/game/move/cards"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
-	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/move/cards"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -29,6 +27,7 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 	t.Parallel()
 
 	gameID := int64(1)
+	phaseID := int64(1)
 	users := []request.Player{
 		{UserID: "fc497971-de4d-49c2-842a-4af62ec9e858", Name: "Giovanni"},
 		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "Gabriele"},
@@ -55,16 +54,24 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 	// setup mocks
 	mockQuerier.EXPECT().InsertGame(context).Return(sqlc.Game{
 		ID:             gameID,
-		CurrentPhaseID: pgtype.Int8{Int64: 0, Valid: true},
+		CurrentPhaseID: pgtype.Int8{Int64: 1, Valid: true},
 	}, nil)
 
-	moveContext := ctx.NewMoveContext(context, ctx.WithGameID(context, gameID))
+	mockQuerier.EXPECT().InsertPhase(context, sqlc.InsertPhaseParams{
+		GameID: gameID,
+		Type:   sqlc.PhaseTypeDEPLOY,
+		Turn:   0,
+	}).Return(sqlc.Phase{ID: phaseID}, nil)
 
-	cardsServiceMock := cards.NewService(t)
-	cardsServiceMock.
-		EXPECT().
-		AdvanceQ(moveContext, mockQuerier, sqlc.PhaseTypeDEPLOY, cards2.Move{}).
-		Return(nil)
+	mockQuerier.EXPECT().UpdateGamePhase(context, sqlc.UpdateGamePhaseParams{
+		CurrentPhaseID: pgtype.Int8{Int64: phaseID, Valid: true},
+		ID:             gameID,
+	}).Return(nil)
+
+	mockQuerier.EXPECT().InsertDeployPhase(context, sqlc.InsertDeployPhaseParams{
+		PhaseID:          phaseID,
+		DeployableTroops: int64(3),
+	}).Return(sqlc.DeployPhase{ID: 1}, nil)
 
 	playerServiceMock := player.NewService(t)
 	playerServiceMock.
@@ -79,12 +86,7 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 		Return(nil)
 
 	// Initialize the state
-	service := creation.NewService(
-		mockQuerier,
-		cardsServiceMock,
-		playerServiceMock,
-		regionServiceMock,
-	)
+	service := creation.NewService(mockQuerier, playerServiceMock, regionServiceMock)
 
 	gameID, err := service.CreateGameQ(context, mockQuerier, regions, users)
 
@@ -98,13 +100,12 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 
 	// Initialize dependencies
 	logger := zap.NewExample().Sugar()
-	cardsService := cards.NewService(t)
 	playerService := player.NewService(t)
 	regionService := region.NewService(t)
 	querier := db.NewQuerier(t)
 
 	// Initialize the state under test
-	service := creation.NewService(querier, cardsService, playerService, regionService)
+	service := creation.NewService(querier, playerService, regionService)
 
 	// Set up test data
 	ctx := ctx.WithUserID(
@@ -140,12 +141,11 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 	// Initialize dependencies
 	logger := zap.NewExample().Sugar()
 	querier := db.NewQuerier(t)
-	cardsService := cards.NewService(t)
 	playerService := player.NewService(t)
 	regionService := region.NewService(t)
 
 	// Initialize the state under test
-	service := creation.NewService(querier, cardsService, playerService, regionService)
+	service := creation.NewService(querier, playerService, regionService)
 
 	// Set up test data
 	context := ctx.WithUserID(
@@ -157,6 +157,7 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "user2"},
 	}
 	gameID := int64(1)
+	phaseID := int64(1)
 
 	// Set up expectations for InsertGame method
 	querier.
@@ -166,10 +167,21 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 			ID: gameID,
 		}, nil)
 
-	moveContext := ctx.NewMoveContext(context, ctx.WithGameID(context, gameID))
-	cardsService.EXPECT().
-		AdvanceQ(moveContext, querier, sqlc.PhaseTypeDEPLOY, cards2.Move{}).
-		Return(nil)
+	querier.EXPECT().InsertPhase(context, sqlc.InsertPhaseParams{
+		GameID: gameID,
+		Type:   sqlc.PhaseTypeDEPLOY,
+		Turn:   0,
+	}).Return(sqlc.Phase{ID: phaseID}, nil)
+
+	querier.EXPECT().UpdateGamePhase(context, sqlc.UpdateGamePhaseParams{
+		CurrentPhaseID: pgtype.Int8{Int64: phaseID, Valid: true},
+		ID:             gameID,
+	}).Return(nil)
+
+	querier.EXPECT().InsertDeployPhase(context, sqlc.InsertDeployPhaseParams{
+		PhaseID:          phaseID,
+		DeployableTroops: int64(3),
+	}).Return(sqlc.DeployPhase{ID: phaseID}, nil)
 
 	// Set up expectations for CreatePlayers method
 	playerService.
