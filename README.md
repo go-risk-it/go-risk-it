@@ -2,6 +2,9 @@
 
 A backend application for the Risk-It game.
 
+![Repo visualizer](codebase-structure.svg)
+
+
 ## Running the application
 
 ```bash
