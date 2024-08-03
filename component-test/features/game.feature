@@ -37,8 +37,7 @@ Feature: Creating a game
     And it's francesco's turn
     And the game phase is attack
 
-    When francesco attacks from western_united_states to eastern_united_states with 1 troops
-    Then all players receive all state updates
-    And it's francesco's turn
-    And the game phase is attack
+    When francesco attacks from western_united_states to eastern_united_states until conquering
+    Then it's francesco's turn
+    And the game phase is conquer
 

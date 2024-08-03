@@ -58,6 +58,6 @@ def step_impl(context: RiskItContext, player: str):
 
 
 @then("all players receive all state updates")
-def step_impl(context: RiskItContext):
+def all_players_receive_all_state_updates(context: RiskItContext):
     for player in context.players.keys():
         receive_all_state_updates(context, player)
