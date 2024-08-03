@@ -19,12 +19,13 @@ import (
 type PlayerConnectedHandlerParams struct {
 	fx.In
 
-	Fetchers           []fetchers.Fetcher `group:"fetchers"`
-	Log                *zap.SugaredLogger
-	Signal             signals.PlayerConnectedSignal
-	GameService        state.Service
-	DeployPhaseFetcher phase.DeployPhaseFetcher
-	AttackPhaseFetcher phase.AttackPhaseFetcher
+	Fetchers            []fetchers.Fetcher `group:"fetchers"`
+	Log                 *zap.SugaredLogger
+	Signal              signals.PlayerConnectedSignal
+	GameService         state.Service
+	DeployPhaseFetcher  phase.DeployPhaseFetcher
+	AttackPhaseFetcher  phase.AttackPhaseFetcher
+	ConquerPhaseFetcher phase.ConquerPhaseFetcher
 }
 
 func HandlePlayerConnected(
@@ -58,26 +59,38 @@ func HandlePlayerConnected(
 			go params.DeployPhaseFetcher.FetchState(gameContext, gameState, stateChannel)
 		case sqlc.PhaseTypeATTACK:
 			go params.AttackPhaseFetcher.FetchState(gameContext, gameState, stateChannel)
+		case sqlc.PhaseTypeCONQUER:
+			go params.ConquerPhaseFetcher.FetchState(gameContext, gameState, stateChannel)
 		default:
 			gameContext.Log().Errorf("unknown phase type: %v", gameState.Phase)
 
 			return
 		}
 
-		for i := 0; i < len(params.Fetchers)+1; i++ {
-			select {
-			case state := <-stateChannel:
-				gameContext.Log().Infow("got state, writing message")
-
-				err := data.Connection.WriteMessage(websocket.TextMessage, state)
-				if err != nil {
-					gameContext.Log().Errorf("unable to write response: %v", err)
-				}
-			case <-childCtx.Done():
-				gameContext.Log().Errorf("unable to get all states: %v", childCtx.Err())
-
-				return
-			}
-		}
+		wait(params, stateChannel, gameContext, data, childCtx)
 	})
+}
+
+func wait(
+	params PlayerConnectedHandlerParams,
+	stateChannel chan json.RawMessage,
+	gameContext ctx.GameContext,
+	data signals.PlayerConnectedData,
+	ctx context.Context,
+) {
+	for i := 0; i < len(params.Fetchers)+1; i++ {
+		select {
+		case state := <-stateChannel:
+			gameContext.Log().Infow("got state, writing message")
+
+			err := data.Connection.WriteMessage(websocket.TextMessage, state)
+			if err != nil {
+				gameContext.Log().Errorf("unable to write response: %v", err)
+			}
+		case <-ctx.Done():
+			gameContext.Log().Errorf("unable to get all states: %v", ctx.Err())
+
+			return
+		}
+	}
 }
