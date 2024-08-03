@@ -4,39 +4,58 @@ import (
 	"math/rand"
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
-	roller2 "github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack/dice/roller"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack/dice/roller"
 )
 
 type Service interface {
-	Roll(n int) []int
+	RollAttackingDices(n int) []int
+	RollDefendingDices(n int) []int
 }
 
 type ServiceImpl struct {
-	roller roller2.Roller
+	attackingRoller roller.Roller
+	defendingRoller roller.Roller
 }
 
 var _ Service = (*ServiceImpl)(nil)
 
-func (s *ServiceImpl) Roll(dices int) []int {
+func (s *ServiceImpl) RollAttackingDices(dices int) []int {
+	return roll(dices, s.attackingRoller)
+}
+
+func (s *ServiceImpl) RollDefendingDices(n int) []int {
+	return roll(n, s.defendingRoller)
+}
+
+func roll(dices int, roller roller.Roller) []int {
 	result := make([]int, 0, dices)
 
 	for i := 0; i < dices; i++ {
-		result = append(result, s.roller.Roll())
+		result = append(result, roller.Roll())
 	}
 
 	return result
 }
 
 func New(diceConfig config.DiceConfig) *ServiceImpl {
-	return &ServiceImpl{roller: getDiceRoller(diceConfig)}
+	attackingRoller, defendingRoller := getDiceRollers(diceConfig)
+
+	return &ServiceImpl{
+		attackingRoller: attackingRoller,
+		defendingRoller: defendingRoller,
+	}
 }
 
-func getDiceRoller(diceConfig config.DiceConfig) roller2.Roller {
+func getDiceRollers(diceConfig config.DiceConfig) (roller.Roller, roller.Roller) {
 	switch diceConfig.RollStrategy {
-	case "fixed":
-		return roller2.WithSequence([]int{1})
+	case "attacker_always_wins":
+		return roller.WithSequence([]int{6}), roller.WithSequence([]int{1})
+	case "attacker_always_loses":
+		return roller.WithSequence([]int{1}), roller.WithSequence([]int{6})
 	case "random":
-		return roller2.WithRandomSource(rand.NewSource(0))
+		randSource := rand.NewSource(0)
+
+		return roller.WithRandomSource(randSource), roller.WithRandomSource(randSource)
 	default:
 		panic("unknown roll strategy: " + diceConfig.RollStrategy)
 	}

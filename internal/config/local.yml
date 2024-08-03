@@ -10,4 +10,4 @@ jwt:
   secret:
 
 dice:
-  roll_strategy: fixed
+  roll_strategy: attacker_always_wins

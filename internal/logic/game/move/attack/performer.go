@@ -42,8 +42,8 @@ func (s *ServiceImpl) perform(
 	defendingRegion *sqlc.GetRegionsByGameRow,
 	move Move,
 ) error {
-	attackDices := s.diceService.Roll(int(move.AttackingTroops))
-	defenseDices := s.diceService.Roll(int(min(defendingRegion.Troops, 3)))
+	attackDices := s.diceService.RollAttackingDices(int(move.AttackingTroops))
+	defenseDices := s.diceService.RollDefendingDices(int(min(defendingRegion.Troops, 3)))
 
 	ctx.Log().Infow("rolled dices", "attack", attackDices, "defense", defenseDices)
 
