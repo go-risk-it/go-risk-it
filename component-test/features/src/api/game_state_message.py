@@ -21,8 +21,8 @@ class DeployPhaseStateData(BaseModel):
 
 
 class ConquerPhaseStateData(BaseModel):
-    attackingRegionId: int
-    defendingRegionId: int
+    attackingRegionId: str
+    defendingRegionId: str
     minTroopsToMove: int
 
 

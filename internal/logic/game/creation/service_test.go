@@ -63,9 +63,9 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 		Turn:   0,
 	}).Return(sqlc.Phase{ID: phaseID}, nil)
 
-	mockQuerier.EXPECT().UpdateGamePhase(context, sqlc.UpdateGamePhaseParams{
-		CurrentPhaseID: pgtype.Int8{Int64: phaseID, Valid: true},
+	mockQuerier.EXPECT().SetGamePhase(context, sqlc.SetGamePhaseParams{
 		ID:             gameID,
+		CurrentPhaseID: pgtype.Int8{Int64: phaseID, Valid: true},
 	}).Return(nil)
 
 	mockQuerier.EXPECT().InsertDeployPhase(context, sqlc.InsertDeployPhaseParams{
@@ -173,9 +173,9 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 		Turn:   0,
 	}).Return(sqlc.Phase{ID: phaseID}, nil)
 
-	querier.EXPECT().UpdateGamePhase(context, sqlc.UpdateGamePhaseParams{
-		CurrentPhaseID: pgtype.Int8{Int64: phaseID, Valid: true},
+	querier.EXPECT().SetGamePhase(context, sqlc.SetGamePhaseParams{
 		ID:             gameID,
+		CurrentPhaseID: pgtype.Int8{Int64: phaseID, Valid: true},
 	}).Return(nil)
 
 	querier.EXPECT().InsertDeployPhase(context, sqlc.InsertDeployPhaseParams{

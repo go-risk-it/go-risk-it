@@ -80,6 +80,63 @@ func (_c *PhaseController_GetAttackPhaseState_Call) RunAndReturn(run func(ctx.Ga
 	return _c
 }
 
+// GetConquerPhaseState provides a mock function with given fields: _a0, game
+func (_m *PhaseController) GetConquerPhaseState(_a0 ctx.GameContext, game *state.Game) (messaging.GameState[messaging.ConquerPhaseState], error) {
+	ret := _m.Called(_a0, game)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetConquerPhaseState")
+	}
+
+	var r0 messaging.GameState[messaging.ConquerPhaseState]
+	var r1 error
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, *state.Game) (messaging.GameState[messaging.ConquerPhaseState], error)); ok {
+		return rf(_a0, game)
+	}
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, *state.Game) messaging.GameState[messaging.ConquerPhaseState]); ok {
+		r0 = rf(_a0, game)
+	} else {
+		r0 = ret.Get(0).(messaging.GameState[messaging.ConquerPhaseState])
+	}
+
+	if rf, ok := ret.Get(1).(func(ctx.GameContext, *state.Game) error); ok {
+		r1 = rf(_a0, game)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// PhaseController_GetConquerPhaseState_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetConquerPhaseState'
+type PhaseController_GetConquerPhaseState_Call struct {
+	*mock.Call
+}
+
+// GetConquerPhaseState is a helper method to define mock.On call
+//   - _a0 ctx.GameContext
+//   - game *state.Game
+func (_e *PhaseController_Expecter) GetConquerPhaseState(_a0 interface{}, game interface{}) *PhaseController_GetConquerPhaseState_Call {
+	return &PhaseController_GetConquerPhaseState_Call{Call: _e.mock.On("GetConquerPhaseState", _a0, game)}
+}
+
+func (_c *PhaseController_GetConquerPhaseState_Call) Run(run func(_a0 ctx.GameContext, game *state.Game)) *PhaseController_GetConquerPhaseState_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.GameContext), args[1].(*state.Game))
+	})
+	return _c
+}
+
+func (_c *PhaseController_GetConquerPhaseState_Call) Return(_a0 messaging.GameState[messaging.ConquerPhaseState], _a1 error) *PhaseController_GetConquerPhaseState_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *PhaseController_GetConquerPhaseState_Call) RunAndReturn(run func(ctx.GameContext, *state.Game) (messaging.GameState[messaging.ConquerPhaseState], error)) *PhaseController_GetConquerPhaseState_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetDeployPhaseState provides a mock function with given fields: _a0, game
 func (_m *PhaseController) GetDeployPhaseState(_a0 ctx.GameContext, game *state.Game) (messaging.GameState[messaging.DeployPhaseState], error) {
 	ret := _m.Called(_a0, game)

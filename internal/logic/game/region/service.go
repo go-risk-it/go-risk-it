@@ -24,14 +24,14 @@ type Service interface {
 	) error
 
 	GetRegionQ(
-		ctx ctx.MoveContext,
+		ctx ctx.GameContext,
 		querier db.Querier,
 		region string,
 	) (*sqlc.GetRegionsByGameRow, error)
 	GetRegions(ctx ctx.GameContext) ([]sqlc.GetRegionsByGameRow, error)
 	GetRegionsQ(ctx ctx.GameContext, querier db.Querier) ([]sqlc.GetRegionsByGameRow, error)
 	UpdateTroopsInRegion(
-		ctx ctx.MoveContext,
+		ctx ctx.GameContext,
 		querier db.Querier,
 		regionID int64,
 		troopsToAdd int64,
@@ -111,7 +111,7 @@ func (s *ServiceImpl) GetRegionsQ(
 }
 
 func (s *ServiceImpl) GetRegionQ(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	querier db.Querier,
 	region string,
 ) (*sqlc.GetRegionsByGameRow, error) {
@@ -144,7 +144,7 @@ func extractRegionFrom(
 }
 
 func (s *ServiceImpl) UpdateTroopsInRegion(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	querier db.Querier,
 	regionID int64,
 	troopsToAdd int64,

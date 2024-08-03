@@ -4,7 +4,9 @@ sql:
     queries:
       - "internal/logic/game/board"
       - "internal/logic/game/creation"
+      - "internal/logic/game/move/attack"
       - "internal/logic/game/move/deploy"
+      - "internal/logic/game/move/conquer"
       - "internal/logic/game/phase"
       - "internal/logic/game/player"
       - "internal/logic/game/region"

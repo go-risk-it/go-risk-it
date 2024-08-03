@@ -130,7 +130,7 @@ func (s *ServiceImpl) OrchestrateMoveQ(
 	return nil
 }
 
-func (s *ServiceImpl) publishMoveResult(ctx ctx.MoveContext) {
+func (s *ServiceImpl) publishMoveResult(ctx ctx.GameContext) {
 	go s.boardStateChangedSignal.Emit(ctx, signals.BoardStateChangedData{
 		GameID: ctx.GameID(),
 	})

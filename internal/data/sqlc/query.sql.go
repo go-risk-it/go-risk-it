@@ -31,6 +31,31 @@ func (q *Queries) DecreaseDeployableTroops(ctx context.Context, arg DecreaseDepl
 	return err
 }
 
+const getConquerPhaseState = `-- name: GetConquerPhaseState :one
+select source_region.external_reference as source_region,
+       target_region.external_reference as target_region,
+       cp.minimum_troops
+from game g
+         join phase p on g.current_phase_id = p.id
+         join conquer_phase cp on p.id = cp.phase_id
+         join region source_region on cp.source_region_id = source_region.id
+         join region target_region on cp.target_region_id = target_region.id
+where g.id = $1
+`
+
+type GetConquerPhaseStateRow struct {
+	SourceRegion  string
+	TargetRegion  string
+	MinimumTroops int64
+}
+
+func (q *Queries) GetConquerPhaseState(ctx context.Context, id int64) (GetConquerPhaseStateRow, error) {
+	row := q.db.QueryRow(ctx, getConquerPhaseState, id)
+	var i GetConquerPhaseStateRow
+	err := row.Scan(&i.SourceRegion, &i.TargetRegion, &i.MinimumTroops)
+	return i, err
+}
+
 const getDeployableTroops = `-- name: GetDeployableTroops :one
 SELECT deploy_phase.deployable_troops
 FROM game
@@ -173,6 +198,52 @@ func (q *Queries) IncreaseRegionTroops(ctx context.Context, arg IncreaseRegionTr
 	return err
 }
 
+const insertConquerPhase = `-- name: InsertConquerPhase :one
+INSERT INTO conquer_phase(phase_id, source_region_id, target_region_id, minimum_troops)
+VALUES ($1,
+        (select r.id
+         from game g
+                  join player p on g.id = p.game_id
+                  join region r on p.id = r.player_id
+         where g.id = $2
+           and r.external_reference = $3),
+        (select r.id
+         from game g
+                  join player p on g.id = p.game_id
+                  join region r on p.id = r.player_id
+         where g.id = $2
+           and r.external_reference = $4),
+        $5)
+RETURNING id, phase_id, source_region_id, target_region_id, minimum_troops
+`
+
+type InsertConquerPhaseParams struct {
+	PhaseID             int64
+	ID                  int64
+	ExternalReference   string
+	ExternalReference_2 string
+	MinimumTroops       int64
+}
+
+func (q *Queries) InsertConquerPhase(ctx context.Context, arg InsertConquerPhaseParams) (ConquerPhase, error) {
+	row := q.db.QueryRow(ctx, insertConquerPhase,
+		arg.PhaseID,
+		arg.ID,
+		arg.ExternalReference,
+		arg.ExternalReference_2,
+		arg.MinimumTroops,
+	)
+	var i ConquerPhase
+	err := row.Scan(
+		&i.ID,
+		&i.PhaseID,
+		&i.SourceRegionID,
+		&i.TargetRegionID,
+		&i.MinimumTroops,
+	)
+	return i, err
+}
+
 const insertDeployPhase = `-- name: InsertDeployPhase :one
 INSERT INTO deploy_phase (phase_id, deployable_troops)
 VALUES ($1, $2)
@@ -254,21 +325,5 @@ type SetGamePhaseParams struct {
 
 func (q *Queries) SetGamePhase(ctx context.Context, arg SetGamePhaseParams) error {
 	_, err := q.db.Exec(ctx, setGamePhase, arg.ID, arg.CurrentPhaseID)
-	return err
-}
-
-const updateGamePhase = `-- name: UpdateGamePhase :exec
-UPDATE game
-SET current_phase_id = $1
-WHERE id = $2
-`
-
-type UpdateGamePhaseParams struct {
-	CurrentPhaseID pgtype.Int8
-	ID             int64
-}
-
-func (q *Queries) UpdateGamePhase(ctx context.Context, arg UpdateGamePhaseParams) error {
-	_, err := q.db.Exec(ctx, updateGamePhase, arg.CurrentPhaseID, arg.ID)
 	return err
 }

@@ -194,6 +194,63 @@ func (_c *Querier_ExecuteInTransactionWithIsolation_Call) RunAndReturn(run func(
 	return _c
 }
 
+// GetConquerPhaseState provides a mock function with given fields: _a0, id
+func (_m *Querier) GetConquerPhaseState(_a0 context.Context, id int64) (sqlc.GetConquerPhaseStateRow, error) {
+	ret := _m.Called(_a0, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetConquerPhaseState")
+	}
+
+	var r0 sqlc.GetConquerPhaseStateRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (sqlc.GetConquerPhaseStateRow, error)); ok {
+		return rf(_a0, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int64) sqlc.GetConquerPhaseStateRow); ok {
+		r0 = rf(_a0, id)
+	} else {
+		r0 = ret.Get(0).(sqlc.GetConquerPhaseStateRow)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(_a0, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_GetConquerPhaseState_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetConquerPhaseState'
+type Querier_GetConquerPhaseState_Call struct {
+	*mock.Call
+}
+
+// GetConquerPhaseState is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - id int64
+func (_e *Querier_Expecter) GetConquerPhaseState(_a0 interface{}, id interface{}) *Querier_GetConquerPhaseState_Call {
+	return &Querier_GetConquerPhaseState_Call{Call: _e.mock.On("GetConquerPhaseState", _a0, id)}
+}
+
+func (_c *Querier_GetConquerPhaseState_Call) Run(run func(_a0 context.Context, id int64)) *Querier_GetConquerPhaseState_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int64))
+	})
+	return _c
+}
+
+func (_c *Querier_GetConquerPhaseState_Call) Return(_a0 sqlc.GetConquerPhaseStateRow, _a1 error) *Querier_GetConquerPhaseState_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_GetConquerPhaseState_Call) RunAndReturn(run func(context.Context, int64) (sqlc.GetConquerPhaseStateRow, error)) *Querier_GetConquerPhaseState_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetDeployableTroops provides a mock function with given fields: _a0, id
 func (_m *Querier) GetDeployableTroops(_a0 context.Context, id int64) (int64, error) {
 	ret := _m.Called(_a0, id)
@@ -530,6 +587,63 @@ func (_c *Querier_IncreaseRegionTroops_Call) RunAndReturn(run func(context.Conte
 	return _c
 }
 
+// InsertConquerPhase provides a mock function with given fields: _a0, arg
+func (_m *Querier) InsertConquerPhase(_a0 context.Context, arg sqlc.InsertConquerPhaseParams) (sqlc.ConquerPhase, error) {
+	ret := _m.Called(_a0, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for InsertConquerPhase")
+	}
+
+	var r0 sqlc.ConquerPhase
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.InsertConquerPhaseParams) (sqlc.ConquerPhase, error)); ok {
+		return rf(_a0, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.InsertConquerPhaseParams) sqlc.ConquerPhase); ok {
+		r0 = rf(_a0, arg)
+	} else {
+		r0 = ret.Get(0).(sqlc.ConquerPhase)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, sqlc.InsertConquerPhaseParams) error); ok {
+		r1 = rf(_a0, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_InsertConquerPhase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertConquerPhase'
+type Querier_InsertConquerPhase_Call struct {
+	*mock.Call
+}
+
+// InsertConquerPhase is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - arg sqlc.InsertConquerPhaseParams
+func (_e *Querier_Expecter) InsertConquerPhase(_a0 interface{}, arg interface{}) *Querier_InsertConquerPhase_Call {
+	return &Querier_InsertConquerPhase_Call{Call: _e.mock.On("InsertConquerPhase", _a0, arg)}
+}
+
+func (_c *Querier_InsertConquerPhase_Call) Run(run func(_a0 context.Context, arg sqlc.InsertConquerPhaseParams)) *Querier_InsertConquerPhase_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(sqlc.InsertConquerPhaseParams))
+	})
+	return _c
+}
+
+func (_c *Querier_InsertConquerPhase_Call) Return(_a0 sqlc.ConquerPhase, _a1 error) *Querier_InsertConquerPhase_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_InsertConquerPhase_Call) RunAndReturn(run func(context.Context, sqlc.InsertConquerPhaseParams) (sqlc.ConquerPhase, error)) *Querier_InsertConquerPhase_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // InsertDeployPhase provides a mock function with given fields: _a0, arg
 func (_m *Querier) InsertDeployPhase(_a0 context.Context, arg sqlc.InsertDeployPhaseParams) (sqlc.DeployPhase, error) {
 	ret := _m.Called(_a0, arg)
@@ -857,53 +971,6 @@ func (_c *Querier_SetGamePhase_Call) Return(_a0 error) *Querier_SetGamePhase_Cal
 }
 
 func (_c *Querier_SetGamePhase_Call) RunAndReturn(run func(context.Context, sqlc.SetGamePhaseParams) error) *Querier_SetGamePhase_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// UpdateGamePhase provides a mock function with given fields: _a0, arg
-func (_m *Querier) UpdateGamePhase(_a0 context.Context, arg sqlc.UpdateGamePhaseParams) error {
-	ret := _m.Called(_a0, arg)
-
-	if len(ret) == 0 {
-		panic("no return value specified for UpdateGamePhase")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, sqlc.UpdateGamePhaseParams) error); ok {
-		r0 = rf(_a0, arg)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// Querier_UpdateGamePhase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateGamePhase'
-type Querier_UpdateGamePhase_Call struct {
-	*mock.Call
-}
-
-// UpdateGamePhase is a helper method to define mock.On call
-//   - _a0 context.Context
-//   - arg sqlc.UpdateGamePhaseParams
-func (_e *Querier_Expecter) UpdateGamePhase(_a0 interface{}, arg interface{}) *Querier_UpdateGamePhase_Call {
-	return &Querier_UpdateGamePhase_Call{Call: _e.mock.On("UpdateGamePhase", _a0, arg)}
-}
-
-func (_c *Querier_UpdateGamePhase_Call) Run(run func(_a0 context.Context, arg sqlc.UpdateGamePhaseParams)) *Querier_UpdateGamePhase_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(sqlc.UpdateGamePhaseParams))
-	})
-	return _c
-}
-
-func (_c *Querier_UpdateGamePhase_Call) Return(_a0 error) *Querier_UpdateGamePhase_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Querier_UpdateGamePhase_Call) RunAndReturn(run func(context.Context, sqlc.UpdateGamePhaseParams) error) *Querier_UpdateGamePhase_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -28,7 +28,7 @@ func FetchState[T messaging.PhaseState](
 		ctx.Log().Errorf("unable to fetch gameState: %v", err)
 	}
 
-	ctx.Log().Debugw("got gameState")
+	ctx.Log().Debugw("got gameState", "gameState", gameState)
 
 	rawResponse, err := wsmessage.BuildMessage(messageType, gameState)
 	if err != nil {
@@ -42,5 +42,6 @@ var Module = fx.Options(
 	fx.Provide(
 		fx.Annotate(NewDeployPhaseFetcher, fx.As(new(DeployPhaseFetcher))),
 		fx.Annotate(NewAttackPhaseFetcher, fx.As(new(AttackPhaseFetcher))),
+		fx.Annotate(NewConquerPhaseFetcher, fx.As(new(ConquerPhaseFetcher))),
 	),
 )

@@ -93,9 +93,9 @@ func (s *ServiceImpl) CreateGameQ(
 	cont.Log().
 		Infow("updating game phase", "gameID", game.ID, "phaseID", phase.ID)
 
-	if err = querier.UpdateGamePhase(cont, sqlc.UpdateGamePhaseParams{
-		CurrentPhaseID: pgtype.Int8{Int64: phase.ID, Valid: true},
+	if err := querier.SetGamePhase(cont, sqlc.SetGamePhaseParams{
 		ID:             game.ID,
+		CurrentPhaseID: pgtype.Int8{Int64: phase.ID, Valid: true},
 	}); err != nil {
 		cont.Log().Warnw("failed to update game phase", "err", err)
 
