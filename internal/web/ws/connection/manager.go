@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/signals"
-	"github.com/go-risk-it/go-risk-it/internal/web/fetchers"
+	"github.com/go-risk-it/go-risk-it/internal/web/fetchers/fetcher"
 	"github.com/lesismal/nbio/nbhttp/websocket"
 	"go.uber.org/zap"
 )
@@ -21,14 +21,14 @@ type Manager interface {
 type ManagerImpl struct {
 	log                   *zap.SugaredLogger
 	gameConnections       map[int64][]*websocket.Conn
-	fetchers              []fetchers.Fetcher
+	fetchers              []fetcher.Fetcher
 	playerConnectedSignal signals.PlayerConnectedSignal
 }
 
 var _ Manager = (*ManagerImpl)(nil)
 
 func NewManager(
-	fetchers []fetchers.Fetcher,
+	fetchers []fetcher.Fetcher,
 	log *zap.SugaredLogger,
 	playerConnectedSignal signals.PlayerConnectedSignal,
 ) *ManagerImpl {

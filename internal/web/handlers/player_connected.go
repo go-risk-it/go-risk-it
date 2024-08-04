@@ -9,7 +9,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/internal/logic/signals"
-	"github.com/go-risk-it/go-risk-it/internal/web/fetchers"
+	"github.com/go-risk-it/go-risk-it/internal/web/fetchers/fetcher"
 	"github.com/go-risk-it/go-risk-it/internal/web/fetchers/phase"
 	"github.com/lesismal/nbio/nbhttp/websocket"
 	"go.uber.org/fx"
@@ -19,7 +19,7 @@ import (
 type PlayerConnectedHandlerParams struct {
 	fx.In
 
-	Fetchers            []fetchers.Fetcher `group:"fetchers"`
+	Fetchers            []fetcher.Fetcher `group:"fetchers"`
 	Log                 *zap.SugaredLogger
 	Signal              signals.PlayerConnectedSignal
 	GameService         state.Service

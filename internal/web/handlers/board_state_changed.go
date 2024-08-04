@@ -5,14 +5,14 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/signals"
-	"github.com/go-risk-it/go-risk-it/internal/web/fetchers"
+	"github.com/go-risk-it/go-risk-it/internal/web/fetchers/fetcher"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/connection"
 	"go.uber.org/zap"
 )
 
 func HandleBoardStateChanged(
 	log *zap.SugaredLogger,
-	boardStateFetcher fetchers.BoardFetcher,
+	boardStateFetcher fetcher.BoardFetcher,
 	connectionManager connection.Manager,
 	signal signals.BoardStateChangedSignal,
 ) {

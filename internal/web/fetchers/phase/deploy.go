@@ -6,6 +6,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/internal/web/controller"
+	"github.com/go-risk-it/go-risk-it/internal/web/fetchers/fetcher"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 )
 
@@ -32,11 +33,10 @@ func (f *DeployPhaseFetcherImpl) FetchState(
 	game *state.Game,
 	stateChannel chan json.RawMessage,
 ) {
-	FetchState(
+	fetcher.FetchState(
 		context,
-		game,
 		message.GameState,
-		f.phaseController.GetDeployPhaseState,
+		getFetcherFunc(game, f.phaseController.GetDeployPhaseState),
 		stateChannel,
 	)
 }
