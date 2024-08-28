@@ -7,8 +7,6 @@ import (
 	deploy "github.com/go-risk-it/go-risk-it/internal/logic/game/move/deploy"
 	mock "github.com/stretchr/testify/mock"
 
-	service "github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
-
 	sqlc "github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 )
 
@@ -25,17 +23,17 @@ func (_m *DeployOrchestrator) EXPECT() *DeployOrchestrator_Expecter {
 	return &DeployOrchestrator_Expecter{mock: &_m.Mock}
 }
 
-// OrchestrateMove provides a mock function with given fields: _a0, phase, _a2, move
-func (_m *DeployOrchestrator) OrchestrateMove(_a0 ctx.MoveContext, phase sqlc.PhaseType, _a2 service.Service[deploy.Move, *deploy.MoveResult], move deploy.Move) error {
-	ret := _m.Called(_a0, phase, _a2, move)
+// OrchestrateMove provides a mock function with given fields: _a0, phase, move
+func (_m *DeployOrchestrator) OrchestrateMove(_a0 ctx.MoveContext, phase sqlc.PhaseType, move deploy.Move) error {
+	ret := _m.Called(_a0, phase, move)
 
 	if len(ret) == 0 {
 		panic("no return value specified for OrchestrateMove")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(ctx.MoveContext, sqlc.PhaseType, service.Service[deploy.Move, *deploy.MoveResult], deploy.Move) error); ok {
-		r0 = rf(_a0, phase, _a2, move)
+	if rf, ok := ret.Get(0).(func(ctx.MoveContext, sqlc.PhaseType, deploy.Move) error); ok {
+		r0 = rf(_a0, phase, move)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -51,15 +49,14 @@ type DeployOrchestrator_OrchestrateMove_Call struct {
 // OrchestrateMove is a helper method to define mock.On call
 //   - _a0 ctx.MoveContext
 //   - phase sqlc.PhaseType
-//   - _a2 service.Service[deploy.Move,*deploy.MoveResult]
 //   - move deploy.Move
-func (_e *DeployOrchestrator_Expecter) OrchestrateMove(_a0 interface{}, phase interface{}, _a2 interface{}, move interface{}) *DeployOrchestrator_OrchestrateMove_Call {
-	return &DeployOrchestrator_OrchestrateMove_Call{Call: _e.mock.On("OrchestrateMove", _a0, phase, _a2, move)}
+func (_e *DeployOrchestrator_Expecter) OrchestrateMove(_a0 interface{}, phase interface{}, move interface{}) *DeployOrchestrator_OrchestrateMove_Call {
+	return &DeployOrchestrator_OrchestrateMove_Call{Call: _e.mock.On("OrchestrateMove", _a0, phase, move)}
 }
 
-func (_c *DeployOrchestrator_OrchestrateMove_Call) Run(run func(_a0 ctx.MoveContext, phase sqlc.PhaseType, _a2 service.Service[deploy.Move, *deploy.MoveResult], move deploy.Move)) *DeployOrchestrator_OrchestrateMove_Call {
+func (_c *DeployOrchestrator_OrchestrateMove_Call) Run(run func(_a0 ctx.MoveContext, phase sqlc.PhaseType, move deploy.Move)) *DeployOrchestrator_OrchestrateMove_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.MoveContext), args[1].(sqlc.PhaseType), args[2].(service.Service[deploy.Move, *deploy.MoveResult]), args[3].(deploy.Move))
+		run(args[0].(ctx.MoveContext), args[1].(sqlc.PhaseType), args[2].(deploy.Move))
 	})
 	return _c
 }
@@ -69,7 +66,7 @@ func (_c *DeployOrchestrator_OrchestrateMove_Call) Return(_a0 error) *DeployOrch
 	return _c
 }
 
-func (_c *DeployOrchestrator_OrchestrateMove_Call) RunAndReturn(run func(ctx.MoveContext, sqlc.PhaseType, service.Service[deploy.Move, *deploy.MoveResult], deploy.Move) error) *DeployOrchestrator_OrchestrateMove_Call {
+func (_c *DeployOrchestrator_OrchestrateMove_Call) RunAndReturn(run func(ctx.MoveContext, sqlc.PhaseType, deploy.Move) error) *DeployOrchestrator_OrchestrateMove_Call {
 	_c.Call.Return(run)
 	return _c
 }

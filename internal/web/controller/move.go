@@ -9,7 +9,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/deploy"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
 )
 
 type MoveController interface {
@@ -18,9 +17,6 @@ type MoveController interface {
 }
 
 type MoveControllerImpl struct {
-	attackService       attack.Service
-	deployService       deploy.Service
-	phaseService        phase.Service
 	deployOrchestrator  orchestration.DeployOrchestrator
 	attackOrchestrator  orchestration.AttackOrchestrator
 	conquerOrchestrator orchestration.ConquerOrchestrator
@@ -29,17 +25,11 @@ type MoveControllerImpl struct {
 var _ MoveController = (*MoveControllerImpl)(nil)
 
 func NewMoveController(
-	attackService attack.Service,
-	deployService deploy.Service,
-	phaseService phase.Service,
 	deployOrchestrator orchestration.DeployOrchestrator,
 	attackOrchestrator orchestration.AttackOrchestrator,
 	conquerOrchestrator orchestration.ConquerOrchestrator,
 ) *MoveControllerImpl {
 	return &MoveControllerImpl{
-		attackService:       attackService,
-		deployService:       deployService,
-		phaseService:        phaseService,
 		deployOrchestrator:  deployOrchestrator,
 		attackOrchestrator:  attackOrchestrator,
 		conquerOrchestrator: conquerOrchestrator,
@@ -59,7 +49,6 @@ func (c *MoveControllerImpl) PerformDeployMove(
 	err := c.deployOrchestrator.OrchestrateMove(
 		ctx,
 		sqlc.PhaseTypeDEPLOY,
-		c.deployService,
 		move,
 	)
 	if err != nil {
@@ -84,7 +73,6 @@ func (c *MoveControllerImpl) PerformAttackMove(
 	err := c.attackOrchestrator.OrchestrateMove(
 		ctx,
 		sqlc.PhaseTypeATTACK,
-		c.attackService,
 		move,
 	)
 	if err != nil {

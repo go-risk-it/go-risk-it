@@ -17,13 +17,13 @@ type Orchestator[T, R any] interface {
 	OrchestrateMove(
 		ctx ctx.MoveContext,
 		phase sqlc.PhaseType,
-		service service.Service[T, R],
 		move T,
 	) error
 }
 
 type OrchestatorImpl[T, R any] struct {
 	querier                  db.Querier
+	service                  service.Service[T, R]
 	gameService              state.Service
 	validationService        validation.Service
 	boardStateChangedSignal  signals.BoardStateChangedSignal
@@ -33,6 +33,7 @@ type OrchestatorImpl[T, R any] struct {
 
 func NewOrchestrator[T, R any](
 	querier db.Querier,
+	service service.Service[T, R],
 	gameService state.Service,
 	validationService validation.Service,
 	boardStateChangedSignal signals.BoardStateChangedSignal,
@@ -41,6 +42,7 @@ func NewOrchestrator[T, R any](
 ) *OrchestatorImpl[T, R] {
 	return &OrchestatorImpl[T, R]{
 		querier:                  querier,
+		service:                  service,
 		gameService:              gameService,
 		validationService:        validationService,
 		boardStateChangedSignal:  boardStateChangedSignal,
@@ -52,14 +54,13 @@ func NewOrchestrator[T, R any](
 func (s *OrchestatorImpl[T, R]) OrchestrateMove(
 	ctx ctx.MoveContext,
 	phase sqlc.PhaseType,
-	service service.Service[T, R],
 	move T,
 ) error {
 	_, err := s.querier.ExecuteInTransactionWithIsolation(
 		ctx,
 		pgx.RepeatableRead,
 		func(q db.Querier) (interface{}, error) {
-			err := s.OrchestrateMoveQ(ctx, q, phase, service, move)
+			err := s.OrchestrateMoveQ(ctx, q, phase, move)
 			if err != nil {
 				return struct{}{}, err
 			}
@@ -80,7 +81,6 @@ func (s *OrchestatorImpl[T, R]) OrchestrateMoveQ(
 	ctx ctx.MoveContext,
 	querier db.Querier,
 	phase sqlc.PhaseType,
-	service service.Service[T, R],
 	move T,
 ) error {
 	ctx.Log().Infow("orchestrating move", "phase", phase)
@@ -98,12 +98,12 @@ func (s *OrchestatorImpl[T, R]) OrchestrateMoveQ(
 		return fmt.Errorf("invalid move: %w", err)
 	}
 
-	performResult, err := service.PerformQ(ctx, querier, move)
+	performResult, err := s.service.PerformQ(ctx, querier, move)
 	if err != nil {
 		return fmt.Errorf("unable to perform move: %w", err)
 	}
 
-	targetPhase, err := service.Walk(ctx, querier)
+	targetPhase, err := s.service.Walk(ctx, querier)
 	if err != nil {
 		return fmt.Errorf("unable to walk phase: %w", err)
 	}
@@ -114,7 +114,7 @@ func (s *OrchestatorImpl[T, R]) OrchestrateMoveQ(
 		return nil
 	}
 
-	if err := service.AdvanceQ(ctx, querier, targetPhase, performResult); err != nil {
+	if err := s.service.AdvanceQ(ctx, querier, targetPhase, performResult); err != nil {
 		return fmt.Errorf("unable to advance move: %w", err)
 	}
 
