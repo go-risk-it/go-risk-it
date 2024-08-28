@@ -6,7 +6,10 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
 )
 
 type Move struct {
@@ -22,32 +25,24 @@ type Service interface {
 }
 
 type ServiceImpl struct {
-	querier db.Querier
+	querier       db.Querier
+	attackService attack.Service
+	phaseService  phase.Service
+	regionService region.Service
 }
 
-func (s *ServiceImpl) PerformQ(
-	ctx ctx.MoveContext,
+func NewService(
 	querier db.Querier,
-	move Move,
-) (*MoveResult, error) {
-	panic("implement me")
-}
-
-func (s *ServiceImpl) AdvanceQ(
-	ctx ctx.MoveContext,
-	querier db.Querier,
-	targetPhase sqlc.PhaseType,
-	performResult *MoveResult,
-) error {
-	panic("implement me")
-}
-
-func (s *ServiceImpl) Walk(ctx ctx.MoveContext, querier db.Querier) (sqlc.PhaseType, error) {
-	panic("implement me")
-}
-
-func NewService(querier db.Querier) *ServiceImpl {
-	return &ServiceImpl{querier: querier}
+	attackService attack.Service,
+	phaseService phase.Service,
+	regionService region.Service,
+) *ServiceImpl {
+	return &ServiceImpl{
+		querier:       querier,
+		attackService: attackService,
+		phaseService:  phaseService,
+		regionService: regionService,
+	}
 }
 
 var _ Service = (*ServiceImpl)(nil)
