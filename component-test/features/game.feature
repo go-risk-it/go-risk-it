@@ -41,3 +41,7 @@ Feature: Creating a game
     Then it's francesco's turn
     And the game phase is conquer
 
+    When francesco conquers with 3 troops
+    Then it's francesco's turn
+    And the game phase is attack
+
