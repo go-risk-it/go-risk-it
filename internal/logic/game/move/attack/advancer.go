@@ -12,7 +12,7 @@ func (s *ServiceImpl) AdvanceQ(
 	ctx ctx.MoveContext,
 	querier db.Querier,
 	targetPhase sqlc.PhaseType,
-	move Move,
+	performResult *MoveResult,
 ) error {
 	if targetPhase != sqlc.PhaseTypeCONQUER && targetPhase != sqlc.PhaseTypeREINFORCE {
 		return fmt.Errorf("cannot advance attack phase to %s", targetPhase)
@@ -24,11 +24,11 @@ func (s *ServiceImpl) AdvanceQ(
 	}
 
 	if targetPhase == sqlc.PhaseTypeCONQUER {
-		return s.advanceToConquerPhase(ctx, querier, move, *phase)
+		return s.advanceToConquerPhase(ctx, querier, performResult, *phase)
 	}
 
 	if targetPhase == sqlc.PhaseTypeREINFORCE {
-		return s.advanceToReinforcePhase(ctx, querier, move, *phase)
+		return s.advanceToReinforcePhase(ctx, querier, performResult, *phase)
 	}
 
 	return fmt.Errorf("cannot advance attack phase to %s", targetPhase)
@@ -37,15 +37,15 @@ func (s *ServiceImpl) AdvanceQ(
 func (s *ServiceImpl) advanceToConquerPhase(
 	ctx ctx.MoveContext,
 	querier db.Querier,
-	move Move,
+	performResult *MoveResult,
 	phase sqlc.Phase,
 ) error {
 	conquerPhase, err := querier.InsertConquerPhase(ctx, sqlc.InsertConquerPhaseParams{
 		PhaseID:             phase.ID,
 		ID:                  ctx.GameID(),
-		ExternalReference:   move.AttackingRegionID,
-		ExternalReference_2: move.DefendingRegionID,
-		MinimumTroops:       move.AttackingTroops,
+		ExternalReference:   performResult.AttackingRegionID,
+		ExternalReference_2: performResult.DefendingRegionID,
+		MinimumTroops:       performResult.ConqueringTroops,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create conquer phase: %w", err)
@@ -59,7 +59,7 @@ func (s *ServiceImpl) advanceToConquerPhase(
 func (s *ServiceImpl) advanceToReinforcePhase(
 	ctx ctx.MoveContext,
 	querier db.Querier,
-	move Move,
+	performResult *MoveResult,
 	phase sqlc.Phase,
 ) error {
 	return nil

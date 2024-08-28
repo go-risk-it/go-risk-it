@@ -12,7 +12,7 @@ func (s *ServiceImpl) AdvanceQ(
 	ctx ctx.MoveContext,
 	querier db.Querier,
 	targetPhase sqlc.PhaseType,
-	_ Move,
+	_ *MoveResult,
 ) error {
 	if targetPhase != sqlc.PhaseTypeATTACK {
 		return fmt.Errorf("cannot advance deploy phase to %s", targetPhase)

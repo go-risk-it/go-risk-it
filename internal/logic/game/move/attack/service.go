@@ -18,8 +18,14 @@ type Move struct {
 	AttackingTroops   int64
 }
 
+type MoveResult struct {
+	AttackingRegionID string
+	DefendingRegionID string
+	ConqueringTroops  int64
+}
+
 type Service interface {
-	service.Service[Move]
+	service.Service[Move, *MoveResult]
 
 	HasConqueredQ(ctx ctx.MoveContext, querier db.Querier) (bool, error)
 	CanContinueAttackingQ(ctx ctx.MoveContext, querier db.Querier) (bool, error)

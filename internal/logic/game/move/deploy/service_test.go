@@ -69,7 +69,7 @@ func TestServiceImpl_DeployShouldFailWhenPlayerDoesntHaveEnoughDeployableTroops(
 
 	querier.EXPECT().GetDeployableTroops(ctx, game.ID).Return(int64(0), nil)
 
-	err := service.PerformQ(ctx, querier, deploy.Move{
+	_, err := service.PerformQ(ctx, querier, deploy.Move{
 		RegionID:      regionReference,
 		CurrentTroops: currentTroops,
 		DesiredTroops: desiredTroops,
@@ -131,7 +131,7 @@ func TestServiceImpl_DeployShouldFail(t *testing.T) {
 					Troops:            0,
 				}, nil)
 
-			err := service.PerformQ(ctx, querier, deploy.Move{
+			_, err := service.PerformQ(ctx, querier, deploy.Move{
 				RegionID:      regionReference,
 				CurrentTroops: currentTroops,
 				DesiredTroops: desiredTroops,
@@ -201,7 +201,7 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 				}).
 				Return(nil)
 
-			err := service.PerformQ(ctx, querier, deploy.Move{
+			_, err := service.PerformQ(ctx, querier, deploy.Move{
 				RegionID:      regionReference,
 				CurrentTroops: currentTroops,
 				DesiredTroops: desiredTroops,

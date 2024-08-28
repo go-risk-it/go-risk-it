@@ -6,20 +6,25 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 )
 
-type Performer[T any] interface {
-	PerformQ(ctx ctx.MoveContext, querier db.Querier, move T) error
+type Performer[T, R any] interface {
+	PerformQ(ctx ctx.MoveContext, querier db.Querier, move T) (R, error)
 }
 
-type Advancer[T any] interface {
-	AdvanceQ(ctx ctx.MoveContext, querier db.Querier, targetPhase sqlc.PhaseType, move T) error
+type Advancer[R any] interface {
+	AdvanceQ(
+		ctx ctx.MoveContext,
+		querier db.Querier,
+		targetPhase sqlc.PhaseType,
+		performResult R,
+	) error
 }
 
 type PhaseWalker interface {
 	Walk(ctx ctx.MoveContext, querier db.Querier) (sqlc.PhaseType, error)
 }
 
-type Service[T any] interface {
-	Advancer[T]
-	Performer[T]
+type Service[T, R any] interface {
+	Performer[T, R]
+	Advancer[R]
 	PhaseWalker
 }

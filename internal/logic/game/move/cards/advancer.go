@@ -12,7 +12,7 @@ func (s *ServiceImpl) AdvanceQ(
 	ctx ctx.MoveContext,
 	querier db.Querier,
 	targetPhase sqlc.PhaseType,
-	_ Move,
+	_ *MoveResult,
 ) error {
 	if targetPhase != sqlc.PhaseTypeDEPLOY {
 		return fmt.Errorf("cannot advance cards phase to %s", targetPhase)

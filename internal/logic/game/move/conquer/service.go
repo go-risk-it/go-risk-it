@@ -8,6 +8,14 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 )
 
+type Move struct {
+	RegionID      string
+	CurrentTroops int64
+	DesiredTroops int64
+}
+
+type MoveResult struct{}
+
 type Service interface {
 	GetPhaseState(ctx ctx.GameContext) (sqlc.GetConquerPhaseStateRow, error)
 	GetPhaseStateQ(ctx ctx.GameContext, querier db.Querier) (sqlc.GetConquerPhaseStateRow, error)

@@ -18,8 +18,10 @@ type Move struct {
 	DesiredTroops int64
 }
 
+type MoveResult struct{}
+
 type Service interface {
-	service.Service[Move]
+	service.Service[Move, *MoveResult]
 	GetDeployableTroops(ctx ctx.GameContext) (int64, error)
 	GetDeployableTroopsQ(ctx ctx.GameContext, querier db.Querier) (int64, error)
 }

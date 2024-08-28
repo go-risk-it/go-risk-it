@@ -230,7 +230,7 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 					Return(false, nil)
 			}
 
-			err := service.PerformQ(ctx, querier, attack.Move{
+			_, err := service.PerformQ(ctx, querier, attack.Move{
 				AttackingRegionID: test.attackingRegion,
 				DefendingRegionID: test.defendingRegion,
 				TroopsInSource:    test.declaredTroopsInSource,
@@ -394,7 +394,7 @@ func TestServiceImpl_AttackShouldUpdateRegionTroops(t *testing.T) {
 				UpdateTroopsInRegion(ctx, querier, int64(2), -test.expectedDefenderCasualties).
 				Return(nil)
 
-			err := service.PerformQ(ctx, querier, attack.Move{
+			_, err := service.PerformQ(ctx, querier, attack.Move{
 				AttackingRegionID: attackingRegion,
 				DefendingRegionID: defendingRegion,
 				TroopsInSource:    troopsInAttackingRegion,

@@ -9,30 +9,39 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 )
 
-func (s *ServiceImpl) PerformQ(ctx ctx.MoveContext, querier db.Querier, move Move) error {
+func (s *ServiceImpl) PerformQ(
+	ctx ctx.MoveContext,
+	querier db.Querier,
+	move Move,
+) (*MoveResult, error) {
 	ctx.Log().Infow("performing attack move", "move", move)
 
 	attackingRegion, err := s.regionService.GetRegionQ(ctx, querier, move.AttackingRegionID)
 	if err != nil {
-		return fmt.Errorf("unable to get attacking region: %w", err)
+		return nil, fmt.Errorf("unable to get attacking region: %w", err)
 	}
 
 	defendingRegion, err := s.regionService.GetRegionQ(ctx, querier, move.DefendingRegionID)
 	if err != nil {
-		return fmt.Errorf("unable to get defending region: %w", err)
+		return nil, fmt.Errorf("unable to get defending region: %w", err)
 	}
 
 	if err := s.validate(ctx, attackingRegion, defendingRegion, move); err != nil {
-		return fmt.Errorf("validation failed: %w", err)
+		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	if err := s.perform(ctx, querier, attackingRegion, defendingRegion, move); err != nil {
-		return fmt.Errorf("unable to perform attack move: %w", err)
+	casualties, err := s.perform(ctx, querier, attackingRegion, defendingRegion, move)
+	if err != nil {
+		return nil, fmt.Errorf("unable to perform attack move: %w", err)
 	}
 
 	ctx.Log().Infow("attack executed successfully")
 
-	return nil
+	return &MoveResult{
+		AttackingRegionID: move.AttackingRegionID,
+		DefendingRegionID: move.DefendingRegionID,
+		ConqueringTroops:  move.AttackingTroops - casualties.attacking,
+	}, nil
 }
 
 func (s *ServiceImpl) perform(
@@ -41,7 +50,7 @@ func (s *ServiceImpl) perform(
 	attackingRegion *sqlc.GetRegionsByGameRow,
 	defendingRegion *sqlc.GetRegionsByGameRow,
 	move Move,
-) error {
+) (*casualties, error) {
 	attackDices := s.diceService.RollAttackingDices(int(move.AttackingTroops))
 	defenseDices := s.diceService.RollDefendingDices(int(min(defendingRegion.Troops, 3)))
 
@@ -57,7 +66,7 @@ func (s *ServiceImpl) perform(
 		attackingRegion.ID,
 		-casualties.attacking,
 	); err != nil {
-		return fmt.Errorf("failed to decrease troops in attacking region: %w", err)
+		return nil, fmt.Errorf("failed to decrease troops in attacking region: %w", err)
 	}
 
 	if err := s.regionService.UpdateTroopsInRegion(
@@ -66,10 +75,10 @@ func (s *ServiceImpl) perform(
 		defendingRegion.ID,
 		-casualties.defending,
 	); err != nil {
-		return fmt.Errorf("failed to decrease troops in defending region: %w", err)
+		return nil, fmt.Errorf("failed to decrease troops in defending region: %w", err)
 	}
 
-	return nil
+	return casualties, nil
 }
 
 type casualties struct {

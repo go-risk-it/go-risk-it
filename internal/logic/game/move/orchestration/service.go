@@ -7,29 +7,22 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/validation"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/internal/logic/signals"
 	"github.com/jackc/pgx/v5"
 )
 
-type Service interface {
+type Orchestator[T, R any] interface {
 	OrchestrateMove(
 		ctx ctx.MoveContext,
 		phase sqlc.PhaseType,
-		perform func(ctx.MoveContext, db.Querier) error,
-		walk func(ctx.MoveContext, db.Querier) (sqlc.PhaseType, error),
-		advance func(ctx.MoveContext, db.Querier, sqlc.PhaseType) error,
-	) error
-	OrchestrateMoveQ(
-		ctx ctx.MoveContext,
-		querier db.Querier,
-		phase sqlc.PhaseType,
-		perform func(ctx.MoveContext, db.Querier) error,
-		walk func(ctx.MoveContext, db.Querier) (sqlc.PhaseType, error),
-		advance func(ctx.MoveContext, db.Querier, sqlc.PhaseType) error,
+		service service.Service[T, R],
+		move T,
 	) error
 }
-type ServiceImpl struct {
+
+type OrchestatorImpl[T, R any] struct {
 	querier                  db.Querier
 	gameService              state.Service
 	validationService        validation.Service
@@ -38,17 +31,15 @@ type ServiceImpl struct {
 	gameStateChangedSignal   signals.GameStateChangedSignal
 }
 
-var _ Service = (*ServiceImpl)(nil)
-
-func NewService(
+func NewOrchestrator[T, R any](
 	querier db.Querier,
 	gameService state.Service,
 	validationService validation.Service,
 	boardStateChangedSignal signals.BoardStateChangedSignal,
 	playerStateChangedSignal signals.PlayerStateChangedSignal,
 	gameStateChangedSignal signals.GameStateChangedSignal,
-) *ServiceImpl {
-	return &ServiceImpl{
+) *OrchestatorImpl[T, R] {
+	return &OrchestatorImpl[T, R]{
 		querier:                  querier,
 		gameService:              gameService,
 		validationService:        validationService,
@@ -58,19 +49,19 @@ func NewService(
 	}
 }
 
-func (s *ServiceImpl) OrchestrateMove(
+func (s *OrchestatorImpl[T, R]) OrchestrateMove(
 	ctx ctx.MoveContext,
 	phase sqlc.PhaseType,
-	perform func(ctx.MoveContext, db.Querier) error,
-	walk func(ctx.MoveContext, db.Querier) (sqlc.PhaseType, error),
-	advance func(ctx.MoveContext, db.Querier, sqlc.PhaseType) error,
+	service service.Service[T, R],
+	move T,
 ) error {
 	_, err := s.querier.ExecuteInTransactionWithIsolation(
 		ctx,
 		pgx.RepeatableRead,
 		func(q db.Querier) (interface{}, error) {
-			if err := s.OrchestrateMoveQ(ctx, q, phase, perform, walk, advance); err != nil {
-				return nil, fmt.Errorf("unable to perform move: %w", err)
+			err := s.OrchestrateMoveQ(ctx, q, phase, service, move)
+			if err != nil {
+				return struct{}{}, err
 			}
 
 			return struct{}{}, nil
@@ -85,13 +76,12 @@ func (s *ServiceImpl) OrchestrateMove(
 	return nil
 }
 
-func (s *ServiceImpl) OrchestrateMoveQ(
+func (s *OrchestatorImpl[T, R]) OrchestrateMoveQ(
 	ctx ctx.MoveContext,
 	querier db.Querier,
 	phase sqlc.PhaseType,
-	perform func(ctx.MoveContext, db.Querier) error,
-	walk func(ctx.MoveContext, db.Querier) (sqlc.PhaseType, error),
-	advance func(ctx.MoveContext, db.Querier, sqlc.PhaseType) error,
+	service service.Service[T, R],
+	move T,
 ) error {
 	ctx.Log().Infow("orchestrating move", "phase", phase)
 
@@ -108,11 +98,12 @@ func (s *ServiceImpl) OrchestrateMoveQ(
 		return fmt.Errorf("invalid move: %w", err)
 	}
 
-	if err := perform(ctx, querier); err != nil {
+	performResult, err := service.PerformQ(ctx, querier, move)
+	if err != nil {
 		return fmt.Errorf("unable to perform move: %w", err)
 	}
 
-	targetPhase, err := walk(ctx, querier)
+	targetPhase, err := service.Walk(ctx, querier)
 	if err != nil {
 		return fmt.Errorf("unable to walk phase: %w", err)
 	}
@@ -123,14 +114,14 @@ func (s *ServiceImpl) OrchestrateMoveQ(
 		return nil
 	}
 
-	if err := advance(ctx, querier, targetPhase); err != nil {
+	if err := service.AdvanceQ(ctx, querier, targetPhase, performResult); err != nil {
 		return fmt.Errorf("unable to advance move: %w", err)
 	}
 
 	return nil
 }
 
-func (s *ServiceImpl) publishMoveResult(ctx ctx.GameContext) {
+func (s *OrchestatorImpl[T, R]) publishMoveResult(ctx ctx.GameContext) {
 	go s.boardStateChangedSignal.Emit(ctx, signals.BoardStateChangedData{
 		GameID: ctx.GameID(),
 	})

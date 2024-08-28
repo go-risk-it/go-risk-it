@@ -10,15 +10,21 @@ import (
 
 type Move struct{}
 
+type MoveResult struct{}
+
 type Service interface {
-	service.Service[Move]
+	service.Service[Move, *MoveResult]
 }
 
 type ServiceImpl struct {
 	phaseService phase.Service
 }
 
-func (s *ServiceImpl) PerformQ(ctx ctx.MoveContext, querier db.Querier, move Move) error {
+func (s *ServiceImpl) PerformQ(
+	ctx ctx.MoveContext,
+	querier db.Querier,
+	move Move,
+) (*MoveResult, error) {
 	panic("implement me")
 }
 
