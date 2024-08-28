@@ -36,7 +36,7 @@ func (s *ServiceImpl) PerformQ(
 	if err := s.regionService.UpdateTroopsInRegion(
 		ctx,
 		querier,
-		sourceRegion.ID,
+		sourceRegion,
 		-move.Troops,
 	); err != nil {
 		return nil, fmt.Errorf("failed to decrease troops in source region: %w", err)
@@ -45,7 +45,7 @@ func (s *ServiceImpl) PerformQ(
 	if err := s.regionService.UpdateTroopsInRegion(
 		ctx,
 		querier,
-		targetRegion.ID,
+		targetRegion,
 		move.Troops,
 	); err != nil {
 		return nil, fmt.Errorf("failed to increase troops in target region: %w", err)

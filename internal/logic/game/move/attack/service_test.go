@@ -349,31 +349,31 @@ func TestServiceImpl_AttackShouldUpdateRegionTroops(t *testing.T) {
 			querier, boardService, diceService, regionService, service := setup(t)
 			ctx := input()
 
-			attackingRegion := "greenland"
-			defendingRegion := "iceland"
 			troopsInAttackingRegion := int64(4)
+			attackingRegion := &sqlc.GetRegionsByGameRow{
+				ID:                1,
+				ExternalReference: "greenland",
+				UserID:            "giovanni",
+				Troops:            troopsInAttackingRegion,
+			}
+			defendingRegion := &sqlc.GetRegionsByGameRow{
+				ID:                2,
+				ExternalReference: "iceland",
+				UserID:            "gabriele",
+				Troops:            test.troopsInDefendingRegion,
+			}
 
 			regionService.
 				EXPECT().
-				GetRegionQ(ctx, querier, attackingRegion).
-				Return(&sqlc.GetRegionsByGameRow{
-					ID:                1,
-					ExternalReference: attackingRegion,
-					UserID:            "giovanni",
-					Troops:            troopsInAttackingRegion,
-				}, nil)
+				GetRegionQ(ctx, querier, attackingRegion.ExternalReference).
+				Return(attackingRegion, nil)
 			regionService.
 				EXPECT().
-				GetRegionQ(ctx, querier, defendingRegion).
-				Return(&sqlc.GetRegionsByGameRow{
-					ID:                2,
-					ExternalReference: defendingRegion,
-					UserID:            "gabriele",
-					Troops:            test.troopsInDefendingRegion,
-				}, nil)
+				GetRegionQ(ctx, querier, defendingRegion.ExternalReference).
+				Return(defendingRegion, nil)
 			boardService.
 				EXPECT().
-				AreNeighbours(ctx, attackingRegion, defendingRegion).
+				AreNeighbours(ctx, attackingRegion.ExternalReference, defendingRegion.ExternalReference).
 				Return(true, nil)
 			diceService.
 				EXPECT().
@@ -387,16 +387,16 @@ func TestServiceImpl_AttackShouldUpdateRegionTroops(t *testing.T) {
 				Once()
 			regionService.
 				EXPECT().
-				UpdateTroopsInRegion(ctx, querier, int64(1), -test.expectedAttackerCasualties).
+				UpdateTroopsInRegion(ctx, querier, attackingRegion, -test.expectedAttackerCasualties).
 				Return(nil)
 			regionService.
 				EXPECT().
-				UpdateTroopsInRegion(ctx, querier, int64(2), -test.expectedDefenderCasualties).
+				UpdateTroopsInRegion(ctx, querier, defendingRegion, -test.expectedDefenderCasualties).
 				Return(nil)
 
 			_, err := service.PerformQ(ctx, querier, attack.Move{
-				AttackingRegionID: attackingRegion,
-				DefendingRegionID: defendingRegion,
+				AttackingRegionID: attackingRegion.ExternalReference,
+				DefendingRegionID: defendingRegion.ExternalReference,
 				TroopsInSource:    troopsInAttackingRegion,
 				TroopsInTarget:    test.troopsInDefendingRegion,
 				AttackingTroops:   test.attackingTroops,

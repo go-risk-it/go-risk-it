@@ -180,18 +180,20 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 
 			querier.EXPECT().GetDeployableTroops(ctx, game.ID).Return(test.deployableTroops, nil)
 
+			region := &sqlc.GetRegionsByGameRow{
+				ID:                1,
+				ExternalReference: "greenland",
+				UserID:            "Giovanni",
+				Troops:            currentTroops,
+			}
+
 			regionService.
 				EXPECT().
 				GetRegionQ(ctx, querier, regionReference).
-				Return(&sqlc.GetRegionsByGameRow{
-					ID:                1,
-					ExternalReference: "greenland",
-					UserID:            "Giovanni",
-					Troops:            currentTroops,
-				}, nil)
+				Return(region, nil)
 			regionService.
 				EXPECT().
-				UpdateTroopsInRegion(ctx, querier, int64(1), troops).
+				UpdateTroopsInRegion(ctx, querier, region, troops).
 				Return(nil)
 			querier.
 				EXPECT().

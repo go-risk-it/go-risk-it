@@ -33,7 +33,7 @@ type Service interface {
 	UpdateTroopsInRegion(
 		ctx ctx.GameContext,
 		querier db.Querier,
-		regionID int64,
+		region *sqlc.GetRegionsByGameRow,
 		troopsToAdd int64,
 	) error
 }
@@ -146,7 +146,7 @@ func extractRegionFrom(
 func (s *ServiceImpl) UpdateTroopsInRegion(
 	ctx ctx.GameContext,
 	querier db.Querier,
-	regionID int64,
+	region *sqlc.GetRegionsByGameRow,
 	troopsToAdd int64,
 ) error {
 	if troopsToAdd == 0 {
@@ -160,10 +160,11 @@ func (s *ServiceImpl) UpdateTroopsInRegion(
 		action = "decreas"
 	}
 
-	ctx.Log().Infof("%sing region troops", action)
+	ctx.Log().
+		Infof("%sing troops in region %s by %d", action, region.ExternalReference, troopsToAdd)
 
 	err := querier.IncreaseRegionTroops(ctx, sqlc.IncreaseRegionTroopsParams{
-		ID:     regionID,
+		ID:     region.ID,
 		Troops: troopsToAdd,
 	})
 	if err != nil {

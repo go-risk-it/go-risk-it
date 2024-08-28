@@ -63,7 +63,7 @@ func (s *ServiceImpl) perform(
 	if err := s.regionService.UpdateTroopsInRegion(
 		ctx,
 		querier,
-		attackingRegion.ID,
+		attackingRegion,
 		-casualties.attacking,
 	); err != nil {
 		return nil, fmt.Errorf("failed to decrease troops in attacking region: %w", err)
@@ -72,7 +72,7 @@ func (s *ServiceImpl) perform(
 	if err := s.regionService.UpdateTroopsInRegion(
 		ctx,
 		querier,
-		defendingRegion.ID,
+		defendingRegion,
 		-casualties.defending,
 	); err != nil {
 		return nil, fmt.Errorf("failed to decrease troops in defending region: %w", err)
