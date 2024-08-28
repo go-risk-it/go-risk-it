@@ -69,6 +69,53 @@ func (_c *MoveController_PerformAttackMove_Call) RunAndReturn(run func(ctx.MoveC
 	return _c
 }
 
+// PerformConquerMove provides a mock function with given fields: _a0, conquerMove
+func (_m *MoveController) PerformConquerMove(_a0 ctx.MoveContext, conquerMove request.ConquerMove) error {
+	ret := _m.Called(_a0, conquerMove)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PerformConquerMove")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(ctx.MoveContext, request.ConquerMove) error); ok {
+		r0 = rf(_a0, conquerMove)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MoveController_PerformConquerMove_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PerformConquerMove'
+type MoveController_PerformConquerMove_Call struct {
+	*mock.Call
+}
+
+// PerformConquerMove is a helper method to define mock.On call
+//   - _a0 ctx.MoveContext
+//   - conquerMove request.ConquerMove
+func (_e *MoveController_Expecter) PerformConquerMove(_a0 interface{}, conquerMove interface{}) *MoveController_PerformConquerMove_Call {
+	return &MoveController_PerformConquerMove_Call{Call: _e.mock.On("PerformConquerMove", _a0, conquerMove)}
+}
+
+func (_c *MoveController_PerformConquerMove_Call) Run(run func(_a0 ctx.MoveContext, conquerMove request.ConquerMove)) *MoveController_PerformConquerMove_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.MoveContext), args[1].(request.ConquerMove))
+	})
+	return _c
+}
+
+func (_c *MoveController_PerformConquerMove_Call) Return(_a0 error) *MoveController_PerformConquerMove_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MoveController_PerformConquerMove_Call) RunAndReturn(run func(ctx.MoveContext, request.ConquerMove) error) *MoveController_PerformConquerMove_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // PerformDeployMove provides a mock function with given fields: _a0, deployMove
 func (_m *MoveController) PerformDeployMove(_a0 ctx.MoveContext, deployMove request.DeployMove) error {
 	ret := _m.Called(_a0, deployMove)
