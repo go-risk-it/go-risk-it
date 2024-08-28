@@ -7,6 +7,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/conquer"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/deploy"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration"
 )
@@ -14,6 +15,7 @@ import (
 type MoveController interface {
 	PerformDeployMove(ctx ctx.MoveContext, deployMove request.DeployMove) error
 	PerformAttackMove(ctx ctx.MoveContext, attackMove request.AttackMove) error
+	PerformConquerMove(ctx ctx.MoveContext, conquerMove request.ConquerMove) error
 }
 
 type MoveControllerImpl struct {
@@ -77,6 +79,26 @@ func (c *MoveControllerImpl) PerformAttackMove(
 	)
 	if err != nil {
 		return fmt.Errorf("unable to perform attack move: %w", err)
+	}
+
+	return nil
+}
+
+func (c *MoveControllerImpl) PerformConquerMove(
+	ctx ctx.MoveContext,
+	conquerMove request.ConquerMove,
+) error {
+	move := conquer.Move{
+		Troops: conquerMove.Troops,
+	}
+
+	err := c.conquerOrchestrator.OrchestrateMove(
+		ctx,
+		sqlc.PhaseTypeCONQUER,
+		move,
+	)
+	if err != nil {
+		return fmt.Errorf("unable to perform conquer move: %w", err)
 	}
 
 	return nil

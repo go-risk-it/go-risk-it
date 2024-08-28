@@ -10,9 +10,7 @@ import (
 )
 
 type Move struct {
-	RegionID      string
-	CurrentTroops int64
-	DesiredTroops int64
+	Troops int64
 }
 
 type MoveResult struct{}

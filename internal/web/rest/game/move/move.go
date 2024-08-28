@@ -13,6 +13,7 @@ var Module = fx.Options(
 	fx.Provide(
 		route.AsRoute(NewDeployHandler),
 		route.AsRoute(NewAttackHandler),
+		route.AsRoute(NewConquerHandler),
 	),
 )
 
