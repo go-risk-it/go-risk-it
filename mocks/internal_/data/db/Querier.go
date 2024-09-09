@@ -587,6 +587,63 @@ func (_c *Querier_IncreaseRegionTroops_Call) RunAndReturn(run func(context.Conte
 	return _c
 }
 
+// InsertCards provides a mock function with given fields: _a0, arg
+func (_m *Querier) InsertCards(_a0 context.Context, arg []sqlc.InsertCardsParams) (int64, error) {
+	ret := _m.Called(_a0, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for InsertCards")
+	}
+
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []sqlc.InsertCardsParams) (int64, error)); ok {
+		return rf(_a0, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []sqlc.InsertCardsParams) int64); ok {
+		r0 = rf(_a0, arg)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, []sqlc.InsertCardsParams) error); ok {
+		r1 = rf(_a0, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_InsertCards_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertCards'
+type Querier_InsertCards_Call struct {
+	*mock.Call
+}
+
+// InsertCards is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - arg []sqlc.InsertCardsParams
+func (_e *Querier_Expecter) InsertCards(_a0 interface{}, arg interface{}) *Querier_InsertCards_Call {
+	return &Querier_InsertCards_Call{Call: _e.mock.On("InsertCards", _a0, arg)}
+}
+
+func (_c *Querier_InsertCards_Call) Run(run func(_a0 context.Context, arg []sqlc.InsertCardsParams)) *Querier_InsertCards_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]sqlc.InsertCardsParams))
+	})
+	return _c
+}
+
+func (_c *Querier_InsertCards_Call) Return(_a0 int64, _a1 error) *Querier_InsertCards_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_InsertCards_Call) RunAndReturn(run func(context.Context, []sqlc.InsertCardsParams) (int64, error)) *Querier_InsertCards_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // InsertConquerPhase provides a mock function with given fields: _a0, arg
 func (_m *Querier) InsertConquerPhase(_a0 context.Context, arg sqlc.InsertConquerPhaseParams) (sqlc.ConquerPhase, error) {
 	ret := _m.Called(_a0, arg)

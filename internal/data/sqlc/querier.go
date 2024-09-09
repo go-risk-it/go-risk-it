@@ -17,6 +17,7 @@ type Querier interface {
 	GetPlayersByGame(ctx context.Context, gameID int64) ([]Player, error)
 	GetRegionsByGame(ctx context.Context, id int64) ([]GetRegionsByGameRow, error)
 	IncreaseRegionTroops(ctx context.Context, arg IncreaseRegionTroopsParams) error
+	InsertCards(ctx context.Context, arg []InsertCardsParams) (int64, error)
 	InsertConquerPhase(ctx context.Context, arg InsertConquerPhaseParams) (ConquerPhase, error)
 	InsertDeployPhase(ctx context.Context, arg InsertDeployPhaseParams) (DeployPhase, error)
 	InsertGame(ctx context.Context) (Game, error)

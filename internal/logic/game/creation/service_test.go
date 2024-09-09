@@ -10,6 +10,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/creation"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/card"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -57,18 +58,20 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 		CurrentPhaseID: pgtype.Int8{Int64: 1, Valid: true},
 	}, nil)
 
-	mockQuerier.EXPECT().InsertPhase(context, sqlc.InsertPhaseParams{
+	gameContext := ctx.WithGameID(context, gameID)
+
+	mockQuerier.EXPECT().InsertPhase(gameContext, sqlc.InsertPhaseParams{
 		GameID: gameID,
 		Type:   sqlc.PhaseTypeDEPLOY,
 		Turn:   0,
 	}).Return(sqlc.Phase{ID: phaseID}, nil)
 
-	mockQuerier.EXPECT().SetGamePhase(context, sqlc.SetGamePhaseParams{
+	mockQuerier.EXPECT().SetGamePhase(gameContext, sqlc.SetGamePhaseParams{
 		ID:             gameID,
 		CurrentPhaseID: pgtype.Int8{Int64: phaseID, Valid: true},
 	}).Return(nil)
 
-	mockQuerier.EXPECT().InsertDeployPhase(context, sqlc.InsertDeployPhaseParams{
+	mockQuerier.EXPECT().InsertDeployPhase(gameContext, sqlc.InsertDeployPhaseParams{
 		PhaseID:          phaseID,
 		DeployableTroops: int64(3),
 	}).Return(sqlc.DeployPhase{ID: 1}, nil)
@@ -76,17 +79,28 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 	playerServiceMock := player.NewService(t)
 	playerServiceMock.
 		EXPECT().
-		CreatePlayers(context, mockQuerier, gameID, users).
+		CreatePlayers(gameContext, mockQuerier, gameID, users).
 		Return(players, nil)
 
 	regionServiceMock := region.NewService(t)
 	regionServiceMock.
 		EXPECT().
-		CreateRegions(context, mockQuerier, players, regions).
+		CreateRegions(gameContext, mockQuerier, players, regions).
+		Return(nil)
+
+	cardServiceMock := card.NewService(t)
+	cardServiceMock.
+		EXPECT().
+		CreateCards(gameContext, mockQuerier).
 		Return(nil)
 
 	// Initialize the state
-	service := creation.NewService(mockQuerier, playerServiceMock, regionServiceMock)
+	service := creation.NewService(
+		mockQuerier,
+		cardServiceMock,
+		playerServiceMock,
+		regionServiceMock,
+	)
 
 	gameID, err := service.CreateGameQ(context, mockQuerier, regions, users)
 
@@ -100,12 +114,13 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 
 	// Initialize dependencies
 	logger := zap.NewExample().Sugar()
+	cardService := card.NewService(t)
 	playerService := player.NewService(t)
 	regionService := region.NewService(t)
 	querier := db.NewQuerier(t)
 
 	// Initialize the state under test
-	service := creation.NewService(querier, playerService, regionService)
+	service := creation.NewService(querier, cardService, playerService, regionService)
 
 	// Set up test data
 	ctx := ctx.WithUserID(
@@ -141,11 +156,12 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 	// Initialize dependencies
 	logger := zap.NewExample().Sugar()
 	querier := db.NewQuerier(t)
+	cardService := card.NewService(t)
 	playerService := player.NewService(t)
 	regionService := region.NewService(t)
 
 	// Initialize the state under test
-	service := creation.NewService(querier, playerService, regionService)
+	service := creation.NewService(querier, cardService, playerService, regionService)
 
 	// Set up test data
 	context := ctx.WithUserID(
@@ -167,18 +183,20 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 			ID: gameID,
 		}, nil)
 
-	querier.EXPECT().InsertPhase(context, sqlc.InsertPhaseParams{
+	gameContext := ctx.WithGameID(context, gameID)
+
+	querier.EXPECT().InsertPhase(gameContext, sqlc.InsertPhaseParams{
 		GameID: gameID,
 		Type:   sqlc.PhaseTypeDEPLOY,
 		Turn:   0,
 	}).Return(sqlc.Phase{ID: phaseID}, nil)
 
-	querier.EXPECT().SetGamePhase(context, sqlc.SetGamePhaseParams{
+	querier.EXPECT().SetGamePhase(gameContext, sqlc.SetGamePhaseParams{
 		ID:             gameID,
 		CurrentPhaseID: pgtype.Int8{Int64: phaseID, Valid: true},
 	}).Return(nil)
 
-	querier.EXPECT().InsertDeployPhase(context, sqlc.InsertDeployPhaseParams{
+	querier.EXPECT().InsertDeployPhase(gameContext, sqlc.InsertDeployPhaseParams{
 		PhaseID:          phaseID,
 		DeployableTroops: int64(3),
 	}).Return(sqlc.DeployPhase{ID: phaseID}, nil)
@@ -186,7 +204,7 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 	// Set up expectations for CreatePlayers method
 	playerService.
 		EXPECT().
-		CreatePlayers(context, querier, int64(1), users).
+		CreatePlayers(gameContext, querier, int64(1), users).
 		Return(nil, errCreatePlayers)
 
 	// Call the method under test

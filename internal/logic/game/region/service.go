@@ -17,7 +17,7 @@ var (
 
 type Service interface {
 	CreateRegions(
-		ctx ctx.UserContext,
+		ctx ctx.LogContext,
 		querier db.Querier,
 		players []sqlc.Player,
 		regions []string,
@@ -49,7 +49,7 @@ func NewService(querier db.Querier, assignmentService assignment.Service) *Servi
 }
 
 func (s *ServiceImpl) CreateRegions(
-	ctx ctx.UserContext,
+	ctx ctx.LogContext,
 	querier db.Querier,
 	players []sqlc.Player,
 	regions []string,

@@ -198,6 +198,12 @@ func (q *Queries) IncreaseRegionTroops(ctx context.Context, arg IncreaseRegionTr
 	return err
 }
 
+type InsertCardsParams struct {
+	RegionID pgtype.Int8
+	GameID   int64
+	CardType CardType
+}
+
 const insertConquerPhase = `-- name: InsertConquerPhase :one
 INSERT INTO conquer_phase(phase_id, source_region_id, target_region_id, minimum_troops)
 VALUES ($1,

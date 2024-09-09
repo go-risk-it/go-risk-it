@@ -1,5 +1,5 @@
 CREATE TYPE phase_type AS ENUM ('CARDS', 'DEPLOY', 'ATTACK', 'CONQUER', 'REINFORCE');
-
+CREATE TYPE card_type AS ENUM ('CAVALRY', 'INFANTRY', 'ARTILLERY', 'JOLLY');
 
 CREATE TABLE game
 (
@@ -32,10 +32,14 @@ CREATE TABLE region
 CREATE TABLE card
 (
     id        BIGSERIAL PRIMARY KEY,
-    player_id BIGINT,
-    region_id BIGINT NOT NULL,
-    FOREIGN KEY (player_id) REFERENCES player (id),
-    FOREIGN KEY (region_id) REFERENCES region (id)
+    game_id   BIGINT    NOT NULL,
+    region_id BIGINT,
+    owner_id  BIGINT,
+    card_type card_type NOT NULL,
+    FOREIGN KEY (game_id) REFERENCES game (id),
+    FOREIGN KEY (owner_id) REFERENCES player (id),
+    FOREIGN KEY (region_id) REFERENCES region (id),
+    CONSTRAINT unique_card_per_game UNIQUE (game_id, region_id)
 );
 
 CREATE TABLE mission

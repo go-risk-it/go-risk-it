@@ -11,7 +11,7 @@ import (
 
 type Service interface {
 	CreatePlayers(
-		ctx ctx.UserContext,
+		ctx ctx.LogContext,
 		querier db.Querier,
 		gameID int64,
 		players []request.Player,
@@ -49,7 +49,7 @@ func (s *ServiceImpl) GetPlayersQ(ctx ctx.GameContext, querier db.Querier) ([]sq
 }
 
 func (s *ServiceImpl) CreatePlayers(
-	ctx ctx.UserContext,
+	ctx ctx.LogContext,
 	querier db.Querier,
 	gameID int64,
 	players []request.Player,
