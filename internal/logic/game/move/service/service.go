@@ -25,6 +25,6 @@ type PhaseWalker interface {
 
 type Service[T, R any] interface {
 	Performer[T, R]
-	Advancer[R]
 	PhaseWalker
+	Advancer[R]
 }

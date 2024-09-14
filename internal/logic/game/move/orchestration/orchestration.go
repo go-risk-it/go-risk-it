@@ -9,21 +9,21 @@ import (
 )
 
 type DeployOrchestrator interface {
-	Orchestator[deploy.Move, *deploy.MoveResult]
+	Orchestrator[deploy.Move, *deploy.MoveResult]
 }
 
 type AttackOrchestrator interface {
-	Orchestator[attack.Move, *attack.MoveResult]
+	Orchestrator[attack.Move, *attack.MoveResult]
 }
 
 type ConquerOrchestrator interface {
-	Orchestator[conquer.Move, *conquer.MoveResult]
+	Orchestrator[conquer.Move, *conquer.MoveResult]
 }
 
 var (
-	_ DeployOrchestrator  = (*OrchestatorImpl[deploy.Move, *deploy.MoveResult])(nil)
-	_ AttackOrchestrator  = (*OrchestatorImpl[attack.Move, *attack.MoveResult])(nil)
-	_ ConquerOrchestrator = (*OrchestatorImpl[conquer.Move, *conquer.MoveResult])(nil)
+	_ DeployOrchestrator  = (*OrchestratorImpl[deploy.Move, *deploy.MoveResult])(nil)
+	_ AttackOrchestrator  = (*OrchestratorImpl[attack.Move, *attack.MoveResult])(nil)
+	_ ConquerOrchestrator = (*OrchestratorImpl[conquer.Move, *conquer.MoveResult])(nil)
 )
 
 var Module = fx.Options(

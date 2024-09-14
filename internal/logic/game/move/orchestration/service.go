@@ -13,7 +13,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type Orchestator[T, R any] interface {
+type Orchestrator[T, R any] interface {
 	OrchestrateMove(
 		ctx ctx.MoveContext,
 		phase sqlc.PhaseType,
@@ -21,7 +21,7 @@ type Orchestator[T, R any] interface {
 	) error
 }
 
-type OrchestatorImpl[T, R any] struct {
+type OrchestratorImpl[T, R any] struct {
 	querier                  db.Querier
 	service                  service.Service[T, R]
 	gameService              state.Service
@@ -39,8 +39,8 @@ func NewOrchestrator[T, R any](
 	boardStateChangedSignal signals.BoardStateChangedSignal,
 	playerStateChangedSignal signals.PlayerStateChangedSignal,
 	gameStateChangedSignal signals.GameStateChangedSignal,
-) *OrchestatorImpl[T, R] {
-	return &OrchestatorImpl[T, R]{
+) *OrchestratorImpl[T, R] {
+	return &OrchestratorImpl[T, R]{
 		querier:                  querier,
 		service:                  service,
 		gameService:              gameService,
@@ -51,7 +51,7 @@ func NewOrchestrator[T, R any](
 	}
 }
 
-func (s *OrchestatorImpl[T, R]) OrchestrateMove(
+func (s *OrchestratorImpl[T, R]) OrchestrateMove(
 	ctx ctx.MoveContext,
 	phase sqlc.PhaseType,
 	move T,
@@ -77,7 +77,7 @@ func (s *OrchestatorImpl[T, R]) OrchestrateMove(
 	return nil
 }
 
-func (s *OrchestatorImpl[T, R]) OrchestrateMoveQ(
+func (s *OrchestratorImpl[T, R]) OrchestrateMoveQ(
 	ctx ctx.MoveContext,
 	querier db.Querier,
 	phase sqlc.PhaseType,
@@ -121,7 +121,7 @@ func (s *OrchestatorImpl[T, R]) OrchestrateMoveQ(
 	return nil
 }
 
-func (s *OrchestatorImpl[T, R]) publishMoveResult(ctx ctx.GameContext) {
+func (s *OrchestratorImpl[T, R]) publishMoveResult(ctx ctx.GameContext) {
 	go s.boardStateChangedSignal.Emit(ctx, signals.BoardStateChangedData{
 		GameID: ctx.GameID(),
 	})
