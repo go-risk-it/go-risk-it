@@ -7,21 +7,22 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/signals"
 	"github.com/go-risk-it/go-risk-it/internal/web/fetchers/fetcher"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/connection"
-	"go.uber.org/zap"
 )
 
 func HandlePlayerStateChanged(
-	log *zap.SugaredLogger,
 	playerStateFetcher fetcher.PlayerFetcher,
 	connectionManager connection.Manager,
 	signal signals.PlayerStateChangedSignal,
 ) {
 	signal.AddListener(func(context context.Context, data signals.PlayerStateChangedData) {
-		ctx := ctx.WithGameID(ctx.WithLog(context, log), data.GameID)
+		gameContext, ok := context.(ctx.GameContext)
+		if !ok {
+			return
+		}
 
-		ctx.Log().Infow("handling player state changed")
+		gameContext.Log().Infow("handling player state changed")
 		fetchStateAndBroadcast(
-			ctx,
+			gameContext,
 			playerStateFetcher.FetchState,
 			connectionManager.Broadcast)
 	})

@@ -24,7 +24,10 @@ func TestServiceImpl_GetGameState(t *testing.T) {
 
 	// Set up test data
 	gameID := int64(1)
-	ctx := ctx.WithGameID(ctx.WithLog(context.Background(), logger), gameID)
+	ctx := ctx.WithGameID(
+		ctx.WithUserID(ctx.WithLog(context.Background(), logger), "francesco"),
+		gameID,
+	)
 
 	// Set up expectations for GetGame method
 	querier.EXPECT().GetGame(ctx, gameID).Return(sqlc.GetGameRow{

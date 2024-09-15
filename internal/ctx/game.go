@@ -1,12 +1,12 @@
 package ctx
 
 type GameContext interface {
-	LogContext
+	UserContext
 	GameID() int64
 }
 
 type gameContext struct {
-	LogContext
+	UserContext
 	gameID int64
 }
 
@@ -16,9 +16,9 @@ func (c *gameContext) GameID() int64 {
 	return c.gameID
 }
 
-func WithGameID(ctx LogContext, gameID int64) GameContext {
+func WithGameID(ctx UserContext, gameID int64) GameContext {
 	return &gameContext{
-		LogContext: WithLog(ctx, ctx.Log().With("gameID", gameID)),
-		gameID:     gameID,
+		UserContext: WithUserID(WithLog(ctx, ctx.Log().With("gameID", gameID)), ctx.UserID()),
+		gameID:      gameID,
 	}
 }

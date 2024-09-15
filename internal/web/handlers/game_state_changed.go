@@ -10,11 +10,9 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/signals"
 	"github.com/go-risk-it/go-risk-it/internal/web/fetchers/phase"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/connection"
-	"go.uber.org/zap"
 )
 
 func HandleGameStateChanged(
-	log *zap.SugaredLogger,
 	gameService state.Service,
 	deployPhaseFetcher phase.DeployPhaseFetcher,
 	attackPhaseFetcher phase.AttackPhaseFetcher,
@@ -23,7 +21,10 @@ func HandleGameStateChanged(
 	signal signals.GameStateChangedSignal,
 ) {
 	signal.AddListener(func(context context.Context, data signals.GameStateChangedData) {
-		gameContext := ctx.WithGameID(ctx.WithLog(context, log), data.GameID)
+		gameContext, ok := context.(ctx.GameContext)
+		if !ok {
+			return
+		}
 
 		gameState, err := gameService.GetGameState(gameContext)
 		if err != nil {

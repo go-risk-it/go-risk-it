@@ -31,7 +31,10 @@ func TestServiceImpl_GetPlayersByGame(t *testing.T) {
 
 	// Set up test data
 	gameID := int64(1)
-	ctx := ctx2.WithGameID(ctx2.WithLog(context.Background(), logger), gameID)
+	ctx := ctx2.WithGameID(
+		ctx2.WithUserID(ctx2.WithLog(context.Background(), logger), "francesco"),
+		gameID,
+	)
 
 	player1 := sqlc.Player{
 		ID:        1,
@@ -81,7 +84,10 @@ func TestServiceImpl_GetPlayersByGame_WithError(t *testing.T) {
 
 	// Set up test data
 	gameID := int64(1)
-	ctx := ctx2.WithGameID(ctx2.WithLog(context.Background(), logger), gameID)
+	ctx := ctx2.WithGameID(
+		ctx2.WithUserID(ctx2.WithLog(context.Background(), logger), "francesco"),
+		gameID,
+	)
 
 	// Set up expectations for GetGame method
 	querier.On("GetPlayersByGame", ctx, gameID).Return(nil, errGetPlayersByGame)

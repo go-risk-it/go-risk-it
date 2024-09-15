@@ -44,11 +44,10 @@ func (p *playerConnections) ConnectPlayer(ctx ctx.GameContext, connection *webso
 	p.Lock()
 	defer p.Unlock()
 
-	userID := "gianfranco"
-	if p.playerConnections[userID] != nil {
-		ctx.Log().Warnw("player already connected, overwriting", "userID", userID)
+	if p.playerConnections[ctx.UserID()] != nil {
+		ctx.Log().Warnw("player already connected, overwriting")
 	}
 
-	p.playerConnections[userID] = connection
+	p.playerConnections[ctx.UserID()] = connection
 	ctx.Log().Infow("Connected player", "currentConnections", len(p.playerConnections))
 }

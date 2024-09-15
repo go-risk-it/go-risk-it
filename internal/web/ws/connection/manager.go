@@ -1,7 +1,6 @@
 package connection
 
 import (
-	"context"
 	"encoding/json"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
@@ -35,7 +34,7 @@ func (m *ManagerImpl) Broadcast(ctx ctx.GameContext, message json.RawMessage) {
 func (m *ManagerImpl) ConnectPlayer(ctx ctx.GameContext, connection *websocket.Conn) {
 	m.gameConnections.ConnectPlayer(ctx, connection)
 
-	m.playerConnectedSignal.Emit(context.Background(), signals.PlayerConnectedData{
+	m.playerConnectedSignal.Emit(ctx, signals.PlayerConnectedData{
 		Connection: connection,
 		GameID:     ctx.GameID(),
 	})

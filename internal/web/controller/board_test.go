@@ -25,7 +25,10 @@ func TestBoardControllerImpl_GetBoardState(t *testing.T) {
 
 	// Set up test data
 	gameID := int64(1)
-	ctx := ctx2.WithGameID(ctx2.WithLog(context.Background(), log), gameID)
+	ctx := ctx2.WithGameID(
+		ctx2.WithUserID(ctx2.WithLog(context.Background(), log), "francesco"),
+		gameID,
+	)
 
 	// Set up expectations for GetRegions method
 	regionService.On("GetRegions", ctx).Return([]sqlc.GetRegionsByGameRow{

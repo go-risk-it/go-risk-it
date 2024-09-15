@@ -32,10 +32,10 @@ func HandlePlayerConnected(
 	params PlayerConnectedHandlerParams,
 ) {
 	params.Signal.AddListener(func(cont context.Context, data signals.PlayerConnectedData) {
-		childCtx, cancel := context.WithTimeout(cont, 10*time.Second)
-		defer cancel()
-
-		gameContext := ctx.WithGameID(ctx.WithLog(childCtx, params.Log), data.GameID)
+		gameContext, ok := cont.(ctx.GameContext)
+		if !ok {
+			return
+		}
 
 		gameContext.Log().Infow("handling player connected",
 			"remoteAddress", data.Connection.RemoteAddr().String())
@@ -68,7 +68,7 @@ func HandlePlayerConnected(
 			return
 		}
 
-		wait(params, stateChannel, gameContext, data, childCtx)
+		wait(params, stateChannel, gameContext, data)
 	})
 }
 
@@ -77,8 +77,10 @@ func wait(
 	stateChannel chan json.RawMessage,
 	gameContext ctx.GameContext,
 	data signals.PlayerConnectedData,
-	ctx context.Context,
 ) {
+	childCtx, cancel := context.WithTimeout(gameContext, 10*time.Second)
+	defer cancel()
+
 	for range len(params.Fetchers) + 1 {
 		select {
 		case state := <-stateChannel:
@@ -88,8 +90,8 @@ func wait(
 			if err != nil {
 				gameContext.Log().Errorf("unable to write response: %v", err)
 			}
-		case <-ctx.Done():
-			gameContext.Log().Errorf("unable to get all states: %v", ctx.Err())
+		case <-childCtx.Done():
+			gameContext.Log().Errorf("unable to get all states: %v", childCtx.Err())
 
 			return
 		}
