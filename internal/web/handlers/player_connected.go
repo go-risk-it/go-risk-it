@@ -11,7 +11,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/signals"
 	"github.com/go-risk-it/go-risk-it/internal/web/fetchers/fetcher"
 	"github.com/go-risk-it/go-risk-it/internal/web/fetchers/phase"
-	"github.com/lesismal/nbio/nbhttp/websocket"
+	"github.com/go-risk-it/go-risk-it/internal/web/ws/connection"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -26,6 +26,7 @@ type PlayerConnectedHandlerParams struct {
 	DeployPhaseFetcher  phase.DeployPhaseFetcher
 	AttackPhaseFetcher  phase.AttackPhaseFetcher
 	ConquerPhaseFetcher phase.ConquerPhaseFetcher
+	ConnectionManager   connection.Manager
 }
 
 func HandlePlayerConnected(
@@ -34,11 +35,12 @@ func HandlePlayerConnected(
 	params.Signal.AddListener(func(cont context.Context, data signals.PlayerConnectedData) {
 		gameContext, ok := cont.(ctx.GameContext)
 		if !ok {
+			params.Log.Errorw("context is not game context", "context", cont)
+
 			return
 		}
 
-		gameContext.Log().Infow("handling player connected",
-			"remoteAddress", data.Connection.RemoteAddr().String())
+		gameContext.Log().Infow("handling player connected")
 
 		stateChannel := make(chan json.RawMessage, len(params.Fetchers))
 
@@ -68,28 +70,25 @@ func HandlePlayerConnected(
 			return
 		}
 
-		wait(params, stateChannel, gameContext, data)
+		wait(gameContext, params.Fetchers, params.ConnectionManager, stateChannel)
 	})
 }
 
 func wait(
-	params PlayerConnectedHandlerParams,
-	stateChannel chan json.RawMessage,
 	gameContext ctx.GameContext,
-	data signals.PlayerConnectedData,
+	fetchers []fetcher.Fetcher,
+	connectionManager connection.Manager,
+	stateChannel chan json.RawMessage,
 ) {
 	childCtx, cancel := context.WithTimeout(gameContext, 10*time.Second)
 	defer cancel()
 
-	for range len(params.Fetchers) + 1 {
+	for range len(fetchers) + 1 {
 		select {
 		case state := <-stateChannel:
 			gameContext.Log().Infow("got state, writing message")
 
-			err := data.Connection.WriteMessage(websocket.TextMessage, state)
-			if err != nil {
-				gameContext.Log().Errorf("unable to write response: %v", err)
-			}
+			connectionManager.WriteMessage(gameContext, state)
 		case <-childCtx.Done():
 			gameContext.Log().Errorf("unable to get all states: %v", childCtx.Err())
 

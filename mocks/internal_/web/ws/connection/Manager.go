@@ -93,6 +93,40 @@ func (_c *Manager_ConnectPlayer_Call) RunAndReturn(run func(ctx.GameContext, *we
 	return _c
 }
 
+// WriteMessage provides a mock function with given fields: _a0, message
+func (_m *Manager) WriteMessage(_a0 ctx.GameContext, message json.RawMessage) {
+	_m.Called(_a0, message)
+}
+
+// Manager_WriteMessage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WriteMessage'
+type Manager_WriteMessage_Call struct {
+	*mock.Call
+}
+
+// WriteMessage is a helper method to define mock.On call
+//   - _a0 ctx.GameContext
+//   - message json.RawMessage
+func (_e *Manager_Expecter) WriteMessage(_a0 interface{}, message interface{}) *Manager_WriteMessage_Call {
+	return &Manager_WriteMessage_Call{Call: _e.mock.On("WriteMessage", _a0, message)}
+}
+
+func (_c *Manager_WriteMessage_Call) Run(run func(_a0 ctx.GameContext, message json.RawMessage)) *Manager_WriteMessage_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.GameContext), args[1].(json.RawMessage))
+	})
+	return _c
+}
+
+func (_c *Manager_WriteMessage_Call) Return() *Manager_WriteMessage_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Manager_WriteMessage_Call) RunAndReturn(run func(ctx.GameContext, json.RawMessage)) *Manager_WriteMessage_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewManager creates a new instance of Manager. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewManager(t interface {

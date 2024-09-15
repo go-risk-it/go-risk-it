@@ -2,6 +2,8 @@ package connection
 
 import (
 	"encoding/json"
+	"errors"
+	"net"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	upgradablerwmutex "github.com/go-risk-it/go-risk-it/lib/upgradablerw_mutex"
@@ -20,6 +22,9 @@ func newPlayerConnections() *playerConnections {
 }
 
 func (p *playerConnections) Broadcast(ctx ctx.GameContext, message json.RawMessage) {
+	p.UpgradableRLock()
+	defer p.UpgradableRUnlock()
+
 	if len(p.playerConnections) == 0 {
 		ctx.Log().Warnw("no connections for given game")
 
@@ -28,12 +33,59 @@ func (p *playerConnections) Broadcast(ctx ctx.GameContext, message json.RawMessa
 
 	ctx.Log().Infof("broadcasting message to %d players", len(p.playerConnections))
 
-	for i := range p.playerConnections {
-		err := p.playerConnections[i].WriteMessage(websocket.TextMessage, message)
-		if err != nil {
-			ctx.Log().Errorw("unable to write message", "error", err)
+	toCleanup := make([]string, 0)
+
+	for player, connection := range p.playerConnections {
+		err := connection.WriteMessage(websocket.TextMessage, message)
+		if err != nil && errors.Is(err, net.ErrClosed) {
+			ctx.Log().Debugw("unable to write message because connection is closed")
+
+			toCleanup = append(toCleanup, player)
 		}
 	}
+
+	p.cleanUpConnections(ctx, toCleanup)
+}
+
+func (p *playerConnections) Write(ctx ctx.GameContext, message json.RawMessage) {
+	p.UpgradableRLock()
+	defer p.UpgradableRUnlock()
+
+	if len(p.playerConnections) == 0 {
+		ctx.Log().Warnw("no connections for given game")
+
+		return
+	}
+
+	connection, ok := p.playerConnections[ctx.UserID()]
+	if !ok {
+		ctx.Log().Warnw("no connection for given player")
+
+		return
+	}
+
+	err := connection.WriteMessage(websocket.TextMessage, message)
+	if err != nil && errors.Is(err, net.ErrClosed) {
+		ctx.Log().Debugw("unable to write message because connection is closed")
+
+		p.cleanUpConnections(ctx, []string{ctx.UserID()})
+	}
+}
+
+func (p *playerConnections) cleanUpConnections(ctx ctx.GameContext, toCleanup []string) {
+	if len(toCleanup) == 0 {
+		return
+	}
+
+	ctx.Log().Debugw("cleaning up connections", "users", toCleanup)
+
+	p.UpgradeWLock()
+
+	for _, player := range toCleanup {
+		delete(p.playerConnections, player)
+	}
+
+	ctx.Log().Debugw("cleaned up connections", "users", toCleanup)
 }
 
 func (p *playerConnections) ConnectPlayer(ctx ctx.GameContext, connection *websocket.Conn) {

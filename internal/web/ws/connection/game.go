@@ -30,6 +30,20 @@ func (g *gameConnections) Broadcast(ctx ctx.GameContext, message json.RawMessage
 	playerConnections.Broadcast(ctx, message)
 }
 
+func (g *gameConnections) Write(ctx ctx.GameContext, message json.RawMessage) {
+	g.RLock()
+	defer g.RUnlock()
+
+	playerConnections, ok := g.gameConnections[ctx.GameID()]
+	if !ok {
+		ctx.Log().Errorw("no connections for given game")
+
+		return
+	}
+
+	playerConnections.Write(ctx, message)
+}
+
 func (g *gameConnections) PlayerConnections(gameID int64) *playerConnections {
 	g.UpgradableRLock()
 	defer g.UpgradableRUnlock()
@@ -46,9 +60,5 @@ func (g *gameConnections) PlayerConnections(gameID int64) *playerConnections {
 }
 
 func (g *gameConnections) ConnectPlayer(ctx ctx.GameContext, connection *websocket.Conn) {
-	ctx.Log().Infow(
-		"Connecting player",
-		"remoteAddress", connection.RemoteAddr().String())
-
 	g.PlayerConnections(ctx.GameID()).ConnectPlayer(ctx, connection)
 }

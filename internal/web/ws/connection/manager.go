@@ -11,6 +11,7 @@ import (
 type Manager interface {
 	ConnectPlayer(ctx ctx.GameContext, connection *websocket.Conn)
 	Broadcast(ctx ctx.GameContext, message json.RawMessage)
+	WriteMessage(ctx ctx.GameContext, message json.RawMessage)
 }
 
 type ManagerImpl struct {
@@ -34,8 +35,9 @@ func (m *ManagerImpl) Broadcast(ctx ctx.GameContext, message json.RawMessage) {
 func (m *ManagerImpl) ConnectPlayer(ctx ctx.GameContext, connection *websocket.Conn) {
 	m.gameConnections.ConnectPlayer(ctx, connection)
 
-	m.playerConnectedSignal.Emit(ctx, signals.PlayerConnectedData{
-		Connection: connection,
-		GameID:     ctx.GameID(),
-	})
+	m.playerConnectedSignal.Emit(ctx, signals.PlayerConnectedData{})
+}
+
+func (m *ManagerImpl) WriteMessage(ctx ctx.GameContext, message json.RawMessage) {
+	m.gameConnections.Write(ctx, message)
 }
