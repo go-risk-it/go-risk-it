@@ -30,12 +30,16 @@ type Service interface {
 	) (*sqlc.GetRegionsByGameRow, error)
 	GetRegions(ctx ctx.GameContext) ([]sqlc.GetRegionsByGameRow, error)
 	GetRegionsQ(ctx ctx.GameContext, querier db.Querier) ([]sqlc.GetRegionsByGameRow, error)
-	UpdateTroopsInRegion(
+	UpdateTroopsInRegionQ(
 		ctx ctx.GameContext,
 		querier db.Querier,
 		region *sqlc.GetRegionsByGameRow,
 		troopsToAdd int64,
 	) error
+	UpdateRegionOwnerQ(
+		ctx ctx.GameContext,
+		querier db.Querier,
+		region *sqlc.GetRegionsByGameRow) error
 }
 type ServiceImpl struct {
 	querier           db.Querier
@@ -143,7 +147,7 @@ func extractRegionFrom(
 	return nil
 }
 
-func (s *ServiceImpl) UpdateTroopsInRegion(
+func (s *ServiceImpl) UpdateTroopsInRegionQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	region *sqlc.GetRegionsByGameRow,
@@ -172,6 +176,27 @@ func (s *ServiceImpl) UpdateTroopsInRegion(
 	}
 
 	ctx.Log().Infof("%sed region troops", action)
+
+	return nil
+}
+
+func (s *ServiceImpl) UpdateRegionOwnerQ(
+	ctx ctx.GameContext,
+	querier db.Querier,
+	region *sqlc.GetRegionsByGameRow,
+) error {
+	ctx.Log().Infow("updating region owner", "region", region.ExternalReference)
+
+	err := querier.UpdateRegionOwner(ctx, sqlc.UpdateRegionOwnerParams{
+		UserID: ctx.UserID(),
+		GameID: ctx.GameID(),
+		ID:     region.ID,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to update region owner: %w", err)
+	}
+
+	ctx.Log().Infow("updated region owner", "region", region.ExternalReference)
 
 	return nil
 }

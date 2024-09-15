@@ -333,3 +333,20 @@ func (q *Queries) SetGamePhase(ctx context.Context, arg SetGamePhaseParams) erro
 	_, err := q.db.Exec(ctx, setGamePhase, arg.ID, arg.CurrentPhaseID)
 	return err
 }
+
+const updateRegionOwner = `-- name: UpdateRegionOwner :exec
+UPDATE region
+SET player_id = (SELECT player.id FROM player WHERE user_id = $1 AND game_id = $2)
+WHERE region.id = $3
+`
+
+type UpdateRegionOwnerParams struct {
+	UserID string
+	GameID int64
+	ID     int64
+}
+
+func (q *Queries) UpdateRegionOwner(ctx context.Context, arg UpdateRegionOwnerParams) error {
+	_, err := q.db.Exec(ctx, updateRegionOwner, arg.UserID, arg.GameID, arg.ID)
+	return err
+}

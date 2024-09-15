@@ -25,6 +25,7 @@ type Querier interface {
 	InsertPlayers(ctx context.Context, arg []InsertPlayersParams) (int64, error)
 	InsertRegions(ctx context.Context, arg []InsertRegionsParams) (int64, error)
 	SetGamePhase(ctx context.Context, arg SetGamePhaseParams) error
+	UpdateRegionOwner(ctx context.Context, arg UpdateRegionOwnerParams) error
 }
 
 var _ Querier = (*Queries)(nil)

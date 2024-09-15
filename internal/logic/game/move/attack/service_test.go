@@ -386,11 +386,11 @@ func TestServiceImpl_AttackShouldUpdateRegionTroops(t *testing.T) {
 				Once()
 			regionService.
 				EXPECT().
-				UpdateTroopsInRegion(ctx, querier, attackingRegion, -test.expectedAttackerCasualties).
+				UpdateTroopsInRegionQ(ctx, querier, attackingRegion, -test.expectedAttackerCasualties).
 				Return(nil)
 			regionService.
 				EXPECT().
-				UpdateTroopsInRegion(ctx, querier, defendingRegion, -test.expectedDefenderCasualties).
+				UpdateTroopsInRegionQ(ctx, querier, defendingRegion, -test.expectedDefenderCasualties).
 				Return(nil)
 
 			_, err := service.PerformQ(ctx, querier, attack.Move{

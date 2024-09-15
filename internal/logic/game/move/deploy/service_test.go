@@ -191,7 +191,7 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 				Return(region, nil)
 			regionService.
 				EXPECT().
-				UpdateTroopsInRegion(ctx, querier, region, troops).
+				UpdateTroopsInRegionQ(ctx, querier, region, troops).
 				Return(nil)
 			querier.
 				EXPECT().

@@ -13,3 +13,8 @@ WHERE g.id = $1;
 UPDATE region
 SET troops = troops + $2
 WHERE id = $1;
+
+-- name: UpdateRegionOwner :exec
+UPDATE region
+SET player_id = (SELECT player.id FROM player WHERE user_id = $1 AND game_id = $2)
+WHERE region.id = $3;

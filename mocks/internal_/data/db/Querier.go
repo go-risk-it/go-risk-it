@@ -1032,6 +1032,53 @@ func (_c *Querier_SetGamePhase_Call) RunAndReturn(run func(context.Context, sqlc
 	return _c
 }
 
+// UpdateRegionOwner provides a mock function with given fields: _a0, arg
+func (_m *Querier) UpdateRegionOwner(_a0 context.Context, arg sqlc.UpdateRegionOwnerParams) error {
+	ret := _m.Called(_a0, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateRegionOwner")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.UpdateRegionOwnerParams) error); ok {
+		r0 = rf(_a0, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Querier_UpdateRegionOwner_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateRegionOwner'
+type Querier_UpdateRegionOwner_Call struct {
+	*mock.Call
+}
+
+// UpdateRegionOwner is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - arg sqlc.UpdateRegionOwnerParams
+func (_e *Querier_Expecter) UpdateRegionOwner(_a0 interface{}, arg interface{}) *Querier_UpdateRegionOwner_Call {
+	return &Querier_UpdateRegionOwner_Call{Call: _e.mock.On("UpdateRegionOwner", _a0, arg)}
+}
+
+func (_c *Querier_UpdateRegionOwner_Call) Run(run func(_a0 context.Context, arg sqlc.UpdateRegionOwnerParams)) *Querier_UpdateRegionOwner_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(sqlc.UpdateRegionOwnerParams))
+	})
+	return _c
+}
+
+func (_c *Querier_UpdateRegionOwner_Call) Return(_a0 error) *Querier_UpdateRegionOwner_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Querier_UpdateRegionOwner_Call) RunAndReturn(run func(context.Context, sqlc.UpdateRegionOwnerParams) error) *Querier_UpdateRegionOwner_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewQuerier creates a new instance of Querier. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewQuerier(t interface {

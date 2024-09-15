@@ -250,12 +250,60 @@ func (_c *Service_GetRegionsQ_Call) RunAndReturn(run func(ctx.GameContext, db.Qu
 	return _c
 }
 
-// UpdateTroopsInRegion provides a mock function with given fields: _a0, querier, _a2, troopsToAdd
-func (_m *Service) UpdateTroopsInRegion(_a0 ctx.GameContext, querier db.Querier, _a2 *sqlc.GetRegionsByGameRow, troopsToAdd int64) error {
+// UpdateRegionOwnerQ provides a mock function with given fields: _a0, querier, _a2
+func (_m *Service) UpdateRegionOwnerQ(_a0 ctx.GameContext, querier db.Querier, _a2 *sqlc.GetRegionsByGameRow) error {
+	ret := _m.Called(_a0, querier, _a2)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateRegionOwnerQ")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, *sqlc.GetRegionsByGameRow) error); ok {
+		r0 = rf(_a0, querier, _a2)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Service_UpdateRegionOwnerQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateRegionOwnerQ'
+type Service_UpdateRegionOwnerQ_Call struct {
+	*mock.Call
+}
+
+// UpdateRegionOwnerQ is a helper method to define mock.On call
+//   - _a0 ctx.GameContext
+//   - querier db.Querier
+//   - _a2 *sqlc.GetRegionsByGameRow
+func (_e *Service_Expecter) UpdateRegionOwnerQ(_a0 interface{}, querier interface{}, _a2 interface{}) *Service_UpdateRegionOwnerQ_Call {
+	return &Service_UpdateRegionOwnerQ_Call{Call: _e.mock.On("UpdateRegionOwnerQ", _a0, querier, _a2)}
+}
+
+func (_c *Service_UpdateRegionOwnerQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, _a2 *sqlc.GetRegionsByGameRow)) *Service_UpdateRegionOwnerQ_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(*sqlc.GetRegionsByGameRow))
+	})
+	return _c
+}
+
+func (_c *Service_UpdateRegionOwnerQ_Call) Return(_a0 error) *Service_UpdateRegionOwnerQ_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Service_UpdateRegionOwnerQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, *sqlc.GetRegionsByGameRow) error) *Service_UpdateRegionOwnerQ_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateTroopsInRegionQ provides a mock function with given fields: _a0, querier, _a2, troopsToAdd
+func (_m *Service) UpdateTroopsInRegionQ(_a0 ctx.GameContext, querier db.Querier, _a2 *sqlc.GetRegionsByGameRow, troopsToAdd int64) error {
 	ret := _m.Called(_a0, querier, _a2, troopsToAdd)
 
 	if len(ret) == 0 {
-		panic("no return value specified for UpdateTroopsInRegion")
+		panic("no return value specified for UpdateTroopsInRegionQ")
 	}
 
 	var r0 error
@@ -268,33 +316,33 @@ func (_m *Service) UpdateTroopsInRegion(_a0 ctx.GameContext, querier db.Querier,
 	return r0
 }
 
-// Service_UpdateTroopsInRegion_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateTroopsInRegion'
-type Service_UpdateTroopsInRegion_Call struct {
+// Service_UpdateTroopsInRegionQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateTroopsInRegionQ'
+type Service_UpdateTroopsInRegionQ_Call struct {
 	*mock.Call
 }
 
-// UpdateTroopsInRegion is a helper method to define mock.On call
+// UpdateTroopsInRegionQ is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
 //   - _a2 *sqlc.GetRegionsByGameRow
 //   - troopsToAdd int64
-func (_e *Service_Expecter) UpdateTroopsInRegion(_a0 interface{}, querier interface{}, _a2 interface{}, troopsToAdd interface{}) *Service_UpdateTroopsInRegion_Call {
-	return &Service_UpdateTroopsInRegion_Call{Call: _e.mock.On("UpdateTroopsInRegion", _a0, querier, _a2, troopsToAdd)}
+func (_e *Service_Expecter) UpdateTroopsInRegionQ(_a0 interface{}, querier interface{}, _a2 interface{}, troopsToAdd interface{}) *Service_UpdateTroopsInRegionQ_Call {
+	return &Service_UpdateTroopsInRegionQ_Call{Call: _e.mock.On("UpdateTroopsInRegionQ", _a0, querier, _a2, troopsToAdd)}
 }
 
-func (_c *Service_UpdateTroopsInRegion_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, _a2 *sqlc.GetRegionsByGameRow, troopsToAdd int64)) *Service_UpdateTroopsInRegion_Call {
+func (_c *Service_UpdateTroopsInRegionQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, _a2 *sqlc.GetRegionsByGameRow, troopsToAdd int64)) *Service_UpdateTroopsInRegionQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(*sqlc.GetRegionsByGameRow), args[3].(int64))
 	})
 	return _c
 }
 
-func (_c *Service_UpdateTroopsInRegion_Call) Return(_a0 error) *Service_UpdateTroopsInRegion_Call {
+func (_c *Service_UpdateTroopsInRegionQ_Call) Return(_a0 error) *Service_UpdateTroopsInRegionQ_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Service_UpdateTroopsInRegion_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, *sqlc.GetRegionsByGameRow, int64) error) *Service_UpdateTroopsInRegion_Call {
+func (_c *Service_UpdateTroopsInRegionQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, *sqlc.GetRegionsByGameRow, int64) error) *Service_UpdateTroopsInRegionQ_Call {
 	_c.Call.Return(run)
 	return _c
 }

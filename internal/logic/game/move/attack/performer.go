@@ -28,6 +28,8 @@ func (s *ServiceImpl) PerformQ(
 	}
 
 	if err := s.validate(ctx, attackingRegion, defendingRegion, move); err != nil {
+		ctx.Log().Infow("validation failed", "error", err)
+
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
@@ -61,7 +63,7 @@ func (s *ServiceImpl) perform(
 
 	ctx.Log().Infow("updating region troops")
 
-	if err := s.regionService.UpdateTroopsInRegion(
+	if err := s.regionService.UpdateTroopsInRegionQ(
 		ctx,
 		querier,
 		attackingRegion,
@@ -70,7 +72,7 @@ func (s *ServiceImpl) perform(
 		return nil, fmt.Errorf("failed to decrease troops in attacking region: %w", err)
 	}
 
-	if err := s.regionService.UpdateTroopsInRegion(
+	if err := s.regionService.UpdateTroopsInRegionQ(
 		ctx,
 		querier,
 		defendingRegion,
@@ -211,6 +213,8 @@ func checkDeclaredValues(
 	defendingRegion *sqlc.GetRegionsByGameRow,
 	move Move,
 ) error {
+	ctx.Log().Infow("checking declared values")
+
 	if attackingRegion.Troops != move.TroopsInSource {
 		return errors.New("attacking region doesn't have the declared number of troops")
 	}

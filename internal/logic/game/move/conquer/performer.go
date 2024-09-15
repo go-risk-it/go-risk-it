@@ -1,6 +1,7 @@
 package conquer
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
@@ -33,7 +34,11 @@ func (s *ServiceImpl) PerformQ(
 		return nil, fmt.Errorf("unable to get defending region: %w", err)
 	}
 
-	if err := s.regionService.UpdateTroopsInRegion(
+	if sourceRegion.Troops-move.Troops < 1 {
+		return nil, errors.New("source region does not have enough troops")
+	}
+
+	if err := s.regionService.UpdateTroopsInRegionQ(
 		ctx,
 		querier,
 		sourceRegion,
@@ -42,13 +47,23 @@ func (s *ServiceImpl) PerformQ(
 		return nil, fmt.Errorf("failed to decrease troops in source region: %w", err)
 	}
 
-	if err := s.regionService.UpdateTroopsInRegion(
+	if err := s.regionService.UpdateTroopsInRegionQ(
 		ctx,
 		querier,
 		targetRegion,
 		move.Troops,
 	); err != nil {
 		return nil, fmt.Errorf("failed to increase troops in target region: %w", err)
+	}
+
+	ctx.Log().Infow("troops updated successfully")
+
+	if err := s.regionService.UpdateRegionOwnerQ(
+		ctx,
+		querier,
+		targetRegion,
+	); err != nil {
+		return nil, fmt.Errorf("failed to update region owner: %w", err)
 	}
 
 	ctx.Log().Infow("conquer executed successfully")
