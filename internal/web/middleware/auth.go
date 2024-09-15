@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -73,16 +74,16 @@ func (m *AuthMiddlewareImpl) verifyJWT(request *http.Request) (string, error) {
 	}
 
 	if !token.Valid {
-		return "", fmt.Errorf("invalid token")
+		return "", errors.New("invalid token")
 	}
 
 	if _, ok := token.Claims.(jwt.MapClaims); !ok {
-		return "", fmt.Errorf("failed to parse claims")
+		return "", errors.New("failed to parse claims")
 	}
 
 	subject, err := token.Claims.GetSubject()
 	if err != nil {
-		return "", fmt.Errorf("failed to extract UserID")
+		return "", errors.New("failed to extract UserID")
 	}
 
 	return subject, nil

@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -60,7 +61,7 @@ func (g *GameMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 func buildMoveContext(request *http.Request, gameID int64) (*http.Request, error) {
 	userContext, ok := request.Context().(ctx.UserContext)
 	if !ok {
-		return nil, fmt.Errorf("user context not found")
+		return nil, errors.New("user context not found")
 	}
 
 	gameContext := ctx.WithGameID(userContext, gameID)

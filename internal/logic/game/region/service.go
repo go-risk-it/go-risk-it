@@ -124,7 +124,7 @@ func (s *ServiceImpl) GetRegionQ(
 
 	result := extractRegionFrom(region, regions)
 	if result == nil {
-		return nil, fmt.Errorf("region is not in game")
+		return nil, errors.New("region is not in game")
 	}
 
 	return result, nil

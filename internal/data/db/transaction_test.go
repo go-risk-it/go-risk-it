@@ -2,7 +2,7 @@ package db_test
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
@@ -60,7 +60,7 @@ func TestQueries_ExecuteInTransaction_ShouldRollbackIfErr(t *testing.T) {
 	querier := db.New(mockDB)
 
 	_, err := querier.ExecuteInTransaction(ctx, func(querier db.Querier) (interface{}, error) {
-		return nil, fmt.Errorf("test")
+		return nil, errors.New("test")
 	})
 	require.Error(t, err)
 

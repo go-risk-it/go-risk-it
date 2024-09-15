@@ -35,7 +35,7 @@ func GetQuerier(ctx ctx.LogContext) (db.Querier, error) {
 
 	pathToMigrationFiles := filepath.Dir(path) + "/sqlc/migrations"
 
-	mig, err := migrate.New(fmt.Sprintf("file:%s", pathToMigrationFiles), connStr)
+	mig, err := migrate.New("file:"+pathToMigrationFiles, connStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to migrate data: %w", err)
 	}

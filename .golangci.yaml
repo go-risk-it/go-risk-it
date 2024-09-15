@@ -14,6 +14,8 @@ issues:
         - funlen
         - dogsled
         - lll
+  exclude-dirs:
+    - lib
 linters-settings:
   exhaustive:
     default-signifies-exhaustive: true
@@ -52,22 +54,13 @@ linters:
     - contextcheck
     # error
     - depguard
+    - err113
     - gochecknoglobals
     - gomnd
+    - mnd
     - exhaustruct
     - ireturn
     #    deprecated linters
-    - golint
-    - interfacer
-    - scopelint
-    - ifshort
-    - maligned
-    - varcheck
-    - exhaustivestruct
-    - structcheck
-    - nosnakecase
-    - deadcode
-    - goerr113
 #  disable-all: true
 #  enable:
 #    - errcheck

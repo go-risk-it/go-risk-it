@@ -53,8 +53,6 @@ func New(
 		} else {
 			log.Infow("Connection closed", "remoteAddress", connection.RemoteAddr().String())
 		}
-
-		connectionManager.DisconnectPlayer(connection, 1)
 	})
 
 	return &upgrader

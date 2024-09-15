@@ -84,7 +84,6 @@ func TestServiceImpl_ShouldFailOnTurnCheck(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			querier, playerService, service := setup(t)
@@ -99,6 +98,7 @@ func TestServiceImpl_ShouldFailOnTurnCheck(t *testing.T) {
 				EXPECT().
 				GetPlayersQ(ctx, querier).
 				Return(players, nil)
+
 			game := &state.Game{
 				ID:    ctx.GameID(),
 				Phase: test.phase,

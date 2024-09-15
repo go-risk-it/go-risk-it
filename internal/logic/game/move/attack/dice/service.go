@@ -30,7 +30,7 @@ func (s *ServiceImpl) RollDefendingDices(n int) []int {
 func roll(dices int, roller roller.Roller) []int {
 	result := make([]int, 0, dices)
 
-	for i := 0; i < dices; i++ {
+	for range dices {
 		result = append(result, roller.Roll())
 	}
 

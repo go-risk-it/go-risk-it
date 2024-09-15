@@ -17,6 +17,6 @@ repos:
         exclude: "^(mocks/.*|internal/data/(copyfrom|data|models|querier|query.sql)).go$"
   # linting
   - repo: https://github.com/golangci/golangci-lint
-    rev: v1.55.2
+    rev: v1.61.0
     hooks:
       - id: golangci-lint-full

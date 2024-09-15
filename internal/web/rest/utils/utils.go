@@ -106,7 +106,7 @@ func decode[T any](dec *json.Decoder, dst T) error {
 
 		case strings.HasPrefix(err.Error(), "json: unknown field "):
 			fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
-			msg := fmt.Sprintf("Request body contains unknown field %s", fieldName)
+			msg := "Request body contains unknown field " + fieldName
 
 			return &malformedRequestError{status: http.StatusBadRequest, msg: msg}
 

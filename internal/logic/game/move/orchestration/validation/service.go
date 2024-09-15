@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
@@ -34,7 +35,7 @@ func (s *ServiceImpl) Validate(ctx ctx.MoveContext, querier db.Querier, game *st
 
 	thisPlayer := extractPlayerFrom(players, ctx.UserID())
 	if thisPlayer == nil {
-		return fmt.Errorf("player is not in game")
+		return errors.New("player is not in game")
 	}
 
 	if err := s.checkTurn(game, int64(len(players)), thisPlayer.TurnIndex); err != nil {
@@ -52,7 +53,7 @@ func (s *ServiceImpl) checkTurn(
 	playerTurn int64,
 ) error {
 	if game.Turn%playersInGame != playerTurn {
-		return fmt.Errorf("it is not the player's turn")
+		return errors.New("it is not the player's turn")
 	}
 
 	return nil

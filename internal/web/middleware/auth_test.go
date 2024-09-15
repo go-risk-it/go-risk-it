@@ -2,7 +2,6 @@ package middleware_test
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -66,7 +65,6 @@ func TestAuthMiddleware_Wrap(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -87,7 +85,7 @@ func TestAuthMiddleware_Wrap(t *testing.T) {
 				nil,
 			)
 
-			request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", test.token))
+			request.Header.Set("Authorization", "Bearer "+test.token)
 
 			wrappedHandler.ServeHTTP(responseWriter, request)
 

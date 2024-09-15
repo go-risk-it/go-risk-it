@@ -1,6 +1,7 @@
 package orchestration
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
@@ -91,7 +92,7 @@ func (s *OrchestratorImpl[T, R]) OrchestrateMoveQ(
 	}
 
 	if gameState.Phase != phase {
-		return fmt.Errorf("game is not in the correct phase to perform move")
+		return errors.New("game is not in the correct phase to perform move")
 	}
 
 	if err := s.validationService.Validate(ctx, querier, gameState); err != nil {

@@ -14,7 +14,6 @@ var Module = fx.Options(
 		fx.Annotate(
 			connection.NewManager,
 			fx.As(new(connection.Manager)),
-			fx.ParamTags(`group:"fetchers"`),
 		),
 		fx.Annotate(
 			connection.New,

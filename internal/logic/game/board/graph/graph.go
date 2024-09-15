@@ -1,6 +1,7 @@
 package graph
 
 import (
+	"errors"
 	"fmt"
 	"slices"
 
@@ -60,17 +61,17 @@ func New(board *dto.Board) (*GraphImpl, error) {
 
 func validate(board *dto.Board) error {
 	if len(board.Regions) == 0 {
-		return fmt.Errorf("no regions")
+		return errors.New("no regions")
 	}
 
 	if len(board.Borders) == 0 {
-		return fmt.Errorf("no borders")
+		return errors.New("no borders")
 	}
 
 	regionNames := make(map[string]struct{})
 	for _, region := range board.Regions {
 		if _, ok := regionNames[region.ExternalReference]; ok {
-			return fmt.Errorf("duplicate region")
+			return errors.New("duplicate region")
 		}
 
 		regionNames[region.ExternalReference] = struct{}{}
@@ -87,15 +88,15 @@ func validate(board *dto.Board) error {
 func validateBorders(board *dto.Board, regionNames map[string]struct{}) error {
 	for _, border := range board.Borders {
 		if border.Source == "" {
-			return fmt.Errorf("empty source")
+			return errors.New("empty source")
 		}
 
 		if border.Target == "" {
-			return fmt.Errorf("empty target")
+			return errors.New("empty target")
 		}
 
 		if border.Source == border.Target {
-			return fmt.Errorf("self-loop")
+			return errors.New("self-loop")
 		}
 
 		if _, ok := regionNames[border.Source]; !ok {

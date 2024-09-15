@@ -43,6 +43,7 @@ func HandlePlayerConnected(
 		stateChannel := make(chan json.RawMessage, len(params.Fetchers))
 
 		gameContext.Log().Infow("fetching states", "count", len(params.Fetchers))
+
 		for _, fetcher := range params.Fetchers {
 			go fetcher.FetchState(gameContext, stateChannel)
 		}
@@ -78,7 +79,7 @@ func wait(
 	data signals.PlayerConnectedData,
 	ctx context.Context,
 ) {
-	for i := 0; i < len(params.Fetchers)+1; i++ {
+	for range len(params.Fetchers) + 1 {
 		select {
 		case state := <-stateChannel:
 			gameContext.Log().Infow("got state, writing message")

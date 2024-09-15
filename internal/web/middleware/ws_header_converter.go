@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"fmt"
+	"errors"
 	"net/http"
 	"strings"
 
@@ -56,7 +56,7 @@ func (m *WebsocketHeaderConversionMiddlewareImpl) Wrap(routeToWrap route.Route) 
 
 func extractToken(subprotocol string) (string, error) {
 	if !strings.HasPrefix(subprotocol, "risk-it.websocket.auth.token, ") {
-		return "", fmt.Errorf("invalid subprotocol")
+		return "", errors.New("invalid subprotocol")
 	}
 
 	return strings.TrimPrefix(subprotocol, "risk-it.websocket.auth.token, "), nil

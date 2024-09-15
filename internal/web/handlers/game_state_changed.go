@@ -33,6 +33,7 @@ func HandleGameStateChanged(
 		}
 
 		var fetcher phase.Fetcher
+
 		switch gameState.Phase {
 		case sqlc.PhaseTypeDEPLOY:
 			fetcher = deployPhaseFetcher

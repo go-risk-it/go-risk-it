@@ -198,7 +198,6 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -223,6 +222,7 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 					UserID:            test.defendingRegionOwner,
 					Troops:            test.troopsInTarget,
 				}, nil)
+
 			if !test.regionsAreNeighboring {
 				boardService.
 					EXPECT().
@@ -342,7 +342,6 @@ func TestServiceImpl_AttackShouldUpdateRegionTroops(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -474,7 +473,6 @@ func TestServiceImpl_HasConqueredQ(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -543,7 +541,6 @@ func TestServiceImpl_CanContinueAttackingQ(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 

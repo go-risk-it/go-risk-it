@@ -16,12 +16,12 @@ LOGGER = logging.getLogger(__name__)
 @when("{player} connects to the game")
 def step_impl(context: RiskItContext, player: str):
     conn = create_connection(
-        "ws://localhost:8000/ws",
+        f"ws://localhost:8000/ws?gameID={context.game_id}",
         timeout=2,
-        header=["Authorization: Bearer " + context.players[player].user.jwt],
+        header=[f"Authorization: Bearer {context.players[player].user.jwt}"],
     )
     context.players[player].connection = conn
-    conn.send(build_subscribe_message(context.game_id))
+    # conn.send(build_subscribe_message(context.game_id))
 
 
 def deserialize(

@@ -1,6 +1,7 @@
 package attack
 
 import (
+	"errors"
 	"fmt"
 	"slices"
 
@@ -93,7 +94,7 @@ func computeCasualties(ctx ctx.MoveContext, attackDices, defenseDices []int) *ca
 	slices.SortFunc(defenseDices, descending)
 
 	matches := min(len(attackDices), len(defenseDices))
-	for i := 0; i < matches; i++ {
+	for i := range matches {
 		if attackDices[i] > defenseDices[i] {
 			casualties.defending++
 		} else {
@@ -141,7 +142,7 @@ func (s *ServiceImpl) validate(
 	}
 
 	if !areNeighbours {
-		return fmt.Errorf("attacking region cannot reach defending region")
+		return errors.New("attacking region cannot reach defending region")
 	}
 
 	ctx.Log().Infow("attack move validation passed", "move", move)
@@ -158,11 +159,11 @@ func checkTroops(
 	ctx.Log().Infow("checking troops")
 
 	if move.AttackingTroops < 1 {
-		return fmt.Errorf("at least one troop is required to attack")
+		return errors.New("at least one troop is required to attack")
 	}
 
 	if attackingRegion.Troops <= move.AttackingTroops {
-		return fmt.Errorf("attacking region does not have enough troops")
+		return errors.New("attacking region does not have enough troops")
 	}
 
 	if defendingRegion.Troops < 1 {
@@ -172,7 +173,7 @@ func checkTroops(
 			defendingRegion.ExternalReference,
 		)
 
-		return fmt.Errorf("defending region does not have enough troops")
+		return errors.New("defending region does not have enough troops")
 	}
 
 	if err := checkDeclaredValues(ctx, attackingRegion, defendingRegion, move); err != nil {
@@ -192,11 +193,11 @@ func checkRegionOwnership(
 	ctx.Log().Infow("checking region ownership")
 
 	if attackingRegion.UserID != ctx.UserID() {
-		return fmt.Errorf("attacking region is not owned by player")
+		return errors.New("attacking region is not owned by player")
 	}
 
 	if defendingRegion.UserID == ctx.UserID() {
-		return fmt.Errorf("cannot attack your own region")
+		return errors.New("cannot attack your own region")
 	}
 
 	ctx.Log().Infow("region ownership check passed")
@@ -211,11 +212,11 @@ func checkDeclaredValues(
 	move Move,
 ) error {
 	if attackingRegion.Troops != move.TroopsInSource {
-		return fmt.Errorf("attacking region doesn't have the declared number of troops")
+		return errors.New("attacking region doesn't have the declared number of troops")
 	}
 
 	if defendingRegion.Troops != move.TroopsInTarget {
-		return fmt.Errorf("defending region doesn't have the declared number of troops")
+		return errors.New("defending region doesn't have the declared number of troops")
 	}
 
 	ctx.Log().Infow("declared values check passed")

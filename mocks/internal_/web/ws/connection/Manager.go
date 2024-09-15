@@ -93,40 +93,6 @@ func (_c *Manager_ConnectPlayer_Call) RunAndReturn(run func(ctx.GameContext, *we
 	return _c
 }
 
-// DisconnectPlayer provides a mock function with given fields: _a0, gameID
-func (_m *Manager) DisconnectPlayer(_a0 *websocket.Conn, gameID int64) {
-	_m.Called(_a0, gameID)
-}
-
-// Manager_DisconnectPlayer_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DisconnectPlayer'
-type Manager_DisconnectPlayer_Call struct {
-	*mock.Call
-}
-
-// DisconnectPlayer is a helper method to define mock.On call
-//   - _a0 *websocket.Conn
-//   - gameID int64
-func (_e *Manager_Expecter) DisconnectPlayer(_a0 interface{}, gameID interface{}) *Manager_DisconnectPlayer_Call {
-	return &Manager_DisconnectPlayer_Call{Call: _e.mock.On("DisconnectPlayer", _a0, gameID)}
-}
-
-func (_c *Manager_DisconnectPlayer_Call) Run(run func(_a0 *websocket.Conn, gameID int64)) *Manager_DisconnectPlayer_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*websocket.Conn), args[1].(int64))
-	})
-	return _c
-}
-
-func (_c *Manager_DisconnectPlayer_Call) Return() *Manager_DisconnectPlayer_Call {
-	_c.Call.Return()
-	return _c
-}
-
-func (_c *Manager_DisconnectPlayer_Call) RunAndReturn(run func(*websocket.Conn, int64)) *Manager_DisconnectPlayer_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // NewManager creates a new instance of Manager. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewManager(t interface {

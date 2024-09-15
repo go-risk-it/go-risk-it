@@ -2,7 +2,7 @@ package region_test
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 
 	ctx2 "github.com/go-risk-it/go-risk-it/internal/ctx"
@@ -174,7 +174,7 @@ func TestServiceImpl_CreateRegions_InsertRegionsError(t *testing.T) {
 		{ExternalReference: "greenland", PlayerID: 3, Troops: 3},
 		{ExternalReference: "alberta", PlayerID: 1, Troops: 3},
 		{ExternalReference: "ontario", PlayerID: 2, Troops: 3},
-	}).Return(int64(0), fmt.Errorf("insert regions error"))
+	}).Return(int64(0), errors.New("insert regions error"))
 
 	// Call the method under test
 	err := service.CreateRegions(ctx, querier, players, regions)
