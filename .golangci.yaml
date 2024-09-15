@@ -15,7 +15,7 @@ issues:
         - dogsled
         - lll
   exclude-dirs:
-    - lib
+    - internal/upgradablerw_mutex
 linters-settings:
   exhaustive:
     default-signifies-exhaustive: true
