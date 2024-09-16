@@ -9,6 +9,7 @@ import (
 type LogContext interface {
 	context.Context
 	Log() *zap.SugaredLogger
+	SetLog(log *zap.SugaredLogger)
 }
 
 type logContext struct {
@@ -27,4 +28,8 @@ func WithLog(ctx context.Context, log *zap.SugaredLogger) LogContext {
 		Context: ctx,
 		log:     log,
 	}
+}
+
+func (c *logContext) SetLog(log *zap.SugaredLogger) {
+	c.log = log
 }

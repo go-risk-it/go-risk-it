@@ -53,3 +53,7 @@ func (c *moveContext) Err() error {
 func (c *moveContext) Value(key any) any {
 	return c.GameContext.Value(key)
 }
+
+func (c *moveContext) SetLog(log *zap.SugaredLogger) {
+	c.GameContext.SetLog(log)
+}

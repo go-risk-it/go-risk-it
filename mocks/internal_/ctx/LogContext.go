@@ -217,6 +217,39 @@ func (_c *LogContext_Log_Call) RunAndReturn(run func() *zap.SugaredLogger) *LogC
 	return _c
 }
 
+// SetLog provides a mock function with given fields: log
+func (_m *LogContext) SetLog(log *zap.SugaredLogger) {
+	_m.Called(log)
+}
+
+// LogContext_SetLog_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetLog'
+type LogContext_SetLog_Call struct {
+	*mock.Call
+}
+
+// SetLog is a helper method to define mock.On call
+//   - log *zap.SugaredLogger
+func (_e *LogContext_Expecter) SetLog(log interface{}) *LogContext_SetLog_Call {
+	return &LogContext_SetLog_Call{Call: _e.mock.On("SetLog", log)}
+}
+
+func (_c *LogContext_SetLog_Call) Run(run func(log *zap.SugaredLogger)) *LogContext_SetLog_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*zap.SugaredLogger))
+	})
+	return _c
+}
+
+func (_c *LogContext_SetLog_Call) Return() *LogContext_SetLog_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *LogContext_SetLog_Call) RunAndReturn(run func(*zap.SugaredLogger)) *LogContext_SetLog_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Value provides a mock function with given fields: key
 func (_m *LogContext) Value(key interface{}) interface{} {
 	ret := _m.Called(key)

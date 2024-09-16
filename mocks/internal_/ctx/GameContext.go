@@ -262,6 +262,39 @@ func (_c *GameContext_Log_Call) RunAndReturn(run func() *zap.SugaredLogger) *Gam
 	return _c
 }
 
+// SetLog provides a mock function with given fields: log
+func (_m *GameContext) SetLog(log *zap.SugaredLogger) {
+	_m.Called(log)
+}
+
+// GameContext_SetLog_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetLog'
+type GameContext_SetLog_Call struct {
+	*mock.Call
+}
+
+// SetLog is a helper method to define mock.On call
+//   - log *zap.SugaredLogger
+func (_e *GameContext_Expecter) SetLog(log interface{}) *GameContext_SetLog_Call {
+	return &GameContext_SetLog_Call{Call: _e.mock.On("SetLog", log)}
+}
+
+func (_c *GameContext_SetLog_Call) Run(run func(log *zap.SugaredLogger)) *GameContext_SetLog_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*zap.SugaredLogger))
+	})
+	return _c
+}
+
+func (_c *GameContext_SetLog_Call) Return() *GameContext_SetLog_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *GameContext_SetLog_Call) RunAndReturn(run func(*zap.SugaredLogger)) *GameContext_SetLog_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // UserID provides a mock function with given fields:
 func (_m *GameContext) UserID() string {
 	ret := _m.Called()
