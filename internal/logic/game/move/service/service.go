@@ -7,12 +7,12 @@ import (
 )
 
 type Performer[T, R any] interface {
-	PerformQ(ctx ctx.MoveContext, querier db.Querier, move T) (R, error)
+	PerformQ(ctx ctx.GameContext, querier db.Querier, move T) (R, error)
 }
 
 type Advancer[R any] interface {
 	AdvanceQ(
-		ctx ctx.MoveContext,
+		ctx ctx.GameContext,
 		querier db.Querier,
 		targetPhase sqlc.PhaseType,
 		performResult R,
@@ -20,7 +20,7 @@ type Advancer[R any] interface {
 }
 
 type PhaseWalker interface {
-	Walk(ctx ctx.MoveContext, querier db.Querier) (sqlc.PhaseType, error)
+	Walk(ctx ctx.GameContext, querier db.Querier) (sqlc.PhaseType, error)
 }
 
 type Service[T, R any] interface {

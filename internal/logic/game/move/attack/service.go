@@ -27,8 +27,8 @@ type MoveResult struct {
 type Service interface {
 	service.Service[Move, *MoveResult]
 
-	HasConqueredQ(ctx ctx.MoveContext, querier db.Querier) (bool, error)
-	CanContinueAttackingQ(ctx ctx.MoveContext, querier db.Querier) (bool, error)
+	HasConqueredQ(ctx ctx.GameContext, querier db.Querier) (bool, error)
+	CanContinueAttackingQ(ctx ctx.GameContext, querier db.Querier) (bool, error)
 }
 
 type ServiceImpl struct {

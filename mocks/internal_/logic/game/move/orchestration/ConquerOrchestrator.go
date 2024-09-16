@@ -25,7 +25,7 @@ func (_m *ConquerOrchestrator) EXPECT() *ConquerOrchestrator_Expecter {
 }
 
 // OrchestrateMove provides a mock function with given fields: _a0, phase, move
-func (_m *ConquerOrchestrator) OrchestrateMove(_a0 ctx.MoveContext, phase sqlc.PhaseType, move conquer.Move) error {
+func (_m *ConquerOrchestrator) OrchestrateMove(_a0 ctx.GameContext, phase sqlc.PhaseType, move conquer.Move) error {
 	ret := _m.Called(_a0, phase, move)
 
 	if len(ret) == 0 {
@@ -33,7 +33,7 @@ func (_m *ConquerOrchestrator) OrchestrateMove(_a0 ctx.MoveContext, phase sqlc.P
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(ctx.MoveContext, sqlc.PhaseType, conquer.Move) error); ok {
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, sqlc.PhaseType, conquer.Move) error); ok {
 		r0 = rf(_a0, phase, move)
 	} else {
 		r0 = ret.Error(0)
@@ -48,16 +48,16 @@ type ConquerOrchestrator_OrchestrateMove_Call struct {
 }
 
 // OrchestrateMove is a helper method to define mock.On call
-//   - _a0 ctx.MoveContext
+//   - _a0 ctx.GameContext
 //   - phase sqlc.PhaseType
 //   - move conquer.Move
 func (_e *ConquerOrchestrator_Expecter) OrchestrateMove(_a0 interface{}, phase interface{}, move interface{}) *ConquerOrchestrator_OrchestrateMove_Call {
 	return &ConquerOrchestrator_OrchestrateMove_Call{Call: _e.mock.On("OrchestrateMove", _a0, phase, move)}
 }
 
-func (_c *ConquerOrchestrator_OrchestrateMove_Call) Run(run func(_a0 ctx.MoveContext, phase sqlc.PhaseType, move conquer.Move)) *ConquerOrchestrator_OrchestrateMove_Call {
+func (_c *ConquerOrchestrator_OrchestrateMove_Call) Run(run func(_a0 ctx.GameContext, phase sqlc.PhaseType, move conquer.Move)) *ConquerOrchestrator_OrchestrateMove_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.MoveContext), args[1].(sqlc.PhaseType), args[2].(conquer.Move))
+		run(args[0].(ctx.GameContext), args[1].(sqlc.PhaseType), args[2].(conquer.Move))
 	})
 	return _c
 }
@@ -67,7 +67,7 @@ func (_c *ConquerOrchestrator_OrchestrateMove_Call) Return(_a0 error) *ConquerOr
 	return _c
 }
 
-func (_c *ConquerOrchestrator_OrchestrateMove_Call) RunAndReturn(run func(ctx.MoveContext, sqlc.PhaseType, conquer.Move) error) *ConquerOrchestrator_OrchestrateMove_Call {
+func (_c *ConquerOrchestrator_OrchestrateMove_Call) RunAndReturn(run func(ctx.GameContext, sqlc.PhaseType, conquer.Move) error) *ConquerOrchestrator_OrchestrateMove_Call {
 	_c.Call.Return(run)
 	return _c
 }

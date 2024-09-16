@@ -20,21 +20,21 @@ var Module = fx.Options(
 func serveMove[T any](
 	writer http.ResponseWriter,
 	req *http.Request,
-	perform func(ctx ctx.MoveContext, move T) error,
+	perform func(ctx ctx.GameContext, move T) error,
 ) {
 	moveRequest, err := restutils.DecodeRequest[T](writer, req)
 	if err != nil {
 		return
 	}
 
-	moveContext, ok := req.Context().(ctx.MoveContext)
+	gameContext, ok := req.Context().(ctx.GameContext)
 	if !ok {
 		http.Error(writer, "invalid move context", http.StatusInternalServerError)
 
 		return
 	}
 
-	if err := perform(moveContext, moveRequest); err != nil {
+	if err := perform(gameContext, moveRequest); err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 	}
 

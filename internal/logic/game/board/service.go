@@ -14,7 +14,7 @@ import (
 type Service interface {
 	GetBoardRegions(ctx ctx.LogContext) ([]string, error)
 	AreNeighbours(context ctx.LogContext, source string, target string) (bool, error)
-	CanPlayerReach(context ctx.MoveContext, source string, target string) (bool, error)
+	CanPlayerReach(context ctx.GameContext, source string, target string) (bool, error)
 }
 
 type ServiceImpl struct {
@@ -38,7 +38,7 @@ func (s *ServiceImpl) AreNeighbours(
 }
 
 func (s *ServiceImpl) CanPlayerReach(
-	context ctx.MoveContext,
+	context ctx.GameContext,
 	source string,
 	target string,
 ) (bool, error) {

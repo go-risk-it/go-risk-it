@@ -9,7 +9,7 @@ import (
 )
 
 func (s *ServiceImpl) AdvanceQ(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	querier db.Querier,
 	targetPhase sqlc.PhaseType,
 	_ *MoveResult,

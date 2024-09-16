@@ -35,7 +35,7 @@ func setup(t *testing.T) (
 	return querier, playerService, gameService, regionService, service
 }
 
-func input() (string, int64, int64, ctx.MoveContext) {
+func input() (string, int64, int64, ctx.GameContext) {
 	gameID := int64(1)
 	userID := "Giovanni"
 	regionReference := "greenland"
@@ -49,10 +49,7 @@ func input() (string, int64, int64, ctx.MoveContext) {
 			currentTroops,
 		), int64(
 			desiredTroops,
-		), ctx.NewMoveContext(
-			userContext,
-			gameContext,
-		)
+		), gameContext
 }
 
 func TestServiceImpl_DeployShouldFailWhenPlayerDoesntHaveEnoughDeployableTroops(t *testing.T) {

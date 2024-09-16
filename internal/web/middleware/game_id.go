@@ -37,14 +37,7 @@ func (g *GameMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			g.log.Debug("applying game middleware")
 
-			gameID, err := extractGameID(request)
-			if err != nil {
-				http.Error(writer, err.Error(), http.StatusBadRequest)
-
-				return
-			}
-
-			moveContext, err := buildMoveContext(request, gameID)
+			gameContext, err := buildGameContext(writer, request)
 			if err != nil {
 				http.Error(writer, "cannot build move context", http.StatusInternalServerError)
 
@@ -53,20 +46,25 @@ func (g *GameMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 
 			routeToWrap.ServeHTTP(
 				writer,
-				moveContext,
+				request.WithContext(gameContext),
 			)
 		}))
 }
 
-func buildMoveContext(request *http.Request, gameID int64) (*http.Request, error) {
+func buildGameContext(writer http.ResponseWriter, request *http.Request) (ctx.GameContext, error) {
+	gameID, err := extractGameID(request)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+
+		return nil, err
+	}
+
 	userContext, ok := request.Context().(ctx.UserContext)
 	if !ok {
 		return nil, errors.New("user context not found")
 	}
 
-	gameContext := ctx.WithGameID(userContext, gameID)
-
-	return request.WithContext(ctx.NewMoveContext(userContext, gameContext)), nil
+	return ctx.WithGameID(userContext, gameID), nil
 }
 
 func extractGameID(req *http.Request) (int64, error) {

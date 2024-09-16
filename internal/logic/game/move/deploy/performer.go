@@ -10,7 +10,7 @@ import (
 )
 
 func (s *ServiceImpl) PerformQ(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	querier db.Querier,
 	move Move,
 ) (*MoveResult, error) {
@@ -47,7 +47,7 @@ func (s *ServiceImpl) PerformQ(
 }
 
 func (s *ServiceImpl) executeDeploy(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	querier db.Querier,
 	region *sqlc.GetRegionsByGameRow,
 	troops int64,
@@ -80,7 +80,7 @@ func (s *ServiceImpl) executeDeploy(
 }
 
 func (s *ServiceImpl) decreaseDeployableTroopsQ(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	querier db.Querier,
 	troops int64,
 ) error {

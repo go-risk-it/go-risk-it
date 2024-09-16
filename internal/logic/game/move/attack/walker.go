@@ -22,7 +22,7 @@ type ConquerPhase struct {
 }
 
 func (s *ServiceImpl) Walk(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	querier db.Querier,
 ) (sqlc.PhaseType, error) {
 	hasConquered, err := s.HasConqueredQ(ctx, querier)
@@ -53,7 +53,7 @@ func (s *ServiceImpl) Walk(
 // HasConqueredQ returns true if the player has conquered any region.
 // This is detected by checking that there is exactly one region
 // (non owned by the player) that has 0 troops.
-func (s *ServiceImpl) HasConqueredQ(ctx ctx.MoveContext, querier db.Querier) (bool, error) {
+func (s *ServiceImpl) HasConqueredQ(ctx ctx.GameContext, querier db.Querier) (bool, error) {
 	regions, err := s.regionService.GetRegionsQ(ctx, querier)
 	if err != nil {
 		return false, fmt.Errorf("failed to get regions: %w", err)
@@ -77,7 +77,7 @@ func (s *ServiceImpl) HasConqueredQ(ctx ctx.MoveContext, querier db.Querier) (bo
 // CanContinueAttackingQ returns true if the player does not have any attack move available.
 // This is detected by checking that all of the regions owned by the player have exactly 1 troop.
 func (s *ServiceImpl) CanContinueAttackingQ(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	querier db.Querier,
 ) (bool, error) {
 	regions, err := s.regionService.GetRegionsQ(ctx, querier)

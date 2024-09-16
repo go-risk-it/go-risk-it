@@ -12,7 +12,7 @@ import (
 )
 
 type Service interface {
-	Validate(ctx ctx.MoveContext, querier db.Querier, game *state.Game) error
+	Validate(ctx ctx.GameContext, querier db.Querier, game *state.Game) error
 }
 
 type ServiceImpl struct {
@@ -25,7 +25,7 @@ func NewService(playerService player.Service) *ServiceImpl {
 	return &ServiceImpl{playerService: playerService}
 }
 
-func (s *ServiceImpl) Validate(ctx ctx.MoveContext, querier db.Querier, game *state.Game) error {
+func (s *ServiceImpl) Validate(ctx ctx.GameContext, querier db.Querier, game *state.Game) error {
 	ctx.Log().Infow("performing generic move validation")
 
 	players, err := s.playerService.GetPlayersQ(ctx, querier)

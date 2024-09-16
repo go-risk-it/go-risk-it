@@ -9,7 +9,7 @@ import (
 )
 
 func (s *ServiceImpl) AdvanceQ(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	querier db.Querier,
 	targetPhase sqlc.PhaseType,
 	performResult *MoveResult,
@@ -35,7 +35,7 @@ func (s *ServiceImpl) AdvanceQ(
 }
 
 func (s *ServiceImpl) advanceToConquerPhase(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	querier db.Querier,
 	performResult *MoveResult,
 	phase sqlc.Phase,
@@ -57,7 +57,7 @@ func (s *ServiceImpl) advanceToConquerPhase(
 }
 
 func (s *ServiceImpl) advanceToReinforcePhase(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	querier db.Querier,
 	performResult *MoveResult,
 	phase sqlc.Phase,

@@ -16,7 +16,7 @@ import (
 
 type Orchestrator[T, R any] interface {
 	OrchestrateMove(
-		ctx ctx.MoveContext,
+		ctx ctx.GameContext,
 		phase sqlc.PhaseType,
 		move T,
 	) error
@@ -53,7 +53,7 @@ func NewOrchestrator[T, R any](
 }
 
 func (s *OrchestratorImpl[T, R]) OrchestrateMove(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	phase sqlc.PhaseType,
 	move T,
 ) error {
@@ -79,7 +79,7 @@ func (s *OrchestratorImpl[T, R]) OrchestrateMove(
 }
 
 func (s *OrchestratorImpl[T, R]) OrchestrateMoveQ(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	querier db.Querier,
 	phase sqlc.PhaseType,
 	move T,

@@ -21,14 +21,14 @@ type ServiceImpl struct {
 }
 
 func (s *ServiceImpl) PerformQ(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	querier db.Querier,
 	move Move,
 ) (*MoveResult, error) {
 	panic("implement me")
 }
 
-func (s *ServiceImpl) Walk(ctx ctx.MoveContext, querier db.Querier) (sqlc.PhaseType, error) {
+func (s *ServiceImpl) Walk(ctx ctx.GameContext, querier db.Querier) (sqlc.PhaseType, error) {
 	panic("implement me")
 }
 

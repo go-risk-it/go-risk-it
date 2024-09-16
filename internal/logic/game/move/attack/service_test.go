@@ -34,7 +34,7 @@ func setup(t *testing.T) (
 	return querier, boardService, diceService, regionService, service
 }
 
-func input() ctx.MoveContext {
+func input() ctx.GameContext {
 	gameID := int64(1)
 	userID := "giovanni"
 
@@ -43,12 +43,7 @@ func input() ctx.MoveContext {
 		userID,
 	)
 
-	gameContext := ctx.WithGameID(userContext, gameID)
-
-	return ctx.NewMoveContext(
-		userContext,
-		gameContext,
-	)
+	return ctx.WithGameID(userContext, gameID)
 }
 
 func TestServiceImpl_AttackShouldFail(t *testing.T) {

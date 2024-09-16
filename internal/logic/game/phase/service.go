@@ -12,7 +12,7 @@ import (
 
 type Service interface {
 	InsertPhaseQ(
-		ctx ctx.MoveContext,
+		ctx ctx.GameContext,
 		querier db.Querier,
 		phaseType sqlc.PhaseType,
 	) (*sqlc.Phase, error)
@@ -31,7 +31,7 @@ func NewService(gameService state.Service) *ServiceImpl {
 }
 
 func (s *ServiceImpl) InsertPhaseQ(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	querier db.Querier,
 	phaseType sqlc.PhaseType,
 ) (*sqlc.Phase, error) {

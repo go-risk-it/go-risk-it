@@ -25,7 +25,7 @@ func (_m *Service) EXPECT() *Service_Expecter {
 }
 
 // InsertPhaseQ provides a mock function with given fields: _a0, querier, phaseType
-func (_m *Service) InsertPhaseQ(_a0 ctx.MoveContext, querier db.Querier, phaseType sqlc.PhaseType) (*sqlc.Phase, error) {
+func (_m *Service) InsertPhaseQ(_a0 ctx.GameContext, querier db.Querier, phaseType sqlc.PhaseType) (*sqlc.Phase, error) {
 	ret := _m.Called(_a0, querier, phaseType)
 
 	if len(ret) == 0 {
@@ -34,10 +34,10 @@ func (_m *Service) InsertPhaseQ(_a0 ctx.MoveContext, querier db.Querier, phaseTy
 
 	var r0 *sqlc.Phase
 	var r1 error
-	if rf, ok := ret.Get(0).(func(ctx.MoveContext, db.Querier, sqlc.PhaseType) (*sqlc.Phase, error)); ok {
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, sqlc.PhaseType) (*sqlc.Phase, error)); ok {
 		return rf(_a0, querier, phaseType)
 	}
-	if rf, ok := ret.Get(0).(func(ctx.MoveContext, db.Querier, sqlc.PhaseType) *sqlc.Phase); ok {
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, sqlc.PhaseType) *sqlc.Phase); ok {
 		r0 = rf(_a0, querier, phaseType)
 	} else {
 		if ret.Get(0) != nil {
@@ -45,7 +45,7 @@ func (_m *Service) InsertPhaseQ(_a0 ctx.MoveContext, querier db.Querier, phaseTy
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(ctx.MoveContext, db.Querier, sqlc.PhaseType) error); ok {
+	if rf, ok := ret.Get(1).(func(ctx.GameContext, db.Querier, sqlc.PhaseType) error); ok {
 		r1 = rf(_a0, querier, phaseType)
 	} else {
 		r1 = ret.Error(1)
@@ -60,16 +60,16 @@ type Service_InsertPhaseQ_Call struct {
 }
 
 // InsertPhaseQ is a helper method to define mock.On call
-//   - _a0 ctx.MoveContext
+//   - _a0 ctx.GameContext
 //   - querier db.Querier
 //   - phaseType sqlc.PhaseType
 func (_e *Service_Expecter) InsertPhaseQ(_a0 interface{}, querier interface{}, phaseType interface{}) *Service_InsertPhaseQ_Call {
 	return &Service_InsertPhaseQ_Call{Call: _e.mock.On("InsertPhaseQ", _a0, querier, phaseType)}
 }
 
-func (_c *Service_InsertPhaseQ_Call) Run(run func(_a0 ctx.MoveContext, querier db.Querier, phaseType sqlc.PhaseType)) *Service_InsertPhaseQ_Call {
+func (_c *Service_InsertPhaseQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, phaseType sqlc.PhaseType)) *Service_InsertPhaseQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.MoveContext), args[1].(db.Querier), args[2].(sqlc.PhaseType))
+		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(sqlc.PhaseType))
 	})
 	return _c
 }
@@ -79,7 +79,7 @@ func (_c *Service_InsertPhaseQ_Call) Return(_a0 *sqlc.Phase, _a1 error) *Service
 	return _c
 }
 
-func (_c *Service_InsertPhaseQ_Call) RunAndReturn(run func(ctx.MoveContext, db.Querier, sqlc.PhaseType) (*sqlc.Phase, error)) *Service_InsertPhaseQ_Call {
+func (_c *Service_InsertPhaseQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, sqlc.PhaseType) (*sqlc.Phase, error)) *Service_InsertPhaseQ_Call {
 	_c.Call.Return(run)
 	return _c
 }

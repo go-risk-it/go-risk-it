@@ -11,7 +11,7 @@ import (
 )
 
 func (s *ServiceImpl) PerformQ(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	querier db.Querier,
 	move Move,
 ) (*MoveResult, error) {
@@ -48,7 +48,7 @@ func (s *ServiceImpl) PerformQ(
 }
 
 func (s *ServiceImpl) perform(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	querier db.Querier,
 	attackingRegion *sqlc.GetRegionsByGameRow,
 	defendingRegion *sqlc.GetRegionsByGameRow,
@@ -89,7 +89,7 @@ type casualties struct {
 	defending int64
 }
 
-func computeCasualties(ctx ctx.MoveContext, attackDices, defenseDices []int) *casualties {
+func computeCasualties(ctx ctx.GameContext, attackDices, defenseDices []int) *casualties {
 	casualties := &casualties{}
 
 	slices.SortFunc(attackDices, descending)
@@ -119,7 +119,7 @@ func descending(a, b int) int {
 }
 
 func (s *ServiceImpl) validate(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	attackingRegion *sqlc.GetRegionsByGameRow,
 	defendingRegion *sqlc.GetRegionsByGameRow,
 	move Move,
@@ -153,7 +153,7 @@ func (s *ServiceImpl) validate(
 }
 
 func checkTroops(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	attackingRegion *sqlc.GetRegionsByGameRow,
 	defendingRegion *sqlc.GetRegionsByGameRow,
 	move Move,
@@ -188,7 +188,7 @@ func checkTroops(
 }
 
 func checkRegionOwnership(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	attackingRegion *sqlc.GetRegionsByGameRow,
 	defendingRegion *sqlc.GetRegionsByGameRow,
 ) error {
@@ -208,7 +208,7 @@ func checkRegionOwnership(
 }
 
 func checkDeclaredValues(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	attackingRegion *sqlc.GetRegionsByGameRow,
 	defendingRegion *sqlc.GetRegionsByGameRow,
 	move Move,

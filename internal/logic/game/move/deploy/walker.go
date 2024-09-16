@@ -9,7 +9,7 @@ import (
 )
 
 func (s *ServiceImpl) Walk(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	querier db.Querier,
 ) (sqlc.PhaseType, error) {
 	deployableTroops, err := s.GetDeployableTroopsQ(ctx, querier)

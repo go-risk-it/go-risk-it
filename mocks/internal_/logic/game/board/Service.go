@@ -79,7 +79,7 @@ func (_c *Service_AreNeighbours_Call) RunAndReturn(run func(ctx.LogContext, stri
 }
 
 // CanPlayerReach provides a mock function with given fields: context, source, target
-func (_m *Service) CanPlayerReach(context ctx.MoveContext, source string, target string) (bool, error) {
+func (_m *Service) CanPlayerReach(context ctx.GameContext, source string, target string) (bool, error) {
 	ret := _m.Called(context, source, target)
 
 	if len(ret) == 0 {
@@ -88,16 +88,16 @@ func (_m *Service) CanPlayerReach(context ctx.MoveContext, source string, target
 
 	var r0 bool
 	var r1 error
-	if rf, ok := ret.Get(0).(func(ctx.MoveContext, string, string) (bool, error)); ok {
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, string, string) (bool, error)); ok {
 		return rf(context, source, target)
 	}
-	if rf, ok := ret.Get(0).(func(ctx.MoveContext, string, string) bool); ok {
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, string, string) bool); ok {
 		r0 = rf(context, source, target)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	if rf, ok := ret.Get(1).(func(ctx.MoveContext, string, string) error); ok {
+	if rf, ok := ret.Get(1).(func(ctx.GameContext, string, string) error); ok {
 		r1 = rf(context, source, target)
 	} else {
 		r1 = ret.Error(1)
@@ -112,16 +112,16 @@ type Service_CanPlayerReach_Call struct {
 }
 
 // CanPlayerReach is a helper method to define mock.On call
-//   - context ctx.MoveContext
+//   - context ctx.GameContext
 //   - source string
 //   - target string
 func (_e *Service_Expecter) CanPlayerReach(context interface{}, source interface{}, target interface{}) *Service_CanPlayerReach_Call {
 	return &Service_CanPlayerReach_Call{Call: _e.mock.On("CanPlayerReach", context, source, target)}
 }
 
-func (_c *Service_CanPlayerReach_Call) Run(run func(context ctx.MoveContext, source string, target string)) *Service_CanPlayerReach_Call {
+func (_c *Service_CanPlayerReach_Call) Run(run func(context ctx.GameContext, source string, target string)) *Service_CanPlayerReach_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.MoveContext), args[1].(string), args[2].(string))
+		run(args[0].(ctx.GameContext), args[1].(string), args[2].(string))
 	})
 	return _c
 }
@@ -131,7 +131,7 @@ func (_c *Service_CanPlayerReach_Call) Return(_a0 bool, _a1 error) *Service_CanP
 	return _c
 }
 
-func (_c *Service_CanPlayerReach_Call) RunAndReturn(run func(ctx.MoveContext, string, string) (bool, error)) *Service_CanPlayerReach_Call {
+func (_c *Service_CanPlayerReach_Call) RunAndReturn(run func(ctx.GameContext, string, string) (bool, error)) *Service_CanPlayerReach_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -27,14 +27,12 @@ func setup(t *testing.T) (
 	return querier, playerService, service
 }
 
-func input() ctx.MoveContext {
+func input() ctx.GameContext {
 	gameID := int64(1)
 	userID := "Giovanni"
 	userContext := ctx.WithUserID(ctx.WithLog(context.Background(), zap.NewNop().Sugar()), userID)
 
-	gameContext := ctx.WithGameID(userContext, gameID)
-
-	return ctx.NewMoveContext(userContext, gameContext)
+	return ctx.WithGameID(userContext, gameID)
 }
 
 func TestServiceImpl_ShouldFailWhenPlayerNotInGame(t *testing.T) {

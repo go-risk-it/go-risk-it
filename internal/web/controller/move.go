@@ -13,9 +13,9 @@ import (
 )
 
 type MoveController interface {
-	PerformDeployMove(ctx ctx.MoveContext, deployMove request.DeployMove) error
-	PerformAttackMove(ctx ctx.MoveContext, attackMove request.AttackMove) error
-	PerformConquerMove(ctx ctx.MoveContext, conquerMove request.ConquerMove) error
+	PerformDeployMove(ctx ctx.GameContext, deployMove request.DeployMove) error
+	PerformAttackMove(ctx ctx.GameContext, attackMove request.AttackMove) error
+	PerformConquerMove(ctx ctx.GameContext, conquerMove request.ConquerMove) error
 }
 
 type MoveControllerImpl struct {
@@ -39,7 +39,7 @@ func NewMoveController(
 }
 
 func (c *MoveControllerImpl) PerformDeployMove(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	deployMove request.DeployMove,
 ) error {
 	move := deploy.Move{
@@ -61,7 +61,7 @@ func (c *MoveControllerImpl) PerformDeployMove(
 }
 
 func (c *MoveControllerImpl) PerformAttackMove(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	attackMove request.AttackMove,
 ) error {
 	move := attack.Move{
@@ -85,7 +85,7 @@ func (c *MoveControllerImpl) PerformAttackMove(
 }
 
 func (c *MoveControllerImpl) PerformConquerMove(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	conquerMove request.ConquerMove,
 ) error {
 	move := conquer.Move{

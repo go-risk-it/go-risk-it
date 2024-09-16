@@ -8,7 +8,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 )
 
-func (s *ServiceImpl) Walk(ctx ctx.MoveContext, querier db.Querier) (sqlc.PhaseType, error) {
+func (s *ServiceImpl) Walk(ctx ctx.GameContext, querier db.Querier) (sqlc.PhaseType, error) {
 	canContinueAttacking, err := s.attackService.CanContinueAttackingQ(ctx, querier)
 	if err != nil {
 		return "", fmt.Errorf("failed to check if can continue attacking: %w", err)

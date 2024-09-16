@@ -9,7 +9,7 @@ import (
 )
 
 func (s *ServiceImpl) PerformQ(
-	ctx ctx.MoveContext,
+	ctx ctx.GameContext,
 	querier db.Querier,
 	move Move,
 ) (*MoveResult, error) {
