@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/signals"
+	upgradablerwmutex "github.com/go-risk-it/go-risk-it/internal/upgradablerw_mutex"
 	"github.com/lesismal/nbio/nbhttp/websocket"
 )
 
@@ -15,7 +16,8 @@ type Manager interface {
 }
 
 type ManagerImpl struct {
-	gameConnections       *gameConnections
+	upgradablerwmutex.UpgradableRWMutex
+	gameConnections       map[int64]*playerConnections
 	playerConnectedSignal signals.PlayerConnectedSignal
 }
 
@@ -23,21 +25,36 @@ var _ Manager = (*ManagerImpl)(nil)
 
 func NewManager(playerConnectedSignal signals.PlayerConnectedSignal) *ManagerImpl {
 	return &ManagerImpl{
-		gameConnections:       newGameConnections(),
+		gameConnections:       make(map[int64]*playerConnections),
 		playerConnectedSignal: playerConnectedSignal,
 	}
 }
 
 func (m *ManagerImpl) Broadcast(ctx ctx.GameContext, message json.RawMessage) {
-	m.gameConnections.Broadcast(ctx, message)
+	m.playerConnections(ctx).Broadcast(ctx, message)
 }
 
 func (m *ManagerImpl) ConnectPlayer(ctx ctx.GameContext, connection *websocket.Conn) {
-	m.gameConnections.ConnectPlayer(ctx, connection)
+	m.playerConnections(ctx).ConnectPlayer(ctx, connection)
 
 	m.playerConnectedSignal.Emit(ctx, signals.PlayerConnectedData{})
 }
 
 func (m *ManagerImpl) WriteMessage(ctx ctx.GameContext, message json.RawMessage) {
-	m.gameConnections.Write(ctx, message)
+	m.playerConnections(ctx).Write(ctx, message)
+}
+
+func (m *ManagerImpl) playerConnections(ctx ctx.GameContext) *playerConnections {
+	m.UpgradableRLock()
+	defer m.UpgradableRUnlock()
+
+	connections, ok := m.gameConnections[ctx.GameID()]
+	if !ok {
+		connections = newPlayerConnections()
+
+		m.UpgradeWLock()
+		m.gameConnections[ctx.GameID()] = connections
+	}
+
+	return connections
 }
