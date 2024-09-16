@@ -7,7 +7,6 @@ from websocket import create_connection
 from src.api.board_state_message import BoardStateMessage
 from src.api.game_state_message import GameStateMessage
 from src.api.player_state_message import PlayerStateMessage
-from src.api.subscribe_message import build_subscribe_message
 from src.core.context import RiskItContext, IndexedBoardStateData
 
 LOGGER = logging.getLogger(__name__)
@@ -21,7 +20,6 @@ def step_impl(context: RiskItContext, player: str):
         header=[f"Authorization: Bearer {context.players[player].user.jwt}"],
     )
     context.players[player].connection = conn
-    # conn.send(build_subscribe_message(context.game_id))
 
 
 def deserialize(

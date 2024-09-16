@@ -18,21 +18,12 @@ type Upgrader interface {
 
 type UpgraderImpl struct {
 	*websocket.Upgrader
-	connectionManager Manager
-	messageHandler    Handler
 }
 
-func New(
-	log *zap.SugaredLogger,
-	messageHandler Handler,
-	connectionManager Manager,
-	args ...interface{},
-) *UpgraderImpl {
+func New(log *zap.SugaredLogger, _ ...interface{}) *UpgraderImpl {
 	//exhaustruct:ignore
 	upgrader := UpgraderImpl{
-		Upgrader:          websocket.NewUpgrader(),
-		connectionManager: connectionManager,
-		messageHandler:    messageHandler,
+		Upgrader: websocket.NewUpgrader(),
 	}
 	upgrader.Subprotocols = []string{"risk-it.websocket.auth.token"}
 
@@ -45,11 +36,11 @@ func New(
 		log.Infow("Connection opened", "remoteAddress", connection.RemoteAddr().String())
 	})
 
-	upgrader.OnMessage(messageHandler.OnMessage)
+	upgrader.OnMessage(nil)
 
 	upgrader.OnClose(func(connection *websocket.Conn, err error) {
 		if err != nil {
-			log.Errorw("Connection closed with error", "error", err)
+			log.Infow("Connection closed with error", "error", err)
 		} else {
 			log.Infow("Connection closed", "remoteAddress", connection.RemoteAddr().String())
 		}

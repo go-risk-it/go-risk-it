@@ -8,10 +8,6 @@ import (
 var Module = fx.Options(
 	fx.Provide(
 		fx.Annotate(
-			connection.NewHandler,
-			fx.As(new(connection.Handler)),
-		),
-		fx.Annotate(
 			connection.NewManager,
 			fx.As(new(connection.Manager)),
 		),

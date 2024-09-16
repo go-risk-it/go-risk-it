@@ -6,12 +6,12 @@ import (
 	"net"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	upgradable_rw_mutex "github.com/go-risk-it/go-risk-it/internal/upgradablerw_mutex"
+	upgradablerwmutex "github.com/go-risk-it/go-risk-it/internal/upgradablerw_mutex"
 	"github.com/lesismal/nbio/nbhttp/websocket"
 )
 
 type playerConnections struct {
-	upgradable_rw_mutex.UpgradableRWMutex
+	upgradablerwmutex.UpgradableRWMutex
 	playerConnections map[string]*websocket.Conn
 }
 
