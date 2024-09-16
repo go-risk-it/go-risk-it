@@ -47,11 +47,11 @@ func NewService(
 
 var _ Service = (*ServiceImpl)(nil)
 
-func (s ServiceImpl) GetPhaseState(ctx ctx.GameContext) (sqlc.GetConquerPhaseStateRow, error) {
+func (s *ServiceImpl) GetPhaseState(ctx ctx.GameContext) (sqlc.GetConquerPhaseStateRow, error) {
 	return s.GetPhaseStateQ(ctx, s.querier)
 }
 
-func (s ServiceImpl) GetPhaseStateQ(
+func (s *ServiceImpl) GetPhaseStateQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) (sqlc.GetConquerPhaseStateRow, error) {

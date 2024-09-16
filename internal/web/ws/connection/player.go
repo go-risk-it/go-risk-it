@@ -64,6 +64,8 @@ func (p *playerConnections) Write(ctx ctx.GameContext, message json.RawMessage) 
 		return
 	}
 
+	ctx.Log().Info("writing message to player", "message", string(message))
+
 	err := connection.WriteMessage(websocket.TextMessage, message)
 	if err != nil && errors.Is(err, net.ErrClosed) {
 		ctx.Log().Debugw("unable to write message because connection is closed")
