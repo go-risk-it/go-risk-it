@@ -73,6 +73,51 @@ func (_c *Service_AdvanceQ_Call[T, R]) RunAndReturn(run func(ctx.GameContext, db
 	return _c
 }
 
+// ForcedAdvancementPhase provides a mock function with given fields:
+func (_m *Service[T, R]) ForcedAdvancementPhase() sqlc.PhaseType {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for ForcedAdvancementPhase")
+	}
+
+	var r0 sqlc.PhaseType
+	if rf, ok := ret.Get(0).(func() sqlc.PhaseType); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(sqlc.PhaseType)
+	}
+
+	return r0
+}
+
+// Service_ForcedAdvancementPhase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ForcedAdvancementPhase'
+type Service_ForcedAdvancementPhase_Call[T interface{}, R interface{}] struct {
+	*mock.Call
+}
+
+// ForcedAdvancementPhase is a helper method to define mock.On call
+func (_e *Service_Expecter[T, R]) ForcedAdvancementPhase() *Service_ForcedAdvancementPhase_Call[T, R] {
+	return &Service_ForcedAdvancementPhase_Call[T, R]{Call: _e.mock.On("ForcedAdvancementPhase")}
+}
+
+func (_c *Service_ForcedAdvancementPhase_Call[T, R]) Run(run func()) *Service_ForcedAdvancementPhase_Call[T, R] {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Service_ForcedAdvancementPhase_Call[T, R]) Return(_a0 sqlc.PhaseType) *Service_ForcedAdvancementPhase_Call[T, R] {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Service_ForcedAdvancementPhase_Call[T, R]) RunAndReturn(run func() sqlc.PhaseType) *Service_ForcedAdvancementPhase_Call[T, R] {
+	_c.Call.Return(run)
+	return _c
+}
+
 // PerformQ provides a mock function with given fields: _a0, querier, move
 func (_m *Service[T, R]) PerformQ(_a0 ctx.GameContext, querier db.Querier, move T) (R, error) {
 	ret := _m.Called(_a0, querier, move)
@@ -127,6 +172,51 @@ func (_c *Service_PerformQ_Call[T, R]) Return(_a0 R, _a1 error) *Service_Perform
 }
 
 func (_c *Service_PerformQ_Call[T, R]) RunAndReturn(run func(ctx.GameContext, db.Querier, T) (R, error)) *Service_PerformQ_Call[T, R] {
+	_c.Call.Return(run)
+	return _c
+}
+
+// PhaseType provides a mock function with given fields:
+func (_m *Service[T, R]) PhaseType() sqlc.PhaseType {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for PhaseType")
+	}
+
+	var r0 sqlc.PhaseType
+	if rf, ok := ret.Get(0).(func() sqlc.PhaseType); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(sqlc.PhaseType)
+	}
+
+	return r0
+}
+
+// Service_PhaseType_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PhaseType'
+type Service_PhaseType_Call[T interface{}, R interface{}] struct {
+	*mock.Call
+}
+
+// PhaseType is a helper method to define mock.On call
+func (_e *Service_Expecter[T, R]) PhaseType() *Service_PhaseType_Call[T, R] {
+	return &Service_PhaseType_Call[T, R]{Call: _e.mock.On("PhaseType")}
+}
+
+func (_c *Service_PhaseType_Call[T, R]) Run(run func()) *Service_PhaseType_Call[T, R] {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Service_PhaseType_Call[T, R]) Return(_a0 sqlc.PhaseType) *Service_PhaseType_Call[T, R] {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Service_PhaseType_Call[T, R]) RunAndReturn(run func() sqlc.PhaseType) *Service_PhaseType_Call[T, R] {
 	_c.Call.Return(run)
 	return _c
 }

@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
-	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/validation"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
@@ -15,11 +14,7 @@ import (
 )
 
 type Orchestrator[T, R any] interface {
-	OrchestrateMove(
-		ctx ctx.GameContext,
-		phase sqlc.PhaseType,
-		move T,
-	) error
+	OrchestrateMove(ctx ctx.GameContext, move T) error
 }
 
 type OrchestratorImpl[T, R any] struct {
@@ -52,16 +47,12 @@ func NewOrchestrator[T, R any](
 	}
 }
 
-func (s *OrchestratorImpl[T, R]) OrchestrateMove(
-	ctx ctx.GameContext,
-	phase sqlc.PhaseType,
-	move T,
-) error {
+func (s *OrchestratorImpl[T, R]) OrchestrateMove(ctx ctx.GameContext, move T) error {
 	_, err := s.querier.ExecuteInTransactionWithIsolation(
 		ctx,
 		pgx.RepeatableRead,
 		func(q db.Querier) (interface{}, error) {
-			err := s.OrchestrateMoveQ(ctx, q, phase, move)
+			err := s.OrchestrateMoveQ(ctx, q, move)
 			if err != nil {
 				return struct{}{}, err
 			}
@@ -81,9 +72,10 @@ func (s *OrchestratorImpl[T, R]) OrchestrateMove(
 func (s *OrchestratorImpl[T, R]) OrchestrateMoveQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
-	phase sqlc.PhaseType,
 	move T,
 ) error {
+	phase := s.service.PhaseType()
+
 	ctx.Log().Infow("orchestrating move", "phase", phase)
 
 	gameState, err := s.gameService.GetGameStateQ(ctx, querier)

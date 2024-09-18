@@ -41,3 +41,11 @@ func NewService(
 		phaseService: phaseService,
 	}
 }
+
+func (s *ServiceImpl) PhaseType() sqlc.PhaseType {
+	return sqlc.PhaseTypeCARDS
+}
+
+func (s *ServiceImpl) ForcedAdvancementPhase() sqlc.PhaseType {
+	return sqlc.PhaseTypeDEPLOY
+}

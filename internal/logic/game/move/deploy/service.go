@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
+	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
@@ -70,4 +71,12 @@ func (s *ServiceImpl) GetDeployableTroopsQ(
 	ctx.Log().Infow("got deployable troops", "troops", deployableTroops)
 
 	return deployableTroops, nil
+}
+
+func (s *ServiceImpl) PhaseType() sqlc.PhaseType {
+	return sqlc.PhaseTypeDEPLOY
+}
+
+func (s *ServiceImpl) ForcedAdvancementPhase() sqlc.PhaseType {
+	return sqlc.PhaseTypeDEPLOY
 }

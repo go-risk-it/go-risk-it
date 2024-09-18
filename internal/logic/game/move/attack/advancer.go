@@ -27,10 +27,6 @@ func (s *ServiceImpl) AdvanceQ(
 		return s.advanceToConquerPhase(ctx, querier, performResult, *phase)
 	}
 
-	if targetPhase == sqlc.PhaseTypeREINFORCE {
-		return s.advanceToReinforcePhase(ctx, querier, performResult, *phase)
-	}
-
 	return fmt.Errorf("cannot advance attack phase to %s", targetPhase)
 }
 
@@ -53,14 +49,5 @@ func (s *ServiceImpl) advanceToConquerPhase(
 
 	ctx.Log().Infow("created conquer phase", "phase", conquerPhase)
 
-	return nil
-}
-
-func (s *ServiceImpl) advanceToReinforcePhase(
-	ctx ctx.GameContext,
-	querier db.Querier,
-	performResult *MoveResult,
-	phase sqlc.Phase,
-) error {
 	return nil
 }

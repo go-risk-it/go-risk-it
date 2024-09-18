@@ -27,4 +27,6 @@ type Service[T, R any] interface {
 	Performer[T, R]
 	PhaseWalker
 	Advancer[R]
+	PhaseType() sqlc.PhaseType
+	ForcedAdvancementPhase() sqlc.PhaseType
 }

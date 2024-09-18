@@ -1,13 +1,6 @@
 package messaging
 
-type PhaseType string
-
-const (
-	Cards   PhaseType = "cards"
-	Deploy  PhaseType = "deploy"
-	Attack  PhaseType = "attack"
-	Conquer PhaseType = "conquer"
-)
+import "github.com/go-risk-it/go-risk-it/internal/api/game"
 
 type EmptyState struct{}
 
@@ -26,8 +19,8 @@ type PhaseState interface {
 }
 
 type Phase[T PhaseState] struct {
-	Type  PhaseType `json:"type"`
-	State T         `json:"state"`
+	Type  game.PhaseType `json:"type"`
+	State T              `json:"state"`
 }
 
 type GameState[T PhaseState] struct {

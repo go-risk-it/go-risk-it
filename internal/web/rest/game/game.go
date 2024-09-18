@@ -10,5 +10,6 @@ var Module = fx.Options(
 	move.Module,
 	fx.Provide(
 		route.AsRoute(NewGameHandler),
+		route.AsRoute(NewAdvancementHandler),
 	),
 )

@@ -1,6 +1,7 @@
 package game
 
 import (
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/advancement"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/card"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/creation"
@@ -13,6 +14,7 @@ import (
 )
 
 var Module = fx.Options(
+	advancement.Module,
 	board.Module,
 	card.Module,
 	creation.Module,

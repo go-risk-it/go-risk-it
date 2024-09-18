@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/conquer"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/deploy"
@@ -48,11 +47,7 @@ func (c *MoveControllerImpl) PerformDeployMove(
 		DesiredTroops: deployMove.DesiredTroops,
 	}
 
-	err := c.deployOrchestrator.OrchestrateMove(
-		ctx,
-		sqlc.PhaseTypeDEPLOY,
-		move,
-	)
+	err := c.deployOrchestrator.OrchestrateMove(ctx, move)
 	if err != nil {
 		return fmt.Errorf("unable to perform deploy move: %w", err)
 	}
@@ -72,11 +67,7 @@ func (c *MoveControllerImpl) PerformAttackMove(
 		AttackingTroops:   attackMove.AttackingTroops,
 	}
 
-	err := c.attackOrchestrator.OrchestrateMove(
-		ctx,
-		sqlc.PhaseTypeATTACK,
-		move,
-	)
+	err := c.attackOrchestrator.OrchestrateMove(ctx, move)
 	if err != nil {
 		return fmt.Errorf("unable to perform attack move: %w", err)
 	}
@@ -92,11 +83,7 @@ func (c *MoveControllerImpl) PerformConquerMove(
 		Troops: conquerMove.Troops,
 	}
 
-	err := c.conquerOrchestrator.OrchestrateMove(
-		ctx,
-		sqlc.PhaseTypeCONQUER,
-		move,
-	)
+	err := c.conquerOrchestrator.OrchestrateMove(ctx, move)
 	if err != nil {
 		return fmt.Errorf("unable to perform conquer move: %w", err)
 	}

@@ -26,5 +26,9 @@ var Module = fx.Options(
 			NewPhaseController,
 			fx.As(new(PhaseController)),
 		),
+		fx.Annotate(
+			NewAdvancementController,
+			fx.As(new(AdvancementController)),
+		),
 	),
 )

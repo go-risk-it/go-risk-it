@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 
+	"github.com/go-risk-it/go-risk-it/internal/api/game"
 	"github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/conquer"
@@ -44,7 +45,7 @@ func NewPhaseController(
 
 func (c *PhaseControllerImpl) GetDeployPhaseState(
 	ctx ctx.GameContext,
-	game *state.Game,
+	gameState *state.Game,
 ) (messaging.GameState[messaging.DeployPhaseState], error) {
 	ctx.Log().Infow("fetching deploy phase state")
 
@@ -57,10 +58,10 @@ func (c *PhaseControllerImpl) GetDeployPhaseState(
 	}
 
 	return messaging.GameState[messaging.DeployPhaseState]{
-		ID:   game.ID,
-		Turn: game.Turn,
+		ID:   gameState.ID,
+		Turn: gameState.Turn,
 		Phase: messaging.Phase[messaging.DeployPhaseState]{
-			Type: messaging.Deploy,
+			Type: game.Deploy,
 			State: messaging.DeployPhaseState{
 				DeployableTroops: deployableTroops,
 			},
@@ -70,16 +71,16 @@ func (c *PhaseControllerImpl) GetDeployPhaseState(
 
 func (c *PhaseControllerImpl) GetAttackPhaseState(
 	ctx ctx.GameContext,
-	game *state.Game,
+	gameState *state.Game,
 ) (messaging.GameState[messaging.EmptyState], error) {
 	ctx.Log().Infow("fetching attack phase phaseState")
 
-	return c.getEmptyPhaseState(ctx, game, messaging.Attack), nil
+	return c.getEmptyPhaseState(ctx, gameState, game.Attack), nil
 }
 
 func (c *PhaseControllerImpl) GetConquerPhaseState(
 	ctx ctx.GameContext,
-	game *state.Game,
+	gameState *state.Game,
 ) (messaging.GameState[messaging.ConquerPhaseState], error) {
 	ctx.Log().Infow("fetching conquer phase phaseState")
 
@@ -92,10 +93,10 @@ func (c *PhaseControllerImpl) GetConquerPhaseState(
 	}
 
 	return messaging.GameState[messaging.ConquerPhaseState]{
-		ID:   game.ID,
-		Turn: game.Turn,
+		ID:   gameState.ID,
+		Turn: gameState.Turn,
 		Phase: messaging.Phase[messaging.ConquerPhaseState]{
-			Type: messaging.Conquer,
+			Type: game.Conquer,
 			State: messaging.ConquerPhaseState{
 				AttackingRegionID: conquerPhase.SourceRegion,
 				DefendingRegionID: conquerPhase.TargetRegion,
@@ -108,7 +109,7 @@ func (c *PhaseControllerImpl) GetConquerPhaseState(
 func (c *PhaseControllerImpl) getEmptyPhaseState(
 	ctx ctx.GameContext,
 	game *state.Game,
-	phaseType messaging.PhaseType,
+	phaseType game.PhaseType,
 ) messaging.GameState[messaging.EmptyState] {
 	ctx.Log().Infow("fetching empty phase state")
 

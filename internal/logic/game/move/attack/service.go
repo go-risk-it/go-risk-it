@@ -3,6 +3,7 @@ package attack
 import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
+	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack/dice"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
@@ -52,4 +53,12 @@ func NewService(
 		phaseService:  phaseService,
 		regionService: regionService,
 	}
+}
+
+func (s *ServiceImpl) PhaseType() sqlc.PhaseType {
+	return sqlc.PhaseTypeATTACK
+}
+
+func (s *ServiceImpl) ForcedAdvancementPhase() sqlc.PhaseType {
+	return sqlc.PhaseTypeREINFORCE
 }
