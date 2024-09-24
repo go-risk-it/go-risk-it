@@ -18,13 +18,11 @@ type Orchestrator[T, R any] interface {
 }
 
 type OrchestratorImpl[T, R any] struct {
-	querier                  db.Querier
-	service                  service.Service[T, R]
-	gameService              state.Service
-	validationService        validation.Service
-	boardStateChangedSignal  signals.BoardStateChangedSignal
-	playerStateChangedSignal signals.PlayerStateChangedSignal
-	gameStateChangedSignal   signals.GameStateChangedSignal
+	querier                db.Querier
+	service                service.Service[T, R]
+	gameService            state.Service
+	validationService      validation.Service
+	gameStateChangedSignal signals.GameStateChangedSignal
 }
 
 func NewOrchestrator[T, R any](
@@ -32,18 +30,14 @@ func NewOrchestrator[T, R any](
 	service service.Service[T, R],
 	gameService state.Service,
 	validationService validation.Service,
-	boardStateChangedSignal signals.BoardStateChangedSignal,
-	playerStateChangedSignal signals.PlayerStateChangedSignal,
 	gameStateChangedSignal signals.GameStateChangedSignal,
 ) *OrchestratorImpl[T, R] {
 	return &OrchestratorImpl[T, R]{
-		querier:                  querier,
-		service:                  service,
-		gameService:              gameService,
-		validationService:        validationService,
-		boardStateChangedSignal:  boardStateChangedSignal,
-		playerStateChangedSignal: playerStateChangedSignal,
-		gameStateChangedSignal:   gameStateChangedSignal,
+		querier:                querier,
+		service:                service,
+		gameService:            gameService,
+		validationService:      validationService,
+		gameStateChangedSignal: gameStateChangedSignal,
 	}
 }
 
@@ -64,7 +58,7 @@ func (s *OrchestratorImpl[T, R]) OrchestrateMove(ctx ctx.GameContext, move T) er
 		return fmt.Errorf("unable to perform move: %w", err)
 	}
 
-	s.publishMoveResult(ctx)
+	go s.gameStateChangedSignal.Emit(ctx, signals.GameStateChangedData{})
 
 	return nil
 }
@@ -112,16 +106,4 @@ func (s *OrchestratorImpl[T, R]) OrchestrateMoveQ(
 	}
 
 	return nil
-}
-
-func (s *OrchestratorImpl[T, R]) publishMoveResult(ctx ctx.GameContext) {
-	go s.boardStateChangedSignal.Emit(ctx, signals.BoardStateChangedData{
-		GameID: ctx.GameID(),
-	})
-	go s.playerStateChangedSignal.Emit(ctx, signals.PlayerStateChangedData{
-		GameID: ctx.GameID(),
-	})
-	go s.gameStateChangedSignal.Emit(ctx, signals.GameStateChangedData{
-		GameID: ctx.GameID(),
-	})
 }

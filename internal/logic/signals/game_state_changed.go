@@ -2,9 +2,7 @@ package signals
 
 import "github.com/maniartech/signals"
 
-type GameStateChangedData struct {
-	GameID int64
-}
+type GameStateChangedData struct{}
 
 type GameStateChangedSignal interface {
 	signals.Signal[GameStateChangedData]

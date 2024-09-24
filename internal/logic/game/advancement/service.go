@@ -17,29 +17,23 @@ type Service[T, R any] interface {
 }
 
 type ServiceImpl[T, R any] struct {
-	querier                  db.Querier
-	gameState                state.Service
-	moveService              service.Service[T, R]
-	boardStateChangedSignal  signals.BoardStateChangedSignal
-	playerStateChangedSignal signals.PlayerStateChangedSignal
-	gameStateChangedSignal   signals.GameStateChangedSignal
+	querier                db.Querier
+	gameState              state.Service
+	moveService            service.Service[T, R]
+	gameStateChangedSignal signals.GameStateChangedSignal
 }
 
 func NewService[T, R any](
 	gameState state.Service,
 	querier db.Querier,
 	moveService service.Service[T, R],
-	boardStateChangedSignal signals.BoardStateChangedSignal,
-	playerStateChangedSignal signals.PlayerStateChangedSignal,
 	gameStateChangedSignal signals.GameStateChangedSignal,
 ) *ServiceImpl[T, R] {
 	return &ServiceImpl[T, R]{
-		gameState:                gameState,
-		querier:                  querier,
-		moveService:              moveService,
-		boardStateChangedSignal:  boardStateChangedSignal,
-		playerStateChangedSignal: playerStateChangedSignal,
-		gameStateChangedSignal:   gameStateChangedSignal,
+		gameState:              gameState,
+		querier:                querier,
+		moveService:            moveService,
+		gameStateChangedSignal: gameStateChangedSignal,
 	}
 }
 
@@ -60,7 +54,7 @@ func (s *ServiceImpl[T, R]) Advance(ctx ctx.GameContext) error {
 		return fmt.Errorf("unable to perform move: %w", err)
 	}
 
-	s.publishMoveResult(ctx)
+	go s.gameStateChangedSignal.Emit(ctx, signals.GameStateChangedData{})
 
 	return nil
 }
@@ -96,16 +90,4 @@ func (s *ServiceImpl[T, R]) AdvanceQ(ctx ctx.GameContext, querier db.Querier) er
 	ctx.Log().Infow("phase advanced successfully", "from", currentPhase)
 
 	return nil
-}
-
-func (s *ServiceImpl[T, R]) publishMoveResult(ctx ctx.GameContext) {
-	go s.boardStateChangedSignal.Emit(ctx, signals.BoardStateChangedData{
-		GameID: ctx.GameID(),
-	})
-	go s.playerStateChangedSignal.Emit(ctx, signals.PlayerStateChangedData{
-		GameID: ctx.GameID(),
-	})
-	go s.gameStateChangedSignal.Emit(ctx, signals.GameStateChangedData{
-		GameID: ctx.GameID(),
-	})
 }
