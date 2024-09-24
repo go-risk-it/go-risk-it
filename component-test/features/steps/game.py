@@ -26,3 +26,13 @@ def step_impl(context: RiskItContext):
 def step_impl(context: RiskItContext, phase: str):
     assert context.game_state.phase.type == phase, \
         f"Expected phase {phase}, but got {context.game_state.phase.type}"
+
+
+@when("{player} advances from phase {phase}")
+def step_impl(context: RiskItContext, player: str, phase: str):
+    request = {
+        "currentPhase": phase
+    }
+    response = context.risk_it_clients[player].advance(context.game_id, request)
+
+    assert_2xx(response)

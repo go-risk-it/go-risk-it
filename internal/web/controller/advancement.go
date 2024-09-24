@@ -37,7 +37,7 @@ func (c *AdvancementControllerImpl) Advance(
 ) error {
 	var err error
 
-	switch advancement.Phase {
+	switch advancement.CurrentPhase {
 	case game.Deploy:
 		err = errors.New("cannot advance from deploy phase")
 	case game.Attack:
@@ -47,7 +47,7 @@ func (c *AdvancementControllerImpl) Advance(
 	case game.Cards:
 		err = c.cardsAdvancer.Advance(ctx)
 	default:
-		err = fmt.Errorf("invalid phase type: %s", advancement.Phase)
+		err = fmt.Errorf("invalid phase type: %s", advancement.CurrentPhase)
 	}
 
 	if err != nil {

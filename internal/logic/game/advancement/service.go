@@ -7,6 +7,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
+	"github.com/go-risk-it/go-risk-it/internal/logic/signals"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -16,20 +17,29 @@ type Service[T, R any] interface {
 }
 
 type ServiceImpl[T, R any] struct {
-	querier     db.Querier
-	gameState   state.Service
-	moveService service.Service[T, R]
+	querier                  db.Querier
+	gameState                state.Service
+	moveService              service.Service[T, R]
+	boardStateChangedSignal  signals.BoardStateChangedSignal
+	playerStateChangedSignal signals.PlayerStateChangedSignal
+	gameStateChangedSignal   signals.GameStateChangedSignal
 }
 
 func NewService[T, R any](
 	gameState state.Service,
 	querier db.Querier,
 	moveService service.Service[T, R],
+	boardStateChangedSignal signals.BoardStateChangedSignal,
+	playerStateChangedSignal signals.PlayerStateChangedSignal,
+	gameStateChangedSignal signals.GameStateChangedSignal,
 ) *ServiceImpl[T, R] {
 	return &ServiceImpl[T, R]{
-		gameState:   gameState,
-		querier:     querier,
-		moveService: moveService,
+		gameState:                gameState,
+		querier:                  querier,
+		moveService:              moveService,
+		boardStateChangedSignal:  boardStateChangedSignal,
+		playerStateChangedSignal: playerStateChangedSignal,
+		gameStateChangedSignal:   gameStateChangedSignal,
 	}
 }
 
@@ -49,6 +59,8 @@ func (s *ServiceImpl[T, R]) Advance(ctx ctx.GameContext) error {
 	if err != nil {
 		return fmt.Errorf("unable to perform move: %w", err)
 	}
+
+	s.publishMoveResult(ctx)
 
 	return nil
 }
@@ -81,7 +93,19 @@ func (s *ServiceImpl[T, R]) AdvanceQ(ctx ctx.GameContext, querier db.Querier) er
 		return fmt.Errorf("unable to perform move: %w", err)
 	}
 
-	ctx.Log().Infow("phase advanced successfully", "phase", currentPhase)
+	ctx.Log().Infow("phase advanced successfully", "from", currentPhase)
 
 	return nil
+}
+
+func (s *ServiceImpl[T, R]) publishMoveResult(ctx ctx.GameContext) {
+	go s.boardStateChangedSignal.Emit(ctx, signals.BoardStateChangedData{
+		GameID: ctx.GameID(),
+	})
+	go s.playerStateChangedSignal.Emit(ctx, signals.PlayerStateChangedData{
+		GameID: ctx.GameID(),
+	})
+	go s.gameStateChangedSignal.Emit(ctx, signals.GameStateChangedData{
+		GameID: ctx.GameID(),
+	})
 }

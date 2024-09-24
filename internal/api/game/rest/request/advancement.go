@@ -5,5 +5,5 @@ import (
 )
 
 type Advancement struct {
-	Phase game.PhaseType `json:"type"`
+	CurrentPhase game.PhaseType `json:"currentPhase"`
 }

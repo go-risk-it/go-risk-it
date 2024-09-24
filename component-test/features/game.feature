@@ -45,3 +45,8 @@ Feature: Creating a game
     Then it's francesco's turn
     And the game phase is attack
 
+    When francesco advances from phase attack
+    Then all players receive all state updates
+    And it's francesco's turn
+    And the game phase is reinforce
+

@@ -52,6 +52,12 @@ class RiskItClient:
             body=body,
         )
 
+    def advance(self, game_id: int, body) -> Response:
+        return self.__post(
+            f"/api/v1/games/{game_id}/advancements",
+            body=body,
+        )
+
     def is_ready(self) -> bool:
         response = self.__get("/status")
 

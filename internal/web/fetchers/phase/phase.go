@@ -27,5 +27,6 @@ var Module = fx.Options(
 		fx.Annotate(NewDeployPhaseFetcher, fx.As(new(DeployPhaseFetcher))),
 		fx.Annotate(NewAttackPhaseFetcher, fx.As(new(AttackPhaseFetcher))),
 		fx.Annotate(NewConquerPhaseFetcher, fx.As(new(ConquerPhaseFetcher))),
+		fx.Annotate(NewReinforcePhaseFetcher, fx.As(new(ReinforcePhaseFetcher))),
 	),
 )

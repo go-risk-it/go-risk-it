@@ -17,6 +17,7 @@ func HandleGameStateChanged(
 	deployPhaseFetcher phase.DeployPhaseFetcher,
 	attackPhaseFetcher phase.AttackPhaseFetcher,
 	conquerPhaseFetcher phase.ConquerPhaseFetcher,
+	reinforcePhaseFetcher phase.ReinforcePhaseFetcher,
 	connectionManager connection.Manager,
 	signal signals.GameStateChangedSignal,
 ) {
@@ -42,6 +43,8 @@ func HandleGameStateChanged(
 			fetcher = attackPhaseFetcher
 		case sqlc.PhaseTypeCONQUER:
 			fetcher = conquerPhaseFetcher
+		case sqlc.PhaseTypeREINFORCE:
+			fetcher = reinforcePhaseFetcher
 		default:
 			gameContext.Log().Errorf("unknown phase type: %v", gameState.Phase)
 

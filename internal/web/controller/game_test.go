@@ -23,7 +23,7 @@ package controller_test
 //		Return(&state.Game{
 //			ID:    gameID,
 //			Turn:  0,
-//			Phase: sqlc.PhaseTypeCARDS,
+//			CurrentPhase: sqlc.PhaseTypeCARDS,
 //		}, nil)
 //
 //	// Call the method under test
@@ -34,7 +34,7 @@ package controller_test
 //	require.Equal(t, message.GameState{
 //		ID:    gameID,
 //		Turn:  0,
-//		Phase: message.Cards,
+//		CurrentPhase: message.Cards,
 //	}, gameState)
 //
 //	gameService.AssertExpectations(t)

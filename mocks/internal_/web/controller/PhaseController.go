@@ -194,6 +194,63 @@ func (_c *PhaseController_GetDeployPhaseState_Call) RunAndReturn(run func(ctx.Ga
 	return _c
 }
 
+// GetReinforcePhaseState provides a mock function with given fields: _a0, gameState
+func (_m *PhaseController) GetReinforcePhaseState(_a0 ctx.GameContext, gameState *state.Game) (messaging.GameState[messaging.EmptyState], error) {
+	ret := _m.Called(_a0, gameState)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetReinforcePhaseState")
+	}
+
+	var r0 messaging.GameState[messaging.EmptyState]
+	var r1 error
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, *state.Game) (messaging.GameState[messaging.EmptyState], error)); ok {
+		return rf(_a0, gameState)
+	}
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, *state.Game) messaging.GameState[messaging.EmptyState]); ok {
+		r0 = rf(_a0, gameState)
+	} else {
+		r0 = ret.Get(0).(messaging.GameState[messaging.EmptyState])
+	}
+
+	if rf, ok := ret.Get(1).(func(ctx.GameContext, *state.Game) error); ok {
+		r1 = rf(_a0, gameState)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// PhaseController_GetReinforcePhaseState_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetReinforcePhaseState'
+type PhaseController_GetReinforcePhaseState_Call struct {
+	*mock.Call
+}
+
+// GetReinforcePhaseState is a helper method to define mock.On call
+//   - _a0 ctx.GameContext
+//   - gameState *state.Game
+func (_e *PhaseController_Expecter) GetReinforcePhaseState(_a0 interface{}, gameState interface{}) *PhaseController_GetReinforcePhaseState_Call {
+	return &PhaseController_GetReinforcePhaseState_Call{Call: _e.mock.On("GetReinforcePhaseState", _a0, gameState)}
+}
+
+func (_c *PhaseController_GetReinforcePhaseState_Call) Run(run func(_a0 ctx.GameContext, gameState *state.Game)) *PhaseController_GetReinforcePhaseState_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.GameContext), args[1].(*state.Game))
+	})
+	return _c
+}
+
+func (_c *PhaseController_GetReinforcePhaseState_Call) Return(_a0 messaging.GameState[messaging.EmptyState], _a1 error) *PhaseController_GetReinforcePhaseState_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *PhaseController_GetReinforcePhaseState_Call) RunAndReturn(run func(ctx.GameContext, *state.Game) (messaging.GameState[messaging.EmptyState], error)) *PhaseController_GetReinforcePhaseState_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewPhaseController creates a new instance of PhaseController. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewPhaseController(t interface {
