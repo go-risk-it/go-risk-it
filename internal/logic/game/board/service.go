@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/go-risk-it/go-risk-it/internal/data/db"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
+
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board/dto"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board/graph"
@@ -13,23 +16,33 @@ import (
 
 type Service interface {
 	GetBoardRegions(ctx ctx.LogContext) ([]string, error)
-	AreNeighbours(context ctx.LogContext, source string, target string) (bool, error)
-	CanPlayerReach(context ctx.GameContext, source string, target string) (bool, error)
+	AreNeighbours(ctx ctx.LogContext, source string, target string) (bool, error)
+	CanPlayerReachQ(
+		ctx ctx.GameContext,
+		querier db.Querier,
+		source string,
+		target string,
+	) (bool, error)
 }
 
 type ServiceImpl struct {
-	log   *zap.SugaredLogger
-	graph graph.Graph
+	log           *zap.SugaredLogger
+	graph         graph.Graph
+	regionService region.Service
 }
 
 var _ Service = (*ServiceImpl)(nil)
 
+func NewService(logger *zap.SugaredLogger, regionService region.Service) *ServiceImpl {
+	return &ServiceImpl{log: logger, graph: nil, regionService: regionService}
+}
+
 func (s *ServiceImpl) AreNeighbours(
-	context ctx.LogContext,
+	ctx ctx.LogContext,
 	source string,
 	target string,
 ) (bool, error) {
-	graph, err := s.getGraph(context)
+	graph, err := s.getGraph(ctx)
 	if err != nil {
 		return false, fmt.Errorf("failed to get graph: %w", err)
 	}
@@ -37,18 +50,33 @@ func (s *ServiceImpl) AreNeighbours(
 	return graph.AreNeighbours(source, target), nil
 }
 
-func (s *ServiceImpl) CanPlayerReach(
-	context ctx.GameContext,
+func (s *ServiceImpl) CanPlayerReachQ(
+	ctx ctx.GameContext,
+	querier db.Querier,
 	source string,
 	target string,
 ) (bool, error) {
-	return false, nil
-}
+	ctx.Log().Infow("checking if player can reach target", "source", source, "target", target)
 
-var _ Service = (*ServiceImpl)(nil)
+	regions, err := s.regionService.GetRegionsQ(ctx, querier)
+	if err != nil {
+		return false, fmt.Errorf("failed to get regions: %w", err)
+	}
 
-func NewService(logger *zap.SugaredLogger) *ServiceImpl {
-	return &ServiceImpl{log: logger, graph: nil}
+	usableRegions := make(map[string]struct{})
+
+	for _, region := range regions {
+		if region.UserID == ctx.UserID() {
+			usableRegions[region.ExternalReference] = struct{}{}
+		}
+	}
+
+	graph, err := s.getGraph(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to get graph: %w", err)
+	}
+
+	return graph.CanReach(ctx, source, target, usableRegions), nil
 }
 
 func (s *ServiceImpl) GetBoardRegions(ctx ctx.LogContext) ([]string, error) {

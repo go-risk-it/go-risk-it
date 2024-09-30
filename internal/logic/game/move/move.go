@@ -7,6 +7,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/conquer"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/deploy"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/reinforce"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
 	"go.uber.org/fx"
 )
@@ -27,6 +28,11 @@ var Module = fx.Options(
 			conquer.NewService,
 			fx.As(new(conquer.Service)),
 			fx.As(new(service.Service[conquer.Move, *conquer.MoveResult])),
+		),
+		fx.Annotate(
+			reinforce.NewService,
+			fx.As(new(reinforce.Service)),
+			fx.As(new(service.Service[reinforce.Move, *reinforce.MoveResult])),
 		),
 		fx.Annotate(
 			cards.NewService,

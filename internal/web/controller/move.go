@@ -3,6 +3,8 @@ package controller
 import (
 	"fmt"
 
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/reinforce"
+
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack"
@@ -15,12 +17,14 @@ type MoveController interface {
 	PerformDeployMove(ctx ctx.GameContext, deployMove request.DeployMove) error
 	PerformAttackMove(ctx ctx.GameContext, attackMove request.AttackMove) error
 	PerformConquerMove(ctx ctx.GameContext, conquerMove request.ConquerMove) error
+	PerformReinforceMove(ctx ctx.GameContext, reinforceMove request.ReinforceMove) error
 }
 
 type MoveControllerImpl struct {
-	deployOrchestrator  orchestration.DeployOrchestrator
-	attackOrchestrator  orchestration.AttackOrchestrator
-	conquerOrchestrator orchestration.ConquerOrchestrator
+	deployOrchestrator    orchestration.DeployOrchestrator
+	attackOrchestrator    orchestration.AttackOrchestrator
+	conquerOrchestrator   orchestration.ConquerOrchestrator
+	reinforceOrchestrator orchestration.ReinforceOrchestrator
 }
 
 var _ MoveController = (*MoveControllerImpl)(nil)
@@ -29,11 +33,13 @@ func NewMoveController(
 	deployOrchestrator orchestration.DeployOrchestrator,
 	attackOrchestrator orchestration.AttackOrchestrator,
 	conquerOrchestrator orchestration.ConquerOrchestrator,
+	reinforceOrchestrator orchestration.ReinforceOrchestrator,
 ) *MoveControllerImpl {
 	return &MoveControllerImpl{
-		deployOrchestrator:  deployOrchestrator,
-		attackOrchestrator:  attackOrchestrator,
-		conquerOrchestrator: conquerOrchestrator,
+		deployOrchestrator:    deployOrchestrator,
+		attackOrchestrator:    attackOrchestrator,
+		conquerOrchestrator:   conquerOrchestrator,
+		reinforceOrchestrator: reinforceOrchestrator,
 	}
 }
 
@@ -86,6 +92,25 @@ func (c *MoveControllerImpl) PerformConquerMove(
 	err := c.conquerOrchestrator.OrchestrateMove(ctx, move)
 	if err != nil {
 		return fmt.Errorf("unable to perform conquer move: %w", err)
+	}
+
+	return nil
+}
+
+func (c *MoveControllerImpl) PerformReinforceMove(
+	ctx ctx.GameContext,
+	reinforceMove request.ReinforceMove,
+) error {
+	move := reinforce.Move{
+		SourceRegionID: reinforceMove.SourceRegionID,
+		TargetRegionID: reinforceMove.TargetRegionID,
+		TroopsInSource: reinforceMove.TroopsInSource,
+		TroopsInTarget: reinforceMove.TroopsInTarget,
+		MovingTroops:   reinforceMove.MovingTroops,
+	}
+
+	if err := c.reinforceOrchestrator.OrchestrateMove(ctx, move); err != nil {
+		return fmt.Errorf("unable to perform reinforce move: %w", err)
 	}
 
 	return nil

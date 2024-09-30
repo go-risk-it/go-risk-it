@@ -58,6 +58,12 @@ class RiskItClient:
             body=body,
         )
 
+    def reinforce(self, game_id: int, body) -> Response:
+        return self.__post(
+            f"/api/v1/games/{game_id}/moves/reinforcements",
+            body=body,
+        )
+
     def is_ready(self) -> bool:
         response = self.__get("/status")
 

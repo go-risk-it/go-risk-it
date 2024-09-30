@@ -163,6 +163,53 @@ func (_c *MoveController_PerformDeployMove_Call) RunAndReturn(run func(ctx.GameC
 	return _c
 }
 
+// PerformReinforceMove provides a mock function with given fields: _a0, reinforceMove
+func (_m *MoveController) PerformReinforceMove(_a0 ctx.GameContext, reinforceMove request.ReinforceMove) error {
+	ret := _m.Called(_a0, reinforceMove)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PerformReinforceMove")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, request.ReinforceMove) error); ok {
+		r0 = rf(_a0, reinforceMove)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MoveController_PerformReinforceMove_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PerformReinforceMove'
+type MoveController_PerformReinforceMove_Call struct {
+	*mock.Call
+}
+
+// PerformReinforceMove is a helper method to define mock.On call
+//   - _a0 ctx.GameContext
+//   - reinforceMove request.ReinforceMove
+func (_e *MoveController_Expecter) PerformReinforceMove(_a0 interface{}, reinforceMove interface{}) *MoveController_PerformReinforceMove_Call {
+	return &MoveController_PerformReinforceMove_Call{Call: _e.mock.On("PerformReinforceMove", _a0, reinforceMove)}
+}
+
+func (_c *MoveController_PerformReinforceMove_Call) Run(run func(_a0 ctx.GameContext, reinforceMove request.ReinforceMove)) *MoveController_PerformReinforceMove_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.GameContext), args[1].(request.ReinforceMove))
+	})
+	return _c
+}
+
+func (_c *MoveController_PerformReinforceMove_Call) Return(_a0 error) *MoveController_PerformReinforceMove_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MoveController_PerformReinforceMove_Call) RunAndReturn(run func(ctx.GameContext, request.ReinforceMove) error) *MoveController_PerformReinforceMove_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewMoveController creates a new instance of MoveController. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewMoveController(t interface {

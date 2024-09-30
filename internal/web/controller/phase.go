@@ -28,6 +28,10 @@ type PhaseController interface {
 		ctx ctx.GameContext,
 		gameState *state.Game,
 	) (messaging.GameState[messaging.EmptyState], error)
+	GetCardsPhaseState(
+		ctx ctx.GameContext,
+		gameState *state.Game,
+	) (messaging.GameState[messaging.EmptyState], error)
 }
 
 type PhaseControllerImpl struct {
@@ -117,6 +121,15 @@ func (c *PhaseControllerImpl) GetReinforcePhaseState(
 	ctx.Log().Infow("fetching reinforce phase state")
 
 	return c.getEmptyPhaseState(ctx, gameState, game.Reinforce), nil
+}
+
+func (c *PhaseControllerImpl) GetCardsPhaseState(
+	ctx ctx.GameContext,
+	gameState *state.Game,
+) (messaging.GameState[messaging.EmptyState], error) {
+	ctx.Log().Infow("fetching cards phase state")
+
+	return c.getEmptyPhaseState(ctx, gameState, game.Cards), nil
 }
 
 func (c *PhaseControllerImpl) getEmptyPhaseState(

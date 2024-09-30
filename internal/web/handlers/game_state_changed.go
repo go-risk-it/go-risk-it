@@ -21,6 +21,7 @@ func HandleGameStateChanged(
 	attackPhaseFetcher phase.AttackPhaseFetcher,
 	conquerPhaseFetcher phase.ConquerPhaseFetcher,
 	reinforcePhaseFetcher phase.ReinforcePhaseFetcher,
+	cardsPhaseFetcher phase.CardsPhaseFetcher,
 	connectionManager connection.Manager,
 	signal signals.GameStateChangedSignal,
 ) {
@@ -37,6 +38,7 @@ func HandleGameStateChanged(
 			attackPhaseFetcher,
 			conquerPhaseFetcher,
 			reinforcePhaseFetcher,
+			cardsPhaseFetcher,
 			connectionManager,
 		)
 
@@ -59,6 +61,7 @@ func fetchGameState(
 	attackPhaseFetcher phase.AttackPhaseFetcher,
 	conquerPhaseFetcher phase.ConquerPhaseFetcher,
 	reinforcePhaseFetcher phase.ReinforcePhaseFetcher,
+	cardsPhaseFetcher phase.CardsPhaseFetcher,
 	connectionManager connection.Manager,
 ) {
 	gameState, err := gameService.GetGameState(gameContext)
@@ -79,6 +82,8 @@ func fetchGameState(
 		fetcher = conquerPhaseFetcher
 	case sqlc.PhaseTypeREINFORCE:
 		fetcher = reinforcePhaseFetcher
+	case sqlc.PhaseTypeCARDS:
+		fetcher = cardsPhaseFetcher
 	default:
 		gameContext.Log().Errorf("unknown phase type: %v", gameState.Phase)
 

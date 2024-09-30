@@ -28,5 +28,6 @@ var Module = fx.Options(
 		fx.Annotate(NewAttackPhaseFetcher, fx.As(new(AttackPhaseFetcher))),
 		fx.Annotate(NewConquerPhaseFetcher, fx.As(new(ConquerPhaseFetcher))),
 		fx.Annotate(NewReinforcePhaseFetcher, fx.As(new(ReinforcePhaseFetcher))),
+		fx.Annotate(NewCardsPhaseFetcher, fx.As(new(CardsPhaseFetcher))),
 	),
 )

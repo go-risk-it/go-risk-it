@@ -50,3 +50,7 @@ Feature: Creating a game
     And it's francesco's turn
     And the game phase is reinforce
 
+    When francesco reinforces from eastern_united_states to western_united_states with 2 troops
+    Then all players receive all state updates
+    And it's francesco's turn
+    And the game phase is cards

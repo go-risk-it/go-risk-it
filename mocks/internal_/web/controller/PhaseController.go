@@ -80,6 +80,63 @@ func (_c *PhaseController_GetAttackPhaseState_Call) RunAndReturn(run func(ctx.Ga
 	return _c
 }
 
+// GetCardsPhaseState provides a mock function with given fields: _a0, gameState
+func (_m *PhaseController) GetCardsPhaseState(_a0 ctx.GameContext, gameState *state.Game) (messaging.GameState[messaging.EmptyState], error) {
+	ret := _m.Called(_a0, gameState)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetCardsPhaseState")
+	}
+
+	var r0 messaging.GameState[messaging.EmptyState]
+	var r1 error
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, *state.Game) (messaging.GameState[messaging.EmptyState], error)); ok {
+		return rf(_a0, gameState)
+	}
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, *state.Game) messaging.GameState[messaging.EmptyState]); ok {
+		r0 = rf(_a0, gameState)
+	} else {
+		r0 = ret.Get(0).(messaging.GameState[messaging.EmptyState])
+	}
+
+	if rf, ok := ret.Get(1).(func(ctx.GameContext, *state.Game) error); ok {
+		r1 = rf(_a0, gameState)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// PhaseController_GetCardsPhaseState_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCardsPhaseState'
+type PhaseController_GetCardsPhaseState_Call struct {
+	*mock.Call
+}
+
+// GetCardsPhaseState is a helper method to define mock.On call
+//   - _a0 ctx.GameContext
+//   - gameState *state.Game
+func (_e *PhaseController_Expecter) GetCardsPhaseState(_a0 interface{}, gameState interface{}) *PhaseController_GetCardsPhaseState_Call {
+	return &PhaseController_GetCardsPhaseState_Call{Call: _e.mock.On("GetCardsPhaseState", _a0, gameState)}
+}
+
+func (_c *PhaseController_GetCardsPhaseState_Call) Run(run func(_a0 ctx.GameContext, gameState *state.Game)) *PhaseController_GetCardsPhaseState_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.GameContext), args[1].(*state.Game))
+	})
+	return _c
+}
+
+func (_c *PhaseController_GetCardsPhaseState_Call) Return(_a0 messaging.GameState[messaging.EmptyState], _a1 error) *PhaseController_GetCardsPhaseState_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *PhaseController_GetCardsPhaseState_Call) RunAndReturn(run func(ctx.GameContext, *state.Game) (messaging.GameState[messaging.EmptyState], error)) *PhaseController_GetCardsPhaseState_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetConquerPhaseState provides a mock function with given fields: _a0, game
 func (_m *PhaseController) GetConquerPhaseState(_a0 ctx.GameContext, game *state.Game) (messaging.GameState[messaging.ConquerPhaseState], error) {
 	ret := _m.Called(_a0, game)

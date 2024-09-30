@@ -4,6 +4,8 @@ package board
 
 import (
 	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
+	db "github.com/go-risk-it/go-risk-it/internal/data/db"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -20,9 +22,9 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
-// AreNeighbours provides a mock function with given fields: context, source, target
-func (_m *Service) AreNeighbours(context ctx.LogContext, source string, target string) (bool, error) {
-	ret := _m.Called(context, source, target)
+// AreNeighbours provides a mock function with given fields: _a0, source, target
+func (_m *Service) AreNeighbours(_a0 ctx.LogContext, source string, target string) (bool, error) {
+	ret := _m.Called(_a0, source, target)
 
 	if len(ret) == 0 {
 		panic("no return value specified for AreNeighbours")
@@ -31,16 +33,16 @@ func (_m *Service) AreNeighbours(context ctx.LogContext, source string, target s
 	var r0 bool
 	var r1 error
 	if rf, ok := ret.Get(0).(func(ctx.LogContext, string, string) (bool, error)); ok {
-		return rf(context, source, target)
+		return rf(_a0, source, target)
 	}
 	if rf, ok := ret.Get(0).(func(ctx.LogContext, string, string) bool); ok {
-		r0 = rf(context, source, target)
+		r0 = rf(_a0, source, target)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	if rf, ok := ret.Get(1).(func(ctx.LogContext, string, string) error); ok {
-		r1 = rf(context, source, target)
+		r1 = rf(_a0, source, target)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -54,14 +56,14 @@ type Service_AreNeighbours_Call struct {
 }
 
 // AreNeighbours is a helper method to define mock.On call
-//   - context ctx.LogContext
+//   - _a0 ctx.LogContext
 //   - source string
 //   - target string
-func (_e *Service_Expecter) AreNeighbours(context interface{}, source interface{}, target interface{}) *Service_AreNeighbours_Call {
-	return &Service_AreNeighbours_Call{Call: _e.mock.On("AreNeighbours", context, source, target)}
+func (_e *Service_Expecter) AreNeighbours(_a0 interface{}, source interface{}, target interface{}) *Service_AreNeighbours_Call {
+	return &Service_AreNeighbours_Call{Call: _e.mock.On("AreNeighbours", _a0, source, target)}
 }
 
-func (_c *Service_AreNeighbours_Call) Run(run func(context ctx.LogContext, source string, target string)) *Service_AreNeighbours_Call {
+func (_c *Service_AreNeighbours_Call) Run(run func(_a0 ctx.LogContext, source string, target string)) *Service_AreNeighbours_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.LogContext), args[1].(string), args[2].(string))
 	})
@@ -78,27 +80,27 @@ func (_c *Service_AreNeighbours_Call) RunAndReturn(run func(ctx.LogContext, stri
 	return _c
 }
 
-// CanPlayerReach provides a mock function with given fields: context, source, target
-func (_m *Service) CanPlayerReach(context ctx.GameContext, source string, target string) (bool, error) {
-	ret := _m.Called(context, source, target)
+// CanPlayerReachQ provides a mock function with given fields: _a0, querier, source, target
+func (_m *Service) CanPlayerReachQ(_a0 ctx.GameContext, querier db.Querier, source string, target string) (bool, error) {
+	ret := _m.Called(_a0, querier, source, target)
 
 	if len(ret) == 0 {
-		panic("no return value specified for CanPlayerReach")
+		panic("no return value specified for CanPlayerReachQ")
 	}
 
 	var r0 bool
 	var r1 error
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, string, string) (bool, error)); ok {
-		return rf(context, source, target)
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, string, string) (bool, error)); ok {
+		return rf(_a0, querier, source, target)
 	}
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, string, string) bool); ok {
-		r0 = rf(context, source, target)
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, string, string) bool); ok {
+		r0 = rf(_a0, querier, source, target)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	if rf, ok := ret.Get(1).(func(ctx.GameContext, string, string) error); ok {
-		r1 = rf(context, source, target)
+	if rf, ok := ret.Get(1).(func(ctx.GameContext, db.Querier, string, string) error); ok {
+		r1 = rf(_a0, querier, source, target)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -106,32 +108,33 @@ func (_m *Service) CanPlayerReach(context ctx.GameContext, source string, target
 	return r0, r1
 }
 
-// Service_CanPlayerReach_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CanPlayerReach'
-type Service_CanPlayerReach_Call struct {
+// Service_CanPlayerReachQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CanPlayerReachQ'
+type Service_CanPlayerReachQ_Call struct {
 	*mock.Call
 }
 
-// CanPlayerReach is a helper method to define mock.On call
-//   - context ctx.GameContext
+// CanPlayerReachQ is a helper method to define mock.On call
+//   - _a0 ctx.GameContext
+//   - querier db.Querier
 //   - source string
 //   - target string
-func (_e *Service_Expecter) CanPlayerReach(context interface{}, source interface{}, target interface{}) *Service_CanPlayerReach_Call {
-	return &Service_CanPlayerReach_Call{Call: _e.mock.On("CanPlayerReach", context, source, target)}
+func (_e *Service_Expecter) CanPlayerReachQ(_a0 interface{}, querier interface{}, source interface{}, target interface{}) *Service_CanPlayerReachQ_Call {
+	return &Service_CanPlayerReachQ_Call{Call: _e.mock.On("CanPlayerReachQ", _a0, querier, source, target)}
 }
 
-func (_c *Service_CanPlayerReach_Call) Run(run func(context ctx.GameContext, source string, target string)) *Service_CanPlayerReach_Call {
+func (_c *Service_CanPlayerReachQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, source string, target string)) *Service_CanPlayerReachQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.GameContext), args[1].(string), args[2].(string))
+		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(string), args[3].(string))
 	})
 	return _c
 }
 
-func (_c *Service_CanPlayerReach_Call) Return(_a0 bool, _a1 error) *Service_CanPlayerReach_Call {
+func (_c *Service_CanPlayerReachQ_Call) Return(_a0 bool, _a1 error) *Service_CanPlayerReachQ_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_CanPlayerReach_Call) RunAndReturn(run func(ctx.GameContext, string, string) (bool, error)) *Service_CanPlayerReach_Call {
+func (_c *Service_CanPlayerReachQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, string, string) (bool, error)) *Service_CanPlayerReachQ_Call {
 	_c.Call.Return(run)
 	return _c
 }

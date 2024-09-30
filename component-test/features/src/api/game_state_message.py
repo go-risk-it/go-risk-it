@@ -45,6 +45,8 @@ class Phase(BaseModel, Generic[T]):
             return ConquerPhaseStateData(**value)
         elif phase_type == 'reinforce':
             return EmptyStateData(**value)
+        elif phase_type == 'cards':
+            return EmptyStateData(**value)
         else:
             raise ValueError(f'Unknown phase type: {phase_type}')
 

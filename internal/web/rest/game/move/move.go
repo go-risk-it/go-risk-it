@@ -14,6 +14,7 @@ var Module = fx.Options(
 		route.AsRoute(NewDeployHandler),
 		route.AsRoute(NewAttackHandler),
 		route.AsRoute(NewConquerHandler),
+		route.AsRoute(NewReinforceHandler),
 	),
 )
 
@@ -22,14 +23,16 @@ func serveMove[T any](
 	req *http.Request,
 	perform func(ctx ctx.GameContext, move T) error,
 ) {
-	moveRequest, err := restutils.DecodeRequest[T](writer, req)
-	if err != nil {
-		return
-	}
-
 	gameContext, ok := req.Context().(ctx.GameContext)
 	if !ok {
 		http.Error(writer, "invalid move context", http.StatusInternalServerError)
+
+		return
+	}
+
+	moveRequest, err := restutils.DecodeRequest[T](writer, req)
+	if err != nil {
+		gameContext.Log().Errorw("failed to decode request", "error", err)
 
 		return
 	}
