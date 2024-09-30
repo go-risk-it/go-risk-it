@@ -75,6 +75,53 @@ func (_c *Service_AdvanceQ_Call) RunAndReturn(run func(ctx.GameContext, db.Queri
 	return _c
 }
 
+// Draw provides a mock function with given fields: _a0, querier
+func (_m *Service) Draw(_a0 ctx.GameContext, querier db.Querier) error {
+	ret := _m.Called(_a0, querier)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Draw")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) error); ok {
+		r0 = rf(_a0, querier)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Service_Draw_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Draw'
+type Service_Draw_Call struct {
+	*mock.Call
+}
+
+// Draw is a helper method to define mock.On call
+//   - _a0 ctx.GameContext
+//   - querier db.Querier
+func (_e *Service_Expecter) Draw(_a0 interface{}, querier interface{}) *Service_Draw_Call {
+	return &Service_Draw_Call{Call: _e.mock.On("Draw", _a0, querier)}
+}
+
+func (_c *Service_Draw_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier)) *Service_Draw_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.GameContext), args[1].(db.Querier))
+	})
+	return _c
+}
+
+func (_c *Service_Draw_Call) Return(_a0 error) *Service_Draw_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Service_Draw_Call) RunAndReturn(run func(ctx.GameContext, db.Querier) error) *Service_Draw_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ForcedAdvancementPhase provides a mock function with given fields:
 func (_m *Service) ForcedAdvancementPhase() sqlc.PhaseType {
 	ret := _m.Called()

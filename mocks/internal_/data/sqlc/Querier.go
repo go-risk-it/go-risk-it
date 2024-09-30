@@ -69,6 +69,112 @@ func (_c *Querier_DecreaseDeployableTroops_Call) RunAndReturn(run func(context.C
 	return _c
 }
 
+// DrawCard provides a mock function with given fields: ctx, arg
+func (_m *Querier) DrawCard(ctx context.Context, arg sqlc.DrawCardParams) error {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DrawCard")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.DrawCardParams) error); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Querier_DrawCard_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DrawCard'
+type Querier_DrawCard_Call struct {
+	*mock.Call
+}
+
+// DrawCard is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg sqlc.DrawCardParams
+func (_e *Querier_Expecter) DrawCard(ctx interface{}, arg interface{}) *Querier_DrawCard_Call {
+	return &Querier_DrawCard_Call{Call: _e.mock.On("DrawCard", ctx, arg)}
+}
+
+func (_c *Querier_DrawCard_Call) Run(run func(ctx context.Context, arg sqlc.DrawCardParams)) *Querier_DrawCard_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(sqlc.DrawCardParams))
+	})
+	return _c
+}
+
+func (_c *Querier_DrawCard_Call) Return(_a0 error) *Querier_DrawCard_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Querier_DrawCard_Call) RunAndReturn(run func(context.Context, sqlc.DrawCardParams) error) *Querier_DrawCard_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetAvailableCards provides a mock function with given fields: ctx, id
+func (_m *Querier) GetAvailableCards(ctx context.Context, id int64) ([]sqlc.Card, error) {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetAvailableCards")
+	}
+
+	var r0 []sqlc.Card
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64) ([]sqlc.Card, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int64) []sqlc.Card); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]sqlc.Card)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_GetAvailableCards_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAvailableCards'
+type Querier_GetAvailableCards_Call struct {
+	*mock.Call
+}
+
+// GetAvailableCards is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id int64
+func (_e *Querier_Expecter) GetAvailableCards(ctx interface{}, id interface{}) *Querier_GetAvailableCards_Call {
+	return &Querier_GetAvailableCards_Call{Call: _e.mock.On("GetAvailableCards", ctx, id)}
+}
+
+func (_c *Querier_GetAvailableCards_Call) Run(run func(ctx context.Context, id int64)) *Querier_GetAvailableCards_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int64))
+	})
+	return _c
+}
+
+func (_c *Querier_GetAvailableCards_Call) Return(_a0 []sqlc.Card, _a1 error) *Querier_GetAvailableCards_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_GetAvailableCards_Call) RunAndReturn(run func(context.Context, int64) ([]sqlc.Card, error)) *Querier_GetAvailableCards_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetConquerPhaseState provides a mock function with given fields: ctx, id
 func (_m *Querier) GetConquerPhaseState(ctx context.Context, id int64) (sqlc.GetConquerPhaseStateRow, error) {
 	ret := _m.Called(ctx, id)
@@ -411,6 +517,63 @@ func (_c *Querier_GetRegionsByGame_Call) Return(_a0 []sqlc.GetRegionsByGameRow, 
 }
 
 func (_c *Querier_GetRegionsByGame_Call) RunAndReturn(run func(context.Context, int64) ([]sqlc.GetRegionsByGameRow, error)) *Querier_GetRegionsByGame_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// HasConqueredInTurn provides a mock function with given fields: ctx, arg
+func (_m *Querier) HasConqueredInTurn(ctx context.Context, arg sqlc.HasConqueredInTurnParams) (bool, error) {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for HasConqueredInTurn")
+	}
+
+	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.HasConqueredInTurnParams) (bool, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.HasConqueredInTurnParams) bool); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, sqlc.HasConqueredInTurnParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_HasConqueredInTurn_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HasConqueredInTurn'
+type Querier_HasConqueredInTurn_Call struct {
+	*mock.Call
+}
+
+// HasConqueredInTurn is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg sqlc.HasConqueredInTurnParams
+func (_e *Querier_Expecter) HasConqueredInTurn(ctx interface{}, arg interface{}) *Querier_HasConqueredInTurn_Call {
+	return &Querier_HasConqueredInTurn_Call{Call: _e.mock.On("HasConqueredInTurn", ctx, arg)}
+}
+
+func (_c *Querier_HasConqueredInTurn_Call) Run(run func(ctx context.Context, arg sqlc.HasConqueredInTurnParams)) *Querier_HasConqueredInTurn_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(sqlc.HasConqueredInTurnParams))
+	})
+	return _c
+}
+
+func (_c *Querier_HasConqueredInTurn_Call) Return(_a0 bool, _a1 error) *Querier_HasConqueredInTurn_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_HasConqueredInTurn_Call) RunAndReturn(run func(context.Context, sqlc.HasConqueredInTurnParams) (bool, error)) *Querier_HasConqueredInTurn_Call {
 	_c.Call.Return(run)
 	return _c
 }

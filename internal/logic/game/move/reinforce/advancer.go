@@ -23,5 +23,24 @@ func (s *ServiceImpl) AdvanceQ(
 		return fmt.Errorf("failed to create cards phase: %w", err)
 	}
 
+	game, err := s.gameService.GetGameStateQ(ctx, querier)
+	if err != nil {
+		return fmt.Errorf("unable to get game state: %w", err)
+	}
+
+	hasConqueredInTurn, err := querier.HasConqueredInTurn(ctx, sqlc.HasConqueredInTurnParams{
+		ID:   ctx.GameID(),
+		Turn: game.Turn,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to check if player has conquered in turn: %w", err)
+	}
+
+	if hasConqueredInTurn {
+		if err := s.cardsService.Draw(ctx, querier); err != nil {
+			return fmt.Errorf("failed to draw cards: %w", err)
+		}
+	}
+
 	return nil
 }

@@ -1,4 +1,4 @@
--- name: HasConqueredInTurn :many
+-- name: HasConqueredInTurn :one
 select exists
            (select p.id
             from game g

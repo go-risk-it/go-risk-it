@@ -31,6 +31,56 @@ func (q *Queries) DecreaseDeployableTroops(ctx context.Context, arg DecreaseDepl
 	return err
 }
 
+const drawCard = `-- name: DrawCard :exec
+update card
+set owner_id = $2
+where id = $1
+`
+
+type DrawCardParams struct {
+	ID      int64
+	OwnerID pgtype.Int8
+}
+
+func (q *Queries) DrawCard(ctx context.Context, arg DrawCardParams) error {
+	_, err := q.db.Exec(ctx, drawCard, arg.ID, arg.OwnerID)
+	return err
+}
+
+const getAvailableCards = `-- name: GetAvailableCards :many
+select c.id, c.game_id, c.region_id, c.owner_id, c.card_type
+from game g
+         join card c on c.game_id = g.id
+where g.id = $1
+  and c.owner_id is null
+`
+
+func (q *Queries) GetAvailableCards(ctx context.Context, id int64) ([]Card, error) {
+	rows, err := q.db.Query(ctx, getAvailableCards, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Card
+	for rows.Next() {
+		var i Card
+		if err := rows.Scan(
+			&i.ID,
+			&i.GameID,
+			&i.RegionID,
+			&i.OwnerID,
+			&i.CardType,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getConquerPhaseState = `-- name: GetConquerPhaseState :one
 select source_region.external_reference as source_region,
        target_region.external_reference as target_region,
@@ -180,6 +230,28 @@ func (q *Queries) GetRegionsByGame(ctx context.Context, id int64) ([]GetRegionsB
 		return nil, err
 	}
 	return items, nil
+}
+
+const hasConqueredInTurn = `-- name: HasConqueredInTurn :one
+select exists
+           (select p.id
+            from game g
+                     join phase p on p.game_id = g.id
+            where g.id = $1
+              and p.type = 'CONQUER'
+              and p.turn = $2)
+`
+
+type HasConqueredInTurnParams struct {
+	ID   int64
+	Turn int64
+}
+
+func (q *Queries) HasConqueredInTurn(ctx context.Context, arg HasConqueredInTurnParams) (bool, error) {
+	row := q.db.QueryRow(ctx, hasConqueredInTurn, arg.ID, arg.Turn)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
 }
 
 const increaseRegionTroops = `-- name: IncreaseRegionTroops :exec
