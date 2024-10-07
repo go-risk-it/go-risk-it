@@ -300,6 +300,65 @@ func (_c *Querier_GetAvailableCards_Call) RunAndReturn(run func(context.Context,
 	return _c
 }
 
+// GetCardsForPlayer provides a mock function with given fields: _a0, arg
+func (_m *Querier) GetCardsForPlayer(_a0 context.Context, arg sqlc.GetCardsForPlayerParams) ([]sqlc.GetCardsForPlayerRow, error) {
+	ret := _m.Called(_a0, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetCardsForPlayer")
+	}
+
+	var r0 []sqlc.GetCardsForPlayerRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.GetCardsForPlayerParams) ([]sqlc.GetCardsForPlayerRow, error)); ok {
+		return rf(_a0, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.GetCardsForPlayerParams) []sqlc.GetCardsForPlayerRow); ok {
+		r0 = rf(_a0, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]sqlc.GetCardsForPlayerRow)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, sqlc.GetCardsForPlayerParams) error); ok {
+		r1 = rf(_a0, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_GetCardsForPlayer_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCardsForPlayer'
+type Querier_GetCardsForPlayer_Call struct {
+	*mock.Call
+}
+
+// GetCardsForPlayer is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - arg sqlc.GetCardsForPlayerParams
+func (_e *Querier_Expecter) GetCardsForPlayer(_a0 interface{}, arg interface{}) *Querier_GetCardsForPlayer_Call {
+	return &Querier_GetCardsForPlayer_Call{Call: _e.mock.On("GetCardsForPlayer", _a0, arg)}
+}
+
+func (_c *Querier_GetCardsForPlayer_Call) Run(run func(_a0 context.Context, arg sqlc.GetCardsForPlayerParams)) *Querier_GetCardsForPlayer_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(sqlc.GetCardsForPlayerParams))
+	})
+	return _c
+}
+
+func (_c *Querier_GetCardsForPlayer_Call) Return(_a0 []sqlc.GetCardsForPlayerRow, _a1 error) *Querier_GetCardsForPlayer_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_GetCardsForPlayer_Call) RunAndReturn(run func(context.Context, sqlc.GetCardsForPlayerParams) ([]sqlc.GetCardsForPlayerRow, error)) *Querier_GetCardsForPlayer_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetConquerPhaseState provides a mock function with given fields: _a0, id
 func (_m *Querier) GetConquerPhaseState(_a0 context.Context, id int64) (sqlc.GetConquerPhaseStateRow, error) {
 	ret := _m.Called(_a0, id)

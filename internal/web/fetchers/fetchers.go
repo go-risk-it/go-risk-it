@@ -11,5 +11,6 @@ var Module = fx.Options(
 	fx.Provide(
 		fetcher.NewBoardFetcher,
 		fetcher.NewPlayerFetcher,
+		fetcher.NewCardFetcher,
 	),
 )

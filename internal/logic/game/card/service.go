@@ -13,16 +13,28 @@ import (
 
 type Service interface {
 	CreateCards(ctx ctx.GameContext, querier db.Querier) error
+	GetCardsForPlayer(ctx ctx.GameContext) ([]sqlc.GetCardsForPlayerRow, error)
+	GetCardsForPlayerQ(
+		ctx ctx.GameContext,
+		querier db.Querier,
+	) ([]sqlc.GetCardsForPlayerRow, error)
 }
 
 type ServiceImpl struct {
+	querier       db.Querier
 	regionService region.Service
 }
 
 var _ Service = (*ServiceImpl)(nil)
 
-func New(regionService region.Service) *ServiceImpl {
-	return &ServiceImpl{regionService: regionService}
+func New(
+	querier db.Querier,
+	regionService region.Service,
+) *ServiceImpl {
+	return &ServiceImpl{
+		querier:       querier,
+		regionService: regionService,
+	}
 }
 
 func (s *ServiceImpl) CreateCards(ctx ctx.GameContext, querier db.Querier) error {
@@ -72,16 +84,36 @@ func (s *ServiceImpl) buildCards(
 		})
 	}
 
-	cards = append(cards, sqlc.InsertCardsParams{
-		RegionID: pgtype.Int8{Int64: 0, Valid: false},
-		GameID:   ctx.GameID(),
-		CardType: sqlc.CardTypeJOLLY,
-	})
-	cards = append(cards, sqlc.InsertCardsParams{
-		RegionID: pgtype.Int8{Int64: 0, Valid: false},
-		GameID:   ctx.GameID(),
-		CardType: sqlc.CardTypeJOLLY,
-	})
+	for range 2 {
+		cards = append(cards, sqlc.InsertCardsParams{
+			RegionID: pgtype.Int8{Int64: 0, Valid: false},
+			GameID:   ctx.GameID(),
+			CardType: sqlc.CardTypeJOLLY,
+		})
+	}
 
 	return cards, nil
+}
+
+func (s *ServiceImpl) GetCardsForPlayer(ctx ctx.GameContext) ([]sqlc.GetCardsForPlayerRow, error) {
+	return s.GetCardsForPlayerQ(ctx, s.querier)
+}
+
+func (s *ServiceImpl) GetCardsForPlayerQ(
+	ctx ctx.GameContext,
+	querier db.Querier,
+) ([]sqlc.GetCardsForPlayerRow, error) {
+	ctx.Log().Infow("getting cards for player")
+
+	result, err := querier.GetCardsForPlayer(ctx, sqlc.GetCardsForPlayerParams{
+		ID:     ctx.GameID(),
+		UserID: ctx.UserID(),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to get cards for player: %w", err)
+	}
+
+	ctx.Log().Infow("got cards for player", "cards", result)
+
+	return result, nil
 }

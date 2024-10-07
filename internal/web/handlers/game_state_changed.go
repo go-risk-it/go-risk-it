@@ -17,6 +17,7 @@ func HandleGameStateChanged(
 	gameService state.Service,
 	boardStateFetcher fetcher.BoardFetcher,
 	playerStateFetcher fetcher.PlayerFetcher,
+	cardStateFetcher fetcher.CardFetcher,
 	deployPhaseFetcher phase.DeployPhaseFetcher,
 	attackPhaseFetcher phase.AttackPhaseFetcher,
 	conquerPhaseFetcher phase.ConquerPhaseFetcher,
@@ -50,6 +51,11 @@ func HandleGameStateChanged(
 		go fetchStateAndBroadcast(
 			gameContext,
 			playerStateFetcher.FetchState,
+			connectionManager.Broadcast)
+
+		go fetchStateAndBroadcast(
+			gameContext,
+			cardStateFetcher.FetchState,
 			connectionManager.Broadcast)
 	})
 }

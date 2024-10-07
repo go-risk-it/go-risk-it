@@ -12,6 +12,7 @@ type Querier interface {
 	DecreaseDeployableTroops(ctx context.Context, arg DecreaseDeployableTroopsParams) error
 	DrawCard(ctx context.Context, arg DrawCardParams) error
 	GetAvailableCards(ctx context.Context, id int64) ([]Card, error)
+	GetCardsForPlayer(ctx context.Context, arg GetCardsForPlayerParams) ([]GetCardsForPlayerRow, error)
 	GetConquerPhaseState(ctx context.Context, id int64) (GetConquerPhaseStateRow, error)
 	GetDeployableTroops(ctx context.Context, id int64) (int64, error)
 	GetGame(ctx context.Context, id int64) (GetGameRow, error)

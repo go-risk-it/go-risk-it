@@ -5,6 +5,7 @@ from behave import *
 from websocket import create_connection
 
 from src.api.board_state_message import BoardStateMessage
+from src.api.card_state_message import CardStateMessage
 from src.api.game_state_message import GameStateMessage
 from src.api.player_state_message import PlayerStateMessage
 from src.core.context import RiskItContext, IndexedBoardStateData
@@ -40,13 +41,16 @@ def deserialize(
         case "boardState":
             board_state_message = BoardStateMessage.parse_obj(parsed_message)
             context.board_state = IndexedBoardStateData(board_state_message.data.regions)
+        case "cardState":
+            card_state_message = CardStateMessage.parse_obj(parsed_message)
+            context.card_state = card_state_message.data
         case _:
             raise ValueError(f"Unknown message type: {message_type}")
 
 
 def receive_all_state_updates(context: RiskItContext, player: str):
     conn = context.players[player].connection
-    for i in range(3):
+    for i in range(4):
         deserialize(context, conn.recv())
 
 

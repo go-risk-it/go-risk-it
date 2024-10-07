@@ -11,6 +11,7 @@ const (
 	GameState   Type = "gameState"
 	BoardState  Type = "boardState"
 	PlayerState Type = "playerState"
+	CardState   Type = "cardState"
 )
 
 type Message struct {

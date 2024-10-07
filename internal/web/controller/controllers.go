@@ -30,5 +30,9 @@ var Module = fx.Options(
 			NewAdvancementController,
 			fx.As(new(AdvancementController)),
 		),
+		fx.Annotate(
+			NewCardController,
+			fx.As(new(CardController)),
+		),
 	),
 )

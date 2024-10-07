@@ -26,6 +26,7 @@ type PlayerConnectedHandlerParams struct {
 	DeployPhaseFetcher  phase.DeployPhaseFetcher
 	AttackPhaseFetcher  phase.AttackPhaseFetcher
 	ConquerPhaseFetcher phase.ConquerPhaseFetcher
+	CardsPhaseFetcher   phase.CardsPhaseFetcher
 	ConnectionManager   connection.Manager
 }
 
@@ -64,6 +65,8 @@ func HandlePlayerConnected(
 			go params.AttackPhaseFetcher.FetchState(gameContext, gameState, stateChannel)
 		case sqlc.PhaseTypeCONQUER:
 			go params.ConquerPhaseFetcher.FetchState(gameContext, gameState, stateChannel)
+		case sqlc.PhaseTypeCARDS:
+			go params.CardsPhaseFetcher.FetchState(gameContext, gameState, stateChannel)
 		default:
 			gameContext.Log().Errorf("unknown phase type: %v", gameState.Phase)
 

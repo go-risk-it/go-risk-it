@@ -81,6 +81,46 @@ func (q *Queries) GetAvailableCards(ctx context.Context, id int64) ([]Card, erro
 	return items, nil
 }
 
+const getCardsForPlayer = `-- name: GetCardsForPlayer :many
+SELECT c.card_type, r.external_reference
+FROM game g
+         JOIN player p on g.id = p.game_id
+         JOIN card c ON c.owner_id = p.id
+         LEFT JOIN region r ON c.region_id = r.id
+WHERE g.id = $1
+  AND p.user_id = $2
+`
+
+type GetCardsForPlayerParams struct {
+	ID     int64
+	UserID string
+}
+
+type GetCardsForPlayerRow struct {
+	CardType          CardType
+	ExternalReference pgtype.Text
+}
+
+func (q *Queries) GetCardsForPlayer(ctx context.Context, arg GetCardsForPlayerParams) ([]GetCardsForPlayerRow, error) {
+	rows, err := q.db.Query(ctx, getCardsForPlayer, arg.ID, arg.UserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetCardsForPlayerRow
+	for rows.Next() {
+		var i GetCardsForPlayerRow
+		if err := rows.Scan(&i.CardType, &i.ExternalReference); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getConquerPhaseState = `-- name: GetConquerPhaseState :one
 select source_region.external_reference as source_region,
        target_region.external_reference as target_region,
