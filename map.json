@@ -403,11 +403,15 @@
     },
     {
       "source": "east_africa",
+      "target": "madagascar"
+    },
+    {
+      "source": "east_africa",
       "target": "middle_east"
     },
     {
       "source": "east_africa",
-      "target": "madagascar"
+      "target": "north_africa"
     },
     {
       "source": "east_africa",

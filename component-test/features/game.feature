@@ -6,7 +6,7 @@ Feature: Creating a game
     And giovanni creates an account
     And vasilii creates an account
 
-  Scenario: Create game, connect players and make some moves
+  Scenario: Create game, connect players, attack and conquer a region
     Given a game is created with the following players
       | player    |
       | francesco |
