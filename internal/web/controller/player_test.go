@@ -31,9 +31,9 @@ func TestControllerImpl_GetPlayerState(t *testing.T) {
 	)
 
 	// Set up expectations for GetPlayersState method
-	playerService.On("GetPlayersState", ctx).Return([]sqlc.Player{
-		{ID: 1, GameID: gameID, UserID: "user1", TurnIndex: 0},
-		{ID: 2, GameID: gameID, UserID: "user2", TurnIndex: 1},
+	playerService.EXPECT().GetPlayersState(ctx).Return([]sqlc.GetPlayersStateRow{
+		{Name: "francesco", UserID: "user1", TurnIndex: 0, CardCount: 0},
+		{Name: "gabriele", UserID: "user2", TurnIndex: 1, CardCount: 0},
 	}, nil)
 
 	// Call the method under test
@@ -43,8 +43,8 @@ func TestControllerImpl_GetPlayerState(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, messaging.PlayersState{
 		Players: []messaging.Player{
-			{UserID: "user1", Index: 0},
-			{UserID: "user2", Index: 1},
+			{UserID: "user1", Name: "francesco", Index: 0, CardCount: 0},
+			{UserID: "user2", Name: "gabriele", Index: 1, CardCount: 0},
 		},
 	}, playerState)
 
