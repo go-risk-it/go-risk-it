@@ -354,6 +354,18 @@
       "target": "venezuela"
     },
     {
+      "source": "central_america",
+      "target": "eastern_united_states"
+    },
+    {
+      "source": "central_america",
+      "target": "venezuela"
+    },
+    {
+      "source": "central_america",
+      "target": "western_united_states"
+    },
+    {
       "source": "china",
       "target": "india"
     },
@@ -372,18 +384,6 @@
     {
       "source": "china",
       "target": "ural"
-    },
-    {
-      "source": "central_america",
-      "target": "eastern_united_states"
-    },
-    {
-      "source": "central_america",
-      "target": "western_united_states"
-    },
-    {
-      "source": "central_america",
-      "target": "venezuela"
     },
     {
       "source": "congo",
@@ -427,15 +427,15 @@
     },
     {
       "source": "eastern_united_states",
-      "target": "western_united_states"
-    },
-    {
-      "source": "eastern_united_states",
       "target": "ontario"
     },
     {
       "source": "eastern_united_states",
       "target": "quebec"
+    },
+    {
+      "source": "eastern_united_states",
+      "target": "western_united_states"
     },
     {
       "source": "egypt",
@@ -490,6 +490,14 @@
       "target": "scandinavia"
     },
     {
+      "source": "india",
+      "target": "middle_east"
+    },
+    {
+      "source": "india",
+      "target": "siam"
+    },
+    {
       "source": "indonesia",
       "target": "new_guinea"
     },
@@ -500,14 +508,6 @@
     {
       "source": "indonesia",
       "target": "western_australia"
-    },
-    {
-      "source": "india",
-      "target": "middle_east"
-    },
-    {
-      "source": "india",
-      "target": "siam"
     },
     {
       "source": "irkutsk",
@@ -622,8 +622,12 @@
       "target": "western_europe"
     },
     {
-      "source": "ukraine",
-      "target": "ural"
+      "source": "ural",
+      "target": "siberia"
+    },
+    {
+      "source": "ural",
+      "target": "ukraine"
     }
   ]
 }
