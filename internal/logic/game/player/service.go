@@ -11,7 +11,7 @@ import (
 
 type Service interface {
 	CreatePlayers(
-		ctx ctx.LogContext,
+		ctx ctx.GameContext,
 		querier db.Querier,
 		gameID int64,
 		players []request.Player,
@@ -19,7 +19,7 @@ type Service interface {
 		[]sqlc.Player,
 		error,
 	)
-	GetPlayers(ctx ctx.GameContext) ([]sqlc.Player, error)
+	GetPlayersState(ctx ctx.GameContext) ([]sqlc.GetPlayersStateRow, error)
 	GetPlayersQ(ctx ctx.GameContext, querier db.Querier) ([]sqlc.Player, error)
 }
 
@@ -33,8 +33,17 @@ func NewService(querier db.Querier) *ServiceImpl {
 	return &ServiceImpl{querier: querier}
 }
 
-func (s *ServiceImpl) GetPlayers(ctx ctx.GameContext) ([]sqlc.Player, error) {
-	return s.GetPlayersQ(ctx, s.querier)
+func (s *ServiceImpl) GetPlayersState(ctx ctx.GameContext) ([]sqlc.GetPlayersStateRow, error) {
+	ctx.Log().Infow("fetching player state")
+
+	result, err := s.querier.GetPlayersState(ctx, ctx.GameID())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get players: %w", err)
+	}
+
+	ctx.Log().Infow("got player state")
+
+	return result, nil
 }
 
 func (s *ServiceImpl) GetPlayersQ(ctx ctx.GameContext, querier db.Querier) ([]sqlc.Player, error) {
@@ -49,12 +58,12 @@ func (s *ServiceImpl) GetPlayersQ(ctx ctx.GameContext, querier db.Querier) ([]sq
 }
 
 func (s *ServiceImpl) CreatePlayers(
-	ctx ctx.LogContext,
+	ctx ctx.GameContext,
 	querier db.Querier,
 	gameID int64,
 	players []request.Player,
 ) ([]sqlc.Player, error) {
-	ctx.Log().Infow("creating players", "gameID", gameID, "players", players)
+	ctx.Log().Infow("creating players", "players", players)
 
 	turnIndex := int64(0)
 	playersParams := make([]sqlc.InsertPlayersParams, 0, len(players))
@@ -76,11 +85,11 @@ func (s *ServiceImpl) CreatePlayers(
 		return nil, fmt.Errorf("failed to insert players: %w", err)
 	}
 
-	ctx.Log().Infow("created players", "gameId", gameID, "players", players)
+	ctx.Log().Infow("created players", "players", players)
 
 	result, err := querier.GetPlayersByGame(ctx, gameID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get players by game UserID: %w", err)
+		return nil, fmt.Errorf("failed to get players by game: %w", err)
 	}
 
 	return result, nil

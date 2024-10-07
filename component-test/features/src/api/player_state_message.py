@@ -5,6 +5,7 @@ class Player(BaseModel):
     userId: str
     name: str
     index: int
+    cardCount: int
 
 
 class PlayerStateData(BaseModel):

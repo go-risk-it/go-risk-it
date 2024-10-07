@@ -19,87 +19,6 @@ var (
 	errGetPlayersByGame = errors.New("error getting players")
 )
 
-func TestServiceImpl_GetPlayersByGame(t *testing.T) {
-	t.Parallel()
-
-	// Initialize dependencies
-	logger := zap.NewExample().Sugar()
-	querier := db.NewQuerier(t)
-
-	// Initialize the state under test
-	service := player.NewService(querier)
-
-	// Set up test data
-	gameID := int64(1)
-	ctx := ctx2.WithGameID(
-		ctx2.WithUserID(ctx2.WithLog(context.Background(), logger), "francesco"),
-		gameID,
-	)
-
-	player1 := sqlc.Player{
-		ID:        1,
-		GameID:    gameID,
-		UserID:    "francesco",
-		TurnIndex: 0,
-	}
-	player2 := sqlc.Player{
-		ID:        2,
-		GameID:    gameID,
-		UserID:    "gabriele",
-		TurnIndex: 1,
-	}
-	player3 := sqlc.Player{
-		ID:        3,
-		GameID:    gameID,
-		UserID:    "giovanni",
-		TurnIndex: 2,
-	}
-	// Set up expectations for GetGame method
-	querier.On("GetPlayersByGame", ctx, gameID).Return([]sqlc.Player{
-		player1, player2, player3,
-	}, nil)
-
-	// Call the method under test
-	result, err := service.GetPlayers(ctx)
-
-	// Assert the result
-	require.NoError(t, err)
-
-	// Verify that the expected methods were called
-	require.Len(t, result, 3)
-	require.Contains(t, result, player1)
-	require.Contains(t, result, player2)
-	require.Contains(t, result, player3)
-}
-
-func TestServiceImpl_GetPlayersByGame_WithError(t *testing.T) {
-	t.Parallel()
-
-	// Initialize dependencies
-	logger := zap.NewExample().Sugar()
-	querier := db.NewQuerier(t)
-
-	// Initialize the state under test
-	service := player.NewService(querier)
-
-	// Set up test data
-	gameID := int64(1)
-	ctx := ctx2.WithGameID(
-		ctx2.WithUserID(ctx2.WithLog(context.Background(), logger), "francesco"),
-		gameID,
-	)
-
-	// Set up expectations for GetGame method
-	querier.On("GetPlayersByGame", ctx, gameID).Return(nil, errGetPlayersByGame)
-
-	// Call the method under test
-	result, err := service.GetPlayers(ctx)
-
-	// Assert the result
-	require.Error(t, err)
-	require.Nil(t, result)
-}
-
 func TestServiceImpl_CreatePlayers_WithValidData(t *testing.T) {
 	t.Parallel()
 
@@ -112,10 +31,10 @@ func TestServiceImpl_CreatePlayers_WithValidData(t *testing.T) {
 
 	// Set up test data
 	gameID := int64(1)
-	ctx := ctx2.WithUserID(
+	ctx := ctx2.WithGameID(ctx2.WithUserID(
 		ctx2.WithLog(context.Background(), logger),
 		"5a4fde41-4a68-4625-b42b-a9f5f938b394",
-	)
+	), gameID)
 	users := []request.Player{
 		{UserID: "5a4fde41-4a68-4625-b42b-a9f5f938b394", Name: "francesco"},
 		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "gabriele"},
@@ -194,10 +113,10 @@ func TestServiceImpl_CreatePlayers_InsertPlayersError(t *testing.T) {
 
 	// Set up test data
 	gameID := int64(1)
-	ctx := ctx2.WithUserID(
+	ctx := ctx2.WithGameID(ctx2.WithUserID(
 		ctx2.WithLog(context.Background(), logger),
 		"5a4fde41-4a68-4625-b42b-a9f5f938b394",
-	)
+	), gameID)
 	users := []request.Player{
 		{UserID: "5a4fde41-4a68-4625-b42b-a9f5f938b394", Name: "francesco"},
 		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "gabriele"},
@@ -249,10 +168,10 @@ func TestServiceImpl_CreatePlayers_GetPlayersByGameError(t *testing.T) {
 
 	// Set up test data
 	gameID := int64(1)
-	ctx := ctx2.WithUserID(
+	ctx := ctx2.WithGameID(ctx2.WithUserID(
 		ctx2.WithLog(context.Background(), logger),
 		"5a4fde41-4a68-4625-b42b-a9f5f938b394",
-	)
+	), gameID)
 	users := []request.Player{
 		{UserID: "5a4fde41-4a68-4625-b42b-a9f5f938b394", Name: "francesco"},
 		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "gabriele"},

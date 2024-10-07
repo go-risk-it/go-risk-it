@@ -30,8 +30,8 @@ func TestControllerImpl_GetPlayerState(t *testing.T) {
 		gameID,
 	)
 
-	// Set up expectations for GetPlayers method
-	playerService.On("GetPlayers", ctx).Return([]sqlc.Player{
+	// Set up expectations for GetPlayersState method
+	playerService.On("GetPlayersState", ctx).Return([]sqlc.Player{
 		{ID: 1, GameID: gameID, UserID: "user1", TurnIndex: 0},
 		{ID: 2, GameID: gameID, UserID: "user2", TurnIndex: 1},
 	}, nil)

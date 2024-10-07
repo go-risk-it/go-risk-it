@@ -19,6 +19,8 @@ type ServiceImpl struct {
 	regionService region.Service
 }
 
+var _ Service = (*ServiceImpl)(nil)
+
 func New(regionService region.Service) *ServiceImpl {
 	return &ServiceImpl{regionService: regionService}
 }

@@ -54,3 +54,4 @@ Feature: Creating a game
     Then all players receive all state updates
     And it's francesco's turn
     And the game phase is cards
+    And francesco has 1 cards

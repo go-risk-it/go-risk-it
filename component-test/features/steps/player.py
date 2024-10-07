@@ -26,3 +26,9 @@ def step_impl(context: RiskItContext, player_name: str):
     player = extract_player(player_name, players)
 
     assert turn % len(players) == player.index
+
+
+@then("{player_name} has {card_count} cards")
+def step_impl(context: RiskItContext, player_name: str, card_count: str):
+    player = extract_player(player_name, context.player_state.players)
+    assert player.cardCount == int(card_count)

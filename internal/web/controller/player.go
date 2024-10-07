@@ -26,19 +26,15 @@ func NewPlayerController(playerService player.Service) *PlayerControllerImpl {
 func (c *PlayerControllerImpl) GetPlayerState(
 	ctx ctx.GameContext,
 ) (messaging.PlayersState, error) {
-	ctx.Log().Infow("fetching players")
-
-	players, err := c.playerService.GetPlayers(ctx)
+	playersState, err := c.playerService.GetPlayersState(ctx)
 	if err != nil {
-		return messaging.PlayersState{}, fmt.Errorf("unable to get players: %w", err)
+		return messaging.PlayersState{}, fmt.Errorf("unable to get playersState: %w", err)
 	}
 
-	ctx.Log().Infow("got players", "players", players)
-
-	return messaging.PlayersState{Players: convertPlayers(players)}, nil
+	return messaging.PlayersState{Players: convertPlayers(playersState)}, nil
 }
 
-func convertPlayers(players []sqlc.Player) []messaging.Player {
+func convertPlayers(players []sqlc.GetPlayersStateRow) []messaging.Player {
 	result := make([]messaging.Player, len(players))
 	for i, p := range players {
 		result[i] = convertPlayer(p)
@@ -47,10 +43,11 @@ func convertPlayers(players []sqlc.Player) []messaging.Player {
 	return result
 }
 
-func convertPlayer(player sqlc.Player) messaging.Player {
+func convertPlayer(player sqlc.GetPlayersStateRow) messaging.Player {
 	return messaging.Player{
-		UserID: player.UserID,
-		Name:   player.Name,
-		Index:  player.TurnIndex,
+		UserID:    player.UserID,
+		Name:      player.Name,
+		Index:     player.TurnIndex,
+		CardCount: player.CardCount,
 	}
 }

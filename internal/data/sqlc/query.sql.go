@@ -192,6 +192,46 @@ func (q *Queries) GetPlayersByGame(ctx context.Context, gameID int64) ([]Player,
 	return items, nil
 }
 
+const getPlayersState = `-- name: GetPlayersState :many
+SELECT p.user_id, p.name, p.turn_index, COUNT(c.id) as card_count
+FROM player p
+         LEFT JOIN card c on p.id = c.owner_id
+WHERE p.game_id = $1
+GROUP BY p.id
+`
+
+type GetPlayersStateRow struct {
+	UserID    string
+	Name      string
+	TurnIndex int64
+	CardCount int64
+}
+
+func (q *Queries) GetPlayersState(ctx context.Context, gameID int64) ([]GetPlayersStateRow, error) {
+	rows, err := q.db.Query(ctx, getPlayersState, gameID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetPlayersStateRow
+	for rows.Next() {
+		var i GetPlayersStateRow
+		if err := rows.Scan(
+			&i.UserID,
+			&i.Name,
+			&i.TurnIndex,
+			&i.CardCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getRegionsByGame = `-- name: GetRegionsByGame :many
 SELECT r.id, r.external_reference, r.troops, p.user_id
 FROM region r

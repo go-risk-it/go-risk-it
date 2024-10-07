@@ -462,6 +462,65 @@ func (_c *Querier_GetPlayersByGame_Call) RunAndReturn(run func(context.Context, 
 	return _c
 }
 
+// GetPlayersState provides a mock function with given fields: ctx, gameID
+func (_m *Querier) GetPlayersState(ctx context.Context, gameID int64) ([]sqlc.GetPlayersStateRow, error) {
+	ret := _m.Called(ctx, gameID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetPlayersState")
+	}
+
+	var r0 []sqlc.GetPlayersStateRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64) ([]sqlc.GetPlayersStateRow, error)); ok {
+		return rf(ctx, gameID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int64) []sqlc.GetPlayersStateRow); ok {
+		r0 = rf(ctx, gameID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]sqlc.GetPlayersStateRow)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(ctx, gameID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_GetPlayersState_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetPlayersState'
+type Querier_GetPlayersState_Call struct {
+	*mock.Call
+}
+
+// GetPlayersState is a helper method to define mock.On call
+//   - ctx context.Context
+//   - gameID int64
+func (_e *Querier_Expecter) GetPlayersState(ctx interface{}, gameID interface{}) *Querier_GetPlayersState_Call {
+	return &Querier_GetPlayersState_Call{Call: _e.mock.On("GetPlayersState", ctx, gameID)}
+}
+
+func (_c *Querier_GetPlayersState_Call) Run(run func(ctx context.Context, gameID int64)) *Querier_GetPlayersState_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int64))
+	})
+	return _c
+}
+
+func (_c *Querier_GetPlayersState_Call) Return(_a0 []sqlc.GetPlayersStateRow, _a1 error) *Querier_GetPlayersState_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_GetPlayersState_Call) RunAndReturn(run func(context.Context, int64) ([]sqlc.GetPlayersStateRow, error)) *Querier_GetPlayersState_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetRegionsByGame provides a mock function with given fields: ctx, id
 func (_m *Querier) GetRegionsByGame(ctx context.Context, id int64) ([]sqlc.GetRegionsByGameRow, error) {
 	ret := _m.Called(ctx, id)

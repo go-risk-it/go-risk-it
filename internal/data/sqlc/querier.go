@@ -17,6 +17,7 @@ type Querier interface {
 	GetGame(ctx context.Context, id int64) (GetGameRow, error)
 	GetPlayerByUserId(ctx context.Context, userID string) (Player, error)
 	GetPlayersByGame(ctx context.Context, gameID int64) ([]Player, error)
+	GetPlayersState(ctx context.Context, gameID int64) ([]GetPlayersStateRow, error)
 	GetRegionsByGame(ctx context.Context, id int64) ([]GetRegionsByGameRow, error)
 	HasConqueredInTurn(ctx context.Context, arg HasConqueredInTurnParams) (bool, error)
 	IncreaseRegionTroops(ctx context.Context, arg IncreaseRegionTroopsParams) error

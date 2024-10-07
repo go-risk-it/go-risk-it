@@ -72,12 +72,7 @@ func (s *ServiceImpl) Draw(ctx ctx.GameContext, querier db.Querier) error {
 		return errors.New("no cards available")
 	}
 
-	players, err := s.playerService.GetPlayersQ(ctx, querier)
-	if err != nil {
-		return fmt.Errorf("failed to get players: %w", err)
-	}
-
-	playerID, err := extractPlayerID(ctx, players)
+	playerID, err := s.extractPlayerID(ctx, querier)
 	if err != nil {
 		return fmt.Errorf("failed to extract player id: %w", err)
 	}
@@ -99,7 +94,12 @@ func (s *ServiceImpl) Draw(ctx ctx.GameContext, querier db.Querier) error {
 	return nil
 }
 
-func extractPlayerID(ctx ctx.GameContext, players []sqlc.Player) (int64, error) {
+func (s *ServiceImpl) extractPlayerID(ctx ctx.GameContext, querier db.Querier) (int64, error) {
+	players, err := s.playerService.GetPlayersQ(ctx, querier)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get players: %w", err)
+	}
+
 	for _, player := range players {
 		if player.UserID == ctx.UserID() {
 			return player.ID, nil
