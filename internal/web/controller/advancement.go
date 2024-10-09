@@ -15,8 +15,9 @@ type AdvancementController interface {
 }
 
 type AdvancementControllerImpl struct {
-	attackAdvancer advancement.AttackAdvancer
-	cardsAdvancer  advancement.CardsAdvancer
+	attackAdvancer    advancement.AttackAdvancer
+	cardsAdvancer     advancement.CardsAdvancer
+	reinforceAdvancer advancement.ReinforceAdvancer
 }
 
 var _ AdvancementController = (*AdvancementControllerImpl)(nil)
@@ -24,10 +25,12 @@ var _ AdvancementController = (*AdvancementControllerImpl)(nil)
 func NewAdvancementController(
 	attackAdvancer advancement.AttackAdvancer,
 	cardsAdvancer advancement.CardsAdvancer,
+	reinforceAdvancer advancement.ReinforceAdvancer,
 ) *AdvancementControllerImpl {
 	return &AdvancementControllerImpl{
-		attackAdvancer: attackAdvancer,
-		cardsAdvancer:  cardsAdvancer,
+		attackAdvancer:    attackAdvancer,
+		cardsAdvancer:     cardsAdvancer,
+		reinforceAdvancer: reinforceAdvancer,
 	}
 }
 
@@ -44,6 +47,8 @@ func (c *AdvancementControllerImpl) Advance(
 		err = c.attackAdvancer.Advance(ctx)
 	case game.Conquer:
 		err = errors.New("cannot advance from conquer phase")
+	case game.Reinforce:
+		err = c.reinforceAdvancer.Advance(ctx)
 	case game.Cards:
 		err = c.cardsAdvancer.Advance(ctx)
 	default:

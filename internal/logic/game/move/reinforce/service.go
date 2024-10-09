@@ -55,5 +55,5 @@ func (s *ServiceImpl) PhaseType() sqlc.PhaseType {
 }
 
 func (s *ServiceImpl) ForcedAdvancementPhase() sqlc.PhaseType {
-	return sqlc.PhaseTypeREINFORCE
+	return sqlc.PhaseTypeCARDS
 }

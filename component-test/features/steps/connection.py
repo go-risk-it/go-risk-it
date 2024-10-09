@@ -2,7 +2,7 @@ import json
 import logging
 
 from behave import *
-from websocket import create_connection
+from websockets.sync.client import connect
 
 from src.api.board_state_message import BoardStateMessage
 from src.api.card_state_message import CardStateMessage
@@ -15,17 +15,15 @@ LOGGER = logging.getLogger(__name__)
 
 @when("{player} connects to the game")
 def step_impl(context: RiskItContext, player: str):
-    conn = create_connection(
+    conn = connect(
         f"ws://localhost:8000/ws?gameID={context.game_id}",
-        timeout=2,
-        header=[f"Authorization: Bearer {context.players[player].user.jwt}"],
+        open_timeout=2,
+        additional_headers={"Authorization": f"Bearer {context.players[player].user.jwt}"},
     )
     context.players[player].connection = conn
 
 
-def deserialize(
-        context: RiskItContext, message: str
-) -> None:
+def deserialize(context: RiskItContext, message: str) -> None:
     parsed_message = json.loads(message)
     message_type = parsed_message["type"]
 
@@ -50,8 +48,16 @@ def deserialize(
 
 def receive_all_state_updates(context: RiskItContext, player: str):
     conn = context.players[player].connection
-    for i in range(4):
-        deserialize(context, conn.recv())
+    while True:
+        try:
+            message = conn.recv(timeout=0.05)
+            deserialize(context, message)
+        except TimeoutError:
+            LOGGER.error("Timed out waiting for message")
+            break
+        except Exception as e:
+            LOGGER.error(e)
+            break
 
 
 @then("{player} receives all state updates")

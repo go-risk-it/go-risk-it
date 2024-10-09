@@ -1,13 +1,12 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from websocket import WebSocket
-
 from src.core.user import User
+from websockets.sync.client import ClientConnection
 
 
 @dataclass
 class Player:
     user: User
     name: str
-    connection: Optional[WebSocket] = None
+    connection: Optional[ClientConnection] = None

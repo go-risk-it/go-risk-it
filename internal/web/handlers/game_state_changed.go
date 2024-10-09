@@ -56,7 +56,7 @@ func HandleGameStateChanged(
 		go fetchStateAndBroadcast(
 			gameContext,
 			cardStateFetcher.FetchState,
-			connectionManager.Broadcast)
+			connectionManager.WriteMessage)
 	})
 }
 
