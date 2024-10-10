@@ -3,7 +3,7 @@ version: "3.8"
 services:
 
   minio:
-    image: minio/minio
+    image: minio/minio@sha256:ea15e53e66f96f63e12f45509d2d2d8fad774808debb490f48508b3130bd22d3
     ports:
       - '9000:9000'
       - '9001:9001'
@@ -20,7 +20,7 @@ services:
       - ./volumes/storage:/data:z
 
   minio-createbucket:
-    image: minio/mc
+    image: minio/mc@sha256:6284293efec74a9f1061c3bdfe30f0b99ffb90833096f3c5a6fb5f112ba80162
     depends_on:
       minio:
         condition: service_healthy
@@ -84,7 +84,7 @@ services:
 
   imgproxy:
     container_name: supabase-imgproxy
-    image: darthsim/imgproxy:v3.24.1
+    image: darthsim/imgproxy:v3.24.1@sha256:360e3b460816d06ecdeb7141999fa28fcb59c085e50af86b2f57bc7eb0c40f18
     healthcheck:
       test: [ "CMD", "imgproxy", "health" ]
       timeout: 5s

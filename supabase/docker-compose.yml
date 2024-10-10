@@ -10,7 +10,7 @@ version: "3.8"
 services:
   studio:
     container_name: supabase-studio
-    image: supabase/studio:20240326-5e5586d
+    image: supabase/studio:20240326-5e5586d@sha256:3537ae89d217432a27fae5b76ce1a2147a0ce1692cc9858a3fcddf5a55c93460
     restart: unless-stopped
     healthcheck:
       test:
@@ -48,7 +48,7 @@ services:
 
   kong:
     container_name: supabase-kong
-    image: kong:2.8.1
+    image: kong:2.8.1@sha256:1b53405d8680a09d6f44494b7990bf7da2ea43f84a258c59717d4539abf09f6d
     restart: unless-stopped
     # https://unix.stackexchange.com/a/294837
     entrypoint: bash -c 'eval "echo \"$$(cat ~/temp.yml)\"" > ~/kong.yml && /docker-entrypoint.sh kong docker-start'
@@ -135,7 +135,7 @@ services:
 
   rest:
     container_name: supabase-rest
-    image: postgrest/postgrest:v12.0.3
+    image: postgrest/postgrest:v12.0.3@sha256:a1dcb39350d04c2f768bc6b9cb01eb6ead068156aa7281d155b9ed829cbb2ad7
     depends_on:
       db:
         # Disable this if you are using an external Postgres database
@@ -240,7 +240,7 @@ services:
 
   imgproxy:
     container_name: supabase-imgproxy
-    image: darthsim/imgproxy:v3.24.1
+    image: darthsim/imgproxy:v3.24.1@sha256:360e3b460816d06ecdeb7141999fa28fcb59c085e50af86b2f57bc7eb0c40f18
     healthcheck:
       test: [ "CMD", "imgproxy", "health" ]
       timeout: 5s
