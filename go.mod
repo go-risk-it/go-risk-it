@@ -1,6 +1,6 @@
 module github.com/go-risk-it/go-risk-it
 
-go 1.22.3
+go 1.23.1
 
 toolchain go1.23.2
 
