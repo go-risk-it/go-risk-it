@@ -8,19 +8,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 )
 
-type TargetPhase[T any] struct {
-	Type    sqlc.PhaseType
-	Payload T
-}
-
-type AttackPhase struct{}
-
-type ConquerPhase struct {
-	AttackingRegion sqlc.Region
-	DefendingRegion sqlc.Region
-	AttackingTroops int
-}
-
 func (s *ServiceImpl) Walk(
 	ctx ctx.GameContext,
 	querier db.Querier,

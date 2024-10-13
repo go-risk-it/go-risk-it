@@ -20,8 +20,5 @@ var Module = fx.Options(
 	nbio.Module,
 	rest.Module,
 	ws.Module,
-	fx.Invoke(
-		handlers.HandleGameStateChanged,
-		handlers.HandlePlayerConnected,
-	),
+	handlers.Module,
 )
