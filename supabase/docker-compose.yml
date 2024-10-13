@@ -240,7 +240,7 @@ services:
 
   imgproxy:
     container_name: supabase-imgproxy
-    image: darthsim/imgproxy:v3.24.1
+    image: darthsim/imgproxy:v3.26.0@sha256:f3130cc154e8584643581ad7ba53970ec779e7e974f98b121854bba2a46b3b76
     healthcheck:
       test: [ "CMD", "imgproxy", "health" ]
       timeout: 5s
