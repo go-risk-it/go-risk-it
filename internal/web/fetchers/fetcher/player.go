@@ -22,7 +22,7 @@ type PlayerFetcherResult struct {
 	fx.Out
 
 	PlayerFetcher PlayerFetcher
-	Fetcher       Fetcher `group:"fetchers"`
+	Fetcher       Fetcher `group:"public_fetchers"`
 }
 
 func NewPlayerFetcher(

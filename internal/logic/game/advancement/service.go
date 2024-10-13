@@ -3,6 +3,8 @@ package advancement
 import (
 	"fmt"
 
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/validation"
+
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
@@ -20,6 +22,7 @@ type ServiceImpl[T, R any] struct {
 	querier                db.Querier
 	gameState              state.Service
 	moveService            service.Service[T, R]
+	validationService      validation.Service
 	gameStateChangedSignal signals.GameStateChangedSignal
 }
 
@@ -27,12 +30,14 @@ func NewService[T, R any](
 	gameState state.Service,
 	querier db.Querier,
 	moveService service.Service[T, R],
+	validationService validation.Service,
 	gameStateChangedSignal signals.GameStateChangedSignal,
 ) *ServiceImpl[T, R] {
 	return &ServiceImpl[T, R]{
 		gameState:              gameState,
 		querier:                querier,
 		moveService:            moveService,
+		validationService:      validationService,
 		gameStateChangedSignal: gameStateChangedSignal,
 	}
 }
@@ -67,6 +72,12 @@ func (s *ServiceImpl[T, R]) AdvanceQ(ctx ctx.GameContext, querier db.Querier) er
 	game, err := s.gameState.GetGameStateQ(ctx, querier)
 	if err != nil {
 		return fmt.Errorf("unable to get game state: %w", err)
+	}
+
+	if err := s.validationService.Validate(ctx, querier, game); err != nil {
+		ctx.Log().Errorw("validation failed", "error", err)
+
+		return fmt.Errorf("validation failed: %w", err)
 	}
 
 	ctx.Log().Infof("game is in phase %s", game.Phase)

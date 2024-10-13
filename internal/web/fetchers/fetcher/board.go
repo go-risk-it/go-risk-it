@@ -23,7 +23,7 @@ type BoardFetcherResult struct {
 	fx.Out
 
 	BoardFetcher BoardFetcher
-	Fetcher      Fetcher `group:"fetchers"`
+	Fetcher      Fetcher `group:"public_fetchers"`
 }
 
 func NewBoardFetcher(boardController controller.BoardController) BoardFetcherResult {

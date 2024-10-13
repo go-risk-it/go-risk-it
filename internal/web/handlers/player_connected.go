@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+
 	"github.com/go-risk-it/go-risk-it/internal/logic/signals"
 )
 

@@ -28,12 +28,11 @@ func (s *ServiceImpl) AdvanceQ(
 		return fmt.Errorf("failed to create phase: %w", err)
 	}
 
-	// TODO: add continents and used cards
+	// add continents and used cards
 	deployPhase, err := querier.InsertDeployPhase(ctx, sqlc.InsertDeployPhaseParams{
 		PhaseID:          phase.ID,
 		DeployableTroops: int64(countPlayerRegions(ctx, regions) / 3),
 	})
-
 	if err != nil {
 		return fmt.Errorf("failed to create deploy phase: %w", err)
 	}
@@ -51,5 +50,6 @@ func countPlayerRegions(ctx ctx.GameContext, regions []sqlc.GetRegionsByGameRow)
 			result++
 		}
 	}
+
 	return result
 }

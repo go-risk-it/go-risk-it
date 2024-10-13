@@ -3,8 +3,9 @@ package cards
 import (
 	"errors"
 	"fmt"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
 	"math/rand"
+
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"

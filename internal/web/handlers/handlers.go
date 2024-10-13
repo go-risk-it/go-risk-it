@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/internal/web/fetchers/fetcher"
@@ -24,7 +25,8 @@ var Module = fx.Options(
 type HandlerParams[T any] struct {
 	fx.In
 
-	Fetchers              []fetcher.Fetcher `group:"fetchers"`
+	PublicFetchers        []fetcher.Fetcher `group:"public_fetchers"`
+	PrivateFetchers       []fetcher.Fetcher `group:"private_fetchers"`
 	Log                   *zap.SugaredLogger
 	Signal                T
 	GameService           state.Service
@@ -55,8 +57,16 @@ func fetchAllStatesAndPublish[T any](
 		params,
 		publisher)
 
-	for _, fetcher := range params.Fetchers {
+	for _, fetcher := range params.PublicFetchers {
 		go fetchStateAndPublish(gameContext, fetcher.FetchState, publisher)
+	}
+
+	for _, fetcher := range params.PrivateFetchers {
+		go fetchStateAndPublish(
+			gameContext,
+			fetcher.FetchState,
+			params.ConnectionManager.WriteMessage,
+		)
 	}
 }
 

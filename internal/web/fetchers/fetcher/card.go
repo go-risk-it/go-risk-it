@@ -23,7 +23,7 @@ type CardFetcherResult struct {
 	fx.Out
 
 	CardFetcher CardFetcher
-	Fetcher     Fetcher `group:"fetchers"`
+	Fetcher     Fetcher `group:"private_fetchers"`
 }
 
 func NewCardFetcher(
