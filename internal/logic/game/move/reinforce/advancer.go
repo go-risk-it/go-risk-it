@@ -30,7 +30,7 @@ func (s *ServiceImpl) AdvanceQ(
 
 	hasConqueredInTurn, err := querier.HasConqueredInTurn(ctx, sqlc.HasConqueredInTurnParams{
 		ID:   ctx.GameID(),
-		Turn: game.Turn,
+		Turn: game.Turn - 1,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to check if player has conquered in turn: %w", err)

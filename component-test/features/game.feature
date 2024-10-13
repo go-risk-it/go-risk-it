@@ -52,6 +52,6 @@ Feature: Creating a game
 
     When francesco reinforces from eastern_united_states to western_united_states with 2 troops
     Then all players receive all state updates
-    And it's francesco's turn
+    And it's gabriele's turn
     And the game phase is cards
     And francesco has 1 cards

@@ -3,6 +3,7 @@ package cards
 import (
 	"errors"
 	"fmt"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
 	"math/rand"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
@@ -26,6 +27,21 @@ type Service interface {
 type ServiceImpl struct {
 	phaseService  phase.Service
 	playerService player.Service
+	regionService region.Service
+}
+
+var _ Service = (*ServiceImpl)(nil)
+
+func NewService(
+	phaseService phase.Service,
+	playerService player.Service,
+	regionService region.Service,
+) *ServiceImpl {
+	return &ServiceImpl{
+		phaseService:  phaseService,
+		playerService: playerService,
+		regionService: regionService,
+	}
 }
 
 func (s *ServiceImpl) PerformQ(
@@ -38,18 +54,6 @@ func (s *ServiceImpl) PerformQ(
 
 func (s *ServiceImpl) Walk(ctx ctx.GameContext, querier db.Querier) (sqlc.PhaseType, error) {
 	panic("implement me")
-}
-
-var _ Service = (*ServiceImpl)(nil)
-
-func NewService(
-	phaseService phase.Service,
-	playerService player.Service,
-) *ServiceImpl {
-	return &ServiceImpl{
-		phaseService:  phaseService,
-		playerService: playerService,
-	}
 }
 
 func (s *ServiceImpl) PhaseType() sqlc.PhaseType {

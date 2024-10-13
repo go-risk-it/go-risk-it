@@ -52,7 +52,12 @@ func (s *ServiceImpl) InsertPhaseQ(
 		phaseType,
 	)
 
-	phase, err := s.insertPhaseQ(ctx, querier, ctx.GameID(), phaseType, gameState.Turn)
+	turn := gameState.Turn
+	if phaseType == sqlc.PhaseTypeCARDS {
+		turn++
+	}
+
+	phase, err := s.insertPhaseQ(ctx, querier, ctx.GameID(), phaseType, turn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new phase: %w", err)
 	}
