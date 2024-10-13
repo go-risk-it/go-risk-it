@@ -15,9 +15,17 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type Move struct{}
+type CardCombination struct {
+	CardIDs []int64
+}
 
-type MoveResult struct{}
+type Move struct {
+	Combinations []CardCombination
+}
+
+type MoveResult struct {
+	ExtraDeployableTroops int64
+}
 
 type Service interface {
 	service.Service[Move, *MoveResult]
@@ -42,18 +50,6 @@ func NewService(
 		playerService: playerService,
 		regionService: regionService,
 	}
-}
-
-func (s *ServiceImpl) PerformQ(
-	ctx ctx.GameContext,
-	querier db.Querier,
-	move Move,
-) (*MoveResult, error) {
-	panic("implement me")
-}
-
-func (s *ServiceImpl) Walk(ctx ctx.GameContext, querier db.Querier) (sqlc.PhaseType, error) {
-	panic("implement me")
 }
 
 func (s *ServiceImpl) PhaseType() sqlc.PhaseType {

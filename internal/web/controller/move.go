@@ -3,6 +3,8 @@ package controller
 import (
 	"fmt"
 
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/cards"
+
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack"
@@ -17,6 +19,7 @@ type MoveController interface {
 	PerformAttackMove(ctx ctx.GameContext, attackMove request.AttackMove) error
 	PerformConquerMove(ctx ctx.GameContext, conquerMove request.ConquerMove) error
 	PerformReinforceMove(ctx ctx.GameContext, reinforceMove request.ReinforceMove) error
+	PerformCardsMove(ctx ctx.GameContext, cardsMove request.CardsMove) error
 }
 
 type MoveControllerImpl struct {
@@ -24,6 +27,7 @@ type MoveControllerImpl struct {
 	attackOrchestrator    orchestration.AttackOrchestrator
 	conquerOrchestrator   orchestration.ConquerOrchestrator
 	reinforceOrchestrator orchestration.ReinforceOrchestrator
+	cardsOrchestrator     orchestration.CardsOrchestrator
 }
 
 var _ MoveController = (*MoveControllerImpl)(nil)
@@ -33,12 +37,14 @@ func NewMoveController(
 	attackOrchestrator orchestration.AttackOrchestrator,
 	conquerOrchestrator orchestration.ConquerOrchestrator,
 	reinforceOrchestrator orchestration.ReinforceOrchestrator,
+	cardsOrchestrator orchestration.CardsOrchestrator,
 ) *MoveControllerImpl {
 	return &MoveControllerImpl{
 		deployOrchestrator:    deployOrchestrator,
 		attackOrchestrator:    attackOrchestrator,
 		conquerOrchestrator:   conquerOrchestrator,
 		reinforceOrchestrator: reinforceOrchestrator,
+		cardsOrchestrator:     cardsOrchestrator,
 	}
 }
 
@@ -110,6 +116,28 @@ func (c *MoveControllerImpl) PerformReinforceMove(
 
 	if err := c.reinforceOrchestrator.OrchestrateMove(ctx, move); err != nil {
 		return fmt.Errorf("unable to perform reinforce move: %w", err)
+	}
+
+	return nil
+}
+
+func (c *MoveControllerImpl) PerformCardsMove(
+	ctx ctx.GameContext,
+	cardsMove request.CardsMove,
+) error {
+	combinations := make([]cards.CardCombination, len(cardsMove.Combinations))
+	for i, combination := range cardsMove.Combinations {
+		combinations[i] = cards.CardCombination{
+			CardIDs: combination.CardIDs,
+		}
+	}
+
+	move := cards.Move{
+		Combinations: combinations,
+	}
+
+	if err := c.cardsOrchestrator.OrchestrateMove(ctx, move); err != nil {
+		return fmt.Errorf("unable to perform cards move: %w", err)
 	}
 
 	return nil

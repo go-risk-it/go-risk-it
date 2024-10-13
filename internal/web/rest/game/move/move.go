@@ -15,6 +15,7 @@ var Module = fx.Options(
 		route.AsRoute(NewAttackHandler),
 		route.AsRoute(NewConquerHandler),
 		route.AsRoute(NewReinforceHandler),
+		route.AsRoute(NewCardsHandler),
 	),
 )
 

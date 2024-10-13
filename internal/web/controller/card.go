@@ -47,8 +47,8 @@ func convertCards(cards []sqlc.GetCardsForPlayerRow) []messaging.Card {
 
 func convertCard(card sqlc.GetCardsForPlayerRow) messaging.Card {
 	region := ""
-	if card.ExternalReference.Valid {
-		region = card.ExternalReference.String
+	if card.Region.Valid {
+		region = card.Region.String
 	}
 
 	return messaging.Card{

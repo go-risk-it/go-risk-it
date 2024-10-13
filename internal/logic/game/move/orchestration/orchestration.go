@@ -2,6 +2,7 @@ package orchestration
 
 import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/cards"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/conquer"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/deploy"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/validation"
@@ -23,6 +24,10 @@ type ConquerOrchestrator interface {
 
 type ReinforceOrchestrator interface {
 	Orchestrator[reinforce.Move, *reinforce.MoveResult]
+}
+
+type CardsOrchestrator interface {
+	Orchestrator[cards.Move, *cards.MoveResult]
 }
 
 var (

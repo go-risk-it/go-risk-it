@@ -10,6 +10,7 @@ const (
 )
 
 type Card struct {
+	ID     int64    `json:"id"`
 	Type   CardType `json:"type"`
 	Region string   `json:"region"`
 }

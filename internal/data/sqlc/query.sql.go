@@ -82,7 +82,7 @@ func (q *Queries) GetAvailableCards(ctx context.Context, id int64) ([]Card, erro
 }
 
 const getCardsForPlayer = `-- name: GetCardsForPlayer :many
-SELECT c.card_type, r.external_reference
+SELECT c.id, c.card_type, r.external_reference as region
 FROM game g
          JOIN player p on g.id = p.game_id
          JOIN card c ON c.owner_id = p.id
@@ -97,8 +97,9 @@ type GetCardsForPlayerParams struct {
 }
 
 type GetCardsForPlayerRow struct {
-	CardType          CardType
-	ExternalReference pgtype.Text
+	ID       int64
+	CardType CardType
+	Region   pgtype.Text
 }
 
 func (q *Queries) GetCardsForPlayer(ctx context.Context, arg GetCardsForPlayerParams) ([]GetCardsForPlayerRow, error) {
@@ -110,7 +111,7 @@ func (q *Queries) GetCardsForPlayer(ctx context.Context, arg GetCardsForPlayerPa
 	var items []GetCardsForPlayerRow
 	for rows.Next() {
 		var i GetCardsForPlayerRow
-		if err := rows.Scan(&i.CardType, &i.ExternalReference); err != nil {
+		if err := rows.Scan(&i.ID, &i.CardType, &i.Region); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
