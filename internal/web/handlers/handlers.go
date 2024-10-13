@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/internal/web/fetchers/fetcher"
@@ -11,8 +12,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/connection"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
 )
 
 var Module = fx.Options(

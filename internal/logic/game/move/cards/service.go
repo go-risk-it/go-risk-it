@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
-
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
