@@ -147,6 +147,5 @@ func getCardValue(cardType sqlc.CardType) int64 {
 		return CAVALRY
 	default:
 		return JOLLY
-
 	}
 }
