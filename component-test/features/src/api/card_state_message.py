@@ -11,6 +11,7 @@ class CardType(str, enum.Enum):
 
 
 class Card(BaseModel):
+    id: int
     type: CardType
     region: str
 

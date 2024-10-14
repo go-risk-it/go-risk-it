@@ -56,6 +56,11 @@ var Module = fx.Options(
 			fx.As(new(ReinforceOrchestrator)),
 		),
 		fx.Annotate(
+			NewOrchestrator[cards.Move, *cards.MoveResult],
+			fx.As(new(CardsOrchestrator)),
+		),
+
+		fx.Annotate(
 			validation.NewService,
 			fx.As(new(validation.Service)),
 		),
