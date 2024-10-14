@@ -7,5 +7,5 @@ import (
 )
 
 func (s *ServiceImpl) Walk(ctx ctx.GameContext, querier db.Querier) (sqlc.PhaseType, error) {
-	panic("implement me")
+	return sqlc.PhaseTypeDEPLOY, nil
 }

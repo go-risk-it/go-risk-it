@@ -31,6 +31,14 @@ func (s *ServiceImpl) PerformQ(
 		cardIndex[card.ID] = card
 	}
 
+	if len(move.Combinations) == 0 {
+		return nil, errors.New("no combinations provided")
+	}
+
+	if err := validateAllCardsDifferent(move); err != nil {
+		return nil, fmt.Errorf("validation failed: %w", err)
+	}
+
 	for _, combination := range move.Combinations {
 		if err := validateCombination(combination, cardIndex); err != nil {
 			return nil, fmt.Errorf("validation failed: %w", err)
@@ -38,7 +46,7 @@ func (s *ServiceImpl) PerformQ(
 
 		combinationTroops, err := identifyCombination(combination, cardIndex)
 		if err != nil {
-			return nil, fmt.Errorf("unable to identify combination: %w", err)
+			return nil, fmt.Errorf("validation failed: %w", err)
 		}
 
 		extraDeployableTroops += combinationTroops
@@ -47,6 +55,19 @@ func (s *ServiceImpl) PerformQ(
 	return &MoveResult{
 		ExtraDeployableTroops: extraDeployableTroops,
 	}, nil
+}
+
+func validateAllCardsDifferent(move Move) error {
+	cardMap := make(map[int64]struct{})
+	for _, combination := range move.Combinations {
+		for _, cardID := range combination.CardIDs {
+			if _, ok := cardMap[cardID]; ok {
+				return errors.New("all cards must be different")
+			}
+			cardMap[cardID] = struct{}{}
+		}
+	}
+	return nil
 }
 
 const (
@@ -62,12 +83,6 @@ func validateCombination(
 ) error {
 	if len(combination.CardIDs) != 3 {
 		return errors.New("combination must have exactly 3 cards")
-	}
-
-	if combination.CardIDs[0] == combination.CardIDs[1] ||
-		combination.CardIDs[0] == combination.CardIDs[2] ||
-		combination.CardIDs[1] == combination.CardIDs[2] {
-		return errors.New("combination must have distinct cards")
 	}
 
 	// check if the cards are owned by this player
