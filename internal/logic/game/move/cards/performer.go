@@ -59,14 +59,17 @@ func (s *ServiceImpl) PerformQ(
 
 func validateAllCardsDifferent(move Move) error {
 	cardMap := make(map[int64]struct{})
+
 	for _, combination := range move.Combinations {
 		for _, cardID := range combination.CardIDs {
 			if _, ok := cardMap[cardID]; ok {
 				return errors.New("all cards must be different")
 			}
+
 			cardMap[cardID] = struct{}{}
 		}
 	}
+
 	return nil
 }
 

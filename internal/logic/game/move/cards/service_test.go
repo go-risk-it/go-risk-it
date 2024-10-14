@@ -18,9 +18,6 @@ import (
 
 func setup(t *testing.T) (
 	*db.Querier,
-	*phase.Service,
-	*player.Service,
-	*region.Service,
 	cards.Service,
 ) {
 	t.Helper()
@@ -30,7 +27,7 @@ func setup(t *testing.T) (
 	regionService := region.NewService(t)
 	service := cards.NewService(phaseService, playerService, regionService)
 
-	return querier, phaseService, playerService, regionService, service
+	return querier, service
 }
 
 func input() ctx.GameContext {
@@ -171,7 +168,7 @@ func TestServiceImpl_InvalidCombinations(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, _, _, _, service := setup(t)
+			querier, service := setup(t)
 			ctx := input()
 
 			querier.
@@ -263,7 +260,7 @@ func TestServiceImpl_ValidCombinations(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, _, _, _, service := setup(t)
+			querier, service := setup(t)
 			ctx := input()
 
 			querier.
