@@ -143,6 +143,27 @@ func TestServiceImpl_InvalidCombinations(t *testing.T) {
 			expectedError: "validation failed: invalid combination",
 		},
 		{
+			name: "One jolly card, one artillery card and one infantry card",
+			combinations: []cards.CardCombination{
+				{CardIDs: []int64{10, 1, 4}},
+			},
+			expectedError: "validation failed: invalid combination",
+		},
+		{
+			name: "One jolly card, one artillery card and one cavalry card",
+			combinations: []cards.CardCombination{
+				{CardIDs: []int64{10, 1, 7}},
+			},
+			expectedError: "validation failed: invalid combination",
+		},
+		{
+			name: "One jolly card, one infantry card and one cavalry",
+			combinations: []cards.CardCombination{
+				{CardIDs: []int64{10, 4, 7}},
+			},
+			expectedError: "validation failed: invalid combination",
+		},
+		{
 			name: "Two jolly cards and one artillery card",
 			combinations: []cards.CardCombination{
 				{CardIDs: []int64{10, 11, 1}},
