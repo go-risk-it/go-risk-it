@@ -13,6 +13,7 @@ def step_impl(context: RiskItContext, player: str, source: str, target: str, tro
     response = attack(context, attacking_region, defending_region, player, source, target, troops)
 
     assert_2xx(response)
+    all_players_receive_all_state_updates(context)
 
 
 @when("{player} attacks from {source} to {target} until conquering")
@@ -24,7 +25,8 @@ def step_impl(context: RiskItContext, player: str, source: str, target: str):
         attacking_troops = min(attacking_region.troops, 3)
         if attacking_troops <= 0:
             return
-        response = attack(context, attacking_region, defending_region, player, source, target, attacking_troops)
+        response = attack(context, attacking_region, defending_region, player, source, target,
+                          attacking_troops)
 
         assert_2xx(response)
         all_players_receive_all_state_updates(context)

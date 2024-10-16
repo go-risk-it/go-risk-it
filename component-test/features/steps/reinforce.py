@@ -1,6 +1,7 @@
 from behave import *
 
 from src.core.context import RiskItContext
+from steps.connection import all_players_receive_all_state_updates
 from util.http_assertions import assert_2xx
 
 
@@ -17,3 +18,4 @@ def step_impl(context: RiskItContext, player: str, source_region: str, target_re
     }
     response = context.risk_it_clients[player].reinforce(context.game_id, request)
     assert_2xx(response)
+    all_players_receive_all_state_updates(context)

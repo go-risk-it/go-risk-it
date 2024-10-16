@@ -2,10 +2,11 @@ package cards_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/cards"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
 	"github.com/jackc/pgx/v5/pgtype"
-	"testing"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
