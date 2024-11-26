@@ -52,6 +52,7 @@ func convertCard(card sqlc.GetCardsForPlayerRow) messaging.Card {
 	}
 
 	return messaging.Card{
+		ID:     card.ID,
 		Type:   convertCartType(card.CardType),
 		Region: region,
 	}
