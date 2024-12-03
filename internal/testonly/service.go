@@ -27,6 +27,9 @@ func NewService(pool pool.DB, dbConfig config.DatabaseConfig) *ServiceImpl {
 		"region",
 		"card",
 		"mission",
+		"deploy_phase",
+		"conquer_phase",
+		"phase",
 	}
 
 	return &ServiceImpl{pool: pool, dbConfig: dbConfig, tables: tables}
