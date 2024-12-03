@@ -108,6 +108,40 @@ Feature: Creating a game
     And giovanni has 2 cards
 
     When francesco advances from phase cards
+    And francesco deploys 4 troops in china
+    And francesco attacks from china to siam until conquering
+    And francesco conquers with 6 troops
+    And francesco advances from phase attack
+    And francesco reinforces from india to siam with 2 troops
+    Then all players receive all state updates
+    And it's gabriele's turn
+    And the game phase is cards
+    And francesco has 3 cards
+
+    When gabriele advances from phase cards
+    And gabriele deploys 4 troops in congo
+    And gabriele attacks from congo to south_africa until conquering
+    And gabriele conquers with 4 troops
+    And gabriele advances from phase attack
+    And gabriele reinforces from north_africa to south_africa with 2 troops
+    Then all players receive all state updates
+    And it's giovanni's turn
+    And the game phase is cards
+    And gabriele has 3 cards
+
+    When giovanni advances from phase cards
+    And giovanni deploys 5 troops in new_guinea
+    And giovanni attacks from new_guinea to eastern_australia until conquering
+    And giovanni conquers with 4 troops
+    And giovanni advances from phase attack
+    And giovanni reinforces from eastern_australia to western_australia with 1 troops
+    Then all players receive all state updates
+    And it's francesco's turn
+    And the game phase is cards
+    And giovanni has 3 cards
+
+
+
 
 
 
