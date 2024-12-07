@@ -3,7 +3,7 @@ version: "3.8"
 services:
 
   minio:
-    image: minio/minio
+    image: minio/minio@sha256:ac591851803a79aee64bc37f66d77c56b0a4b6e12d9e5356380f4105510f2332
     ports:
       - '9000:9000'
       - '9001:9001'
@@ -20,7 +20,7 @@ services:
       - ./volumes/storage:/data:z
 
   minio-createbucket:
-    image: minio/mc
+    image: minio/mc@sha256:8f94d208188dcd04bbaa51b54578bb43ea2a663626ca59889c07d4fb8ae9546d
     depends_on:
       minio:
         condition: service_healthy
