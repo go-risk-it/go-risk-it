@@ -3,7 +3,6 @@ package cards
 import (
 	"errors"
 	"fmt"
-	"math/rand"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
@@ -12,6 +11,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
+	"github.com/go-risk-it/go-risk-it/internal/rand"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -36,6 +36,7 @@ type ServiceImpl struct {
 	phaseService  phase.Service
 	playerService player.Service
 	regionService region.Service
+	rng           rand.RNG
 }
 
 var _ Service = (*ServiceImpl)(nil)
@@ -44,11 +45,13 @@ func NewService(
 	phaseService phase.Service,
 	playerService player.Service,
 	regionService region.Service,
+	rng rand.RNG,
 ) *ServiceImpl {
 	return &ServiceImpl{
 		phaseService:  phaseService,
 		playerService: playerService,
 		regionService: regionService,
+		rng:           rng,
 	}
 }
 
@@ -77,11 +80,7 @@ func (s *ServiceImpl) Draw(ctx ctx.GameContext, querier db.Querier) error {
 		return fmt.Errorf("failed to extract player id: %w", err)
 	}
 
-	rand.Shuffle(len(cards), func(i, j int) {
-		cards[i], cards[j] = cards[j], cards[i]
-	})
-
-	card := cards[0]
+	card := cards[s.rng.IntN(len(cards))]
 	if err := querier.DrawCard(ctx, sqlc.DrawCardParams{
 		ID:      card.ID,
 		OwnerID: pgtype.Int8{Int64: playerID, Valid: true},

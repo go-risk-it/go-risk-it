@@ -1,10 +1,9 @@
 package dice
 
 import (
-	"math/rand"
-
 	"github.com/go-risk-it/go-risk-it/internal/config"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack/dice/roller"
+	"github.com/go-risk-it/go-risk-it/internal/rand"
 )
 
 type Service interface {
@@ -37,8 +36,8 @@ func roll(dices int, roller roller.Roller) []int {
 	return result
 }
 
-func New(diceConfig config.DiceConfig) *ServiceImpl {
-	attackingRoller, defendingRoller := getDiceRollers(diceConfig)
+func New(diceConfig config.DiceConfig, rng rand.RNG) *ServiceImpl {
+	attackingRoller, defendingRoller := getDiceRollers(diceConfig, rng)
 
 	return &ServiceImpl{
 		attackingRoller: attackingRoller,
@@ -46,16 +45,14 @@ func New(diceConfig config.DiceConfig) *ServiceImpl {
 	}
 }
 
-func getDiceRollers(diceConfig config.DiceConfig) (roller.Roller, roller.Roller) {
+func getDiceRollers(diceConfig config.DiceConfig, rng rand.RNG) (roller.Roller, roller.Roller) {
 	switch diceConfig.RollStrategy {
 	case "attacker_always_wins":
 		return roller.WithSequence([]int{6}), roller.WithSequence([]int{1})
 	case "attacker_always_loses":
 		return roller.WithSequence([]int{1}), roller.WithSequence([]int{6})
 	case "random":
-		randSource := rand.NewSource(0)
-
-		return roller.WithRandomSource(randSource), roller.WithRandomSource(randSource)
+		return roller.WithRandomSource(rng), roller.WithRandomSource(rng)
 	default:
 		panic("unknown roll strategy: " + diceConfig.RollStrategy)
 	}

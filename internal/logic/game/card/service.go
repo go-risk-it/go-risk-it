@@ -2,7 +2,8 @@ package card
 
 import (
 	"fmt"
-	"math/rand"
+
+	"github.com/go-risk-it/go-risk-it/internal/rand"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
@@ -23,6 +24,7 @@ type Service interface {
 type ServiceImpl struct {
 	querier       db.Querier
 	regionService region.Service
+	rng           rand.RNG
 }
 
 var _ Service = (*ServiceImpl)(nil)
@@ -30,10 +32,12 @@ var _ Service = (*ServiceImpl)(nil)
 func New(
 	querier db.Querier,
 	regionService region.Service,
+	rng rand.RNG,
 ) *ServiceImpl {
 	return &ServiceImpl{
 		querier:       querier,
 		regionService: regionService,
+		rng:           rng,
 	}
 }
 
@@ -64,7 +68,7 @@ func (s *ServiceImpl) buildCards(
 		return nil, fmt.Errorf("unable to get regions: %w", err)
 	}
 
-	rand.Shuffle(len(regions), func(i, j int) {
+	s.rng.Shuffle(len(regions), func(i, j int) {
 		regions[i], regions[j] = regions[j], regions[i]
 	})
 
