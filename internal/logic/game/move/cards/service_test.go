@@ -4,15 +4,15 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/cards"
-	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
-	"github.com/jackc/pgx/v5/pgtype"
-
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/cards"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/phase"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/rand"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -26,7 +26,8 @@ func setup(t *testing.T) (
 	phaseService := phase.NewService(t)
 	playerService := player.NewService(t)
 	regionService := region.NewService(t)
-	service := cards.NewService(phaseService, playerService, regionService)
+	rng := rand.NewRNG(t)
+	service := cards.NewService(phaseService, playerService, regionService, rng)
 
 	return querier, service
 }

@@ -32,6 +32,11 @@ linters-settings:
   gosec:
     excludes:
       - G404
+  iface:
+    enable:
+      - identical
+      - unused
+      - opaque
 #  exhaustruct:
 #    # List of regular expressions to match struct packages and their names.
 #    # Regular expressions must match complete canonical struct package/name/structname.
@@ -56,7 +61,7 @@ linters:
     - depguard
     - err113
     - gochecknoglobals
-    - gomnd
+    - iface # Check: maybe we are misusing interfaces
     - mnd
     - exhaustruct
     - ireturn
@@ -71,3 +76,4 @@ linters:
 #    - unused
 #    - gofumpt
 #    - lll # long lines
+
