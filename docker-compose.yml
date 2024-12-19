@@ -13,7 +13,7 @@ services:
       service: kong
 
   migrate:
-    image: migrate/migrate:latest
+    image: migrate/migrate:latest@sha256:f21c436af23c282f4516b00ba3e93bccf5c5fe5cd52530fd5c319a936998f539
     volumes:
       - ./internal/data/sqlc/migrations:/migrations
     command: -verbose -path=/migrations/ -database postgresql://postgres:password@postgres:5432/risk-it?sslmode=disable up
@@ -22,7 +22,7 @@ services:
         condition: service_healthy
 
   sqlc:
-    image: sqlc/sqlc:latest
+    image: sqlc/sqlc:latest@sha256:c2a7e80357000614571266cea1e4a0a9010ec03637998d71053c2ac6bb4b9f06
     env_file:
       - component-test/.env
     volumes:
@@ -33,7 +33,7 @@ services:
       - migrate
 
   mockery:
-    image: vektra/mockery:v2.46
+    image: vektra/mockery:v2.46@sha256:3a8198900ae21bad2486bfcd4c63cc48e2ddc8876125b7d9488ab4ad6b11618f
     volumes:
       - ./:/src
     working_dir: /src
