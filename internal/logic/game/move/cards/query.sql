@@ -9,3 +9,8 @@ where g.id = $1
 update card
 set owner_id = $2
 where id = $1;
+
+-- name: UnlinkCardsFromOwner :exec
+UPDATE card
+SET owner_id = NULL
+WHERE id  = ANY(sqlc.arg(cards)::bigint[]);

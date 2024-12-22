@@ -1188,6 +1188,53 @@ func (_c *Querier_SetGamePhase_Call) RunAndReturn(run func(context.Context, sqlc
 	return _c
 }
 
+// UnlinkCardsFromOwner provides a mock function with given fields: ctx, cards
+func (_m *Querier) UnlinkCardsFromOwner(ctx context.Context, cards []int64) error {
+	ret := _m.Called(ctx, cards)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UnlinkCardsFromOwner")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []int64) error); ok {
+		r0 = rf(ctx, cards)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Querier_UnlinkCardsFromOwner_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UnlinkCardsFromOwner'
+type Querier_UnlinkCardsFromOwner_Call struct {
+	*mock.Call
+}
+
+// UnlinkCardsFromOwner is a helper method to define mock.On call
+//   - ctx context.Context
+//   - cards []int64
+func (_e *Querier_Expecter) UnlinkCardsFromOwner(ctx interface{}, cards interface{}) *Querier_UnlinkCardsFromOwner_Call {
+	return &Querier_UnlinkCardsFromOwner_Call{Call: _e.mock.On("UnlinkCardsFromOwner", ctx, cards)}
+}
+
+func (_c *Querier_UnlinkCardsFromOwner_Call) Run(run func(ctx context.Context, cards []int64)) *Querier_UnlinkCardsFromOwner_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]int64))
+	})
+	return _c
+}
+
+func (_c *Querier_UnlinkCardsFromOwner_Call) Return(_a0 error) *Querier_UnlinkCardsFromOwner_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Querier_UnlinkCardsFromOwner_Call) RunAndReturn(run func(context.Context, []int64) error) *Querier_UnlinkCardsFromOwner_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // UpdateRegionOwner provides a mock function with given fields: ctx, arg
 func (_m *Querier) UpdateRegionOwner(ctx context.Context, arg sqlc.UpdateRegionOwnerParams) error {
 	ret := _m.Called(ctx, arg)

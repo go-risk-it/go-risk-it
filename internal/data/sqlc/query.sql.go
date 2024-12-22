@@ -487,6 +487,17 @@ func (q *Queries) SetGamePhase(ctx context.Context, arg SetGamePhaseParams) erro
 	return err
 }
 
+const unlinkCardsFromOwner = `-- name: UnlinkCardsFromOwner :exec
+UPDATE card
+SET owner_id = NULL
+WHERE id  = ANY($1::bigint[])
+`
+
+func (q *Queries) UnlinkCardsFromOwner(ctx context.Context, cards []int64) error {
+	_, err := q.db.Exec(ctx, unlinkCardsFromOwner, cards)
+	return err
+}
+
 const updateRegionOwner = `-- name: UpdateRegionOwner :exec
 UPDATE region
 SET player_id = (SELECT player.id FROM player WHERE user_id = $1 AND game_id = $2)

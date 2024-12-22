@@ -39,6 +39,8 @@ func (s *ServiceImpl) PerformQ(
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
+	playedCards := make([]int64, 0, len(move.Combinations)*3)
+
 	for _, combination := range move.Combinations {
 		if err := validateCombination(combination, cardIndex); err != nil {
 			return nil, fmt.Errorf("validation failed: %w", err)
@@ -50,6 +52,13 @@ func (s *ServiceImpl) PerformQ(
 		}
 
 		extraDeployableTroops += combinationTroops
+
+		playedCards = append(playedCards, combination.CardIDs...)
+	}
+
+	err = querier.UnlinkCardsFromOwner(ctx, playedCards)
+	if err != nil {
+		return nil, fmt.Errorf("unable to unlink cards from owner: %w", err)
 	}
 
 	return &MoveResult{

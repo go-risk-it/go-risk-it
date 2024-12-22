@@ -12,7 +12,7 @@ func (s *ServiceImpl) AdvanceQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	targetPhase sqlc.PhaseType,
-	_ *MoveResult,
+	moveResult *MoveResult,
 ) error {
 	if targetPhase != sqlc.PhaseTypeDEPLOY {
 		return fmt.Errorf("cannot advance cards phase to %s", targetPhase)
@@ -28,10 +28,15 @@ func (s *ServiceImpl) AdvanceQ(
 		return fmt.Errorf("failed to create phase: %w", err)
 	}
 
+	extraDeployableTroops := int64(0)
+	if moveResult != nil {
+		extraDeployableTroops = moveResult.ExtraDeployableTroops
+	}
+
 	// add continents and used cards
 	deployPhase, err := querier.InsertDeployPhase(ctx, sqlc.InsertDeployPhaseParams{
 		PhaseID:          phase.ID,
-		DeployableTroops: int64(countPlayerRegions(ctx, regions) / 3),
+		DeployableTroops: int64(countPlayerRegions(ctx, regions)/3) + extraDeployableTroops,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create deploy phase: %w", err)
