@@ -306,6 +306,16 @@ func TestServiceImpl_ValidCombinations(t *testing.T) {
 					card(11, sqlc.CardTypeJOLLY),
 				}, nil)
 
+			playedCards := make([]int64, 0)
+			for _, combination := range test.combinations {
+				playedCards = append(playedCards, combination.CardIDs...)
+			}
+
+			querier.
+				EXPECT().
+				UnlinkCardsFromOwner(ctx, playedCards).
+				Return(nil)
+
 			extraTroops, _ := service.PerformQ(ctx, querier, cards.Move{
 				Combinations: test.combinations,
 			})

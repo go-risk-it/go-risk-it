@@ -61,7 +61,7 @@ linters:
     - depguard
     - err113
     - gochecknoglobals
-    - iface # Check: maybe we are misusing interfaces
+    - iface # Maybe we are misusing interfaces
     - mnd
     - exhaustruct
     - ireturn
