@@ -12,7 +12,7 @@ type RNG interface {
 }
 
 func NewRNG() RNG {
-	return rand.New(rand.NewPCG(69, 420))
+	return rand.New(rand.NewPCG(420, 69))
 }
 
 var Module = fx.Options(
