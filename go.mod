@@ -2,7 +2,7 @@ module github.com/go-risk-it/go-risk-it
 
 go 1.23.1
 
-toolchain go1.23.2
+toolchain go1.23.4
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.2.1
