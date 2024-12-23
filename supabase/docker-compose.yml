@@ -256,7 +256,7 @@ services:
 
   meta:
     container_name: supabase-meta
-    image: supabase/postgres-meta:v0.82.0@sha256:5d1bd226350c8864e1a21a44d63ffff883796a4f8a6d6ef100292896f66b9a3d
+    image: supabase/postgres-meta:v0.85.0@sha256:ff32fcd07dba86d4cbfce8c84c5aeb664ea6cf2a2fc230c917cbd5aa289fe7b0
     depends_on:
       db:
         # Disable this if you are using an external Postgres database
