@@ -156,7 +156,7 @@ services:
   realtime:
     # This container name looks inconsistent but is correct because realtime constructs tenant id by parsing the subdomain
     container_name: realtime-dev.supabase-realtime
-    image: supabase/realtime:v2.30.2@sha256:e78cd9f6caf6f56585f45ec70d83ec3168be1740fce791ee526035aa2cd217d9
+    image: supabase/realtime:v2.33.72@sha256:1db7a4ed57cfde69b4537c29f0d4aae2e7a77ca3436129525859dc42f9346a2c
     depends_on:
       db:
         # Disable this if you are using an external Postgres database
