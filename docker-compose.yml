@@ -33,7 +33,7 @@ services:
       - migrate
 
   mockery:
-    image: vektra/mockery:v2.46
+    image: vektra/mockery:v2.50@sha256:2bb8c34143401c8565a663fbb1ca96d28ad6a0566e4c43e438ea394f4114bb93
     volumes:
       - ./:/src
     working_dir: /src
