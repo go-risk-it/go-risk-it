@@ -76,7 +76,7 @@ services:
 
   auth:
     container_name: supabase-auth
-    image: supabase/gotrue:v2.166.0@sha256:05c3e069cee56884db0d3b5868da2ff09d811443936429a8bff730654e39db1f
+    image: supabase/gotrue:v2.167.0@sha256:d56b93b3d25d0a533b29e8d52ccca335e13188f25c9dda89401ea00a0a1dfb8a
     depends_on:
       db:
         # Disable this if you are using an external Postgres database
