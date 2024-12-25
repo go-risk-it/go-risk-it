@@ -58,7 +58,3 @@ func NewService(
 func (s *ServiceImpl) PhaseType() sqlc.PhaseType {
 	return sqlc.PhaseTypeATTACK
 }
-
-func (s *ServiceImpl) ForcedAdvancementPhase() sqlc.PhaseType {
-	return sqlc.PhaseTypeREINFORCE
-}

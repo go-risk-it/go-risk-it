@@ -75,51 +75,6 @@ func (_c *Service_AdvanceQ_Call) RunAndReturn(run func(ctx.GameContext, db.Queri
 	return _c
 }
 
-// ForcedAdvancementPhase provides a mock function with no fields
-func (_m *Service) ForcedAdvancementPhase() sqlc.PhaseType {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for ForcedAdvancementPhase")
-	}
-
-	var r0 sqlc.PhaseType
-	if rf, ok := ret.Get(0).(func() sqlc.PhaseType); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(sqlc.PhaseType)
-	}
-
-	return r0
-}
-
-// Service_ForcedAdvancementPhase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ForcedAdvancementPhase'
-type Service_ForcedAdvancementPhase_Call struct {
-	*mock.Call
-}
-
-// ForcedAdvancementPhase is a helper method to define mock.On call
-func (_e *Service_Expecter) ForcedAdvancementPhase() *Service_ForcedAdvancementPhase_Call {
-	return &Service_ForcedAdvancementPhase_Call{Call: _e.mock.On("ForcedAdvancementPhase")}
-}
-
-func (_c *Service_ForcedAdvancementPhase_Call) Run(run func()) *Service_ForcedAdvancementPhase_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Service_ForcedAdvancementPhase_Call) Return(_a0 sqlc.PhaseType) *Service_ForcedAdvancementPhase_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Service_ForcedAdvancementPhase_Call) RunAndReturn(run func() sqlc.PhaseType) *Service_ForcedAdvancementPhase_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // PerformQ provides a mock function with given fields: _a0, querier, move
 func (_m *Service) PerformQ(_a0 ctx.GameContext, querier db.Querier, move reinforce.Move) (*reinforce.MoveResult, error) {
 	ret := _m.Called(_a0, querier, move)
@@ -225,9 +180,9 @@ func (_c *Service_PhaseType_Call) RunAndReturn(run func() sqlc.PhaseType) *Servi
 	return _c
 }
 
-// Walk provides a mock function with given fields: _a0, querier
-func (_m *Service) Walk(_a0 ctx.GameContext, querier db.Querier) (sqlc.PhaseType, error) {
-	ret := _m.Called(_a0, querier)
+// Walk provides a mock function with given fields: _a0, querier, voluntaryAdvancement
+func (_m *Service) Walk(_a0 ctx.GameContext, querier db.Querier, voluntaryAdvancement bool) (sqlc.PhaseType, error) {
+	ret := _m.Called(_a0, querier, voluntaryAdvancement)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Walk")
@@ -235,17 +190,17 @@ func (_m *Service) Walk(_a0 ctx.GameContext, querier db.Querier) (sqlc.PhaseType
 
 	var r0 sqlc.PhaseType
 	var r1 error
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) (sqlc.PhaseType, error)); ok {
-		return rf(_a0, querier)
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, bool) (sqlc.PhaseType, error)); ok {
+		return rf(_a0, querier, voluntaryAdvancement)
 	}
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) sqlc.PhaseType); ok {
-		r0 = rf(_a0, querier)
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, bool) sqlc.PhaseType); ok {
+		r0 = rf(_a0, querier, voluntaryAdvancement)
 	} else {
 		r0 = ret.Get(0).(sqlc.PhaseType)
 	}
 
-	if rf, ok := ret.Get(1).(func(ctx.GameContext, db.Querier) error); ok {
-		r1 = rf(_a0, querier)
+	if rf, ok := ret.Get(1).(func(ctx.GameContext, db.Querier, bool) error); ok {
+		r1 = rf(_a0, querier, voluntaryAdvancement)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -261,13 +216,14 @@ type Service_Walk_Call struct {
 // Walk is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
-func (_e *Service_Expecter) Walk(_a0 interface{}, querier interface{}) *Service_Walk_Call {
-	return &Service_Walk_Call{Call: _e.mock.On("Walk", _a0, querier)}
+//   - voluntaryAdvancement bool
+func (_e *Service_Expecter) Walk(_a0 interface{}, querier interface{}, voluntaryAdvancement interface{}) *Service_Walk_Call {
+	return &Service_Walk_Call{Call: _e.mock.On("Walk", _a0, querier, voluntaryAdvancement)}
 }
 
-func (_c *Service_Walk_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier)) *Service_Walk_Call {
+func (_c *Service_Walk_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, voluntaryAdvancement bool)) *Service_Walk_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.GameContext), args[1].(db.Querier))
+		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(bool))
 	})
 	return _c
 }
@@ -277,7 +233,7 @@ func (_c *Service_Walk_Call) Return(_a0 sqlc.PhaseType, _a1 error) *Service_Walk
 	return _c
 }
 
-func (_c *Service_Walk_Call) RunAndReturn(run func(ctx.GameContext, db.Querier) (sqlc.PhaseType, error)) *Service_Walk_Call {
+func (_c *Service_Walk_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, bool) (sqlc.PhaseType, error)) *Service_Walk_Call {
 	_c.Call.Return(run)
 	return _c
 }

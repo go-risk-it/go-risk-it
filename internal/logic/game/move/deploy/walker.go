@@ -11,6 +11,7 @@ import (
 func (s *ServiceImpl) Walk(
 	ctx ctx.GameContext,
 	querier db.Querier,
+	_ bool,
 ) (sqlc.PhaseType, error) {
 	deployableTroops, err := s.GetDeployableTroopsQ(ctx, querier)
 	if err != nil {

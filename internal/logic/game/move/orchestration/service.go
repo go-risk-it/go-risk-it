@@ -90,7 +90,7 @@ func (s *OrchestratorImpl[T, R]) OrchestrateMoveQ(
 		return fmt.Errorf("unable to perform move: %w", err)
 	}
 
-	targetPhase, err := s.service.Walk(ctx, querier)
+	targetPhase, err := s.service.Walk(ctx, querier, false)
 	if err != nil {
 		return fmt.Errorf("unable to walk phase: %w", err)
 	}

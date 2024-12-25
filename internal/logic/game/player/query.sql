@@ -19,3 +19,14 @@ WHERE user_id = $1;
 INSERT INTO player (game_id, user_id, name, turn_index)
 VALUES ($1, $2, $3, $4);
 
+-- name: GetNextPlayer :one
+SELECT *
+FROM player
+WHERE player.game_id = $1
+  AND player.turn_index = ((1 + (SELECT p.turn
+                                 FROM game g
+                                          JOIN phase p on g.current_phase_id = p.id
+                                 WHERE g.id = $1))
+    % (SELECT COUNT (player.id) FROM player WHERE player.game_id = $1));
+
+

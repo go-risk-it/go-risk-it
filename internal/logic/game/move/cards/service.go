@@ -30,7 +30,7 @@ type MoveResult struct {
 type Service interface {
 	service.Service[Move, *MoveResult]
 	Draw(ctx ctx.GameContext, querier db.Querier) error
-	HasValidCombination(ctx ctx.GameContext, querier db.Querier) (bool, error)
+	NextPlayerHasValidCombination(ctx ctx.GameContext, querier db.Querier) (bool, error)
 }
 
 type ServiceImpl struct {
@@ -58,10 +58,6 @@ func NewService(
 
 func (s *ServiceImpl) PhaseType() sqlc.PhaseType {
 	return sqlc.PhaseTypeCARDS
-}
-
-func (s *ServiceImpl) ForcedAdvancementPhase() sqlc.PhaseType {
-	return sqlc.PhaseTypeDEPLOY
 }
 
 func (s *ServiceImpl) Draw(ctx ctx.GameContext, querier db.Querier) error {
@@ -94,41 +90,57 @@ func (s *ServiceImpl) Draw(ctx ctx.GameContext, querier db.Querier) error {
 	return nil
 }
 
-func (s *ServiceImpl) HasValidCombination(ctx ctx.GameContext, querier db.Querier) (bool, error) {
+func (s *ServiceImpl) NextPlayerHasValidCombination(
+	ctx ctx.GameContext,
+	querier db.Querier,
+) (bool, error) {
 	ctx.Log().Infow("checking if the player has a valid card combination")
 
-	thisPlayerCards, err := querier.GetCardsForPlayer(ctx, sqlc.GetCardsForPlayerParams{
+	nextPlayer, err := s.playerService.GetNextPlayer(ctx, querier)
+	if err != nil {
+		return false, fmt.Errorf("failed to get player: %w", err)
+	}
+
+	nextPlayerCards, err := querier.GetCardsForPlayer(ctx, sqlc.GetCardsForPlayerParams{
 		ID:     ctx.GameID(),
-		UserID: ctx.UserID(),
+		UserID: nextPlayer.UserID,
 	})
 	if err != nil {
 		return false, fmt.Errorf("unable to get cards for player: %w", err)
 	}
 
-	if len(thisPlayerCards) < 3 {
+	ctx.Log().Debugf("player has %d cards: %v", len(nextPlayerCards), nextPlayerCards)
+
+	if len(nextPlayerCards) < 3 {
 		return false, nil
 	}
 
 	cardIndex := make(map[int64]sqlc.GetCardsForPlayerRow)
-	for _, card := range thisPlayerCards {
+	for _, card := range nextPlayerCards {
 		cardIndex[card.ID] = card
 	}
 
 	// Try each possible combination of 3 cards
-	for i := range len(thisPlayerCards) - 2 {
-		for j := i + 1; j < len(thisPlayerCards)-1; j++ {
-			for k := j + 1; k < len(thisPlayerCards); k++ {
+	for i := range len(nextPlayerCards) - 2 {
+		for j := i + 1; j < len(nextPlayerCards)-1; j++ {
+			for k := j + 1; k < len(nextPlayerCards); k++ {
 				combination := CardCombination{
 					CardIDs: []int64{
-						thisPlayerCards[i].ID,
-						thisPlayerCards[j].ID,
-						thisPlayerCards[k].ID,
+						nextPlayerCards[i].ID,
+						nextPlayerCards[j].ID,
+						nextPlayerCards[k].ID,
 					},
 				}
 
+				ctx.Log().Debugw("checking combination", "combination", combination)
+
 				if _, err := identifyCombination(combination, cardIndex); err == nil {
+					ctx.Log().Infow("player has a valid combination", "combination", combination)
+
 					return true, nil
 				}
+
+				ctx.Log().Debugw("invalid combination", "combination", combination)
 			}
 		}
 	}

@@ -87,10 +87,15 @@ func (s *ServiceImpl[T, R]) AdvanceQ(ctx ctx.GameContext, querier db.Querier) er
 
 	var performResult R
 
+	targetPhase, err := s.moveService.Walk(ctx, querier, true)
+	if err != nil {
+		return fmt.Errorf("unable to walk to target phase: %w", err)
+	}
+
 	err = s.moveService.AdvanceQ(
 		ctx,
 		querier,
-		s.moveService.ForcedAdvancementPhase(),
+		targetPhase,
 		performResult,
 	)
 	if err != nil {

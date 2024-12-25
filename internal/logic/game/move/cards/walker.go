@@ -6,6 +6,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 )
 
-func (s *ServiceImpl) Walk(ctx ctx.GameContext, querier db.Querier) (sqlc.PhaseType, error) {
+func (s *ServiceImpl) Walk(_ ctx.GameContext, _ db.Querier, _ bool) (sqlc.PhaseType, error) {
 	return sqlc.PhaseTypeDEPLOY, nil
 }

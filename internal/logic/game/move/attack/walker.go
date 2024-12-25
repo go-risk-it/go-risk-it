@@ -11,6 +11,7 @@ import (
 func (s *ServiceImpl) Walk(
 	ctx ctx.GameContext,
 	querier db.Querier,
+	voluntaryAdvancement bool,
 ) (sqlc.PhaseType, error) {
 	hasConquered, err := s.HasConqueredQ(ctx, querier)
 	if err != nil {
@@ -28,8 +29,8 @@ func (s *ServiceImpl) Walk(
 		return sqlc.PhaseTypeATTACK, fmt.Errorf("failed to check if attack can continue: %w", err)
 	}
 
-	if !canContinueAttacking {
-		ctx.Log().Infow("cannot continue attacking, must advance phase to REINFORCE")
+	if voluntaryAdvancement || !canContinueAttacking {
+		ctx.Log().Infow("must advance phase to REINFORCE")
 
 		return sqlc.PhaseTypeREINFORCE, nil
 	}

@@ -49,88 +49,80 @@ Feature: Creating a game
     When francesco reinforces from eastern_united_states to ontario with 2 troops
     Then all players receive all state updates
     And it's gabriele's turn
-    And the game phase is cards
+    And the game phase is deploy
     And francesco has 1 cards
 
-    When gabriele advances from phase cards
-    And gabriele deploys 4 troops in brazil
+    When gabriele deploys 5 troops in brazil
     And gabriele attacks from brazil to argentina until conquering
     And gabriele conquers with 3 troops
     And gabriele advances from phase attack
     And gabriele reinforces from argentina to brazil with 2 troops
     Then all players receive all state updates
     And it's giovanni's turn
-    And the game phase is cards
+    And the game phase is deploy
     And gabriele has 1 cards
 
-    When giovanni advances from phase cards
-    And giovanni deploys 4 troops in siberia
+    When giovanni deploys 4 troops in siberia
     And giovanni attacks from siberia to ural until conquering
     And giovanni conquers with 4 troops
     And giovanni advances from phase attack
     And giovanni advances from phase reinforce
     Then all players receive all state updates
     And it's francesco's turn
-    And the game phase is cards
+    And the game phase is deploy
     And giovanni has 1 cards
 
-    When francesco advances from phase cards
-    And francesco deploys 4 troops in eastern_united_states
+    When francesco deploys 5 troops in eastern_united_states
     And francesco attacks from eastern_united_states to quebec until conquering
     And francesco conquers with 3 troops
     And francesco advances from phase attack
     And francesco advances from phase reinforce
     Then all players receive all state updates
     And it's gabriele's turn
-    And the game phase is cards
+    And the game phase is deploy
     And francesco has 2 cards
 
-    When gabriele advances from phase cards
-    And gabriele deploys 4 troops in brazil
+    When gabriele deploys 4 troops in brazil
     And gabriele attacks from brazil to north_africa until conquering
     And gabriele conquers with 9 troops
     And gabriele advances from phase attack
     And gabriele reinforces from peru to venezuela with 2 troops
     Then all players receive all state updates
     And it's giovanni's turn
-    And the game phase is cards
+    And the game phase is deploy
     And gabriele has 2 cards
 
-    When giovanni advances from phase cards
-    And giovanni deploys 4 troops in egypt
+    When giovanni deploys 5 troops in egypt
     And giovanni attacks from ural to afghanistan until conquering
     And giovanni conquers with 3 troops
     And giovanni advances from phase attack
     And giovanni reinforces from irkutsk to ural with 1 troops
     Then all players receive all state updates
     And it's francesco's turn
-    And the game phase is cards
+    And the game phase is deploy
     And giovanni has 2 cards
 
-    When francesco advances from phase cards
-    And francesco deploys 4 troops in china
+    When francesco deploys 5 troops in china
     And francesco attacks from china to siam until conquering
     And francesco conquers with 6 troops
     And francesco advances from phase attack
     And francesco reinforces from india to siam with 2 troops
     Then all players receive all state updates
     And it's gabriele's turn
-    And the game phase is cards
+    And the game phase is deploy
     And francesco has 3 cards
 
-    When gabriele advances from phase cards
-    And gabriele deploys 4 troops in congo
+    When gabriele deploys 4 troops in congo
     And gabriele attacks from congo to south_africa until conquering
     And gabriele conquers with 4 troops
     And gabriele advances from phase attack
     And gabriele reinforces from north_africa to south_africa with 2 troops
     Then all players receive all state updates
     And it's giovanni's turn
-    And the game phase is cards
+    And the game phase is deploy
     And gabriele has 3 cards
 
-    When giovanni advances from phase cards
-    And giovanni deploys 5 troops in new_guinea
+    When giovanni deploys 5 troops in new_guinea
     And giovanni attacks from new_guinea to eastern_australia until conquering
     And giovanni conquers with 4 troops
     And giovanni advances from phase attack

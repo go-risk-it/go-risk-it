@@ -291,6 +291,63 @@ func (_c *Querier_GetConquerPhaseState_Call) RunAndReturn(run func(context.Conte
 	return _c
 }
 
+// GetCurrentPhase provides a mock function with given fields: ctx, id
+func (_m *Querier) GetCurrentPhase(ctx context.Context, id int64) (sqlc.PhaseType, error) {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetCurrentPhase")
+	}
+
+	var r0 sqlc.PhaseType
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (sqlc.PhaseType, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int64) sqlc.PhaseType); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Get(0).(sqlc.PhaseType)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_GetCurrentPhase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCurrentPhase'
+type Querier_GetCurrentPhase_Call struct {
+	*mock.Call
+}
+
+// GetCurrentPhase is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id int64
+func (_e *Querier_Expecter) GetCurrentPhase(ctx interface{}, id interface{}) *Querier_GetCurrentPhase_Call {
+	return &Querier_GetCurrentPhase_Call{Call: _e.mock.On("GetCurrentPhase", ctx, id)}
+}
+
+func (_c *Querier_GetCurrentPhase_Call) Run(run func(ctx context.Context, id int64)) *Querier_GetCurrentPhase_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int64))
+	})
+	return _c
+}
+
+func (_c *Querier_GetCurrentPhase_Call) Return(_a0 sqlc.PhaseType, _a1 error) *Querier_GetCurrentPhase_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_GetCurrentPhase_Call) RunAndReturn(run func(context.Context, int64) (sqlc.PhaseType, error)) *Querier_GetCurrentPhase_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetDeployableTroops provides a mock function with given fields: ctx, id
 func (_m *Querier) GetDeployableTroops(ctx context.Context, id int64) (int64, error) {
 	ret := _m.Called(ctx, id)
@@ -401,6 +458,63 @@ func (_c *Querier_GetGame_Call) Return(_a0 sqlc.GetGameRow, _a1 error) *Querier_
 }
 
 func (_c *Querier_GetGame_Call) RunAndReturn(run func(context.Context, int64) (sqlc.GetGameRow, error)) *Querier_GetGame_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetNextPlayer provides a mock function with given fields: ctx, gameID
+func (_m *Querier) GetNextPlayer(ctx context.Context, gameID int64) (sqlc.Player, error) {
+	ret := _m.Called(ctx, gameID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetNextPlayer")
+	}
+
+	var r0 sqlc.Player
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (sqlc.Player, error)); ok {
+		return rf(ctx, gameID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int64) sqlc.Player); ok {
+		r0 = rf(ctx, gameID)
+	} else {
+		r0 = ret.Get(0).(sqlc.Player)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(ctx, gameID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_GetNextPlayer_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetNextPlayer'
+type Querier_GetNextPlayer_Call struct {
+	*mock.Call
+}
+
+// GetNextPlayer is a helper method to define mock.On call
+//   - ctx context.Context
+//   - gameID int64
+func (_e *Querier_Expecter) GetNextPlayer(ctx interface{}, gameID interface{}) *Querier_GetNextPlayer_Call {
+	return &Querier_GetNextPlayer_Call{Call: _e.mock.On("GetNextPlayer", ctx, gameID)}
+}
+
+func (_c *Querier_GetNextPlayer_Call) Run(run func(ctx context.Context, gameID int64)) *Querier_GetNextPlayer_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int64))
+	})
+	return _c
+}
+
+func (_c *Querier_GetNextPlayer_Call) Return(_a0 sqlc.Player, _a1 error) *Querier_GetNextPlayer_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_GetNextPlayer_Call) RunAndReturn(run func(context.Context, int64) (sqlc.Player, error)) *Querier_GetNextPlayer_Call {
 	_c.Call.Return(run)
 	return _c
 }

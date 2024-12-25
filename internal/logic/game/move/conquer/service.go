@@ -73,7 +73,3 @@ func (s *ServiceImpl) GetPhaseStateQ(
 func (s *ServiceImpl) PhaseType() sqlc.PhaseType {
 	return sqlc.PhaseTypeCONQUER
 }
-
-func (s *ServiceImpl) ForcedAdvancementPhase() sqlc.PhaseType {
-	return sqlc.PhaseTypeCONQUER
-}

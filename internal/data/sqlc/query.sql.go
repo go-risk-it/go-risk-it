@@ -147,6 +147,20 @@ func (q *Queries) GetConquerPhaseState(ctx context.Context, id int64) (GetConque
 	return i, err
 }
 
+const getCurrentPhase = `-- name: GetCurrentPhase :one
+SELECT p.type
+FROM phase p
+         JOIN GAME g on g.current_phase_id = p.id
+WHERE g.id = $1
+`
+
+func (q *Queries) GetCurrentPhase(ctx context.Context, id int64) (PhaseType, error) {
+	row := q.db.QueryRow(ctx, getCurrentPhase, id)
+	var type_ PhaseType
+	err := row.Scan(&type_)
+	return type_, err
+}
+
 const getDeployableTroops = `-- name: GetDeployableTroops :one
 SELECT deploy_phase.deployable_troops
 FROM game
@@ -179,6 +193,30 @@ func (q *Queries) GetGame(ctx context.Context, id int64) (GetGameRow, error) {
 	row := q.db.QueryRow(ctx, getGame, id)
 	var i GetGameRow
 	err := row.Scan(&i.ID, &i.CurrentPhase, &i.Turn)
+	return i, err
+}
+
+const getNextPlayer = `-- name: GetNextPlayer :one
+SELECT id, game_id, name, user_id, turn_index
+FROM player
+WHERE player.game_id = $1
+  AND player.turn_index = ((1 + (SELECT p.turn
+                                 FROM game g
+                                          JOIN phase p on g.current_phase_id = p.id
+                                 WHERE g.id = $1))
+    % (SELECT COUNT (player.id) FROM player WHERE player.game_id = $1))
+`
+
+func (q *Queries) GetNextPlayer(ctx context.Context, gameID int64) (Player, error) {
+	row := q.db.QueryRow(ctx, getNextPlayer, gameID)
+	var i Player
+	err := row.Scan(
+		&i.ID,
+		&i.GameID,
+		&i.Name,
+		&i.UserID,
+		&i.TurnIndex,
+	)
 	return i, err
 }
 
@@ -405,8 +443,7 @@ func (q *Queries) InsertConquerPhase(ctx context.Context, arg InsertConquerPhase
 
 const insertDeployPhase = `-- name: InsertDeployPhase :one
 INSERT INTO deploy_phase (phase_id, deployable_troops)
-VALUES ($1, $2)
-RETURNING id, phase_id, deployable_troops
+VALUES ($1, $2) RETURNING id, phase_id, deployable_troops
 `
 
 type InsertDeployPhaseParams struct {
@@ -436,8 +473,7 @@ func (q *Queries) InsertGame(ctx context.Context) (Game, error) {
 
 const insertPhase = `-- name: InsertPhase :one
 INSERT INTO phase (game_id, type, turn)
-VALUES ($1, $2, $3)
-RETURNING id, game_id, type, turn
+VALUES ($1, $2, $3) RETURNING id, game_id, type, turn
 `
 
 type InsertPhaseParams struct {

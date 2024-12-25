@@ -76,7 +76,3 @@ func (s *ServiceImpl) GetDeployableTroopsQ(
 func (s *ServiceImpl) PhaseType() sqlc.PhaseType {
 	return sqlc.PhaseTypeDEPLOY
 }
-
-func (s *ServiceImpl) ForcedAdvancementPhase() sqlc.PhaseType {
-	return sqlc.PhaseTypeDEPLOY
-}

@@ -52,8 +52,13 @@ func (s *ServiceImpl) InsertPhaseQ(
 		phaseType,
 	)
 
+	currentPhase, err := querier.GetCurrentPhase(ctx, ctx.GameID())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get current phase: %w", err)
+	}
+
 	turn := gameState.Turn
-	if phaseType == sqlc.PhaseTypeCARDS {
+	if currentPhase == sqlc.PhaseTypeREINFORCE {
 		turn++
 	}
 
