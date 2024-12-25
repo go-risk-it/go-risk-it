@@ -14,6 +14,14 @@ func (s *ServiceImpl) AdvanceQ(
 	targetPhase sqlc.PhaseType,
 	_ *MoveResult,
 ) error {
+	if targetPhase == sqlc.PhaseTypeDEPLOY {
+		if err := s.cardsService.AdvanceQ(ctx, querier, targetPhase, nil); err != nil {
+			return fmt.Errorf("failed to advance cards phase: %w", err)
+		}
+
+		return nil
+	}
+
 	if targetPhase != sqlc.PhaseTypeCARDS {
 		return fmt.Errorf("cannot advance reinforce phase to %s", targetPhase)
 	}

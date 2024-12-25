@@ -173,7 +173,6 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "user2"},
 	}
 	gameID := int64(1)
-	phaseID := int64(1)
 
 	// Set up expectations for InsertGame method
 	querier.
@@ -184,22 +183,6 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 		}, nil)
 
 	gameContext := ctx.WithGameID(context, gameID)
-
-	querier.EXPECT().InsertPhase(gameContext, sqlc.InsertPhaseParams{
-		GameID: gameID,
-		Type:   sqlc.PhaseTypeDEPLOY,
-		Turn:   0,
-	}).Return(sqlc.Phase{ID: phaseID}, nil)
-
-	querier.EXPECT().SetGamePhase(gameContext, sqlc.SetGamePhaseParams{
-		ID:             gameID,
-		CurrentPhaseID: pgtype.Int8{Int64: phaseID, Valid: true},
-	}).Return(nil)
-
-	querier.EXPECT().InsertDeployPhase(gameContext, sqlc.InsertDeployPhaseParams{
-		PhaseID:          phaseID,
-		DeployableTroops: int64(3),
-	}).Return(sqlc.DeployPhase{ID: phaseID}, nil)
 
 	// Set up expectations for CreatePlayers method
 	playerService.

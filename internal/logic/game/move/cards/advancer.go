@@ -33,7 +33,7 @@ func (s *ServiceImpl) AdvanceQ(
 		extraDeployableTroops = moveResult.ExtraDeployableTroops
 	}
 
-	// add continents and used cards
+	// add continents
 	deployPhase, err := querier.InsertDeployPhase(ctx, sqlc.InsertDeployPhaseParams{
 		PhaseID:          phase.ID,
 		DeployableTroops: int64(countPlayerRegions(ctx, regions)/3) + extraDeployableTroops,

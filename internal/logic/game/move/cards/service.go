@@ -30,6 +30,7 @@ type MoveResult struct {
 type Service interface {
 	service.Service[Move, *MoveResult]
 	Draw(ctx ctx.GameContext, querier db.Querier) error
+	HasValidCombination(ctx ctx.GameContext, querier db.Querier) (bool, error)
 }
 
 type ServiceImpl struct {
@@ -91,6 +92,48 @@ func (s *ServiceImpl) Draw(ctx ctx.GameContext, querier db.Querier) error {
 	ctx.Log().Infow("card drawn", "card", card.ID)
 
 	return nil
+}
+
+func (s *ServiceImpl) HasValidCombination(ctx ctx.GameContext, querier db.Querier) (bool, error) {
+	ctx.Log().Infow("checking if the player has a valid card combination")
+
+	thisPlayerCards, err := querier.GetCardsForPlayer(ctx, sqlc.GetCardsForPlayerParams{
+		ID:     ctx.GameID(),
+		UserID: ctx.UserID(),
+	})
+	if err != nil {
+		return false, fmt.Errorf("unable to get cards for player: %w", err)
+	}
+
+	if len(thisPlayerCards) < 3 {
+		return false, nil
+	}
+
+	cardIndex := make(map[int64]sqlc.GetCardsForPlayerRow)
+	for _, card := range thisPlayerCards {
+		cardIndex[card.ID] = card
+	}
+
+	// Try each possible combination of 3 cards
+	for i := range len(thisPlayerCards) - 2 {
+		for j := i + 1; j < len(thisPlayerCards)-1; j++ {
+			for k := j + 1; k < len(thisPlayerCards); k++ {
+				combination := CardCombination{
+					CardIDs: []int64{
+						thisPlayerCards[i].ID,
+						thisPlayerCards[j].ID,
+						thisPlayerCards[k].ID,
+					},
+				}
+
+				if _, err := identifyCombination(combination, cardIndex); err == nil {
+					return true, nil
+				}
+			}
+		}
+	}
+
+	return false, nil
 }
 
 func (s *ServiceImpl) extractPlayerID(ctx ctx.GameContext, querier db.Querier) (int64, error) {
