@@ -15,7 +15,7 @@ install: ## Install dependencies and tools
 	@go install golang.org/x/tools/cmd/goimports@latest
 	@go install mvdan.cc/gofumpt@latest
 	@go install github.com/segmentio/golines@latest
-	@curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.55.2
+	@curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.62.2
 	@pre-commit install
 
 pre-commit-check: ## Run pre-commit checks
