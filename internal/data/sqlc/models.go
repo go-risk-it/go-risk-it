@@ -132,6 +132,16 @@ type Mission struct {
 	PlayerID int64
 }
 
+type MoveLog struct {
+	GameID   int64
+	Sequence int64
+	PlayerID int64
+	Phase    PhaseType
+	MoveData []byte
+	Result   []byte
+	Created  pgtype.Timestamptz
+}
+
 type Phase struct {
 	ID     int64
 	GameID int64

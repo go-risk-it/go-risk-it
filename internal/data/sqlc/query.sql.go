@@ -11,6 +11,39 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const createMoveLog = `-- name: CreateMoveLog :exec
+INSERT INTO move_log (game_id,
+                      player_id,
+                      phase,
+                      move_data,
+                      result)
+VALUES ($1,
+        (SELECT id FROM player WHERE game_id = $1 AND user_id = $2),
+        (SELECT p.type
+         FROM phase p
+                  join game g on g.current_phase_id = p.id
+         WHERE g.id = $1),
+        $3,
+        $4)
+`
+
+type CreateMoveLogParams struct {
+	GameID   int64
+	UserID   string
+	MoveData []byte
+	Result   []byte
+}
+
+func (q *Queries) CreateMoveLog(ctx context.Context, arg CreateMoveLogParams) error {
+	_, err := q.db.Exec(ctx, createMoveLog,
+		arg.GameID,
+		arg.UserID,
+		arg.MoveData,
+		arg.Result,
+	)
+	return err
+}
+
 const decreaseDeployableTroops = `-- name: DecreaseDeployableTroops :exec
 UPDATE deploy_phase
 SET deployable_troops = deploy_phase.deployable_troops - $2

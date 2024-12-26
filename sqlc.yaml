@@ -10,6 +10,7 @@ sql:
       - "internal/logic/game/move/deploy"
       - "internal/logic/game/move/conquer"
       - "internal/logic/game/move/reinforce"
+      - "internal/logic/game/move/orchestration"
       - "internal/logic/game/phase"
       - "internal/logic/game/player"
       - "internal/logic/game/region"

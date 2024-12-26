@@ -1,11 +1,14 @@
 package orchestration
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
+	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/validation"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
@@ -90,6 +93,10 @@ func (s *OrchestratorImpl[T, R]) OrchestrateMoveQ(
 		return fmt.Errorf("unable to perform move: %w", err)
 	}
 
+	if err := s.logMoveQ(ctx, querier, move, performResult); err != nil {
+		return fmt.Errorf("unable to log move: %w", err)
+	}
+
 	targetPhase, err := s.service.Walk(ctx, querier, false)
 	if err != nil {
 		return fmt.Errorf("unable to walk phase: %w", err)
@@ -101,8 +108,43 @@ func (s *OrchestratorImpl[T, R]) OrchestrateMoveQ(
 		return nil
 	}
 
+	ctx.Log().Infow("advancing phase", "target", targetPhase)
+
 	if err := s.service.AdvanceQ(ctx, querier, targetPhase, performResult); err != nil {
 		return fmt.Errorf("unable to advance move: %w", err)
+	}
+
+	ctx.Log().Infow("successfully advanced phase", "phase", targetPhase)
+
+	return nil
+}
+
+func (s *OrchestratorImpl[T, R]) logMoveQ(
+	ctx ctx.GameContext,
+	querier db.Querier,
+	move T,
+	result R,
+) error {
+	moveJSON, err := json.Marshal(move)
+	if err != nil {
+		return fmt.Errorf("failed to marshal move: %w", err)
+	}
+
+	var resultJSON []byte
+	if !reflect.ValueOf(result).IsZero() {
+		resultJSON, err = json.Marshal(result)
+		if err != nil {
+			return fmt.Errorf("failed to marshal result: %w", err)
+		}
+	}
+
+	if err = querier.CreateMoveLog(ctx, sqlc.CreateMoveLogParams{
+		GameID:   ctx.GameID(),
+		UserID:   ctx.UserID(),
+		MoveData: moveJSON,
+		Result:   resultJSON,
+	}); err != nil {
+		return fmt.Errorf("failed to insert move log: %w", err)
 	}
 
 	return nil

@@ -27,11 +27,7 @@ func (s *ServiceImpl) AdvanceQ(
 		return s.advanceToConquerPhase(ctx, querier, performResult, *phase)
 	}
 
-	if targetPhase == sqlc.PhaseTypeREINFORCE {
-		return nil
-	}
-
-	return fmt.Errorf("cannot advance attack phase to %s", targetPhase)
+	return nil
 }
 
 func (s *ServiceImpl) advanceToConquerPhase(

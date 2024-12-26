@@ -30,6 +30,7 @@ func NewService(pool pool.DB, dbConfig config.DatabaseConfig) *ServiceImpl {
 		"deploy_phase",
 		"conquer_phase",
 		"phase",
+		"move_log",
 	}
 
 	return &ServiceImpl{pool: pool, dbConfig: dbConfig, tables: tables}

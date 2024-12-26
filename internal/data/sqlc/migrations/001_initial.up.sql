@@ -83,3 +83,15 @@ CREATE TABLE conquer_phase
     FOREIGN KEY (target_region_id) REFERENCES region (id),
     CONSTRAINT check_minimum_troops CHECK (minimum_troops > 0 AND minimum_troops <= 3)
 );
+
+CREATE TABLE move_log
+(
+    game_id   BIGINT                   NOT NULL REFERENCES game (id),
+    sequence  BIGINT                   NOT NULL GENERATED ALWAYS AS IDENTITY,
+    player_id BIGINT                   NOT NULL REFERENCES player (id),
+    phase     phase_type               NOT NULL,
+    move_data JSONB                    NOT NULL,
+    result    JSONB,
+    created   TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (game_id, sequence)
+);
