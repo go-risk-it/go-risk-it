@@ -16,15 +16,15 @@ import (
 )
 
 type CardCombination struct {
-	CardIDs []int64
+	CardIDs []int64 `json:"cardIds"`
 }
 
 type Move struct {
-	Combinations []CardCombination
+	Combinations []CardCombination `json:"combinations"`
 }
 
 type MoveResult struct {
-	ExtraDeployableTroops int64
+	ExtraDeployableTroops int64 `json:"extraDeployableTroops"`
 }
 
 type Service interface {

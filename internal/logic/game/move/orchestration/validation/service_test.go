@@ -22,7 +22,7 @@ func setup(t *testing.T) (
 	t.Helper()
 	querier := db.NewQuerier(t)
 	playerService := player.NewService(t)
-	service := validation.NewService(playerService)
+	service := validation.New(playerService)
 
 	return querier, playerService, service
 }

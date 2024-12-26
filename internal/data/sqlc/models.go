@@ -33,8 +33,8 @@ func (e *CardType) Scan(src interface{}) error {
 }
 
 type NullCardType struct {
-	CardType CardType
-	Valid    bool // Valid is true if CardType is not NULL
+	CardType CardType `json:"card_type"`
+	Valid    bool     `json:"valid"` // Valid is true if CardType is not NULL
 }
 
 // Scan implements the Scanner interface.
@@ -78,8 +78,8 @@ func (e *PhaseType) Scan(src interface{}) error {
 }
 
 type NullPhaseType struct {
-	PhaseType PhaseType
-	Valid     bool // Valid is true if PhaseType is not NULL
+	PhaseType PhaseType `json:"phase_type"`
+	Valid     bool      `json:"valid"` // Valid is true if PhaseType is not NULL
 }
 
 // Scan implements the Scanner interface.
@@ -101,65 +101,65 @@ func (ns NullPhaseType) Value() (driver.Value, error) {
 }
 
 type Card struct {
-	ID       int64
-	GameID   int64
-	RegionID pgtype.Int8
-	OwnerID  pgtype.Int8
-	CardType CardType
+	ID       int64       `json:"id"`
+	GameID   int64       `json:"game_id"`
+	RegionID pgtype.Int8 `json:"region_id"`
+	OwnerID  pgtype.Int8 `json:"owner_id"`
+	CardType CardType    `json:"card_type"`
 }
 
 type ConquerPhase struct {
-	ID             int64
-	PhaseID        int64
-	SourceRegionID int64
-	TargetRegionID int64
-	MinimumTroops  int64
+	ID             int64 `json:"id"`
+	PhaseID        int64 `json:"phase_id"`
+	SourceRegionID int64 `json:"source_region_id"`
+	TargetRegionID int64 `json:"target_region_id"`
+	MinimumTroops  int64 `json:"minimum_troops"`
 }
 
 type DeployPhase struct {
-	ID               int64
-	PhaseID          int64
-	DeployableTroops int64
+	ID               int64 `json:"id"`
+	PhaseID          int64 `json:"phase_id"`
+	DeployableTroops int64 `json:"deployable_troops"`
 }
 
 type Game struct {
-	ID             int64
-	CurrentPhaseID pgtype.Int8
+	ID             int64       `json:"id"`
+	CurrentPhaseID pgtype.Int8 `json:"current_phase_id"`
 }
 
 type Mission struct {
-	ID       int64
-	PlayerID int64
+	ID       int64 `json:"id"`
+	PlayerID int64 `json:"player_id"`
 }
 
 type MoveLog struct {
-	GameID   int64
-	Sequence int64
-	PlayerID int64
-	Phase    PhaseType
-	MoveData []byte
-	Result   []byte
-	Created  pgtype.Timestamptz
+	GameID   int64              `json:"game_id"`
+	Sequence int64              `json:"sequence"`
+	PlayerID int64              `json:"player_id"`
+	Phase    PhaseType          `json:"phase"`
+	MoveData []byte             `json:"move_data"`
+	Result   []byte             `json:"result"`
+	Created  pgtype.Timestamptz `json:"created"`
 }
 
 type Phase struct {
-	ID     int64
-	GameID int64
-	Type   PhaseType
-	Turn   int64
+	ID     int64     `json:"id"`
+	GameID int64     `json:"game_id"`
+	Type   PhaseType `json:"type"`
+	Turn   int64     `json:"turn"`
 }
 
 type Player struct {
-	ID        int64
-	GameID    int64
-	Name      string
-	UserID    string
-	TurnIndex int64
+	ID        int64  `json:"id"`
+	GameID    int64  `json:"game_id"`
+	Name      string `json:"name"`
+	UserID    string `json:"user_id"`
+	TurnIndex int64  `json:"turn_index"`
 }
 
 type Region struct {
-	ID                int64
-	ExternalReference string
-	PlayerID          int64
-	Troops            int64
+	ID                int64  `json:"id"`
+	ExternalReference string `json:"external_reference"`
+	PlayerID          int64  `json:"player_id"`
+	Troops            int64  `json:"troops"`
 }

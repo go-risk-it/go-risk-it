@@ -13,7 +13,7 @@ import (
 )
 
 type Move struct {
-	Troops int64
+	Troops int64 `json:"troops"`
 }
 
 type MoveResult struct{}

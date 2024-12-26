@@ -12,19 +12,18 @@ import (
 )
 
 type Move struct {
-	AttackingRegionID string
-	DefendingRegionID string
-	TroopsInSource    int64
-	TroopsInTarget    int64
-	AttackingTroops   int64
+	AttackingRegionID string `json:"attackingRegionId"`
+	DefendingRegionID string `json:"defendingRegionId"`
+	TroopsInSource    int64  `json:"troopsInSource"`
+	TroopsInTarget    int64  `json:"troopsInTarget"`
+	AttackingTroops   int64  `json:"attackingTroops"`
 }
 
 type MoveResult struct {
-	AttackingRegionID string
-	DefendingRegionID string
-	ConqueringTroops  int64
+	AttackingRegionID string `json:"attackingRegionId"`
+	DefendingRegionID string `json:"defendingRegionId"`
+	ConqueringTroops  int64  `json:"conqueringTroops"`
 }
-
 type Service interface {
 	service.Service[Move, *MoveResult]
 

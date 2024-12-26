@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createMoveLog = `-- name: CreateMoveLog :exec
+const createMoveLog = `-- name: CreateMoveLog :one
 INSERT INTO move_log (game_id,
                       player_id,
                       phase,
@@ -25,23 +25,34 @@ VALUES ($1,
          WHERE g.id = $1),
         $3,
         $4)
+RETURNING game_id, sequence, player_id, phase, move_data, result, created
 `
 
 type CreateMoveLogParams struct {
-	GameID   int64
-	UserID   string
-	MoveData []byte
-	Result   []byte
+	GameID   int64  `json:"game_id"`
+	UserID   string `json:"user_id"`
+	MoveData []byte `json:"move_data"`
+	Result   []byte `json:"result"`
 }
 
-func (q *Queries) CreateMoveLog(ctx context.Context, arg CreateMoveLogParams) error {
-	_, err := q.db.Exec(ctx, createMoveLog,
+func (q *Queries) CreateMoveLog(ctx context.Context, arg CreateMoveLogParams) (MoveLog, error) {
+	row := q.db.QueryRow(ctx, createMoveLog,
 		arg.GameID,
 		arg.UserID,
 		arg.MoveData,
 		arg.Result,
 	)
-	return err
+	var i MoveLog
+	err := row.Scan(
+		&i.GameID,
+		&i.Sequence,
+		&i.PlayerID,
+		&i.Phase,
+		&i.MoveData,
+		&i.Result,
+		&i.Created,
+	)
+	return i, err
 }
 
 const decreaseDeployableTroops = `-- name: DecreaseDeployableTroops :exec
@@ -55,8 +66,8 @@ WHERE id = (select dp.id
 `
 
 type DecreaseDeployableTroopsParams struct {
-	ID               int64
-	DeployableTroops int64
+	ID               int64 `json:"id"`
+	DeployableTroops int64 `json:"deployable_troops"`
 }
 
 func (q *Queries) DecreaseDeployableTroops(ctx context.Context, arg DecreaseDeployableTroopsParams) error {
@@ -71,8 +82,8 @@ where id = $1
 `
 
 type DrawCardParams struct {
-	ID      int64
-	OwnerID pgtype.Int8
+	ID      int64       `json:"id"`
+	OwnerID pgtype.Int8 `json:"owner_id"`
 }
 
 func (q *Queries) DrawCard(ctx context.Context, arg DrawCardParams) error {
@@ -125,14 +136,14 @@ WHERE g.id = $1
 `
 
 type GetCardsForPlayerParams struct {
-	ID     int64
-	UserID string
+	ID     int64  `json:"id"`
+	UserID string `json:"user_id"`
 }
 
 type GetCardsForPlayerRow struct {
-	ID       int64
-	CardType CardType
-	Region   pgtype.Text
+	ID       int64       `json:"id"`
+	CardType CardType    `json:"card_type"`
+	Region   pgtype.Text `json:"region"`
 }
 
 func (q *Queries) GetCardsForPlayer(ctx context.Context, arg GetCardsForPlayerParams) ([]GetCardsForPlayerRow, error) {
@@ -168,9 +179,9 @@ where g.id = $1
 `
 
 type GetConquerPhaseStateRow struct {
-	SourceRegion  string
-	TargetRegion  string
-	MinimumTroops int64
+	SourceRegion  string `json:"source_region"`
+	TargetRegion  string `json:"target_region"`
+	MinimumTroops int64  `json:"minimum_troops"`
 }
 
 func (q *Queries) GetConquerPhaseState(ctx context.Context, id int64) (GetConquerPhaseStateRow, error) {
@@ -217,9 +228,9 @@ WHERE game.id = $1
 `
 
 type GetGameRow struct {
-	ID           int64
-	CurrentPhase PhaseType
-	Turn         int64
+	ID           int64     `json:"id"`
+	CurrentPhase PhaseType `json:"current_phase"`
+	Turn         int64     `json:"turn"`
 }
 
 func (q *Queries) GetGame(ctx context.Context, id int64) (GetGameRow, error) {
@@ -313,10 +324,10 @@ GROUP BY p.id
 `
 
 type GetPlayersStateRow struct {
-	UserID    string
-	Name      string
-	TurnIndex int64
-	CardCount int64
+	UserID    string `json:"user_id"`
+	Name      string `json:"name"`
+	TurnIndex int64  `json:"turn_index"`
+	CardCount int64  `json:"card_count"`
 }
 
 func (q *Queries) GetPlayersState(ctx context.Context, gameID int64) ([]GetPlayersStateRow, error) {
@@ -353,10 +364,10 @@ WHERE g.id = $1
 `
 
 type GetRegionsByGameRow struct {
-	ID                int64
-	ExternalReference string
-	Troops            int64
-	UserID            string
+	ID                int64  `json:"id"`
+	ExternalReference string `json:"external_reference"`
+	Troops            int64  `json:"troops"`
+	UserID            string `json:"user_id"`
 }
 
 func (q *Queries) GetRegionsByGame(ctx context.Context, id int64) ([]GetRegionsByGameRow, error) {
@@ -395,8 +406,8 @@ select exists
 `
 
 type HasConqueredInTurnParams struct {
-	ID   int64
-	Turn int64
+	ID   int64 `json:"id"`
+	Turn int64 `json:"turn"`
 }
 
 func (q *Queries) HasConqueredInTurn(ctx context.Context, arg HasConqueredInTurnParams) (bool, error) {
@@ -413,8 +424,8 @@ WHERE id = $1
 `
 
 type IncreaseRegionTroopsParams struct {
-	ID     int64
-	Troops int64
+	ID     int64 `json:"id"`
+	Troops int64 `json:"troops"`
 }
 
 func (q *Queries) IncreaseRegionTroops(ctx context.Context, arg IncreaseRegionTroopsParams) error {
@@ -423,9 +434,9 @@ func (q *Queries) IncreaseRegionTroops(ctx context.Context, arg IncreaseRegionTr
 }
 
 type InsertCardsParams struct {
-	RegionID pgtype.Int8
-	GameID   int64
-	CardType CardType
+	RegionID pgtype.Int8 `json:"region_id"`
+	GameID   int64       `json:"game_id"`
+	CardType CardType    `json:"card_type"`
 }
 
 const insertConquerPhase = `-- name: InsertConquerPhase :one
@@ -448,11 +459,11 @@ RETURNING id, phase_id, source_region_id, target_region_id, minimum_troops
 `
 
 type InsertConquerPhaseParams struct {
-	PhaseID             int64
-	ID                  int64
-	ExternalReference   string
-	ExternalReference_2 string
-	MinimumTroops       int64
+	PhaseID             int64  `json:"phase_id"`
+	ID                  int64  `json:"id"`
+	ExternalReference   string `json:"external_reference"`
+	ExternalReference_2 string `json:"external_reference_2"`
+	MinimumTroops       int64  `json:"minimum_troops"`
 }
 
 func (q *Queries) InsertConquerPhase(ctx context.Context, arg InsertConquerPhaseParams) (ConquerPhase, error) {
@@ -480,8 +491,8 @@ VALUES ($1, $2) RETURNING id, phase_id, deployable_troops
 `
 
 type InsertDeployPhaseParams struct {
-	PhaseID          int64
-	DeployableTroops int64
+	PhaseID          int64 `json:"phase_id"`
+	DeployableTroops int64 `json:"deployable_troops"`
 }
 
 func (q *Queries) InsertDeployPhase(ctx context.Context, arg InsertDeployPhaseParams) (DeployPhase, error) {
@@ -510,9 +521,9 @@ VALUES ($1, $2, $3) RETURNING id, game_id, type, turn
 `
 
 type InsertPhaseParams struct {
-	GameID int64
-	Type   PhaseType
-	Turn   int64
+	GameID int64     `json:"game_id"`
+	Type   PhaseType `json:"type"`
+	Turn   int64     `json:"turn"`
 }
 
 func (q *Queries) InsertPhase(ctx context.Context, arg InsertPhaseParams) (Phase, error) {
@@ -528,16 +539,16 @@ func (q *Queries) InsertPhase(ctx context.Context, arg InsertPhaseParams) (Phase
 }
 
 type InsertPlayersParams struct {
-	GameID    int64
-	UserID    string
-	Name      string
-	TurnIndex int64
+	GameID    int64  `json:"game_id"`
+	UserID    string `json:"user_id"`
+	Name      string `json:"name"`
+	TurnIndex int64  `json:"turn_index"`
 }
 
 type InsertRegionsParams struct {
-	ExternalReference string
-	PlayerID          int64
-	Troops            int64
+	ExternalReference string `json:"external_reference"`
+	PlayerID          int64  `json:"player_id"`
+	Troops            int64  `json:"troops"`
 }
 
 const setGamePhase = `-- name: SetGamePhase :exec
@@ -547,8 +558,8 @@ WHERE id = $1
 `
 
 type SetGamePhaseParams struct {
-	ID             int64
-	CurrentPhaseID pgtype.Int8
+	ID             int64       `json:"id"`
+	CurrentPhaseID pgtype.Int8 `json:"current_phase_id"`
 }
 
 func (q *Queries) SetGamePhase(ctx context.Context, arg SetGamePhaseParams) error {
@@ -574,9 +585,9 @@ WHERE region.id = $3
 `
 
 type UpdateRegionOwnerParams struct {
-	UserID string
-	GameID int64
-	ID     int64
+	UserID string `json:"user_id"`
+	GameID int64  `json:"game_id"`
+	ID     int64  `json:"id"`
 }
 
 func (q *Queries) UpdateRegionOwner(ctx context.Context, arg UpdateRegionOwnerParams) error {

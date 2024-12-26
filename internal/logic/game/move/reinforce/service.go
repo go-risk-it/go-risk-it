@@ -11,11 +11,11 @@ import (
 )
 
 type Move struct {
-	SourceRegionID string
-	TargetRegionID string
-	TroopsInSource int64
-	TroopsInTarget int64
-	MovingTroops   int64
+	SourceRegionID string `json:"sourceRegionId"`
+	TargetRegionID string `json:"targetRegionId"`
+	TroopsInSource int64  `json:"troopsInSource"`
+	TroopsInTarget int64  `json:"troopsInTarget"`
+	MovingTroops   int64  `json:"movingTroops"`
 }
 
 type MoveResult struct{}

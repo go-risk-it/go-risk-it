@@ -1,4 +1,4 @@
--- name: CreateMoveLog :exec
+-- name: CreateMoveLog :one
 INSERT INTO move_log (game_id,
                       player_id,
                       phase,
@@ -11,4 +11,5 @@ VALUES ($1,
                   join game g on g.current_phase_id = p.id
          WHERE g.id = $1),
         $3,
-        $4);
+        $4)
+RETURNING *;

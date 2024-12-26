@@ -21,7 +21,7 @@ type ServiceImpl struct {
 
 var _ Service = (*ServiceImpl)(nil)
 
-func NewService(playerService player.Service) *ServiceImpl {
+func New(playerService player.Service) *ServiceImpl {
 	return &ServiceImpl{playerService: playerService}
 }
 

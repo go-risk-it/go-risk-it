@@ -29,21 +29,31 @@ func (_m *Querier) EXPECT() *Querier_Expecter {
 }
 
 // CreateMoveLog provides a mock function with given fields: _a0, arg
-func (_m *Querier) CreateMoveLog(_a0 context.Context, arg sqlc.CreateMoveLogParams) error {
+func (_m *Querier) CreateMoveLog(_a0 context.Context, arg sqlc.CreateMoveLogParams) (sqlc.MoveLog, error) {
 	ret := _m.Called(_a0, arg)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateMoveLog")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, sqlc.CreateMoveLogParams) error); ok {
+	var r0 sqlc.MoveLog
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.CreateMoveLogParams) (sqlc.MoveLog, error)); ok {
+		return rf(_a0, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.CreateMoveLogParams) sqlc.MoveLog); ok {
 		r0 = rf(_a0, arg)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(sqlc.MoveLog)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, sqlc.CreateMoveLogParams) error); ok {
+		r1 = rf(_a0, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Querier_CreateMoveLog_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateMoveLog'
@@ -65,12 +75,12 @@ func (_c *Querier_CreateMoveLog_Call) Run(run func(_a0 context.Context, arg sqlc
 	return _c
 }
 
-func (_c *Querier_CreateMoveLog_Call) Return(_a0 error) *Querier_CreateMoveLog_Call {
-	_c.Call.Return(_a0)
+func (_c *Querier_CreateMoveLog_Call) Return(_a0 sqlc.MoveLog, _a1 error) *Querier_CreateMoveLog_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_CreateMoveLog_Call) RunAndReturn(run func(context.Context, sqlc.CreateMoveLogParams) error) *Querier_CreateMoveLog_Call {
+func (_c *Querier_CreateMoveLog_Call) RunAndReturn(run func(context.Context, sqlc.CreateMoveLogParams) (sqlc.MoveLog, error)) *Querier_CreateMoveLog_Call {
 	_c.Call.Return(run)
 	return _c
 }

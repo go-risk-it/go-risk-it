@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "enable": true,
+  "internal": {
+    "completions": true,
+    "commands": true
+  }
+}

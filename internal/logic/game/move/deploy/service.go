@@ -14,9 +14,9 @@ import (
 )
 
 type Move struct {
-	RegionID      string
-	CurrentTroops int64
-	DesiredTroops int64
+	RegionID      string `json:"regionId"`
+	CurrentTroops int64  `json:"currentTroops"`
+	DesiredTroops int64  `json:"desiredTroops"`
 }
 
 type MoveResult struct{}

@@ -9,7 +9,7 @@ import (
 )
 
 type Querier interface {
-	CreateMoveLog(ctx context.Context, arg CreateMoveLogParams) error
+	CreateMoveLog(ctx context.Context, arg CreateMoveLogParams) (MoveLog, error)
 	DecreaseDeployableTroops(ctx context.Context, arg DecreaseDeployableTroopsParams) error
 	DrawCard(ctx context.Context, arg DrawCardParams) error
 	GetAvailableCards(ctx context.Context, id int64) ([]Card, error)

@@ -5,6 +5,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/cards"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/conquer"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/deploy"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/logging"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/validation"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/reinforce"
 	"go.uber.org/fx"
@@ -59,10 +60,13 @@ var Module = fx.Options(
 			NewOrchestrator[cards.Move, *cards.MoveResult],
 			fx.As(new(CardsOrchestrator)),
 		),
-
 		fx.Annotate(
-			validation.NewService,
+			validation.New,
 			fx.As(new(validation.Service)),
+		),
+		fx.Annotate(
+			logging.New,
+			fx.As(new(logging.Service)),
 		),
 	),
 )

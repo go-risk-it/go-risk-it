@@ -1,14 +1,12 @@
 package orchestration
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"reflect"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
-	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/logging"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/validation"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
@@ -24,6 +22,7 @@ type OrchestratorImpl[T, R any] struct {
 	querier                db.Querier
 	service                service.Service[T, R]
 	gameService            state.Service
+	loggingService         logging.Service
 	validationService      validation.Service
 	gameStateChangedSignal signals.GameStateChangedSignal
 }
@@ -32,6 +31,7 @@ func NewOrchestrator[T, R any](
 	querier db.Querier,
 	service service.Service[T, R],
 	gameService state.Service,
+	loggingService logging.Service,
 	validationService validation.Service,
 	gameStateChangedSignal signals.GameStateChangedSignal,
 ) *OrchestratorImpl[T, R] {
@@ -39,6 +39,7 @@ func NewOrchestrator[T, R any](
 		querier:                querier,
 		service:                service,
 		gameService:            gameService,
+		loggingService:         loggingService,
 		validationService:      validationService,
 		gameStateChangedSignal: gameStateChangedSignal,
 	}
@@ -93,7 +94,7 @@ func (s *OrchestratorImpl[T, R]) OrchestrateMoveQ(
 		return fmt.Errorf("unable to perform move: %w", err)
 	}
 
-	if err := s.logMoveQ(ctx, querier, move, performResult); err != nil {
+	if err := s.loggingService.LogMoveQ(ctx, querier, move, performResult); err != nil {
 		return fmt.Errorf("unable to log move: %w", err)
 	}
 
@@ -115,37 +116,6 @@ func (s *OrchestratorImpl[T, R]) OrchestrateMoveQ(
 	}
 
 	ctx.Log().Infow("successfully advanced phase", "phase", targetPhase)
-
-	return nil
-}
-
-func (s *OrchestratorImpl[T, R]) logMoveQ(
-	ctx ctx.GameContext,
-	querier db.Querier,
-	move T,
-	result R,
-) error {
-	moveJSON, err := json.Marshal(move)
-	if err != nil {
-		return fmt.Errorf("failed to marshal move: %w", err)
-	}
-
-	var resultJSON []byte
-	if !reflect.ValueOf(result).IsZero() {
-		resultJSON, err = json.Marshal(result)
-		if err != nil {
-			return fmt.Errorf("failed to marshal result: %w", err)
-		}
-	}
-
-	if err = querier.CreateMoveLog(ctx, sqlc.CreateMoveLogParams{
-		GameID:   ctx.GameID(),
-		UserID:   ctx.UserID(),
-		MoveData: moveJSON,
-		Result:   resultJSON,
-	}); err != nil {
-		return fmt.Errorf("failed to insert move log: %w", err)
-	}
 
 	return nil
 }
