@@ -16,7 +16,7 @@ require (
 	github.com/knadh/koanf/v2 v2.1.1
 	github.com/lesismal/nbio v1.5.8
 	github.com/maniartech/signals v1.2.0
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	github.com/testcontainers/testcontainers-go v0.31.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.31.0
 	go.uber.org/fx v1.23.0
