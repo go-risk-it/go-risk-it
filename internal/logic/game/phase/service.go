@@ -104,7 +104,7 @@ func (s *ServiceImpl) setGamePhaseQ(
 	gameID int64,
 	phaseID int64,
 ) error {
-	ctx.Log().Infow("setting phase", "phase", phaseID)
+	ctx.Log().Debugw("setting phase", "phase", phaseID)
 
 	err := querier.SetGamePhase(ctx, sqlc.SetGamePhaseParams{
 		ID:             gameID,
@@ -114,7 +114,7 @@ func (s *ServiceImpl) setGamePhaseQ(
 		return fmt.Errorf("failed to set phase: %w", err)
 	}
 
-	ctx.Log().Infow("phase set", "phase", phaseID)
+	ctx.Log().Debugw("phase set", "phase", phaseID)
 
 	return nil
 }

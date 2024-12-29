@@ -74,7 +74,8 @@ func (s *OrchestratorImpl[T, R]) OrchestrateMoveQ(
 ) error {
 	phase := s.service.PhaseType()
 
-	ctx.Log().Infow("orchestrating move", "phase", phase)
+	ctx.SetLog(ctx.Log().With("phase", phase))
+	ctx.Log().Infow("orchestrating move", "move", move)
 
 	gameState, err := s.gameService.GetGameStateQ(ctx, querier)
 	if err != nil {
@@ -115,7 +116,7 @@ func (s *OrchestratorImpl[T, R]) OrchestrateMoveQ(
 		return fmt.Errorf("unable to advance move: %w", err)
 	}
 
-	ctx.Log().Infow("successfully advanced phase", "phase", targetPhase)
+	ctx.Log().Infow("successfully advanced phase", "target", targetPhase)
 
 	return nil
 }

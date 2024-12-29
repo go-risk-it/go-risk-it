@@ -31,7 +31,7 @@ func NewResetHandler(
 }
 
 func (h *ResetHandlerImpl) Pattern() string {
-	return "/api/1/reset"
+	return "/api/v1/reset"
 }
 
 func (h *ResetHandlerImpl) RequiresAuth() bool {

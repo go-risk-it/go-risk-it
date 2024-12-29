@@ -139,11 +139,11 @@ func (s *ServiceImpl) NextPlayerHasValidCombination(
 
 					return true, nil
 				}
-
-				ctx.Log().Debugw("invalid combination", "combination", combination)
 			}
 		}
 	}
+
+	ctx.Log().Infow("player has no valid combination")
 
 	return false, nil
 }

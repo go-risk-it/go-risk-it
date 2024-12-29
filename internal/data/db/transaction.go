@@ -54,6 +54,7 @@ func (q *Queries) executeTransaction(
 
 			panic(panicking) // re-throw panic after Rollback
 		} else if err != nil {
+			ctx.Log().Errorw("error in transaction, rolling back", "err", err)
 			q.rollback(transaction, ctx)
 		} else {
 			err = transaction.Commit(ctx) // err is nil; if Commit returns error update err

@@ -34,15 +34,14 @@ func (s *ServiceImpl) AdvanceQ(
 	}
 
 	// add continents
-	deployPhase, err := querier.InsertDeployPhase(ctx, sqlc.InsertDeployPhaseParams{
+	if _, err = querier.InsertDeployPhase(ctx, sqlc.InsertDeployPhaseParams{
 		PhaseID:          phase.ID,
 		DeployableTroops: int64(countPlayerRegions(ctx, regions)/3) + extraDeployableTroops,
-	})
-	if err != nil {
+	}); err != nil {
 		return fmt.Errorf("failed to create deploy phase: %w", err)
 	}
 
-	ctx.Log().Infow("created deploy phase", "phase", deployPhase)
+	ctx.Log().Infow("created deploy phase")
 
 	return nil
 }

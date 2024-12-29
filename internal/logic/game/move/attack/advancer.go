@@ -36,18 +36,17 @@ func (s *ServiceImpl) advanceToConquerPhase(
 	performResult *MoveResult,
 	phase sqlc.Phase,
 ) error {
-	conquerPhase, err := querier.InsertConquerPhase(ctx, sqlc.InsertConquerPhaseParams{
+	if _, err := querier.InsertConquerPhase(ctx, sqlc.InsertConquerPhaseParams{
 		PhaseID:             phase.ID,
 		ID:                  ctx.GameID(),
 		ExternalReference:   performResult.AttackingRegionID,
 		ExternalReference_2: performResult.DefendingRegionID,
 		MinimumTroops:       performResult.ConqueringTroops,
-	})
-	if err != nil {
+	}); err != nil {
 		return fmt.Errorf("failed to create conquer phase: %w", err)
 	}
 
-	ctx.Log().Infow("created conquer phase", "phase", conquerPhase)
+	ctx.Log().Debugw("created conquer phase")
 
 	return nil
 }

@@ -25,7 +25,7 @@ func FetchState[T any](
 		ctx.Log().Errorf("unable to fetch state: %v", err)
 	}
 
-	ctx.Log().Debugw("got state, writing message", "state", reflect.TypeOf(state))
+	ctx.Log().Debugf("got state %v, writing message", reflect.TypeOf(state))
 
 	rawResponse, err := message.BuildMessage(messageType, state)
 	if err != nil {

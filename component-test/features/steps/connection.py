@@ -53,7 +53,7 @@ def receive_all_state_updates(context: RiskItContext, player: str):
     conn = context.players[player].connection
     while True:
         try:
-            message = conn.recv(timeout=0.05)
+            message = conn.recv(timeout=0.001)
             deserialize(context, message)
         except TimeoutError:
             LOGGER.error("Timed out waiting for message")
