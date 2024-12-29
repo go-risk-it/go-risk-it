@@ -11,3 +11,6 @@ jwt:
 
 dice:
   roll_strategy: attacker_always_wins
+
+history:
+  size: 999

@@ -34,5 +34,9 @@ var Module = fx.Options(
 			NewCardController,
 			fx.As(new(CardController)),
 		),
+		fx.Annotate(
+			NewMoveLogController,
+			fx.As(new(MoveLogController)),
+		),
 	),
 )

@@ -6,5 +6,6 @@ var Module = fx.Options(
 	fx.Provide(
 		NewGameStateChangedSignal,
 		NewPlayerConnectedSignal,
+		NewMovePerformedSignal,
 	),
 )

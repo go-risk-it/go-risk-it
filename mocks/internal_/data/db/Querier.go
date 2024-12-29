@@ -644,6 +644,65 @@ func (_c *Querier_GetGame_Call) RunAndReturn(run func(context.Context, int64) (s
 	return _c
 }
 
+// GetMoveLogs provides a mock function with given fields: _a0, arg
+func (_m *Querier) GetMoveLogs(_a0 context.Context, arg sqlc.GetMoveLogsParams) ([]sqlc.GetMoveLogsRow, error) {
+	ret := _m.Called(_a0, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetMoveLogs")
+	}
+
+	var r0 []sqlc.GetMoveLogsRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.GetMoveLogsParams) ([]sqlc.GetMoveLogsRow, error)); ok {
+		return rf(_a0, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.GetMoveLogsParams) []sqlc.GetMoveLogsRow); ok {
+		r0 = rf(_a0, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]sqlc.GetMoveLogsRow)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, sqlc.GetMoveLogsParams) error); ok {
+		r1 = rf(_a0, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_GetMoveLogs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetMoveLogs'
+type Querier_GetMoveLogs_Call struct {
+	*mock.Call
+}
+
+// GetMoveLogs is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - arg sqlc.GetMoveLogsParams
+func (_e *Querier_Expecter) GetMoveLogs(_a0 interface{}, arg interface{}) *Querier_GetMoveLogs_Call {
+	return &Querier_GetMoveLogs_Call{Call: _e.mock.On("GetMoveLogs", _a0, arg)}
+}
+
+func (_c *Querier_GetMoveLogs_Call) Run(run func(_a0 context.Context, arg sqlc.GetMoveLogsParams)) *Querier_GetMoveLogs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(sqlc.GetMoveLogsParams))
+	})
+	return _c
+}
+
+func (_c *Querier_GetMoveLogs_Call) Return(_a0 []sqlc.GetMoveLogsRow, _a1 error) *Querier_GetMoveLogs_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_GetMoveLogs_Call) RunAndReturn(run func(context.Context, sqlc.GetMoveLogsParams) ([]sqlc.GetMoveLogsRow, error)) *Querier_GetMoveLogs_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetNextPlayer provides a mock function with given fields: _a0, gameID
 func (_m *Querier) GetNextPlayer(_a0 context.Context, gameID int64) (sqlc.Player, error) {
 	ret := _m.Called(_a0, gameID)

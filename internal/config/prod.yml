@@ -11,3 +11,6 @@ jwt:
 
 dice:
   roll_strategy: random
+
+history:
+  size: 50

@@ -133,8 +133,8 @@ type Mission struct {
 }
 
 type MoveLog struct {
+	ID       int64
 	GameID   int64
-	Sequence int64
 	PlayerID int64
 	Phase    PhaseType
 	MoveData []byte

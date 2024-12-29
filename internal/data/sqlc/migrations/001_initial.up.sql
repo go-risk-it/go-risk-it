@@ -86,12 +86,11 @@ CREATE TABLE conquer_phase
 
 CREATE TABLE move_log
 (
+    id        BIGSERIAL PRIMARY KEY,
     game_id   BIGINT                   NOT NULL REFERENCES game (id),
-    sequence  BIGINT                   NOT NULL GENERATED ALWAYS AS IDENTITY,
     player_id BIGINT                   NOT NULL REFERENCES player (id),
     phase     phase_type               NOT NULL,
     move_data JSONB                    NOT NULL,
     result    JSONB,
-    created   TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    PRIMARY KEY (game_id, sequence)
+    created   TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );

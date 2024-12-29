@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
@@ -17,6 +16,7 @@ import (
 var Module = fx.Options(
 	fx.Invoke(
 		HandleGameStateChanged,
+		HandleMovePerformed,
 		HandlePlayerConnected,
 	),
 )
@@ -34,35 +34,27 @@ type HandlerParams[T any] struct {
 	ConquerPhaseFetcher   phase.ConquerPhaseFetcher
 	ReinforcePhaseFetcher phase.ReinforcePhaseFetcher
 	CardsPhaseFetcher     phase.CardsPhaseFetcher
+	MoveLogFetcher        fetcher.MoveLogFetcher
 	ConnectionManager     connection.Manager
 }
 
 func fetchAllStatesAndPublish[T any](
-	context context.Context,
+	context ctx.GameContext,
 	params HandlerParams[T],
 	publisher func(ctx.GameContext, json.RawMessage),
 ) {
-	gameContext, ok := context.(ctx.GameContext)
-	if !ok {
-		params.Log.Errorw("context is not game context", "context", context)
-
-		return
-	}
-
-	gameContext.Log().Infow("handling player connected")
-
 	go fetchGameState(
-		gameContext,
+		context,
 		params,
 		publisher)
 
 	for _, fetcher := range params.PublicFetchers {
-		go fetchStateAndPublish(gameContext, fetcher.FetchState, publisher)
+		go fetchStateAndPublish(context, fetcher.FetchState, publisher)
 	}
 
 	for _, fetcher := range params.PrivateFetchers {
 		go fetchStateAndPublish(
-			gameContext,
+			context,
 			fetcher.FetchState,
 			params.ConnectionManager.WriteMessage,
 		)

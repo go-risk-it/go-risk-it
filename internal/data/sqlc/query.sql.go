@@ -25,7 +25,7 @@ VALUES ($1,
          WHERE g.id = $1),
         $3,
         $4)
-RETURNING game_id, sequence, player_id, phase, move_data, result, created
+RETURNING id, game_id, player_id, phase, move_data, result, created
 `
 
 type CreateMoveLogParams struct {
@@ -44,8 +44,8 @@ func (q *Queries) CreateMoveLog(ctx context.Context, arg CreateMoveLogParams) (M
 	)
 	var i MoveLog
 	err := row.Scan(
+		&i.ID,
 		&i.GameID,
-		&i.Sequence,
 		&i.PlayerID,
 		&i.Phase,
 		&i.MoveData,
@@ -238,6 +238,54 @@ func (q *Queries) GetGame(ctx context.Context, id int64) (GetGameRow, error) {
 	var i GetGameRow
 	err := row.Scan(&i.ID, &i.CurrentPhase, &i.Turn)
 	return i, err
+}
+
+const getMoveLogs = `-- name: GetMoveLogs :many
+SELECT move_log.phase, move_log.move_data, move_log.result, move_log.created, player.user_id
+FROM move_log
+         JOIN player ON player.id = player_id
+WHERE move_log.game_id = $1
+ORDER BY created DESC
+LIMIT $2::bigint
+`
+
+type GetMoveLogsParams struct {
+	GameID  int64
+	MaxLogs int64
+}
+
+type GetMoveLogsRow struct {
+	Phase    PhaseType
+	MoveData []byte
+	Result   []byte
+	Created  pgtype.Timestamptz
+	UserID   string
+}
+
+func (q *Queries) GetMoveLogs(ctx context.Context, arg GetMoveLogsParams) ([]GetMoveLogsRow, error) {
+	rows, err := q.db.Query(ctx, getMoveLogs, arg.GameID, arg.MaxLogs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetMoveLogsRow
+	for rows.Next() {
+		var i GetMoveLogsRow
+		if err := rows.Scan(
+			&i.Phase,
+			&i.MoveData,
+			&i.Result,
+			&i.Created,
+			&i.UserID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getNextPlayer = `-- name: GetNextPlayer :one

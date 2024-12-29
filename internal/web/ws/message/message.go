@@ -12,6 +12,7 @@ const (
 	BoardState  Type = "boardState"
 	PlayerState Type = "playerState"
 	CardState   Type = "cardState"
+	MoveHistory Type = "moveHistory"
 )
 
 type Message struct {

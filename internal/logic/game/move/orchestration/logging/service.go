@@ -8,18 +8,46 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/logic/signals"
 )
 
 type Service interface {
+	GetMoveLogs(ctx ctx.GameContext, limit int64) ([]sqlc.GetMoveLogsRow, error)
 	LogMoveQ(ctx ctx.GameContext, querier db.Querier, move, result any) error
 }
 
-type ServiceImpl struct{}
+type ServiceImpl struct {
+	querier             db.Querier
+	movePerformedSignal signals.MovePerformedSignal
+}
 
 var _ Service = (*ServiceImpl)(nil)
 
-func New() *ServiceImpl {
-	return &ServiceImpl{}
+func New(
+	querier db.Querier,
+	movePerformedSignal signals.MovePerformedSignal,
+) *ServiceImpl {
+	return &ServiceImpl{
+		querier:             querier,
+		movePerformedSignal: movePerformedSignal,
+	}
+}
+
+func (s *ServiceImpl) GetMoveLogs(
+	ctx ctx.GameContext,
+	limit int64,
+) ([]sqlc.GetMoveLogsRow, error) {
+	ctx.Log().Info("getting move logs", "limit", limit)
+
+	moveLogs, err := s.querier.GetMoveLogs(ctx, sqlc.GetMoveLogsParams{
+		GameID:  ctx.GameID(),
+		MaxLogs: limit,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get move logs: %w", err)
+	}
+
+	return moveLogs, nil
 }
 
 func (s *ServiceImpl) LogMoveQ(ctx ctx.GameContext, querier db.Querier, move, result any) error {
@@ -36,7 +64,7 @@ func (s *ServiceImpl) LogMoveQ(ctx ctx.GameContext, querier db.Querier, move, re
 		}
 	}
 
-	_, err = querier.CreateMoveLog(ctx, sqlc.CreateMoveLogParams{
+	moveLog, err := querier.CreateMoveLog(ctx, sqlc.CreateMoveLogParams{
 		GameID:   ctx.GameID(),
 		UserID:   ctx.UserID(),
 		MoveData: moveJSON,
@@ -45,6 +73,10 @@ func (s *ServiceImpl) LogMoveQ(ctx ctx.GameContext, querier db.Querier, move, re
 	if err != nil {
 		return fmt.Errorf("failed to insert move log: %w", err)
 	}
+
+	go s.movePerformedSignal.Emit(ctx, signals.MovePerformedData{
+		MoveLog: moveLog,
+	})
 
 	return nil
 }

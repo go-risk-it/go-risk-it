@@ -18,6 +18,7 @@ type Querier interface {
 	GetCurrentPhase(ctx context.Context, id int64) (PhaseType, error)
 	GetDeployableTroops(ctx context.Context, id int64) (int64, error)
 	GetGame(ctx context.Context, id int64) (GetGameRow, error)
+	GetMoveLogs(ctx context.Context, arg GetMoveLogsParams) ([]GetMoveLogsRow, error)
 	GetNextPlayer(ctx context.Context, gameID int64) (Player, error)
 	GetPlayerByUserId(ctx context.Context, userID string) (Player, error)
 	GetPlayersByGame(ctx context.Context, gameID int64) ([]Player, error)

@@ -16,6 +16,7 @@ type Config struct {
 	Jwt      JwtConfig
 	Database DatabaseConfig
 	Dice     DiceConfig
+	History  HistoryConfig
 }
 
 type Result struct {
@@ -24,6 +25,7 @@ type Result struct {
 	JwtConfig      JwtConfig
 	DatabaseConfig DatabaseConfig
 	DiceConfig     DiceConfig
+	HistoryConfig  HistoryConfig
 }
 
 func newConfig(log *zap.SugaredLogger) Result {
@@ -48,6 +50,7 @@ func newConfig(log *zap.SugaredLogger) Result {
 		JwtConfig:      config.Jwt,
 		DatabaseConfig: config.Database,
 		DiceConfig:     config.Dice,
+		HistoryConfig:  config.History,
 	}
 }
 

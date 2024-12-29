@@ -8,6 +8,7 @@ from src.api.board_state_message import BoardStateMessage
 from src.api.card_state_message import CardStateMessage
 from src.api.game_state_message import GameStateMessage
 from src.api.player_state_message import PlayerStateMessage
+from src.api.move_history_message import MoveHistoryMessage
 from src.core.context import RiskItContext, IndexedBoardStateData
 
 LOGGER = logging.getLogger(__name__)
@@ -42,6 +43,8 @@ def deserialize(context: RiskItContext, message: str) -> None:
         case "cardState":
             card_state_message = CardStateMessage.parse_obj(parsed_message)
             context.card_state = card_state_message.data
+        case "moveHistory":
+            MoveHistoryMessage.parse_obj(parsed_message)
         case _:
             raise ValueError(f"Unknown message type: {message_type}")
 
