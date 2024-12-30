@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/board/continents"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board/dto"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board/graph"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
@@ -22,10 +23,15 @@ type Service interface {
 		source string,
 		target string,
 	) (bool, error)
+	GetContinentRewardsForRegions(
+		ctx ctx.GameContext,
+		regions []string,
+	) (int64, error)
 }
 
 type ServiceImpl struct {
 	log           *zap.SugaredLogger
+	continents    continents.Continents
 	graph         graph.Graph
 	regionService region.Service
 }
@@ -78,6 +84,28 @@ func (s *ServiceImpl) CanPlayerReachQ(
 	return graph.CanReach(ctx, source, target, usableRegions), nil
 }
 
+func (s *ServiceImpl) GetContinentRewardsForRegions(
+	ctx ctx.GameContext,
+	regions []string,
+) (int64, error) {
+	ctx.Log().Infow("getting player continents reward")
+
+	reward := 0
+
+	continents, err := s.getContinents(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get continents: %w", err)
+	}
+
+	for _, continent := range continents.GetContinentsControlledBy(regions) {
+		reward += continent.BonusTroops
+	}
+
+	ctx.Log().Infow("got player continents reward", "reward", reward)
+
+	return int64(reward), nil
+}
+
 func (s *ServiceImpl) GetBoardRegions(ctx ctx.LogContext) ([]string, error) {
 	ctx.Log().Infow("getting board regions")
 
@@ -117,6 +145,32 @@ func (s *ServiceImpl) getGraph(ctx ctx.LogContext) (graph.Graph, error) {
 	ctx.Log().Infow("graph cache updated")
 
 	return s.graph, nil
+}
+
+func (s *ServiceImpl) getContinents(ctx ctx.GameContext) (continents.Continents, error) {
+	ctx.Log().Infow("getting continents")
+
+	if s.continents != nil {
+		ctx.Log().Infow("continents cache hit")
+
+		return s.continents, nil
+	}
+
+	ctx.Log().Infow("continents cache miss, fetching board from file")
+
+	boardDto, err := s.fetchFromFile(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get boardDto: %w", err)
+	}
+
+	s.continents, err = continents.New(boardDto)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create continents: %w", err)
+	}
+
+	ctx.Log().Infow("continents cache updated")
+
+	return s.continents, nil
 }
 
 func (s *ServiceImpl) fetchFromFile(ctx ctx.LogContext) (*dto.Board, error) {

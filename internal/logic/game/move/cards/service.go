@@ -7,6 +7,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
@@ -34,6 +35,7 @@ type Service interface {
 }
 
 type ServiceImpl struct {
+	boardService  board.Service
 	phaseService  phase.Service
 	playerService player.Service
 	regionService region.Service
@@ -43,12 +45,14 @@ type ServiceImpl struct {
 var _ Service = (*ServiceImpl)(nil)
 
 func NewService(
+	boardService board.Service,
 	phaseService phase.Service,
 	playerService player.Service,
 	regionService region.Service,
 	rng rand.RNG,
 ) *ServiceImpl {
 	return &ServiceImpl{
+		boardService:  boardService,
 		phaseService:  phaseService,
 		playerService: playerService,
 		regionService: regionService,

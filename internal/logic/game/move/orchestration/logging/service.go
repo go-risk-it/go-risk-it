@@ -37,7 +37,7 @@ func (s *ServiceImpl) GetMoveLogs(
 	ctx ctx.GameContext,
 	limit int64,
 ) ([]sqlc.GetMoveLogsRow, error) {
-	ctx.Log().Info("getting move logs", "limit", limit)
+	ctx.Log().Infow("getting move logs", "limit", limit)
 
 	moveLogs, err := s.querier.GetMoveLogs(ctx, sqlc.GetMoveLogsParams{
 		GameID:  ctx.GameID(),

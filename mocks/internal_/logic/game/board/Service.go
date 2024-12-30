@@ -197,6 +197,63 @@ func (_c *Service_GetBoardRegions_Call) RunAndReturn(run func(ctx.LogContext) ([
 	return _c
 }
 
+// GetContinentRewardsForRegions provides a mock function with given fields: _a0, regions
+func (_m *Service) GetContinentRewardsForRegions(_a0 ctx.GameContext, regions []string) (int64, error) {
+	ret := _m.Called(_a0, regions)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetContinentRewardsForRegions")
+	}
+
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, []string) (int64, error)); ok {
+		return rf(_a0, regions)
+	}
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, []string) int64); ok {
+		r0 = rf(_a0, regions)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	if rf, ok := ret.Get(1).(func(ctx.GameContext, []string) error); ok {
+		r1 = rf(_a0, regions)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Service_GetContinentRewardsForRegions_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetContinentRewardsForRegions'
+type Service_GetContinentRewardsForRegions_Call struct {
+	*mock.Call
+}
+
+// GetContinentRewardsForRegions is a helper method to define mock.On call
+//   - _a0 ctx.GameContext
+//   - regions []string
+func (_e *Service_Expecter) GetContinentRewardsForRegions(_a0 interface{}, regions interface{}) *Service_GetContinentRewardsForRegions_Call {
+	return &Service_GetContinentRewardsForRegions_Call{Call: _e.mock.On("GetContinentRewardsForRegions", _a0, regions)}
+}
+
+func (_c *Service_GetContinentRewardsForRegions_Call) Run(run func(_a0 ctx.GameContext, regions []string)) *Service_GetContinentRewardsForRegions_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.GameContext), args[1].([]string))
+	})
+	return _c
+}
+
+func (_c *Service_GetContinentRewardsForRegions_Call) Return(_a0 int64, _a1 error) *Service_GetContinentRewardsForRegions_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Service_GetContinentRewardsForRegions_Call) RunAndReturn(run func(ctx.GameContext, []string) (int64, error)) *Service_GetContinentRewardsForRegions_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewService creates a new instance of Service. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewService(t interface {
