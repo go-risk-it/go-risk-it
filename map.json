@@ -6,32 +6,32 @@
     {
       "id": "oceania",
       "name": "Oceania",
-      "bonus_troops": 2
+      "bonusTroops": 2
     },
     {
       "id": "asia",
       "name": "Asia",
-      "bonus_troops": 7
+      "bonusTroops": 7
     },
     {
       "id": "europe",
       "name": "Europe",
-      "bonus_troops": 5
+      "bonusTroops": 5
     },
     {
       "id": "north_america",
       "name": "North America",
-      "bonus_troops": 5
+      "bonusTroops": 5
     },
     {
       "id": "south_america",
       "name": "South America",
-      "bonus_troops": 2
+      "bonusTroops": 2
     },
     {
       "id": "africa",
       "name": "Africa",
-      "bonus_troops": 3
+      "bonusTroops": 3
     }
   ],
   "layers": [

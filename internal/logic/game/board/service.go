@@ -97,7 +97,18 @@ func (s *ServiceImpl) GetContinentRewardsForRegions(
 		return 0, fmt.Errorf("failed to get continents: %w", err)
 	}
 
+	ctx.Log().Debugw("checking player continents against regions", "regions", regions)
+
 	for _, continent := range continents.GetContinentsControlledBy(regions) {
+		ctx.Log().
+			Debugw(
+				"player controls continent",
+				"continent",
+				continent.ExternalReference,
+				"troops",
+				continent.BonusTroops,
+			)
+
 		reward += continent.BonusTroops
 	}
 

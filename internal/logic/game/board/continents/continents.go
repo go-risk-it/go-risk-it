@@ -78,7 +78,7 @@ func New(board *dto.Board) (*ContinentsImpl, error) {
 
 	for i, continent := range board.Continents {
 		continents[i] = &Continent{
-			ExternalReference: continent.Name,
+			ExternalReference: continent.ExternalReference,
 			BonusTroops:       continent.BonusTroops,
 			regions:           make([]string, 0),
 		}

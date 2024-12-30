@@ -22,7 +22,7 @@ def step_impl(context: RiskItContext, player: str, source: str, target: str):
         attacking_region = context.board_state.regions[source]
         defending_region = context.board_state.regions[target]
 
-        attacking_troops = min(attacking_region.troops, 3)
+        attacking_troops = min(attacking_region.troops - 1, 3)
         if attacking_troops <= 0:
             return
         response = attack(context, attacking_region, defending_region, player, source, target,

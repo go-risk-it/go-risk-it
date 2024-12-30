@@ -62,9 +62,9 @@ Feature: Creating a game
     And the game phase is deploy
     And gabriele has 1 cards
 
-    When giovanni deploys 4 troops in siberia
+    When giovanni deploys 6 troops in siberia
     And giovanni attacks from siberia to ural until conquering
-    And giovanni conquers with 4 troops
+    And giovanni conquers with 6 troops
     And giovanni advances from phase attack
     And giovanni advances from phase reinforce
     Then all players receive all state updates
@@ -92,7 +92,7 @@ Feature: Creating a game
     And the game phase is deploy
     And gabriele has 2 cards
 
-    When giovanni deploys 5 troops in egypt
+    When giovanni deploys 7 troops in egypt
     And giovanni attacks from ural to afghanistan until conquering
     And giovanni conquers with 3 troops
     And giovanni advances from phase attack
@@ -122,15 +122,68 @@ Feature: Creating a game
     And the game phase is deploy
     And gabriele has 3 cards
 
-    When giovanni deploys 5 troops in new_guinea
+    When giovanni deploys 7 troops in new_guinea
     And giovanni attacks from new_guinea to eastern_australia until conquering
-    And giovanni conquers with 4 troops
+    And giovanni conquers with 6 troops
     And giovanni advances from phase attack
-    And giovanni reinforces from eastern_australia to western_australia with 1 troops
+    And giovanni reinforces from eastern_australia to western_australia with 3 troops
     Then all players receive all state updates
     And it's francesco's turn
     And the game phase is cards
     And giovanni has 3 cards
+
+    When francesco plays the following card combinations
+      | card1 | card2 | card3 |
+      | 2     | 26    | 39    |
+    When francesco deploys 10 troops in middle_east
+    And francesco deploys 3 troops in siam
+    And francesco attacks from siam to indonesia until conquering
+    And francesco conquers with 10 troops
+    And francesco attacks from indonesia to western_australia until conquering
+    And francesco conquers with 9 troops
+    And francesco attacks from western_australia to eastern_australia until conquering
+    And francesco conquers with 8 troops
+    And francesco attacks from eastern_australia to new_guinea until conquering
+    And francesco conquers with 7 troops
+    And francesco attacks from middle_east to ukraine until conquering
+    And francesco conquers with 12 troops
+    And francesco attacks from ukraine to afghanistan until conquering
+    And francesco conquers with 11 troops
+    And francesco attacks from afghanistan to ural until conquering
+    And francesco conquers with 10 troops
+    And francesco attacks from ural to siberia until conquering
+    And francesco conquers with 9 troops
+    And francesco attacks from siberia to irkutsk until conquering
+    And francesco conquers with 8 troops
+    And francesco attacks from irkutsk to yakutsk until conquering
+    And francesco conquers with 7 troops
+    And francesco attacks from scandinavia to iceland until conquering
+    And francesco conquers with 2 troops
+    And francesco advances from phase attack
+    And francesco advances from phase reinforce
+
+    Then it's gabriele's turn
+    And the game phase is cards
+    When gabriele plays the following card combinations
+      | card1 | card2 | card3 |
+      | 9     | 22    | 38    |
+    When gabriele deploys 5 troops in south_africa
+    And gabriele deploys 5 troops in alaska
+    And gabriele deploys 6 troops in venezuela
+    And gabriele attacks from south_africa to madagascar until conquering
+    And gabriele conquers with 10 troops
+    And gabriele attacks from madagascar to east_africa until conquering
+    And gabriele conquers with 9 troops
+    And gabriele attacks from east_africa to egypt until conquering
+    And gabriele conquers with 8 troops
+    And gabriele attacks from venezuela to central_america until conquering
+    And gabriele conquers with 8 troops
+    And gabriele attacks from alaska to northwest_territory until conquering
+    And gabriele conquers with 7 troops
+#    And gabriele attacks from northwest_territory to alberta until conquering
+#    And gabriele conquers with 6 troops
+
+
 
 
 
