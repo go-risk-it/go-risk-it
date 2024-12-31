@@ -1,4 +1,4 @@
-package graph
+package board
 
 import (
 	"errors"
@@ -6,7 +6,6 @@ import (
 	"slices"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/board/dto"
 )
 
 type Graph interface {
@@ -37,8 +36,8 @@ func (g *GraphImpl) GetRegions() []string {
 
 var _ Graph = (*GraphImpl)(nil)
 
-func New(board *dto.Board) (*GraphImpl, error) {
-	err := validate(board)
+func NewGraph(board *BoardDto) (*GraphImpl, error) {
+	err := validateGraph(board)
 	if err != nil {
 		return nil, fmt.Errorf("invalid board: %w", err)
 	}
@@ -59,7 +58,7 @@ func New(board *dto.Board) (*GraphImpl, error) {
 	return topG, nil
 }
 
-func validate(board *dto.Board) error {
+func validateGraph(board *BoardDto) error {
 	if len(board.Regions) == 0 {
 		return errors.New("no regions")
 	}
@@ -85,7 +84,7 @@ func validate(board *dto.Board) error {
 	return nil
 }
 
-func validateBorders(board *dto.Board, regionNames map[string]struct{}) error {
+func validateBorders(board *BoardDto, regionNames map[string]struct{}) error {
 	for _, border := range board.Borders {
 		if border.Source == "" {
 			return errors.New("empty source")
@@ -164,8 +163,6 @@ func (g *GraphImpl) canReachRecursive(
 			return true
 		}
 	}
-
-	context.Log().Debugw("target unreachable", "source", source, "target", target)
 
 	return false
 }

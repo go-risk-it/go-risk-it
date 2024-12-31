@@ -1,11 +1,9 @@
-package continents
+package board
 
 import (
 	"errors"
 	"fmt"
 	"slices"
-
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/board/dto"
 )
 
 type Continent struct {
@@ -48,7 +46,7 @@ func allRegionsContained(continent *Continent, regions []string) bool {
 
 var _ Continents = (*ContinentsImpl)(nil)
 
-func validate(board *dto.Board) error {
+func validateContinents(board *BoardDto) error {
 	if len(board.Regions) == 0 {
 		return errors.New("no regions")
 	}
@@ -69,8 +67,8 @@ func validate(board *dto.Board) error {
 	return nil
 }
 
-func New(board *dto.Board) (*ContinentsImpl, error) {
-	if err := validate(board); err != nil {
+func NewContinents(board *BoardDto) (*ContinentsImpl, error) {
+	if err := validateContinents(board); err != nil {
 		return nil, fmt.Errorf("invalid board: %w", err)
 	}
 

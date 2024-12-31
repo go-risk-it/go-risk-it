@@ -7,9 +7,6 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/board/continents"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/board/dto"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/board/graph"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
 	"go.uber.org/zap"
 )
@@ -31,8 +28,8 @@ type Service interface {
 
 type ServiceImpl struct {
 	log           *zap.SugaredLogger
-	continents    continents.Continents
-	graph         graph.Graph
+	continents    Continents
+	graph         Graph
 	regionService region.Service
 }
 
@@ -132,7 +129,7 @@ func (s *ServiceImpl) GetBoardRegions(ctx ctx.LogContext) ([]string, error) {
 	return result, nil
 }
 
-func (s *ServiceImpl) getGraph(ctx ctx.LogContext) (graph.Graph, error) {
+func (s *ServiceImpl) getGraph(ctx ctx.LogContext) (Graph, error) {
 	ctx.Log().Infow("getting graph")
 
 	if s.graph != nil {
@@ -148,7 +145,7 @@ func (s *ServiceImpl) getGraph(ctx ctx.LogContext) (graph.Graph, error) {
 		return nil, fmt.Errorf("failed to get boardDto: %w", err)
 	}
 
-	s.graph, err = graph.New(boardDto)
+	s.graph, err = NewGraph(boardDto)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create graph: %w", err)
 	}
@@ -158,7 +155,7 @@ func (s *ServiceImpl) getGraph(ctx ctx.LogContext) (graph.Graph, error) {
 	return s.graph, nil
 }
 
-func (s *ServiceImpl) getContinents(ctx ctx.GameContext) (continents.Continents, error) {
+func (s *ServiceImpl) getContinents(ctx ctx.GameContext) (Continents, error) {
 	ctx.Log().Infow("getting continents")
 
 	if s.continents != nil {
@@ -174,7 +171,7 @@ func (s *ServiceImpl) getContinents(ctx ctx.GameContext) (continents.Continents,
 		return nil, fmt.Errorf("failed to get boardDto: %w", err)
 	}
 
-	s.continents, err = continents.New(boardDto)
+	s.continents, err = NewContinents(boardDto)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create continents: %w", err)
 	}
@@ -184,13 +181,13 @@ func (s *ServiceImpl) getContinents(ctx ctx.GameContext) (continents.Continents,
 	return s.continents, nil
 }
 
-func (s *ServiceImpl) fetchFromFile(ctx ctx.LogContext) (*dto.Board, error) {
+func (s *ServiceImpl) fetchFromFile(ctx ctx.LogContext) (*BoardDto, error) {
 	data, err := os.ReadFile("map.json")
 	if err != nil {
 		return nil, fmt.Errorf("error reading file: %w", err)
 	}
 
-	board := &dto.Board{}
+	board := &BoardDto{}
 
 	err = json.Unmarshal(data, board)
 	if err != nil {
