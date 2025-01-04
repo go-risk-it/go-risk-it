@@ -54,12 +54,15 @@
 **Server: Logic**
 
 - [x] Game logic
-- [ ] Map validation
+- [x] Map validation
 - [x] POST endpoint for creating a game
 - [x] Deploy move
-- [ ] Attack move
-- [ ] Reinforcement move
-- [ ] Cards move
+- [x] Attack move
+- [x] Reinforcement move
+- [x] Cards move
+- [x] Consider continents
+- [x] Implement player kill
+- [ ] Implement objectives
 
 **Server: Analytics**
 
