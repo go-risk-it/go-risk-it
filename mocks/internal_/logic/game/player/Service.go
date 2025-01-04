@@ -261,6 +261,65 @@ func (_c *Service_GetPlayersState_Call) RunAndReturn(run func(ctx.GameContext) (
 	return _c
 }
 
+// GetPlayersStateQ provides a mock function with given fields: _a0, querier
+func (_m *Service) GetPlayersStateQ(_a0 ctx.GameContext, querier db.Querier) ([]sqlc.GetPlayersStateRow, error) {
+	ret := _m.Called(_a0, querier)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetPlayersStateQ")
+	}
+
+	var r0 []sqlc.GetPlayersStateRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) ([]sqlc.GetPlayersStateRow, error)); ok {
+		return rf(_a0, querier)
+	}
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) []sqlc.GetPlayersStateRow); ok {
+		r0 = rf(_a0, querier)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]sqlc.GetPlayersStateRow)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(ctx.GameContext, db.Querier) error); ok {
+		r1 = rf(_a0, querier)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Service_GetPlayersStateQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetPlayersStateQ'
+type Service_GetPlayersStateQ_Call struct {
+	*mock.Call
+}
+
+// GetPlayersStateQ is a helper method to define mock.On call
+//   - _a0 ctx.GameContext
+//   - querier db.Querier
+func (_e *Service_Expecter) GetPlayersStateQ(_a0 interface{}, querier interface{}) *Service_GetPlayersStateQ_Call {
+	return &Service_GetPlayersStateQ_Call{Call: _e.mock.On("GetPlayersStateQ", _a0, querier)}
+}
+
+func (_c *Service_GetPlayersStateQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier)) *Service_GetPlayersStateQ_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.GameContext), args[1].(db.Querier))
+	})
+	return _c
+}
+
+func (_c *Service_GetPlayersStateQ_Call) Return(_a0 []sqlc.GetPlayersStateRow, _a1 error) *Service_GetPlayersStateQ_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Service_GetPlayersStateQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier) ([]sqlc.GetPlayersStateRow, error)) *Service_GetPlayersStateQ_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewService creates a new instance of Service. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewService(t interface {

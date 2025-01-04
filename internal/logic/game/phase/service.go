@@ -6,6 +6,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -19,14 +20,16 @@ type Service interface {
 }
 
 type ServiceImpl struct {
-	gameService state.Service
+	gameService   state.Service
+	playerService player.Service
 }
 
 var _ Service = &ServiceImpl{}
 
-func NewService(gameService state.Service) *ServiceImpl {
+func NewService(gameService state.Service, playerService player.Service) *ServiceImpl {
 	return &ServiceImpl{
-		gameService: gameService,
+		gameService:   gameService,
+		playerService: playerService,
 	}
 }
 
@@ -57,9 +60,9 @@ func (s *ServiceImpl) InsertPhaseQ(
 		return nil, fmt.Errorf("failed to get current phase: %w", err)
 	}
 
-	turn := gameState.Turn
-	if currentPhase == sqlc.PhaseTypeREINFORCE {
-		turn++
+	turn, err := s.getNextTurn(ctx, querier, gameState, currentPhase)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get next turn: %w", err)
 	}
 
 	phase, err := s.insertPhaseQ(ctx, querier, ctx.GameID(), phaseType, turn)
@@ -73,6 +76,31 @@ func (s *ServiceImpl) InsertPhaseQ(
 	}
 
 	return phase, nil
+}
+
+func (s *ServiceImpl) getNextTurn(
+	ctx ctx.GameContext,
+	querier db.Querier,
+	gameState *state.Game,
+	currentPhase sqlc.PhaseType,
+) (int64, error) {
+	turn := gameState.Turn
+
+	if currentPhase == sqlc.PhaseTypeREINFORCE {
+		playersState, err := s.playerService.GetPlayersStateQ(ctx, querier)
+		if err != nil {
+			return 0, fmt.Errorf("failed to get players state: %w", err)
+		}
+
+		turn++
+
+		players := int64(len(playersState))
+		for playersState[turn%players].RegionCount == 0 {
+			turn++
+		}
+	}
+
+	return turn, nil
 }
 
 func (s *ServiceImpl) insertPhaseQ(

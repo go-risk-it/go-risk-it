@@ -9,7 +9,8 @@ FROM player p
          LEFT JOIN card c on p.id = c.owner_id
          LEFT JOIN region r on r.player_id = p.id
 WHERE p.game_id = $1
-GROUP BY p.id;
+GROUP BY p.id
+ORDER BY p.turn_index;
 
 -- name: GetPlayerByUserId :one
 SELECT *

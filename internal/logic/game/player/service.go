@@ -20,6 +20,7 @@ type Service interface {
 		error,
 	)
 	GetPlayersState(ctx ctx.GameContext) ([]sqlc.GetPlayersStateRow, error)
+	GetPlayersStateQ(ctx ctx.GameContext, querier db.Querier) ([]sqlc.GetPlayersStateRow, error)
 	GetPlayersQ(ctx ctx.GameContext, querier db.Querier) ([]sqlc.Player, error)
 	GetNextPlayer(ctx ctx.GameContext, querier db.Querier) (sqlc.Player, error)
 }
@@ -35,9 +36,16 @@ func NewService(querier db.Querier) *ServiceImpl {
 }
 
 func (s *ServiceImpl) GetPlayersState(ctx ctx.GameContext) ([]sqlc.GetPlayersStateRow, error) {
+	return s.GetPlayersStateQ(ctx, s.querier)
+}
+
+func (s *ServiceImpl) GetPlayersStateQ(
+	ctx ctx.GameContext,
+	querier db.Querier,
+) ([]sqlc.GetPlayersStateRow, error) {
 	ctx.Log().Infow("fetching player state")
 
-	result, err := s.querier.GetPlayersState(ctx, ctx.GameID())
+	result, err := querier.GetPlayersState(ctx, ctx.GameID())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get players: %w", err)
 	}

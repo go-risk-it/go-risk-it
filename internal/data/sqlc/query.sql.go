@@ -370,6 +370,7 @@ FROM player p
          LEFT JOIN region r on r.player_id = p.id
 WHERE p.game_id = $1
 GROUP BY p.id
+ORDER BY p.turn_index
 `
 
 type GetPlayersStateRow struct {
