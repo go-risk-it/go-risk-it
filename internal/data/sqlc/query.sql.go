@@ -331,6 +331,33 @@ func (q *Queries) GetPlayerByUserId(ctx context.Context, userID string) (Player,
 	return i, err
 }
 
+const getPlayerRegionsFromRegion = `-- name: GetPlayerRegionsFromRegion :one
+SELECT p.user_id, COUNT(r.id) as region_count
+FROM player p
+         JOIN region r on r.player_id = p.id
+         JOIN region this_region on this_region.player_id = p.id
+WHERE p.game_id = $1
+  AND this_region.external_reference = $2
+GROUP BY p.user_id
+`
+
+type GetPlayerRegionsFromRegionParams struct {
+	GameID            int64
+	ExternalReference string
+}
+
+type GetPlayerRegionsFromRegionRow struct {
+	UserID      string
+	RegionCount int64
+}
+
+func (q *Queries) GetPlayerRegionsFromRegion(ctx context.Context, arg GetPlayerRegionsFromRegionParams) (GetPlayerRegionsFromRegionRow, error) {
+	row := q.db.QueryRow(ctx, getPlayerRegionsFromRegion, arg.GameID, arg.ExternalReference)
+	var i GetPlayerRegionsFromRegionRow
+	err := row.Scan(&i.UserID, &i.RegionCount)
+	return i, err
+}
+
 const getPlayersByGame = `-- name: GetPlayersByGame :many
 SELECT id, game_id, name, user_id, turn_index
 FROM player
@@ -616,6 +643,23 @@ type SetGamePhaseParams struct {
 
 func (q *Queries) SetGamePhase(ctx context.Context, arg SetGamePhaseParams) error {
 	_, err := q.db.Exec(ctx, setGamePhase, arg.ID, arg.CurrentPhaseID)
+	return err
+}
+
+const transferCardsOwnership = `-- name: TransferCardsOwnership :exec
+UPDATE card
+SET owner_id = (SELECT id from player WHERE player.user_id = $2::text AND player.game_id = $1)
+WHERE owner_id = (SELECT id from player WHERE player.user_id = $3::text AND player.game_id = $1)
+`
+
+type TransferCardsOwnershipParams struct {
+	GameID int64
+	To     string
+	From   string
+}
+
+func (q *Queries) TransferCardsOwnership(ctx context.Context, arg TransferCardsOwnershipParams) error {
+	_, err := q.db.Exec(ctx, transferCardsOwnership, arg.GameID, arg.To, arg.From)
 	return err
 }
 

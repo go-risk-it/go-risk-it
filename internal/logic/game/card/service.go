@@ -18,12 +18,37 @@ type Service interface {
 		ctx ctx.GameContext,
 		querier db.Querier,
 	) ([]sqlc.GetCardsForPlayerRow, error)
+	TransferCardsOwnership(
+		ctx ctx.GameContext,
+		querier db.Querier,
+		attacker, defender string,
+	) error
 }
 
 type ServiceImpl struct {
 	querier       db.Querier
 	regionService region.Service
 	rng           rand.RNG
+}
+
+func (s *ServiceImpl) TransferCardsOwnership(
+	ctx ctx.GameContext,
+	querier db.Querier,
+	attacker, defender string,
+) error {
+	ctx.Log().Infow("transferring cards ownership", "from", defender, "to", attacker)
+
+	if err := querier.TransferCardsOwnership(ctx, sqlc.TransferCardsOwnershipParams{
+		GameID: ctx.GameID(),
+		From:   defender,
+		To:     attacker,
+	}); err != nil {
+		return fmt.Errorf("unable defender transfer cards ownership: %w", err)
+	}
+
+	ctx.Log().Infow("transferred cards ownership", "from", defender, "to", attacker)
+
+	return nil
 }
 
 var _ Service = (*ServiceImpl)(nil)

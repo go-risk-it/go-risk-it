@@ -180,8 +180,16 @@ Feature: Creating a game
     And gabriele conquers with 8 troops
     And gabriele attacks from alaska to northwest_territory until conquering
     And gabriele conquers with 7 troops
-#    And gabriele attacks from northwest_territory to alberta until conquering
-#    And gabriele conquers with 6 troops
+    And gabriele attacks from northwest_territory to alberta until conquering
+    And gabriele conquers with 6 troops
+
+    Then giovanni is dead
+    And gabriele has 3 cards
+    When gabriele advances from phase attack
+    And gabriele advances from phase reinforce
+    Then gabriele has 4 cards
+
+    And it's francesco's turn
 
 
 

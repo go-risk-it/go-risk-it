@@ -1,6 +1,6 @@
 from behave import *
 
-from src.api.player_state_message import Player
+from src.api.player_state_message import Player, PlayerStatus
 from src.core.context import RiskItContext
 
 
@@ -32,3 +32,9 @@ def step_impl(context: RiskItContext, player_name: str):
 def step_impl(context: RiskItContext, player_name: str, card_count: str):
     player = extract_player(player_name, context.player_state.players)
     assert player.cardCount == int(card_count)
+
+
+@then("{player_name} is dead")
+def step_impl(context: RiskItContext, player_name: str):
+    player = extract_player(player_name, context.player_state.players)
+    assert player.status == PlayerStatus.DEAD

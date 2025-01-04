@@ -188,6 +188,55 @@ func (_c *Service_GetCardsForPlayerQ_Call) RunAndReturn(run func(ctx.GameContext
 	return _c
 }
 
+// TransferCardsOwnership provides a mock function with given fields: _a0, querier, attacker, defender
+func (_m *Service) TransferCardsOwnership(_a0 ctx.GameContext, querier db.Querier, attacker string, defender string) error {
+	ret := _m.Called(_a0, querier, attacker, defender)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TransferCardsOwnership")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, string, string) error); ok {
+		r0 = rf(_a0, querier, attacker, defender)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Service_TransferCardsOwnership_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TransferCardsOwnership'
+type Service_TransferCardsOwnership_Call struct {
+	*mock.Call
+}
+
+// TransferCardsOwnership is a helper method to define mock.On call
+//   - _a0 ctx.GameContext
+//   - querier db.Querier
+//   - attacker string
+//   - defender string
+func (_e *Service_Expecter) TransferCardsOwnership(_a0 interface{}, querier interface{}, attacker interface{}, defender interface{}) *Service_TransferCardsOwnership_Call {
+	return &Service_TransferCardsOwnership_Call{Call: _e.mock.On("TransferCardsOwnership", _a0, querier, attacker, defender)}
+}
+
+func (_c *Service_TransferCardsOwnership_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, attacker string, defender string)) *Service_TransferCardsOwnership_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(string), args[3].(string))
+	})
+	return _c
+}
+
+func (_c *Service_TransferCardsOwnership_Call) Return(_a0 error) *Service_TransferCardsOwnership_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Service_TransferCardsOwnership_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, string, string) error) *Service_TransferCardsOwnership_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewService creates a new instance of Service. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewService(t interface {

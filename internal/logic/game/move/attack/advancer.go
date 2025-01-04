@@ -24,6 +24,35 @@ func (s *ServiceImpl) AdvanceQ(
 	}
 
 	if targetPhase == sqlc.PhaseTypeCONQUER {
+		defendingPlayerRegions, err := querier.GetPlayerRegionsFromRegion(
+			ctx,
+			sqlc.GetPlayerRegionsFromRegionParams{
+				GameID:            ctx.GameID(),
+				ExternalReference: performResult.DefendingRegionID,
+			},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to get player regions: %w", err)
+		}
+
+		if defendingPlayerRegions.RegionCount == 1 {
+			ctx.Log().Infow("defending player has been killed",
+				"attacker",
+				ctx.UserID(),
+				"defender",
+				defendingPlayerRegions.UserID,
+			)
+
+			if err := s.cardService.TransferCardsOwnership(
+				ctx,
+				querier,
+				ctx.UserID(),
+				defendingPlayerRegions.UserID,
+			); err != nil {
+				return fmt.Errorf("unable to advance phase: %w", err)
+			}
+		}
+
 		return s.advanceToConquerPhase(ctx, querier, performResult, *phase)
 	}
 

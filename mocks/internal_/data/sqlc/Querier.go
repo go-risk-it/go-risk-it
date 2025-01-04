@@ -692,6 +692,63 @@ func (_c *Querier_GetPlayerByUserId_Call) RunAndReturn(run func(context.Context,
 	return _c
 }
 
+// GetPlayerRegionsFromRegion provides a mock function with given fields: ctx, arg
+func (_m *Querier) GetPlayerRegionsFromRegion(ctx context.Context, arg sqlc.GetPlayerRegionsFromRegionParams) (sqlc.GetPlayerRegionsFromRegionRow, error) {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetPlayerRegionsFromRegion")
+	}
+
+	var r0 sqlc.GetPlayerRegionsFromRegionRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.GetPlayerRegionsFromRegionParams) (sqlc.GetPlayerRegionsFromRegionRow, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.GetPlayerRegionsFromRegionParams) sqlc.GetPlayerRegionsFromRegionRow); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(sqlc.GetPlayerRegionsFromRegionRow)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, sqlc.GetPlayerRegionsFromRegionParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_GetPlayerRegionsFromRegion_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetPlayerRegionsFromRegion'
+type Querier_GetPlayerRegionsFromRegion_Call struct {
+	*mock.Call
+}
+
+// GetPlayerRegionsFromRegion is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg sqlc.GetPlayerRegionsFromRegionParams
+func (_e *Querier_Expecter) GetPlayerRegionsFromRegion(ctx interface{}, arg interface{}) *Querier_GetPlayerRegionsFromRegion_Call {
+	return &Querier_GetPlayerRegionsFromRegion_Call{Call: _e.mock.On("GetPlayerRegionsFromRegion", ctx, arg)}
+}
+
+func (_c *Querier_GetPlayerRegionsFromRegion_Call) Run(run func(ctx context.Context, arg sqlc.GetPlayerRegionsFromRegionParams)) *Querier_GetPlayerRegionsFromRegion_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(sqlc.GetPlayerRegionsFromRegionParams))
+	})
+	return _c
+}
+
+func (_c *Querier_GetPlayerRegionsFromRegion_Call) Return(_a0 sqlc.GetPlayerRegionsFromRegionRow, _a1 error) *Querier_GetPlayerRegionsFromRegion_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_GetPlayerRegionsFromRegion_Call) RunAndReturn(run func(context.Context, sqlc.GetPlayerRegionsFromRegionParams) (sqlc.GetPlayerRegionsFromRegionRow, error)) *Querier_GetPlayerRegionsFromRegion_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetPlayersByGame provides a mock function with given fields: ctx, gameID
 func (_m *Querier) GetPlayersByGame(ctx context.Context, gameID int64) ([]sqlc.Player, error) {
 	ret := _m.Called(ctx, gameID)
@@ -1414,6 +1471,53 @@ func (_c *Querier_SetGamePhase_Call) Return(_a0 error) *Querier_SetGamePhase_Cal
 }
 
 func (_c *Querier_SetGamePhase_Call) RunAndReturn(run func(context.Context, sqlc.SetGamePhaseParams) error) *Querier_SetGamePhase_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TransferCardsOwnership provides a mock function with given fields: ctx, arg
+func (_m *Querier) TransferCardsOwnership(ctx context.Context, arg sqlc.TransferCardsOwnershipParams) error {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TransferCardsOwnership")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.TransferCardsOwnershipParams) error); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Querier_TransferCardsOwnership_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TransferCardsOwnership'
+type Querier_TransferCardsOwnership_Call struct {
+	*mock.Call
+}
+
+// TransferCardsOwnership is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg sqlc.TransferCardsOwnershipParams
+func (_e *Querier_Expecter) TransferCardsOwnership(ctx interface{}, arg interface{}) *Querier_TransferCardsOwnership_Call {
+	return &Querier_TransferCardsOwnership_Call{Call: _e.mock.On("TransferCardsOwnership", ctx, arg)}
+}
+
+func (_c *Querier_TransferCardsOwnership_Call) Run(run func(ctx context.Context, arg sqlc.TransferCardsOwnershipParams)) *Querier_TransferCardsOwnership_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(sqlc.TransferCardsOwnershipParams))
+	})
+	return _c
+}
+
+func (_c *Querier_TransferCardsOwnership_Call) Return(_a0 error) *Querier_TransferCardsOwnership_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Querier_TransferCardsOwnership_Call) RunAndReturn(run func(context.Context, sqlc.TransferCardsOwnershipParams) error) *Querier_TransferCardsOwnership_Call {
 	_c.Call.Return(run)
 	return _c
 }

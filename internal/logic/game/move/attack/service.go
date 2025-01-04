@@ -5,9 +5,11 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/card"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack/dice"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
 )
 
@@ -33,8 +35,10 @@ type Service interface {
 
 type ServiceImpl struct {
 	boardService  board.Service
+	cardService   card.Service
 	diceService   dice.Service
 	phaseService  phase.Service
+	playerService player.Service
 	regionService region.Service
 }
 
@@ -42,14 +46,18 @@ var _ Service = &ServiceImpl{}
 
 func NewService(
 	boardService board.Service,
+	cardService card.Service,
 	diceService dice.Service,
 	phaseService phase.Service,
+	playerService player.Service,
 	regionService region.Service,
 ) *ServiceImpl {
 	return &ServiceImpl{
 		boardService:  boardService,
+		cardService:   cardService,
 		diceService:   diceService,
 		phaseService:  phaseService,
+		playerService: playerService,
 		regionService: regionService,
 	}
 }
