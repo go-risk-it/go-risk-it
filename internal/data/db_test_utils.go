@@ -62,8 +62,8 @@ func setupPostgresTestcontainer(ctx ctx.LogContext) (string, error) {
 	dbPassword := "password"
 
 	// build container
-	container, err := postgres.RunContainer(ctx,
-		testcontainers.WithImage("docker.io/postgres:latest"),
+	container, err := postgres.Run(ctx,
+		"docker.io/postgres:latest",
 		postgres.WithDatabase(dbName),
 		postgres.WithUsername(dbUser),
 		postgres.WithPassword(dbPassword),
