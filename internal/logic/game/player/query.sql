@@ -4,9 +4,10 @@ FROM player
 WHERE game_id = $1;
 
 -- name: GetPlayersState :many
-SELECT p.user_id, p.name, p.turn_index, COUNT(c.id) as card_count
+SELECT p.user_id, p.name, p.turn_index, COUNT(distinct c.id) as card_count, COUNT(distinct r.id) as region_count
 FROM player p
          LEFT JOIN card c on p.id = c.owner_id
+         LEFT JOIN region r on r.player_id = p.id
 WHERE p.game_id = $1
 GROUP BY p.id;
 

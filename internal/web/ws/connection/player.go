@@ -105,3 +105,17 @@ func (p *playerConnections) ConnectPlayer(ctx ctx.GameContext, connection *webso
 	p.playerConnections[ctx.UserID()] = connection
 	ctx.Log().Infow("Connected player", "currentConnections", len(p.playerConnections))
 }
+
+func (p *playerConnections) GetConnectedPlayers(ctx ctx.GameContext) []string {
+	p.RLock()
+	defer p.RUnlock()
+
+	result := make([]string, 0)
+	for player := range p.playerConnections {
+		result = append(result, player)
+	}
+
+	ctx.Log().Debugw("found connected players", "players", result, "count", len(result))
+
+	return result
+}

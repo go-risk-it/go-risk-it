@@ -9,6 +9,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	playerController "github.com/go-risk-it/go-risk-it/internal/web/controller"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/web/ws/connection"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -18,10 +19,11 @@ func TestControllerImpl_GetPlayerState(t *testing.T) {
 
 	// Initialize dependencies
 	logger := zap.NewExample().Sugar()
+	connectionManager := connection.NewManager(t)
 	playerService := player.NewService(t)
 
 	// Initialize the state under test
-	controller := playerController.NewPlayerController(playerService)
+	controller := playerController.NewPlayerController(connectionManager, playerService)
 
 	// Set up test data
 	gameID := int64(1)
@@ -32,9 +34,11 @@ func TestControllerImpl_GetPlayerState(t *testing.T) {
 
 	// Set up expectations for GetPlayersState method
 	playerService.EXPECT().GetPlayersState(ctx).Return([]sqlc.GetPlayersStateRow{
-		{Name: "francesco", UserID: "user1", TurnIndex: 0, CardCount: 0},
-		{Name: "gabriele", UserID: "user2", TurnIndex: 1, CardCount: 0},
+		{Name: "francesco", UserID: "user1", TurnIndex: 0, CardCount: 0, RegionCount: 15},
+		{Name: "gabriele", UserID: "user2", TurnIndex: 1, CardCount: 0, RegionCount: 12},
 	}, nil)
+
+	connectionManager.EXPECT().GetConnectedPlayers(ctx).Return([]string{"user1", "user2"})
 
 	// Call the method under test
 	playerState, err := controller.GetPlayerState(ctx)
@@ -43,8 +47,22 @@ func TestControllerImpl_GetPlayerState(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, messaging.PlayersState{
 		Players: []messaging.Player{
-			{UserID: "user1", Name: "francesco", Index: 0, CardCount: 0},
-			{UserID: "user2", Name: "gabriele", Index: 1, CardCount: 0},
+			{
+				UserID:           "user1",
+				Name:             "francesco",
+				Index:            0,
+				CardCount:        0,
+				Status:           messaging.Alive,
+				ConnectionStatus: messaging.Connected,
+			},
+			{
+				UserID:           "user2",
+				Name:             "gabriele",
+				Index:            1,
+				CardCount:        0,
+				Status:           messaging.Alive,
+				ConnectionStatus: messaging.Connected,
+			},
 		},
 	}, playerState)
 

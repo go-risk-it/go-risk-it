@@ -364,18 +364,20 @@ func (q *Queries) GetPlayersByGame(ctx context.Context, gameID int64) ([]Player,
 }
 
 const getPlayersState = `-- name: GetPlayersState :many
-SELECT p.user_id, p.name, p.turn_index, COUNT(c.id) as card_count
+SELECT p.user_id, p.name, p.turn_index, COUNT(distinct c.id) as card_count, COUNT(distinct r.id) as region_count
 FROM player p
          LEFT JOIN card c on p.id = c.owner_id
+         LEFT JOIN region r on r.player_id = p.id
 WHERE p.game_id = $1
 GROUP BY p.id
 `
 
 type GetPlayersStateRow struct {
-	UserID    string
-	Name      string
-	TurnIndex int64
-	CardCount int64
+	UserID      string
+	Name        string
+	TurnIndex   int64
+	CardCount   int64
+	RegionCount int64
 }
 
 func (q *Queries) GetPlayersState(ctx context.Context, gameID int64) ([]GetPlayersStateRow, error) {
@@ -392,6 +394,7 @@ func (q *Queries) GetPlayersState(ctx context.Context, gameID int64) ([]GetPlaye
 			&i.Name,
 			&i.TurnIndex,
 			&i.CardCount,
+			&i.RegionCount,
 		); err != nil {
 			return nil, err
 		}

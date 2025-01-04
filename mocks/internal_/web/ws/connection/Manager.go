@@ -93,6 +93,54 @@ func (_c *Manager_ConnectPlayer_Call) RunAndReturn(run func(ctx.GameContext, *we
 	return _c
 }
 
+// GetConnectedPlayers provides a mock function with given fields: _a0
+func (_m *Manager) GetConnectedPlayers(_a0 ctx.GameContext) []string {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetConnectedPlayers")
+	}
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(ctx.GameContext) []string); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	return r0
+}
+
+// Manager_GetConnectedPlayers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetConnectedPlayers'
+type Manager_GetConnectedPlayers_Call struct {
+	*mock.Call
+}
+
+// GetConnectedPlayers is a helper method to define mock.On call
+//   - _a0 ctx.GameContext
+func (_e *Manager_Expecter) GetConnectedPlayers(_a0 interface{}) *Manager_GetConnectedPlayers_Call {
+	return &Manager_GetConnectedPlayers_Call{Call: _e.mock.On("GetConnectedPlayers", _a0)}
+}
+
+func (_c *Manager_GetConnectedPlayers_Call) Run(run func(_a0 ctx.GameContext)) *Manager_GetConnectedPlayers_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.GameContext))
+	})
+	return _c
+}
+
+func (_c *Manager_GetConnectedPlayers_Call) Return(_a0 []string) *Manager_GetConnectedPlayers_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Manager_GetConnectedPlayers_Call) RunAndReturn(run func(ctx.GameContext) []string) *Manager_GetConnectedPlayers_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // WriteMessage provides a mock function with given fields: _a0, message
 func (_m *Manager) WriteMessage(_a0 ctx.GameContext, message json.RawMessage) {
 	_m.Called(_a0, message)

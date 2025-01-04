@@ -10,6 +10,7 @@ import (
 )
 
 type Manager interface {
+	GetConnectedPlayers(ctx ctx.GameContext) []string
 	ConnectPlayer(ctx ctx.GameContext, connection *websocket.Conn)
 	Broadcast(ctx ctx.GameContext, message json.RawMessage)
 	WriteMessage(ctx ctx.GameContext, message json.RawMessage)
@@ -19,6 +20,10 @@ type ManagerImpl struct {
 	upgradablerwmutex.UpgradableRWMutex
 	gameConnections       map[int64]*playerConnections
 	playerConnectedSignal signals.PlayerConnectedSignal
+}
+
+func (m *ManagerImpl) GetConnectedPlayers(ctx ctx.GameContext) []string {
+	return m.playerConnections(ctx).GetConnectedPlayers(ctx)
 }
 
 var _ Manager = (*ManagerImpl)(nil)
