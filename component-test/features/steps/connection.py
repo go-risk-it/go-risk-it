@@ -24,7 +24,7 @@ def step_impl(context: RiskItContext, player: str):
     context.players[player].connection = conn
 
 
-def deserialize(context: RiskItContext, message: str) -> None:
+def deserialize(context: RiskItContext, message: str, player: str) -> None:
     parsed_message = json.loads(message)
     message_type = parsed_message["type"]
 
@@ -42,7 +42,9 @@ def deserialize(context: RiskItContext, message: str) -> None:
             context.board_state = IndexedBoardStateData(board_state_message.data.regions)
         case "cardState":
             card_state_message = CardStateMessage.parse_obj(parsed_message)
-            context.card_state = card_state_message.data
+            if not hasattr(context, "card_state"):
+                context.card_state = {}
+            context.card_state[player] = card_state_message.data
         case "moveHistory":
             MoveHistoryMessage.parse_obj(parsed_message)
         case _:
@@ -54,7 +56,7 @@ def receive_all_state_updates(context: RiskItContext, player: str):
     while True:
         try:
             message = conn.recv(timeout=0.01)
-            deserialize(context, message)
+            deserialize(context, message, player)
         except TimeoutError:
             LOGGER.error("Timed out waiting for message")
             break

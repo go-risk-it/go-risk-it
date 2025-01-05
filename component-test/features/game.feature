@@ -133,8 +133,8 @@ Feature: Creating a game
     And giovanni has 3 cards
 
     When francesco plays the following card combinations
-      | card1 | card2 | card3 |
-      | 2     | 26    | 39    |
+      | card1     | card2    | card3   |
+      | ARTILLERY | INFANTRY | CAVALRY |
     When francesco deploys 10 troops in middle_east
     And francesco deploys 3 troops in siam
     And francesco attacks from siam to indonesia until conquering
@@ -165,8 +165,8 @@ Feature: Creating a game
     Then it's gabriele's turn
     And the game phase is cards
     When gabriele plays the following card combinations
-      | card1 | card2 | card3 |
-      | 9     | 22    | 38    |
+      | card1     | card2    | card3   |
+      | ARTILLERY | INFANTRY | CAVALRY |
     When gabriele deploys 5 troops in south_africa
     And gabriele deploys 5 troops in alaska
     And gabriele deploys 6 troops in venezuela

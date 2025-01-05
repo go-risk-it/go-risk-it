@@ -20,7 +20,7 @@ class IndexedBoardStateData:
 class RiskItContext(Context):
     game_id: int
     board_state: IndexedBoardStateData
-    card_state: CardStateData
+    card_state: dict[str, CardStateData]
     game_state: GameStateData
     player_state: PlayerStateData
     supabase_client: SupabaseClient
