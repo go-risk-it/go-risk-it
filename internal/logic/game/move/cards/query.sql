@@ -13,4 +13,9 @@ where id = $1;
 -- name: UnlinkCardsFromOwner :exec
 UPDATE card
 SET owner_id = NULL
-WHERE id  = ANY(sqlc.arg(cards)::bigint[]);
+WHERE id = ANY (sqlc.arg(cards)::bigint[]);
+
+-- name: GrantRegionTroops :exec
+UPDATE region
+set troops = troops + $1
+where id = ANY (sqlc.arg(regions)::bigint[]);

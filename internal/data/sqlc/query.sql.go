@@ -474,6 +474,22 @@ func (q *Queries) GetRegionsByGame(ctx context.Context, id int64) ([]GetRegionsB
 	return items, nil
 }
 
+const grantRegionTroops = `-- name: GrantRegionTroops :exec
+UPDATE region
+set troops = troops + $1
+where id = ANY ($2::bigint[])
+`
+
+type GrantRegionTroopsParams struct {
+	Troops  int64
+	Regions []int64
+}
+
+func (q *Queries) GrantRegionTroops(ctx context.Context, arg GrantRegionTroopsParams) error {
+	_, err := q.db.Exec(ctx, grantRegionTroops, arg.Troops, arg.Regions)
+	return err
+}
+
 const hasConqueredInTurn = `-- name: HasConqueredInTurn :one
 select exists
            (select p.id
@@ -666,7 +682,7 @@ func (q *Queries) TransferCardsOwnership(ctx context.Context, arg TransferCardsO
 const unlinkCardsFromOwner = `-- name: UnlinkCardsFromOwner :exec
 UPDATE card
 SET owner_id = NULL
-WHERE id  = ANY($1::bigint[])
+WHERE id = ANY ($1::bigint[])
 `
 
 func (q *Queries) UnlinkCardsFromOwner(ctx context.Context, cards []int64) error {

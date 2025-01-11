@@ -61,9 +61,49 @@ func (s *ServiceImpl) PerformQ(
 		return nil, fmt.Errorf("unable to unlink cards from owner: %w", err)
 	}
 
+	regionTroopGrants, err := s.grantRegionTroops(ctx, querier, cardIndex, playedCards)
+	if err != nil {
+		return nil, fmt.Errorf("unable to grant region troops: %w", err)
+	}
+
 	return &MoveResult{
 		ExtraDeployableTroops: extraDeployableTroops,
+		RegionTroopGrants:     regionTroopGrants,
 	}, nil
+}
+
+func (s *ServiceImpl) grantRegionTroops(
+	ctx ctx.GameContext,
+	querier db.Querier,
+	cardIndex map[int64]sqlc.GetCardsForPlayerRow,
+	playedCards []int64,
+) ([]RegionTroopGrant, error) {
+	grants, err := s.getRegionTroopGrants(ctx, querier, cardIndex, playedCards)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get region troop grants: %w", err)
+	}
+
+	if len(grants) == 0 {
+		ctx.Log().Infow("no region troop grants")
+
+		return nil, nil
+	}
+
+	grantedRegionIds := make([]int64, 0)
+	for _, grant := range grants {
+		grantedRegionIds = append(grantedRegionIds, grant.RegionID)
+	}
+
+	if err := querier.GrantRegionTroops(ctx, sqlc.GrantRegionTroopsParams{
+		Regions: grantedRegionIds,
+		Troops:  DefaultTroopGrant,
+	}); err != nil {
+		return nil, fmt.Errorf("failed to grant region troops: %w", err)
+	}
+
+	ctx.Log().Infof("granted bonus troops to %d regions", len(grantedRegionIds))
+
+	return grants, nil
 }
 
 func validateAllCardsDifferent(move Move) error {

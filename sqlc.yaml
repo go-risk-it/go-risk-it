@@ -22,3 +22,12 @@ sql:
         out: "internal/data/sqlc"
         sql_package: "pgx/v5"
         emit_interface: true
+    rules:
+      - sqlc/db-prepare
+rules:
+  - name: postgresql-query-too-costly
+    message: "Query cost estimate is too high"
+    rule: "postgresql.explain.plan.total_cost > 1.0"
+  - name: postgresql-no-seq-scan
+    message: "Query plan results in a sequential scan"
+    rule: "postgresql.explain.plan.node_type == 'Seq Scan'"

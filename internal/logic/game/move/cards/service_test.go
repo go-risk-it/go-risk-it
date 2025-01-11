@@ -21,6 +21,7 @@ import (
 func setup(t *testing.T) (
 	*db.Querier,
 	cards.Service,
+	*region.Service,
 ) {
 	t.Helper()
 	querier := db.NewQuerier(t)
@@ -31,7 +32,7 @@ func setup(t *testing.T) (
 	rng := rand.NewRNG(t)
 	service := cards.NewService(boardService, phaseService, playerService, regionService, rng)
 
-	return querier, service
+	return querier, service, regionService
 }
 
 func input() ctx.GameContext {
@@ -193,7 +194,7 @@ func TestServiceImpl_InvalidCombinations(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, service := setup(t)
+			querier, service, _ := setup(t)
 			ctx := input()
 
 			querier.
@@ -285,7 +286,7 @@ func TestServiceImpl_ValidCombinations(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, service := setup(t)
+			querier, service, regionService := setup(t)
 			ctx := input()
 
 			querier.
@@ -313,10 +314,16 @@ func TestServiceImpl_ValidCombinations(t *testing.T) {
 				playedCards = append(playedCards, combination.CardIDs...)
 			}
 
+			var regions []sqlc.GetRegionsByGameRow
+
 			querier.
 				EXPECT().
 				UnlinkCardsFromOwner(ctx, playedCards).
 				Return(nil)
+			regionService.
+				EXPECT().
+				GetRegionsQ(ctx, querier).
+				Return(regions, nil)
 
 			extraTroops, _ := service.PerformQ(ctx, querier, cards.Move{
 				Combinations: test.combinations,
