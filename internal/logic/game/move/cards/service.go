@@ -34,7 +34,7 @@ type MoveResult struct {
 type Service interface {
 	service.Service[Move, *MoveResult]
 	Draw(ctx ctx.GameContext, querier db.Querier) error
-	NextPlayerHasValidCombination(ctx ctx.GameContext, querier db.Querier) (bool, error)
+	NextPlayerHasValidCombinationQ(ctx ctx.GameContext, querier db.Querier) (bool, error)
 }
 
 type ServiceImpl struct {
@@ -97,13 +97,13 @@ func (s *ServiceImpl) Draw(ctx ctx.GameContext, querier db.Querier) error {
 	return nil
 }
 
-func (s *ServiceImpl) NextPlayerHasValidCombination(
+func (s *ServiceImpl) NextPlayerHasValidCombinationQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) (bool, error) {
 	ctx.Log().Infow("checking if the player has a valid card combination")
 
-	nextPlayer, err := s.playerService.GetNextPlayer(ctx, querier)
+	nextPlayer, err := s.playerService.GetNextPlayerQ(ctx, querier)
 	if err != nil {
 		return false, fmt.Errorf("failed to get player: %w", err)
 	}

@@ -83,71 +83,67 @@ func (s *ServiceImpl) CreateGameQ(
 		return -1, fmt.Errorf("failed to insert game: %w", err)
 	}
 
-	gameContext := ctx.WithGameID(cont, game.ID)
+	ctx := ctx.WithGameID(cont, game.ID)
 
-	createdPlayers, err := s.playerService.CreatePlayers(gameContext, querier, game.ID, players)
+	createdPlayers, err := s.playerService.CreatePlayers(ctx, querier, game.ID, players)
 	if err != nil {
 		return -1, fmt.Errorf("failed to create players: %w", err)
 	}
 
-	err = s.regionService.CreateRegions(gameContext, querier, createdPlayers, regions)
-	if err != nil {
+	if err = s.regionService.CreateRegionsQ(ctx, querier, createdPlayers, regions); err != nil {
 		return -1, fmt.Errorf("failed to create regions: %w", err)
 	}
 
-	err = s.cardService.CreateCards(gameContext, querier)
-	if err != nil {
+	if err = s.cardService.CreateCards(ctx, querier); err != nil {
 		return -1, fmt.Errorf("failed to create cards: %w", err)
 	}
 
-	gameContext.Log().Debugw("creating initial phase", "gameID", game.ID)
+	ctx.Log().Debugw("creating initial phase", "gameID", game.ID)
 
-	phase, err := s.createPhase(gameContext, querier, game)
-	if err != nil {
+	if err := s.createPhase(ctx, querier, game); err != nil {
 		return -1, fmt.Errorf("failed to create phase: %w", err)
 	}
 
-	gameContext.Log().Infow("updated phase, creating deploy phase")
-
-	_, err = querier.InsertDeployPhase(gameContext, sqlc.InsertDeployPhaseParams{
-		PhaseID:          phase.ID,
-		DeployableTroops: int64(3),
-	})
-	if err != nil {
-		return -1, fmt.Errorf("failed to create deploy phase: %w", err)
-	}
-
-	gameContext.Log().
+	ctx.Log().
 		Infow("successfully created game", "regions", len(regions), "players", len(players))
 
 	return game.ID, nil
 }
 
 func (s *ServiceImpl) createPhase(
-	gameContext ctx.GameContext,
+	ctx ctx.GameContext,
 	querier db.Querier,
 	game sqlc.Game,
-) (sqlc.Phase, error) {
-	phase, err := querier.InsertPhase(gameContext, sqlc.InsertPhaseParams{
+) error {
+	phase, err := querier.InsertPhase(ctx, sqlc.InsertPhaseParams{
 		GameID: game.ID,
 		Type:   sqlc.PhaseTypeDEPLOY,
 		Turn:   0,
 	})
 	if err != nil {
-		return sqlc.Phase{}, fmt.Errorf("failed to create initial phase: %w", err)
+		return fmt.Errorf("failed to create initial phase: %w", err)
 	}
 
-	gameContext.Log().
+	ctx.Log().
 		Infow("updating game phase", "gameID", game.ID, "phaseID", phase.ID)
 
-	if err := querier.SetGamePhase(gameContext, sqlc.SetGamePhaseParams{
+	if err := querier.SetGamePhase(ctx, sqlc.SetGamePhaseParams{
 		ID:             game.ID,
 		CurrentPhaseID: pgtype.Int8{Int64: phase.ID, Valid: true},
 	}); err != nil {
-		gameContext.Log().Warnw("failed to update game phase", "err", err)
+		ctx.Log().Warnw("failed to update game phase", "err", err)
 
-		return sqlc.Phase{}, fmt.Errorf("failed to update game phase: %w", err)
+		return fmt.Errorf("failed to update game phase: %w", err)
 	}
 
-	return phase, nil
+	ctx.Log().Infow("updated phase, creating deploy phase")
+
+	if _, err = querier.InsertDeployPhase(ctx, sqlc.InsertDeployPhaseParams{
+		PhaseID:          phase.ID,
+		DeployableTroops: int64(3),
+	}); err != nil {
+		return fmt.Errorf("failed to create deploy phase: %w", err)
+	}
+
+	return nil
 }

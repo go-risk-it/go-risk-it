@@ -13,7 +13,7 @@ func (s *ServiceImpl) Walk(
 	querier db.Querier,
 	_ bool,
 ) (sqlc.PhaseType, error) {
-	hasValidCombination, err := s.cardsService.NextPlayerHasValidCombination(ctx, querier)
+	hasValidCombination, err := s.cardsService.NextPlayerHasValidCombinationQ(ctx, querier)
 	if err != nil {
 		return "", fmt.Errorf("failed to check if has valid combination: %w", err)
 	}

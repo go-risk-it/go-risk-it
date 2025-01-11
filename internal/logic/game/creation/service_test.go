@@ -85,7 +85,7 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 	regionServiceMock := region.NewService(t)
 	regionServiceMock.
 		EXPECT().
-		CreateRegions(gameContext, mockQuerier, players, regions).
+		CreateRegionsQ(gameContext, mockQuerier, players, regions).
 		Return(nil)
 
 	cardServiceMock := card.NewService(t)

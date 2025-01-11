@@ -16,13 +16,12 @@ var (
 )
 
 type Service interface {
-	CreateRegions(
+	CreateRegionsQ(
 		ctx ctx.LogContext,
 		querier db.Querier,
 		players []sqlc.Player,
 		regions []string,
 	) error
-
 	GetRegionQ(
 		ctx ctx.GameContext,
 		querier db.Querier,
@@ -52,7 +51,7 @@ func NewService(querier db.Querier, assignmentService assignment.Service) *Servi
 	return &ServiceImpl{querier: querier, assignmentService: assignmentService}
 }
 
-func (s *ServiceImpl) CreateRegions(
+func (s *ServiceImpl) CreateRegionsQ(
 	ctx ctx.LogContext,
 	querier db.Querier,
 	players []sqlc.Player,

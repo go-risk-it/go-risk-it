@@ -23,7 +23,7 @@ type Service interface {
 	GetPlayersState(ctx ctx.GameContext) ([]sqlc.GetPlayersStateRow, error)
 	GetPlayersStateQ(ctx ctx.GameContext, querier db.Querier) ([]sqlc.GetPlayersStateRow, error)
 	GetPlayersQ(ctx ctx.GameContext, querier db.Querier) ([]sqlc.Player, error)
-	GetNextPlayer(ctx ctx.GameContext, querier db.Querier) (sqlc.Player, error)
+	GetNextPlayerQ(ctx ctx.GameContext, querier db.Querier) (sqlc.Player, error)
 	GetPlayerIDQ(ctx ctx.GameContext, querier db.Querier) (int64, error)
 }
 
@@ -68,7 +68,10 @@ func (s *ServiceImpl) GetPlayersQ(ctx ctx.GameContext, querier db.Querier) ([]sq
 	return result, nil
 }
 
-func (s *ServiceImpl) GetNextPlayer(ctx ctx.GameContext, querier db.Querier) (sqlc.Player, error) {
+func (s *ServiceImpl) GetNextPlayerQ(
+	ctx ctx.GameContext,
+	querier db.Querier,
+) (sqlc.Player, error) {
 	result, err := querier.GetNextPlayer(ctx, ctx.GameID())
 	if err != nil {
 		return sqlc.Player{}, fmt.Errorf("failed to get next player: %w", err)

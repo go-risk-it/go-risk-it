@@ -24,12 +24,12 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
-// CreateRegions provides a mock function with given fields: _a0, querier, players, regions
-func (_m *Service) CreateRegions(_a0 ctx.LogContext, querier db.Querier, players []sqlc.Player, regions []string) error {
+// CreateRegionsQ provides a mock function with given fields: _a0, querier, players, regions
+func (_m *Service) CreateRegionsQ(_a0 ctx.LogContext, querier db.Querier, players []sqlc.Player, regions []string) error {
 	ret := _m.Called(_a0, querier, players, regions)
 
 	if len(ret) == 0 {
-		panic("no return value specified for CreateRegions")
+		panic("no return value specified for CreateRegionsQ")
 	}
 
 	var r0 error
@@ -42,33 +42,33 @@ func (_m *Service) CreateRegions(_a0 ctx.LogContext, querier db.Querier, players
 	return r0
 }
 
-// Service_CreateRegions_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateRegions'
-type Service_CreateRegions_Call struct {
+// Service_CreateRegionsQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateRegionsQ'
+type Service_CreateRegionsQ_Call struct {
 	*mock.Call
 }
 
-// CreateRegions is a helper method to define mock.On call
+// CreateRegionsQ is a helper method to define mock.On call
 //   - _a0 ctx.LogContext
 //   - querier db.Querier
 //   - players []sqlc.Player
 //   - regions []string
-func (_e *Service_Expecter) CreateRegions(_a0 interface{}, querier interface{}, players interface{}, regions interface{}) *Service_CreateRegions_Call {
-	return &Service_CreateRegions_Call{Call: _e.mock.On("CreateRegions", _a0, querier, players, regions)}
+func (_e *Service_Expecter) CreateRegionsQ(_a0 interface{}, querier interface{}, players interface{}, regions interface{}) *Service_CreateRegionsQ_Call {
+	return &Service_CreateRegionsQ_Call{Call: _e.mock.On("CreateRegionsQ", _a0, querier, players, regions)}
 }
 
-func (_c *Service_CreateRegions_Call) Run(run func(_a0 ctx.LogContext, querier db.Querier, players []sqlc.Player, regions []string)) *Service_CreateRegions_Call {
+func (_c *Service_CreateRegionsQ_Call) Run(run func(_a0 ctx.LogContext, querier db.Querier, players []sqlc.Player, regions []string)) *Service_CreateRegionsQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.LogContext), args[1].(db.Querier), args[2].([]sqlc.Player), args[3].([]string))
 	})
 	return _c
 }
 
-func (_c *Service_CreateRegions_Call) Return(_a0 error) *Service_CreateRegions_Call {
+func (_c *Service_CreateRegionsQ_Call) Return(_a0 error) *Service_CreateRegionsQ_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Service_CreateRegions_Call) RunAndReturn(run func(ctx.LogContext, db.Querier, []sqlc.Player, []string) error) *Service_CreateRegions_Call {
+func (_c *Service_CreateRegionsQ_Call) RunAndReturn(run func(ctx.LogContext, db.Querier, []sqlc.Player, []string) error) *Service_CreateRegionsQ_Call {
 	_c.Call.Return(run)
 	return _c
 }

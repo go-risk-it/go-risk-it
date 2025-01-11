@@ -122,12 +122,12 @@ func (_c *Service_Draw_Call) RunAndReturn(run func(ctx.GameContext, db.Querier) 
 	return _c
 }
 
-// NextPlayerHasValidCombination provides a mock function with given fields: _a0, querier
-func (_m *Service) NextPlayerHasValidCombination(_a0 ctx.GameContext, querier db.Querier) (bool, error) {
+// NextPlayerHasValidCombinationQ provides a mock function with given fields: _a0, querier
+func (_m *Service) NextPlayerHasValidCombinationQ(_a0 ctx.GameContext, querier db.Querier) (bool, error) {
 	ret := _m.Called(_a0, querier)
 
 	if len(ret) == 0 {
-		panic("no return value specified for NextPlayerHasValidCombination")
+		panic("no return value specified for NextPlayerHasValidCombinationQ")
 	}
 
 	var r0 bool
@@ -150,31 +150,31 @@ func (_m *Service) NextPlayerHasValidCombination(_a0 ctx.GameContext, querier db
 	return r0, r1
 }
 
-// Service_NextPlayerHasValidCombination_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NextPlayerHasValidCombination'
-type Service_NextPlayerHasValidCombination_Call struct {
+// Service_NextPlayerHasValidCombinationQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NextPlayerHasValidCombinationQ'
+type Service_NextPlayerHasValidCombinationQ_Call struct {
 	*mock.Call
 }
 
-// NextPlayerHasValidCombination is a helper method to define mock.On call
+// NextPlayerHasValidCombinationQ is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
-func (_e *Service_Expecter) NextPlayerHasValidCombination(_a0 interface{}, querier interface{}) *Service_NextPlayerHasValidCombination_Call {
-	return &Service_NextPlayerHasValidCombination_Call{Call: _e.mock.On("NextPlayerHasValidCombination", _a0, querier)}
+func (_e *Service_Expecter) NextPlayerHasValidCombinationQ(_a0 interface{}, querier interface{}) *Service_NextPlayerHasValidCombinationQ_Call {
+	return &Service_NextPlayerHasValidCombinationQ_Call{Call: _e.mock.On("NextPlayerHasValidCombinationQ", _a0, querier)}
 }
 
-func (_c *Service_NextPlayerHasValidCombination_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier)) *Service_NextPlayerHasValidCombination_Call {
+func (_c *Service_NextPlayerHasValidCombinationQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier)) *Service_NextPlayerHasValidCombinationQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.GameContext), args[1].(db.Querier))
 	})
 	return _c
 }
 
-func (_c *Service_NextPlayerHasValidCombination_Call) Return(_a0 bool, _a1 error) *Service_NextPlayerHasValidCombination_Call {
+func (_c *Service_NextPlayerHasValidCombinationQ_Call) Return(_a0 bool, _a1 error) *Service_NextPlayerHasValidCombinationQ_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_NextPlayerHasValidCombination_Call) RunAndReturn(run func(ctx.GameContext, db.Querier) (bool, error)) *Service_NextPlayerHasValidCombination_Call {
+func (_c *Service_NextPlayerHasValidCombinationQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier) (bool, error)) *Service_NextPlayerHasValidCombinationQ_Call {
 	_c.Call.Return(run)
 	return _c
 }
