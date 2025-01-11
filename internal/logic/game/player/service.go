@@ -1,6 +1,7 @@
 package player
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
@@ -23,6 +24,7 @@ type Service interface {
 	GetPlayersStateQ(ctx ctx.GameContext, querier db.Querier) ([]sqlc.GetPlayersStateRow, error)
 	GetPlayersQ(ctx ctx.GameContext, querier db.Querier) ([]sqlc.Player, error)
 	GetNextPlayer(ctx ctx.GameContext, querier db.Querier) (sqlc.Player, error)
+	GetPlayerIDQ(ctx ctx.GameContext, querier db.Querier) (int64, error)
 }
 
 type ServiceImpl struct {
@@ -113,4 +115,19 @@ func (s *ServiceImpl) CreatePlayers(
 	}
 
 	return result, nil
+}
+
+func (s *ServiceImpl) GetPlayerIDQ(ctx ctx.GameContext, querier db.Querier) (int64, error) {
+	players, err := s.GetPlayersQ(ctx, querier)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get players: %w", err)
+	}
+
+	for _, player := range players {
+		if player.UserID == ctx.UserID() {
+			return player.ID, nil
+		}
+	}
+
+	return 0, errors.New("player not found")
 }

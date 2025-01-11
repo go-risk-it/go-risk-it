@@ -144,6 +144,63 @@ func (_c *Service_GetNextPlayer_Call) RunAndReturn(run func(ctx.GameContext, db.
 	return _c
 }
 
+// GetPlayerIDQ provides a mock function with given fields: _a0, querier
+func (_m *Service) GetPlayerIDQ(_a0 ctx.GameContext, querier db.Querier) (int64, error) {
+	ret := _m.Called(_a0, querier)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetPlayerIDQ")
+	}
+
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) (int64, error)); ok {
+		return rf(_a0, querier)
+	}
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) int64); ok {
+		r0 = rf(_a0, querier)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	if rf, ok := ret.Get(1).(func(ctx.GameContext, db.Querier) error); ok {
+		r1 = rf(_a0, querier)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Service_GetPlayerIDQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetPlayerIDQ'
+type Service_GetPlayerIDQ_Call struct {
+	*mock.Call
+}
+
+// GetPlayerIDQ is a helper method to define mock.On call
+//   - _a0 ctx.GameContext
+//   - querier db.Querier
+func (_e *Service_Expecter) GetPlayerIDQ(_a0 interface{}, querier interface{}) *Service_GetPlayerIDQ_Call {
+	return &Service_GetPlayerIDQ_Call{Call: _e.mock.On("GetPlayerIDQ", _a0, querier)}
+}
+
+func (_c *Service_GetPlayerIDQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier)) *Service_GetPlayerIDQ_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.GameContext), args[1].(db.Querier))
+	})
+	return _c
+}
+
+func (_c *Service_GetPlayerIDQ_Call) Return(_a0 int64, _a1 error) *Service_GetPlayerIDQ_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Service_GetPlayerIDQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier) (int64, error)) *Service_GetPlayerIDQ_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetPlayersQ provides a mock function with given fields: _a0, querier
 func (_m *Service) GetPlayersQ(_a0 ctx.GameContext, querier db.Querier) ([]sqlc.Player, error) {
 	ret := _m.Called(_a0, querier)

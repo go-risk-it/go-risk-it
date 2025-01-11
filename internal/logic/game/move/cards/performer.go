@@ -3,6 +3,7 @@ package cards
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
@@ -70,6 +71,11 @@ func (s *ServiceImpl) PerformQ(
 		ExtraDeployableTroops: extraDeployableTroops,
 		RegionTroopGrants:     regionTroopGrants,
 	}, nil
+}
+
+type RegionTroopGrant struct {
+	RegionID                int64  `json:"regionId"`
+	RegionExternalReference string `json:"regionExternalReference"`
 }
 
 func (s *ServiceImpl) grantRegionTroops(
@@ -197,4 +203,57 @@ func getCardValue(cardType sqlc.CardType) int64 {
 	default:
 		return JOLLY
 	}
+}
+
+func (s *ServiceImpl) getRegionTroopGrants(
+	ctx ctx.GameContext,
+	querier db.Querier,
+	cardIndex map[int64]sqlc.GetCardsForPlayerRow,
+	playedCards []int64,
+) ([]RegionTroopGrant, error) {
+	result := make([]RegionTroopGrant, 0)
+
+	regions, err := s.regionService.GetRegionsQ(ctx, querier)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get regions: %w", err)
+	}
+
+	playerRegions := getPlayerRegionsWithID(ctx, regions)
+
+	for _, cardID := range playedCards {
+		card := cardIndex[cardID]
+		if !card.Region.Valid {
+			continue
+		}
+
+		index := slices.IndexFunc(playerRegions, func(regionRow sqlc.GetRegionsByGameRow) bool {
+			return regionRow.ExternalReference == card.Region.String
+		})
+		if index == -1 {
+			continue
+		}
+
+		region := playerRegions[index]
+		result = append(result, RegionTroopGrant{
+			RegionID:                region.ID,
+			RegionExternalReference: region.ExternalReference,
+		})
+	}
+
+	return result, nil
+}
+
+func getPlayerRegionsWithID(
+	ctx ctx.GameContext,
+	regions []sqlc.GetRegionsByGameRow,
+) []sqlc.GetRegionsByGameRow {
+	result := make([]sqlc.GetRegionsByGameRow, 0)
+
+	for _, region := range regions {
+		if region.UserID == ctx.UserID() {
+			result = append(result, region)
+		}
+	}
+
+	return result
 }
