@@ -33,7 +33,7 @@ func newConfig(log *zap.SugaredLogger) Result {
 
 	err := godotenv.Load(".env")
 	if err != nil {
-		panic(err)
+		log.Debugw("failed to load .env")
 	}
 
 	readFromConfigFile(koanfManager)
