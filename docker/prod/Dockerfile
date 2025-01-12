@@ -26,5 +26,13 @@ COPY --from=builder /src/internal/data/sqlc/migrations ./migrations
 COPY --from=builder /src/map.json .
 COPY --from=builder /src/risk-it-server .
 
+RUN printf "%s\n" \
+    "DATABASE_HOST=${DATABASE_HOST}" \
+    "DATABASE_NAME=${DATABASE_NAME}" \
+    "DATABASE_PASSWORD=${DATABASE_PASSWORD}" \
+    "DATABASE_PORT=${DATABASE_PORT}" \
+    "DATABASE_USER=${DATABASE_USER}" \
+    "JWT_SECRET=${JWT_SECRET}" > .env
+
 # Command to run the executable
 ENTRYPOINT ["./risk-it-server"]
