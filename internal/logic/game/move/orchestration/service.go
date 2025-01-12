@@ -86,7 +86,7 @@ func (s *OrchestratorImpl[T, R]) OrchestrateMoveQ(
 		return errors.New("game is not in the correct phase to perform move")
 	}
 
-	if err := s.validationService.Validate(ctx, querier, gameState); err != nil {
+	if err := s.validationService.ValidateQ(ctx, querier, gameState); err != nil {
 		return fmt.Errorf("invalid move: %w", err)
 	}
 
@@ -99,7 +99,7 @@ func (s *OrchestratorImpl[T, R]) OrchestrateMoveQ(
 		return fmt.Errorf("unable to log move: %w", err)
 	}
 
-	targetPhase, err := s.service.Walk(ctx, querier, false)
+	targetPhase, err := s.service.WalkQ(ctx, querier, false)
 	if err != nil {
 		return fmt.Errorf("unable to walk phase: %w", err)
 	}

@@ -73,7 +73,7 @@ func (s *ServiceImpl[T, R]) AdvanceQ(ctx ctx.GameContext, querier db.Querier) er
 		return fmt.Errorf("unable to get game state: %w", err)
 	}
 
-	if err := s.validationService.Validate(ctx, querier, game); err != nil {
+	if err := s.validationService.ValidateQ(ctx, querier, game); err != nil {
 		ctx.Log().Errorw("validation failed", "error", err)
 
 		return fmt.Errorf("validation failed: %w", err)
@@ -87,7 +87,7 @@ func (s *ServiceImpl[T, R]) AdvanceQ(ctx ctx.GameContext, querier db.Querier) er
 
 	var performResult R
 
-	targetPhase, err := s.moveService.Walk(ctx, querier, true)
+	targetPhase, err := s.moveService.WalkQ(ctx, querier, true)
 	if err != nil {
 		return fmt.Errorf("unable to walk to target phase: %w", err)
 	}

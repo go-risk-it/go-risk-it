@@ -8,7 +8,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 )
 
-func (s *ServiceImpl) Walk(
+func (s *ServiceImpl) WalkQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	_ bool,

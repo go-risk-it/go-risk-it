@@ -57,7 +57,7 @@ func TestServiceImpl_ShouldFailWhenPlayerNotInGame(t *testing.T) {
 		GetPlayersQ(ctx, querier).
 		Return(players, nil)
 
-	err := service.Validate(ctx, querier, game)
+	err := service.ValidateQ(ctx, querier, game)
 
 	require.Error(t, err)
 	require.EqualError(t, err, "player is not in game")
@@ -103,7 +103,7 @@ func TestServiceImpl_ShouldFailOnTurnCheck(t *testing.T) {
 				Turn:  test.turn,
 			}
 
-			err := service.Validate(ctx, querier, game)
+			err := service.ValidateQ(ctx, querier, game)
 
 			require.Error(t, err)
 			require.EqualError(t, err, test.expectedErr)

@@ -20,7 +20,7 @@ type Advancer[R any] interface {
 }
 
 type PhaseWalker interface {
-	Walk(
+	WalkQ(
 		ctx ctx.GameContext,
 		querier db.Querier,
 		voluntaryAdvancement bool,

@@ -24,12 +24,12 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
-// Validate provides a mock function with given fields: _a0, querier, game
-func (_m *Service) Validate(_a0 ctx.GameContext, querier db.Querier, game *state.Game) error {
+// ValidateQ provides a mock function with given fields: _a0, querier, game
+func (_m *Service) ValidateQ(_a0 ctx.GameContext, querier db.Querier, game *state.Game) error {
 	ret := _m.Called(_a0, querier, game)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Validate")
+		panic("no return value specified for ValidateQ")
 	}
 
 	var r0 error
@@ -42,32 +42,32 @@ func (_m *Service) Validate(_a0 ctx.GameContext, querier db.Querier, game *state
 	return r0
 }
 
-// Service_Validate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Validate'
-type Service_Validate_Call struct {
+// Service_ValidateQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ValidateQ'
+type Service_ValidateQ_Call struct {
 	*mock.Call
 }
 
-// Validate is a helper method to define mock.On call
+// ValidateQ is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
 //   - game *state.Game
-func (_e *Service_Expecter) Validate(_a0 interface{}, querier interface{}, game interface{}) *Service_Validate_Call {
-	return &Service_Validate_Call{Call: _e.mock.On("Validate", _a0, querier, game)}
+func (_e *Service_Expecter) ValidateQ(_a0 interface{}, querier interface{}, game interface{}) *Service_ValidateQ_Call {
+	return &Service_ValidateQ_Call{Call: _e.mock.On("ValidateQ", _a0, querier, game)}
 }
 
-func (_c *Service_Validate_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, game *state.Game)) *Service_Validate_Call {
+func (_c *Service_ValidateQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, game *state.Game)) *Service_ValidateQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(*state.Game))
 	})
 	return _c
 }
 
-func (_c *Service_Validate_Call) Return(_a0 error) *Service_Validate_Call {
+func (_c *Service_ValidateQ_Call) Return(_a0 error) *Service_ValidateQ_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Service_Validate_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, *state.Game) error) *Service_Validate_Call {
+func (_c *Service_ValidateQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, *state.Game) error) *Service_ValidateQ_Call {
 	_c.Call.Return(run)
 	return _c
 }
