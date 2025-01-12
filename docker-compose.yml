@@ -46,6 +46,7 @@ services:
       dockerfile: docker/component-test/Dockerfile
     ports:
       - "8080:8080"
+      - "9443:9443"
     depends_on:
       db:
         condition: service_healthy

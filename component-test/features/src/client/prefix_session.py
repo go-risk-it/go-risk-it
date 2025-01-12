@@ -16,6 +16,7 @@ class PrefixSession(requests.Session):
         """Initialize PrefixSession."""
         super().__init__()
         self.prefix_url = prefix_url
+        self.verify = False
 
     def request(self, method, url, *args, **kwargs) -> requests.Response:
         url = urljoin(self.prefix_url, url)
