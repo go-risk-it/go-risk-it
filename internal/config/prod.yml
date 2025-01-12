@@ -1,11 +1,3 @@
-database:
-  host:
-  port:
-  name:
-  user:
-  password:
-  disable_ssl: false
-
 jwt:
   secret:
 

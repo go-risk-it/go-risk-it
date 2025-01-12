@@ -32,6 +32,7 @@ RUN printf "%s\n" \
     "DATABASE_PASSWORD=${DATABASE_PASSWORD}" \
     "DATABASE_PORT=${DATABASE_PORT}" \
     "DATABASE_USER=${DATABASE_USER}" \
+    "DATABASE_DISABLE_SSL=false" \
     "JWT_SECRET=${JWT_SECRET}" > .env
 
 # Command to run the executable

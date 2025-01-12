@@ -1,11 +1,3 @@
-database:
-  host: supabase-db
-  port:
-  name:
-  user:
-  password:
-  disable_ssl: true
-
 jwt:
   secret:
 
