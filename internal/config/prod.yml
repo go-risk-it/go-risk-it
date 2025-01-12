@@ -1,5 +1,5 @@
 database:
-  host: aws-0-eu-central-1.pooler.supabase.com
+  host:
   port:
   name:
   user:

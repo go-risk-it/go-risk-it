@@ -43,7 +43,7 @@ services:
   risk-it:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/component-test/Dockerfile
     ports:
       - "8080:8080"
     depends_on:
