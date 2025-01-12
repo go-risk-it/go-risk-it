@@ -18,6 +18,8 @@ RUN go build -o risk-it-server ./cmd/risk-it-server/component-test
 # Use a lightweight Golang image as the base image for the runtime stage
 FROM golang:1.23-alpine
 
+ENV ENVIRONMENT=component-test
+
 WORKDIR /src
 COPY --from=builder /src/component-test/.env .
 COPY --from=builder /src/internal/config .

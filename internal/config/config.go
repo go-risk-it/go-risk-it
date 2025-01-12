@@ -1,6 +1,7 @@
 package config
 
 import (
+	"os"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -11,6 +12,8 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
+
+const EnvironmentKey = "ENVIRONMENT"
 
 type Config struct {
 	Jwt      JwtConfig
@@ -55,9 +58,18 @@ func newConfig(log *zap.SugaredLogger) Result {
 }
 
 func readFromConfigFile(k *koanf.Koanf) {
-	if err := k.Load(file.Provider("local.yml"), yaml.Parser()); err != nil {
+	if err := k.Load(file.Provider(getEnv()+".yml"), yaml.Parser()); err != nil {
 		panic(err)
 	}
+}
+
+func getEnv() string {
+	environment := os.Getenv(EnvironmentKey)
+	if environment == "" {
+		environment = "component-test"
+	}
+
+	return environment
 }
 
 func readFromEnv(k *koanf.Koanf) {
