@@ -17,7 +17,6 @@ const EnvironmentKey = "ENVIRONMENT"
 
 type Config struct {
 	Jwt      JwtConfig
-	TLS      TLSConfig
 	Database DatabaseConfig
 	Dice     DiceConfig
 	History  HistoryConfig
@@ -27,7 +26,6 @@ type Result struct {
 	fx.Out
 
 	JwtConfig      JwtConfig
-	TLSConfig      TLSConfig
 	DatabaseConfig DatabaseConfig
 	DiceConfig     DiceConfig
 	HistoryConfig  HistoryConfig
@@ -49,11 +47,10 @@ func newConfig(log *zap.SugaredLogger) Result {
 		panic(err)
 	}
 
-	log.Debugf("Loaded config")
+	log.Debugf("Loaded config: %+v", koanfManager)
 
 	return Result{
 		JwtConfig:      config.Jwt,
-		TLSConfig:      config.TLS,
 		DatabaseConfig: config.Database,
 		DiceConfig:     config.Dice,
 		HistoryConfig:  config.History,

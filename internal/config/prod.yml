@@ -9,11 +9,6 @@ database:
 jwt:
   secret: ${JWT_SECRET}
 
-tls:
-  cert: ${TLS_CERT}
-  key: ${TLS_KEY}
-  insecure_skip_verify: false
-
 dice:
   roll_strategy: random
 

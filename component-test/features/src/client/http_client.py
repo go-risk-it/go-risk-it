@@ -11,7 +11,7 @@ class RiskItClient:
 
     def __init__(self, player: Optional[Player] = None):
         self.player = player
-        self.session = PrefixSession(prefix_url="https://localhost:9443")
+        self.session = PrefixSession(prefix_url="http://localhost:8000")
         if player is not None:
             self.session.headers.update({"Authorization": f"Bearer {player.user.jwt}"})
 

@@ -1,4 +1,5 @@
-import ssl, json, logging
+import json
+import logging
 
 from behave import *
 from websockets.sync.client import connect
@@ -12,18 +13,13 @@ from src.core.context import RiskItContext, IndexedBoardStateData
 
 LOGGER = logging.getLogger(__name__)
 
-ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-ssl_context.check_hostname = False
-ssl_context.verify_mode = ssl.CERT_NONE
-
 
 @when("{player} connects to the game")
 def step_impl(context: RiskItContext, player: str):
     conn = connect(
-        f"wss://localhost:9443/wss?gameID={context.game_id}",
+        f"ws://localhost:8000/ws?gameID={context.game_id}",
         open_timeout=2,
         additional_headers={"Authorization": f"Bearer {context.players[player].user.jwt}"},
-        ssl_context=ssl_context
     )
     context.players[player].connection = conn
 

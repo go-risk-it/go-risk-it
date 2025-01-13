@@ -36,7 +36,7 @@ func NewWebSocketHandler(
 }
 
 func (h *WebSocketUpgraderHandlerImpl) Pattern() string {
-	return "/wss"
+	return "/ws"
 }
 
 func (h *WebSocketUpgraderHandlerImpl) RequiresAuth() bool {
