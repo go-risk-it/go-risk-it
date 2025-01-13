@@ -12,6 +12,7 @@ import (
 func NewServeMux(
 	routes []route.Route,
 	authMiddleware middleware.AuthMiddleware,
+	corsMiddleware middleware.CorsMiddleware,
 	gameMiddleware middleware.GameMiddleware,
 	logMiddleware middleware.LogMiddleware,
 	websocketAuthMiddleware middleware.WebsocketHeaderConversionMiddleware,
@@ -26,8 +27,10 @@ func NewServeMux(
 			logMiddleware.Wrap(
 				websocketAuthMiddleware.Wrap(
 					authMiddleware.Wrap(
-						gameMiddleware.Wrap(
-							route,
+						corsMiddleware.Wrap(
+							gameMiddleware.Wrap(
+								route,
+							),
 						),
 					),
 				),

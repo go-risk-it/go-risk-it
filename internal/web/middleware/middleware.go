@@ -16,6 +16,10 @@ var Module = fx.Options(
 			fx.As(new(AuthMiddleware)),
 		),
 		fx.Annotate(
+			NewCorsMiddleware,
+			fx.As(new(CorsMiddleware)),
+		),
+		fx.Annotate(
 			NewWebsocketAuthMiddleware,
 			fx.As(new(WebsocketHeaderConversionMiddleware)),
 		),
