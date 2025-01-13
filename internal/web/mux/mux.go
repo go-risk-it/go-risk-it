@@ -25,9 +25,9 @@ func NewServeMux(
 		mux.Handle(
 			route.Pattern(),
 			logMiddleware.Wrap(
-				websocketAuthMiddleware.Wrap(
-					authMiddleware.Wrap(
-						corsMiddleware.Wrap(
+				corsMiddleware.Wrap(
+					websocketAuthMiddleware.Wrap(
+						authMiddleware.Wrap(
 							gameMiddleware.Wrap(
 								route,
 							),
