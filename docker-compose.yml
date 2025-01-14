@@ -12,15 +12,6 @@ services:
       file: supabase/docker-compose.yml
       service: kong
 
-  migrate:
-    image: migrate/migrate:latest
-    volumes:
-      - ./internal/data/sqlc/migrations:/migrations
-    command: -verbose -path=/migrations/ -database postgresql://postgres:password@postgres:5432/risk-it?sslmode=disable up
-    depends_on:
-      db:
-        condition: service_healthy
-
   sqlc:
     image: sqlc/sqlc:latest
     env_file:
@@ -29,8 +20,6 @@ services:
       - ./:/src
     working_dir: /src
     command: generate
-    depends_on:
-      - migrate
 
   mockery:
     image: vektra/mockery:v2.50@sha256:2bb8c34143401c8565a663fbb1ca96d28ad6a0566e4c43e438ea394f4114bb93
