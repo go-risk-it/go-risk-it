@@ -600,13 +600,13 @@ func (q *Queries) InsertDeployPhase(ctx context.Context, arg InsertDeployPhasePa
 const insertGame = `-- name: InsertGame :one
 INSERT INTO game DEFAULT
 VALUES
-RETURNING id, current_phase_id
+RETURNING id, current_phase_id, winner_player_id
 `
 
 func (q *Queries) InsertGame(ctx context.Context) (Game, error) {
 	row := q.db.QueryRow(ctx, insertGame)
 	var i Game
-	err := row.Scan(&i.ID, &i.CurrentPhaseID)
+	err := row.Scan(&i.ID, &i.CurrentPhaseID, &i.WinnerPlayerID)
 	return i, err
 }
 
