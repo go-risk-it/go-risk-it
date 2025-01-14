@@ -55,6 +55,51 @@ func (ns NullCardType) Value() (driver.Value, error) {
 	return string(ns.CardType), nil
 }
 
+type MissionType string
+
+const (
+	MissionTypeEIGHTEENTERRITORIESTWOARMIES MissionType = "EIGHTEEN_TERRITORIES_TWO_ARMIES"
+	MissionTypeTWENTYFOURTERRITORIES        MissionType = "TWENTY_FOUR_TERRITORIES"
+	MissionTypeTWOCONTINENTS                MissionType = "TWO_CONTINENTS"
+	MissionTypeTWOCONTINENTSPLUSONE         MissionType = "TWO_CONTINENTS_PLUS_ONE"
+	MissionTypeELIMINATEPLAYER              MissionType = "ELIMINATE_PLAYER"
+)
+
+func (e *MissionType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = MissionType(s)
+	case string:
+		*e = MissionType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for MissionType: %T", src)
+	}
+	return nil
+}
+
+type NullMissionType struct {
+	MissionType MissionType
+	Valid       bool // Valid is true if MissionType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullMissionType) Scan(value interface{}) error {
+	if value == nil {
+		ns.MissionType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.MissionType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullMissionType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.MissionType), nil
+}
+
 type PhaseType string
 
 const (
@@ -122,6 +167,11 @@ type DeployPhase struct {
 	DeployableTroops int64
 }
 
+type EliminatePlayerMission struct {
+	MissionID      int64
+	TargetPlayerID int64
+}
+
 type Game struct {
 	ID             int64
 	CurrentPhaseID pgtype.Int8
@@ -130,6 +180,7 @@ type Game struct {
 type Mission struct {
 	ID       int64
 	PlayerID int64
+	Type     MissionType
 }
 
 type MoveLog struct {
@@ -162,4 +213,16 @@ type Region struct {
 	ExternalReference string
 	PlayerID          int64
 	Troops            int64
+}
+
+type TwoContinentsMission struct {
+	MissionID  int64
+	Continent1 string
+	Continent2 string
+}
+
+type TwoContinentsPlusOneMission struct {
+	MissionID  int64
+	Continent1 string
+	Continent2 string
 }
