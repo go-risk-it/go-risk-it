@@ -58,7 +58,7 @@ func (ns NullCardType) Value() (driver.Value, error) {
 type MissionType string
 
 const (
-	MissionTypeEIGHTEENTERRITORIESTWOARMIES MissionType = "EIGHTEEN_TERRITORIES_TWO_ARMIES"
+	MissionTypeEIGHTEENTERRITORIESTWOTROOPS MissionType = "EIGHTEEN_TERRITORIES_TWO_TROOPS"
 	MissionTypeTWENTYFOURTERRITORIES        MissionType = "TWENTY_FOUR_TERRITORIES"
 	MissionTypeTWOCONTINENTS                MissionType = "TWO_CONTINENTS"
 	MissionTypeTWOCONTINENTSPLUSONE         MissionType = "TWO_CONTINENTS_PLUS_ONE"
@@ -175,6 +175,7 @@ type EliminatePlayerMission struct {
 type Game struct {
 	ID             int64
 	CurrentPhaseID pgtype.Int8
+	WinnerPlayerID pgtype.Int8
 }
 
 type Mission struct {
