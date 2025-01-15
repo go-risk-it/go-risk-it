@@ -5,6 +5,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/card"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/creation"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
@@ -18,6 +19,7 @@ var Module = fx.Options(
 	board.Module,
 	card.Module,
 	creation.Module,
+	mission.Module,
 	move.Module,
 	phase.Module,
 	player.Module,

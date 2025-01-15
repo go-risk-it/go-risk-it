@@ -88,7 +88,7 @@ func TestServiceImpl_CreatePlayers_WithValidData(t *testing.T) {
 	}, nil)
 
 	// Call the method under test
-	players, err := service.CreatePlayers(ctx, querier, gameID, users)
+	players, err := service.CreatePlayersQ(ctx, querier, gameID, users)
 
 	// Assert the result
 	require.NoError(t, err)
@@ -146,7 +146,7 @@ func TestServiceImpl_CreatePlayers_InsertPlayersError(t *testing.T) {
 	}).Return(int64(0), errInsertPlayers)
 
 	// Call the method under test
-	players, err := service.CreatePlayers(ctx, querier, gameID, users)
+	players, err := service.CreatePlayersQ(ctx, querier, gameID, users)
 
 	// Assert the result
 	require.Error(t, err)
@@ -203,7 +203,7 @@ func TestServiceImpl_CreatePlayers_GetPlayersByGameError(t *testing.T) {
 	querier.On("GetPlayersByGame", ctx, gameID).Return(nil, errGetPlayersByGame)
 
 	// Call the method under test
-	players, err := service.CreatePlayers(ctx, querier, gameID, users)
+	players, err := service.CreatePlayersQ(ctx, querier, gameID, users)
 
 	// Assert the result
 	require.Error(t, err)

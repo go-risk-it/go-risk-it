@@ -14,4 +14,3 @@ The following are the missions that can be assigned:
 * Conquer all of Europe, South America, and a third continent of your choice;
 * Conquer all of Europe, Oceania, and a third continent of your choice;
 * Eliminate player X. If another player eliminates them first, conquer 24 territories instead.
-* 

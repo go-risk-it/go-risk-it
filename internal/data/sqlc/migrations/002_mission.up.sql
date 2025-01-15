@@ -34,10 +34,6 @@ CREATE TABLE eliminate_player_mission
     FOREIGN KEY (target_player_id) REFERENCES player (id)
 );
 
-CREATE UNIQUE INDEX two_continents_mission_mission_id_idx ON two_continents_mission (mission_id);
-CREATE UNIQUE INDEX two_continents_plus_one_mission_mission_id_idx ON two_continents_plus_one_mission (mission_id);
-CREATE UNIQUE INDEX eliminate_player_mission_mission_id_idx ON eliminate_player_mission (mission_id);
-
 ALTER TABLE game
     ADD COLUMN winner_player_id BIGINT REFERENCES player (id);
 

@@ -8,6 +8,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/card"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -28,10 +29,11 @@ type Service interface {
 }
 
 type ServiceImpl struct {
-	querier       db.Querier
-	cardService   card.Service
-	playerService player.Service
-	regionService region.Service
+	querier        db.Querier
+	cardService    card.Service
+	missionService mission.Service
+	playerService  player.Service
+	regionService  region.Service
 }
 
 var _ Service = (*ServiceImpl)(nil)
@@ -39,14 +41,16 @@ var _ Service = (*ServiceImpl)(nil)
 func NewService(
 	querier db.Querier,
 	cardService card.Service,
+	missionService mission.Service,
 	playerService player.Service,
 	regionService region.Service,
 ) *ServiceImpl {
 	return &ServiceImpl{
-		querier:       querier,
-		playerService: playerService,
-		regionService: regionService,
-		cardService:   cardService,
+		querier:        querier,
+		playerService:  playerService,
+		missionService: missionService,
+		regionService:  regionService,
+		cardService:    cardService,
 	}
 }
 
@@ -85,9 +89,13 @@ func (s *ServiceImpl) CreateGameQ(
 
 	ctx := ctx.WithGameID(cont, game.ID)
 
-	createdPlayers, err := s.playerService.CreatePlayers(ctx, querier, game.ID, players)
+	createdPlayers, err := s.playerService.CreatePlayersQ(ctx, querier, game.ID, players)
 	if err != nil {
 		return -1, fmt.Errorf("failed to create players: %w", err)
+	}
+
+	if err = s.missionService.CreateMissionsQ(ctx, querier, createdPlayers); err != nil {
+		return -1, fmt.Errorf("failed to create missions: %w", err)
 	}
 
 	if err = s.regionService.CreateRegionsQ(ctx, querier, createdPlayers, regions); err != nil {

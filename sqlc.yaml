@@ -5,6 +5,7 @@ sql:
       - "internal/logic/game/board"
       - "internal/logic/game/card"
       - "internal/logic/game/creation"
+      - "internal/logic/game/mission"
       - "internal/logic/game/move/attack"
       - "internal/logic/game/move/cards"
       - "internal/logic/game/move/deploy"

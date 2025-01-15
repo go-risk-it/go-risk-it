@@ -597,6 +597,21 @@ func (q *Queries) InsertDeployPhase(ctx context.Context, arg InsertDeployPhasePa
 	return i, err
 }
 
+const insertEliminatePlayerMission = `-- name: InsertEliminatePlayerMission :exec
+INSERT INTO eliminate_player_mission (mission_id, target_player_id)
+VALUES ($1, $2)
+`
+
+type InsertEliminatePlayerMissionParams struct {
+	MissionID      int64
+	TargetPlayerID int64
+}
+
+func (q *Queries) InsertEliminatePlayerMission(ctx context.Context, arg InsertEliminatePlayerMissionParams) error {
+	_, err := q.db.Exec(ctx, insertEliminatePlayerMission, arg.MissionID, arg.TargetPlayerID)
+	return err
+}
+
 const insertGame = `-- name: InsertGame :one
 INSERT INTO game DEFAULT
 VALUES
@@ -608,6 +623,24 @@ func (q *Queries) InsertGame(ctx context.Context) (Game, error) {
 	var i Game
 	err := row.Scan(&i.ID, &i.CurrentPhaseID, &i.WinnerPlayerID)
 	return i, err
+}
+
+const insertMission = `-- name: InsertMission :one
+INSERT INTO mission (player_id, type)
+VALUES ($1, $2)
+RETURNING id
+`
+
+type InsertMissionParams struct {
+	PlayerID int64
+	Type     MissionType
+}
+
+func (q *Queries) InsertMission(ctx context.Context, arg InsertMissionParams) (int64, error) {
+	row := q.db.QueryRow(ctx, insertMission, arg.PlayerID, arg.Type)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
 const insertPhase = `-- name: InsertPhase :one
@@ -644,6 +677,38 @@ type InsertRegionsParams struct {
 	ExternalReference string
 	PlayerID          int64
 	Troops            int64
+}
+
+const insertTwoContinentsMission = `-- name: InsertTwoContinentsMission :exec
+INSERT INTO two_continents_mission (mission_id, continent_1, continent_2)
+VALUES ($1, $2, $3)
+`
+
+type InsertTwoContinentsMissionParams struct {
+	MissionID  int64
+	Continent1 string
+	Continent2 string
+}
+
+func (q *Queries) InsertTwoContinentsMission(ctx context.Context, arg InsertTwoContinentsMissionParams) error {
+	_, err := q.db.Exec(ctx, insertTwoContinentsMission, arg.MissionID, arg.Continent1, arg.Continent2)
+	return err
+}
+
+const insertTwoContinentsPlusOneMission = `-- name: InsertTwoContinentsPlusOneMission :exec
+INSERT INTO two_continents_plus_one_mission (mission_id, continent_1, continent_2)
+VALUES ($1, $2, $3)
+`
+
+type InsertTwoContinentsPlusOneMissionParams struct {
+	MissionID  int64
+	Continent1 string
+	Continent2 string
+}
+
+func (q *Queries) InsertTwoContinentsPlusOneMission(ctx context.Context, arg InsertTwoContinentsPlusOneMissionParams) error {
+	_, err := q.db.Exec(ctx, insertTwoContinentsPlusOneMission, arg.MissionID, arg.Continent1, arg.Continent2)
+	return err
 }
 
 const setGamePhase = `-- name: SetGamePhase :exec
