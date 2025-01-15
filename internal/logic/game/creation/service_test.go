@@ -11,6 +11,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/creation"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/card"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/mission"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -79,8 +80,14 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 	playerServiceMock := player.NewService(t)
 	playerServiceMock.
 		EXPECT().
-		CreatePlayers(gameContext, mockQuerier, gameID, users).
+		CreatePlayersQ(gameContext, mockQuerier, gameID, users).
 		Return(players, nil)
+
+	missionServiceMock := mission.NewService(t)
+	missionServiceMock.
+		EXPECT().
+		CreateMissionsQ(gameContext, mockQuerier, players).
+		Return(nil)
 
 	regionServiceMock := region.NewService(t)
 	regionServiceMock.
@@ -98,6 +105,7 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 	service := creation.NewService(
 		mockQuerier,
 		cardServiceMock,
+		missionServiceMock,
 		playerServiceMock,
 		regionServiceMock,
 	)
@@ -115,12 +123,19 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 	// Initialize dependencies
 	logger := zap.NewExample().Sugar()
 	cardService := card.NewService(t)
+	missionService := mission.NewService(t)
 	playerService := player.NewService(t)
 	regionService := region.NewService(t)
 	querier := db.NewQuerier(t)
 
 	// Initialize the state under test
-	service := creation.NewService(querier, cardService, playerService, regionService)
+	service := creation.NewService(
+		querier,
+		cardService,
+		missionService,
+		playerService,
+		regionService,
+	)
 
 	// Set up test data
 	ctx := ctx.WithUserID(
@@ -149,7 +164,7 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 	querier.AssertExpectations(t)
 }
 
-// returns error if CreatePlayers method returns an error.
+// returns error if CreatePlayersQ method returns an error.
 func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 	t.Parallel()
 
@@ -157,11 +172,18 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 	logger := zap.NewExample().Sugar()
 	querier := db.NewQuerier(t)
 	cardService := card.NewService(t)
+	missionService := mission.NewService(t)
 	playerService := player.NewService(t)
 	regionService := region.NewService(t)
 
 	// Initialize the state under test
-	service := creation.NewService(querier, cardService, playerService, regionService)
+	service := creation.NewService(
+		querier,
+		cardService,
+		missionService,
+		playerService,
+		regionService,
+	)
 
 	// Set up test data
 	context := ctx.WithUserID(
@@ -184,10 +206,10 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 
 	gameContext := ctx.WithGameID(context, gameID)
 
-	// Set up expectations for CreatePlayers method
+	// Set up expectations for CreatePlayersQ method
 	playerService.
 		EXPECT().
-		CreatePlayers(gameContext, querier, int64(1), users).
+		CreatePlayersQ(gameContext, querier, int64(1), users).
 		Return(nil, errCreatePlayers)
 
 	// Call the method under test

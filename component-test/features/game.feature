@@ -163,13 +163,9 @@ Feature: Creating a game
     And francesco advances from phase reinforce
 
     Then it's gabriele's turn
-    And the game phase is cards
-    When gabriele plays the following card combinations
-      | card1     | card2    | card3   |
-      | ARTILLERY | INFANTRY | CAVALRY |
+    And the game phase is deploy
     When gabriele deploys 5 troops in south_africa
-    And gabriele deploys 5 troops in alaska
-    And gabriele deploys 6 troops in venezuela
+    And gabriele deploys 4 troops in alaska
     And gabriele attacks from south_africa to madagascar until conquering
     And gabriele conquers with 10 troops
     And gabriele attacks from madagascar to east_africa until conquering
@@ -177,17 +173,17 @@ Feature: Creating a game
     And gabriele attacks from east_africa to egypt until conquering
     And gabriele conquers with 8 troops
     And gabriele attacks from venezuela to central_america until conquering
-    And gabriele conquers with 8 troops
+    And gabriele conquers with 4 troops
     And gabriele attacks from alaska to northwest_territory until conquering
-    And gabriele conquers with 7 troops
-    And gabriele attacks from northwest_territory to alberta until conquering
     And gabriele conquers with 6 troops
+    And gabriele attacks from northwest_territory to alberta until conquering
+    And gabriele conquers with 5 troops
 
     Then giovanni is dead
-    And gabriele has 3 cards
+    And gabriele has 6 cards
     When gabriele advances from phase attack
     And gabriele advances from phase reinforce
-    Then gabriele has 4 cards
+    Then gabriele has 7 cards
 
     And it's francesco's turn
 

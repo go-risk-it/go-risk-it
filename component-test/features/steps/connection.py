@@ -28,8 +28,6 @@ def deserialize(context: RiskItContext, message: str, player: str) -> None:
     parsed_message = json.loads(message)
     message_type = parsed_message["type"]
 
-    LOGGER.info(f"Received message: {message}")
-
     match message_type:
         case "gameState":
             game_state_message = GameStateMessage.parse_obj(parsed_message)
@@ -58,7 +56,6 @@ def receive_all_state_updates(context: RiskItContext, player: str):
             message = conn.recv(timeout=0.01)
             deserialize(context, message, player)
         except TimeoutError:
-            LOGGER.error("Timed out waiting for message")
             break
         except Exception as e:
             LOGGER.error(e)

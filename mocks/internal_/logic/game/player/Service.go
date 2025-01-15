@@ -26,12 +26,12 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
-// CreatePlayers provides a mock function with given fields: _a0, querier, gameID, players
-func (_m *Service) CreatePlayers(_a0 ctx.GameContext, querier db.Querier, gameID int64, players []request.Player) ([]sqlc.Player, error) {
+// CreatePlayersQ provides a mock function with given fields: _a0, querier, gameID, players
+func (_m *Service) CreatePlayersQ(_a0 ctx.GameContext, querier db.Querier, gameID int64, players []request.Player) ([]sqlc.Player, error) {
 	ret := _m.Called(_a0, querier, gameID, players)
 
 	if len(ret) == 0 {
-		panic("no return value specified for CreatePlayers")
+		panic("no return value specified for CreatePlayersQ")
 	}
 
 	var r0 []sqlc.Player
@@ -56,33 +56,33 @@ func (_m *Service) CreatePlayers(_a0 ctx.GameContext, querier db.Querier, gameID
 	return r0, r1
 }
 
-// Service_CreatePlayers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreatePlayers'
-type Service_CreatePlayers_Call struct {
+// Service_CreatePlayersQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreatePlayersQ'
+type Service_CreatePlayersQ_Call struct {
 	*mock.Call
 }
 
-// CreatePlayers is a helper method to define mock.On call
+// CreatePlayersQ is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
 //   - gameID int64
 //   - players []request.Player
-func (_e *Service_Expecter) CreatePlayers(_a0 interface{}, querier interface{}, gameID interface{}, players interface{}) *Service_CreatePlayers_Call {
-	return &Service_CreatePlayers_Call{Call: _e.mock.On("CreatePlayers", _a0, querier, gameID, players)}
+func (_e *Service_Expecter) CreatePlayersQ(_a0 interface{}, querier interface{}, gameID interface{}, players interface{}) *Service_CreatePlayersQ_Call {
+	return &Service_CreatePlayersQ_Call{Call: _e.mock.On("CreatePlayersQ", _a0, querier, gameID, players)}
 }
 
-func (_c *Service_CreatePlayers_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, gameID int64, players []request.Player)) *Service_CreatePlayers_Call {
+func (_c *Service_CreatePlayersQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, gameID int64, players []request.Player)) *Service_CreatePlayersQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(int64), args[3].([]request.Player))
 	})
 	return _c
 }
 
-func (_c *Service_CreatePlayers_Call) Return(_a0 []sqlc.Player, _a1 error) *Service_CreatePlayers_Call {
+func (_c *Service_CreatePlayersQ_Call) Return(_a0 []sqlc.Player, _a1 error) *Service_CreatePlayersQ_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_CreatePlayers_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, int64, []request.Player) ([]sqlc.Player, error)) *Service_CreatePlayers_Call {
+func (_c *Service_CreatePlayersQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, int64, []request.Player) ([]sqlc.Player, error)) *Service_CreatePlayersQ_Call {
 	_c.Call.Return(run)
 	return _c
 }

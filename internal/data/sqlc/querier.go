@@ -31,10 +31,14 @@ type Querier interface {
 	InsertCards(ctx context.Context, arg []InsertCardsParams) (int64, error)
 	InsertConquerPhase(ctx context.Context, arg InsertConquerPhaseParams) (ConquerPhase, error)
 	InsertDeployPhase(ctx context.Context, arg InsertDeployPhaseParams) (DeployPhase, error)
+	InsertEliminatePlayerMission(ctx context.Context, arg InsertEliminatePlayerMissionParams) error
 	InsertGame(ctx context.Context) (Game, error)
+	InsertMission(ctx context.Context, arg InsertMissionParams) (int64, error)
 	InsertPhase(ctx context.Context, arg InsertPhaseParams) (Phase, error)
 	InsertPlayers(ctx context.Context, arg []InsertPlayersParams) (int64, error)
 	InsertRegions(ctx context.Context, arg []InsertRegionsParams) (int64, error)
+	InsertTwoContinentsMission(ctx context.Context, arg InsertTwoContinentsMissionParams) error
+	InsertTwoContinentsPlusOneMission(ctx context.Context, arg InsertTwoContinentsPlusOneMissionParams) error
 	SetGamePhase(ctx context.Context, arg SetGamePhaseParams) error
 	TransferCardsOwnership(ctx context.Context, arg TransferCardsOwnershipParams) error
 	UnlinkCardsFromOwner(ctx context.Context, cards []int64) error

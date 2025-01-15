@@ -65,6 +65,7 @@ linters:
     - mnd
     - exhaustruct
     - ireturn
+    - wrapcheck
     #    deprecated linters
 #  disable-all: true
 #  enable:

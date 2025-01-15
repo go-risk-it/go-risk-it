@@ -1248,6 +1248,53 @@ func (_c *Querier_InsertDeployPhase_Call) RunAndReturn(run func(context.Context,
 	return _c
 }
 
+// InsertEliminatePlayerMission provides a mock function with given fields: ctx, arg
+func (_m *Querier) InsertEliminatePlayerMission(ctx context.Context, arg sqlc.InsertEliminatePlayerMissionParams) error {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for InsertEliminatePlayerMission")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.InsertEliminatePlayerMissionParams) error); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Querier_InsertEliminatePlayerMission_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertEliminatePlayerMission'
+type Querier_InsertEliminatePlayerMission_Call struct {
+	*mock.Call
+}
+
+// InsertEliminatePlayerMission is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg sqlc.InsertEliminatePlayerMissionParams
+func (_e *Querier_Expecter) InsertEliminatePlayerMission(ctx interface{}, arg interface{}) *Querier_InsertEliminatePlayerMission_Call {
+	return &Querier_InsertEliminatePlayerMission_Call{Call: _e.mock.On("InsertEliminatePlayerMission", ctx, arg)}
+}
+
+func (_c *Querier_InsertEliminatePlayerMission_Call) Run(run func(ctx context.Context, arg sqlc.InsertEliminatePlayerMissionParams)) *Querier_InsertEliminatePlayerMission_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(sqlc.InsertEliminatePlayerMissionParams))
+	})
+	return _c
+}
+
+func (_c *Querier_InsertEliminatePlayerMission_Call) Return(_a0 error) *Querier_InsertEliminatePlayerMission_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Querier_InsertEliminatePlayerMission_Call) RunAndReturn(run func(context.Context, sqlc.InsertEliminatePlayerMissionParams) error) *Querier_InsertEliminatePlayerMission_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // InsertGame provides a mock function with given fields: ctx
 func (_m *Querier) InsertGame(ctx context.Context) (sqlc.Game, error) {
 	ret := _m.Called(ctx)
@@ -1300,6 +1347,63 @@ func (_c *Querier_InsertGame_Call) Return(_a0 sqlc.Game, _a1 error) *Querier_Ins
 }
 
 func (_c *Querier_InsertGame_Call) RunAndReturn(run func(context.Context) (sqlc.Game, error)) *Querier_InsertGame_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// InsertMission provides a mock function with given fields: ctx, arg
+func (_m *Querier) InsertMission(ctx context.Context, arg sqlc.InsertMissionParams) (int64, error) {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for InsertMission")
+	}
+
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.InsertMissionParams) (int64, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.InsertMissionParams) int64); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, sqlc.InsertMissionParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_InsertMission_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertMission'
+type Querier_InsertMission_Call struct {
+	*mock.Call
+}
+
+// InsertMission is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg sqlc.InsertMissionParams
+func (_e *Querier_Expecter) InsertMission(ctx interface{}, arg interface{}) *Querier_InsertMission_Call {
+	return &Querier_InsertMission_Call{Call: _e.mock.On("InsertMission", ctx, arg)}
+}
+
+func (_c *Querier_InsertMission_Call) Run(run func(ctx context.Context, arg sqlc.InsertMissionParams)) *Querier_InsertMission_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(sqlc.InsertMissionParams))
+	})
+	return _c
+}
+
+func (_c *Querier_InsertMission_Call) Return(_a0 int64, _a1 error) *Querier_InsertMission_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_InsertMission_Call) RunAndReturn(run func(context.Context, sqlc.InsertMissionParams) (int64, error)) *Querier_InsertMission_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1471,6 +1575,100 @@ func (_c *Querier_InsertRegions_Call) Return(_a0 int64, _a1 error) *Querier_Inse
 }
 
 func (_c *Querier_InsertRegions_Call) RunAndReturn(run func(context.Context, []sqlc.InsertRegionsParams) (int64, error)) *Querier_InsertRegions_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// InsertTwoContinentsMission provides a mock function with given fields: ctx, arg
+func (_m *Querier) InsertTwoContinentsMission(ctx context.Context, arg sqlc.InsertTwoContinentsMissionParams) error {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for InsertTwoContinentsMission")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.InsertTwoContinentsMissionParams) error); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Querier_InsertTwoContinentsMission_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertTwoContinentsMission'
+type Querier_InsertTwoContinentsMission_Call struct {
+	*mock.Call
+}
+
+// InsertTwoContinentsMission is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg sqlc.InsertTwoContinentsMissionParams
+func (_e *Querier_Expecter) InsertTwoContinentsMission(ctx interface{}, arg interface{}) *Querier_InsertTwoContinentsMission_Call {
+	return &Querier_InsertTwoContinentsMission_Call{Call: _e.mock.On("InsertTwoContinentsMission", ctx, arg)}
+}
+
+func (_c *Querier_InsertTwoContinentsMission_Call) Run(run func(ctx context.Context, arg sqlc.InsertTwoContinentsMissionParams)) *Querier_InsertTwoContinentsMission_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(sqlc.InsertTwoContinentsMissionParams))
+	})
+	return _c
+}
+
+func (_c *Querier_InsertTwoContinentsMission_Call) Return(_a0 error) *Querier_InsertTwoContinentsMission_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Querier_InsertTwoContinentsMission_Call) RunAndReturn(run func(context.Context, sqlc.InsertTwoContinentsMissionParams) error) *Querier_InsertTwoContinentsMission_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// InsertTwoContinentsPlusOneMission provides a mock function with given fields: ctx, arg
+func (_m *Querier) InsertTwoContinentsPlusOneMission(ctx context.Context, arg sqlc.InsertTwoContinentsPlusOneMissionParams) error {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for InsertTwoContinentsPlusOneMission")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.InsertTwoContinentsPlusOneMissionParams) error); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Querier_InsertTwoContinentsPlusOneMission_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertTwoContinentsPlusOneMission'
+type Querier_InsertTwoContinentsPlusOneMission_Call struct {
+	*mock.Call
+}
+
+// InsertTwoContinentsPlusOneMission is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg sqlc.InsertTwoContinentsPlusOneMissionParams
+func (_e *Querier_Expecter) InsertTwoContinentsPlusOneMission(ctx interface{}, arg interface{}) *Querier_InsertTwoContinentsPlusOneMission_Call {
+	return &Querier_InsertTwoContinentsPlusOneMission_Call{Call: _e.mock.On("InsertTwoContinentsPlusOneMission", ctx, arg)}
+}
+
+func (_c *Querier_InsertTwoContinentsPlusOneMission_Call) Run(run func(ctx context.Context, arg sqlc.InsertTwoContinentsPlusOneMissionParams)) *Querier_InsertTwoContinentsPlusOneMission_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(sqlc.InsertTwoContinentsPlusOneMissionParams))
+	})
+	return _c
+}
+
+func (_c *Querier_InsertTwoContinentsPlusOneMission_Call) Return(_a0 error) *Querier_InsertTwoContinentsPlusOneMission_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Querier_InsertTwoContinentsPlusOneMission_Call) RunAndReturn(run func(context.Context, sqlc.InsertTwoContinentsPlusOneMissionParams) error) *Querier_InsertTwoContinentsPlusOneMission_Call {
 	_c.Call.Return(run)
 	return _c
 }
