@@ -587,6 +587,63 @@ func (_c *Querier_GetDeployableTroops_Call) RunAndReturn(run func(context.Contex
 	return _c
 }
 
+// GetEliminatePlayerMission provides a mock function with given fields: _a0, missionID
+func (_m *Querier) GetEliminatePlayerMission(_a0 context.Context, missionID int64) (sqlc.EliminatePlayerMission, error) {
+	ret := _m.Called(_a0, missionID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetEliminatePlayerMission")
+	}
+
+	var r0 sqlc.EliminatePlayerMission
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (sqlc.EliminatePlayerMission, error)); ok {
+		return rf(_a0, missionID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int64) sqlc.EliminatePlayerMission); ok {
+		r0 = rf(_a0, missionID)
+	} else {
+		r0 = ret.Get(0).(sqlc.EliminatePlayerMission)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(_a0, missionID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_GetEliminatePlayerMission_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetEliminatePlayerMission'
+type Querier_GetEliminatePlayerMission_Call struct {
+	*mock.Call
+}
+
+// GetEliminatePlayerMission is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - missionID int64
+func (_e *Querier_Expecter) GetEliminatePlayerMission(_a0 interface{}, missionID interface{}) *Querier_GetEliminatePlayerMission_Call {
+	return &Querier_GetEliminatePlayerMission_Call{Call: _e.mock.On("GetEliminatePlayerMission", _a0, missionID)}
+}
+
+func (_c *Querier_GetEliminatePlayerMission_Call) Run(run func(_a0 context.Context, missionID int64)) *Querier_GetEliminatePlayerMission_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int64))
+	})
+	return _c
+}
+
+func (_c *Querier_GetEliminatePlayerMission_Call) Return(_a0 sqlc.EliminatePlayerMission, _a1 error) *Querier_GetEliminatePlayerMission_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_GetEliminatePlayerMission_Call) RunAndReturn(run func(context.Context, int64) (sqlc.EliminatePlayerMission, error)) *Querier_GetEliminatePlayerMission_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetGame provides a mock function with given fields: _a0, id
 func (_m *Querier) GetGame(_a0 context.Context, id int64) (sqlc.GetGameRow, error) {
 	ret := _m.Called(_a0, id)
@@ -640,6 +697,63 @@ func (_c *Querier_GetGame_Call) Return(_a0 sqlc.GetGameRow, _a1 error) *Querier_
 }
 
 func (_c *Querier_GetGame_Call) RunAndReturn(run func(context.Context, int64) (sqlc.GetGameRow, error)) *Querier_GetGame_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetMission provides a mock function with given fields: _a0, arg
+func (_m *Querier) GetMission(_a0 context.Context, arg sqlc.GetMissionParams) (sqlc.Mission, error) {
+	ret := _m.Called(_a0, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetMission")
+	}
+
+	var r0 sqlc.Mission
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.GetMissionParams) (sqlc.Mission, error)); ok {
+		return rf(_a0, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.GetMissionParams) sqlc.Mission); ok {
+		r0 = rf(_a0, arg)
+	} else {
+		r0 = ret.Get(0).(sqlc.Mission)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, sqlc.GetMissionParams) error); ok {
+		r1 = rf(_a0, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_GetMission_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetMission'
+type Querier_GetMission_Call struct {
+	*mock.Call
+}
+
+// GetMission is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - arg sqlc.GetMissionParams
+func (_e *Querier_Expecter) GetMission(_a0 interface{}, arg interface{}) *Querier_GetMission_Call {
+	return &Querier_GetMission_Call{Call: _e.mock.On("GetMission", _a0, arg)}
+}
+
+func (_c *Querier_GetMission_Call) Run(run func(_a0 context.Context, arg sqlc.GetMissionParams)) *Querier_GetMission_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(sqlc.GetMissionParams))
+	})
+	return _c
+}
+
+func (_c *Querier_GetMission_Call) Return(_a0 sqlc.Mission, _a1 error) *Querier_GetMission_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_GetMission_Call) RunAndReturn(run func(context.Context, sqlc.GetMissionParams) (sqlc.Mission, error)) *Querier_GetMission_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1047,6 +1161,179 @@ func (_c *Querier_GetRegionsByGame_Call) Return(_a0 []sqlc.GetRegionsByGameRow, 
 }
 
 func (_c *Querier_GetRegionsByGame_Call) RunAndReturn(run func(context.Context, int64) ([]sqlc.GetRegionsByGameRow, error)) *Querier_GetRegionsByGame_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetRegionsByPlayer provides a mock function with given fields: _a0, id
+func (_m *Querier) GetRegionsByPlayer(_a0 context.Context, id int64) ([]sqlc.Region, error) {
+	ret := _m.Called(_a0, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetRegionsByPlayer")
+	}
+
+	var r0 []sqlc.Region
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64) ([]sqlc.Region, error)); ok {
+		return rf(_a0, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int64) []sqlc.Region); ok {
+		r0 = rf(_a0, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]sqlc.Region)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(_a0, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_GetRegionsByPlayer_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetRegionsByPlayer'
+type Querier_GetRegionsByPlayer_Call struct {
+	*mock.Call
+}
+
+// GetRegionsByPlayer is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - id int64
+func (_e *Querier_Expecter) GetRegionsByPlayer(_a0 interface{}, id interface{}) *Querier_GetRegionsByPlayer_Call {
+	return &Querier_GetRegionsByPlayer_Call{Call: _e.mock.On("GetRegionsByPlayer", _a0, id)}
+}
+
+func (_c *Querier_GetRegionsByPlayer_Call) Run(run func(_a0 context.Context, id int64)) *Querier_GetRegionsByPlayer_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int64))
+	})
+	return _c
+}
+
+func (_c *Querier_GetRegionsByPlayer_Call) Return(_a0 []sqlc.Region, _a1 error) *Querier_GetRegionsByPlayer_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_GetRegionsByPlayer_Call) RunAndReturn(run func(context.Context, int64) ([]sqlc.Region, error)) *Querier_GetRegionsByPlayer_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetTwoContinentsMission provides a mock function with given fields: _a0, missionID
+func (_m *Querier) GetTwoContinentsMission(_a0 context.Context, missionID int64) (sqlc.TwoContinentsMission, error) {
+	ret := _m.Called(_a0, missionID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTwoContinentsMission")
+	}
+
+	var r0 sqlc.TwoContinentsMission
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (sqlc.TwoContinentsMission, error)); ok {
+		return rf(_a0, missionID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int64) sqlc.TwoContinentsMission); ok {
+		r0 = rf(_a0, missionID)
+	} else {
+		r0 = ret.Get(0).(sqlc.TwoContinentsMission)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(_a0, missionID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_GetTwoContinentsMission_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTwoContinentsMission'
+type Querier_GetTwoContinentsMission_Call struct {
+	*mock.Call
+}
+
+// GetTwoContinentsMission is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - missionID int64
+func (_e *Querier_Expecter) GetTwoContinentsMission(_a0 interface{}, missionID interface{}) *Querier_GetTwoContinentsMission_Call {
+	return &Querier_GetTwoContinentsMission_Call{Call: _e.mock.On("GetTwoContinentsMission", _a0, missionID)}
+}
+
+func (_c *Querier_GetTwoContinentsMission_Call) Run(run func(_a0 context.Context, missionID int64)) *Querier_GetTwoContinentsMission_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int64))
+	})
+	return _c
+}
+
+func (_c *Querier_GetTwoContinentsMission_Call) Return(_a0 sqlc.TwoContinentsMission, _a1 error) *Querier_GetTwoContinentsMission_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_GetTwoContinentsMission_Call) RunAndReturn(run func(context.Context, int64) (sqlc.TwoContinentsMission, error)) *Querier_GetTwoContinentsMission_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetTwoContinentsPlusOneMission provides a mock function with given fields: _a0, missionID
+func (_m *Querier) GetTwoContinentsPlusOneMission(_a0 context.Context, missionID int64) (sqlc.TwoContinentsPlusOneMission, error) {
+	ret := _m.Called(_a0, missionID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTwoContinentsPlusOneMission")
+	}
+
+	var r0 sqlc.TwoContinentsPlusOneMission
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (sqlc.TwoContinentsPlusOneMission, error)); ok {
+		return rf(_a0, missionID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int64) sqlc.TwoContinentsPlusOneMission); ok {
+		r0 = rf(_a0, missionID)
+	} else {
+		r0 = ret.Get(0).(sqlc.TwoContinentsPlusOneMission)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(_a0, missionID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_GetTwoContinentsPlusOneMission_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTwoContinentsPlusOneMission'
+type Querier_GetTwoContinentsPlusOneMission_Call struct {
+	*mock.Call
+}
+
+// GetTwoContinentsPlusOneMission is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - missionID int64
+func (_e *Querier_Expecter) GetTwoContinentsPlusOneMission(_a0 interface{}, missionID interface{}) *Querier_GetTwoContinentsPlusOneMission_Call {
+	return &Querier_GetTwoContinentsPlusOneMission_Call{Call: _e.mock.On("GetTwoContinentsPlusOneMission", _a0, missionID)}
+}
+
+func (_c *Querier_GetTwoContinentsPlusOneMission_Call) Run(run func(_a0 context.Context, missionID int64)) *Querier_GetTwoContinentsPlusOneMission_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int64))
+	})
+	return _c
+}
+
+func (_c *Querier_GetTwoContinentsPlusOneMission_Call) Return(_a0 sqlc.TwoContinentsPlusOneMission, _a1 error) *Querier_GetTwoContinentsPlusOneMission_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_GetTwoContinentsPlusOneMission_Call) RunAndReturn(run func(context.Context, int64) (sqlc.TwoContinentsPlusOneMission, error)) *Querier_GetTwoContinentsPlusOneMission_Call {
 	_c.Call.Return(run)
 	return _c
 }

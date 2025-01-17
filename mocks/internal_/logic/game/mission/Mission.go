@@ -24,12 +24,12 @@ func (_m *Mission) EXPECT() *Mission_Expecter {
 	return &Mission_Expecter{mock: &_m.Mock}
 }
 
-// PersistSpecifics provides a mock function with given fields: _a0, querier, missionID
-func (_m *Mission) PersistSpecifics(_a0 ctx.GameContext, querier db.Querier, missionID int64) error {
+// Persist provides a mock function with given fields: _a0, querier, missionID
+func (_m *Mission) Persist(_a0 ctx.GameContext, querier db.Querier, missionID int64) error {
 	ret := _m.Called(_a0, querier, missionID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for PersistSpecifics")
+		panic("no return value specified for Persist")
 	}
 
 	var r0 error
@@ -42,32 +42,32 @@ func (_m *Mission) PersistSpecifics(_a0 ctx.GameContext, querier db.Querier, mis
 	return r0
 }
 
-// Mission_PersistSpecifics_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PersistSpecifics'
-type Mission_PersistSpecifics_Call struct {
+// Mission_Persist_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Persist'
+type Mission_Persist_Call struct {
 	*mock.Call
 }
 
-// PersistSpecifics is a helper method to define mock.On call
+// Persist is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
 //   - missionID int64
-func (_e *Mission_Expecter) PersistSpecifics(_a0 interface{}, querier interface{}, missionID interface{}) *Mission_PersistSpecifics_Call {
-	return &Mission_PersistSpecifics_Call{Call: _e.mock.On("PersistSpecifics", _a0, querier, missionID)}
+func (_e *Mission_Expecter) Persist(_a0 interface{}, querier interface{}, missionID interface{}) *Mission_Persist_Call {
+	return &Mission_Persist_Call{Call: _e.mock.On("Persist", _a0, querier, missionID)}
 }
 
-func (_c *Mission_PersistSpecifics_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, missionID int64)) *Mission_PersistSpecifics_Call {
+func (_c *Mission_Persist_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, missionID int64)) *Mission_Persist_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(int64))
 	})
 	return _c
 }
 
-func (_c *Mission_PersistSpecifics_Call) Return(_a0 error) *Mission_PersistSpecifics_Call {
+func (_c *Mission_Persist_Call) Return(_a0 error) *Mission_Persist_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Mission_PersistSpecifics_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, int64) error) *Mission_PersistSpecifics_Call {
+func (_c *Mission_Persist_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, int64) error) *Mission_Persist_Call {
 	_c.Call.Return(run)
 	return _c
 }

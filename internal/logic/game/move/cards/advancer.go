@@ -18,11 +18,6 @@ func (s *ServiceImpl) AdvanceQ(
 		return fmt.Errorf("cannot advance cards phase to %s", targetPhase)
 	}
 
-	regions, err := s.regionService.GetRegionsQ(ctx, querier)
-	if err != nil {
-		return fmt.Errorf("failed to get regions: %w", err)
-	}
-
 	phase, err := s.phaseService.InsertPhaseQ(ctx, querier, targetPhase)
 	if err != nil {
 		return fmt.Errorf("failed to create phase: %w", err)
@@ -37,13 +32,30 @@ func (s *ServiceImpl) AdvanceQ(
 		cardReward = moveResult.ExtraDeployableTroops
 	}
 
-	playerRegions := getPlayerRegions(ctx, regions)
+	playerRegions, err := s.regionService.GetPlayerRegionsQ(ctx, querier)
+	if err != nil {
+		return fmt.Errorf("failed to get regions: %w", err)
+	}
+
 	regionReward := int64(len(playerRegions) / 3)
 
-	continentReward, err := s.boardService.GetContinentRewardsForRegions(ctx, playerRegions)
+	continents, err := s.boardService.GetContinentsControlledByPlayerQ(ctx, querier)
 	if err != nil {
-		return fmt.Errorf("failed to get continent rewards: %w", err)
+		return fmt.Errorf("failed to get continents: %w", err)
 	}
+
+	continentReward := int64(0)
+	for _, continent := range continents {
+		continentReward += int64(continent.BonusTroops)
+	}
+
+	ctx.Log().Debugw("awarding deployable troops",
+		"region",
+		regionReward,
+		"continent",
+		continentReward,
+		"card",
+		cardReward)
 
 	if _, err = querier.InsertDeployPhase(ctx, sqlc.InsertDeployPhaseParams{
 		PhaseID:          phase.ID,
@@ -55,16 +67,4 @@ func (s *ServiceImpl) AdvanceQ(
 	ctx.Log().Infow("created deploy phase")
 
 	return nil
-}
-
-func getPlayerRegions(ctx ctx.GameContext, regions []sqlc.GetRegionsByGameRow) []string {
-	result := make([]string, 0)
-
-	for _, region := range regions {
-		if region.UserID == ctx.UserID() {
-			result = append(result, region.ExternalReference)
-		}
-	}
-
-	return result
 }

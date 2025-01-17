@@ -20,10 +20,10 @@ type Service interface {
 		source string,
 		target string,
 	) (bool, error)
-	GetContinentRewardsForRegions(
+	GetContinentsControlledByPlayerQ(
 		ctx ctx.GameContext,
-		regions []string,
-	) (int64, error)
+		querier db.Querier,
+	) ([]*Continent, error)
 }
 
 type ServiceImpl struct {
@@ -79,39 +79,6 @@ func (s *ServiceImpl) CanPlayerReachQ(
 	}
 
 	return graph.CanReach(ctx, source, target, usableRegions), nil
-}
-
-func (s *ServiceImpl) GetContinentRewardsForRegions(
-	ctx ctx.GameContext,
-	regions []string,
-) (int64, error) {
-	ctx.Log().Infow("getting player continents reward")
-
-	reward := 0
-
-	continents, err := s.getContinents(ctx)
-	if err != nil {
-		return 0, fmt.Errorf("failed to get continents: %w", err)
-	}
-
-	ctx.Log().Debugw("checking player continents against regions", "regions", regions)
-
-	for _, continent := range continents.GetContinentsControlledBy(regions) {
-		ctx.Log().
-			Debugw(
-				"player controls continent",
-				"continent",
-				continent.ExternalReference,
-				"troops",
-				continent.BonusTroops,
-			)
-
-		reward += continent.BonusTroops
-	}
-
-	ctx.Log().Infow("got player continents reward", "reward", reward)
-
-	return int64(reward), nil
 }
 
 func (s *ServiceImpl) GetBoardRegions(ctx ctx.LogContext) ([]string, error) {
@@ -197,4 +164,26 @@ func (s *ServiceImpl) fetchFromFile(ctx ctx.LogContext) (*BoardDto, error) {
 	ctx.Log().Debugw("Read board from file", "board", board)
 
 	return board, nil
+}
+
+func (s *ServiceImpl) GetContinentsControlledByPlayerQ(
+	ctx ctx.GameContext,
+	querier db.Querier,
+) ([]*Continent, error) {
+	playerRegions, err := s.regionService.GetPlayerRegionsQ(ctx, querier)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get regions: %w", err)
+	}
+
+	continents, err := s.getContinents(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get continents: %w", err)
+	}
+
+	regionStrings := make([]string, len(playerRegions))
+	for i, region := range playerRegions {
+		regionStrings[i] = region.ExternalReference
+	}
+
+	return continents.GetContinentsControlledBy(regionStrings), nil
 }

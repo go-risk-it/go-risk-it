@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/logging"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/validation"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
@@ -23,6 +24,7 @@ type OrchestratorImpl[T, R any] struct {
 	service                service.Service[T, R]
 	gameService            state.Service
 	loggingService         logging.Service
+	missionService         mission.Service
 	validationService      validation.Service
 	gameStateChangedSignal signals.GameStateChangedSignal
 }
@@ -32,6 +34,7 @@ func NewOrchestrator[T, R any](
 	service service.Service[T, R],
 	gameService state.Service,
 	loggingService logging.Service,
+	missionService mission.Service,
 	validationService validation.Service,
 	gameStateChangedSignal signals.GameStateChangedSignal,
 ) *OrchestratorImpl[T, R] {
@@ -40,6 +43,7 @@ func NewOrchestrator[T, R any](
 		service:                service,
 		gameService:            gameService,
 		loggingService:         loggingService,
+		missionService:         missionService,
 		validationService:      validationService,
 		gameStateChangedSignal: gameStateChangedSignal,
 	}
@@ -97,6 +101,11 @@ func (s *OrchestratorImpl[T, R]) OrchestrateMoveQ(
 
 	if err := s.loggingService.LogMoveQ(ctx, querier, move, performResult); err != nil {
 		return fmt.Errorf("unable to log move: %w", err)
+	}
+
+	_, err = s.missionService.IsMissionFulfilledQ(ctx, querier)
+	if err != nil {
+		return fmt.Errorf("unable to check if mission is fulfilled: %w", err)
 	}
 
 	targetPhase, err := s.service.WalkQ(ctx, querier, false)

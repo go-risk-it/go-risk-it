@@ -29,6 +29,12 @@ type Service interface {
 	) (*sqlc.GetRegionsByGameRow, error)
 	GetRegions(ctx ctx.GameContext) ([]sqlc.GetRegionsByGameRow, error)
 	GetRegionsQ(ctx ctx.GameContext, querier db.Querier) ([]sqlc.GetRegionsByGameRow, error)
+	GetPlayerRegionsQ(ctx ctx.GameContext, querier db.Querier) ([]sqlc.GetRegionsByGameRow, error)
+	GetRegionsControlledByPlayerQ(
+		ctx ctx.GameContext,
+		querier db.Querier,
+		playerID int64,
+	) ([]sqlc.Region, error)
 	UpdateTroopsInRegionQ(
 		ctx ctx.GameContext,
 		querier db.Querier,
@@ -43,6 +49,14 @@ type Service interface {
 type ServiceImpl struct {
 	querier           db.Querier
 	assignmentService assignment.Service
+}
+
+func (s *ServiceImpl) GetRegionsControlledByPlayerQ(
+	ctx ctx.GameContext,
+	querier db.Querier,
+	playerID int64,
+) ([]sqlc.Region, error) {
+	return querier.GetRegionsByPlayer(ctx, playerID)
 }
 
 var _ Service = (*ServiceImpl)(nil)
@@ -111,6 +125,33 @@ func (s *ServiceImpl) GetRegionsQ(
 	ctx.Log().Debugw("got regions", "regions", len(regions))
 
 	return regions, nil
+}
+
+func (s *ServiceImpl) GetPlayerRegionsQ(
+	ctx ctx.GameContext,
+	querier db.Querier,
+) ([]sqlc.GetRegionsByGameRow, error) {
+	regions, err := s.GetRegionsQ(ctx, querier)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get regions: %w", err)
+	}
+
+	return getPlayerRegions(ctx, regions), nil
+}
+
+func getPlayerRegions(
+	ctx ctx.GameContext,
+	regions []sqlc.GetRegionsByGameRow,
+) []sqlc.GetRegionsByGameRow {
+	result := make([]sqlc.GetRegionsByGameRow, 0)
+
+	for _, region := range regions {
+		if region.UserID == ctx.UserID() {
+			result = append(result, region)
+		}
+	}
+
+	return result
 }
 
 func (s *ServiceImpl) GetRegionQ(

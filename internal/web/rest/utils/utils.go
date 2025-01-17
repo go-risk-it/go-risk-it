@@ -54,7 +54,7 @@ func decodeJSONBody[T any](writer http.ResponseWriter, req *http.Request, dst T)
 	if ct != "" {
 		mediaType := strings.ToLower(strings.TrimSpace(strings.Split(ct, ";")[0]))
 		if mediaType != "application/json" {
-			msg := "Content-Type header is not application/json"
+			msg := "Content-MissionType header is not application/json"
 
 			return &malformedRequestError{status: http.StatusUnsupportedMediaType, msg: msg}
 		}

@@ -17,7 +17,9 @@ type Querier interface {
 	GetConquerPhaseState(ctx context.Context, id int64) (GetConquerPhaseStateRow, error)
 	GetCurrentPhase(ctx context.Context, id int64) (PhaseType, error)
 	GetDeployableTroops(ctx context.Context, id int64) (int64, error)
+	GetEliminatePlayerMission(ctx context.Context, missionID int64) (EliminatePlayerMission, error)
 	GetGame(ctx context.Context, id int64) (GetGameRow, error)
+	GetMission(ctx context.Context, arg GetMissionParams) (Mission, error)
 	GetMoveLogs(ctx context.Context, arg GetMoveLogsParams) ([]GetMoveLogsRow, error)
 	GetNextPlayer(ctx context.Context, gameID int64) (Player, error)
 	GetPlayerByUserId(ctx context.Context, userID string) (Player, error)
@@ -25,6 +27,9 @@ type Querier interface {
 	GetPlayersByGame(ctx context.Context, gameID int64) ([]Player, error)
 	GetPlayersState(ctx context.Context, gameID int64) ([]GetPlayersStateRow, error)
 	GetRegionsByGame(ctx context.Context, id int64) ([]GetRegionsByGameRow, error)
+	GetRegionsByPlayer(ctx context.Context, id int64) ([]Region, error)
+	GetTwoContinentsMission(ctx context.Context, missionID int64) (TwoContinentsMission, error)
+	GetTwoContinentsPlusOneMission(ctx context.Context, missionID int64) (TwoContinentsPlusOneMission, error)
 	GrantRegionTroops(ctx context.Context, arg GrantRegionTroopsParams) error
 	HasConqueredInTurn(ctx context.Context, arg HasConqueredInTurnParams) (bool, error)
 	IncreaseRegionTroops(ctx context.Context, arg IncreaseRegionTroopsParams) error

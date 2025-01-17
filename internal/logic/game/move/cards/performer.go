@@ -163,30 +163,22 @@ func identifyCombination(
 
 	combinationValue := getCardValue(type1) + getCardValue(type2) + getCardValue(type3)
 
+	combinationToTroops := map[int64]int64{
+		3 * ARTILLERY:                  4,
+		3 * INFANTRY:                   6,
+		3 * CAVALRY:                    8,
+		ARTILLERY + INFANTRY + CAVALRY: 10,
+		JOLLY + 2*ARTILLERY:            12,
+		JOLLY + 2*INFANTRY:             12,
+		JOLLY + 2*CAVALRY:              12,
+	}
+
 	if combinationValue >= 2*JOLLY {
 		return 0, errors.New("cannot use more than 2 jolly cards in a combination")
 	}
 
-	if combinationValue == 3*ARTILLERY {
-		return 4, nil
-	}
-
-	if combinationValue == 3*INFANTRY {
-		return 6, nil
-	}
-
-	if combinationValue == 3*CAVALRY {
-		return 8, nil
-	}
-
-	if combinationValue == ARTILLERY+INFANTRY+CAVALRY {
-		return 10, nil
-	}
-
-	if combinationValue == JOLLY+2*ARTILLERY ||
-		combinationValue == JOLLY+2*INFANTRY ||
-		combinationValue == JOLLY+2*CAVALRY {
-		return 12, nil
+	if troops, ok := combinationToTroops[combinationValue]; ok {
+		return troops, nil
 	}
 
 	return 0, errors.New("invalid combination")

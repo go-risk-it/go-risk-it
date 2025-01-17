@@ -4,6 +4,8 @@ package board
 
 import (
 	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
+	board "github.com/go-risk-it/go-risk-it/internal/logic/game/board"
+
 	db "github.com/go-risk-it/go-risk-it/internal/data/db"
 
 	mock "github.com/stretchr/testify/mock"
@@ -197,27 +199,29 @@ func (_c *Service_GetBoardRegions_Call) RunAndReturn(run func(ctx.LogContext) ([
 	return _c
 }
 
-// GetContinentRewardsForRegions provides a mock function with given fields: _a0, regions
-func (_m *Service) GetContinentRewardsForRegions(_a0 ctx.GameContext, regions []string) (int64, error) {
-	ret := _m.Called(_a0, regions)
+// GetContinentsControlledByPlayerQ provides a mock function with given fields: _a0, querier
+func (_m *Service) GetContinentsControlledByPlayerQ(_a0 ctx.GameContext, querier db.Querier) ([]*board.Continent, error) {
+	ret := _m.Called(_a0, querier)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetContinentRewardsForRegions")
+		panic("no return value specified for GetContinentsControlledByPlayerQ")
 	}
 
-	var r0 int64
+	var r0 []*board.Continent
 	var r1 error
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, []string) (int64, error)); ok {
-		return rf(_a0, regions)
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) ([]*board.Continent, error)); ok {
+		return rf(_a0, querier)
 	}
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, []string) int64); ok {
-		r0 = rf(_a0, regions)
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) []*board.Continent); ok {
+		r0 = rf(_a0, querier)
 	} else {
-		r0 = ret.Get(0).(int64)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*board.Continent)
+		}
 	}
 
-	if rf, ok := ret.Get(1).(func(ctx.GameContext, []string) error); ok {
-		r1 = rf(_a0, regions)
+	if rf, ok := ret.Get(1).(func(ctx.GameContext, db.Querier) error); ok {
+		r1 = rf(_a0, querier)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -225,31 +229,31 @@ func (_m *Service) GetContinentRewardsForRegions(_a0 ctx.GameContext, regions []
 	return r0, r1
 }
 
-// Service_GetContinentRewardsForRegions_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetContinentRewardsForRegions'
-type Service_GetContinentRewardsForRegions_Call struct {
+// Service_GetContinentsControlledByPlayerQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetContinentsControlledByPlayerQ'
+type Service_GetContinentsControlledByPlayerQ_Call struct {
 	*mock.Call
 }
 
-// GetContinentRewardsForRegions is a helper method to define mock.On call
+// GetContinentsControlledByPlayerQ is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
-//   - regions []string
-func (_e *Service_Expecter) GetContinentRewardsForRegions(_a0 interface{}, regions interface{}) *Service_GetContinentRewardsForRegions_Call {
-	return &Service_GetContinentRewardsForRegions_Call{Call: _e.mock.On("GetContinentRewardsForRegions", _a0, regions)}
+//   - querier db.Querier
+func (_e *Service_Expecter) GetContinentsControlledByPlayerQ(_a0 interface{}, querier interface{}) *Service_GetContinentsControlledByPlayerQ_Call {
+	return &Service_GetContinentsControlledByPlayerQ_Call{Call: _e.mock.On("GetContinentsControlledByPlayerQ", _a0, querier)}
 }
 
-func (_c *Service_GetContinentRewardsForRegions_Call) Run(run func(_a0 ctx.GameContext, regions []string)) *Service_GetContinentRewardsForRegions_Call {
+func (_c *Service_GetContinentsControlledByPlayerQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier)) *Service_GetContinentsControlledByPlayerQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.GameContext), args[1].([]string))
+		run(args[0].(ctx.GameContext), args[1].(db.Querier))
 	})
 	return _c
 }
 
-func (_c *Service_GetContinentRewardsForRegions_Call) Return(_a0 int64, _a1 error) *Service_GetContinentRewardsForRegions_Call {
+func (_c *Service_GetContinentsControlledByPlayerQ_Call) Return(_a0 []*board.Continent, _a1 error) *Service_GetContinentsControlledByPlayerQ_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_GetContinentRewardsForRegions_Call) RunAndReturn(run func(ctx.GameContext, []string) (int64, error)) *Service_GetContinentRewardsForRegions_Call {
+func (_c *Service_GetContinentsControlledByPlayerQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier) ([]*board.Continent, error)) *Service_GetContinentsControlledByPlayerQ_Call {
 	_c.Call.Return(run)
 	return _c
 }
