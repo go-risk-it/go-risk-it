@@ -14,6 +14,7 @@ issues:
         - funlen
         - dogsled
         - lll
+        - dupl
   exclude-dirs:
     - internal/upgradablerw_mutex
 linters-settings:

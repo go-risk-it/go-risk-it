@@ -220,6 +220,19 @@ func (q *Queries) GetDeployableTroops(ctx context.Context, id int64) (int64, err
 	return deployable_troops, err
 }
 
+const getEliminatePlayerMission = `-- name: GetEliminatePlayerMission :one
+SELECT mission_id, target_player_id
+FROM eliminate_player_mission
+WHERE mission_id = $1
+`
+
+func (q *Queries) GetEliminatePlayerMission(ctx context.Context, missionID int64) (EliminatePlayerMission, error) {
+	row := q.db.QueryRow(ctx, getEliminatePlayerMission, missionID)
+	var i EliminatePlayerMission
+	err := row.Scan(&i.MissionID, &i.TargetPlayerID)
+	return i, err
+}
+
 const getGame = `-- name: GetGame :one
 SELECT game.id, phase.type AS current_phase, phase.turn
 FROM game
@@ -237,6 +250,26 @@ func (q *Queries) GetGame(ctx context.Context, id int64) (GetGameRow, error) {
 	row := q.db.QueryRow(ctx, getGame, id)
 	var i GetGameRow
 	err := row.Scan(&i.ID, &i.CurrentPhase, &i.Turn)
+	return i, err
+}
+
+const getMission = `-- name: GetMission :one
+SELECT m.id, m.player_id, m.type
+FROM mission m
+         JOIN player p ON m.player_id = p.id
+WHERE p.game_id = $1
+  AND p.user_id = $2
+`
+
+type GetMissionParams struct {
+	GameID int64
+	UserID string
+}
+
+func (q *Queries) GetMission(ctx context.Context, arg GetMissionParams) (Mission, error) {
+	row := q.db.QueryRow(ctx, getMission, arg.GameID, arg.UserID)
+	var i Mission
+	err := row.Scan(&i.ID, &i.PlayerID, &i.Type)
 	return i, err
 }
 
@@ -472,6 +505,64 @@ func (q *Queries) GetRegionsByGame(ctx context.Context, id int64) ([]GetRegionsB
 		return nil, err
 	}
 	return items, nil
+}
+
+const getRegionsByPlayer = `-- name: GetRegionsByPlayer :many
+SELECT r.id, r.external_reference, r.player_id, r.troops
+FROM region r
+         JOIN player p on r.player_id = p.id
+WHERE p.id = $1
+`
+
+func (q *Queries) GetRegionsByPlayer(ctx context.Context, id int64) ([]Region, error) {
+	rows, err := q.db.Query(ctx, getRegionsByPlayer, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Region
+	for rows.Next() {
+		var i Region
+		if err := rows.Scan(
+			&i.ID,
+			&i.ExternalReference,
+			&i.PlayerID,
+			&i.Troops,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getTwoContinentsMission = `-- name: GetTwoContinentsMission :one
+SELECT mission_id, continent_1, continent_2
+FROM two_continents_mission
+WHERE mission_id = $1
+`
+
+func (q *Queries) GetTwoContinentsMission(ctx context.Context, missionID int64) (TwoContinentsMission, error) {
+	row := q.db.QueryRow(ctx, getTwoContinentsMission, missionID)
+	var i TwoContinentsMission
+	err := row.Scan(&i.MissionID, &i.Continent1, &i.Continent2)
+	return i, err
+}
+
+const getTwoContinentsPlusOneMission = `-- name: GetTwoContinentsPlusOneMission :one
+SELECT mission_id, continent_1, continent_2
+FROM two_continents_plus_one_mission
+WHERE mission_id = $1
+`
+
+func (q *Queries) GetTwoContinentsPlusOneMission(ctx context.Context, missionID int64) (TwoContinentsPlusOneMission, error) {
+	row := q.db.QueryRow(ctx, getTwoContinentsPlusOneMission, missionID)
+	var i TwoContinentsPlusOneMission
+	err := row.Scan(&i.MissionID, &i.Continent1, &i.Continent2)
+	return i, err
 }
 
 const grantRegionTroops = `-- name: GrantRegionTroops :exec

@@ -9,6 +9,12 @@ FROM region r
          JOIN game g on p.game_id = g.id
 WHERE g.id = $1;
 
+-- name: GetRegionsByPlayer :many
+SELECT r.*
+FROM region r
+         JOIN player p on r.player_id = p.id
+WHERE p.id = $1;
+
 -- name: IncreaseRegionTroops :exec
 UPDATE region
 SET troops = troops + $2
