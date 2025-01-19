@@ -12,6 +12,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/rand"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -145,6 +146,19 @@ func TestServiceImpl_IsTwoContinentsMissionAccomplished(t *testing.T) {
 				GetContinentsControlledByPlayerQ(ctx, querier).
 				Return(test.controlledContinents, nil)
 
+			if test.expectedResult {
+				querier.
+					EXPECT().
+					AssignGameWinner(ctx, sqlc.AssignGameWinnerParams{
+						WinnerPlayerID: pgtype.Int8{
+							Int64: 1,
+							Valid: true,
+						},
+						GameID: ctx.GameID(),
+					}).
+					Return(nil)
+			}
+
 			result, err := service.IsMissionAccomplishedQ(ctx, querier)
 
 			require.NoError(t, err)
@@ -273,6 +287,19 @@ func TestServiceImpl_IsTwoContinentsPlusOneMissionAccomplished(t *testing.T) {
 				GetContinentsControlledByPlayerQ(ctx, querier).
 				Return(test.controlledContinents, nil)
 
+			if test.expectedResult {
+				querier.
+					EXPECT().
+					AssignGameWinner(ctx, sqlc.AssignGameWinnerParams{
+						WinnerPlayerID: pgtype.Int8{
+							Int64: 1,
+							Valid: true,
+						},
+						GameID: ctx.GameID(),
+					}).
+					Return(nil)
+			}
+
 			result, err := service.IsMissionAccomplishedQ(ctx, querier)
 
 			require.NoError(t, err)
@@ -355,6 +382,19 @@ func TestServiceImpl_IsEliminatePlayerMissionAccomplished(t *testing.T) {
 				EXPECT().
 				GetRegionsControlledByPlayerQ(ctx, querier, int64(2)).
 				Return(test.regionsControlledByTarget, nil)
+
+			if test.expectedResult {
+				querier.
+					EXPECT().
+					AssignGameWinner(ctx, sqlc.AssignGameWinnerParams{
+						WinnerPlayerID: pgtype.Int8{
+							Int64: 1,
+							Valid: true,
+						},
+						GameID: ctx.GameID(),
+					}).
+					Return(nil)
+			}
 
 			result, err := service.IsMissionAccomplishedQ(ctx, querier)
 
