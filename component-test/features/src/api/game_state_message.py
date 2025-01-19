@@ -55,6 +55,7 @@ class GameStateData(BaseModel, Generic[T]):
     id: int
     turn: int
     phase: Phase[T]
+    winnerUserId: str
 
     @property
     def deploy_phase(self) -> DeployPhaseStateData:

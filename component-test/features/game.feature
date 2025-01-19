@@ -186,6 +186,7 @@ Feature: Creating a game
     Then gabriele has 7 cards
 
     And it's francesco's turn
+    And there is no winner yet
 
 
 
