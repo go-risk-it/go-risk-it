@@ -17,8 +17,8 @@ require (
 	github.com/lesismal/nbio v1.6.0
 	github.com/maniartech/signals v1.2.0
 	github.com/stretchr/testify v1.10.0
-	github.com/testcontainers/testcontainers-go v0.34.0
-	github.com/testcontainers/testcontainers-go/modules/postgres v0.34.0
+	github.com/testcontainers/testcontainers-go v0.35.0
+	github.com/testcontainers/testcontainers-go/modules/postgres v0.35.0
 	go.uber.org/fx v1.23.0
 	go.uber.org/zap v1.27.0
 )
