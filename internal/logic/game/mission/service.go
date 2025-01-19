@@ -11,6 +11,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
 	"github.com/go-risk-it/go-risk-it/internal/rand"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Service interface {
@@ -19,7 +20,7 @@ type Service interface {
 		querier db.Querier,
 		players []sqlc.Player,
 	) error
-	IsMissionFulfilledQ(ctx ctx.GameContext, querier db.Querier) (bool, error)
+	IsMissionAccomplishedQ(ctx ctx.GameContext, querier db.Querier) (bool, error)
 	ReassignMissionsQ(ctx ctx.GameContext, querier db.Querier, eliminatedUserID string) error
 }
 
@@ -144,8 +145,11 @@ func (s *ServiceImpl) GetAvailableMissions(players []sqlc.Player) []Mission {
 	return missions
 }
 
-func (s *ServiceImpl) IsMissionFulfilledQ(ctx ctx.GameContext, querier db.Querier) (bool, error) {
-	ctx.Log().Debugw("checking if mission is fulfilled")
+func (s *ServiceImpl) IsMissionAccomplishedQ(
+	ctx ctx.GameContext,
+	querier db.Querier,
+) (bool, error) {
+	ctx.Log().Debugw("checking if mission is accomplished")
 
 	baseMission, err := querier.GetMission(ctx, sqlc.GetMissionParams{
 		GameID: ctx.GameID(),
@@ -155,17 +159,46 @@ func (s *ServiceImpl) IsMissionFulfilledQ(ctx ctx.GameContext, querier db.Querie
 		return false, fmt.Errorf("failed to get mission: %w", err)
 	}
 
+	isMissionAccomplished, err := s.isMissionAccomplished(ctx, querier, baseMission)
+	if err != nil {
+		return false, fmt.Errorf("failed to check if mission is accomplished: %w", err)
+	}
+
+	if isMissionAccomplished {
+		ctx.Log().Infow("mission is accomplished, assigning winner")
+
+		if err := querier.AssignGameWinner(ctx, sqlc.AssignGameWinnerParams{
+			WinnerPlayerID: pgtype.Int8{
+				Int64: baseMission.PlayerID,
+				Valid: true,
+			},
+			GameID: ctx.GameID(),
+		}); err != nil {
+			return false, fmt.Errorf("failed to assign game winner: %w", err)
+		}
+
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func (s *ServiceImpl) isMissionAccomplished(
+	ctx ctx.GameContext,
+	querier db.Querier,
+	baseMission sqlc.Mission,
+) (bool, error) {
 	switch baseMission.Type {
 	case sqlc.MissionTypeTWOCONTINENTS:
-		return s.isTwoContinentsMissionFulfilled(ctx, querier, baseMission)
+		return s.isTwoContinentsMissionAccomplished(ctx, querier, baseMission)
 	case sqlc.MissionTypeTWOCONTINENTSPLUSONE:
-		return s.isTwoContinentsPlusOneMissionFulfilled(ctx, querier, baseMission)
+		return s.isTwoContinentsPlusOneMissionAccomplished(ctx, querier, baseMission)
 	case sqlc.MissionTypeEIGHTEENTERRITORIESTWOTROOPS:
-		return s.isEighteenTerritoriesTwoTroopsMissionFulfilled(ctx, querier, baseMission)
+		return s.isEighteenTerritoriesTwoTroopsMissionAccomplished(ctx, querier, baseMission)
 	case sqlc.MissionTypeTWENTYFOURTERRITORIES:
-		return s.isTwentyFourTerritoriesMissionFulfilled(ctx, querier, baseMission)
+		return s.isTwentyFourTerritoriesMissionAccomplished(ctx, querier, baseMission)
 	case sqlc.MissionTypeELIMINATEPLAYER:
-		return s.isEliminatePlayerMissionFulfilled(ctx, querier, baseMission)
+		return s.isEliminatePlayerMissionAccomplished(ctx, querier, baseMission)
 	default:
 		return false, fmt.Errorf("unknown mission type: %s", baseMission.Type)
 	}
@@ -177,7 +210,7 @@ func continentEquals(cont string) func(continent *board.Continent) bool {
 	}
 }
 
-func (s *ServiceImpl) isTwoContinentsMissionFulfilled(
+func (s *ServiceImpl) isTwoContinentsMissionAccomplished(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	baseMission sqlc.Mission,
@@ -196,7 +229,7 @@ func (s *ServiceImpl) isTwoContinentsMissionFulfilled(
 		slices.ContainsFunc(continents, continentEquals(mission.Continent2)), nil
 }
 
-func (s *ServiceImpl) isTwoContinentsPlusOneMissionFulfilled(
+func (s *ServiceImpl) isTwoContinentsPlusOneMissionAccomplished(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	baseMission sqlc.Mission,
@@ -220,7 +253,7 @@ func (s *ServiceImpl) isTwoContinentsPlusOneMissionFulfilled(
 	return playerControlsTwoMandatoryContinents && len(continents) > 2, nil
 }
 
-func (s *ServiceImpl) isEighteenTerritoriesTwoTroopsMissionFulfilled(
+func (s *ServiceImpl) isEighteenTerritoriesTwoTroopsMissionAccomplished(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	_ sqlc.Mission,
@@ -241,7 +274,7 @@ func (s *ServiceImpl) isEighteenTerritoriesTwoTroopsMissionFulfilled(
 	return count >= 18, nil
 }
 
-func (s *ServiceImpl) isTwentyFourTerritoriesMissionFulfilled(
+func (s *ServiceImpl) isTwentyFourTerritoriesMissionAccomplished(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	_ sqlc.Mission,
@@ -254,7 +287,7 @@ func (s *ServiceImpl) isTwentyFourTerritoriesMissionFulfilled(
 	return len(regions) >= 24, nil
 }
 
-func (s *ServiceImpl) isEliminatePlayerMissionFulfilled(
+func (s *ServiceImpl) isEliminatePlayerMissionAccomplished(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	baseMission sqlc.Mission,

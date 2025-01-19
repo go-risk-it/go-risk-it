@@ -53,10 +53,21 @@ func (s *OrchestratorImpl[T, R]) OrchestrateMove(ctx ctx.GameContext, move T) er
 	_, err := s.querier.ExecuteInTransactionWithIsolation(
 		ctx,
 		pgx.RepeatableRead,
-		func(q db.Querier) (interface{}, error) {
-			err := s.OrchestrateMoveQ(ctx, q, move)
+		func(querier db.Querier) (interface{}, error) {
+			phase := s.service.PhaseType()
+			ctx.SetLog(ctx.Log().With("phase", phase))
+
+			gameState, err := s.gameService.GetGameStateQ(ctx, querier)
 			if err != nil {
-				return struct{}{}, err
+				return struct{}{}, fmt.Errorf("unable to get game state: %w", err)
+			}
+
+			if gameState.Phase != phase {
+				return struct{}{}, errors.New("game is not in the correct phase to perform move")
+			}
+
+			if err := s.OrchestrateMoveQ(ctx, querier, move, gameState); err != nil {
+				return struct{}{}, fmt.Errorf("unable to orchestrate move: %w", err)
 			}
 
 			return struct{}{}, nil
@@ -75,20 +86,9 @@ func (s *OrchestratorImpl[T, R]) OrchestrateMoveQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	move T,
+	gameState *state.Game,
 ) error {
-	phase := s.service.PhaseType()
-
-	ctx.SetLog(ctx.Log().With("phase", phase))
 	ctx.Log().Infow("orchestrating move", "move", move)
-
-	gameState, err := s.gameService.GetGameStateQ(ctx, querier)
-	if err != nil {
-		return fmt.Errorf("unable to get game state: %w", err)
-	}
-
-	if gameState.Phase != phase {
-		return errors.New("game is not in the correct phase to perform move")
-	}
 
 	if err := s.validationService.ValidateQ(ctx, querier, gameState); err != nil {
 		return fmt.Errorf("invalid move: %w", err)
@@ -103,9 +103,15 @@ func (s *OrchestratorImpl[T, R]) OrchestrateMoveQ(
 		return fmt.Errorf("unable to log move: %w", err)
 	}
 
-	_, err = s.missionService.IsMissionFulfilledQ(ctx, querier)
+	isMissionAccomplished, err := s.missionService.IsMissionAccomplishedQ(ctx, querier)
 	if err != nil {
-		return fmt.Errorf("unable to check if mission is fulfilled: %w", err)
+		return fmt.Errorf("unable to check if mission is accomplished: %w", err)
+	}
+
+	if isMissionAccomplished {
+		ctx.Log().Infow("game is over")
+
+		return nil
 	}
 
 	targetPhase, err := s.service.WalkQ(ctx, querier, false)
@@ -113,7 +119,7 @@ func (s *OrchestratorImpl[T, R]) OrchestrateMoveQ(
 		return fmt.Errorf("unable to walk phase: %w", err)
 	}
 
-	if targetPhase == phase {
+	if targetPhase == s.service.PhaseType() {
 		ctx.Log().Infow("no need to advance")
 
 		return nil

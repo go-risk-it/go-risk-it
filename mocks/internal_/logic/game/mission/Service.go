@@ -72,12 +72,12 @@ func (_c *Service_CreateMissionsQ_Call) RunAndReturn(run func(ctx.GameContext, d
 	return _c
 }
 
-// IsMissionFulfilledQ provides a mock function with given fields: _a0, querier
-func (_m *Service) IsMissionFulfilledQ(_a0 ctx.GameContext, querier db.Querier) (bool, error) {
+// IsMissionAccomplishedQ provides a mock function with given fields: _a0, querier
+func (_m *Service) IsMissionAccomplishedQ(_a0 ctx.GameContext, querier db.Querier) (bool, error) {
 	ret := _m.Called(_a0, querier)
 
 	if len(ret) == 0 {
-		panic("no return value specified for IsMissionFulfilledQ")
+		panic("no return value specified for IsMissionAccomplishedQ")
 	}
 
 	var r0 bool
@@ -100,31 +100,31 @@ func (_m *Service) IsMissionFulfilledQ(_a0 ctx.GameContext, querier db.Querier) 
 	return r0, r1
 }
 
-// Service_IsMissionFulfilledQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsMissionFulfilledQ'
-type Service_IsMissionFulfilledQ_Call struct {
+// Service_IsMissionAccomplishedQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsMissionAccomplishedQ'
+type Service_IsMissionAccomplishedQ_Call struct {
 	*mock.Call
 }
 
-// IsMissionFulfilledQ is a helper method to define mock.On call
+// IsMissionAccomplishedQ is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
-func (_e *Service_Expecter) IsMissionFulfilledQ(_a0 interface{}, querier interface{}) *Service_IsMissionFulfilledQ_Call {
-	return &Service_IsMissionFulfilledQ_Call{Call: _e.mock.On("IsMissionFulfilledQ", _a0, querier)}
+func (_e *Service_Expecter) IsMissionAccomplishedQ(_a0 interface{}, querier interface{}) *Service_IsMissionAccomplishedQ_Call {
+	return &Service_IsMissionAccomplishedQ_Call{Call: _e.mock.On("IsMissionAccomplishedQ", _a0, querier)}
 }
 
-func (_c *Service_IsMissionFulfilledQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier)) *Service_IsMissionFulfilledQ_Call {
+func (_c *Service_IsMissionAccomplishedQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier)) *Service_IsMissionAccomplishedQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.GameContext), args[1].(db.Querier))
 	})
 	return _c
 }
 
-func (_c *Service_IsMissionFulfilledQ_Call) Return(_a0 bool, _a1 error) *Service_IsMissionFulfilledQ_Call {
+func (_c *Service_IsMissionAccomplishedQ_Call) Return(_a0 bool, _a1 error) *Service_IsMissionAccomplishedQ_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_IsMissionFulfilledQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier) (bool, error)) *Service_IsMissionFulfilledQ_Call {
+func (_c *Service_IsMissionAccomplishedQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier) (bool, error)) *Service_IsMissionAccomplishedQ_Call {
 	_c.Call.Return(run)
 	return _c
 }

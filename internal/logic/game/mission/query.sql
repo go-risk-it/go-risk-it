@@ -56,3 +56,8 @@ WHERE mission_id in (SELECT m.id
                               JOIN player p on m.player_id = p.id
                      WHERE p.game_id = $1
                        AND m.type = 'TWENTY_FOUR_TERRITORIES');
+
+-- name: AssignGameWinner :exec
+UPDATE game
+SET winner_player_id = $1
+WHERE id = sqlc.arg(game_id);
