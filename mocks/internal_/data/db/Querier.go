@@ -132,6 +132,53 @@ func (_c *Querier_DecreaseDeployableTroops_Call) RunAndReturn(run func(context.C
 	return _c
 }
 
+// DeleteSpuriousEliminatePlayerMissions provides a mock function with given fields: _a0, gameID
+func (_m *Querier) DeleteSpuriousEliminatePlayerMissions(_a0 context.Context, gameID int64) error {
+	ret := _m.Called(_a0, gameID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteSpuriousEliminatePlayerMissions")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64) error); ok {
+		r0 = rf(_a0, gameID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Querier_DeleteSpuriousEliminatePlayerMissions_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteSpuriousEliminatePlayerMissions'
+type Querier_DeleteSpuriousEliminatePlayerMissions_Call struct {
+	*mock.Call
+}
+
+// DeleteSpuriousEliminatePlayerMissions is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - gameID int64
+func (_e *Querier_Expecter) DeleteSpuriousEliminatePlayerMissions(_a0 interface{}, gameID interface{}) *Querier_DeleteSpuriousEliminatePlayerMissions_Call {
+	return &Querier_DeleteSpuriousEliminatePlayerMissions_Call{Call: _e.mock.On("DeleteSpuriousEliminatePlayerMissions", _a0, gameID)}
+}
+
+func (_c *Querier_DeleteSpuriousEliminatePlayerMissions_Call) Run(run func(_a0 context.Context, gameID int64)) *Querier_DeleteSpuriousEliminatePlayerMissions_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int64))
+	})
+	return _c
+}
+
+func (_c *Querier_DeleteSpuriousEliminatePlayerMissions_Call) Return(_a0 error) *Querier_DeleteSpuriousEliminatePlayerMissions_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Querier_DeleteSpuriousEliminatePlayerMissions_Call) RunAndReturn(run func(context.Context, int64) error) *Querier_DeleteSpuriousEliminatePlayerMissions_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DrawCard provides a mock function with given fields: _a0, arg
 func (_m *Querier) DrawCard(_a0 context.Context, arg sqlc.DrawCardParams) error {
 	ret := _m.Called(_a0, arg)
@@ -2081,6 +2128,53 @@ func (_c *Querier_InsertTwoContinentsPlusOneMission_Call) Return(_a0 error) *Que
 }
 
 func (_c *Querier_InsertTwoContinentsPlusOneMission_Call) RunAndReturn(run func(context.Context, sqlc.InsertTwoContinentsPlusOneMissionParams) error) *Querier_InsertTwoContinentsPlusOneMission_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ReassignMissions provides a mock function with given fields: _a0, arg
+func (_m *Querier) ReassignMissions(_a0 context.Context, arg sqlc.ReassignMissionsParams) error {
+	ret := _m.Called(_a0, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ReassignMissions")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.ReassignMissionsParams) error); ok {
+		r0 = rf(_a0, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Querier_ReassignMissions_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ReassignMissions'
+type Querier_ReassignMissions_Call struct {
+	*mock.Call
+}
+
+// ReassignMissions is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - arg sqlc.ReassignMissionsParams
+func (_e *Querier_Expecter) ReassignMissions(_a0 interface{}, arg interface{}) *Querier_ReassignMissions_Call {
+	return &Querier_ReassignMissions_Call{Call: _e.mock.On("ReassignMissions", _a0, arg)}
+}
+
+func (_c *Querier_ReassignMissions_Call) Run(run func(_a0 context.Context, arg sqlc.ReassignMissionsParams)) *Querier_ReassignMissions_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(sqlc.ReassignMissionsParams))
+	})
+	return _c
+}
+
+func (_c *Querier_ReassignMissions_Call) Return(_a0 error) *Querier_ReassignMissions_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Querier_ReassignMissions_Call) RunAndReturn(run func(context.Context, sqlc.ReassignMissionsParams) error) *Querier_ReassignMissions_Call {
 	_c.Call.Return(run)
 	return _c
 }

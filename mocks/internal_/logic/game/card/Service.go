@@ -24,12 +24,12 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
-// CreateCards provides a mock function with given fields: _a0, querier
-func (_m *Service) CreateCards(_a0 ctx.GameContext, querier db.Querier) error {
+// CreateCardsQ provides a mock function with given fields: _a0, querier
+func (_m *Service) CreateCardsQ(_a0 ctx.GameContext, querier db.Querier) error {
 	ret := _m.Called(_a0, querier)
 
 	if len(ret) == 0 {
-		panic("no return value specified for CreateCards")
+		panic("no return value specified for CreateCardsQ")
 	}
 
 	var r0 error
@@ -42,31 +42,31 @@ func (_m *Service) CreateCards(_a0 ctx.GameContext, querier db.Querier) error {
 	return r0
 }
 
-// Service_CreateCards_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateCards'
-type Service_CreateCards_Call struct {
+// Service_CreateCardsQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateCardsQ'
+type Service_CreateCardsQ_Call struct {
 	*mock.Call
 }
 
-// CreateCards is a helper method to define mock.On call
+// CreateCardsQ is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
-func (_e *Service_Expecter) CreateCards(_a0 interface{}, querier interface{}) *Service_CreateCards_Call {
-	return &Service_CreateCards_Call{Call: _e.mock.On("CreateCards", _a0, querier)}
+func (_e *Service_Expecter) CreateCardsQ(_a0 interface{}, querier interface{}) *Service_CreateCardsQ_Call {
+	return &Service_CreateCardsQ_Call{Call: _e.mock.On("CreateCardsQ", _a0, querier)}
 }
 
-func (_c *Service_CreateCards_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier)) *Service_CreateCards_Call {
+func (_c *Service_CreateCardsQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier)) *Service_CreateCardsQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.GameContext), args[1].(db.Querier))
 	})
 	return _c
 }
 
-func (_c *Service_CreateCards_Call) Return(_a0 error) *Service_CreateCards_Call {
+func (_c *Service_CreateCardsQ_Call) Return(_a0 error) *Service_CreateCardsQ_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Service_CreateCards_Call) RunAndReturn(run func(ctx.GameContext, db.Querier) error) *Service_CreateCards_Call {
+func (_c *Service_CreateCardsQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier) error) *Service_CreateCardsQ_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -188,12 +188,12 @@ func (_c *Service_GetCardsForPlayerQ_Call) RunAndReturn(run func(ctx.GameContext
 	return _c
 }
 
-// TransferCardsOwnership provides a mock function with given fields: _a0, querier, attacker, defender
-func (_m *Service) TransferCardsOwnership(_a0 ctx.GameContext, querier db.Querier, attacker string, defender string) error {
+// TransferCardsOwnershipQ provides a mock function with given fields: _a0, querier, attacker, defender
+func (_m *Service) TransferCardsOwnershipQ(_a0 ctx.GameContext, querier db.Querier, attacker string, defender string) error {
 	ret := _m.Called(_a0, querier, attacker, defender)
 
 	if len(ret) == 0 {
-		panic("no return value specified for TransferCardsOwnership")
+		panic("no return value specified for TransferCardsOwnershipQ")
 	}
 
 	var r0 error
@@ -206,33 +206,33 @@ func (_m *Service) TransferCardsOwnership(_a0 ctx.GameContext, querier db.Querie
 	return r0
 }
 
-// Service_TransferCardsOwnership_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TransferCardsOwnership'
-type Service_TransferCardsOwnership_Call struct {
+// Service_TransferCardsOwnershipQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TransferCardsOwnershipQ'
+type Service_TransferCardsOwnershipQ_Call struct {
 	*mock.Call
 }
 
-// TransferCardsOwnership is a helper method to define mock.On call
+// TransferCardsOwnershipQ is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
 //   - attacker string
 //   - defender string
-func (_e *Service_Expecter) TransferCardsOwnership(_a0 interface{}, querier interface{}, attacker interface{}, defender interface{}) *Service_TransferCardsOwnership_Call {
-	return &Service_TransferCardsOwnership_Call{Call: _e.mock.On("TransferCardsOwnership", _a0, querier, attacker, defender)}
+func (_e *Service_Expecter) TransferCardsOwnershipQ(_a0 interface{}, querier interface{}, attacker interface{}, defender interface{}) *Service_TransferCardsOwnershipQ_Call {
+	return &Service_TransferCardsOwnershipQ_Call{Call: _e.mock.On("TransferCardsOwnershipQ", _a0, querier, attacker, defender)}
 }
 
-func (_c *Service_TransferCardsOwnership_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, attacker string, defender string)) *Service_TransferCardsOwnership_Call {
+func (_c *Service_TransferCardsOwnershipQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, attacker string, defender string)) *Service_TransferCardsOwnershipQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(string), args[3].(string))
 	})
 	return _c
 }
 
-func (_c *Service_TransferCardsOwnership_Call) Return(_a0 error) *Service_TransferCardsOwnership_Call {
+func (_c *Service_TransferCardsOwnershipQ_Call) Return(_a0 error) *Service_TransferCardsOwnershipQ_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Service_TransferCardsOwnership_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, string, string) error) *Service_TransferCardsOwnership_Call {
+func (_c *Service_TransferCardsOwnershipQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, string, string) error) *Service_TransferCardsOwnershipQ_Call {
 	_c.Call.Return(run)
 	return _c
 }

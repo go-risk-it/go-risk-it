@@ -12,13 +12,13 @@ import (
 )
 
 type Service interface {
-	CreateCards(ctx ctx.GameContext, querier db.Querier) error
+	CreateCardsQ(ctx ctx.GameContext, querier db.Querier) error
 	GetCardsForPlayer(ctx ctx.GameContext) ([]sqlc.GetCardsForPlayerRow, error)
 	GetCardsForPlayerQ(
 		ctx ctx.GameContext,
 		querier db.Querier,
 	) ([]sqlc.GetCardsForPlayerRow, error)
-	TransferCardsOwnership(
+	TransferCardsOwnershipQ(
 		ctx ctx.GameContext,
 		querier db.Querier,
 		attacker, defender string,
@@ -31,7 +31,7 @@ type ServiceImpl struct {
 	rng           rand.RNG
 }
 
-func (s *ServiceImpl) TransferCardsOwnership(
+func (s *ServiceImpl) TransferCardsOwnershipQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	attacker, defender string,
@@ -65,7 +65,7 @@ func New(
 	}
 }
 
-func (s *ServiceImpl) CreateCards(ctx ctx.GameContext, querier db.Querier) error {
+func (s *ServiceImpl) CreateCardsQ(ctx ctx.GameContext, querier db.Querier) error {
 	ctx.Log().Infow("creating cards")
 
 	cards, err := s.buildCards(ctx, querier)

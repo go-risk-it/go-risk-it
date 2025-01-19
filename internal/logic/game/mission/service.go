@@ -20,6 +20,7 @@ type Service interface {
 		players []sqlc.Player,
 	) error
 	IsMissionFulfilledQ(ctx ctx.GameContext, querier db.Querier) (bool, error)
+	ReassignMissionsQ(ctx ctx.GameContext, querier db.Querier, eliminatedUserID string) error
 }
 
 type ServiceImpl struct {
@@ -273,4 +274,25 @@ func (s *ServiceImpl) isEliminatePlayerMissionFulfilled(
 	}
 
 	return len(targetPlayerRegions) == 0, nil
+}
+
+func (s *ServiceImpl) ReassignMissionsQ(
+	ctx ctx.GameContext,
+	querier db.Querier,
+	eliminatedUserID string,
+) error {
+	if err := querier.ReassignMissions(ctx, sqlc.ReassignMissionsParams{
+		GameID:           ctx.GameID(),
+		EliminatedPlayer: eliminatedUserID,
+	}); err != nil {
+		return fmt.Errorf("failed to reassign missions: %w", err)
+	}
+
+	if err := querier.DeleteSpuriousEliminatePlayerMissions(ctx, ctx.GameID()); err != nil {
+		return fmt.Errorf("failed to delete spurious missions: %w", err)
+	}
+
+	ctx.Log().Infow("reassigned missions")
+
+	return nil
 }

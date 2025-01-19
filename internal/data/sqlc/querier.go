@@ -11,6 +11,7 @@ import (
 type Querier interface {
 	CreateMoveLog(ctx context.Context, arg CreateMoveLogParams) (MoveLog, error)
 	DecreaseDeployableTroops(ctx context.Context, arg DecreaseDeployableTroopsParams) error
+	DeleteSpuriousEliminatePlayerMissions(ctx context.Context, gameID int64) error
 	DrawCard(ctx context.Context, arg DrawCardParams) error
 	GetAvailableCards(ctx context.Context, id int64) ([]Card, error)
 	GetCardsForPlayer(ctx context.Context, arg GetCardsForPlayerParams) ([]GetCardsForPlayerRow, error)
@@ -44,6 +45,7 @@ type Querier interface {
 	InsertRegions(ctx context.Context, arg []InsertRegionsParams) (int64, error)
 	InsertTwoContinentsMission(ctx context.Context, arg InsertTwoContinentsMissionParams) error
 	InsertTwoContinentsPlusOneMission(ctx context.Context, arg InsertTwoContinentsPlusOneMissionParams) error
+	ReassignMissions(ctx context.Context, arg ReassignMissionsParams) error
 	SetGamePhase(ctx context.Context, arg SetGamePhaseParams) error
 	TransferCardsOwnership(ctx context.Context, arg TransferCardsOwnershipParams) error
 	UnlinkCardsFromOwner(ctx context.Context, cards []int64) error

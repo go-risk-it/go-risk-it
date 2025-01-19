@@ -102,7 +102,7 @@ func (s *ServiceImpl) CreateGameQ(
 		return -1, fmt.Errorf("failed to create regions: %w", err)
 	}
 
-	if err = s.cardService.CreateCards(ctx, querier); err != nil {
+	if err = s.cardService.CreateCardsQ(ctx, querier); err != nil {
 		return -1, fmt.Errorf("failed to create cards: %w", err)
 	}
 
