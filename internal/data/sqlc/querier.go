@@ -9,6 +9,7 @@ import (
 )
 
 type Querier interface {
+	AssignGameWinner(ctx context.Context, arg AssignGameWinnerParams) error
 	CreateMoveLog(ctx context.Context, arg CreateMoveLogParams) (MoveLog, error)
 	DecreaseDeployableTroops(ctx context.Context, arg DecreaseDeployableTroopsParams) error
 	DeleteSpuriousEliminatePlayerMissions(ctx context.Context, gameID int64) error

@@ -11,6 +11,22 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const assignGameWinner = `-- name: AssignGameWinner :exec
+UPDATE game
+SET winner_player_id = $1
+WHERE id = $2
+`
+
+type AssignGameWinnerParams struct {
+	WinnerPlayerID pgtype.Int8
+	GameID         int64
+}
+
+func (q *Queries) AssignGameWinner(ctx context.Context, arg AssignGameWinnerParams) error {
+	_, err := q.db.Exec(ctx, assignGameWinner, arg.WinnerPlayerID, arg.GameID)
+	return err
+}
+
 const createMoveLog = `-- name: CreateMoveLog :one
 INSERT INTO move_log (game_id,
                       player_id,
@@ -249,22 +265,28 @@ func (q *Queries) GetEliminatePlayerMission(ctx context.Context, missionID int64
 }
 
 const getGame = `-- name: GetGame :one
-SELECT game.id, phase.type AS current_phase, phase.turn
+SELECT game.id, phase.type AS current_phase, phase.turn, game.winner_player_id
 FROM game
          JOIN phase ON game.current_phase_id = phase.id
 WHERE game.id = $1
 `
 
 type GetGameRow struct {
-	ID           int64
-	CurrentPhase PhaseType
-	Turn         int64
+	ID             int64
+	CurrentPhase   PhaseType
+	Turn           int64
+	WinnerPlayerID pgtype.Int8
 }
 
 func (q *Queries) GetGame(ctx context.Context, id int64) (GetGameRow, error) {
 	row := q.db.QueryRow(ctx, getGame, id)
 	var i GetGameRow
-	err := row.Scan(&i.ID, &i.CurrentPhase, &i.Turn)
+	err := row.Scan(
+		&i.ID,
+		&i.CurrentPhase,
+		&i.Turn,
+		&i.WinnerPlayerID,
+	)
 	return i, err
 }
 

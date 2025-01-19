@@ -45,7 +45,7 @@ func input() ctx.GameContext {
 	return ctx.WithGameID(userContext, gameID)
 }
 
-func TestServiceImpl_IsTwoContinentsMissionFulfilled(t *testing.T) {
+func TestServiceImpl_IsTwoContinentsMissionAccomplished(t *testing.T) {
 	t.Parallel()
 
 	type inputType struct {
@@ -145,7 +145,7 @@ func TestServiceImpl_IsTwoContinentsMissionFulfilled(t *testing.T) {
 				GetContinentsControlledByPlayerQ(ctx, querier).
 				Return(test.controlledContinents, nil)
 
-			result, err := service.IsMissionFulfilledQ(ctx, querier)
+			result, err := service.IsMissionAccomplishedQ(ctx, querier)
 
 			require.NoError(t, err)
 			require.Equal(t, test.expectedResult, result)
@@ -153,7 +153,7 @@ func TestServiceImpl_IsTwoContinentsMissionFulfilled(t *testing.T) {
 	}
 }
 
-func TestServiceImpl_IsTwoContinentsPlusOneMissionFulfilled(t *testing.T) {
+func TestServiceImpl_IsTwoContinentsPlusOneMissionAccomplished(t *testing.T) {
 	t.Parallel()
 
 	type inputType struct {
@@ -273,7 +273,7 @@ func TestServiceImpl_IsTwoContinentsPlusOneMissionFulfilled(t *testing.T) {
 				GetContinentsControlledByPlayerQ(ctx, querier).
 				Return(test.controlledContinents, nil)
 
-			result, err := service.IsMissionFulfilledQ(ctx, querier)
+			result, err := service.IsMissionAccomplishedQ(ctx, querier)
 
 			require.NoError(t, err)
 			require.Equal(t, test.expectedResult, result)
@@ -281,7 +281,7 @@ func TestServiceImpl_IsTwoContinentsPlusOneMissionFulfilled(t *testing.T) {
 	}
 }
 
-func TestServiceImpl_IsEliminatePlayerMissionFulfilled(t *testing.T) {
+func TestServiceImpl_IsEliminatePlayerMissionAccomplished(t *testing.T) {
 	t.Parallel()
 
 	type inputType struct {
@@ -356,7 +356,7 @@ func TestServiceImpl_IsEliminatePlayerMissionFulfilled(t *testing.T) {
 				GetRegionsControlledByPlayerQ(ctx, querier, int64(2)).
 				Return(test.regionsControlledByTarget, nil)
 
-			result, err := service.IsMissionFulfilledQ(ctx, querier)
+			result, err := service.IsMissionAccomplishedQ(ctx, querier)
 
 			require.NoError(t, err)
 			require.Equal(t, test.expectedResult, result)

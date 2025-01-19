@@ -22,6 +22,53 @@ func (_m *Querier) EXPECT() *Querier_Expecter {
 	return &Querier_Expecter{mock: &_m.Mock}
 }
 
+// AssignGameWinner provides a mock function with given fields: ctx, arg
+func (_m *Querier) AssignGameWinner(ctx context.Context, arg sqlc.AssignGameWinnerParams) error {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AssignGameWinner")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.AssignGameWinnerParams) error); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Querier_AssignGameWinner_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AssignGameWinner'
+type Querier_AssignGameWinner_Call struct {
+	*mock.Call
+}
+
+// AssignGameWinner is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg sqlc.AssignGameWinnerParams
+func (_e *Querier_Expecter) AssignGameWinner(ctx interface{}, arg interface{}) *Querier_AssignGameWinner_Call {
+	return &Querier_AssignGameWinner_Call{Call: _e.mock.On("AssignGameWinner", ctx, arg)}
+}
+
+func (_c *Querier_AssignGameWinner_Call) Run(run func(ctx context.Context, arg sqlc.AssignGameWinnerParams)) *Querier_AssignGameWinner_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(sqlc.AssignGameWinnerParams))
+	})
+	return _c
+}
+
+func (_c *Querier_AssignGameWinner_Call) Return(_a0 error) *Querier_AssignGameWinner_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Querier_AssignGameWinner_Call) RunAndReturn(run func(context.Context, sqlc.AssignGameWinnerParams) error) *Querier_AssignGameWinner_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CreateMoveLog provides a mock function with given fields: ctx, arg
 func (_m *Querier) CreateMoveLog(ctx context.Context, arg sqlc.CreateMoveLogParams) (sqlc.MoveLog, error) {
 	ret := _m.Called(ctx, arg)
