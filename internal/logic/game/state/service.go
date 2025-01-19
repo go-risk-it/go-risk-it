@@ -9,9 +9,10 @@ import (
 )
 
 type Game struct {
-	ID    int64
-	Turn  int64
-	Phase sqlc.PhaseType
+	ID           int64
+	Turn         int64
+	Phase        sqlc.PhaseType
+	WinnerUserID string
 }
 
 type Service interface {
@@ -45,9 +46,15 @@ func (s *ServiceImpl) GetGameStateQ(ctx ctx.GameContext, querier db.Querier) (*G
 		return nil, fmt.Errorf("failed to get game: %w", err)
 	}
 
+	winnerUserID := ""
+	if game.WinnerUserID.Valid {
+		winnerUserID = game.WinnerUserID.String
+	}
+
 	return &Game{
-		ID:    game.ID,
-		Turn:  game.Turn,
-		Phase: game.CurrentPhase,
+		ID:           game.ID,
+		Turn:         game.Turn,
+		Phase:        game.CurrentPhase,
+		WinnerUserID: winnerUserID,
 	}, nil
 }

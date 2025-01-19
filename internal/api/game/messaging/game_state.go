@@ -24,7 +24,8 @@ type Phase[T PhaseState] struct {
 }
 
 type GameState[T PhaseState] struct {
-	ID    int64    `json:"id"`
-	Turn  int64    `json:"turn"`
-	Phase Phase[T] `json:"phase"`
+	ID           int64    `json:"id"`
+	Turn         int64    `json:"turn"`
+	Phase        Phase[T] `json:"phase"`
+	WinnerUserID string   `json:"winnerUserId"`
 }

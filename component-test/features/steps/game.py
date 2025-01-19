@@ -37,3 +37,15 @@ def step_impl(context: RiskItContext, player: str, phase: str):
 
     assert_2xx(response)
     all_players_receive_all_state_updates(context)
+
+
+@then("there is no winner yet")
+def step_impl(context: RiskItContext):
+    assert context.game_state.winnerUserId == "", \
+        f"Expected no winner, but got {context.game_state.winnerUserId}"
+
+
+@then("the winner is {player}")
+def step_impl(context: RiskItContext, player: str):
+    assert context.game_state.winnerUserId == context.players[player].user.id, \
+        f"Expected {player} to be the winner, but got {context.game_state.winnerUserId}"

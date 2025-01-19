@@ -74,6 +74,7 @@ func (c *PhaseControllerImpl) GetDeployPhaseState(
 				DeployableTroops: deployableTroops,
 			},
 		},
+		WinnerUserID: gameState.WinnerUserID,
 	}, nil
 }
 
@@ -111,6 +112,7 @@ func (c *PhaseControllerImpl) GetConquerPhaseState(
 				MinTroopsToMove:   conquerPhase.MinimumTroops,
 			},
 		},
+		WinnerUserID: gameState.WinnerUserID,
 	}, nil
 }
 
@@ -146,5 +148,6 @@ func (c *PhaseControllerImpl) getEmptyPhaseState(
 			Type:  phaseType,
 			State: messaging.EmptyState{},
 		},
+		WinnerUserID: game.WinnerUserID,
 	}
 }

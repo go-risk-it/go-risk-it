@@ -265,17 +265,18 @@ func (q *Queries) GetEliminatePlayerMission(ctx context.Context, missionID int64
 }
 
 const getGame = `-- name: GetGame :one
-SELECT game.id, phase.type AS current_phase, phase.turn, game.winner_player_id
+SELECT game.id, phase.type AS current_phase, phase.turn, winner_player.user_id AS winner_user_id
 FROM game
          JOIN phase ON game.current_phase_id = phase.id
+         LEFT JOIN player winner_player ON game.winner_player_id = winner_player.id
 WHERE game.id = $1
 `
 
 type GetGameRow struct {
-	ID             int64
-	CurrentPhase   PhaseType
-	Turn           int64
-	WinnerPlayerID pgtype.Int8
+	ID           int64
+	CurrentPhase PhaseType
+	Turn         int64
+	WinnerUserID pgtype.Text
 }
 
 func (q *Queries) GetGame(ctx context.Context, id int64) (GetGameRow, error) {
@@ -285,7 +286,7 @@ func (q *Queries) GetGame(ctx context.Context, id int64) (GetGameRow, error) {
 		&i.ID,
 		&i.CurrentPhase,
 		&i.Turn,
-		&i.WinnerPlayerID,
+		&i.WinnerUserID,
 	)
 	return i, err
 }

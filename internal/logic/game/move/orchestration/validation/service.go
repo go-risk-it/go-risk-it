@@ -28,6 +28,10 @@ func New(playerService player.Service) *ServiceImpl {
 func (s *ServiceImpl) ValidateQ(ctx ctx.GameContext, querier db.Querier, game *state.Game) error {
 	ctx.Log().Infow("performing generic move validation")
 
+	if game.WinnerUserID != "" {
+		return errors.New("game is already over")
+	}
+
 	players, err := s.playerService.GetPlayersQ(ctx, querier)
 	if err != nil {
 		return fmt.Errorf("failed to get players: %w", err)

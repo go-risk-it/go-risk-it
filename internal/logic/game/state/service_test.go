@@ -8,6 +8,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -34,6 +35,10 @@ func TestServiceImpl_GetGameState(t *testing.T) {
 		ID:           gameID,
 		CurrentPhase: sqlc.PhaseTypeATTACK,
 		Turn:         3,
+		WinnerUserID: pgtype.Text{
+			Valid:  false,
+			String: "",
+		},
 	}, nil)
 
 	// Call the method under test
@@ -44,4 +49,5 @@ func TestServiceImpl_GetGameState(t *testing.T) {
 
 	// Verify that the expected methods were called
 	require.Equal(t, gameID, result.ID)
+	require.Equal(t, "", result.WinnerUserID)
 }
