@@ -9,8 +9,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/board"
-	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/card"
-	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/mission"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/move/attack/dice"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/phase"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
@@ -29,17 +27,13 @@ func setup(t *testing.T) (
 	t.Helper()
 	querier := db.NewQuerier(t)
 	boardService := board.NewService(t)
-	cardService := card.NewService(t)
 	diceService := dice.NewService(t)
-	missionService := mission.NewService(t)
 	phaseService := phase.NewService(t)
 	playerService := player.NewService(t)
 	regionService := region.NewService(t)
 	service := attack.NewService(
 		boardService,
-		cardService,
 		diceService,
-		missionService,
 		phaseService,
 		playerService,
 		regionService,

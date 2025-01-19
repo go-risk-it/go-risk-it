@@ -44,7 +44,7 @@ type Service interface {
 	UpdateRegionOwnerQ(
 		ctx ctx.GameContext,
 		querier db.Querier,
-		region *sqlc.GetRegionsByGameRow) error
+		region *sqlc.GetRegionsByGameRow) (int64, error)
 }
 type ServiceImpl struct {
 	querier           db.Querier
@@ -224,19 +224,19 @@ func (s *ServiceImpl) UpdateRegionOwnerQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	region *sqlc.GetRegionsByGameRow,
-) error {
+) (int64, error) {
 	ctx.Log().Infow("updating region owner", "region", region.ExternalReference)
 
-	err := querier.UpdateRegionOwner(ctx, sqlc.UpdateRegionOwnerParams{
-		UserID: ctx.UserID(),
-		GameID: ctx.GameID(),
-		ID:     region.ID,
+	oldOwnerPlayerID, err := querier.UpdateRegionOwner(ctx, sqlc.UpdateRegionOwnerParams{
+		NewOwnerUserID:    ctx.UserID(),
+		GameID:            ctx.GameID(),
+		ConqueredRegionID: region.ID,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to update region owner: %w", err)
+		return -1, fmt.Errorf("failed to update region owner: %w", err)
 	}
 
 	ctx.Log().Infow("updated region owner", "region", region.ExternalReference)
 
-	return nil
+	return oldOwnerPlayerID, nil
 }

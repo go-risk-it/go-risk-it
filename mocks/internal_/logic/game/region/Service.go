@@ -370,21 +370,31 @@ func (_c *Service_GetRegionsQ_Call) RunAndReturn(run func(ctx.GameContext, db.Qu
 }
 
 // UpdateRegionOwnerQ provides a mock function with given fields: _a0, querier, _a2
-func (_m *Service) UpdateRegionOwnerQ(_a0 ctx.GameContext, querier db.Querier, _a2 *sqlc.GetRegionsByGameRow) error {
+func (_m *Service) UpdateRegionOwnerQ(_a0 ctx.GameContext, querier db.Querier, _a2 *sqlc.GetRegionsByGameRow) (int64, error) {
 	ret := _m.Called(_a0, querier, _a2)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateRegionOwnerQ")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, *sqlc.GetRegionsByGameRow) error); ok {
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, *sqlc.GetRegionsByGameRow) (int64, error)); ok {
+		return rf(_a0, querier, _a2)
+	}
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, *sqlc.GetRegionsByGameRow) int64); ok {
 		r0 = rf(_a0, querier, _a2)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(int64)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(ctx.GameContext, db.Querier, *sqlc.GetRegionsByGameRow) error); ok {
+		r1 = rf(_a0, querier, _a2)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Service_UpdateRegionOwnerQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateRegionOwnerQ'
@@ -407,12 +417,12 @@ func (_c *Service_UpdateRegionOwnerQ_Call) Run(run func(_a0 ctx.GameContext, que
 	return _c
 }
 
-func (_c *Service_UpdateRegionOwnerQ_Call) Return(_a0 error) *Service_UpdateRegionOwnerQ_Call {
-	_c.Call.Return(_a0)
+func (_c *Service_UpdateRegionOwnerQ_Call) Return(_a0 int64, _a1 error) *Service_UpdateRegionOwnerQ_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_UpdateRegionOwnerQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, *sqlc.GetRegionsByGameRow) error) *Service_UpdateRegionOwnerQ_Call {
+func (_c *Service_UpdateRegionOwnerQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, *sqlc.GetRegionsByGameRow) (int64, error)) *Service_UpdateRegionOwnerQ_Call {
 	_c.Call.Return(run)
 	return _c
 }

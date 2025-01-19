@@ -21,7 +21,7 @@ type Service interface {
 		players []sqlc.Player,
 	) error
 	IsMissionAccomplishedQ(ctx ctx.GameContext, querier db.Querier) (bool, error)
-	ReassignMissionsQ(ctx ctx.GameContext, querier db.Querier, eliminatedUserID string) error
+	ReassignMissionsQ(ctx ctx.GameContext, querier db.Querier, eliminatedPlayerID int64) error
 }
 
 type ServiceImpl struct {
@@ -312,11 +312,12 @@ func (s *ServiceImpl) isEliminatePlayerMissionAccomplished(
 func (s *ServiceImpl) ReassignMissionsQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
-	eliminatedUserID string,
+	eliminatedPlayerID int64,
 ) error {
 	if err := querier.ReassignMissions(ctx, sqlc.ReassignMissionsParams{
-		GameID:           ctx.GameID(),
-		EliminatedPlayer: eliminatedUserID,
+		GameID:             ctx.GameID(),
+		UserID:             ctx.UserID(),
+		EliminatedPlayerID: eliminatedPlayerID,
 	}); err != nil {
 		return fmt.Errorf("failed to reassign missions: %w", err)
 	}

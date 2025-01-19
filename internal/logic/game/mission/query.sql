@@ -44,9 +44,9 @@ WHERE id in (SELECT m.id
              FROM mission m
                       JOIN player p on m.player_id = p.id
                       JOIN eliminate_player_mission em on m.id = em.mission_id
-                      JOIN player eliminated_player on em.target_player_id = eliminated_player.id
              WHERE p.game_id = $1
-               AND eliminated_player.user_id = sqlc.arg(eliminated_player));
+               AND em.target_player_id = sqlc.arg(eliminated_player_id)
+               AND p.user_id <> $2);
 
 -- name: DeleteSpuriousEliminatePlayerMissions :exec
 DELETE
