@@ -6,6 +6,8 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/card"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
@@ -25,23 +27,29 @@ type Service interface {
 }
 
 type ServiceImpl struct {
-	querier       db.Querier
-	attackService attack.Service
-	phaseService  phase.Service
-	regionService region.Service
+	querier        db.Querier
+	attackService  attack.Service
+	cardService    card.Service
+	missionService mission.Service
+	phaseService   phase.Service
+	regionService  region.Service
 }
 
 func NewService(
 	querier db.Querier,
 	attackService attack.Service,
+	cardService card.Service,
+	missionService mission.Service,
 	phaseService phase.Service,
 	regionService region.Service,
 ) *ServiceImpl {
 	return &ServiceImpl{
-		querier:       querier,
-		attackService: attackService,
-		phaseService:  phaseService,
-		regionService: regionService,
+		querier:        querier,
+		attackService:  attackService,
+		cardService:    cardService,
+		missionService: missionService,
+		phaseService:   phaseService,
+		regionService:  regionService,
 	}
 }
 

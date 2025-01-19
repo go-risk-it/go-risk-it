@@ -900,63 +900,6 @@ func (_c *Querier_GetPlayerByUserId_Call) RunAndReturn(run func(context.Context,
 	return _c
 }
 
-// GetPlayerRegionsFromRegion provides a mock function with given fields: ctx, arg
-func (_m *Querier) GetPlayerRegionsFromRegion(ctx context.Context, arg sqlc.GetPlayerRegionsFromRegionParams) (sqlc.GetPlayerRegionsFromRegionRow, error) {
-	ret := _m.Called(ctx, arg)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetPlayerRegionsFromRegion")
-	}
-
-	var r0 sqlc.GetPlayerRegionsFromRegionRow
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, sqlc.GetPlayerRegionsFromRegionParams) (sqlc.GetPlayerRegionsFromRegionRow, error)); ok {
-		return rf(ctx, arg)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, sqlc.GetPlayerRegionsFromRegionParams) sqlc.GetPlayerRegionsFromRegionRow); ok {
-		r0 = rf(ctx, arg)
-	} else {
-		r0 = ret.Get(0).(sqlc.GetPlayerRegionsFromRegionRow)
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, sqlc.GetPlayerRegionsFromRegionParams) error); ok {
-		r1 = rf(ctx, arg)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// Querier_GetPlayerRegionsFromRegion_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetPlayerRegionsFromRegion'
-type Querier_GetPlayerRegionsFromRegion_Call struct {
-	*mock.Call
-}
-
-// GetPlayerRegionsFromRegion is a helper method to define mock.On call
-//   - ctx context.Context
-//   - arg sqlc.GetPlayerRegionsFromRegionParams
-func (_e *Querier_Expecter) GetPlayerRegionsFromRegion(ctx interface{}, arg interface{}) *Querier_GetPlayerRegionsFromRegion_Call {
-	return &Querier_GetPlayerRegionsFromRegion_Call{Call: _e.mock.On("GetPlayerRegionsFromRegion", ctx, arg)}
-}
-
-func (_c *Querier_GetPlayerRegionsFromRegion_Call) Run(run func(ctx context.Context, arg sqlc.GetPlayerRegionsFromRegionParams)) *Querier_GetPlayerRegionsFromRegion_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(sqlc.GetPlayerRegionsFromRegionParams))
-	})
-	return _c
-}
-
-func (_c *Querier_GetPlayerRegionsFromRegion_Call) Return(_a0 sqlc.GetPlayerRegionsFromRegionRow, _a1 error) *Querier_GetPlayerRegionsFromRegion_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *Querier_GetPlayerRegionsFromRegion_Call) RunAndReturn(run func(context.Context, sqlc.GetPlayerRegionsFromRegionParams) (sqlc.GetPlayerRegionsFromRegionRow, error)) *Querier_GetPlayerRegionsFromRegion_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // GetPlayersByGame provides a mock function with given fields: ctx, gameID
 func (_m *Querier) GetPlayersByGame(ctx context.Context, gameID int64) ([]sqlc.Player, error) {
 	ret := _m.Called(ctx, gameID)
@@ -2243,21 +2186,31 @@ func (_c *Querier_UnlinkCardsFromOwner_Call) RunAndReturn(run func(context.Conte
 }
 
 // UpdateRegionOwner provides a mock function with given fields: ctx, arg
-func (_m *Querier) UpdateRegionOwner(ctx context.Context, arg sqlc.UpdateRegionOwnerParams) error {
+func (_m *Querier) UpdateRegionOwner(ctx context.Context, arg sqlc.UpdateRegionOwnerParams) (int64, error) {
 	ret := _m.Called(ctx, arg)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateRegionOwner")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, sqlc.UpdateRegionOwnerParams) error); ok {
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.UpdateRegionOwnerParams) (int64, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.UpdateRegionOwnerParams) int64); ok {
 		r0 = rf(ctx, arg)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(int64)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, sqlc.UpdateRegionOwnerParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Querier_UpdateRegionOwner_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateRegionOwner'
@@ -2279,12 +2232,12 @@ func (_c *Querier_UpdateRegionOwner_Call) Run(run func(ctx context.Context, arg 
 	return _c
 }
 
-func (_c *Querier_UpdateRegionOwner_Call) Return(_a0 error) *Querier_UpdateRegionOwner_Call {
-	_c.Call.Return(_a0)
+func (_c *Querier_UpdateRegionOwner_Call) Return(_a0 int64, _a1 error) *Querier_UpdateRegionOwner_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_UpdateRegionOwner_Call) RunAndReturn(run func(context.Context, sqlc.UpdateRegionOwnerParams) error) *Querier_UpdateRegionOwner_Call {
+func (_c *Querier_UpdateRegionOwner_Call) RunAndReturn(run func(context.Context, sqlc.UpdateRegionOwnerParams) (int64, error)) *Querier_UpdateRegionOwner_Call {
 	_c.Call.Return(run)
 	return _c
 }

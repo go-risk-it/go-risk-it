@@ -402,33 +402,6 @@ func (q *Queries) GetPlayerByUserId(ctx context.Context, userID string) (Player,
 	return i, err
 }
 
-const getPlayerRegionsFromRegion = `-- name: GetPlayerRegionsFromRegion :one
-SELECT p.user_id, COUNT(r.id) as region_count
-FROM player p
-         JOIN region r on r.player_id = p.id
-         JOIN region this_region on this_region.player_id = p.id
-WHERE p.game_id = $1
-  AND this_region.external_reference = $2
-GROUP BY p.user_id
-`
-
-type GetPlayerRegionsFromRegionParams struct {
-	GameID            int64
-	ExternalReference string
-}
-
-type GetPlayerRegionsFromRegionRow struct {
-	UserID      string
-	RegionCount int64
-}
-
-func (q *Queries) GetPlayerRegionsFromRegion(ctx context.Context, arg GetPlayerRegionsFromRegionParams) (GetPlayerRegionsFromRegionRow, error) {
-	row := q.db.QueryRow(ctx, getPlayerRegionsFromRegion, arg.GameID, arg.ExternalReference)
-	var i GetPlayerRegionsFromRegionRow
-	err := row.Scan(&i.UserID, &i.RegionCount)
-	return i, err
-}
-
 const getPlayersByGame = `-- name: GetPlayersByGame :many
 SELECT id, game_id, name, user_id, turn_index
 FROM player
@@ -847,18 +820,19 @@ WHERE id in (SELECT m.id
              FROM mission m
                       JOIN player p on m.player_id = p.id
                       JOIN eliminate_player_mission em on m.id = em.mission_id
-                      JOIN player eliminated_player on em.target_player_id = eliminated_player.id
              WHERE p.game_id = $1
-               AND eliminated_player.user_id = $2)
+               AND em.target_player_id = $3
+               AND p.user_id <> $2)
 `
 
 type ReassignMissionsParams struct {
-	GameID           int64
-	EliminatedPlayer string
+	GameID             int64
+	UserID             string
+	EliminatedPlayerID int64
 }
 
 func (q *Queries) ReassignMissions(ctx context.Context, arg ReassignMissionsParams) error {
-	_, err := q.db.Exec(ctx, reassignMissions, arg.GameID, arg.EliminatedPlayer)
+	_, err := q.db.Exec(ctx, reassignMissions, arg.GameID, arg.UserID, arg.EliminatedPlayerID)
 	return err
 }
 
@@ -881,13 +855,13 @@ func (q *Queries) SetGamePhase(ctx context.Context, arg SetGamePhaseParams) erro
 const transferCardsOwnership = `-- name: TransferCardsOwnership :exec
 UPDATE card
 SET owner_id = (SELECT id from player WHERE player.user_id = $2::text AND player.game_id = $1)
-WHERE owner_id = (SELECT id from player WHERE player.user_id = $3::text AND player.game_id = $1)
+WHERE owner_id = $3
 `
 
 type TransferCardsOwnershipParams struct {
 	GameID int64
 	To     string
-	From   string
+	From   pgtype.Int8
 }
 
 func (q *Queries) TransferCardsOwnership(ctx context.Context, arg TransferCardsOwnershipParams) error {
@@ -906,19 +880,25 @@ func (q *Queries) UnlinkCardsFromOwner(ctx context.Context, cards []int64) error
 	return err
 }
 
-const updateRegionOwner = `-- name: UpdateRegionOwner :exec
+const updateRegionOwner = `-- name: UpdateRegionOwner :one
+WITH old_value AS (
+    SELECT player_id FROM region WHERE id = $3
+)
 UPDATE region
-SET player_id = (SELECT player.id FROM player WHERE user_id = $1 AND game_id = $2)
+SET player_id = (SELECT player.id FROM player WHERE user_id = $2 AND game_id = $1)
 WHERE region.id = $3
+RETURNING (SELECT player_id FROM old_value) AS old_player_id
 `
 
 type UpdateRegionOwnerParams struct {
-	UserID string
-	GameID int64
-	ID     int64
+	GameID            int64
+	NewOwnerUserID    string
+	ConqueredRegionID int64
 }
 
-func (q *Queries) UpdateRegionOwner(ctx context.Context, arg UpdateRegionOwnerParams) error {
-	_, err := q.db.Exec(ctx, updateRegionOwner, arg.UserID, arg.GameID, arg.ID)
-	return err
+func (q *Queries) UpdateRegionOwner(ctx context.Context, arg UpdateRegionOwnerParams) (int64, error) {
+	row := q.db.QueryRow(ctx, updateRegionOwner, arg.GameID, arg.NewOwnerUserID, arg.ConqueredRegionID)
+	var old_player_id int64
+	err := row.Scan(&old_player_id)
+	return old_player_id, err
 }

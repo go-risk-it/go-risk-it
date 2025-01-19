@@ -18,11 +18,7 @@ type Service interface {
 		ctx ctx.GameContext,
 		querier db.Querier,
 	) ([]sqlc.GetCardsForPlayerRow, error)
-	TransferCardsOwnershipQ(
-		ctx ctx.GameContext,
-		querier db.Querier,
-		attacker, defender string,
-	) error
+	TransferCardsOwnershipQ(ctx ctx.GameContext, querier db.Querier, defendingPlayerID int64) error
 }
 
 type ServiceImpl struct {
@@ -34,19 +30,22 @@ type ServiceImpl struct {
 func (s *ServiceImpl) TransferCardsOwnershipQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
-	attacker, defender string,
+	defendingPlayerID int64,
 ) error {
-	ctx.Log().Infow("transferring cards ownership", "from", defender, "to", attacker)
+	ctx.Log().Infow("transferring cards ownership")
 
 	if err := querier.TransferCardsOwnership(ctx, sqlc.TransferCardsOwnershipParams{
 		GameID: ctx.GameID(),
-		From:   defender,
-		To:     attacker,
+		From: pgtype.Int8{
+			Int64: defendingPlayerID,
+			Valid: true,
+		},
+		To: ctx.UserID(),
 	}); err != nil {
 		return fmt.Errorf("unable defender transfer cards ownership: %w", err)
 	}
 
-	ctx.Log().Infow("transferred cards ownership", "from", defender, "to", attacker)
+	ctx.Log().Infow("transferred cards ownership")
 
 	return nil
 }

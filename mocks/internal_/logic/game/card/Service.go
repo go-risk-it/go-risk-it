@@ -188,17 +188,17 @@ func (_c *Service_GetCardsForPlayerQ_Call) RunAndReturn(run func(ctx.GameContext
 	return _c
 }
 
-// TransferCardsOwnershipQ provides a mock function with given fields: _a0, querier, attacker, defender
-func (_m *Service) TransferCardsOwnershipQ(_a0 ctx.GameContext, querier db.Querier, attacker string, defender string) error {
-	ret := _m.Called(_a0, querier, attacker, defender)
+// TransferCardsOwnershipQ provides a mock function with given fields: _a0, querier, defendingPlayerID
+func (_m *Service) TransferCardsOwnershipQ(_a0 ctx.GameContext, querier db.Querier, defendingPlayerID int64) error {
+	ret := _m.Called(_a0, querier, defendingPlayerID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for TransferCardsOwnershipQ")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, string, string) error); ok {
-		r0 = rf(_a0, querier, attacker, defender)
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, int64) error); ok {
+		r0 = rf(_a0, querier, defendingPlayerID)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -214,15 +214,14 @@ type Service_TransferCardsOwnershipQ_Call struct {
 // TransferCardsOwnershipQ is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
-//   - attacker string
-//   - defender string
-func (_e *Service_Expecter) TransferCardsOwnershipQ(_a0 interface{}, querier interface{}, attacker interface{}, defender interface{}) *Service_TransferCardsOwnershipQ_Call {
-	return &Service_TransferCardsOwnershipQ_Call{Call: _e.mock.On("TransferCardsOwnershipQ", _a0, querier, attacker, defender)}
+//   - defendingPlayerID int64
+func (_e *Service_Expecter) TransferCardsOwnershipQ(_a0 interface{}, querier interface{}, defendingPlayerID interface{}) *Service_TransferCardsOwnershipQ_Call {
+	return &Service_TransferCardsOwnershipQ_Call{Call: _e.mock.On("TransferCardsOwnershipQ", _a0, querier, defendingPlayerID)}
 }
 
-func (_c *Service_TransferCardsOwnershipQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, attacker string, defender string)) *Service_TransferCardsOwnershipQ_Call {
+func (_c *Service_TransferCardsOwnershipQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, defendingPlayerID int64)) *Service_TransferCardsOwnershipQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(string), args[3].(string))
+		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(int64))
 	})
 	return _c
 }
@@ -232,7 +231,7 @@ func (_c *Service_TransferCardsOwnershipQ_Call) Return(_a0 error) *Service_Trans
 	return _c
 }
 
-func (_c *Service_TransferCardsOwnershipQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, string, string) error) *Service_TransferCardsOwnershipQ_Call {
+func (_c *Service_TransferCardsOwnershipQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, int64) error) *Service_TransferCardsOwnershipQ_Call {
 	_c.Call.Return(run)
 	return _c
 }

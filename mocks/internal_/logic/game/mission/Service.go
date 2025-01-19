@@ -129,17 +129,17 @@ func (_c *Service_IsMissionAccomplishedQ_Call) RunAndReturn(run func(ctx.GameCon
 	return _c
 }
 
-// ReassignMissionsQ provides a mock function with given fields: _a0, querier, eliminatedUserID
-func (_m *Service) ReassignMissionsQ(_a0 ctx.GameContext, querier db.Querier, eliminatedUserID string) error {
-	ret := _m.Called(_a0, querier, eliminatedUserID)
+// ReassignMissionsQ provides a mock function with given fields: _a0, querier, eliminatedPlayerID
+func (_m *Service) ReassignMissionsQ(_a0 ctx.GameContext, querier db.Querier, eliminatedPlayerID int64) error {
+	ret := _m.Called(_a0, querier, eliminatedPlayerID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ReassignMissionsQ")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, string) error); ok {
-		r0 = rf(_a0, querier, eliminatedUserID)
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, int64) error); ok {
+		r0 = rf(_a0, querier, eliminatedPlayerID)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -155,14 +155,14 @@ type Service_ReassignMissionsQ_Call struct {
 // ReassignMissionsQ is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
-//   - eliminatedUserID string
-func (_e *Service_Expecter) ReassignMissionsQ(_a0 interface{}, querier interface{}, eliminatedUserID interface{}) *Service_ReassignMissionsQ_Call {
-	return &Service_ReassignMissionsQ_Call{Call: _e.mock.On("ReassignMissionsQ", _a0, querier, eliminatedUserID)}
+//   - eliminatedPlayerID int64
+func (_e *Service_Expecter) ReassignMissionsQ(_a0 interface{}, querier interface{}, eliminatedPlayerID interface{}) *Service_ReassignMissionsQ_Call {
+	return &Service_ReassignMissionsQ_Call{Call: _e.mock.On("ReassignMissionsQ", _a0, querier, eliminatedPlayerID)}
 }
 
-func (_c *Service_ReassignMissionsQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, eliminatedUserID string)) *Service_ReassignMissionsQ_Call {
+func (_c *Service_ReassignMissionsQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, eliminatedPlayerID int64)) *Service_ReassignMissionsQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(string))
+		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(int64))
 	})
 	return _c
 }
@@ -172,7 +172,7 @@ func (_c *Service_ReassignMissionsQ_Call) Return(_a0 error) *Service_ReassignMis
 	return _c
 }
 
-func (_c *Service_ReassignMissionsQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, string) error) *Service_ReassignMissionsQ_Call {
+func (_c *Service_ReassignMissionsQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, int64) error) *Service_ReassignMissionsQ_Call {
 	_c.Call.Return(run)
 	return _c
 }

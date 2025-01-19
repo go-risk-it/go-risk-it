@@ -14,4 +14,4 @@ WHERE g.id = $1
 -- name: TransferCardsOwnership :exec
 UPDATE card
 SET owner_id = (SELECT id from player WHERE player.user_id = sqlc.arg('to')::text AND player.game_id = $1)
-WHERE owner_id = (SELECT id from player WHERE player.user_id = sqlc.arg('from')::text AND player.game_id = $1);
+WHERE owner_id = sqlc.arg('from');

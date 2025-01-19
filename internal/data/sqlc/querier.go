@@ -25,7 +25,6 @@ type Querier interface {
 	GetMoveLogs(ctx context.Context, arg GetMoveLogsParams) ([]GetMoveLogsRow, error)
 	GetNextPlayer(ctx context.Context, gameID int64) (Player, error)
 	GetPlayerByUserId(ctx context.Context, userID string) (Player, error)
-	GetPlayerRegionsFromRegion(ctx context.Context, arg GetPlayerRegionsFromRegionParams) (GetPlayerRegionsFromRegionRow, error)
 	GetPlayersByGame(ctx context.Context, gameID int64) ([]Player, error)
 	GetPlayersState(ctx context.Context, gameID int64) ([]GetPlayersStateRow, error)
 	GetRegionsByGame(ctx context.Context, id int64) ([]GetRegionsByGameRow, error)
@@ -50,7 +49,7 @@ type Querier interface {
 	SetGamePhase(ctx context.Context, arg SetGamePhaseParams) error
 	TransferCardsOwnership(ctx context.Context, arg TransferCardsOwnershipParams) error
 	UnlinkCardsFromOwner(ctx context.Context, cards []int64) error
-	UpdateRegionOwner(ctx context.Context, arg UpdateRegionOwnerParams) error
+	UpdateRegionOwner(ctx context.Context, arg UpdateRegionOwnerParams) (int64, error)
 }
 
 var _ Querier = (*Queries)(nil)

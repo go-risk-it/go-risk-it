@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
+	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 )
 
 func (s *ServiceImpl) PerformQ(
@@ -38,13 +39,45 @@ func (s *ServiceImpl) PerformQ(
 		return nil, errors.New("source region does not have enough troops")
 	}
 
+	defeatedPlayerID, err := s.updateRegionTroops(ctx, querier, move, sourceRegion, targetRegion)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update region troops: %w", err)
+	}
+
+	isDefenderEliminated, err := s.isDefenderEliminated(ctx, querier, defeatedPlayerID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check if defender is eliminated: %w", err)
+	}
+
+	if isDefenderEliminated {
+		if err := s.handlePlayerEliminated(
+			ctx,
+			querier,
+			defeatedPlayerID,
+		); err != nil {
+			return nil, fmt.Errorf("unable to handle player eliminated: %w", err)
+		}
+	}
+
+	ctx.Log().Infow("conquer executed successfully")
+
+	return &MoveResult{}, nil
+}
+
+func (s *ServiceImpl) updateRegionTroops(
+	ctx ctx.GameContext,
+	querier db.Querier,
+	move Move,
+	sourceRegion *sqlc.GetRegionsByGameRow,
+	targetRegion *sqlc.GetRegionsByGameRow,
+) (int64, error) {
 	if err := s.regionService.UpdateTroopsInRegionQ(
 		ctx,
 		querier,
 		sourceRegion,
 		-move.Troops,
 	); err != nil {
-		return nil, fmt.Errorf("failed to decrease troops in source region: %w", err)
+		return 0, fmt.Errorf("failed to decrease troops in source region: %w", err)
 	}
 
 	if err := s.regionService.UpdateTroopsInRegionQ(
@@ -53,20 +86,58 @@ func (s *ServiceImpl) PerformQ(
 		targetRegion,
 		move.Troops,
 	); err != nil {
-		return nil, fmt.Errorf("failed to increase troops in target region: %w", err)
+		return 0, fmt.Errorf("failed to increase troops in target region: %w", err)
 	}
 
 	ctx.Log().Infow("troops updated successfully")
 
-	if err := s.regionService.UpdateRegionOwnerQ(
+	defeatedPlayerID, err := s.regionService.UpdateRegionOwnerQ(
 		ctx,
 		querier,
 		targetRegion,
-	); err != nil {
-		return nil, fmt.Errorf("failed to update region owner: %w", err)
+	)
+	if err != nil {
+		return 0, fmt.Errorf("failed to update region owner: %w", err)
 	}
 
-	ctx.Log().Infow("conquer executed successfully")
+	return defeatedPlayerID, nil
+}
 
-	return &MoveResult{}, nil
+func (s *ServiceImpl) isDefenderEliminated(
+	ctx ctx.GameContext,
+	querier db.Querier,
+	defeatedPlayerID int64,
+) (bool, error) {
+	defeatedPlayerRegions, err := s.regionService.GetRegionsControlledByPlayerQ(
+		ctx,
+		querier,
+		defeatedPlayerID,
+	)
+	if err != nil {
+		return false, fmt.Errorf("failed to get regions controlled by player: %w", err)
+	}
+
+	return len(defeatedPlayerRegions) == 0, nil
+}
+
+func (s *ServiceImpl) handlePlayerEliminated(
+	ctx ctx.GameContext,
+	querier db.Querier,
+	eliminatedPlayerID int64,
+) error {
+	ctx.Log().Infow("defending player has been eliminated", "defender", eliminatedPlayerID)
+
+	if err := s.cardService.TransferCardsOwnershipQ(ctx, querier, eliminatedPlayerID); err != nil {
+		return fmt.Errorf("unable to advance phase: %w", err)
+	}
+
+	if err := s.missionService.ReassignMissionsQ(
+		ctx,
+		querier,
+		eliminatedPlayerID,
+	); err != nil {
+		return fmt.Errorf("unable to advance phase: %w", err)
+	}
+
+	return nil
 }

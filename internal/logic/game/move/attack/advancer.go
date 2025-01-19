@@ -24,54 +24,7 @@ func (s *ServiceImpl) AdvanceQ(
 	}
 
 	if targetPhase == sqlc.PhaseTypeCONQUER {
-		defendingPlayerRegions, err := querier.GetPlayerRegionsFromRegion(
-			ctx,
-			sqlc.GetPlayerRegionsFromRegionParams{
-				GameID:            ctx.GameID(),
-				ExternalReference: performResult.DefendingRegionID,
-			},
-		)
-		if err != nil {
-			return fmt.Errorf("failed to get player regions: %w", err)
-		}
-
-		if defendingPlayerRegions.RegionCount == 1 {
-			if err := s.handlePlayerEliminated(
-				ctx,
-				querier,
-				defendingPlayerRegions.UserID); err != nil {
-				return fmt.Errorf("unable to handle player eliminated: %w", err)
-			}
-		}
-
 		return s.advanceToConquerPhase(ctx, querier, performResult, *phase)
-	}
-
-	return nil
-}
-
-func (s *ServiceImpl) handlePlayerEliminated(
-	ctx ctx.GameContext,
-	querier db.Querier,
-	eliminatedUserID string,
-) error {
-	ctx.Log().Infow("defending player has been eliminated", "defender", eliminatedUserID)
-
-	if err := s.cardService.TransferCardsOwnershipQ(
-		ctx,
-		querier,
-		ctx.UserID(),
-		eliminatedUserID,
-	); err != nil {
-		return fmt.Errorf("unable to advance phase: %w", err)
-	}
-
-	if err := s.missionService.ReassignMissionsQ(
-		ctx,
-		querier,
-		eliminatedUserID,
-	); err != nil {
-		return fmt.Errorf("unable to advance phase: %w", err)
 	}
 
 	return nil
