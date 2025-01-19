@@ -14,7 +14,7 @@ require (
 	github.com/knadh/koanf/providers/env v0.1.0
 	github.com/knadh/koanf/providers/file v0.1.0
 	github.com/knadh/koanf/v2 v2.1.1
-	github.com/lesismal/nbio v1.5.8
+	github.com/lesismal/nbio v1.6.0
 	github.com/maniartech/signals v1.2.0
 	github.com/stretchr/testify v1.10.0
 	github.com/testcontainers/testcontainers-go v0.34.0
@@ -57,7 +57,7 @@ require (
 	github.com/klauspost/compress v1.17.4 // indirect
 	github.com/knadh/koanf/maps v0.1.1 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
-	github.com/lesismal/llib v1.1.13 // indirect
+	github.com/lesismal/llib v1.2.0 // indirect
 	github.com/lib/pq v1.10.9 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
