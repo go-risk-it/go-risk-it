@@ -75,6 +75,21 @@ func (q *Queries) DecreaseDeployableTroops(ctx context.Context, arg DecreaseDepl
 	return err
 }
 
+const deleteSpuriousEliminatePlayerMissions = `-- name: DeleteSpuriousEliminatePlayerMissions :exec
+DELETE
+FROM eliminate_player_mission
+WHERE mission_id in (SELECT m.id
+                     FROM mission m
+                              JOIN player p on m.player_id = p.id
+                     WHERE p.game_id = $1
+                       AND m.type = 'TWENTY_FOUR_TERRITORIES')
+`
+
+func (q *Queries) DeleteSpuriousEliminatePlayerMissions(ctx context.Context, gameID int64) error {
+	_, err := q.db.Exec(ctx, deleteSpuriousEliminatePlayerMissions, gameID)
+	return err
+}
+
 const drawCard = `-- name: DrawCard :exec
 update card
 set owner_id = $2
@@ -799,6 +814,28 @@ type InsertTwoContinentsPlusOneMissionParams struct {
 
 func (q *Queries) InsertTwoContinentsPlusOneMission(ctx context.Context, arg InsertTwoContinentsPlusOneMissionParams) error {
 	_, err := q.db.Exec(ctx, insertTwoContinentsPlusOneMission, arg.MissionID, arg.Continent1, arg.Continent2)
+	return err
+}
+
+const reassignMissions = `-- name: ReassignMissions :exec
+UPDATE mission
+SET type = 'TWENTY_FOUR_TERRITORIES'
+WHERE id in (SELECT m.id
+             FROM mission m
+                      JOIN player p on m.player_id = p.id
+                      JOIN eliminate_player_mission em on m.id = em.mission_id
+                      JOIN player eliminated_player on em.target_player_id = eliminated_player.id
+             WHERE p.game_id = $1
+               AND eliminated_player.user_id = $2)
+`
+
+type ReassignMissionsParams struct {
+	GameID           int64
+	EliminatedPlayer string
+}
+
+func (q *Queries) ReassignMissions(ctx context.Context, arg ReassignMissionsParams) error {
+	_, err := q.db.Exec(ctx, reassignMissions, arg.GameID, arg.EliminatedPlayer)
 	return err
 }
 

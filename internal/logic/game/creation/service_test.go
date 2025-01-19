@@ -98,7 +98,7 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 	cardServiceMock := card.NewService(t)
 	cardServiceMock.
 		EXPECT().
-		CreateCards(gameContext, mockQuerier).
+		CreateCardsQ(gameContext, mockQuerier).
 		Return(nil)
 
 	// Initialize the state

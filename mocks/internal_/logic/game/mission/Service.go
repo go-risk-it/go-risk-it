@@ -129,6 +129,54 @@ func (_c *Service_IsMissionFulfilledQ_Call) RunAndReturn(run func(ctx.GameContex
 	return _c
 }
 
+// ReassignMissionsQ provides a mock function with given fields: _a0, querier, eliminatedUserID
+func (_m *Service) ReassignMissionsQ(_a0 ctx.GameContext, querier db.Querier, eliminatedUserID string) error {
+	ret := _m.Called(_a0, querier, eliminatedUserID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ReassignMissionsQ")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, string) error); ok {
+		r0 = rf(_a0, querier, eliminatedUserID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Service_ReassignMissionsQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ReassignMissionsQ'
+type Service_ReassignMissionsQ_Call struct {
+	*mock.Call
+}
+
+// ReassignMissionsQ is a helper method to define mock.On call
+//   - _a0 ctx.GameContext
+//   - querier db.Querier
+//   - eliminatedUserID string
+func (_e *Service_Expecter) ReassignMissionsQ(_a0 interface{}, querier interface{}, eliminatedUserID interface{}) *Service_ReassignMissionsQ_Call {
+	return &Service_ReassignMissionsQ_Call{Call: _e.mock.On("ReassignMissionsQ", _a0, querier, eliminatedUserID)}
+}
+
+func (_c *Service_ReassignMissionsQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, eliminatedUserID string)) *Service_ReassignMissionsQ_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *Service_ReassignMissionsQ_Call) Return(_a0 error) *Service_ReassignMissionsQ_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Service_ReassignMissionsQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, string) error) *Service_ReassignMissionsQ_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewService creates a new instance of Service. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewService(t interface {
