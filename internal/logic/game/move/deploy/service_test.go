@@ -97,7 +97,7 @@ func TestServiceImpl_DeployShouldFail(t *testing.T) {
 			"When amount of troops declared is wrong",
 			"Giovanni",
 			10,
-			"region has different number of troops than declared",
+			"must deploy at least 1 troop",
 		},
 	}
 	for _, test := range tests {

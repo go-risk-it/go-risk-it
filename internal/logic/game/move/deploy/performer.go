@@ -31,6 +31,10 @@ func (s *ServiceImpl) PerformQ(
 		return nil, fmt.Errorf("failed to get region: %w", err)
 	}
 
+	if troops < 1 {
+		return nil, errors.New("must deploy at least 1 troop")
+	}
+
 	if thisRegion.UserID != ctx.UserID() {
 		return nil, errors.New("region is not owned by player")
 	}
