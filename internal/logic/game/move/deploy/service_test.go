@@ -10,29 +10,23 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/phase"
-	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region"
-	gamestate "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/state"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
 
 func setup(t *testing.T) (
 	*db.Querier,
-	*player.Service,
-	*gamestate.Service,
 	*region.Service,
 	*deploy.ServiceImpl,
 ) {
 	t.Helper()
 	querier := db.NewQuerier(t)
-	playerService := player.NewService(t)
-	gameService := gamestate.NewService(t)
 	phaseService := phase.NewService(t)
 	regionService := region.NewService(t)
-	service := deploy.NewService(querier, gameService, phaseService, playerService, regionService)
+	service := deploy.NewService(querier, phaseService, regionService)
 
-	return querier, playerService, gameService, regionService, service
+	return querier, regionService, service
 }
 
 func input() (string, int64, int64, ctx.GameContext) {
@@ -55,7 +49,7 @@ func input() (string, int64, int64, ctx.GameContext) {
 func TestServiceImpl_DeployShouldFailWhenPlayerDoesntHaveEnoughDeployableTroops(t *testing.T) {
 	t.Parallel()
 
-	querier, _, _, _, service := setup(t)
+	querier, _, service := setup(t)
 	regionReference, currentTroops, desiredTroops, ctx := input()
 
 	game := &state.Game{
@@ -104,7 +98,7 @@ func TestServiceImpl_DeployShouldFail(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, _, _, regionService, service := setup(t)
+			querier, regionService, service := setup(t)
 			regionReference, _, desiredTroops, ctx := input()
 
 			currentTroops := test.declaredTroops
@@ -161,7 +155,7 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, playerService, gameService, regionService, service := setup(
+			querier, regionService, service := setup(
 				t,
 			)
 			regionReference, currentTroops, desiredTroops, ctx := input()
@@ -205,8 +199,6 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 			})
 
 			require.NoError(t, err)
-			gameService.AssertExpectations(t)
-			playerService.AssertExpectations(t)
 			regionService.AssertExpectations(t)
 		})
 	}

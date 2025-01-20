@@ -220,7 +220,11 @@ func (s *ServiceImpl) isTwoContinentsMissionAccomplished(
 		return false, fmt.Errorf("failed to get two continents mission: %w", err)
 	}
 
-	continents, err := s.boardService.GetContinentsControlledByPlayerQ(ctx, querier)
+	continents, err := s.boardService.GetContinentsControlledByPlayerQ(
+		ctx,
+		querier,
+		baseMission.PlayerID,
+	)
 	if err != nil {
 		return false, fmt.Errorf("failed to get continents controlled by player: %w", err)
 	}
@@ -239,7 +243,11 @@ func (s *ServiceImpl) isTwoContinentsPlusOneMissionAccomplished(
 		return false, fmt.Errorf("failed to get two continents plus one mission: %w", err)
 	}
 
-	continents, err := s.boardService.GetContinentsControlledByPlayerQ(ctx, querier)
+	continents, err := s.boardService.GetContinentsControlledByPlayerQ(
+		ctx,
+		querier,
+		baseMission.PlayerID,
+	)
 	if err != nil {
 		return false, fmt.Errorf("failed to get continents controlled by player: %w", err)
 	}

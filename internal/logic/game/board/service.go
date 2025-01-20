@@ -23,6 +23,7 @@ type Service interface {
 	GetContinentsControlledByPlayerQ(
 		ctx ctx.GameContext,
 		querier db.Querier,
+		playerID int64,
 	) ([]*Continent, error)
 }
 
@@ -169,8 +170,9 @@ func (s *ServiceImpl) fetchFromFile(ctx ctx.LogContext) (*BoardDto, error) {
 func (s *ServiceImpl) GetContinentsControlledByPlayerQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
+	playerID int64,
 ) ([]*Continent, error) {
-	playerRegions, err := s.regionService.GetPlayerRegionsQ(ctx, querier)
+	playerRegions, err := s.regionService.GetRegionsControlledByPlayerQ(ctx, querier, playerID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get regions: %w", err)
 	}

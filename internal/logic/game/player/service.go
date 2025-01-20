@@ -23,6 +23,7 @@ type Service interface {
 	GetPlayersState(ctx ctx.GameContext) ([]sqlc.GetPlayersStateRow, error)
 	GetPlayersStateQ(ctx ctx.GameContext, querier db.Querier) ([]sqlc.GetPlayersStateRow, error)
 	GetPlayersQ(ctx ctx.GameContext, querier db.Querier) ([]sqlc.Player, error)
+	GetCurrentPlayerQ(ctx ctx.GameContext, querier db.Querier) (sqlc.Player, error)
 	GetNextPlayerQ(ctx ctx.GameContext, querier db.Querier) (sqlc.Player, error)
 	GetPlayerIDQ(ctx ctx.GameContext, querier db.Querier) (int64, error)
 }
@@ -64,6 +65,20 @@ func (s *ServiceImpl) GetPlayersQ(ctx ctx.GameContext, querier db.Querier) ([]sq
 	}
 
 	ctx.Log().Infow("got players")
+
+	return result, nil
+}
+
+func (s *ServiceImpl) GetCurrentPlayerQ(
+	ctx ctx.GameContext,
+	querier db.Querier,
+) (sqlc.Player, error) {
+	result, err := querier.GetCurrentPlayer(ctx, ctx.GameID())
+	if err != nil {
+		return sqlc.Player{}, fmt.Errorf("failed to get current player: %w", err)
+	}
+
+	ctx.Log().Infow("got current player", "player", nil)
 
 	return result, nil
 }

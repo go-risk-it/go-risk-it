@@ -31,4 +31,14 @@ WHERE player.game_id = $1
                                  WHERE g.id = $1))
     % (SELECT COUNT (player.id) FROM player WHERE player.game_id = $1));
 
+-- name: GetCurrentPlayer :one
+SELECT *
+FROM player
+WHERE player.game_id = $1
+  AND player.turn_index = ((SELECT p.turn
+                            FROM game g
+                                     JOIN phase p on g.current_phase_id = p.id
+                            WHERE g.id = $1)
+    % (SELECT COUNT (player.id) FROM player WHERE player.game_id = $1));
+
 

@@ -8,9 +8,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 )
 
 type Move struct {
@@ -29,9 +27,7 @@ type Service interface {
 
 type ServiceImpl struct {
 	querier       db.Querier
-	gameService   state.Service
 	phaseService  phase.Service
-	playerService player.Service
 	regionService region.Service
 }
 
@@ -39,16 +35,12 @@ var _ Service = (*ServiceImpl)(nil)
 
 func NewService(
 	querier db.Querier,
-	gameService state.Service,
 	phaseService phase.Service,
-	playerService player.Service,
 	regionService region.Service,
 ) *ServiceImpl {
 	return &ServiceImpl{
 		querier:       querier,
-		gameService:   gameService,
 		phaseService:  phaseService,
-		playerService: playerService,
 		regionService: regionService,
 	}
 }

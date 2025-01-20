@@ -143,7 +143,7 @@ func TestServiceImpl_IsTwoContinentsMissionAccomplished(t *testing.T) {
 
 			boardService.
 				EXPECT().
-				GetContinentsControlledByPlayerQ(ctx, querier).
+				GetContinentsControlledByPlayerQ(ctx, querier, int64(1)).
 				Return(test.controlledContinents, nil)
 
 			if test.expectedResult {
@@ -284,7 +284,7 @@ func TestServiceImpl_IsTwoContinentsPlusOneMissionAccomplished(t *testing.T) {
 
 			boardService.
 				EXPECT().
-				GetContinentsControlledByPlayerQ(ctx, querier).
+				GetContinentsControlledByPlayerQ(ctx, querier, int64(1)).
 				Return(test.controlledContinents, nil)
 
 			if test.expectedResult {

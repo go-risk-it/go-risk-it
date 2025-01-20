@@ -236,6 +236,30 @@ func (q *Queries) GetCurrentPhase(ctx context.Context, id int64) (PhaseType, err
 	return type_, err
 }
 
+const getCurrentPlayer = `-- name: GetCurrentPlayer :one
+SELECT id, game_id, name, user_id, turn_index
+FROM player
+WHERE player.game_id = $1
+  AND player.turn_index = ((SELECT p.turn
+                            FROM game g
+                                     JOIN phase p on g.current_phase_id = p.id
+                            WHERE g.id = $1)
+    % (SELECT COUNT (player.id) FROM player WHERE player.game_id = $1))
+`
+
+func (q *Queries) GetCurrentPlayer(ctx context.Context, gameID int64) (Player, error) {
+	row := q.db.QueryRow(ctx, getCurrentPlayer, gameID)
+	var i Player
+	err := row.Scan(
+		&i.ID,
+		&i.GameID,
+		&i.Name,
+		&i.UserID,
+		&i.TurnIndex,
+	)
+	return i, err
+}
+
 const getDeployableTroops = `-- name: GetDeployableTroops :one
 SELECT deploy_phase.deployable_troops
 FROM game

@@ -18,6 +18,7 @@ type Querier interface {
 	GetCardsForPlayer(ctx context.Context, arg GetCardsForPlayerParams) ([]GetCardsForPlayerRow, error)
 	GetConquerPhaseState(ctx context.Context, id int64) (GetConquerPhaseStateRow, error)
 	GetCurrentPhase(ctx context.Context, id int64) (PhaseType, error)
+	GetCurrentPlayer(ctx context.Context, gameID int64) (Player, error)
 	GetDeployableTroops(ctx context.Context, id int64) (int64, error)
 	GetEliminatePlayerMission(ctx context.Context, missionID int64) (EliminatePlayerMission, error)
 	GetGame(ctx context.Context, id int64) (GetGameRow, error)

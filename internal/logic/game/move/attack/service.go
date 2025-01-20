@@ -8,7 +8,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack/dice"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
 )
 
@@ -36,7 +35,6 @@ type ServiceImpl struct {
 	boardService  board.Service
 	diceService   dice.Service
 	phaseService  phase.Service
-	playerService player.Service
 	regionService region.Service
 }
 
@@ -46,14 +44,12 @@ func NewService(
 	boardService board.Service,
 	diceService dice.Service,
 	phaseService phase.Service,
-	playerService player.Service,
 	regionService region.Service,
 ) *ServiceImpl {
 	return &ServiceImpl{
 		boardService:  boardService,
 		diceService:   diceService,
 		phaseService:  phaseService,
-		playerService: playerService,
 		regionService: regionService,
 	}
 }

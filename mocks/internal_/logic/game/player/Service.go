@@ -87,6 +87,63 @@ func (_c *Service_CreatePlayersQ_Call) RunAndReturn(run func(ctx.GameContext, db
 	return _c
 }
 
+// GetCurrentPlayerQ provides a mock function with given fields: _a0, querier
+func (_m *Service) GetCurrentPlayerQ(_a0 ctx.GameContext, querier db.Querier) (sqlc.Player, error) {
+	ret := _m.Called(_a0, querier)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetCurrentPlayerQ")
+	}
+
+	var r0 sqlc.Player
+	var r1 error
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) (sqlc.Player, error)); ok {
+		return rf(_a0, querier)
+	}
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) sqlc.Player); ok {
+		r0 = rf(_a0, querier)
+	} else {
+		r0 = ret.Get(0).(sqlc.Player)
+	}
+
+	if rf, ok := ret.Get(1).(func(ctx.GameContext, db.Querier) error); ok {
+		r1 = rf(_a0, querier)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Service_GetCurrentPlayerQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCurrentPlayerQ'
+type Service_GetCurrentPlayerQ_Call struct {
+	*mock.Call
+}
+
+// GetCurrentPlayerQ is a helper method to define mock.On call
+//   - _a0 ctx.GameContext
+//   - querier db.Querier
+func (_e *Service_Expecter) GetCurrentPlayerQ(_a0 interface{}, querier interface{}) *Service_GetCurrentPlayerQ_Call {
+	return &Service_GetCurrentPlayerQ_Call{Call: _e.mock.On("GetCurrentPlayerQ", _a0, querier)}
+}
+
+func (_c *Service_GetCurrentPlayerQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier)) *Service_GetCurrentPlayerQ_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.GameContext), args[1].(db.Querier))
+	})
+	return _c
+}
+
+func (_c *Service_GetCurrentPlayerQ_Call) Return(_a0 sqlc.Player, _a1 error) *Service_GetCurrentPlayerQ_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Service_GetCurrentPlayerQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier) (sqlc.Player, error)) *Service_GetCurrentPlayerQ_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetNextPlayerQ provides a mock function with given fields: _a0, querier
 func (_m *Service) GetNextPlayerQ(_a0 ctx.GameContext, querier db.Querier) (sqlc.Player, error) {
 	ret := _m.Called(_a0, querier)
