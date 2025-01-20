@@ -13,7 +13,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
 	"github.com/go-risk-it/go-risk-it/internal/rand"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const DefaultTroopGrant = 2
@@ -79,15 +78,11 @@ func (s *ServiceImpl) Draw(ctx ctx.GameContext, querier db.Querier) error {
 		return errors.New("no cards available")
 	}
 
-	playerID, err := s.playerService.GetPlayerIDQ(ctx, querier)
-	if err != nil {
-		return fmt.Errorf("failed to extract player id: %w", err)
-	}
-
 	card := cards[s.rng.IntN(len(cards))]
 	if err := querier.DrawCard(ctx, sqlc.DrawCardParams{
-		ID:      card.ID,
-		OwnerID: pgtype.Int8{Int64: playerID, Valid: true},
+		ID:     card.ID,
+		UserID: ctx.UserID(),
+		GameID: ctx.GameID(),
 	}); err != nil {
 		return fmt.Errorf("failed to draw card: %w", err)
 	}

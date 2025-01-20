@@ -7,8 +7,8 @@ where g.id = $1
 
 -- name: DrawCard :exec
 update card
-set owner_id = $2
-where id = $1;
+set owner_id = (select player.id from player where player.user_id = $2 and player.game_id = $3)
+where card.id = $1;
 
 -- name: UnlinkCardsFromOwner :exec
 UPDATE card

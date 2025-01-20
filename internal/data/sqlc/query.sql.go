@@ -108,17 +108,18 @@ func (q *Queries) DeleteSpuriousEliminatePlayerMissions(ctx context.Context, gam
 
 const drawCard = `-- name: DrawCard :exec
 update card
-set owner_id = $2
-where id = $1
+set owner_id = (select player.id from player where player.user_id = $2 and player.game_id = $3)
+where card.id = $1
 `
 
 type DrawCardParams struct {
-	ID      int64
-	OwnerID pgtype.Int8
+	ID     int64
+	UserID string
+	GameID int64
 }
 
 func (q *Queries) DrawCard(ctx context.Context, arg DrawCardParams) error {
-	_, err := q.db.Exec(ctx, drawCard, arg.ID, arg.OwnerID)
+	_, err := q.db.Exec(ctx, drawCard, arg.ID, arg.UserID, arg.GameID)
 	return err
 }
 
