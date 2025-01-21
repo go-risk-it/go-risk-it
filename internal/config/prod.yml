@@ -14,3 +14,6 @@ dice:
 
 history:
   size: 50
+
+otel:
+  enabled: false

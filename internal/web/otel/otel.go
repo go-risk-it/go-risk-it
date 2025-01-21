@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/go-risk-it/go-risk-it/internal/config"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/propagation"
@@ -17,7 +18,29 @@ var Module = fx.Options(
 	fx.Invoke(SetupOTelSDK),
 )
 
-func setupOTelSDK() (func(context.Context) error, error) {
+func SetupOTelSDK(
+	lifecycle fx.Lifecycle,
+	log *zap.SugaredLogger,
+	otelConfig config.OtelConfig,
+) {
+	// Set up OpenTelemetry.
+	otelShutdown, err := setupOTelSDK(otelConfig)
+	if err != nil {
+		log.Fatalw("could not set up OpenTelemetry", "error", err)
+	}
+
+	lifecycle.Append(fx.Hook{
+		OnStop: func(ctx context.Context) error {
+			if err := otelShutdown(ctx); err != nil {
+				log.Fatalw("failed to shutdown tracer provider", "error", err)
+			}
+
+			return nil
+		},
+	})
+}
+
+func setupOTelSDK(otelConfig config.OtelConfig) (func(context.Context) error, error) {
 	var shutdownFuncs []func(context.Context) error
 
 	// shutdown calls cleanup functions registered via shutdownFuncs.
@@ -39,7 +62,7 @@ func setupOTelSDK() (func(context.Context) error, error) {
 	otel.SetTextMapPropagator(prop)
 
 	// Set up trace provider.
-	tracerProvider, err := newTraceProvider()
+	tracerProvider, err := newTraceProvider(otelConfig)
 	if err != nil {
 		return shutdown, fmt.Errorf("failed to setup trace provider: %w", err)
 	}
@@ -50,24 +73,6 @@ func setupOTelSDK() (func(context.Context) error, error) {
 	return shutdown, nil
 }
 
-func SetupOTelSDK(lifecycle fx.Lifecycle, log *zap.SugaredLogger) {
-	// Set up OpenTelemetry.
-	otelShutdown, err := setupOTelSDK()
-	if err != nil {
-		log.Fatalw("could not set up OpenTelemetry", "error", err)
-	}
-
-	lifecycle.Append(fx.Hook{
-		OnStop: func(ctx context.Context) error {
-			if err := otelShutdown(ctx); err != nil {
-				log.Fatalw("failed to shutdown tracer provider", "error", err)
-			}
-
-			return nil
-		},
-	})
-}
-
 func newPropagator() propagation.TextMapPropagator {
 	return propagation.NewCompositeTextMapPropagator(
 		propagation.TraceContext{},
@@ -75,13 +80,17 @@ func newPropagator() propagation.TextMapPropagator {
 	)
 }
 
-func newTraceProvider() (*trace.TracerProvider, error) {
+func newTraceProvider(otelConfig config.OtelConfig) (*trace.TracerProvider, error) {
 	exporter, err := otlptracehttp.New(context.Background())
 	if err != nil {
 		return nil, err
 	}
 
-	return trace.NewTracerProvider(trace.WithBatcher(exporter)), nil
+	if otelConfig.Enabled {
+		return trace.NewTracerProvider(trace.WithBatcher(exporter)), nil
+	} else {
+		return trace.NewTracerProvider(), nil
+	}
 }
 
 // func newMeterProvider() (*metric.MeterProvider, error) {

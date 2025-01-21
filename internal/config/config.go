@@ -20,6 +20,7 @@ type Config struct {
 	Database DatabaseConfig
 	Dice     DiceConfig
 	History  HistoryConfig
+	Otel     OtelConfig
 }
 
 type Result struct {
@@ -29,6 +30,7 @@ type Result struct {
 	DatabaseConfig DatabaseConfig
 	DiceConfig     DiceConfig
 	HistoryConfig  HistoryConfig
+	OtelConfig     OtelConfig
 }
 
 func newConfig(log *zap.SugaredLogger) Result {
@@ -54,6 +56,7 @@ func newConfig(log *zap.SugaredLogger) Result {
 		DatabaseConfig: config.Database,
 		DiceConfig:     config.Dice,
 		HistoryConfig:  config.History,
+		OtelConfig:     config.Otel,
 	}
 }
 
