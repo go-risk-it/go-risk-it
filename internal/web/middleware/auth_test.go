@@ -11,6 +11,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/web/middleware"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/zap"
 )
 
@@ -79,7 +80,7 @@ func TestAuthMiddleware_Wrap(t *testing.T) {
 					})))
 
 			request, _ := http.NewRequestWithContext(
-				ctx.WithLog(context.Background(), zap.NewNop().Sugar()),
+				ctx.WithSpan(ctx.WithLog(context.Background(), zap.NewNop().Sugar()), noop.Span{}),
 				http.MethodGet,
 				"/",
 				nil,

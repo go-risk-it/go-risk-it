@@ -10,6 +10,7 @@ import (
 	boardController "github.com/go-risk-it/go-risk-it/internal/web/controller"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/zap"
 )
 
@@ -17,7 +18,6 @@ func TestBoardControllerImpl_GetBoardState(t *testing.T) {
 	t.Parallel()
 
 	// Initialize dependencies
-	log := zap.NewNop().Sugar()
 	regionService := region.NewService(t)
 
 	// Initialize the state under test
@@ -26,7 +26,10 @@ func TestBoardControllerImpl_GetBoardState(t *testing.T) {
 	// Set up test data
 	gameID := int64(1)
 	ctx := ctx2.WithGameID(
-		ctx2.WithUserID(ctx2.WithLog(context.Background(), log), "francesco"),
+		ctx2.WithUserID(
+			ctx2.WithSpan(ctx2.WithLog(context.Background(), zap.NewNop().Sugar()), noop.Span{}),
+			"francesco",
+		),
 		gameID,
 	)
 

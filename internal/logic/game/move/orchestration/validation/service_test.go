@@ -11,6 +11,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/zap"
 )
 
@@ -30,7 +31,10 @@ func setup(t *testing.T) (
 func input() ctx.GameContext {
 	gameID := int64(1)
 	userID := "Giovanni"
-	userContext := ctx.WithUserID(ctx.WithLog(context.Background(), zap.NewNop().Sugar()), userID)
+	userContext := ctx.WithUserID(
+		ctx.WithSpan(ctx.WithLog(context.Background(), zap.NewExample().Sugar()), noop.Span{}),
+		userID,
+	)
 
 	return ctx.WithGameID(userContext, gameID)
 }

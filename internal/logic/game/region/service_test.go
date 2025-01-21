@@ -12,6 +12,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region/assignment"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/zap"
 )
 
@@ -19,7 +20,6 @@ func TestServiceImpl_CreateRegions(t *testing.T) {
 	t.Parallel()
 
 	// Initialize dependencies
-	logger := zap.NewNop().Sugar()
 	querier := db.NewQuerier(t)
 	assignmentService := assignment.NewService(t)
 
@@ -27,7 +27,11 @@ func TestServiceImpl_CreateRegions(t *testing.T) {
 	service := region.NewService(querier, assignmentService)
 
 	// Set up test data
-	ctx := ctx2.WithUserID(ctx2.WithLog(context.Background(), logger), "francesco")
+	ctx := ctx2.WithUserID(
+		ctx2.WithSpan(ctx2.WithLog(context.Background(), zap.NewExample().Sugar()), noop.Span{}),
+		"francesco",
+	)
+
 	players := []sqlc.Player{
 		{ID: 1, GameID: 1, UserID: "francesco", TurnIndex: 0},
 		{ID: 2, GameID: 1, UserID: "gabriele", TurnIndex: 1},
@@ -75,7 +79,6 @@ func TestServiceImpl_CreateRegions_NoPlayers(t *testing.T) {
 	t.Parallel()
 
 	// Initialize dependencies
-	logger := zap.NewNop().Sugar()
 	querier := db.NewQuerier(t)
 	assignmentService := assignment.NewService(t)
 
@@ -83,7 +86,10 @@ func TestServiceImpl_CreateRegions_NoPlayers(t *testing.T) {
 	service := region.NewService(querier, assignmentService)
 
 	// Set up test data
-	ctx := ctx2.WithUserID(ctx2.WithLog(context.Background(), logger), "francesco")
+	ctx := ctx2.WithUserID(
+		ctx2.WithSpan(ctx2.WithLog(context.Background(), zap.NewExample().Sugar()), noop.Span{}),
+		"francesco",
+	)
 
 	var (
 		players []sqlc.Player
@@ -104,7 +110,6 @@ func TestServiceImpl_CreateRegions_PlayersNotInSameGame(t *testing.T) {
 	t.Parallel()
 
 	// Initialize dependencies
-	logger := zap.NewNop().Sugar()
 	querier := db.NewQuerier(t)
 	assignmentService := assignment.NewService(t)
 
@@ -112,7 +117,10 @@ func TestServiceImpl_CreateRegions_PlayersNotInSameGame(t *testing.T) {
 	service := region.NewService(querier, assignmentService)
 
 	// Set up test data
-	ctx := ctx2.WithUserID(ctx2.WithLog(context.Background(), logger), "francesco")
+	ctx := ctx2.WithUserID(
+		ctx2.WithSpan(ctx2.WithLog(context.Background(), zap.NewExample().Sugar()), noop.Span{}),
+		"francesco",
+	)
 	players := []sqlc.Player{
 		{ID: 1, GameID: 1, UserID: "francesco", TurnIndex: 0},
 		{ID: 2, GameID: 2, UserID: "gabriele", TurnIndex: 1},
@@ -135,7 +143,6 @@ func TestServiceImpl_CreateRegions_InsertRegionsError(t *testing.T) {
 	t.Parallel()
 
 	// Initialize dependencies
-	logger := zap.NewNop().Sugar()
 	querier := db.NewQuerier(t)
 	assignmentService := assignment.NewService(t)
 
@@ -143,7 +150,10 @@ func TestServiceImpl_CreateRegions_InsertRegionsError(t *testing.T) {
 	service := region.NewService(querier, assignmentService)
 
 	// Set up test data
-	ctx := ctx2.WithUserID(ctx2.WithLog(context.Background(), logger), "francesco")
+	ctx := ctx2.WithUserID(
+		ctx2.WithSpan(ctx2.WithLog(context.Background(), zap.NewExample().Sugar()), noop.Span{}),
+		"francesco",
+	)
 	players := []sqlc.Player{
 		{ID: 1, GameID: 1, UserID: "francesco", TurnIndex: 0},
 		{ID: 2, GameID: 1, UserID: "gabriele", TurnIndex: 1},

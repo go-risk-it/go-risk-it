@@ -16,6 +16,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/zap"
 )
 
@@ -35,7 +36,7 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "Gabriele"},
 	}
 	context := ctx.WithUserID(
-		ctx.WithLog(context.Background(), zap.NewExample().Sugar()),
+		ctx.WithSpan(ctx.WithLog(context.Background(), zap.NewExample().Sugar()), noop.Span{}),
 		"dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
 	)
 
@@ -121,7 +122,6 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 	t.Parallel()
 
 	// Initialize dependencies
-	logger := zap.NewExample().Sugar()
 	cardService := card.NewService(t)
 	missionService := mission.NewService(t)
 	playerService := player.NewService(t)
@@ -139,7 +139,7 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 
 	// Set up test data
 	ctx := ctx.WithUserID(
-		ctx.WithLog(context.Background(), logger),
+		ctx.WithSpan(ctx.WithLog(context.Background(), zap.NewExample().Sugar()), noop.Span{}),
 		"dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
 	)
 	users := []request.Player{
@@ -169,7 +169,6 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 	t.Parallel()
 
 	// Initialize dependencies
-	logger := zap.NewExample().Sugar()
 	querier := db.NewQuerier(t)
 	cardService := card.NewService(t)
 	missionService := mission.NewService(t)
@@ -187,7 +186,7 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 
 	// Set up test data
 	context := ctx.WithUserID(
-		ctx.WithLog(context.Background(), logger),
+		ctx.WithSpan(ctx.WithLog(context.Background(), zap.NewExample().Sugar()), noop.Span{}),
 		"dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
 	)
 	users := []request.Player{

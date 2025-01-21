@@ -35,9 +35,21 @@ services:
       dockerfile: docker/component-test/Dockerfile
     ports:
       - "8080:8080"
+    environment:
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=risk-it,service.version=0.1.0
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
     depends_on:
       db:
         condition: service_healthy
+
+  jaeger:
+    image: jaegertracing/jaeger:2.2.0
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+      - "5778:5778"
+      - "9411:9411"
 
 
 volumes:

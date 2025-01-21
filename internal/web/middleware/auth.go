@@ -35,14 +35,14 @@ func (m *AuthMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 		routeToWrap.Pattern(),
 		routeToWrap.RequiresAuth(),
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-			logContext, ok := request.Context().(ctx.LogContext)
+			traceContext, ok := request.Context().(ctx.TraceContext)
 			if !ok {
-				http.Error(writer, "invalid log context", http.StatusInternalServerError)
+				http.Error(writer, "invalid trace context", http.StatusInternalServerError)
 
 				return
 			}
 
-			logContext.Log().Debug("applying auth middleware")
+			traceContext.Log().Debug("applying auth middleware")
 
 			subject, err := m.verifyJWT(request)
 			if err != nil {
@@ -51,9 +51,9 @@ func (m *AuthMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 				return
 			}
 
-			logContext.Log().Debugw("Auth token is valid")
+			traceContext.Log().Debugw("Auth token is valid")
 
-			userContext := ctx.WithUserID(logContext, subject)
+			userContext := ctx.WithUserID(traceContext, subject)
 
 			routeToWrap.ServeHTTP(
 				writer,

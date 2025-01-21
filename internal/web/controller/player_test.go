@@ -11,6 +11,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/web/ws/connection"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/zap"
 )
 
@@ -18,7 +19,6 @@ func TestControllerImpl_GetPlayerState(t *testing.T) {
 	t.Parallel()
 
 	// Initialize dependencies
-	logger := zap.NewExample().Sugar()
 	connectionManager := connection.NewManager(t)
 	playerService := player.NewService(t)
 
@@ -28,7 +28,10 @@ func TestControllerImpl_GetPlayerState(t *testing.T) {
 	// Set up test data
 	gameID := int64(1)
 	ctx := ctx2.WithGameID(
-		ctx2.WithUserID(ctx2.WithLog(context.Background(), logger), "francesco"),
+		ctx2.WithUserID(
+			ctx2.WithSpan(ctx2.WithLog(context.Background(), zap.NewNop().Sugar()), noop.Span{}),
+			"francesco",
+		),
 		gameID,
 	)
 

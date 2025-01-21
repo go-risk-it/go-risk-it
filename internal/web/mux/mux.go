@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/web/middleware"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -15,21 +16,27 @@ func NewServeMux(
 	corsMiddleware middleware.CorsMiddleware,
 	gameMiddleware middleware.GameMiddleware,
 	logMiddleware middleware.LogMiddleware,
+	otelMiddleware middleware.OTelMiddleware,
 	websocketAuthMiddleware middleware.WebsocketHeaderConversionMiddleware,
 	log *zap.SugaredLogger,
-) *http.ServeMux {
+) http.Handler {
 	mux := http.NewServeMux()
 	routeNames := make([]string, 0, len(routes))
 
 	for _, route := range routes {
 		mux.Handle(
 			route.Pattern(),
-			logMiddleware.Wrap(
-				corsMiddleware.Wrap(
-					websocketAuthMiddleware.Wrap(
-						authMiddleware.Wrap(
-							gameMiddleware.Wrap(
-								route,
+			otelhttp.WithRouteTag(
+				route.Pattern(),
+				logMiddleware.Wrap(
+					otelMiddleware.Wrap(
+						corsMiddleware.Wrap(
+							websocketAuthMiddleware.Wrap(
+								authMiddleware.Wrap(
+									gameMiddleware.Wrap(
+										route,
+									),
+								),
 							),
 						),
 					),
@@ -42,7 +49,9 @@ func NewServeMux(
 
 	log.Infow("Registered routes", "routes", routeNames)
 
-	return mux
+	handler := otelhttp.NewHandler(mux, "/")
+
+	return handler
 }
 
 var Module = fx.Options(

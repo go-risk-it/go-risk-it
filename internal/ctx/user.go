@@ -1,12 +1,12 @@
 package ctx
 
 type UserContext interface {
-	LogContext
+	TraceContext
 	UserID() string
 }
 
 type userContext struct {
-	LogContext
+	TraceContext
 	userID string
 }
 
@@ -16,9 +16,11 @@ func (c *userContext) UserID() string {
 	return c.userID
 }
 
-func WithUserID(ctx LogContext, userID string) UserContext {
+func WithUserID(ctx TraceContext, userID string) UserContext {
+	ctx.SetLog(ctx.Log().With("userID", userID))
+
 	return &userContext{
-		LogContext: WithLog(ctx, ctx.Log().With("userID", userID)),
-		userID:     userID,
+		TraceContext: ctx,
+		userID:       userID,
 	}
 }

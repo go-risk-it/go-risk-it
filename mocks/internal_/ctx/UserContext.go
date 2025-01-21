@@ -7,6 +7,8 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
+	trace "go.opentelemetry.io/otel/trace"
+
 	zap "go.uber.org/zap"
 )
 
@@ -247,6 +249,53 @@ func (_c *UserContext_SetLog_Call) Return() *UserContext_SetLog_Call {
 
 func (_c *UserContext_SetLog_Call) RunAndReturn(run func(*zap.SugaredLogger)) *UserContext_SetLog_Call {
 	_c.Run(run)
+	return _c
+}
+
+// Span provides a mock function with no fields
+func (_m *UserContext) Span() trace.Span {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Span")
+	}
+
+	var r0 trace.Span
+	if rf, ok := ret.Get(0).(func() trace.Span); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(trace.Span)
+		}
+	}
+
+	return r0
+}
+
+// UserContext_Span_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Span'
+type UserContext_Span_Call struct {
+	*mock.Call
+}
+
+// Span is a helper method to define mock.On call
+func (_e *UserContext_Expecter) Span() *UserContext_Span_Call {
+	return &UserContext_Span_Call{Call: _e.mock.On("Span")}
+}
+
+func (_c *UserContext_Span_Call) Run(run func()) *UserContext_Span_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *UserContext_Span_Call) Return(_a0 trace.Span) *UserContext_Span_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *UserContext_Span_Call) RunAndReturn(run func() trace.Span) *UserContext_Span_Call {
+	_c.Call.Return(run)
 	return _c
 }
 

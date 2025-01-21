@@ -31,5 +31,9 @@ var Module = fx.Options(
 			NewLogMiddleware,
 			fx.As(new(LogMiddleware)),
 		),
+		fx.Annotate(
+			NewOTelMiddleware,
+			fx.As(new(OTelMiddleware)),
+		),
 	),
 )

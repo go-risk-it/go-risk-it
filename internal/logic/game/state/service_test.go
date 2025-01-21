@@ -10,6 +10,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/db"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/zap"
 )
 
@@ -17,7 +18,6 @@ func TestServiceImpl_GetGameState(t *testing.T) {
 	t.Parallel()
 
 	// Initialize dependencies
-	logger := zap.NewExample().Sugar()
 	querier := db.NewQuerier(t)
 
 	// Initialize the state under test
@@ -26,7 +26,10 @@ func TestServiceImpl_GetGameState(t *testing.T) {
 	// Set up test data
 	gameID := int64(1)
 	ctx := ctx.WithGameID(
-		ctx.WithUserID(ctx.WithLog(context.Background(), logger), "francesco"),
+		ctx.WithUserID(
+			ctx.WithSpan(ctx.WithLog(context.Background(), zap.NewExample().Sugar()), noop.Span{}),
+			"francesco",
+		),
 		gameID,
 	)
 

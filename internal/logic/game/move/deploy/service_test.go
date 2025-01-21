@@ -12,6 +12,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/phase"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/zap"
 )
 
@@ -35,7 +36,10 @@ func input() (string, int64, int64, ctx.GameContext) {
 	regionReference := "greenland"
 	currentTroops := 0
 	desiredTroops := 5
-	userContext := ctx.WithUserID(ctx.WithLog(context.Background(), zap.NewNop().Sugar()), userID)
+	userContext := ctx.WithUserID(
+		ctx.WithSpan(ctx.WithLog(context.Background(), zap.NewExample().Sugar()), noop.Span{}),
+		userID,
+	)
 
 	gameContext := ctx.WithGameID(userContext, gameID)
 
