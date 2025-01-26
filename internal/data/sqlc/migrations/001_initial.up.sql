@@ -1,10 +1,17 @@
 CREATE TYPE phase_type AS ENUM ('CARDS', 'DEPLOY', 'ATTACK', 'CONQUER', 'REINFORCE');
 CREATE TYPE card_type AS ENUM ('CAVALRY', 'INFANTRY', 'ARTILLERY', 'JOLLY');
+CREATE TYPE mission_type AS ENUM (
+    'EIGHTEEN_TERRITORIES_TWO_TROOPS',
+    'TWENTY_FOUR_TERRITORIES',
+    'TWO_CONTINENTS',
+    'TWO_CONTINENTS_PLUS_ONE',
+    'ELIMINATE_PLAYER');
 
 CREATE TABLE game
 (
     id               BIGSERIAL PRIMARY KEY,
-    current_phase_id BIGINT
+    current_phase_id BIGINT,
+    winner_player_id BIGINT
 );
 
 CREATE TABLE player
@@ -45,8 +52,33 @@ CREATE TABLE card
 CREATE TABLE mission
 (
     id        BIGSERIAL PRIMARY KEY,
-    player_id BIGINT NOT NULL,
+    player_id BIGINT       NOT NULL,
+    type      mission_type NOT NULL,
     FOREIGN KEY (player_id) REFERENCES player (id)
+);
+
+CREATE TABLE two_continents_mission
+(
+    mission_id  BIGINT PRIMARY KEY,
+    continent_1 TEXT NOT NULL,
+    continent_2 TEXT NOT NULL,
+    FOREIGN KEY (mission_id) REFERENCES mission (id)
+);
+
+CREATE TABLE two_continents_plus_one_mission
+(
+    mission_id  BIGINT PRIMARY KEY,
+    continent_1 TEXT NOT NULL,
+    continent_2 TEXT NOT NULL,
+    FOREIGN KEY (mission_id) REFERENCES mission (id)
+);
+
+CREATE TABLE eliminate_player_mission
+(
+    mission_id       BIGINT PRIMARY KEY,
+    target_player_id BIGINT NOT NULL,
+    FOREIGN KEY (mission_id) REFERENCES mission (id),
+    FOREIGN KEY (target_player_id) REFERENCES player (id)
 );
 
 CREATE TABLE phase
@@ -61,6 +93,10 @@ CREATE TABLE phase
 
 ALTER TABLE game
     ADD FOREIGN KEY (current_phase_id) REFERENCES phase (id);
+
+ALTER TABLE game
+    ADD FOREIGN KEY (winner_player_id) REFERENCES player (id);
+
 
 CREATE TABLE deploy_phase
 (
