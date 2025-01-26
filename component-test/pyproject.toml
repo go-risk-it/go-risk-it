@@ -13,6 +13,7 @@ requests = "^2.31.0"
 pyhamcrest = "^2.1.0"
 python-dotenv = "^1.0.0"
 supabase = "^2.4.0"
+unified-planning = { extras = ["enhsp"], version = "^1.2.0" }
 
 [build-system]
 requires = ["poetry-core"]
