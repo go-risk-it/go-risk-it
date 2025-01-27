@@ -1,35 +1,11 @@
-from typing import Any
-
 import unified_planning.shortcuts as up
 
+from fluents import Adjacent, DeployableTroops, Owns, TroopsOn, BonusTroops, Turn, \
+    NextPlayer, CurrentPhase, HasWonAttack
+from shortcuts import check_turn_and_phase, owns_continent
+from user_types import Player, Region, Continent, Phase
+
 up.get_environment().credits_stream = None
-
-####################
-# User Types
-####################
-Player = up.UserType("Player")
-Region = up.UserType("Region")
-Continent = up.UserType("Continent")
-Phase = up.UserType("Phase")
-
-####################
-# Fluents
-####################
-
-Adjacent = up.Fluent("Adjacent", up.BoolType(), region1=Region, region2=Region)
-DeployableTroops = up.Fluent("DeployableTroops", up.IntType(), player=Player)
-
-# Region related fluents
-Owns = up.Fluent("Owns", up.BoolType(), player=Player, region=Region)
-TroopsOn = up.Fluent("TroopsOn", up.IntType(), region=Region)
-
-# Phase/turn related fluents
-Turn = up.Fluent("Turn", up.BoolType(), player=Player)
-NextPlayer = up.Fluent("NextPlayer", up.BoolType(), current=Player, next=Player)
-CurrentPhase = up.Fluent("CurrentPhase", up.BoolType(), phase=Phase)
-
-# Conquer-related fluents
-HasWonAttack = up.Fluent("hasWonAttack", up.BoolType(), from_region=Region, to_region=Region)
 
 ####################
 # Objects
@@ -40,19 +16,9 @@ phase_conquer = up.Object("conquer", Phase)
 phase_reinforce = up.Object("reinforce", Phase)
 phase_cards = up.Object("cards", Phase)
 
-
 ####################
 # Actions
 ####################
-
-def check_turn_and_phase(player: Player, phase: Phase) -> up.BoolType():
-    return Turn(player) & CurrentPhase(phase)
-
-
-def pass_to_next_phase(current_phase: Phase, next_phase: Phase) -> list[tuple[up.Fluent, Any]]:
-    """Return the effect to pass from current_phase to next_phase."""
-    return [(CurrentPhase(current_phase), False), (CurrentPhase(next_phase), True)]
-
 
 # Deploy action
 # simplification: we deploy all troops at once
@@ -205,9 +171,22 @@ action_advance.add_effect(
     value=True,
     condition=up.Equals(action_advance.from_phase, phase_reinforce)
 )
-action_advance.add_effect(
-    DeployableTroops(action_advance.next_player),
-    value=3,
-    condition=up.Equals(action_advance.from_phase, phase_reinforce)
-)
 
+# When advancing to deploy phase, compute the number of deployable troops
+# get 3 troops for each region owned
+r = up.Variable("r", Region)
+action_advance.add_increase_effect(
+    DeployableTroops(action_advance.player),
+    value=3,
+    condition=up.Equals(action_advance.to_phase, phase_deploy) & Owns(action_advance.player, r),
+    forall=[r]
+)
+# get bonus troops for each continent owned
+c = up.Variable("c", Continent)
+action_advance.add_increase_effect(
+    DeployableTroops(action_advance.player),
+    value=BonusTroops(c),
+    condition=up.Equals(action_advance.to_phase, phase_deploy) &
+              owns_continent(action_advance.player, c),
+    forall=[c]
+)

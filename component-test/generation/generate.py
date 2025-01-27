@@ -10,20 +10,26 @@ Note: the enhsp planner version included in the unified_planning library seems t
 import json
 import os.path
 
+from unified_planning.model import Object
+
+from shortcuts import owns_continent
+
 FILE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-from domain import (Region, Player, NextPlayer, Turn, CurrentPhase, HasWonAttack,
-                    DeployableTroops, TroopsOn, Owns, Adjacent,
-                    phase_deploy, action_deploy, action_attack_until_conquering,
+from domain import (phase_deploy, action_deploy, action_attack_until_conquering,
                     action_conquer, action_advance, action_reinforce)
+from fluents import (Adjacent, DeployableTroops, Owns, TroopsOn, BelongsTo, BonusTroops, Turn,
+                     NextPlayer, CurrentPhase, HasWonAttack)
+from user_types import Player, Region, Continent
 import unified_planning.shortcuts as ups
 import unified_planning.engines as upe
+from itertools import cycle
 
 
 # import unified_planning.io as upi
 
 
-def init_map(map_filename: str, problem: ups.Problem) -> tuple[dict[str, Region], dict[str, list[Region]]]:
+def init_map(map_filename: str, problem: ups.Problem) -> tuple[dict[str, Object], dict[str, Object]]:
     """
     Read a Risk map from a file and initialize the regions and adjacency relations.
     """
@@ -33,15 +39,24 @@ def init_map(map_filename: str, problem: ups.Problem) -> tuple[dict[str, Region]
     with open(map_filename, "r") as map_file:
         map_data = json.load(map_file)
 
-    for layer in map_data["layers"]:
-        region_id = layer["id"]
+    problem.add_fluent(BonusTroops, default_initial_value=0)
+    for continent_data in map_data["continents"]:
+        continent_id: str = continent_data["id"]
+        continent = ups.Object(continent_id, Continent)
+        problem.add_object(continent)
+        continents[continent_id] = continent
+        problem.set_initial_value(BonusTroops(continent), continent_data["bonusTroops"])
+
+    problem.add_fluent(BelongsTo, default_initial_value=False)
+    for region_data in map_data["layers"]:
+        region_id: str = region_data["id"]
         region = ups.Object(region_id, Region)
         problem.add_object(region)
         regions[region_id] = region
-        continents[layer["continent"]] = continents.get(layer["continent"], []) + [region]
+        continent = continents[region_data["continent"]]
+        problem.set_initial_value(BelongsTo(region, continent), True)
 
     problem.add_fluent(Adjacent, default_initial_value=False)
-
     for link in map_data["links"]:
         source_region = regions[link["source"]]
         target_region = regions[link["target"]]
@@ -80,18 +95,10 @@ def init_game(problem: ups.Problem, regions: dict[str, Region]) -> dict[str, Pla
 
     # Assign regions to players
     problem.add_fluent(Owns, default_initial_value=False)
-    pp = list(players.values())
-    player_to_regions = {
-        players["francesco"]: [],
-        players["gabriele"]: [],
-        players["giovanni"]: [],
-    }
-    for i, region in enumerate(regions.values()):
-        player = pp[i % len(pp)]
-        problem.set_initial_value(Owns(player, region), True)
-        player_to_regions[player].append(region)
+    player_to_regions = assign_regions_to_player(players, regions)
     for player, regions in player_to_regions.items():
-        print(f"Regions of {player}: {sorted(regions, key=lambda r: r.name)}")
+        for region in regions:
+            problem.set_initial_value(Owns(player, region), True)
 
     problem.add_fluent(HasWonAttack, default_initial_value=False)
 
@@ -105,6 +112,15 @@ def init_game(problem: ups.Problem, regions: dict[str, Region]) -> dict[str, Pla
     return players
 
 
+def assign_regions_to_player(players: dict[str, Player], regions: dict[str, Region]) -> dict[Player, list[Region]]:
+    player_to_regions = {player: [] for player in players.values()}
+
+    for player, region in zip(cycle(players.values()), regions.values()):
+        player_to_regions[player].append(region)
+
+    return player_to_regions
+
+
 def main():
     problem = ups.Problem("Risk")
 
@@ -112,9 +128,9 @@ def main():
     players = init_game(problem, regions)
     # print(problem)
 
-    problem.add_goal(ups.And([Owns(players["francesco"], region) for region in continents["europe"]]))
-    problem.add_goal(ups.And([Owns(players["gabriele"], region) for region in continents["north_america"]]))
-    problem.add_goal(ups.And([Owns(players["giovanni"], region) for region in continents["south_america"]]))
+    problem.add_goal(owns_continent(players["francesco"], continents["europe"]))
+    problem.add_goal(owns_continent(players["gabriele"], continents["north_america"]))
+    problem.add_goal(owns_continent(players["giovanni"], continents["asia"]))
 
     # write pddl file
     # upi.PDDLWriter(problem).write_domain(os.path.join(FILE_DIR, "risk_domain.pddl"))
