@@ -6,7 +6,7 @@ import (
 	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
 	board "github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 
-	db "github.com/go-risk-it/go-risk-it/internal/data/db"
+	db "github.com/go-risk-it/go-risk-it/internal/data/game/db"
 
 	mock "github.com/stretchr/testify/mock"
 )

@@ -2,8 +2,8 @@ package db
 
 import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/data/pool"
-	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/data/lobby/pool"
+	"github.com/go-risk-it/go-risk-it/internal/data/lobby/sqlc"
 	"github.com/jackc/pgx/v5"
 )
 

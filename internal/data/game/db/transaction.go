@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/data/pool"
+	"github.com/go-risk-it/go-risk-it/internal/data/game/pool"
 	"github.com/jackc/pgx/v5"
 )
 

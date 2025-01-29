@@ -300,19 +300,19 @@ func (_c *TraceContext_Span_Call) RunAndReturn(run func() trace.Span) *TraceCont
 }
 
 // Value provides a mock function with given fields: key
-func (_m *TraceContext) Value(key interface{}) interface{} {
+func (_m *TraceContext) Value(key any) any {
 	ret := _m.Called(key)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Value")
 	}
 
-	var r0 interface{}
-	if rf, ok := ret.Get(0).(func(interface{}) interface{}); ok {
+	var r0 any
+	if rf, ok := ret.Get(0).(func(any) any); ok {
 		r0 = rf(key)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(interface{})
+			r0 = ret.Get(0).(any)
 		}
 	}
 
@@ -325,24 +325,24 @@ type TraceContext_Value_Call struct {
 }
 
 // Value is a helper method to define mock.On call
-//   - key interface{}
+//   - key any
 func (_e *TraceContext_Expecter) Value(key interface{}) *TraceContext_Value_Call {
 	return &TraceContext_Value_Call{Call: _e.mock.On("Value", key)}
 }
 
-func (_c *TraceContext_Value_Call) Run(run func(key interface{})) *TraceContext_Value_Call {
+func (_c *TraceContext_Value_Call) Run(run func(key any)) *TraceContext_Value_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(interface{}))
+		run(args[0].(any))
 	})
 	return _c
 }
 
-func (_c *TraceContext_Value_Call) Return(_a0 interface{}) *TraceContext_Value_Call {
+func (_c *TraceContext_Value_Call) Return(_a0 any) *TraceContext_Value_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *TraceContext_Value_Call) RunAndReturn(run func(interface{}) interface{}) *TraceContext_Value_Call {
+func (_c *TraceContext_Value_Call) RunAndReturn(run func(any) any) *TraceContext_Value_Call {
 	_c.Call.Return(run)
 	return _c
 }

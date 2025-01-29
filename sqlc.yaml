@@ -16,15 +16,25 @@ sql:
       - "internal/logic/game/player"
       - "internal/logic/game/region"
       - "internal/logic/game/state"
-    schema: "internal/data/sqlc/migrations"
+    schema: "internal/data/game/sqlc/migrations"
     gen:
       go:
         package: "sqlc"
-        out: "internal/data/sqlc"
+        out: "internal/data/game/sqlc"
         sql_package: "pgx/v5"
         emit_interface: true
     rules:
       - sqlc/db-prepare
+  - engine: "postgresql"
+    queries: "internal/logic/lobby"
+    schema: "internal/data/lobby/sqlc/migrations"
+    gen:
+      go:
+        package: "sqlc"
+        out: "internal/data/lobby/sqlc"
+        sql_package: "pgx/v5"
+        emit_interface: true
+
 rules:
   - name: postgresql-query-too-costly
     message: "Query cost estimate is too high"

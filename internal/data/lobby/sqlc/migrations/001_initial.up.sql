@@ -1,0 +1,4 @@
+CREATE TABLE lobby
+(
+    id BIGSERIAL PRIMARY KEY
+);

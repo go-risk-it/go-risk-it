@@ -4,7 +4,7 @@ package state
 
 import (
 	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
-	db "github.com/go-risk-it/go-risk-it/internal/data/db"
+	db "github.com/go-risk-it/go-risk-it/internal/data/game/db"
 
 	mock "github.com/stretchr/testify/mock"
 

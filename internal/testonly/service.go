@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/data/pool"
+	"github.com/go-risk-it/go-risk-it/internal/data/game/pool"
 )
 
 type Service interface {
