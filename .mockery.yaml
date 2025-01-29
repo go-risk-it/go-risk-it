@@ -1,6 +1,9 @@
 with-expecter: True
 inpackage: False
 dir: mocks/{{ replaceAll .InterfaceDirRelative "internal" "internal_" }}
+issue-845-fix: True
+resolve-type-alias: False
+
 
 
 mockname: "{{.InterfaceName}}"

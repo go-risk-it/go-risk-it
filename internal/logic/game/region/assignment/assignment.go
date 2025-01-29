@@ -1,7 +1,7 @@
 package assignment
 
 import (
-	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 )
 
 type RegionAssignment map[string]sqlc.Player

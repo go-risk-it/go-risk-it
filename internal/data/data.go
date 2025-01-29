@@ -1,16 +1,12 @@
 package data
 
 import (
-	"github.com/go-risk-it/go-risk-it/internal/data/db"
-	"github.com/go-risk-it/go-risk-it/internal/data/pool"
-	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/data/game"
+	"github.com/go-risk-it/go-risk-it/internal/data/lobby"
 	"go.uber.org/fx"
 )
 
 var Module = fx.Options(
-	pool.Module,
-	fx.Provide(
-		db.New,
-		sqlc.New,
-	),
+	game.Module,
+	lobby.Module,
 )

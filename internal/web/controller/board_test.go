@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
 	ctx2 "github.com/go-risk-it/go-risk-it/internal/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	boardController "github.com/go-risk-it/go-risk-it/internal/web/controller"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region"
 	"github.com/stretchr/testify/require"

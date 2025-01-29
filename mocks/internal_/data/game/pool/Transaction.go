@@ -235,7 +235,7 @@ func (_c *Transaction_CopyFrom_Call) RunAndReturn(run func(context.Context, pgx.
 }
 
 // Exec provides a mock function with given fields: ctx, sql, arguments
-func (_m *Transaction) Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error) {
+func (_m *Transaction) Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error) {
 	var _ca []interface{}
 	_ca = append(_ca, ctx, sql)
 	_ca = append(_ca, arguments...)
@@ -247,16 +247,16 @@ func (_m *Transaction) Exec(ctx context.Context, sql string, arguments ...interf
 
 	var r0 pgconn.CommandTag
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, ...interface{}) (pgconn.CommandTag, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...any) (pgconn.CommandTag, error)); ok {
 		return rf(ctx, sql, arguments...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, ...interface{}) pgconn.CommandTag); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...any) pgconn.CommandTag); ok {
 		r0 = rf(ctx, sql, arguments...)
 	} else {
 		r0 = ret.Get(0).(pgconn.CommandTag)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, ...interface{}) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, ...any) error); ok {
 		r1 = rf(ctx, sql, arguments...)
 	} else {
 		r1 = ret.Error(1)
@@ -273,18 +273,18 @@ type Transaction_Exec_Call struct {
 // Exec is a helper method to define mock.On call
 //   - ctx context.Context
 //   - sql string
-//   - arguments ...interface{}
+//   - arguments ...any
 func (_e *Transaction_Expecter) Exec(ctx interface{}, sql interface{}, arguments ...interface{}) *Transaction_Exec_Call {
 	return &Transaction_Exec_Call{Call: _e.mock.On("Exec",
 		append([]interface{}{ctx, sql}, arguments...)...)}
 }
 
-func (_c *Transaction_Exec_Call) Run(run func(ctx context.Context, sql string, arguments ...interface{})) *Transaction_Exec_Call {
+func (_c *Transaction_Exec_Call) Run(run func(ctx context.Context, sql string, arguments ...any)) *Transaction_Exec_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-2)
+		variadicArgs := make([]any, len(args)-2)
 		for i, a := range args[2:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(args[0].(context.Context), args[1].(string), variadicArgs...)
@@ -297,7 +297,7 @@ func (_c *Transaction_Exec_Call) Return(commandTag pgconn.CommandTag, err error)
 	return _c
 }
 
-func (_c *Transaction_Exec_Call) RunAndReturn(run func(context.Context, string, ...interface{}) (pgconn.CommandTag, error)) *Transaction_Exec_Call {
+func (_c *Transaction_Exec_Call) RunAndReturn(run func(context.Context, string, ...any) (pgconn.CommandTag, error)) *Transaction_Exec_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -408,7 +408,7 @@ func (_c *Transaction_Prepare_Call) RunAndReturn(run func(context.Context, strin
 }
 
 // Query provides a mock function with given fields: ctx, sql, args
-func (_m *Transaction) Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error) {
+func (_m *Transaction) Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error) {
 	var _ca []interface{}
 	_ca = append(_ca, ctx, sql)
 	_ca = append(_ca, args...)
@@ -420,10 +420,10 @@ func (_m *Transaction) Query(ctx context.Context, sql string, args ...interface{
 
 	var r0 pgx.Rows
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, ...interface{}) (pgx.Rows, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...any) (pgx.Rows, error)); ok {
 		return rf(ctx, sql, args...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, ...interface{}) pgx.Rows); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...any) pgx.Rows); ok {
 		r0 = rf(ctx, sql, args...)
 	} else {
 		if ret.Get(0) != nil {
@@ -431,7 +431,7 @@ func (_m *Transaction) Query(ctx context.Context, sql string, args ...interface{
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, ...interface{}) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, ...any) error); ok {
 		r1 = rf(ctx, sql, args...)
 	} else {
 		r1 = ret.Error(1)
@@ -448,18 +448,18 @@ type Transaction_Query_Call struct {
 // Query is a helper method to define mock.On call
 //   - ctx context.Context
 //   - sql string
-//   - args ...interface{}
+//   - args ...any
 func (_e *Transaction_Expecter) Query(ctx interface{}, sql interface{}, args ...interface{}) *Transaction_Query_Call {
 	return &Transaction_Query_Call{Call: _e.mock.On("Query",
 		append([]interface{}{ctx, sql}, args...)...)}
 }
 
-func (_c *Transaction_Query_Call) Run(run func(ctx context.Context, sql string, args ...interface{})) *Transaction_Query_Call {
+func (_c *Transaction_Query_Call) Run(run func(ctx context.Context, sql string, args ...any)) *Transaction_Query_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-2)
+		variadicArgs := make([]any, len(args)-2)
 		for i, a := range args[2:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(args[0].(context.Context), args[1].(string), variadicArgs...)
@@ -472,13 +472,13 @@ func (_c *Transaction_Query_Call) Return(_a0 pgx.Rows, _a1 error) *Transaction_Q
 	return _c
 }
 
-func (_c *Transaction_Query_Call) RunAndReturn(run func(context.Context, string, ...interface{}) (pgx.Rows, error)) *Transaction_Query_Call {
+func (_c *Transaction_Query_Call) RunAndReturn(run func(context.Context, string, ...any) (pgx.Rows, error)) *Transaction_Query_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // QueryRow provides a mock function with given fields: ctx, sql, args
-func (_m *Transaction) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
+func (_m *Transaction) QueryRow(ctx context.Context, sql string, args ...any) pgx.Row {
 	var _ca []interface{}
 	_ca = append(_ca, ctx, sql)
 	_ca = append(_ca, args...)
@@ -489,7 +489,7 @@ func (_m *Transaction) QueryRow(ctx context.Context, sql string, args ...interfa
 	}
 
 	var r0 pgx.Row
-	if rf, ok := ret.Get(0).(func(context.Context, string, ...interface{}) pgx.Row); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...any) pgx.Row); ok {
 		r0 = rf(ctx, sql, args...)
 	} else {
 		if ret.Get(0) != nil {
@@ -508,18 +508,18 @@ type Transaction_QueryRow_Call struct {
 // QueryRow is a helper method to define mock.On call
 //   - ctx context.Context
 //   - sql string
-//   - args ...interface{}
+//   - args ...any
 func (_e *Transaction_Expecter) QueryRow(ctx interface{}, sql interface{}, args ...interface{}) *Transaction_QueryRow_Call {
 	return &Transaction_QueryRow_Call{Call: _e.mock.On("QueryRow",
 		append([]interface{}{ctx, sql}, args...)...)}
 }
 
-func (_c *Transaction_QueryRow_Call) Run(run func(ctx context.Context, sql string, args ...interface{})) *Transaction_QueryRow_Call {
+func (_c *Transaction_QueryRow_Call) Run(run func(ctx context.Context, sql string, args ...any)) *Transaction_QueryRow_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-2)
+		variadicArgs := make([]any, len(args)-2)
 		for i, a := range args[2:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(args[0].(context.Context), args[1].(string), variadicArgs...)
@@ -532,7 +532,7 @@ func (_c *Transaction_QueryRow_Call) Return(_a0 pgx.Row) *Transaction_QueryRow_C
 	return _c
 }
 
-func (_c *Transaction_QueryRow_Call) RunAndReturn(run func(context.Context, string, ...interface{}) pgx.Row) *Transaction_QueryRow_Call {
+func (_c *Transaction_QueryRow_Call) RunAndReturn(run func(context.Context, string, ...any) pgx.Row) *Transaction_QueryRow_Call {
 	_c.Call.Return(run)
 	return _c
 }

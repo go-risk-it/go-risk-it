@@ -345,19 +345,19 @@ func (_c *UserContext_UserID_Call) RunAndReturn(run func() string) *UserContext_
 }
 
 // Value provides a mock function with given fields: key
-func (_m *UserContext) Value(key interface{}) interface{} {
+func (_m *UserContext) Value(key any) any {
 	ret := _m.Called(key)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Value")
 	}
 
-	var r0 interface{}
-	if rf, ok := ret.Get(0).(func(interface{}) interface{}); ok {
+	var r0 any
+	if rf, ok := ret.Get(0).(func(any) any); ok {
 		r0 = rf(key)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(interface{})
+			r0 = ret.Get(0).(any)
 		}
 	}
 
@@ -370,24 +370,24 @@ type UserContext_Value_Call struct {
 }
 
 // Value is a helper method to define mock.On call
-//   - key interface{}
+//   - key any
 func (_e *UserContext_Expecter) Value(key interface{}) *UserContext_Value_Call {
 	return &UserContext_Value_Call{Call: _e.mock.On("Value", key)}
 }
 
-func (_c *UserContext_Value_Call) Run(run func(key interface{})) *UserContext_Value_Call {
+func (_c *UserContext_Value_Call) Run(run func(key any)) *UserContext_Value_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(interface{}))
+		run(args[0].(any))
 	})
 	return _c
 }
 
-func (_c *UserContext_Value_Call) Return(_a0 interface{}) *UserContext_Value_Call {
+func (_c *UserContext_Value_Call) Return(_a0 any) *UserContext_Value_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *UserContext_Value_Call) RunAndReturn(run func(interface{}) interface{}) *UserContext_Value_Call {
+func (_c *UserContext_Value_Call) RunAndReturn(run func(any) any) *UserContext_Value_Call {
 	_c.Call.Return(run)
 	return _c
 }
