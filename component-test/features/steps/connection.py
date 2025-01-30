@@ -4,11 +4,11 @@ import logging
 from behave import *
 from websockets.sync.client import connect
 
-from src.api.board_state_message import BoardStateMessage
-from src.api.card_state_message import CardStateMessage
-from src.api.game_state_message import GameStateMessage
-from src.api.player_state_message import PlayerStateMessage
-from src.api.move_history_message import MoveHistoryMessage
+from src.game.api.board_state_message import BoardStateMessage
+from src.game.api.card_state_message import CardStateMessage
+from src.game.api.game_state_message import GameStateMessage
+from src.game.api.player_state_message import PlayerStateMessage
+from src.game.api.move_history_message import MoveHistoryMessage
 from src.core.context import RiskItContext, IndexedBoardStateData
 
 LOGGER = logging.getLogger(__name__)

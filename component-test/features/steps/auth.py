@@ -13,7 +13,7 @@ LOGGER = logging.getLogger(__name__)
 @given("{player} creates an account")
 def step_impl(context: RiskItContext, player: str):
     if player in context.players.keys():
-        LOGGER.warning(f"Player {player} already exists")
+        LOGGER.debug(f"Player {player} already exists")
 
         return
 

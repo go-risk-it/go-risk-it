@@ -6,8 +6,8 @@ import (
 	"strconv"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/web/game/ws/connection"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
-	"github.com/go-risk-it/go-risk-it/internal/web/ws/connection"
 	"go.uber.org/zap"
 )
 

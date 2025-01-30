@@ -7,17 +7,53 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const insertLobby = `-- name: InsertLobby :one
+const createLobby = `-- name: CreateLobby :one
 INSERT INTO lobby DEFAULT
 VALUES
 RETURNING id
 `
 
-func (q *Queries) InsertLobby(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, insertLobby)
+func (q *Queries) CreateLobby(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, createLobby)
 	var id int64
 	err := row.Scan(&id)
 	return id, err
+}
+
+const insertParticipant = `-- name: InsertParticipant :one
+INSERT INTO participant (lobby_id, user_id)
+VALUES ($1, $2)
+RETURNING id
+`
+
+type InsertParticipantParams struct {
+	LobbyID int64
+	UserID  string
+}
+
+func (q *Queries) InsertParticipant(ctx context.Context, arg InsertParticipantParams) (int64, error) {
+	row := q.db.QueryRow(ctx, insertParticipant, arg.LobbyID, arg.UserID)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
+const updateLobbyOwner = `-- name: UpdateLobbyOwner :exec
+UPDATE lobby
+SET owner_id = $1
+WHERE id = $2
+`
+
+type UpdateLobbyOwnerParams struct {
+	OwnerID pgtype.Int8
+	ID      int64
+}
+
+func (q *Queries) UpdateLobbyOwner(ctx context.Context, arg UpdateLobbyOwnerParams) error {
+	_, err := q.db.Exec(ctx, updateLobbyOwner, arg.OwnerID, arg.ID)
+	return err
 }

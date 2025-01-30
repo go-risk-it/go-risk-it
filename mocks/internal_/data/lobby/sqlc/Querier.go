@@ -5,6 +5,7 @@ package sqlc
 import (
 	context "context"
 
+	sqlc "github.com/go-risk-it/go-risk-it/internal/data/lobby/sqlc"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -21,12 +22,12 @@ func (_m *Querier) EXPECT() *Querier_Expecter {
 	return &Querier_Expecter{mock: &_m.Mock}
 }
 
-// InsertLobby provides a mock function with given fields: ctx
-func (_m *Querier) InsertLobby(ctx context.Context) (int64, error) {
+// CreateLobby provides a mock function with given fields: ctx
+func (_m *Querier) CreateLobby(ctx context.Context) (int64, error) {
 	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
-		panic("no return value specified for InsertLobby")
+		panic("no return value specified for CreateLobby")
 	}
 
 	var r0 int64
@@ -49,30 +50,134 @@ func (_m *Querier) InsertLobby(ctx context.Context) (int64, error) {
 	return r0, r1
 }
 
-// Querier_InsertLobby_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertLobby'
-type Querier_InsertLobby_Call struct {
+// Querier_CreateLobby_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateLobby'
+type Querier_CreateLobby_Call struct {
 	*mock.Call
 }
 
-// InsertLobby is a helper method to define mock.On call
+// CreateLobby is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *Querier_Expecter) InsertLobby(ctx interface{}) *Querier_InsertLobby_Call {
-	return &Querier_InsertLobby_Call{Call: _e.mock.On("InsertLobby", ctx)}
+func (_e *Querier_Expecter) CreateLobby(ctx interface{}) *Querier_CreateLobby_Call {
+	return &Querier_CreateLobby_Call{Call: _e.mock.On("CreateLobby", ctx)}
 }
 
-func (_c *Querier_InsertLobby_Call) Run(run func(ctx context.Context)) *Querier_InsertLobby_Call {
+func (_c *Querier_CreateLobby_Call) Run(run func(ctx context.Context)) *Querier_CreateLobby_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context))
 	})
 	return _c
 }
 
-func (_c *Querier_InsertLobby_Call) Return(_a0 int64, _a1 error) *Querier_InsertLobby_Call {
+func (_c *Querier_CreateLobby_Call) Return(_a0 int64, _a1 error) *Querier_CreateLobby_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_InsertLobby_Call) RunAndReturn(run func(context.Context) (int64, error)) *Querier_InsertLobby_Call {
+func (_c *Querier_CreateLobby_Call) RunAndReturn(run func(context.Context) (int64, error)) *Querier_CreateLobby_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// InsertParticipant provides a mock function with given fields: ctx, arg
+func (_m *Querier) InsertParticipant(ctx context.Context, arg sqlc.InsertParticipantParams) (int64, error) {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for InsertParticipant")
+	}
+
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.InsertParticipantParams) (int64, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.InsertParticipantParams) int64); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, sqlc.InsertParticipantParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_InsertParticipant_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertParticipant'
+type Querier_InsertParticipant_Call struct {
+	*mock.Call
+}
+
+// InsertParticipant is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg sqlc.InsertParticipantParams
+func (_e *Querier_Expecter) InsertParticipant(ctx interface{}, arg interface{}) *Querier_InsertParticipant_Call {
+	return &Querier_InsertParticipant_Call{Call: _e.mock.On("InsertParticipant", ctx, arg)}
+}
+
+func (_c *Querier_InsertParticipant_Call) Run(run func(ctx context.Context, arg sqlc.InsertParticipantParams)) *Querier_InsertParticipant_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(sqlc.InsertParticipantParams))
+	})
+	return _c
+}
+
+func (_c *Querier_InsertParticipant_Call) Return(_a0 int64, _a1 error) *Querier_InsertParticipant_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_InsertParticipant_Call) RunAndReturn(run func(context.Context, sqlc.InsertParticipantParams) (int64, error)) *Querier_InsertParticipant_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateLobbyOwner provides a mock function with given fields: ctx, arg
+func (_m *Querier) UpdateLobbyOwner(ctx context.Context, arg sqlc.UpdateLobbyOwnerParams) error {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateLobbyOwner")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.UpdateLobbyOwnerParams) error); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Querier_UpdateLobbyOwner_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateLobbyOwner'
+type Querier_UpdateLobbyOwner_Call struct {
+	*mock.Call
+}
+
+// UpdateLobbyOwner is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg sqlc.UpdateLobbyOwnerParams
+func (_e *Querier_Expecter) UpdateLobbyOwner(ctx interface{}, arg interface{}) *Querier_UpdateLobbyOwner_Call {
+	return &Querier_UpdateLobbyOwner_Call{Call: _e.mock.On("UpdateLobbyOwner", ctx, arg)}
+}
+
+func (_c *Querier_UpdateLobbyOwner_Call) Run(run func(ctx context.Context, arg sqlc.UpdateLobbyOwnerParams)) *Querier_UpdateLobbyOwner_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(sqlc.UpdateLobbyOwnerParams))
+	})
+	return _c
+}
+
+func (_c *Querier_UpdateLobbyOwner_Call) Return(_a0 error) *Querier_UpdateLobbyOwner_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Querier_UpdateLobbyOwner_Call) RunAndReturn(run func(context.Context, sqlc.UpdateLobbyOwnerParams) error) *Querier_UpdateLobbyOwner_Call {
 	_c.Call.Return(run)
 	return _c
 }

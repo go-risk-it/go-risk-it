@@ -9,7 +9,9 @@ import (
 )
 
 type Querier interface {
-	InsertLobby(ctx context.Context) (int64, error)
+	CreateLobby(ctx context.Context) (int64, error)
+	InsertParticipant(ctx context.Context, arg InsertParticipantParams) (int64, error)
+	UpdateLobbyOwner(ctx context.Context, arg UpdateLobbyOwnerParams) error
 }
 
 var _ Querier = (*Queries)(nil)

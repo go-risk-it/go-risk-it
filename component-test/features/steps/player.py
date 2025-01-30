@@ -1,6 +1,6 @@
 from behave import *
 
-from src.api.player_state_message import Player, PlayerStatus
+from src.game.api.player_state_message import Player, PlayerStatus
 from src.core.context import RiskItContext
 
 

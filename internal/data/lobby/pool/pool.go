@@ -48,7 +48,7 @@ func NewConnectionPool(
 ) *pgxpool.Pool {
 	pool, err := pgxpool.New(
 		context.Background(),
-		config.BuildConnectionString("game"),
+		config.BuildConnectionString("lobby"),
 	)
 	if err != nil {
 		panic("Unable to create connection pool")

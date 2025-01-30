@@ -2,10 +2,10 @@ import dataclasses
 
 from behave.runner import Context
 
-from src.api.board_state_message import Region
-from src.api.card_state_message import CardStateData
-from src.api.game_state_message import GameStateData
-from src.api.player_state_message import PlayerStateData
+from src.game.api.board_state_message import Region
+from src.game.api.card_state_message import CardStateData
+from src.game.api.game_state_message import GameStateData
+from src.game.api.player_state_message import PlayerStateData
 from src.client.http_client import RiskItClient
 from src.client.supabase_client import SupabaseClient
 from src.core.player import Player
@@ -19,6 +19,7 @@ class IndexedBoardStateData:
 
 class RiskItContext(Context):
     game_id: int
+    lobby_id: int
     board_state: IndexedBoardStateData
     card_state: dict[str, CardStateData]
     game_state: GameStateData

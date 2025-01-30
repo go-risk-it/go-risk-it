@@ -1,5 +1,5 @@
 from behave import *
-from src.api.card_state_message import CardType
+from src.game.api.card_state_message import CardType
 from src.core.context import RiskItContext
 from steps.connection import all_players_receive_all_state_updates
 from util.http_assertions import assert_2xx
