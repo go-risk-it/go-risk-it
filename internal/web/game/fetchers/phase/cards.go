@@ -7,7 +7,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/fetchers/fetcher"
-	"github.com/go-risk-it/go-risk-it/internal/web/game/ws/message"
+	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 )
 
 type CardsPhaseFetcher interface {

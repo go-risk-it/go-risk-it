@@ -8,7 +8,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/fetchers/fetcher"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/fetchers/phase"
-	"github.com/go-risk-it/go-risk-it/internal/web/game/ws/connection"
+	"github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -35,7 +35,7 @@ type HandlerParams[T any] struct {
 	ReinforcePhaseFetcher phase.ReinforcePhaseFetcher
 	CardsPhaseFetcher     phase.CardsPhaseFetcher
 	MoveLogFetcher        fetcher.MoveLogFetcher
-	ConnectionManager     connection.Manager
+	ConnectionManager     ws.Manager
 }
 
 func fetchAllStatesAndPublish[T any](

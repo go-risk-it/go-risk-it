@@ -11,8 +11,8 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/signals"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	fetcher2 "github.com/go-risk-it/go-risk-it/internal/web/game/fetchers/fetcher"
-	"github.com/go-risk-it/go-risk-it/internal/web/game/ws/connection"
-	"github.com/go-risk-it/go-risk-it/internal/web/game/ws/message"
+	"github.com/go-risk-it/go-risk-it/internal/web/game/ws"
+	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -24,7 +24,7 @@ type MovePerformedHandlerParams struct {
 	Signal            signals.MovePerformedSignal
 	MoveLogController controller.MoveLogController
 	MoveLogFetcher    fetcher2.MoveLogFetcher
-	ConnectionManager connection.Manager
+	ConnectionManager ws.Manager
 }
 
 func HandleMovePerformed(

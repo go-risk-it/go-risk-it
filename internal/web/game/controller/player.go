@@ -8,7 +8,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
-	"github.com/go-risk-it/go-risk-it/internal/web/game/ws/connection"
+	"github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 )
 
 type PlayerController interface {
@@ -16,14 +16,14 @@ type PlayerController interface {
 }
 
 type PlayerControllerImpl struct {
-	connectionManager connection.Manager
+	connectionManager ws.Manager
 	playerService     player.Service
 }
 
 var _ PlayerController = (*PlayerControllerImpl)(nil)
 
 func NewPlayerController(
-	connectionManager connection.Manager,
+	connectionManager ws.Manager,
 	playerService player.Service,
 ) *PlayerControllerImpl {
 	return &PlayerControllerImpl{

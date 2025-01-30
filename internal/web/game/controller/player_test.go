@@ -9,7 +9,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	playerController "github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
-	"github.com/go-risk-it/go-risk-it/mocks/internal_/web/game/ws/connection"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/web/game/ws"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/zap"
@@ -19,7 +19,7 @@ func TestControllerImpl_GetPlayerState(t *testing.T) {
 	t.Parallel()
 
 	// Initialize dependencies
-	connectionManager := connection.NewManager(t)
+	connectionManager := ws.NewManager(t)
 	playerService := player.NewService(t)
 
 	// Initialize the state under test

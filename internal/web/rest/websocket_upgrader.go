@@ -6,8 +6,9 @@ import (
 	"strconv"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/web/game/ws/connection"
+	gameWs "github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
+	"github.com/go-risk-it/go-risk-it/internal/web/ws"
 	"go.uber.org/zap"
 )
 
@@ -16,16 +17,16 @@ type WebSocketUpgraderHandler interface {
 }
 
 type WebSocketUpgraderHandlerImpl struct {
-	connectionManager connection.Manager
-	upgrader          connection.Upgrader
+	connectionManager gameWs.Manager
+	upgrader          ws.Upgrader
 	log               *zap.SugaredLogger
 }
 
 var _ WebSocketUpgraderHandler = (*WebSocketUpgraderHandlerImpl)(nil)
 
 func NewWebSocketHandler(
-	connectionManager connection.Manager,
-	upgrader connection.Upgrader,
+	connectionManager gameWs.Manager,
+	upgrader ws.Upgrader,
 	log *zap.SugaredLogger,
 ) *WebSocketUpgraderHandlerImpl {
 	return &WebSocketUpgraderHandlerImpl{

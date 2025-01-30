@@ -7,8 +7,8 @@ import (
 var Module = fx.Options(
 	fx.Provide(
 		fx.Annotate(
-			NewManager,
-			fx.As(new(Manager)),
+			New,
+			fx.As(new(Upgrader)),
 		),
 	),
 )

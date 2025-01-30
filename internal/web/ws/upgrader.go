@@ -1,4 +1,4 @@
-package connection
+package ws
 
 import (
 	"net/http"

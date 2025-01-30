@@ -8,6 +8,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/web/nbio"
 	"github.com/go-risk-it/go-risk-it/internal/web/otel"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest"
+	"github.com/go-risk-it/go-risk-it/internal/web/ws"
 	"go.uber.org/fx"
 )
 
@@ -19,4 +20,5 @@ var Module = fx.Options(
 	nbio.Module,
 	otel.Module,
 	rest.Module,
+	ws.Module,
 )

@@ -1,4 +1,4 @@
-package connection
+package ws
 
 import (
 	"encoding/json"
@@ -10,18 +10,18 @@ import (
 	"github.com/lesismal/nbio/nbhttp/websocket"
 )
 
-type playerConnections struct {
+type PlayerConnections struct {
 	upgradablerwmutex.UpgradableRWMutex
 	playerConnections map[string]*websocket.Conn
 }
 
-func newPlayerConnections() *playerConnections {
-	return &playerConnections{
+func NewPlayerConnections() *PlayerConnections {
+	return &PlayerConnections{
 		playerConnections: make(map[string]*websocket.Conn),
 	}
 }
 
-func (p *playerConnections) Broadcast(ctx ctx.GameContext, message json.RawMessage) {
+func (p *PlayerConnections) Broadcast(ctx ctx.UserContext, message json.RawMessage) {
 	p.UpgradableRLock()
 	defer p.UpgradableRUnlock()
 
@@ -47,7 +47,7 @@ func (p *playerConnections) Broadcast(ctx ctx.GameContext, message json.RawMessa
 	p.cleanUpConnections(ctx, toCleanup)
 }
 
-func (p *playerConnections) Write(ctx ctx.GameContext, message json.RawMessage) {
+func (p *PlayerConnections) Write(ctx ctx.UserContext, message json.RawMessage) {
 	p.UpgradableRLock()
 	defer p.UpgradableRUnlock()
 
@@ -74,7 +74,7 @@ func (p *playerConnections) Write(ctx ctx.GameContext, message json.RawMessage) 
 	}
 }
 
-func (p *playerConnections) cleanUpConnections(ctx ctx.GameContext, toCleanup []string) {
+func (p *PlayerConnections) cleanUpConnections(ctx ctx.UserContext, toCleanup []string) {
 	if len(toCleanup) == 0 {
 		return
 	}
@@ -90,7 +90,7 @@ func (p *playerConnections) cleanUpConnections(ctx ctx.GameContext, toCleanup []
 	ctx.Log().Debugw("cleaned up connections", "users", toCleanup)
 }
 
-func (p *playerConnections) ConnectPlayer(ctx ctx.GameContext, connection *websocket.Conn) {
+func (p *PlayerConnections) ConnectPlayer(ctx ctx.UserContext, connection *websocket.Conn) {
 	ctx.Log().Infow(
 		"Connecting player",
 		"remoteAddress", connection.RemoteAddr().String())
@@ -106,7 +106,7 @@ func (p *playerConnections) ConnectPlayer(ctx ctx.GameContext, connection *webso
 	ctx.Log().Infow("Connected player", "currentConnections", len(p.playerConnections))
 }
 
-func (p *playerConnections) GetConnectedPlayers(ctx ctx.GameContext) []string {
+func (p *PlayerConnections) GetConnectedPlayers(ctx ctx.UserContext) []string {
 	p.RLock()
 	defer p.RUnlock()
 
