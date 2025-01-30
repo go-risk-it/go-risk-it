@@ -28,6 +28,10 @@ var Module = fx.Options(
 			fx.As(new(GameMiddleware)),
 		),
 		fx.Annotate(
+			NewLobbyMiddleware,
+			fx.As(new(LobbyMiddleware)),
+		),
+		fx.Annotate(
 			NewLogMiddleware,
 			fx.As(new(LogMiddleware)),
 		),

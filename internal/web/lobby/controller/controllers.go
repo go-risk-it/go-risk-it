@@ -8,5 +8,9 @@ var Module = fx.Options(
 			NewCreationController,
 			fx.As(new(CreationController)),
 		),
+		fx.Annotate(
+			NewManagementController,
+			fx.As(new(ManagementController)),
+		),
 	),
 )

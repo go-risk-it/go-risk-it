@@ -7,11 +7,5 @@ Feature: Creating a lobby, connecting players, starting a game
 
   Scenario: Create lobby
     Given francesco creates a lobby
-
-
-
-
-
-
-
-
+    When gabriele joins the lobby
+    And giovanni joins the lobby

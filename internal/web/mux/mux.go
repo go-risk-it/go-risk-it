@@ -15,6 +15,7 @@ func NewServeMux(
 	authMiddleware middleware.AuthMiddleware,
 	corsMiddleware middleware.CorsMiddleware,
 	gameMiddleware middleware.GameMiddleware,
+	lobbyMiddleware middleware.LobbyMiddleware,
 	logMiddleware middleware.LogMiddleware,
 	otelMiddleware middleware.OTelMiddleware,
 	websocketAuthMiddleware middleware.WebsocketHeaderConversionMiddleware,
@@ -33,8 +34,10 @@ func NewServeMux(
 						corsMiddleware.Wrap(
 							websocketAuthMiddleware.Wrap(
 								authMiddleware.Wrap(
-									gameMiddleware.Wrap(
-										route,
+									lobbyMiddleware.Wrap(
+										gameMiddleware.Wrap(
+											route,
+										),
 									),
 								),
 							),

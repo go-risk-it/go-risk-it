@@ -12,31 +12,33 @@ import (
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 )
 
-type Handler interface {
+type CreationHandler interface {
 	route.Route
 }
 
-type HandlerImpl struct {
+type CreationHandlerImpl struct {
 	creationController controller.CreationController
 }
 
-var _ Handler = (*HandlerImpl)(nil)
+var _ CreationHandler = (*CreationHandlerImpl)(nil)
 
-func NewCreationHandler(creationController controller.CreationController) *HandlerImpl {
-	return &HandlerImpl{
+func NewCreationHandler(
+	creationController controller.CreationController,
+) *CreationHandlerImpl {
+	return &CreationHandlerImpl{
 		creationController: creationController,
 	}
 }
 
-func (h *HandlerImpl) Pattern() string {
+func (h *CreationHandlerImpl) Pattern() string {
 	return "/api/v1/lobbies"
 }
 
-func (h *HandlerImpl) RequiresAuth() bool {
+func (h *CreationHandlerImpl) RequiresAuth() bool {
 	return true
 }
 
-func (h *HandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
+func (h *CreationHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	userContext, ok := req.Context().(ctx.UserContext)
 	if !ok {
 		http.Error(
