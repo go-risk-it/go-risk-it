@@ -17,4 +17,5 @@ type Participant struct {
 	ID      int64
 	LobbyID int64
 	UserID  string
+	Name    string
 }

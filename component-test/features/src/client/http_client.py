@@ -34,16 +34,16 @@ class RiskItClient:
             body=body,
         )
 
-    def create_lobby(self) -> Response:
+    def create_lobby(self, body) -> Response:
         return self.__post(
             "/api/v1/lobbies",
-            body=None,
+            body=body,
         )
 
-    def join_lobby(self, lobby_id: int) -> Response:
+    def join_lobby(self, lobby_id: int, body) -> Response:
         return self.__post(
             f"/api/v1/lobbies/{lobby_id}/join",
-            body=None,
+            body=body,
         )
 
     def deploy(self, game_id: int, body) -> Response:

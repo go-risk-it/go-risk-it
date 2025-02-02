@@ -58,18 +58,19 @@ func (q *Queries) GetLobby(ctx context.Context, id int64) ([]GetLobbyRow, error)
 }
 
 const insertParticipant = `-- name: InsertParticipant :one
-INSERT INTO participant (lobby_id, user_id)
-VALUES ($1, $2)
+INSERT INTO participant (lobby_id, user_id, name)
+VALUES ($1, $2, $3)
 RETURNING id
 `
 
 type InsertParticipantParams struct {
 	LobbyID int64
 	UserID  string
+	Name    string
 }
 
 func (q *Queries) InsertParticipant(ctx context.Context, arg InsertParticipantParams) (int64, error) {
-	row := q.db.QueryRow(ctx, insertParticipant, arg.LobbyID, arg.UserID)
+	row := q.db.QueryRow(ctx, insertParticipant, arg.LobbyID, arg.UserID, arg.Name)
 	var id int64
 	err := row.Scan(&id)
 	return id, err

@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/go-risk-it/go-risk-it/internal/api/lobby/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
+	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 )
 
 type JoinHandler interface {
@@ -36,6 +38,11 @@ func (h *JoinHandlerImpl) RequiresAuth() bool {
 }
 
 func (h *JoinHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
+	joinLobbyRequest, err := restutils.DecodeRequest[request.JoinLobby](writer, req)
+	if err != nil {
+		return
+	}
+
 	lobbyContext, ok := req.Context().(ctx.LobbyContext)
 	if !ok {
 		http.Error(
@@ -47,7 +54,7 @@ func (h *JoinHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	if err := h.managementController.JoinLobby(lobbyContext); err != nil {
+	if err := h.managementController.JoinLobby(lobbyContext, joinLobbyRequest); err != nil {
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 
 		return

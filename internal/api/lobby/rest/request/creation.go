@@ -1,3 +1,5 @@
 package request
 
-type CreateLobby struct{}
+type CreateLobby struct {
+	OwnerName string `json:"ownerName"`
+}

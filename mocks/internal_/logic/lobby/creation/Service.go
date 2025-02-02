@@ -20,9 +20,9 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
-// CreateLobby provides a mock function with given fields: _a0
-func (_m *Service) CreateLobby(_a0 ctx.UserContext) (int64, error) {
-	ret := _m.Called(_a0)
+// CreateLobby provides a mock function with given fields: _a0, ownerName
+func (_m *Service) CreateLobby(_a0 ctx.UserContext, ownerName string) (int64, error) {
+	ret := _m.Called(_a0, ownerName)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateLobby")
@@ -30,17 +30,17 @@ func (_m *Service) CreateLobby(_a0 ctx.UserContext) (int64, error) {
 
 	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(ctx.UserContext) (int64, error)); ok {
-		return rf(_a0)
+	if rf, ok := ret.Get(0).(func(ctx.UserContext, string) (int64, error)); ok {
+		return rf(_a0, ownerName)
 	}
-	if rf, ok := ret.Get(0).(func(ctx.UserContext) int64); ok {
-		r0 = rf(_a0)
+	if rf, ok := ret.Get(0).(func(ctx.UserContext, string) int64); ok {
+		r0 = rf(_a0, ownerName)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(ctx.UserContext) error); ok {
-		r1 = rf(_a0)
+	if rf, ok := ret.Get(1).(func(ctx.UserContext, string) error); ok {
+		r1 = rf(_a0, ownerName)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -55,13 +55,14 @@ type Service_CreateLobby_Call struct {
 
 // CreateLobby is a helper method to define mock.On call
 //   - _a0 ctx.UserContext
-func (_e *Service_Expecter) CreateLobby(_a0 interface{}) *Service_CreateLobby_Call {
-	return &Service_CreateLobby_Call{Call: _e.mock.On("CreateLobby", _a0)}
+//   - ownerName string
+func (_e *Service_Expecter) CreateLobby(_a0 interface{}, ownerName interface{}) *Service_CreateLobby_Call {
+	return &Service_CreateLobby_Call{Call: _e.mock.On("CreateLobby", _a0, ownerName)}
 }
 
-func (_c *Service_CreateLobby_Call) Run(run func(_a0 ctx.UserContext)) *Service_CreateLobby_Call {
+func (_c *Service_CreateLobby_Call) Run(run func(_a0 ctx.UserContext, ownerName string)) *Service_CreateLobby_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.UserContext))
+		run(args[0].(ctx.UserContext), args[1].(string))
 	})
 	return _c
 }
@@ -71,7 +72,7 @@ func (_c *Service_CreateLobby_Call) Return(_a0 int64, _a1 error) *Service_Create
 	return _c
 }
 
-func (_c *Service_CreateLobby_Call) RunAndReturn(run func(ctx.UserContext) (int64, error)) *Service_CreateLobby_Call {
+func (_c *Service_CreateLobby_Call) RunAndReturn(run func(ctx.UserContext, string) (int64, error)) *Service_CreateLobby_Call {
 	_c.Call.Return(run)
 	return _c
 }

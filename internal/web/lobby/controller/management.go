@@ -1,12 +1,13 @@
 package controller
 
 import (
+	"github.com/go-risk-it/go-risk-it/internal/api/lobby/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/lobby/management"
 )
 
 type ManagementController interface {
-	JoinLobby(ctx ctx.LobbyContext) error
+	JoinLobby(ctx ctx.LobbyContext, request request.JoinLobby) error
 }
 
 type ManagementControllerImpl struct {
@@ -23,6 +24,9 @@ func NewManagementController(
 	}
 }
 
-func (c *ManagementControllerImpl) JoinLobby(ctx ctx.LobbyContext) error {
-	return c.managementService.JoinLobby(ctx)
+func (c *ManagementControllerImpl) JoinLobby(
+	ctx ctx.LobbyContext,
+	request request.JoinLobby,
+) error {
+	return c.managementService.JoinLobby(ctx, request.ParticipantName)
 }

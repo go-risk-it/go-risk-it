@@ -21,17 +21,17 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
-// JoinLobby provides a mock function with given fields: _a0
-func (_m *Service) JoinLobby(_a0 ctx.LobbyContext) error {
-	ret := _m.Called(_a0)
+// JoinLobby provides a mock function with given fields: _a0, name
+func (_m *Service) JoinLobby(_a0 ctx.LobbyContext, name string) error {
+	ret := _m.Called(_a0, name)
 
 	if len(ret) == 0 {
 		panic("no return value specified for JoinLobby")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(ctx.LobbyContext) error); ok {
-		r0 = rf(_a0)
+	if rf, ok := ret.Get(0).(func(ctx.LobbyContext, string) error); ok {
+		r0 = rf(_a0, name)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -46,13 +46,14 @@ type Service_JoinLobby_Call struct {
 
 // JoinLobby is a helper method to define mock.On call
 //   - _a0 ctx.LobbyContext
-func (_e *Service_Expecter) JoinLobby(_a0 interface{}) *Service_JoinLobby_Call {
-	return &Service_JoinLobby_Call{Call: _e.mock.On("JoinLobby", _a0)}
+//   - name string
+func (_e *Service_Expecter) JoinLobby(_a0 interface{}, name interface{}) *Service_JoinLobby_Call {
+	return &Service_JoinLobby_Call{Call: _e.mock.On("JoinLobby", _a0, name)}
 }
 
-func (_c *Service_JoinLobby_Call) Run(run func(_a0 ctx.LobbyContext)) *Service_JoinLobby_Call {
+func (_c *Service_JoinLobby_Call) Run(run func(_a0 ctx.LobbyContext, name string)) *Service_JoinLobby_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.LobbyContext))
+		run(args[0].(ctx.LobbyContext), args[1].(string))
 	})
 	return _c
 }
@@ -62,7 +63,7 @@ func (_c *Service_JoinLobby_Call) Return(_a0 error) *Service_JoinLobby_Call {
 	return _c
 }
 
-func (_c *Service_JoinLobby_Call) RunAndReturn(run func(ctx.LobbyContext) error) *Service_JoinLobby_Call {
+func (_c *Service_JoinLobby_Call) RunAndReturn(run func(ctx.LobbyContext, string) error) *Service_JoinLobby_Call {
 	_c.Call.Return(run)
 	return _c
 }

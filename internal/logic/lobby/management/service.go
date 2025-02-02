@@ -10,7 +10,7 @@ import (
 )
 
 type Service interface {
-	JoinLobby(ctx ctx.LobbyContext) error
+	JoinLobby(ctx ctx.LobbyContext, name string) error
 }
 
 type ServiceImpl struct {
@@ -30,9 +30,9 @@ func NewService(
 	}
 }
 
-func (s *ServiceImpl) JoinLobby(ctx ctx.LobbyContext) error {
+func (s *ServiceImpl) JoinLobby(ctx ctx.LobbyContext, name string) error {
 	if _, err := s.querier.ExecuteInTransaction(ctx, func(qtx db.Querier) (interface{}, error) {
-		return nil, s.JoinLobbyQ(ctx, qtx)
+		return nil, s.JoinLobbyQ(ctx, qtx, name)
 	}); err != nil {
 		return fmt.Errorf("failed to join lobby: %w", err)
 	}
@@ -45,12 +45,14 @@ func (s *ServiceImpl) JoinLobby(ctx ctx.LobbyContext) error {
 func (s *ServiceImpl) JoinLobbyQ(
 	ctx ctx.LobbyContext,
 	querier db.Querier,
+	name string,
 ) error {
 	ctx.Log().Infow("joining lobby")
 
 	participantID, err := querier.InsertParticipant(ctx, sqlc.InsertParticipantParams{
 		LobbyID: ctx.LobbyID(),
 		UserID:  ctx.UserID(),
+		Name:    name,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to insert participant: %w", err)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/go-risk-it/go-risk-it/internal/api/lobby/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/api/lobby/rest/response"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby/controller"
@@ -39,6 +40,11 @@ func (h *CreationHandlerImpl) RequiresAuth() bool {
 }
 
 func (h *CreationHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
+	createLobbyRequest, err := restutils.DecodeRequest[request.CreateLobby](writer, req)
+	if err != nil {
+		return
+	}
+
 	userContext, ok := req.Context().(ctx.UserContext)
 	if !ok {
 		http.Error(
@@ -50,7 +56,7 @@ func (h *CreationHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Re
 		return
 	}
 
-	lobbyID, err := h.creationController.CreateLobby(userContext)
+	lobbyID, err := h.creationController.CreateLobby(userContext, createLobbyRequest)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 

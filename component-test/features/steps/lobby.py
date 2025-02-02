@@ -7,7 +7,8 @@ from util.http_assertions import assert_2xx
 
 @given("{player} creates a lobby")
 def step_impl(context: RiskItContext, player: str):
-    response = context.risk_it_clients[player].create_lobby()
+    request = {"ownerName": player}
+    response = context.risk_it_clients[player].create_lobby(request)
 
     assert_2xx(response)
     context.lobby_id = response.json()["lobbyId"]
@@ -25,6 +26,7 @@ def step_impl(context: RiskItContext, player: str):
 
 @when("{player} joins the lobby")
 def step_impl(context: RiskItContext, player: str):
-    response = context.risk_it_clients[player].join_lobby(context.lobby_id)
+    request = {"participantName": player}
+    response = context.risk_it_clients[player].join_lobby(context.lobby_id, request)
 
     assert_2xx(response)

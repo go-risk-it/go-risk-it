@@ -1,3 +1,5 @@
 package request
 
-type JoinLobby struct{}
+type JoinLobby struct {
+	ParticipantName string `json:"participantName"`
+}
