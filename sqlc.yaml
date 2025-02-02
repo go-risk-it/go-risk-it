@@ -26,7 +26,10 @@ sql:
     rules:
       - sqlc/db-prepare
   - engine: "postgresql"
-    queries: "internal/logic/lobby/creation"
+    queries:
+      - "internal/logic/lobby/creation"
+      - "internal/logic/lobby/management"
+      - "internal/logic/lobby/state"
     schema: "internal/data/lobby/sqlc/migrations"
     gen:
       go:

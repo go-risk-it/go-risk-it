@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/logic/signals"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
 )
 
 func HandleGameStateChanged(

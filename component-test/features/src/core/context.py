@@ -10,6 +10,7 @@ from src.client.http_client import RiskItClient
 from src.client.supabase_client import SupabaseClient
 from src.core.player import Player
 from src.core.runner import ServiceRunner
+from src.lobby.api.lobby_state_message import LobbyStateData
 
 
 class IndexedBoardStateData:
@@ -23,6 +24,7 @@ class RiskItContext(Context):
     board_state: IndexedBoardStateData
     card_state: dict[str, CardStateData]
     game_state: GameStateData
+    lobby_state: LobbyStateData
     player_state: PlayerStateData
     supabase_client: SupabaseClient
     service_runner: ServiceRunner

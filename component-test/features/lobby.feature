@@ -7,5 +7,11 @@ Feature: Creating a lobby, connecting players, starting a game
 
   Scenario: Create lobby
     Given francesco creates a lobby
+    When francesco connects to the lobby
+    And gabriele connects to the lobby
+    And giovanni connects to the lobby
+    Then all players receive all state updates
     When gabriele joins the lobby
-    And giovanni joins the lobby
+    Then all players receive all state updates
+    When giovanni joins the lobby
+    Then all players receive all state updates

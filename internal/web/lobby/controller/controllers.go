@@ -12,5 +12,9 @@ var Module = fx.Options(
 			NewManagementController,
 			fx.As(new(ManagementController)),
 		),
+		fx.Annotate(
+			NewStateController,
+			fx.As(new(StateController)),
+		),
 	),
 )

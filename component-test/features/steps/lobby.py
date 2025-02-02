@@ -1,4 +1,5 @@
 from behave import *
+from websockets.sync.client import connect
 
 from src.core.context import RiskItContext
 from util.http_assertions import assert_2xx
@@ -10,6 +11,16 @@ def step_impl(context: RiskItContext, player: str):
 
     assert_2xx(response)
     context.lobby_id = response.json()["lobbyId"]
+
+
+@when("{player} connects to the lobby")
+def step_impl(context: RiskItContext, player: str):
+    conn = connect(
+        f"ws://localhost:8000/ws?lobbyID={context.lobby_id}",
+        open_timeout=2,
+        additional_headers={"Authorization": f"Bearer {context.players[player].user.jwt}"},
+    )
+    context.players[player].connection = conn
 
 
 @when("{player} joins the lobby")

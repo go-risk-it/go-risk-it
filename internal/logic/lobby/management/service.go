@@ -6,6 +6,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/logic/lobby/signals"
 )
 
 type Service interface {
@@ -13,14 +14,19 @@ type Service interface {
 }
 
 type ServiceImpl struct {
-	querier db.Querier
+	querier                 db.Querier
+	lobbyStateChangedSignal signals.LobbyStateChangedSignal
 }
 
 var _ Service = (*ServiceImpl)(nil)
 
-func NewService(querier db.Querier) *ServiceImpl {
+func NewService(
+	querier db.Querier,
+	lobbyStateChangedSignal signals.LobbyStateChangedSignal,
+) *ServiceImpl {
 	return &ServiceImpl{
-		querier: querier,
+		querier:                 querier,
+		lobbyStateChangedSignal: lobbyStateChangedSignal,
 	}
 }
 
@@ -30,6 +36,8 @@ func (s *ServiceImpl) JoinLobby(ctx ctx.LobbyContext) error {
 	}); err != nil {
 		return fmt.Errorf("failed to join lobby: %w", err)
 	}
+
+	go s.lobbyStateChangedSignal.Emit(ctx, signals.LobbyStateChangedData{})
 
 	return nil
 }

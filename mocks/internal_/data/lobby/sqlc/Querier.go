@@ -78,6 +78,65 @@ func (_c *Querier_CreateLobby_Call) RunAndReturn(run func(context.Context) (int6
 	return _c
 }
 
+// GetLobby provides a mock function with given fields: ctx, id
+func (_m *Querier) GetLobby(ctx context.Context, id int64) ([]sqlc.GetLobbyRow, error) {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetLobby")
+	}
+
+	var r0 []sqlc.GetLobbyRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64) ([]sqlc.GetLobbyRow, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int64) []sqlc.GetLobbyRow); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]sqlc.GetLobbyRow)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_GetLobby_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLobby'
+type Querier_GetLobby_Call struct {
+	*mock.Call
+}
+
+// GetLobby is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id int64
+func (_e *Querier_Expecter) GetLobby(ctx interface{}, id interface{}) *Querier_GetLobby_Call {
+	return &Querier_GetLobby_Call{Call: _e.mock.On("GetLobby", ctx, id)}
+}
+
+func (_c *Querier_GetLobby_Call) Run(run func(ctx context.Context, id int64)) *Querier_GetLobby_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int64))
+	})
+	return _c
+}
+
+func (_c *Querier_GetLobby_Call) Return(_a0 []sqlc.GetLobbyRow, _a1 error) *Querier_GetLobby_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_GetLobby_Call) RunAndReturn(run func(context.Context, int64) ([]sqlc.GetLobbyRow, error)) *Querier_GetLobby_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // InsertParticipant provides a mock function with given fields: ctx, arg
 func (_m *Querier) InsertParticipant(ctx context.Context, arg sqlc.InsertParticipantParams) (int64, error) {
 	ret := _m.Called(ctx, arg)

@@ -5,7 +5,7 @@ package signals
 import (
 	context "context"
 
-	logicsignals "github.com/go-risk-it/go-risk-it/internal/logic/signals"
+	gamesignals "github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
 	mock "github.com/stretchr/testify/mock"
 
 	signals "github.com/maniartech/signals"
@@ -25,7 +25,7 @@ func (_m *GameStateChangedSignal) EXPECT() *GameStateChangedSignal_Expecter {
 }
 
 // AddListener provides a mock function with given fields: handler, key
-func (_m *GameStateChangedSignal) AddListener(handler signals.SignalListener[logicsignals.GameStateChangedData], key ...string) int {
+func (_m *GameStateChangedSignal) AddListener(handler signals.SignalListener[gamesignals.GameStateChangedData], key ...string) int {
 	_va := make([]interface{}, len(key))
 	for _i := range key {
 		_va[_i] = key[_i]
@@ -40,7 +40,7 @@ func (_m *GameStateChangedSignal) AddListener(handler signals.SignalListener[log
 	}
 
 	var r0 int
-	if rf, ok := ret.Get(0).(func(signals.SignalListener[logicsignals.GameStateChangedData], ...string) int); ok {
+	if rf, ok := ret.Get(0).(func(signals.SignalListener[gamesignals.GameStateChangedData], ...string) int); ok {
 		r0 = rf(handler, key...)
 	} else {
 		r0 = ret.Get(0).(int)
@@ -55,14 +55,14 @@ type GameStateChangedSignal_AddListener_Call struct {
 }
 
 // AddListener is a helper method to define mock.On call
-//   - handler signals.SignalListener[logicsignals.GameStateChangedData]
+//   - handler signals.SignalListener[gamesignals.GameStateChangedData]
 //   - key ...string
 func (_e *GameStateChangedSignal_Expecter) AddListener(handler interface{}, key ...interface{}) *GameStateChangedSignal_AddListener_Call {
 	return &GameStateChangedSignal_AddListener_Call{Call: _e.mock.On("AddListener",
 		append([]interface{}{handler}, key...)...)}
 }
 
-func (_c *GameStateChangedSignal_AddListener_Call) Run(run func(handler signals.SignalListener[logicsignals.GameStateChangedData], key ...string)) *GameStateChangedSignal_AddListener_Call {
+func (_c *GameStateChangedSignal_AddListener_Call) Run(run func(handler signals.SignalListener[gamesignals.GameStateChangedData], key ...string)) *GameStateChangedSignal_AddListener_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]string, len(args)-1)
 		for i, a := range args[1:] {
@@ -70,7 +70,7 @@ func (_c *GameStateChangedSignal_AddListener_Call) Run(run func(handler signals.
 				variadicArgs[i] = a.(string)
 			}
 		}
-		run(args[0].(signals.SignalListener[logicsignals.GameStateChangedData]), variadicArgs...)
+		run(args[0].(signals.SignalListener[gamesignals.GameStateChangedData]), variadicArgs...)
 	})
 	return _c
 }
@@ -80,13 +80,13 @@ func (_c *GameStateChangedSignal_AddListener_Call) Return(_a0 int) *GameStateCha
 	return _c
 }
 
-func (_c *GameStateChangedSignal_AddListener_Call) RunAndReturn(run func(signals.SignalListener[logicsignals.GameStateChangedData], ...string) int) *GameStateChangedSignal_AddListener_Call {
+func (_c *GameStateChangedSignal_AddListener_Call) RunAndReturn(run func(signals.SignalListener[gamesignals.GameStateChangedData], ...string) int) *GameStateChangedSignal_AddListener_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Emit provides a mock function with given fields: ctx, payload
-func (_m *GameStateChangedSignal) Emit(ctx context.Context, payload logicsignals.GameStateChangedData) {
+func (_m *GameStateChangedSignal) Emit(ctx context.Context, payload gamesignals.GameStateChangedData) {
 	_m.Called(ctx, payload)
 }
 
@@ -97,14 +97,14 @@ type GameStateChangedSignal_Emit_Call struct {
 
 // Emit is a helper method to define mock.On call
 //   - ctx context.Context
-//   - payload logicsignals.GameStateChangedData
+//   - payload gamesignals.GameStateChangedData
 func (_e *GameStateChangedSignal_Expecter) Emit(ctx interface{}, payload interface{}) *GameStateChangedSignal_Emit_Call {
 	return &GameStateChangedSignal_Emit_Call{Call: _e.mock.On("Emit", ctx, payload)}
 }
 
-func (_c *GameStateChangedSignal_Emit_Call) Run(run func(ctx context.Context, payload logicsignals.GameStateChangedData)) *GameStateChangedSignal_Emit_Call {
+func (_c *GameStateChangedSignal_Emit_Call) Run(run func(ctx context.Context, payload gamesignals.GameStateChangedData)) *GameStateChangedSignal_Emit_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(logicsignals.GameStateChangedData))
+		run(args[0].(context.Context), args[1].(gamesignals.GameStateChangedData))
 	})
 	return _c
 }
@@ -114,7 +114,7 @@ func (_c *GameStateChangedSignal_Emit_Call) Return() *GameStateChangedSignal_Emi
 	return _c
 }
 
-func (_c *GameStateChangedSignal_Emit_Call) RunAndReturn(run func(context.Context, logicsignals.GameStateChangedData)) *GameStateChangedSignal_Emit_Call {
+func (_c *GameStateChangedSignal_Emit_Call) RunAndReturn(run func(context.Context, gamesignals.GameStateChangedData)) *GameStateChangedSignal_Emit_Call {
 	_c.Run(run)
 	return _c
 }

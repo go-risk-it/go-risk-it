@@ -8,8 +8,8 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
-	"github.com/go-risk-it/go-risk-it/internal/logic/signals"
 	upgradablerwmutex "github.com/go-risk-it/go-risk-it/internal/upgradablerw_mutex"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws"
 	"github.com/lesismal/nbio/nbhttp/websocket"
@@ -54,7 +54,7 @@ func (m *ManagerImpl) Broadcast(ctx ctx.GameContext, message json.RawMessage) {
 }
 
 func (m *ManagerImpl) ConnectPlayer(ctx ctx.GameContext, connection *websocket.Conn) {
-	ctx.Log().Infow("connecting player")
+	ctx.Log().Infow("connecting player to game")
 
 	if err := m.validateConnectionAttempt(ctx); err != nil {
 		ctx.Log().Debugw("failed to validate connection attempt", "error", err)

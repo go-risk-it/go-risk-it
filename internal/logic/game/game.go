@@ -10,6 +10,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"go.uber.org/fx"
 )
@@ -23,6 +24,7 @@ var Module = fx.Options(
 	move.Module,
 	phase.Module,
 	player.Module,
+	signals.Module,
 	region.Module,
 	state.Module,
 )
