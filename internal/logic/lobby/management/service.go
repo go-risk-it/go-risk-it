@@ -11,6 +11,7 @@ import (
 
 type Service interface {
 	JoinLobby(ctx ctx.LobbyContext, name string) error
+	GetAvailableLobbies(ctx ctx.TraceContext) ([]sqlc.GetAvailableLobbiesRow, error)
 }
 
 type ServiceImpl struct {
@@ -61,4 +62,26 @@ func (s *ServiceImpl) JoinLobbyQ(
 	ctx.Log().Infow("participant joined", "participant_id", participantID)
 
 	return nil
+}
+
+func (s *ServiceImpl) GetAvailableLobbies(
+	ctx ctx.TraceContext,
+) ([]sqlc.GetAvailableLobbiesRow, error) {
+	return s.GetAvailableLobbiesQ(ctx, s.querier)
+}
+
+func (s *ServiceImpl) GetAvailableLobbiesQ(
+	ctx ctx.TraceContext,
+	querier db.Querier,
+) ([]sqlc.GetAvailableLobbiesRow, error) {
+	ctx.Log().Infow("getting available lobbies")
+
+	lobbies, err := querier.GetAvailableLobbies(ctx)
+	if err != nil {
+		return lobbies, fmt.Errorf("failed to get available lobbies: %w", err)
+	}
+
+	ctx.Log().Infow("available lobbies", "lobbies", lobbies)
+
+	return lobbies, nil
 }

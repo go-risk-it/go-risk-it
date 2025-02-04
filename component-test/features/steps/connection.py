@@ -31,23 +31,23 @@ def deserialize(context: RiskItContext, message: str, player: str) -> None:
 
     match message_type:
         case "gameState":
-            game_state_message = GameStateMessage.parse_obj(parsed_message)
+            game_state_message = GameStateMessage.model_validate(parsed_message)
             context.game_state = game_state_message.data
         case "playerState":
-            player_state_message = PlayerStateMessage.parse_obj(parsed_message)
+            player_state_message = PlayerStateMessage.model_validate(parsed_message)
             context.player_state = player_state_message.data
         case "boardState":
-            board_state_message = BoardStateMessage.parse_obj(parsed_message)
+            board_state_message = BoardStateMessage.model_validate(parsed_message)
             context.board_state = IndexedBoardStateData(board_state_message.data.regions)
         case "cardState":
-            card_state_message = CardStateMessage.parse_obj(parsed_message)
+            card_state_message = CardStateMessage.model_validate(parsed_message)
             if not hasattr(context, "card_state"):
                 context.card_state = {}
             context.card_state[player] = card_state_message.data
         case "moveHistory":
-            MoveHistoryMessage.parse_obj(parsed_message)
+            MoveHistoryMessage.model_validate(parsed_message)
         case "lobbyState":
-            lobby_state_message = LobbyStateMessage.parse_obj(parsed_message)
+            lobby_state_message = LobbyStateMessage.model_validate(parsed_message)
             context.lobby_state = lobby_state_message.data
         case _:
             raise ValueError(f"Unknown message type: {message_type}")

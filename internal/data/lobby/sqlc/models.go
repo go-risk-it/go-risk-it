@@ -11,6 +11,7 @@ import (
 type Lobby struct {
 	ID      int64
 	OwnerID pgtype.Int8
+	GameID  pgtype.Int8
 }
 
 type Participant struct {

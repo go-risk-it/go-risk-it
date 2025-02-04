@@ -203,6 +203,64 @@ func (_c *Querier_ExecuteInTransactionWithIsolation_Call) RunAndReturn(run func(
 	return _c
 }
 
+// GetAvailableLobbies provides a mock function with given fields: _a0
+func (_m *Querier) GetAvailableLobbies(_a0 context.Context) ([]sqlc.GetAvailableLobbiesRow, error) {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetAvailableLobbies")
+	}
+
+	var r0 []sqlc.GetAvailableLobbiesRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]sqlc.GetAvailableLobbiesRow, error)); ok {
+		return rf(_a0)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) []sqlc.GetAvailableLobbiesRow); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]sqlc.GetAvailableLobbiesRow)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(_a0)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_GetAvailableLobbies_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAvailableLobbies'
+type Querier_GetAvailableLobbies_Call struct {
+	*mock.Call
+}
+
+// GetAvailableLobbies is a helper method to define mock.On call
+//   - _a0 context.Context
+func (_e *Querier_Expecter) GetAvailableLobbies(_a0 interface{}) *Querier_GetAvailableLobbies_Call {
+	return &Querier_GetAvailableLobbies_Call{Call: _e.mock.On("GetAvailableLobbies", _a0)}
+}
+
+func (_c *Querier_GetAvailableLobbies_Call) Run(run func(_a0 context.Context)) *Querier_GetAvailableLobbies_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *Querier_GetAvailableLobbies_Call) Return(_a0 []sqlc.GetAvailableLobbiesRow, _a1 error) *Querier_GetAvailableLobbies_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_GetAvailableLobbies_Call) RunAndReturn(run func(context.Context) ([]sqlc.GetAvailableLobbiesRow, error)) *Querier_GetAvailableLobbies_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetLobby provides a mock function with given fields: _a0, id
 func (_m *Querier) GetLobby(_a0 context.Context, id int64) ([]sqlc.GetLobbyRow, error) {
 	ret := _m.Called(_a0, id)

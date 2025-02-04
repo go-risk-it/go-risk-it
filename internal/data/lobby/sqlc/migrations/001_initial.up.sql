@@ -1,7 +1,8 @@
 CREATE TABLE lobby
 (
     id       BIGSERIAL PRIMARY KEY,
-    owner_id BIGINT
+    owner_id BIGINT,
+    game_id  BIGINT UNIQUE
 );
 
 CREATE TABLE participant

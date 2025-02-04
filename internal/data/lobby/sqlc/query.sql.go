@@ -24,6 +24,40 @@ func (q *Queries) CreateLobby(ctx context.Context) (int64, error) {
 	return id, err
 }
 
+const getAvailableLobbies = `-- name: GetAvailableLobbies :many
+SELECT l.id, l.game_id, COUNT(p.id) as participant_count
+FROM lobby l
+         LEFT JOIN participant p on l.id = p.lobby_id
+WHERE l.game_id IS NULL
+GROUP BY l.id
+`
+
+type GetAvailableLobbiesRow struct {
+	ID               int64
+	GameID           pgtype.Int8
+	ParticipantCount int64
+}
+
+func (q *Queries) GetAvailableLobbies(ctx context.Context) ([]GetAvailableLobbiesRow, error) {
+	rows, err := q.db.Query(ctx, getAvailableLobbies)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAvailableLobbiesRow
+	for rows.Next() {
+		var i GetAvailableLobbiesRow
+		if err := rows.Scan(&i.ID, &i.GameID, &i.ParticipantCount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getLobby = `-- name: GetLobby :many
 SELECT l.id, p.id as participant_id, p.user_id
 FROM lobby l

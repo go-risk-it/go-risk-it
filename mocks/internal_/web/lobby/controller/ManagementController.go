@@ -3,6 +3,7 @@
 package controller
 
 import (
+	messaging "github.com/go-risk-it/go-risk-it/internal/api/lobby/messaging"
 	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
 	mock "github.com/stretchr/testify/mock"
 
@@ -20,6 +21,62 @@ type ManagementController_Expecter struct {
 
 func (_m *ManagementController) EXPECT() *ManagementController_Expecter {
 	return &ManagementController_Expecter{mock: &_m.Mock}
+}
+
+// GetAvailableLobbies provides a mock function with given fields: _a0
+func (_m *ManagementController) GetAvailableLobbies(_a0 ctx.TraceContext) (messaging.Lobbies, error) {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetAvailableLobbies")
+	}
+
+	var r0 messaging.Lobbies
+	var r1 error
+	if rf, ok := ret.Get(0).(func(ctx.TraceContext) (messaging.Lobbies, error)); ok {
+		return rf(_a0)
+	}
+	if rf, ok := ret.Get(0).(func(ctx.TraceContext) messaging.Lobbies); ok {
+		r0 = rf(_a0)
+	} else {
+		r0 = ret.Get(0).(messaging.Lobbies)
+	}
+
+	if rf, ok := ret.Get(1).(func(ctx.TraceContext) error); ok {
+		r1 = rf(_a0)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ManagementController_GetAvailableLobbies_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAvailableLobbies'
+type ManagementController_GetAvailableLobbies_Call struct {
+	*mock.Call
+}
+
+// GetAvailableLobbies is a helper method to define mock.On call
+//   - _a0 ctx.TraceContext
+func (_e *ManagementController_Expecter) GetAvailableLobbies(_a0 interface{}) *ManagementController_GetAvailableLobbies_Call {
+	return &ManagementController_GetAvailableLobbies_Call{Call: _e.mock.On("GetAvailableLobbies", _a0)}
+}
+
+func (_c *ManagementController_GetAvailableLobbies_Call) Run(run func(_a0 ctx.TraceContext)) *ManagementController_GetAvailableLobbies_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.TraceContext))
+	})
+	return _c
+}
+
+func (_c *ManagementController_GetAvailableLobbies_Call) Return(_a0 messaging.Lobbies, _a1 error) *ManagementController_GetAvailableLobbies_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *ManagementController_GetAvailableLobbies_Call) RunAndReturn(run func(ctx.TraceContext) (messaging.Lobbies, error)) *ManagementController_GetAvailableLobbies_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // JoinLobby provides a mock function with given fields: _a0, _a1

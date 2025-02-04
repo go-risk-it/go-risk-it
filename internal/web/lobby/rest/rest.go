@@ -9,5 +9,6 @@ var Module = fx.Options(
 	fx.Provide(
 		route.AsRoute(NewCreationHandler),
 		route.AsRoute(NewJoinHandler),
+		route.AsRoute(NewLobbiesHandler),
 	),
 )
