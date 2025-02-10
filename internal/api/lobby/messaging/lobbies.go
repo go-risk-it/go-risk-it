@@ -6,5 +6,7 @@ type Lobby struct {
 }
 
 type Lobbies struct {
-	Lobbies []Lobby `json:"lobbies"`
+	Owned    []Lobby `json:"owned"`
+	Joined   []Lobby `json:"joined"`
+	Joinable []Lobby `json:"joinable"`
 }

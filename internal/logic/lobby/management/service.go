@@ -9,9 +9,15 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/lobby/signals"
 )
 
+type UserLobbies struct {
+	Owned    []sqlc.GetOwnedLobbiesRow
+	Joined   []sqlc.GetJoinedLobbiesRow
+	Joinable []sqlc.GetJoinableLobbiesRow
+}
+
 type Service interface {
 	JoinLobby(ctx ctx.LobbyContext, name string) error
-	GetAvailableLobbies(ctx ctx.TraceContext) ([]sqlc.GetAvailableLobbiesRow, error)
+	GetUserLobbies(ctx ctx.UserContext) (*UserLobbies, error)
 }
 
 type ServiceImpl struct {
@@ -64,24 +70,46 @@ func (s *ServiceImpl) JoinLobbyQ(
 	return nil
 }
 
-func (s *ServiceImpl) GetAvailableLobbies(
-	ctx ctx.TraceContext,
-) ([]sqlc.GetAvailableLobbiesRow, error) {
-	return s.GetAvailableLobbiesQ(ctx, s.querier)
+func (s *ServiceImpl) GetUserLobbies(
+	ctx ctx.UserContext,
+) (*UserLobbies, error) {
+	return s.GetUserLobbiesQ(ctx, s.querier)
 }
 
-func (s *ServiceImpl) GetAvailableLobbiesQ(
-	ctx ctx.TraceContext,
+func (s *ServiceImpl) GetUserLobbiesQ(
+	ctx ctx.UserContext,
 	querier db.Querier,
-) ([]sqlc.GetAvailableLobbiesRow, error) {
-	ctx.Log().Infow("getting available lobbies")
+) (*UserLobbies, error) {
+	ctx.Log().Infow("getting user lobbies")
 
-	lobbies, err := querier.GetAvailableLobbies(ctx)
+	ownedLobbies, err := querier.GetOwnedLobbies(ctx, ctx.UserID())
 	if err != nil {
-		return lobbies, fmt.Errorf("failed to get available lobbies: %w", err)
+		return nil, fmt.Errorf("failed to get owned lobbies: %w", err)
 	}
 
-	ctx.Log().Infow("available lobbies", "lobbies", lobbies)
+	ctx.Log().Infow("got owned lobbies", "lobbies", ownedLobbies)
 
-	return lobbies, nil
+	joinedLobbies, err := querier.GetJoinedLobbies(ctx, ctx.UserID())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get joined lobbies: %w", err)
+	}
+
+	ctx.Log().Infow("got joined lobbies", "lobbies", joinedLobbies)
+
+	joinableLobbies, err := querier.GetJoinableLobbies(ctx, ctx.UserID())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get joinable lobbies: %w", err)
+	}
+
+	ctx.Log().Infow("got joinable lobbies", "lobbies", joinableLobbies)
+
+	userLobbies := &UserLobbies{
+		Owned:    ownedLobbies,
+		Joined:   joinedLobbies,
+		Joinable: joinableLobbies,
+	}
+
+	ctx.Log().Infow("got user lobbies", "lobbies", userLobbies)
+
+	return userLobbies, nil
 }

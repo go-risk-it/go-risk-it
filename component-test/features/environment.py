@@ -69,5 +69,6 @@ def close_http_connections(context):
 
 def close_ws_connections(context):
     for player in context.players.values():
-        player.connection.close()
+        if player.connection is not None:
+            player.connection.close()
     context.players = dict()

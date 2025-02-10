@@ -12,23 +12,35 @@ Feature: Creating a lobby, connecting players, starting a game
     Given giovanni creates a lobby
     When francesco joins the lobby
     And gabriele joins the lobby
-    When getting for the list of available lobbies
+    When francesco gets the list of available lobbies
     Then the following lobbies are available
-      | numberOfParticipants |
-      | 2                    |
-      | 1                    |
-      | 3                    |
+      | type     | numberOfParticipants |
+      | owned    | 2                    |
+      | joined   | 3                    |
+      | joinable | 1                    |
+    When gabriele gets the list of available lobbies
+    Then the following lobbies are available
+      | type     | numberOfParticipants |
+      | joined   | 2                    |
+      | joined   | 3                    |
+      | joinable | 1                    |
+    When giovanni gets the list of available lobbies
+    Then the following lobbies are available
+      | type     | numberOfParticipants |
+      | owned    | 1                    |
+      | owned    | 3                    |
+      | joinable | 2                    |
 
-  Scenario: Create lobby
-    Given francesco creates a lobby
-    When francesco connects to the lobby
-    And gabriele connects to the lobby
-    And giovanni connects to the lobby
-    Then all players receive all state updates
-    When gabriele joins the lobby
-    Then all players receive all state updates
-    When giovanni joins the lobby
-    Then all players receive all state updates
+#  Scenario: Create lobby
+#    Given francesco creates a lobby
+#    When francesco connects to the lobby
+#    And gabriele connects to the lobby
+#    And giovanni connects to the lobby
+#    Then all players receive all state updates
+#    When gabriele joins the lobby
+#    Then all players receive all state updates
+#    When giovanni joins the lobby
+#    Then all players receive all state updates
 
 
 

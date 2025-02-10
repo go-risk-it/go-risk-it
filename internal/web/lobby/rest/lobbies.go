@@ -34,11 +34,11 @@ func (h *LobbiesHandlerImpl) Pattern() string {
 }
 
 func (h *LobbiesHandlerImpl) RequiresAuth() bool {
-	return false
+	return true
 }
 
 func (h *LobbiesHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	traceContext, ok := req.Context().(ctx.TraceContext)
+	userContext, ok := req.Context().(ctx.UserContext)
 	if !ok {
 		http.Error(
 			writer,
@@ -49,7 +49,7 @@ func (h *LobbiesHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Req
 		return
 	}
 
-	lobbies, err := h.managementController.GetAvailableLobbies(traceContext)
+	lobbies, err := h.managementController.GetUserLobbies(userContext)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 

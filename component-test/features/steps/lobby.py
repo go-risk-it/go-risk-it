@@ -4,7 +4,7 @@ from behave import *
 from websockets.sync.client import connect
 
 from src.core.context import RiskItContext
-from src.lobby.api.lobbies import LobbiesList
+from src.lobby.api.lobbies import UserLobbies
 from util.http_assertions import assert_2xx
 
 LOGGER = logging.getLogger(__name__)
@@ -37,20 +37,25 @@ def step_impl(context: RiskItContext, player: str):
     assert_2xx(response)
 
 
-@when("getting for the list of available lobbies")
-def step_impl(context: RiskItContext):
-    response = context.admin_http_client.get_available_lobbies()
+@when("{player} gets the list of available lobbies")
+def step_impl(context: RiskItContext, player: str):
+    response = context.risk_it_clients[player].get_available_lobbies()
 
     assert_2xx(response)
-    context.lobbies = LobbiesList.model_validate(response.json())
-
+    context.lobbies = UserLobbies.model_validate(response.json())
 
 
 @then("the following lobbies are available")
 def step_impl(context: RiskItContext):
-    lobbies = context.lobbies
-    num_participants = sorted([lobby.numberOfParticipants for lobby in lobbies.lobbies])
+    check_lobbies(context.lobbies.owned, [row for row in context.table if row["type"] == "owned"])
+    check_lobbies(context.lobbies.joined, [row for row in context.table if row["type"] == "joined"])
+    check_lobbies(context.lobbies.joinable,
+                  [row for row in context.table if row["type"] == "joinable"])
 
-    requested_lobbies = sorted([int(row["numberOfParticipants"]) for row in context.table])
+
+def check_lobbies(lobbies, expected_lobbies):
+    num_participants = sorted([lobby.numberOfParticipants for lobby in lobbies])
+
+    requested_lobbies = sorted([int(row["numberOfParticipants"]) for row in expected_lobbies])
 
     assert num_participants == requested_lobbies, f"Expected {requested_lobbies}, got {num_participants}"

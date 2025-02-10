@@ -6,5 +6,7 @@ class Lobby(BaseModel):
     numberOfParticipants: int
 
 
-class LobbiesList(BaseModel):
-    lobbies: list[Lobby]
+class UserLobbies(BaseModel):
+    owned: list[Lobby]
+    joined: list[Lobby]
+    joinable: list[Lobby]

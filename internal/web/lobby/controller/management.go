@@ -12,7 +12,7 @@ import (
 
 type ManagementController interface {
 	JoinLobby(ctx ctx.LobbyContext, request request.JoinLobby) error
-	GetAvailableLobbies(ctx ctx.TraceContext) (messaging.Lobbies, error)
+	GetUserLobbies(ctx ctx.UserContext) (messaging.Lobbies, error)
 }
 
 type ManagementControllerImpl struct {
@@ -36,31 +36,33 @@ func (c *ManagementControllerImpl) JoinLobby(
 	return c.managementService.JoinLobby(ctx, request.ParticipantName)
 }
 
-func (c *ManagementControllerImpl) GetAvailableLobbies(
-	ctx ctx.TraceContext,
-) (messaging.Lobbies, error) {
-	lobbies, err := c.managementService.GetAvailableLobbies(ctx)
+func (c *ManagementControllerImpl) GetUserLobbies(ctx ctx.UserContext) (messaging.Lobbies, error) {
+	userLobbies, err := c.managementService.GetUserLobbies(ctx)
 	if err != nil {
 		return messaging.Lobbies{}, fmt.Errorf("failed to get available lobbies: %w", err)
 	}
 
 	return messaging.Lobbies{
-		Lobbies: convertLobbies(lobbies),
+		Owned:    convertToLobbies(userLobbies.Owned),
+		Joined:   convertToLobbies(userLobbies.Joined),
+		Joinable: convertToLobbies(userLobbies.Joinable),
 	}, nil
 }
 
-func convertLobbies(cards []sqlc.GetAvailableLobbiesRow) []messaging.Lobby {
-	result := make([]messaging.Lobby, len(cards))
-	for i, c := range cards {
-		result[i] = convertLobby(c)
+func convertToLobbies[T any](rows []T) []messaging.Lobby {
+	res := make([]messaging.Lobby, len(rows))
+
+	for idx, row := range rows {
+		r := any(row)
+		switch lobby := r.(type) {
+		case sqlc.GetOwnedLobbiesRow:
+			res[idx] = messaging.Lobby{ID: lobby.ID, NumberOfParticipants: lobby.ParticipantCount}
+		case sqlc.GetJoinedLobbiesRow:
+			res[idx] = messaging.Lobby{ID: lobby.ID, NumberOfParticipants: lobby.ParticipantCount}
+		case sqlc.GetJoinableLobbiesRow:
+			res[idx] = messaging.Lobby{ID: lobby.ID, NumberOfParticipants: lobby.ParticipantCount}
+		}
 	}
 
-	return result
-}
-
-func convertLobby(lobby sqlc.GetAvailableLobbiesRow) messaging.Lobby {
-	return messaging.Lobby{
-		ID:                   lobby.ID,
-		NumberOfParticipants: lobby.ParticipantCount,
-	}
+	return res
 }

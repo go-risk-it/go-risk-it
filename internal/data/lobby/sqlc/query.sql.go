@@ -24,29 +24,74 @@ func (q *Queries) CreateLobby(ctx context.Context) (int64, error) {
 	return id, err
 }
 
-const getAvailableLobbies = `-- name: GetAvailableLobbies :many
-SELECT l.id, l.game_id, COUNT(p.id) as participant_count
+const getJoinableLobbies = `-- name: GetJoinableLobbies :many
+WITH joined_lobbies AS (SELECT l.id
+                        FROM lobby l
+                                 JOIN participant p ON l.id = p.lobby_id
+                        WHERE l.game_id IS NULL
+                          AND p.user_id = $1)
+SELECT l.id, l.game_id, COUNT(p.id) AS participant_count
 FROM lobby l
-         LEFT JOIN participant p on l.id = p.lobby_id
-WHERE l.game_id IS NULL
+         JOIN participant p ON l.id = p.lobby_id
+WHERE l.id NOT IN (SELECT id FROM joined_lobbies)
 GROUP BY l.id
 `
 
-type GetAvailableLobbiesRow struct {
+type GetJoinableLobbiesRow struct {
 	ID               int64
 	GameID           pgtype.Int8
 	ParticipantCount int64
 }
 
-func (q *Queries) GetAvailableLobbies(ctx context.Context) ([]GetAvailableLobbiesRow, error) {
-	rows, err := q.db.Query(ctx, getAvailableLobbies)
+func (q *Queries) GetJoinableLobbies(ctx context.Context, userID string) ([]GetJoinableLobbiesRow, error) {
+	rows, err := q.db.Query(ctx, getJoinableLobbies, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetAvailableLobbiesRow
+	var items []GetJoinableLobbiesRow
 	for rows.Next() {
-		var i GetAvailableLobbiesRow
+		var i GetJoinableLobbiesRow
+		if err := rows.Scan(&i.ID, &i.GameID, &i.ParticipantCount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getJoinedLobbies = `-- name: GetJoinedLobbies :many
+WITH joined_lobbies AS (SELECT l.id
+                        FROM lobby l
+                                 JOIN participant p ON l.id = p.lobby_id
+                        WHERE l.game_id IS NULL
+                          AND p.user_id = $1)
+SELECT l.id, l.game_id, COUNT(p.id) AS participant_count
+FROM lobby l
+         JOIN participant p ON l.id = p.lobby_id
+WHERE l.id IN (SELECT id FROM joined_lobbies)
+  AND l.owner_id <> (SELECT p.id FROM participant p WHERE p.user_id = $1 AND p.lobby_id = l.id)
+GROUP BY l.id
+`
+
+type GetJoinedLobbiesRow struct {
+	ID               int64
+	GameID           pgtype.Int8
+	ParticipantCount int64
+}
+
+func (q *Queries) GetJoinedLobbies(ctx context.Context, userID string) ([]GetJoinedLobbiesRow, error) {
+	rows, err := q.db.Query(ctx, getJoinedLobbies, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetJoinedLobbiesRow
+	for rows.Next() {
+		var i GetJoinedLobbiesRow
 		if err := rows.Scan(&i.ID, &i.GameID, &i.ParticipantCount); err != nil {
 			return nil, err
 		}
@@ -81,6 +126,41 @@ func (q *Queries) GetLobby(ctx context.Context, id int64) ([]GetLobbyRow, error)
 	for rows.Next() {
 		var i GetLobbyRow
 		if err := rows.Scan(&i.ID, &i.ParticipantID, &i.UserID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getOwnedLobbies = `-- name: GetOwnedLobbies :many
+SELECT l.id, l.game_id, COUNT(p.id) AS participant_count
+FROM lobby l
+         JOIN participant p ON l.id = p.lobby_id
+WHERE l.game_id IS NULL
+  AND l.owner_id = (SELECT p.id FROM participant p WHERE p.user_id = $1 AND p.lobby_id = l.id)
+GROUP BY l.id
+`
+
+type GetOwnedLobbiesRow struct {
+	ID               int64
+	GameID           pgtype.Int8
+	ParticipantCount int64
+}
+
+func (q *Queries) GetOwnedLobbies(ctx context.Context, userID string) ([]GetOwnedLobbiesRow, error) {
+	rows, err := q.db.Query(ctx, getOwnedLobbies, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetOwnedLobbiesRow
+	for rows.Next() {
+		var i GetOwnedLobbiesRow
+		if err := rows.Scan(&i.ID, &i.GameID, &i.ParticipantCount); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

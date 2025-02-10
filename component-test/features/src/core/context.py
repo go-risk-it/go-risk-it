@@ -1,15 +1,14 @@
-import dataclasses
-
 from behave.runner import Context
 
-from src.game.api.board_state_message import Region
-from src.game.api.card_state_message import CardStateData
-from src.game.api.game_state_message import GameStateData
-from src.game.api.player_state_message import PlayerStateData
 from src.client.http_client import RiskItClient
 from src.client.supabase_client import SupabaseClient
 from src.core.player import Player
 from src.core.runner import ServiceRunner
+from src.game.api.board_state_message import Region
+from src.game.api.card_state_message import CardStateData
+from src.game.api.game_state_message import GameStateData
+from src.game.api.player_state_message import PlayerStateData
+from src.lobby.api.lobbies import UserLobbies
 from src.lobby.api.lobby_state_message import LobbyStateData
 
 
@@ -31,3 +30,4 @@ class RiskItContext(Context):
     players: dict[str, Player]
     risk_it_clients: dict[str, RiskItClient]
     admin_http_client: RiskItClient
+    lobbies: UserLobbies

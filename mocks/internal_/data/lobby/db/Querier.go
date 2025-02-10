@@ -203,29 +203,29 @@ func (_c *Querier_ExecuteInTransactionWithIsolation_Call) RunAndReturn(run func(
 	return _c
 }
 
-// GetAvailableLobbies provides a mock function with given fields: _a0
-func (_m *Querier) GetAvailableLobbies(_a0 context.Context) ([]sqlc.GetAvailableLobbiesRow, error) {
-	ret := _m.Called(_a0)
+// GetJoinableLobbies provides a mock function with given fields: _a0, userID
+func (_m *Querier) GetJoinableLobbies(_a0 context.Context, userID string) ([]sqlc.GetJoinableLobbiesRow, error) {
+	ret := _m.Called(_a0, userID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetAvailableLobbies")
+		panic("no return value specified for GetJoinableLobbies")
 	}
 
-	var r0 []sqlc.GetAvailableLobbiesRow
+	var r0 []sqlc.GetJoinableLobbiesRow
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) ([]sqlc.GetAvailableLobbiesRow, error)); ok {
-		return rf(_a0)
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]sqlc.GetJoinableLobbiesRow, error)); ok {
+		return rf(_a0, userID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) []sqlc.GetAvailableLobbiesRow); ok {
-		r0 = rf(_a0)
+	if rf, ok := ret.Get(0).(func(context.Context, string) []sqlc.GetJoinableLobbiesRow); ok {
+		r0 = rf(_a0, userID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]sqlc.GetAvailableLobbiesRow)
+			r0 = ret.Get(0).([]sqlc.GetJoinableLobbiesRow)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(_a0)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(_a0, userID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -233,30 +233,90 @@ func (_m *Querier) GetAvailableLobbies(_a0 context.Context) ([]sqlc.GetAvailable
 	return r0, r1
 }
 
-// Querier_GetAvailableLobbies_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAvailableLobbies'
-type Querier_GetAvailableLobbies_Call struct {
+// Querier_GetJoinableLobbies_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetJoinableLobbies'
+type Querier_GetJoinableLobbies_Call struct {
 	*mock.Call
 }
 
-// GetAvailableLobbies is a helper method to define mock.On call
+// GetJoinableLobbies is a helper method to define mock.On call
 //   - _a0 context.Context
-func (_e *Querier_Expecter) GetAvailableLobbies(_a0 interface{}) *Querier_GetAvailableLobbies_Call {
-	return &Querier_GetAvailableLobbies_Call{Call: _e.mock.On("GetAvailableLobbies", _a0)}
+//   - userID string
+func (_e *Querier_Expecter) GetJoinableLobbies(_a0 interface{}, userID interface{}) *Querier_GetJoinableLobbies_Call {
+	return &Querier_GetJoinableLobbies_Call{Call: _e.mock.On("GetJoinableLobbies", _a0, userID)}
 }
 
-func (_c *Querier_GetAvailableLobbies_Call) Run(run func(_a0 context.Context)) *Querier_GetAvailableLobbies_Call {
+func (_c *Querier_GetJoinableLobbies_Call) Run(run func(_a0 context.Context, userID string)) *Querier_GetJoinableLobbies_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
 
-func (_c *Querier_GetAvailableLobbies_Call) Return(_a0 []sqlc.GetAvailableLobbiesRow, _a1 error) *Querier_GetAvailableLobbies_Call {
+func (_c *Querier_GetJoinableLobbies_Call) Return(_a0 []sqlc.GetJoinableLobbiesRow, _a1 error) *Querier_GetJoinableLobbies_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_GetAvailableLobbies_Call) RunAndReturn(run func(context.Context) ([]sqlc.GetAvailableLobbiesRow, error)) *Querier_GetAvailableLobbies_Call {
+func (_c *Querier_GetJoinableLobbies_Call) RunAndReturn(run func(context.Context, string) ([]sqlc.GetJoinableLobbiesRow, error)) *Querier_GetJoinableLobbies_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetJoinedLobbies provides a mock function with given fields: _a0, userID
+func (_m *Querier) GetJoinedLobbies(_a0 context.Context, userID string) ([]sqlc.GetJoinedLobbiesRow, error) {
+	ret := _m.Called(_a0, userID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetJoinedLobbies")
+	}
+
+	var r0 []sqlc.GetJoinedLobbiesRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]sqlc.GetJoinedLobbiesRow, error)); ok {
+		return rf(_a0, userID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []sqlc.GetJoinedLobbiesRow); ok {
+		r0 = rf(_a0, userID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]sqlc.GetJoinedLobbiesRow)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(_a0, userID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_GetJoinedLobbies_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetJoinedLobbies'
+type Querier_GetJoinedLobbies_Call struct {
+	*mock.Call
+}
+
+// GetJoinedLobbies is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - userID string
+func (_e *Querier_Expecter) GetJoinedLobbies(_a0 interface{}, userID interface{}) *Querier_GetJoinedLobbies_Call {
+	return &Querier_GetJoinedLobbies_Call{Call: _e.mock.On("GetJoinedLobbies", _a0, userID)}
+}
+
+func (_c *Querier_GetJoinedLobbies_Call) Run(run func(_a0 context.Context, userID string)) *Querier_GetJoinedLobbies_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Querier_GetJoinedLobbies_Call) Return(_a0 []sqlc.GetJoinedLobbiesRow, _a1 error) *Querier_GetJoinedLobbies_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_GetJoinedLobbies_Call) RunAndReturn(run func(context.Context, string) ([]sqlc.GetJoinedLobbiesRow, error)) *Querier_GetJoinedLobbies_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -316,6 +376,65 @@ func (_c *Querier_GetLobby_Call) Return(_a0 []sqlc.GetLobbyRow, _a1 error) *Quer
 }
 
 func (_c *Querier_GetLobby_Call) RunAndReturn(run func(context.Context, int64) ([]sqlc.GetLobbyRow, error)) *Querier_GetLobby_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetOwnedLobbies provides a mock function with given fields: _a0, userID
+func (_m *Querier) GetOwnedLobbies(_a0 context.Context, userID string) ([]sqlc.GetOwnedLobbiesRow, error) {
+	ret := _m.Called(_a0, userID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetOwnedLobbies")
+	}
+
+	var r0 []sqlc.GetOwnedLobbiesRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]sqlc.GetOwnedLobbiesRow, error)); ok {
+		return rf(_a0, userID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []sqlc.GetOwnedLobbiesRow); ok {
+		r0 = rf(_a0, userID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]sqlc.GetOwnedLobbiesRow)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(_a0, userID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_GetOwnedLobbies_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetOwnedLobbies'
+type Querier_GetOwnedLobbies_Call struct {
+	*mock.Call
+}
+
+// GetOwnedLobbies is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - userID string
+func (_e *Querier_Expecter) GetOwnedLobbies(_a0 interface{}, userID interface{}) *Querier_GetOwnedLobbies_Call {
+	return &Querier_GetOwnedLobbies_Call{Call: _e.mock.On("GetOwnedLobbies", _a0, userID)}
+}
+
+func (_c *Querier_GetOwnedLobbies_Call) Run(run func(_a0 context.Context, userID string)) *Querier_GetOwnedLobbies_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Querier_GetOwnedLobbies_Call) Return(_a0 []sqlc.GetOwnedLobbiesRow, _a1 error) *Querier_GetOwnedLobbies_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_GetOwnedLobbies_Call) RunAndReturn(run func(context.Context, string) ([]sqlc.GetOwnedLobbiesRow, error)) *Querier_GetOwnedLobbies_Call {
 	_c.Call.Return(run)
 	return _c
 }

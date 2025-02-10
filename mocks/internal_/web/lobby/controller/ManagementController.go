@@ -23,26 +23,26 @@ func (_m *ManagementController) EXPECT() *ManagementController_Expecter {
 	return &ManagementController_Expecter{mock: &_m.Mock}
 }
 
-// GetAvailableLobbies provides a mock function with given fields: _a0
-func (_m *ManagementController) GetAvailableLobbies(_a0 ctx.TraceContext) (messaging.Lobbies, error) {
+// GetUserLobbies provides a mock function with given fields: _a0
+func (_m *ManagementController) GetUserLobbies(_a0 ctx.UserContext) (messaging.Lobbies, error) {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetAvailableLobbies")
+		panic("no return value specified for GetUserLobbies")
 	}
 
 	var r0 messaging.Lobbies
 	var r1 error
-	if rf, ok := ret.Get(0).(func(ctx.TraceContext) (messaging.Lobbies, error)); ok {
+	if rf, ok := ret.Get(0).(func(ctx.UserContext) (messaging.Lobbies, error)); ok {
 		return rf(_a0)
 	}
-	if rf, ok := ret.Get(0).(func(ctx.TraceContext) messaging.Lobbies); ok {
+	if rf, ok := ret.Get(0).(func(ctx.UserContext) messaging.Lobbies); ok {
 		r0 = rf(_a0)
 	} else {
 		r0 = ret.Get(0).(messaging.Lobbies)
 	}
 
-	if rf, ok := ret.Get(1).(func(ctx.TraceContext) error); ok {
+	if rf, ok := ret.Get(1).(func(ctx.UserContext) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
@@ -51,30 +51,30 @@ func (_m *ManagementController) GetAvailableLobbies(_a0 ctx.TraceContext) (messa
 	return r0, r1
 }
 
-// ManagementController_GetAvailableLobbies_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAvailableLobbies'
-type ManagementController_GetAvailableLobbies_Call struct {
+// ManagementController_GetUserLobbies_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetUserLobbies'
+type ManagementController_GetUserLobbies_Call struct {
 	*mock.Call
 }
 
-// GetAvailableLobbies is a helper method to define mock.On call
-//   - _a0 ctx.TraceContext
-func (_e *ManagementController_Expecter) GetAvailableLobbies(_a0 interface{}) *ManagementController_GetAvailableLobbies_Call {
-	return &ManagementController_GetAvailableLobbies_Call{Call: _e.mock.On("GetAvailableLobbies", _a0)}
+// GetUserLobbies is a helper method to define mock.On call
+//   - _a0 ctx.UserContext
+func (_e *ManagementController_Expecter) GetUserLobbies(_a0 interface{}) *ManagementController_GetUserLobbies_Call {
+	return &ManagementController_GetUserLobbies_Call{Call: _e.mock.On("GetUserLobbies", _a0)}
 }
 
-func (_c *ManagementController_GetAvailableLobbies_Call) Run(run func(_a0 ctx.TraceContext)) *ManagementController_GetAvailableLobbies_Call {
+func (_c *ManagementController_GetUserLobbies_Call) Run(run func(_a0 ctx.UserContext)) *ManagementController_GetUserLobbies_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.TraceContext))
+		run(args[0].(ctx.UserContext))
 	})
 	return _c
 }
 
-func (_c *ManagementController_GetAvailableLobbies_Call) Return(_a0 messaging.Lobbies, _a1 error) *ManagementController_GetAvailableLobbies_Call {
+func (_c *ManagementController_GetUserLobbies_Call) Return(_a0 messaging.Lobbies, _a1 error) *ManagementController_GetUserLobbies_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *ManagementController_GetAvailableLobbies_Call) RunAndReturn(run func(ctx.TraceContext) (messaging.Lobbies, error)) *ManagementController_GetAvailableLobbies_Call {
+func (_c *ManagementController_GetUserLobbies_Call) RunAndReturn(run func(ctx.UserContext) (messaging.Lobbies, error)) *ManagementController_GetUserLobbies_Call {
 	_c.Call.Return(run)
 	return _c
 }
