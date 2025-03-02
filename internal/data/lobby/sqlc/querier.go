@@ -9,12 +9,15 @@ import (
 )
 
 type Querier interface {
+	CanLobbyBeStarted(ctx context.Context, arg CanLobbyBeStartedParams) (bool, error)
 	CreateLobby(ctx context.Context) (int64, error)
 	GetJoinableLobbies(ctx context.Context, userID string) ([]GetJoinableLobbiesRow, error)
 	GetJoinedLobbies(ctx context.Context, userID string) ([]GetJoinedLobbiesRow, error)
 	GetLobby(ctx context.Context, id int64) ([]GetLobbyRow, error)
+	GetLobbyPlayers(ctx context.Context, id int64) ([]GetLobbyPlayersRow, error)
 	GetOwnedLobbies(ctx context.Context, userID string) ([]GetOwnedLobbiesRow, error)
 	InsertParticipant(ctx context.Context, arg InsertParticipantParams) (int64, error)
+	MarkLobbyAsStarted(ctx context.Context, arg MarkLobbyAsStartedParams) error
 	UpdateLobbyOwner(ctx context.Context, arg UpdateLobbyOwnerParams) error
 }
 

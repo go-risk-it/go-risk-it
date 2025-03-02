@@ -11,6 +11,31 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const canLobbyBeStarted = `-- name: CanLobbyBeStarted :one
+SELECT EXISTS(SELECT l.id
+              FROM lobby l
+                       JOIN participant p ON l.id = p.lobby_id
+              WHERE l.id = $1
+                AND l.game_id IS NULL
+                AND l.owner_id =
+                    (SELECT p.id FROM participant p WHERE p.user_id = $2 AND p.lobby_id = l.id)
+              GROUP BY l.id
+              HAVING COUNT(p.id) >= $3)
+`
+
+type CanLobbyBeStartedParams struct {
+	LobbyID             int64
+	UserID              string
+	MinimumParticipants int64
+}
+
+func (q *Queries) CanLobbyBeStarted(ctx context.Context, arg CanLobbyBeStartedParams) (bool, error) {
+	row := q.db.QueryRow(ctx, canLobbyBeStarted, arg.LobbyID, arg.UserID, arg.MinimumParticipants)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const createLobby = `-- name: CreateLobby :one
 INSERT INTO lobby DEFAULT
 VALUES
@@ -136,6 +161,38 @@ func (q *Queries) GetLobby(ctx context.Context, id int64) ([]GetLobbyRow, error)
 	return items, nil
 }
 
+const getLobbyPlayers = `-- name: GetLobbyPlayers :many
+SELECT p.user_id, p.name
+FROM lobby l
+         JOIN participant p on l.id = p.lobby_id
+where l.id = $1
+`
+
+type GetLobbyPlayersRow struct {
+	UserID string
+	Name   string
+}
+
+func (q *Queries) GetLobbyPlayers(ctx context.Context, id int64) ([]GetLobbyPlayersRow, error) {
+	rows, err := q.db.Query(ctx, getLobbyPlayers, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetLobbyPlayersRow
+	for rows.Next() {
+		var i GetLobbyPlayersRow
+		if err := rows.Scan(&i.UserID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getOwnedLobbies = `-- name: GetOwnedLobbies :many
 SELECT l.id, l.game_id, COUNT(p.id) AS participant_count
 FROM lobby l
@@ -188,6 +245,22 @@ func (q *Queries) InsertParticipant(ctx context.Context, arg InsertParticipantPa
 	var id int64
 	err := row.Scan(&id)
 	return id, err
+}
+
+const markLobbyAsStarted = `-- name: MarkLobbyAsStarted :exec
+UPDATE lobby
+SET game_id = $1
+WHERE id = $2
+`
+
+type MarkLobbyAsStartedParams struct {
+	GameID  pgtype.Int8
+	LobbyID int64
+}
+
+func (q *Queries) MarkLobbyAsStarted(ctx context.Context, arg MarkLobbyAsStartedParams) error {
+	_, err := q.db.Exec(ctx, markLobbyAsStarted, arg.GameID, arg.LobbyID)
+	return err
 }
 
 const updateLobbyOwner = `-- name: UpdateLobbyOwner :exec

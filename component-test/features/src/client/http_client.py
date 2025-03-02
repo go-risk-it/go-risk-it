@@ -51,6 +51,11 @@ class RiskItClient:
             "/api/v1/lobbies/summary",
         )
 
+    def start_lobby(self, lobby_id: int) -> Response:
+        return self.__post(
+            f"/api/v1/lobbies/{lobby_id}/start",
+        )
+
     def deploy(self, game_id: int, body) -> Response:
         return self.__post(
             f"/api/v1/games/{game_id}/moves/deployments",

@@ -59,3 +59,14 @@ def check_lobbies(lobbies, expected_lobbies):
     requested_lobbies = sorted([int(row["numberOfParticipants"]) for row in expected_lobbies])
 
     assert num_participants == requested_lobbies, f"Expected {requested_lobbies}, got {num_participants}"
+
+
+@when("{player} starts the lobby with {numberOfParticipants} participants")
+def step_impl(context: RiskItContext, player: str, numberOfParticipants: str):
+    lobbies = [l for l in context.lobbies.owned if l.numberOfParticipants == int(numberOfParticipants)]
+    assert len(lobbies) == 1, f"Expected 1 lobby with {numberOfParticipants} participants, got {len(lobbies)}"
+
+    target_lobby = lobbies[0]
+
+    response = context.risk_it_clients[player].start_lobby(target_lobby.id)
+    assert_2xx(response)

@@ -30,6 +30,7 @@ sql:
       - "internal/logic/lobby/creation"
       - "internal/logic/lobby/management"
       - "internal/logic/lobby/state"
+      - "internal/logic/lobby/start"
     schema: "internal/data/lobby/sqlc/migrations"
     gen:
       go:

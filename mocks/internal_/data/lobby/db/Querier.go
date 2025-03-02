@@ -28,6 +28,63 @@ func (_m *Querier) EXPECT() *Querier_Expecter {
 	return &Querier_Expecter{mock: &_m.Mock}
 }
 
+// CanLobbyBeStarted provides a mock function with given fields: _a0, arg
+func (_m *Querier) CanLobbyBeStarted(_a0 context.Context, arg sqlc.CanLobbyBeStartedParams) (bool, error) {
+	ret := _m.Called(_a0, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CanLobbyBeStarted")
+	}
+
+	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.CanLobbyBeStartedParams) (bool, error)); ok {
+		return rf(_a0, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.CanLobbyBeStartedParams) bool); ok {
+		r0 = rf(_a0, arg)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, sqlc.CanLobbyBeStartedParams) error); ok {
+		r1 = rf(_a0, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_CanLobbyBeStarted_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CanLobbyBeStarted'
+type Querier_CanLobbyBeStarted_Call struct {
+	*mock.Call
+}
+
+// CanLobbyBeStarted is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - arg sqlc.CanLobbyBeStartedParams
+func (_e *Querier_Expecter) CanLobbyBeStarted(_a0 interface{}, arg interface{}) *Querier_CanLobbyBeStarted_Call {
+	return &Querier_CanLobbyBeStarted_Call{Call: _e.mock.On("CanLobbyBeStarted", _a0, arg)}
+}
+
+func (_c *Querier_CanLobbyBeStarted_Call) Run(run func(_a0 context.Context, arg sqlc.CanLobbyBeStartedParams)) *Querier_CanLobbyBeStarted_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(sqlc.CanLobbyBeStartedParams))
+	})
+	return _c
+}
+
+func (_c *Querier_CanLobbyBeStarted_Call) Return(_a0 bool, _a1 error) *Querier_CanLobbyBeStarted_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_CanLobbyBeStarted_Call) RunAndReturn(run func(context.Context, sqlc.CanLobbyBeStartedParams) (bool, error)) *Querier_CanLobbyBeStarted_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CreateLobby provides a mock function with given fields: _a0
 func (_m *Querier) CreateLobby(_a0 context.Context) (int64, error) {
 	ret := _m.Called(_a0)
@@ -380,6 +437,65 @@ func (_c *Querier_GetLobby_Call) RunAndReturn(run func(context.Context, int64) (
 	return _c
 }
 
+// GetLobbyPlayers provides a mock function with given fields: _a0, id
+func (_m *Querier) GetLobbyPlayers(_a0 context.Context, id int64) ([]sqlc.GetLobbyPlayersRow, error) {
+	ret := _m.Called(_a0, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetLobbyPlayers")
+	}
+
+	var r0 []sqlc.GetLobbyPlayersRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64) ([]sqlc.GetLobbyPlayersRow, error)); ok {
+		return rf(_a0, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int64) []sqlc.GetLobbyPlayersRow); ok {
+		r0 = rf(_a0, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]sqlc.GetLobbyPlayersRow)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(_a0, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_GetLobbyPlayers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLobbyPlayers'
+type Querier_GetLobbyPlayers_Call struct {
+	*mock.Call
+}
+
+// GetLobbyPlayers is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - id int64
+func (_e *Querier_Expecter) GetLobbyPlayers(_a0 interface{}, id interface{}) *Querier_GetLobbyPlayers_Call {
+	return &Querier_GetLobbyPlayers_Call{Call: _e.mock.On("GetLobbyPlayers", _a0, id)}
+}
+
+func (_c *Querier_GetLobbyPlayers_Call) Run(run func(_a0 context.Context, id int64)) *Querier_GetLobbyPlayers_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int64))
+	})
+	return _c
+}
+
+func (_c *Querier_GetLobbyPlayers_Call) Return(_a0 []sqlc.GetLobbyPlayersRow, _a1 error) *Querier_GetLobbyPlayers_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_GetLobbyPlayers_Call) RunAndReturn(run func(context.Context, int64) ([]sqlc.GetLobbyPlayersRow, error)) *Querier_GetLobbyPlayers_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetOwnedLobbies provides a mock function with given fields: _a0, userID
 func (_m *Querier) GetOwnedLobbies(_a0 context.Context, userID string) ([]sqlc.GetOwnedLobbiesRow, error) {
 	ret := _m.Called(_a0, userID)
@@ -492,6 +608,53 @@ func (_c *Querier_InsertParticipant_Call) Return(_a0 int64, _a1 error) *Querier_
 }
 
 func (_c *Querier_InsertParticipant_Call) RunAndReturn(run func(context.Context, sqlc.InsertParticipantParams) (int64, error)) *Querier_InsertParticipant_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// MarkLobbyAsStarted provides a mock function with given fields: _a0, arg
+func (_m *Querier) MarkLobbyAsStarted(_a0 context.Context, arg sqlc.MarkLobbyAsStartedParams) error {
+	ret := _m.Called(_a0, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for MarkLobbyAsStarted")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.MarkLobbyAsStartedParams) error); ok {
+		r0 = rf(_a0, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Querier_MarkLobbyAsStarted_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MarkLobbyAsStarted'
+type Querier_MarkLobbyAsStarted_Call struct {
+	*mock.Call
+}
+
+// MarkLobbyAsStarted is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - arg sqlc.MarkLobbyAsStartedParams
+func (_e *Querier_Expecter) MarkLobbyAsStarted(_a0 interface{}, arg interface{}) *Querier_MarkLobbyAsStarted_Call {
+	return &Querier_MarkLobbyAsStarted_Call{Call: _e.mock.On("MarkLobbyAsStarted", _a0, arg)}
+}
+
+func (_c *Querier_MarkLobbyAsStarted_Call) Run(run func(_a0 context.Context, arg sqlc.MarkLobbyAsStartedParams)) *Querier_MarkLobbyAsStarted_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(sqlc.MarkLobbyAsStartedParams))
+	})
+	return _c
+}
+
+func (_c *Querier_MarkLobbyAsStarted_Call) Return(_a0 error) *Querier_MarkLobbyAsStarted_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Querier_MarkLobbyAsStarted_Call) RunAndReturn(run func(context.Context, sqlc.MarkLobbyAsStartedParams) error) *Querier_MarkLobbyAsStarted_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -30,6 +30,7 @@ Feature: Creating a lobby, connecting players, starting a game
       | owned    | 1                    |
       | owned    | 3                    |
       | joinable | 2                    |
+    When giovanni starts the lobby with 3 participants
 
 #  Scenario: Create lobby
 #    Given francesco creates a lobby
