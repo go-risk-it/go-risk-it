@@ -19,6 +19,8 @@ func Execute(
 	log.Infow("preparing to execute migrations", "schema", schema)
 
 	connStr := config.BuildConnectionString(schema)
+	log.Infow("connecting to DB for migrations", "schema", schema, "connStr", connStr)
+
 	if err := createSchema(log, connStr, schema); err != nil {
 		return fmt.Errorf("failed to create schema: %w", err)
 	}

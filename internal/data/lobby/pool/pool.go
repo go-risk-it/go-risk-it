@@ -54,7 +54,7 @@ func NewConnectionPool(
 		panic("Unable to create connection pool")
 	}
 
-	log.Infow("created connection pool")
+	log.Infow("created connection pool", "schema", "lobby")
 
 	lifecycle.Append(
 		fx.Hook{
