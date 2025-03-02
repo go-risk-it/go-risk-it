@@ -16,7 +16,7 @@ func Execute(
 	config config.DatabaseConfig,
 	schema string,
 ) error {
-	log.Infow("preparing to execute migrations")
+	log.Infow("preparing to execute migrations", "schema", schema)
 
 	connStr := config.BuildConnectionString(schema)
 	if err := createSchema(log, connStr, schema); err != nil {
@@ -28,17 +28,19 @@ func Execute(
 		return fmt.Errorf("failed to connect to DB for migrations: %w", err)
 	}
 
-	log.Infow("executing migrations")
+	log.Infow("executing migrations", "schema", schema)
 
 	if err := migr.Up(); err != nil {
 		if errors.Is(err, migrate.ErrNoChange) {
 			return nil
 		}
 
+		log.Warnw("failed to run migrations", "error", err, "schema", schema)
+
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 
-	log.Infow("successfully ran migrations")
+	log.Infow("successfully ran migrations", "schema", schema)
 
 	return nil
 }
