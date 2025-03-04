@@ -2,11 +2,13 @@ package migration
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
 	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/jackc/pgx/v5"
 	"go.uber.org/zap"
 )
@@ -25,9 +27,19 @@ func Execute(
 		return fmt.Errorf("failed to create schema: %w", err)
 	}
 
-	migr, err := migrate.New("file://migrations/"+schema, connStr)
+	database, err := sql.Open("postgres", connStr)
 	if err != nil {
-		return fmt.Errorf("failed to connect to DB for migrations: %w", err)
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+
+	driver, err := postgres.WithInstance(database, &postgres.Config{SchemaName: schema})
+	if err != nil {
+		return fmt.Errorf("error creating pgx migrate driver: %w", err)
+	}
+
+	migr, err := migrate.NewWithDatabaseInstance("file://migrations/"+schema, config.Name, driver)
+	if err != nil {
+		return fmt.Errorf("error creating migrate instance: %w", err)
 	}
 
 	log.Infow("executing migrations", "schema", schema)
