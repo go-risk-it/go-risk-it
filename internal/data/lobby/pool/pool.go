@@ -46,12 +46,15 @@ func NewConnectionPool(
 	log *zap.SugaredLogger,
 	config config.DatabaseConfig,
 ) *pgxpool.Pool {
-	pool, err := pgxpool.New(
-		context.Background(),
-		config.BuildConnectionString("lobby"),
-	)
+	ctx := context.Background()
+
+	pool, err := pgxpool.New(ctx, config.BuildConnectionString("lobby"))
 	if err != nil {
 		panic("Unable to create connection pool")
+	}
+
+	if _, err := pool.Exec(ctx, "SET search_path TO lobby;"); err != nil {
+		panic("cannot create DB connection pool")
 	}
 
 	log.Infow("created connection pool", "schema", "lobby")
