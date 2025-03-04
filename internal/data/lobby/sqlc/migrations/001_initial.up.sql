@@ -1,3 +1,4 @@
+SET search_path TO lobby;
 CREATE TABLE lobby
 (
     id       BIGSERIAL PRIMARY KEY,

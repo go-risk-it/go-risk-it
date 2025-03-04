@@ -1,3 +1,4 @@
+SET search_path TO game;
 CREATE TYPE phase_type AS ENUM ('CARDS', 'DEPLOY', 'ATTACK', 'CONQUER', 'REINFORCE');
 CREATE TYPE card_type AS ENUM ('CAVALRY', 'INFANTRY', 'ARTILLERY', 'JOLLY');
 CREATE TYPE mission_type AS ENUM (
