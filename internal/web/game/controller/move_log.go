@@ -12,7 +12,10 @@ import (
 )
 
 type MoveLogController interface {
-	ConvertMoveLogs(ctx ctx.GameContext, sqlcLogs []sqlc.MoveLog) (messaging.MoveHistory, error)
+	ConvertMoveLogs(
+		ctx ctx.GameContext,
+		sqlcLogs []sqlc.GameMoveLog,
+	) (messaging.MoveHistory, error)
 	GetMoveLogs(ctx ctx.GameContext, limit int64) (messaging.MoveHistory, error)
 }
 
@@ -55,7 +58,7 @@ func (c *MoveLogControllerImpl) GetMoveLogs(
 
 func (c *MoveLogControllerImpl) ConvertMoveLogs(
 	ctx ctx.GameContext,
-	sqlcLogs []sqlc.MoveLog,
+	sqlcLogs []sqlc.GameMoveLog,
 ) (messaging.MoveHistory, error) {
 	ctx.Log().Debug("converting move logs")
 
@@ -92,7 +95,7 @@ func convertMoveLogs(moveLogs []sqlc.GetMoveLogsRow) ([]messaging.MovePerformed,
 	return result, nil
 }
 
-func convertSqlcLog(userID string, sqlcLog sqlc.MoveLog) (messaging.MovePerformed, error) {
+func convertSqlcLog(userID string, sqlcLog sqlc.GameMoveLog) (messaging.MovePerformed, error) {
 	phase, err := convertPhase(sqlcLog.Phase)
 	if err != nil {
 		return messaging.MovePerformed{}, fmt.Errorf("unable to convert phase: %w", err)
@@ -122,17 +125,17 @@ func convertMoveLog(moveLog sqlc.GetMoveLogsRow) (messaging.MovePerformed, error
 	}, nil
 }
 
-func convertPhase(phaseType sqlc.PhaseType) (game.PhaseType, error) {
+func convertPhase(phaseType sqlc.GamePhaseType) (game.PhaseType, error) {
 	switch phaseType {
-	case sqlc.PhaseTypeCARDS:
+	case sqlc.GamePhaseTypeCARDS:
 		return game.Cards, nil
-	case sqlc.PhaseTypeDEPLOY:
+	case sqlc.GamePhaseTypeDEPLOY:
 		return game.Deploy, nil
-	case sqlc.PhaseTypeATTACK:
+	case sqlc.GamePhaseTypeATTACK:
 		return game.Attack, nil
-	case sqlc.PhaseTypeCONQUER:
+	case sqlc.GamePhaseTypeCONQUER:
 		return game.Conquer, nil
-	case sqlc.PhaseTypeREINFORCE:
+	case sqlc.GamePhaseTypeREINFORCE:
 		return game.Reinforce, nil
 	default:
 		return "", fmt.Errorf("invalid phase type: %s", phaseType)

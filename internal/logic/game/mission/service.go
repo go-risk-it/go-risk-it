@@ -18,7 +18,7 @@ type Service interface {
 	CreateMissionsQ(
 		ctx ctx.GameContext,
 		querier db.Querier,
-		players []sqlc.Player,
+		players []sqlc.GamePlayer,
 	) error
 	IsMissionAccomplishedQ(ctx ctx.GameContext, querier db.Querier) (bool, error)
 	ReassignMissionsQ(ctx ctx.GameContext, querier db.Querier, eliminatedPlayerID int64) error
@@ -47,7 +47,7 @@ func New(
 func (s *ServiceImpl) CreateMissionsQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
-	players []sqlc.Player,
+	players []sqlc.GamePlayer,
 ) error {
 	ctx.Log().Infow("creating missions")
 
@@ -85,7 +85,7 @@ func (s *ServiceImpl) CreateMissionsQ(
 }
 
 func (s *ServiceImpl) pickMission(
-	player sqlc.Player,
+	player sqlc.GamePlayer,
 	missions []Mission,
 	usedMissions []bool,
 ) (Mission, error) {
@@ -103,7 +103,7 @@ func (s *ServiceImpl) pickMission(
 	return nil, errors.New("no missions left")
 }
 
-func (s *ServiceImpl) GetAvailableMissions(players []sqlc.Player) []Mission {
+func (s *ServiceImpl) GetAvailableMissions(players []sqlc.GamePlayer) []Mission {
 	missions := []Mission{
 		&EighteenTerritoriesTwoTroopsMission{},
 		&TwentyFourTerritoriesMission{},
@@ -186,18 +186,18 @@ func (s *ServiceImpl) IsMissionAccomplishedQ(
 func (s *ServiceImpl) isMissionAccomplished(
 	ctx ctx.GameContext,
 	querier db.Querier,
-	baseMission sqlc.Mission,
+	baseMission sqlc.GameMission,
 ) (bool, error) {
 	switch baseMission.Type {
-	case sqlc.MissionTypeTWOCONTINENTS:
+	case sqlc.GameMissionTypeTWOCONTINENTS:
 		return s.isTwoContinentsMissionAccomplished(ctx, querier, baseMission)
-	case sqlc.MissionTypeTWOCONTINENTSPLUSONE:
+	case sqlc.GameMissionTypeTWOCONTINENTSPLUSONE:
 		return s.isTwoContinentsPlusOneMissionAccomplished(ctx, querier, baseMission)
-	case sqlc.MissionTypeEIGHTEENTERRITORIESTWOTROOPS:
+	case sqlc.GameMissionTypeEIGHTEENTERRITORIESTWOTROOPS:
 		return s.isEighteenTerritoriesTwoTroopsMissionAccomplished(ctx, querier, baseMission)
-	case sqlc.MissionTypeTWENTYFOURTERRITORIES:
+	case sqlc.GameMissionTypeTWENTYFOURTERRITORIES:
 		return s.isTwentyFourTerritoriesMissionAccomplished(ctx, querier, baseMission)
-	case sqlc.MissionTypeELIMINATEPLAYER:
+	case sqlc.GameMissionTypeELIMINATEPLAYER:
 		return s.isEliminatePlayerMissionAccomplished(ctx, querier, baseMission)
 	default:
 		return false, fmt.Errorf("unknown mission type: %s", baseMission.Type)
@@ -213,7 +213,7 @@ func continentEquals(cont string) func(continent *board.Continent) bool {
 func (s *ServiceImpl) isTwoContinentsMissionAccomplished(
 	ctx ctx.GameContext,
 	querier db.Querier,
-	baseMission sqlc.Mission,
+	baseMission sqlc.GameMission,
 ) (bool, error) {
 	mission, err := querier.GetTwoContinentsMission(ctx, baseMission.ID)
 	if err != nil {
@@ -236,7 +236,7 @@ func (s *ServiceImpl) isTwoContinentsMissionAccomplished(
 func (s *ServiceImpl) isTwoContinentsPlusOneMissionAccomplished(
 	ctx ctx.GameContext,
 	querier db.Querier,
-	baseMission sqlc.Mission,
+	baseMission sqlc.GameMission,
 ) (bool, error) {
 	mission, err := querier.GetTwoContinentsPlusOneMission(ctx, baseMission.ID)
 	if err != nil {
@@ -264,7 +264,7 @@ func (s *ServiceImpl) isTwoContinentsPlusOneMissionAccomplished(
 func (s *ServiceImpl) isEighteenTerritoriesTwoTroopsMissionAccomplished(
 	ctx ctx.GameContext,
 	querier db.Querier,
-	_ sqlc.Mission,
+	_ sqlc.GameMission,
 ) (bool, error) {
 	regions, err := s.regionService.GetPlayerRegionsQ(ctx, querier)
 	if err != nil {
@@ -285,7 +285,7 @@ func (s *ServiceImpl) isEighteenTerritoriesTwoTroopsMissionAccomplished(
 func (s *ServiceImpl) isTwentyFourTerritoriesMissionAccomplished(
 	ctx ctx.GameContext,
 	querier db.Querier,
-	_ sqlc.Mission,
+	_ sqlc.GameMission,
 ) (bool, error) {
 	regions, err := s.regionService.GetPlayerRegionsQ(ctx, querier)
 	if err != nil {
@@ -298,7 +298,7 @@ func (s *ServiceImpl) isTwentyFourTerritoriesMissionAccomplished(
 func (s *ServiceImpl) isEliminatePlayerMissionAccomplished(
 	ctx ctx.GameContext,
 	querier db.Querier,
-	baseMission sqlc.Mission,
+	baseMission sqlc.GameMission,
 ) (bool, error) {
 	mission, err := querier.GetEliminatePlayerMission(ctx, baseMission.ID)
 	if err != nil {

@@ -36,7 +36,7 @@ func TestServiceImpl_GetGameState(t *testing.T) {
 	// Set up expectations for GetGame method
 	querier.EXPECT().GetGame(ctx, gameID).Return(sqlc.GetGameRow{
 		ID:           gameID,
-		CurrentPhase: sqlc.PhaseTypeATTACK,
+		CurrentPhase: sqlc.GamePhaseTypeATTACK,
 		Turn:         3,
 		WinnerUserID: pgtype.Text{
 			Valid:  false,

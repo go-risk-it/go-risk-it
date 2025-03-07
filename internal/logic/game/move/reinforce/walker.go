@@ -12,7 +12,7 @@ func (s *ServiceImpl) WalkQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	_ bool,
-) (sqlc.PhaseType, error) {
+) (sqlc.GamePhaseType, error) {
 	hasValidCombination, err := s.cardsService.NextPlayerHasValidCombinationQ(ctx, querier)
 	if err != nil {
 		return "", fmt.Errorf("failed to check if has valid combination: %w", err)
@@ -21,10 +21,10 @@ func (s *ServiceImpl) WalkQ(
 	if !hasValidCombination {
 		ctx.Log().Debugw("no valid combination, advancing to deploy phase")
 
-		return sqlc.PhaseTypeDEPLOY, nil
+		return sqlc.GamePhaseTypeDEPLOY, nil
 	}
 
 	ctx.Log().Debugw("player has at least one valid combination, advancing to cards phase")
 
-	return sqlc.PhaseTypeCARDS, nil
+	return sqlc.GamePhaseTypeCARDS, nil
 }

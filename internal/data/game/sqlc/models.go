@@ -11,149 +11,149 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type CardType string
+type GameCardType string
 
 const (
-	CardTypeCAVALRY   CardType = "CAVALRY"
-	CardTypeINFANTRY  CardType = "INFANTRY"
-	CardTypeARTILLERY CardType = "ARTILLERY"
-	CardTypeJOLLY     CardType = "JOLLY"
+	GameCardTypeCAVALRY   GameCardType = "CAVALRY"
+	GameCardTypeINFANTRY  GameCardType = "INFANTRY"
+	GameCardTypeARTILLERY GameCardType = "ARTILLERY"
+	GameCardTypeJOLLY     GameCardType = "JOLLY"
 )
 
-func (e *CardType) Scan(src interface{}) error {
+func (e *GameCardType) Scan(src interface{}) error {
 	switch s := src.(type) {
 	case []byte:
-		*e = CardType(s)
+		*e = GameCardType(s)
 	case string:
-		*e = CardType(s)
+		*e = GameCardType(s)
 	default:
-		return fmt.Errorf("unsupported scan type for CardType: %T", src)
+		return fmt.Errorf("unsupported scan type for GameCardType: %T", src)
 	}
 	return nil
 }
 
-type NullCardType struct {
-	CardType CardType
-	Valid    bool // Valid is true if CardType is not NULL
+type NullGameCardType struct {
+	GameCardType GameCardType
+	Valid        bool // Valid is true if GameCardType is not NULL
 }
 
 // Scan implements the Scanner interface.
-func (ns *NullCardType) Scan(value interface{}) error {
+func (ns *NullGameCardType) Scan(value interface{}) error {
 	if value == nil {
-		ns.CardType, ns.Valid = "", false
+		ns.GameCardType, ns.Valid = "", false
 		return nil
 	}
 	ns.Valid = true
-	return ns.CardType.Scan(value)
+	return ns.GameCardType.Scan(value)
 }
 
 // Value implements the driver Valuer interface.
-func (ns NullCardType) Value() (driver.Value, error) {
+func (ns NullGameCardType) Value() (driver.Value, error) {
 	if !ns.Valid {
 		return nil, nil
 	}
-	return string(ns.CardType), nil
+	return string(ns.GameCardType), nil
 }
 
-type MissionType string
+type GameMissionType string
 
 const (
-	MissionTypeEIGHTEENTERRITORIESTWOTROOPS MissionType = "EIGHTEEN_TERRITORIES_TWO_TROOPS"
-	MissionTypeTWENTYFOURTERRITORIES        MissionType = "TWENTY_FOUR_TERRITORIES"
-	MissionTypeTWOCONTINENTS                MissionType = "TWO_CONTINENTS"
-	MissionTypeTWOCONTINENTSPLUSONE         MissionType = "TWO_CONTINENTS_PLUS_ONE"
-	MissionTypeELIMINATEPLAYER              MissionType = "ELIMINATE_PLAYER"
+	GameMissionTypeEIGHTEENTERRITORIESTWOTROOPS GameMissionType = "EIGHTEEN_TERRITORIES_TWO_TROOPS"
+	GameMissionTypeTWENTYFOURTERRITORIES        GameMissionType = "TWENTY_FOUR_TERRITORIES"
+	GameMissionTypeTWOCONTINENTS                GameMissionType = "TWO_CONTINENTS"
+	GameMissionTypeTWOCONTINENTSPLUSONE         GameMissionType = "TWO_CONTINENTS_PLUS_ONE"
+	GameMissionTypeELIMINATEPLAYER              GameMissionType = "ELIMINATE_PLAYER"
 )
 
-func (e *MissionType) Scan(src interface{}) error {
+func (e *GameMissionType) Scan(src interface{}) error {
 	switch s := src.(type) {
 	case []byte:
-		*e = MissionType(s)
+		*e = GameMissionType(s)
 	case string:
-		*e = MissionType(s)
+		*e = GameMissionType(s)
 	default:
-		return fmt.Errorf("unsupported scan type for MissionType: %T", src)
+		return fmt.Errorf("unsupported scan type for GameMissionType: %T", src)
 	}
 	return nil
 }
 
-type NullMissionType struct {
-	MissionType MissionType
-	Valid       bool // Valid is true if MissionType is not NULL
+type NullGameMissionType struct {
+	GameMissionType GameMissionType
+	Valid           bool // Valid is true if GameMissionType is not NULL
 }
 
 // Scan implements the Scanner interface.
-func (ns *NullMissionType) Scan(value interface{}) error {
+func (ns *NullGameMissionType) Scan(value interface{}) error {
 	if value == nil {
-		ns.MissionType, ns.Valid = "", false
+		ns.GameMissionType, ns.Valid = "", false
 		return nil
 	}
 	ns.Valid = true
-	return ns.MissionType.Scan(value)
+	return ns.GameMissionType.Scan(value)
 }
 
 // Value implements the driver Valuer interface.
-func (ns NullMissionType) Value() (driver.Value, error) {
+func (ns NullGameMissionType) Value() (driver.Value, error) {
 	if !ns.Valid {
 		return nil, nil
 	}
-	return string(ns.MissionType), nil
+	return string(ns.GameMissionType), nil
 }
 
-type PhaseType string
+type GamePhaseType string
 
 const (
-	PhaseTypeCARDS     PhaseType = "CARDS"
-	PhaseTypeDEPLOY    PhaseType = "DEPLOY"
-	PhaseTypeATTACK    PhaseType = "ATTACK"
-	PhaseTypeCONQUER   PhaseType = "CONQUER"
-	PhaseTypeREINFORCE PhaseType = "REINFORCE"
+	GamePhaseTypeCARDS     GamePhaseType = "CARDS"
+	GamePhaseTypeDEPLOY    GamePhaseType = "DEPLOY"
+	GamePhaseTypeATTACK    GamePhaseType = "ATTACK"
+	GamePhaseTypeCONQUER   GamePhaseType = "CONQUER"
+	GamePhaseTypeREINFORCE GamePhaseType = "REINFORCE"
 )
 
-func (e *PhaseType) Scan(src interface{}) error {
+func (e *GamePhaseType) Scan(src interface{}) error {
 	switch s := src.(type) {
 	case []byte:
-		*e = PhaseType(s)
+		*e = GamePhaseType(s)
 	case string:
-		*e = PhaseType(s)
+		*e = GamePhaseType(s)
 	default:
-		return fmt.Errorf("unsupported scan type for PhaseType: %T", src)
+		return fmt.Errorf("unsupported scan type for GamePhaseType: %T", src)
 	}
 	return nil
 }
 
-type NullPhaseType struct {
-	PhaseType PhaseType
-	Valid     bool // Valid is true if PhaseType is not NULL
+type NullGamePhaseType struct {
+	GamePhaseType GamePhaseType
+	Valid         bool // Valid is true if GamePhaseType is not NULL
 }
 
 // Scan implements the Scanner interface.
-func (ns *NullPhaseType) Scan(value interface{}) error {
+func (ns *NullGamePhaseType) Scan(value interface{}) error {
 	if value == nil {
-		ns.PhaseType, ns.Valid = "", false
+		ns.GamePhaseType, ns.Valid = "", false
 		return nil
 	}
 	ns.Valid = true
-	return ns.PhaseType.Scan(value)
+	return ns.GamePhaseType.Scan(value)
 }
 
 // Value implements the driver Valuer interface.
-func (ns NullPhaseType) Value() (driver.Value, error) {
+func (ns NullGamePhaseType) Value() (driver.Value, error) {
 	if !ns.Valid {
 		return nil, nil
 	}
-	return string(ns.PhaseType), nil
+	return string(ns.GamePhaseType), nil
 }
 
-type Card struct {
+type GameCard struct {
 	ID       int64
 	GameID   int64
 	RegionID pgtype.Int8
 	OwnerID  pgtype.Int8
-	CardType CardType
+	CardType GameCardType
 }
 
-type ConquerPhase struct {
+type GameConquerPhase struct {
 	ID             int64
 	PhaseID        int64
 	SourceRegionID int64
@@ -161,47 +161,47 @@ type ConquerPhase struct {
 	MinimumTroops  int64
 }
 
-type DeployPhase struct {
+type GameDeployPhase struct {
 	ID               int64
 	PhaseID          int64
 	DeployableTroops int64
 }
 
-type EliminatePlayerMission struct {
+type GameEliminatePlayerMission struct {
 	MissionID      int64
 	TargetPlayerID int64
 }
 
-type Game struct {
+type GameGame struct {
 	ID             int64
 	CurrentPhaseID pgtype.Int8
 	WinnerPlayerID pgtype.Int8
 }
 
-type Mission struct {
+type GameMission struct {
 	ID       int64
 	PlayerID int64
-	Type     MissionType
+	Type     GameMissionType
 }
 
-type MoveLog struct {
+type GameMoveLog struct {
 	ID       int64
 	GameID   int64
 	PlayerID int64
-	Phase    PhaseType
+	Phase    GamePhaseType
 	MoveData []byte
 	Result   []byte
 	Created  pgtype.Timestamptz
 }
 
-type Phase struct {
+type GamePhase struct {
 	ID     int64
 	GameID int64
-	Type   PhaseType
+	Type   GamePhaseType
 	Turn   int64
 }
 
-type Player struct {
+type GamePlayer struct {
 	ID        int64
 	GameID    int64
 	Name      string
@@ -209,20 +209,20 @@ type Player struct {
 	TurnIndex int64
 }
 
-type Region struct {
+type GameRegion struct {
 	ID                int64
 	ExternalReference string
 	PlayerID          int64
 	Troops            int64
 }
 
-type TwoContinentsMission struct {
+type GameTwoContinentsMission struct {
 	MissionID  int64
 	Continent1 string
 	Continent2 string
 }
 
-type TwoContinentsPlusOneMission struct {
+type GameTwoContinentsPlusOneMission struct {
 	MissionID  int64
 	Continent1 string
 	Continent2 string

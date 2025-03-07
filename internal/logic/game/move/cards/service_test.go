@@ -48,7 +48,7 @@ func input() ctx.GameContext {
 	return ctx.WithGameID(userContext, gameID)
 }
 
-func card(id int64, cardType sqlc.CardType) sqlc.GetCardsForPlayerRow {
+func card(id int64, cardType sqlc.GameCardType) sqlc.GetCardsForPlayerRow {
 	return sqlc.GetCardsForPlayerRow{
 		ID:       id,
 		CardType: cardType,
@@ -205,17 +205,17 @@ func TestServiceImpl_InvalidCombinations(t *testing.T) {
 					UserID: ctx.UserID(),
 				}).
 				Return([]sqlc.GetCardsForPlayerRow{
-					card(1, sqlc.CardTypeARTILLERY),
-					card(2, sqlc.CardTypeARTILLERY),
-					card(3, sqlc.CardTypeARTILLERY),
-					card(4, sqlc.CardTypeINFANTRY),
-					card(5, sqlc.CardTypeINFANTRY),
-					card(6, sqlc.CardTypeINFANTRY),
-					card(7, sqlc.CardTypeCAVALRY),
-					card(8, sqlc.CardTypeCAVALRY),
-					card(9, sqlc.CardTypeCAVALRY),
-					card(10, sqlc.CardTypeJOLLY),
-					card(11, sqlc.CardTypeJOLLY),
+					card(1, sqlc.GameCardTypeARTILLERY),
+					card(2, sqlc.GameCardTypeARTILLERY),
+					card(3, sqlc.GameCardTypeARTILLERY),
+					card(4, sqlc.GameCardTypeINFANTRY),
+					card(5, sqlc.GameCardTypeINFANTRY),
+					card(6, sqlc.GameCardTypeINFANTRY),
+					card(7, sqlc.GameCardTypeCAVALRY),
+					card(8, sqlc.GameCardTypeCAVALRY),
+					card(9, sqlc.GameCardTypeCAVALRY),
+					card(10, sqlc.GameCardTypeJOLLY),
+					card(11, sqlc.GameCardTypeJOLLY),
 				}, nil)
 
 			_, err := service.PerformQ(ctx, querier, cards.Move{
@@ -297,17 +297,17 @@ func TestServiceImpl_ValidCombinations(t *testing.T) {
 					UserID: ctx.UserID(),
 				}).
 				Return([]sqlc.GetCardsForPlayerRow{
-					card(1, sqlc.CardTypeARTILLERY),
-					card(2, sqlc.CardTypeARTILLERY),
-					card(3, sqlc.CardTypeARTILLERY),
-					card(4, sqlc.CardTypeINFANTRY),
-					card(5, sqlc.CardTypeINFANTRY),
-					card(6, sqlc.CardTypeINFANTRY),
-					card(7, sqlc.CardTypeCAVALRY),
-					card(8, sqlc.CardTypeCAVALRY),
-					card(9, sqlc.CardTypeCAVALRY),
-					card(10, sqlc.CardTypeJOLLY),
-					card(11, sqlc.CardTypeJOLLY),
+					card(1, sqlc.GameCardTypeARTILLERY),
+					card(2, sqlc.GameCardTypeARTILLERY),
+					card(3, sqlc.GameCardTypeARTILLERY),
+					card(4, sqlc.GameCardTypeINFANTRY),
+					card(5, sqlc.GameCardTypeINFANTRY),
+					card(6, sqlc.GameCardTypeINFANTRY),
+					card(7, sqlc.GameCardTypeCAVALRY),
+					card(8, sqlc.GameCardTypeCAVALRY),
+					card(9, sqlc.GameCardTypeCAVALRY),
+					card(10, sqlc.GameCardTypeJOLLY),
+					card(11, sqlc.GameCardTypeJOLLY),
 				}, nil)
 
 			playedCards := make([]int64, 0)

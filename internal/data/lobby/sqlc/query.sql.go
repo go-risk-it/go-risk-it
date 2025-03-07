@@ -13,12 +13,12 @@ import (
 
 const canLobbyBeStarted = `-- name: CanLobbyBeStarted :one
 SELECT EXISTS(SELECT l.id
-              FROM lobby l
-                       JOIN participant p ON l.id = p.lobby_id
+              FROM lobby.lobby l
+                       JOIN lobby.participant p ON l.id = p.lobby_id
               WHERE l.id = $1
                 AND l.game_id IS NULL
                 AND l.owner_id =
-                    (SELECT p.id FROM participant p WHERE p.user_id = $2 AND p.lobby_id = l.id)
+                    (SELECT p.id FROM lobby.participant p WHERE p.user_id = $2 AND p.lobby_id = l.id)
               GROUP BY l.id
               HAVING COUNT(p.id) >= $3)
 `
@@ -37,7 +37,7 @@ func (q *Queries) CanLobbyBeStarted(ctx context.Context, arg CanLobbyBeStartedPa
 }
 
 const createLobby = `-- name: CreateLobby :one
-INSERT INTO lobby DEFAULT
+INSERT INTO lobby.lobby DEFAULT
 VALUES
 RETURNING id
 `
@@ -51,12 +51,12 @@ func (q *Queries) CreateLobby(ctx context.Context) (int64, error) {
 
 const getJoinableLobbies = `-- name: GetJoinableLobbies :many
 WITH joined_lobbies AS (SELECT l.id
-                        FROM lobby l
-                                 JOIN participant p ON l.id = p.lobby_id
+                        FROM lobby.lobby l
+                                 JOIN lobby.participant p ON l.id = p.lobby_id
                             AND p.user_id = $1)
 SELECT l.id, l.game_id, COUNT(p.id) AS participant_count
-FROM lobby l
-         JOIN participant p ON l.id = p.lobby_id
+FROM lobby.lobby l
+         JOIN lobby.participant p ON l.id = p.lobby_id
 WHERE l.id NOT IN (SELECT id FROM joined_lobbies)
   AND l.game_id IS NULL
 GROUP BY l.id
@@ -90,15 +90,15 @@ func (q *Queries) GetJoinableLobbies(ctx context.Context, userID string) ([]GetJ
 
 const getJoinedLobbies = `-- name: GetJoinedLobbies :many
 WITH joined_lobbies AS (SELECT l.id
-                        FROM lobby l
-                                 JOIN participant p ON l.id = p.lobby_id
+                        FROM lobby.lobby l
+                                 JOIN lobby.participant p ON l.id = p.lobby_id
                         WHERE l.game_id IS NULL
                           AND p.user_id = $1)
 SELECT l.id, l.game_id, COUNT(p.id) AS participant_count
-FROM lobby l
-         JOIN participant p ON l.id = p.lobby_id
+FROM lobby.lobby l
+         JOIN lobby.participant p ON l.id = p.lobby_id
 WHERE l.id IN (SELECT id FROM joined_lobbies)
-  AND l.owner_id <> (SELECT p.id FROM participant p WHERE p.user_id = $1 AND p.lobby_id = l.id)
+  AND l.owner_id <> (SELECT p.id FROM lobby.participant p WHERE p.user_id = $1 AND p.lobby_id = l.id)
 GROUP BY l.id
 `
 
@@ -130,8 +130,8 @@ func (q *Queries) GetJoinedLobbies(ctx context.Context, userID string) ([]GetJoi
 
 const getLobby = `-- name: GetLobby :many
 SELECT l.id, p.id as participant_id, p.user_id
-FROM lobby l
-         join participant p on p.lobby_id = l.id
+FROM lobby.lobby l
+         join lobby.participant p on p.lobby_id = l.id
 where l.id = $1
 `
 
@@ -163,8 +163,8 @@ func (q *Queries) GetLobby(ctx context.Context, id int64) ([]GetLobbyRow, error)
 
 const getLobbyPlayers = `-- name: GetLobbyPlayers :many
 SELECT p.user_id, p.name
-FROM lobby l
-         JOIN participant p on l.id = p.lobby_id
+FROM lobby.lobby l
+         JOIN lobby.participant p on l.id = p.lobby_id
 where l.id = $1
 `
 
@@ -195,10 +195,10 @@ func (q *Queries) GetLobbyPlayers(ctx context.Context, id int64) ([]GetLobbyPlay
 
 const getOwnedLobbies = `-- name: GetOwnedLobbies :many
 SELECT l.id, l.game_id, COUNT(p.id) AS participant_count
-FROM lobby l
-         JOIN participant p ON l.id = p.lobby_id
+FROM lobby.lobby l
+         JOIN lobby.participant p ON l.id = p.lobby_id
 WHERE l.game_id IS NULL
-  AND l.owner_id = (SELECT p.id FROM participant p WHERE p.user_id = $1 AND p.lobby_id = l.id)
+  AND l.owner_id = (SELECT p.id FROM lobby.participant p WHERE p.user_id = $1 AND p.lobby_id = l.id)
 GROUP BY l.id
 `
 
@@ -229,7 +229,7 @@ func (q *Queries) GetOwnedLobbies(ctx context.Context, userID string) ([]GetOwne
 }
 
 const insertParticipant = `-- name: InsertParticipant :one
-INSERT INTO participant (lobby_id, user_id, name)
+INSERT INTO lobby.participant (lobby_id, user_id, name)
 VALUES ($1, $2, $3)
 RETURNING id
 `
@@ -248,7 +248,7 @@ func (q *Queries) InsertParticipant(ctx context.Context, arg InsertParticipantPa
 }
 
 const markLobbyAsStarted = `-- name: MarkLobbyAsStarted :exec
-UPDATE lobby
+UPDATE lobby.lobby
 SET game_id = $1
 WHERE id = $2
 `
@@ -264,7 +264,7 @@ func (q *Queries) MarkLobbyAsStarted(ctx context.Context, arg MarkLobbyAsStarted
 }
 
 const updateLobbyOwner = `-- name: UpdateLobbyOwner :exec
-UPDATE lobby
+UPDATE lobby.lobby
 SET owner_id = $1
 WHERE id = $2
 `

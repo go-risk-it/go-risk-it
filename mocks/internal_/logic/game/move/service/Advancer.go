@@ -25,7 +25,7 @@ func (_m *Advancer[R]) EXPECT() *Advancer_Expecter[R] {
 }
 
 // AdvanceQ provides a mock function with given fields: _a0, querier, targetPhase, performResult
-func (_m *Advancer[R]) AdvanceQ(_a0 ctx.GameContext, querier db.Querier, targetPhase sqlc.PhaseType, performResult R) error {
+func (_m *Advancer[R]) AdvanceQ(_a0 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType, performResult R) error {
 	ret := _m.Called(_a0, querier, targetPhase, performResult)
 
 	if len(ret) == 0 {
@@ -33,7 +33,7 @@ func (_m *Advancer[R]) AdvanceQ(_a0 ctx.GameContext, querier db.Querier, targetP
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, sqlc.PhaseType, R) error); ok {
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, sqlc.GamePhaseType, R) error); ok {
 		r0 = rf(_a0, querier, targetPhase, performResult)
 	} else {
 		r0 = ret.Error(0)
@@ -50,15 +50,15 @@ type Advancer_AdvanceQ_Call[R any] struct {
 // AdvanceQ is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
-//   - targetPhase sqlc.PhaseType
+//   - targetPhase sqlc.GamePhaseType
 //   - performResult R
 func (_e *Advancer_Expecter[R]) AdvanceQ(_a0 interface{}, querier interface{}, targetPhase interface{}, performResult interface{}) *Advancer_AdvanceQ_Call[R] {
 	return &Advancer_AdvanceQ_Call[R]{Call: _e.mock.On("AdvanceQ", _a0, querier, targetPhase, performResult)}
 }
 
-func (_c *Advancer_AdvanceQ_Call[R]) Run(run func(_a0 ctx.GameContext, querier db.Querier, targetPhase sqlc.PhaseType, performResult R)) *Advancer_AdvanceQ_Call[R] {
+func (_c *Advancer_AdvanceQ_Call[R]) Run(run func(_a0 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType, performResult R)) *Advancer_AdvanceQ_Call[R] {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(sqlc.PhaseType), args[3].(R))
+		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(sqlc.GamePhaseType), args[3].(R))
 	})
 	return _c
 }
@@ -68,7 +68,7 @@ func (_c *Advancer_AdvanceQ_Call[R]) Return(_a0 error) *Advancer_AdvanceQ_Call[R
 	return _c
 }
 
-func (_c *Advancer_AdvanceQ_Call[R]) RunAndReturn(run func(ctx.GameContext, db.Querier, sqlc.PhaseType, R) error) *Advancer_AdvanceQ_Call[R] {
+func (_c *Advancer_AdvanceQ_Call[R]) RunAndReturn(run func(ctx.GameContext, db.Querier, sqlc.GamePhaseType, R) error) *Advancer_AdvanceQ_Call[R] {
 	_c.Call.Return(run)
 	return _c
 }

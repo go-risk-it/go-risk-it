@@ -50,6 +50,6 @@ func NewService(
 	}
 }
 
-func (s *ServiceImpl) PhaseType() sqlc.PhaseType {
-	return sqlc.PhaseTypeREINFORCE
+func (s *ServiceImpl) PhaseType() sqlc.GamePhaseType {
+	return sqlc.GamePhaseTypeREINFORCE
 }

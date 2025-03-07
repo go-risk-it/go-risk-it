@@ -45,14 +45,14 @@ func TestServiceImpl_ShouldFailWhenPlayerNotInGame(t *testing.T) {
 	querier, playerService, service := setup(t)
 	ctx := input()
 
-	players := []sqlc.Player{
+	players := []sqlc.GamePlayer{
 		{ID: 420, TurnIndex: 0, GameID: 1, UserID: "Gabriele"},
 		{ID: 69, TurnIndex: 1, GameID: 1, UserID: "Francesco"},
 	}
 
 	game := &state.Game{
 		ID:    ctx.GameID(),
-		Phase: sqlc.PhaseTypeDEPLOY,
+		Phase: sqlc.GamePhaseTypeDEPLOY,
 		Turn:  1,
 	}
 
@@ -72,7 +72,7 @@ func TestServiceImpl_ShouldFailOnTurnCheck(t *testing.T) {
 
 	type inputType struct {
 		name        string
-		phase       sqlc.PhaseType
+		phase       sqlc.GamePhaseType
 		turn        int64
 		expectedErr string
 	}
@@ -80,7 +80,7 @@ func TestServiceImpl_ShouldFailOnTurnCheck(t *testing.T) {
 	tests := []inputType{
 		{
 			"When not player's turn",
-			sqlc.PhaseTypeDEPLOY,
+			sqlc.GamePhaseTypeDEPLOY,
 			1,
 			"turn check failed: it is not the player's turn",
 		},
@@ -91,7 +91,7 @@ func TestServiceImpl_ShouldFailOnTurnCheck(t *testing.T) {
 			querier, playerService, service := setup(t)
 			ctx := input()
 
-			players := []sqlc.Player{
+			players := []sqlc.GamePlayer{
 				{ID: 420, TurnIndex: 0, GameID: 1, UserID: "Gabriele"},
 				{ID: 69, TurnIndex: 1, GameID: 1, UserID: "Francesco"},
 				{ID: 42069, TurnIndex: 2, GameID: 1, UserID: "Giovanni"},

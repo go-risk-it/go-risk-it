@@ -49,7 +49,7 @@ func HandleMovePerformed(
 					func(gameCtx2 ctx.GameContext) (messaging.MoveHistory, error) {
 						history, err := params.MoveLogController.ConvertMoveLogs(
 							gameCtx2,
-							[]sqlc.MoveLog{data.MoveLog},
+							[]sqlc.GameMoveLog{data.MoveLog},
 						)
 						if err != nil {
 							return messaging.MoveHistory{}, fmt.Errorf(

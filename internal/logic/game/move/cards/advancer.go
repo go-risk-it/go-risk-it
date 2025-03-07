@@ -11,10 +11,10 @@ import (
 func (s *ServiceImpl) AdvanceQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
-	targetPhase sqlc.PhaseType,
+	targetPhase sqlc.GamePhaseType,
 	moveResult *MoveResult,
 ) error {
-	if targetPhase != sqlc.PhaseTypeDEPLOY {
+	if targetPhase != sqlc.GamePhaseTypeDEPLOY {
 		return fmt.Errorf("cannot advance cards phase to %s", targetPhase)
 	}
 
@@ -85,7 +85,7 @@ func (s *ServiceImpl) getDeployableTroops(
 func (s *ServiceImpl) getContinentReward(
 	ctx ctx.GameContext,
 	querier db.Querier,
-	currentPlayer sqlc.Player,
+	currentPlayer sqlc.GamePlayer,
 ) (int64, error) {
 	continents, err := s.boardService.GetContinentsControlledByPlayerQ(
 		ctx,

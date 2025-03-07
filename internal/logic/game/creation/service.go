@@ -121,11 +121,11 @@ func (s *ServiceImpl) CreateGameQ(
 func (s *ServiceImpl) createPhase(
 	ctx ctx.GameContext,
 	querier db.Querier,
-	game sqlc.Game,
+	game sqlc.GameGame,
 ) error {
 	phase, err := querier.InsertPhase(ctx, sqlc.InsertPhaseParams{
 		GameID: game.ID,
-		Type:   sqlc.PhaseTypeDEPLOY,
+		Type:   sqlc.GamePhaseTypeDEPLOY,
 		Turn:   0,
 	})
 	if err != nil {

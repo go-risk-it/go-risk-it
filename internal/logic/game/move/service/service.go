@@ -14,7 +14,7 @@ type Advancer[R any] interface {
 	AdvanceQ(
 		ctx ctx.GameContext,
 		querier db.Querier,
-		targetPhase sqlc.PhaseType,
+		targetPhase sqlc.GamePhaseType,
 		performResult R,
 	) error
 }
@@ -24,12 +24,12 @@ type PhaseWalker interface {
 		ctx ctx.GameContext,
 		querier db.Querier,
 		voluntaryAdvancement bool,
-	) (sqlc.PhaseType, error)
+	) (sqlc.GamePhaseType, error)
 }
 
 type Service[T, R any] interface {
 	Performer[T, R]
 	PhaseWalker
 	Advancer[R]
-	PhaseType() sqlc.PhaseType
+	PhaseType() sqlc.GamePhaseType
 }

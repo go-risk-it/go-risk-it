@@ -6,7 +6,7 @@ import (
 )
 
 type MovePerformedData struct {
-	MoveLog sqlc.MoveLog
+	MoveLog sqlc.GameMoveLog
 }
 
 type MovePerformedSignal interface {

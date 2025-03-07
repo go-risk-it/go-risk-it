@@ -8,13 +8,13 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type Lobby struct {
+type LobbyLobby struct {
 	ID      int64
 	OwnerID pgtype.Int8
 	GameID  pgtype.Int8
 }
 
-type Participant struct {
+type LobbyParticipant struct {
 	ID      int64
 	LobbyID int64
 	UserID  string

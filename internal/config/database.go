@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 	"strconv"
-	"strings"
 )
 
 type DatabaseConfig struct {
@@ -16,7 +15,7 @@ type DatabaseConfig struct {
 	DisableSSL bool   `koanf:"disable_ssl"`
 }
 
-func (c *DatabaseConfig) BuildConnectionString(searchPath string) string {
+func (c *DatabaseConfig) BuildConnectionString() string {
 	hostPort := net.JoinHostPort(c.Host, strconv.Itoa(c.Port))
 
 	result := fmt.Sprintf(
@@ -27,16 +26,8 @@ func (c *DatabaseConfig) BuildConnectionString(searchPath string) string {
 		c.Name,
 	)
 
-	params := make([]string, 0, 2)
-
 	if c.DisableSSL {
-		params = append(params, "sslmode=disable")
-	}
-
-	params = append(params, "search_path="+searchPath)
-
-	if len(params) > 0 {
-		result += "?" + strings.Join(params, "&")
+		result += "?sslmode=disable"
 	}
 
 	return result

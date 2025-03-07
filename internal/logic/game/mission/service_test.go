@@ -118,10 +118,10 @@ func TestServiceImpl_IsTwoContinentsMissionAccomplished(t *testing.T) {
 			querier, boardService, _, service := setup(t)
 			ctx := input()
 
-			baseMission := sqlc.Mission{
+			baseMission := sqlc.GameMission{
 				ID:       1,
 				PlayerID: 1,
-				Type:     sqlc.MissionTypeTWOCONTINENTS,
+				Type:     sqlc.GameMissionTypeTWOCONTINENTS,
 			}
 
 			querier.
@@ -131,7 +131,7 @@ func TestServiceImpl_IsTwoContinentsMissionAccomplished(t *testing.T) {
 					UserID: ctx.UserID(),
 				}).Return(baseMission, nil)
 
-			twoContinentsMission := sqlc.TwoContinentsMission{
+			twoContinentsMission := sqlc.GameTwoContinentsMission{
 				MissionID:  baseMission.ID,
 				Continent1: test.missionContinent1,
 				Continent2: test.missionContinent2,
@@ -259,10 +259,10 @@ func TestServiceImpl_IsTwoContinentsPlusOneMissionAccomplished(t *testing.T) {
 			querier, boardService, _, service := setup(t)
 			ctx := input()
 
-			baseMission := sqlc.Mission{
+			baseMission := sqlc.GameMission{
 				ID:       1,
 				PlayerID: 1,
-				Type:     sqlc.MissionTypeTWOCONTINENTSPLUSONE,
+				Type:     sqlc.GameMissionTypeTWOCONTINENTSPLUSONE,
 			}
 
 			querier.
@@ -272,7 +272,7 @@ func TestServiceImpl_IsTwoContinentsPlusOneMissionAccomplished(t *testing.T) {
 					UserID: ctx.UserID(),
 				}).Return(baseMission, nil)
 
-			twoContinentsMission := sqlc.TwoContinentsPlusOneMission{
+			twoContinentsMission := sqlc.GameTwoContinentsPlusOneMission{
 				MissionID:  baseMission.ID,
 				Continent1: test.missionContinent1,
 				Continent2: test.missionContinent2,
@@ -314,19 +314,19 @@ func TestServiceImpl_IsEliminatePlayerMissionAccomplished(t *testing.T) {
 
 	type inputType struct {
 		name                      string
-		regionsControlledByTarget []sqlc.Region
+		regionsControlledByTarget []sqlc.GameRegion
 		expectedResult            bool
 	}
 
 	tests := []inputType{
 		{
 			"target controls zero regions",
-			[]sqlc.Region{},
+			[]sqlc.GameRegion{},
 			true,
 		},
 		{
 			"player controls one continent",
-			[]sqlc.Region{
+			[]sqlc.GameRegion{
 				{
 					ID:                1,
 					ExternalReference: "quebec",
@@ -336,7 +336,7 @@ func TestServiceImpl_IsEliminatePlayerMissionAccomplished(t *testing.T) {
 		},
 		{
 			"player controls two continents",
-			[]sqlc.Region{
+			[]sqlc.GameRegion{
 				{
 					ID:                1,
 					ExternalReference: "quebec",
@@ -356,10 +356,10 @@ func TestServiceImpl_IsEliminatePlayerMissionAccomplished(t *testing.T) {
 			querier, _, regionService, service := setup(t)
 			ctx := input()
 
-			baseMission := sqlc.Mission{
+			baseMission := sqlc.GameMission{
 				ID:       1,
 				PlayerID: 1,
-				Type:     sqlc.MissionTypeELIMINATEPLAYER,
+				Type:     sqlc.GameMissionTypeELIMINATEPLAYER,
 			}
 
 			querier.
@@ -369,7 +369,7 @@ func TestServiceImpl_IsEliminatePlayerMissionAccomplished(t *testing.T) {
 					UserID: ctx.UserID(),
 				}).Return(baseMission, nil)
 
-			eliminatePlayerMission := sqlc.EliminatePlayerMission{
+			eliminatePlayerMission := sqlc.GameEliminatePlayerMission{
 				MissionID:      baseMission.ID,
 				TargetPlayerID: 2,
 			}
