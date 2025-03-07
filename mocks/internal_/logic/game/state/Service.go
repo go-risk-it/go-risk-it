@@ -141,6 +141,64 @@ func (_c *Service_GetGameStateQ_Call) RunAndReturn(run func(ctx.GameContext, db.
 	return _c
 }
 
+// GetUserGames provides a mock function with given fields: _a0
+func (_m *Service) GetUserGames(_a0 ctx.UserContext) ([]int64, error) {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetUserGames")
+	}
+
+	var r0 []int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(ctx.UserContext) ([]int64, error)); ok {
+		return rf(_a0)
+	}
+	if rf, ok := ret.Get(0).(func(ctx.UserContext) []int64); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]int64)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(ctx.UserContext) error); ok {
+		r1 = rf(_a0)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Service_GetUserGames_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetUserGames'
+type Service_GetUserGames_Call struct {
+	*mock.Call
+}
+
+// GetUserGames is a helper method to define mock.On call
+//   - _a0 ctx.UserContext
+func (_e *Service_Expecter) GetUserGames(_a0 interface{}) *Service_GetUserGames_Call {
+	return &Service_GetUserGames_Call{Call: _e.mock.On("GetUserGames", _a0)}
+}
+
+func (_c *Service_GetUserGames_Call) Run(run func(_a0 ctx.UserContext)) *Service_GetUserGames_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.UserContext))
+	})
+	return _c
+}
+
+func (_c *Service_GetUserGames_Call) Return(_a0 []int64, _a1 error) *Service_GetUserGames_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Service_GetUserGames_Call) RunAndReturn(run func(ctx.UserContext) ([]int64, error)) *Service_GetUserGames_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewService creates a new instance of Service. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewService(t interface {

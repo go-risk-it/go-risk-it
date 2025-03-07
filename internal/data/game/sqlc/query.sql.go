@@ -601,6 +601,34 @@ func (q *Queries) GetTwoContinentsPlusOneMission(ctx context.Context, missionID 
 	return i, err
 }
 
+const getUserGames = `-- name: GetUserGames :many
+SELECT DISTINCT g.id
+FROM game g
+         JOIN player p on g.id = p.game_id
+WHERE p.user_id = $1
+  and g.winner_player_id IS NULL
+`
+
+func (q *Queries) GetUserGames(ctx context.Context, userID string) ([]int64, error) {
+	rows, err := q.db.Query(ctx, getUserGames, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const grantRegionTroops = `-- name: GrantRegionTroops :exec
 UPDATE region
 set troops = troops + $1

@@ -31,6 +31,8 @@ Feature: Creating a lobby, connecting players, starting a game
       | owned    | 3                    |
       | joinable | 2                    |
     When giovanni starts the lobby with 3 participants
+    And giovanni gets the list of available games
+    Then 1 games are available
 
 #  Scenario: Create lobby
 #    Given francesco creates a lobby

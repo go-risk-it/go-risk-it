@@ -1432,6 +1432,65 @@ func (_c *Querier_GetTwoContinentsPlusOneMission_Call) RunAndReturn(run func(con
 	return _c
 }
 
+// GetUserGames provides a mock function with given fields: _a0, userID
+func (_m *Querier) GetUserGames(_a0 context.Context, userID string) ([]int64, error) {
+	ret := _m.Called(_a0, userID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetUserGames")
+	}
+
+	var r0 []int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]int64, error)); ok {
+		return rf(_a0, userID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []int64); ok {
+		r0 = rf(_a0, userID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]int64)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(_a0, userID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_GetUserGames_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetUserGames'
+type Querier_GetUserGames_Call struct {
+	*mock.Call
+}
+
+// GetUserGames is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - userID string
+func (_e *Querier_Expecter) GetUserGames(_a0 interface{}, userID interface{}) *Querier_GetUserGames_Call {
+	return &Querier_GetUserGames_Call{Call: _e.mock.On("GetUserGames", _a0, userID)}
+}
+
+func (_c *Querier_GetUserGames_Call) Run(run func(_a0 context.Context, userID string)) *Querier_GetUserGames_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Querier_GetUserGames_Call) Return(_a0 []int64, _a1 error) *Querier_GetUserGames_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_GetUserGames_Call) RunAndReturn(run func(context.Context, string) ([]int64, error)) *Querier_GetUserGames_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GrantRegionTroops provides a mock function with given fields: _a0, arg
 func (_m *Querier) GrantRegionTroops(_a0 context.Context, arg sqlc.GrantRegionTroopsParams) error {
 	ret := _m.Called(_a0, arg)

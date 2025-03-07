@@ -3,6 +3,7 @@ from behave import *
 from src.core.context import RiskItContext
 from steps.connection import all_players_receive_all_state_updates
 from util.http_assertions import assert_2xx
+from src.game.api.games import UserGames
 
 
 @given("a game is created with the following players")
@@ -49,3 +50,16 @@ def step_impl(context: RiskItContext):
 def step_impl(context: RiskItContext, player: str):
     assert context.game_state.winnerUserId == context.players[player].user.id, \
         f"Expected {player} to be the winner, but got {context.game_state.winnerUserId}"
+
+
+@when("{player} gets the list of available games")
+def step_impl(context: RiskItContext, player: str):
+    response = context.risk_it_clients[player].get_available_games()
+
+    assert_2xx(response)
+    context.games = UserGames.model_validate(response.json())
+
+
+@then("{amount} games are available")
+def step_impl(context: RiskItContext, amount: str):
+    assert len(context.games.games) == int(amount), f"Expected {amount} games, but got {len(context.games)}"

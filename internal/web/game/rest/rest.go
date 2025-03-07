@@ -11,5 +11,6 @@ var Module = fx.Options(
 	fx.Provide(
 		route.AsRoute(NewAdvancementHandler),
 		route.AsRoute(NewCreationHandler),
+		route.AsRoute(NewManagementHandler),
 	),
 )

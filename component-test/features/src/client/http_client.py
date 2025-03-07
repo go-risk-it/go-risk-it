@@ -51,6 +51,11 @@ class RiskItClient:
             "/api/v1/lobbies/summary",
         )
 
+    def get_available_games(self) -> Response:
+        return self.__get(
+            "/api/v1/games/summary",
+        )
+
     def start_lobby(self, lobby_id: int) -> Response:
         return self.__post(
             f"/api/v1/lobbies/{lobby_id}/start",

@@ -1,4 +1,4 @@
-package messaging
+package response
 
 type Lobby struct {
 	ID                   int64 `json:"id"`

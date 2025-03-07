@@ -18,6 +18,7 @@ type Game struct {
 type Service interface {
 	GetGameState(ctx ctx.GameContext) (*Game, error)
 	GetGameStateQ(ctx ctx.GameContext, querier db.Querier) (*Game, error)
+	GetUserGames(ctx ctx.UserContext) ([]int64, error)
 }
 
 type ServiceImpl struct {
@@ -57,4 +58,17 @@ func (s *ServiceImpl) GetGameStateQ(ctx ctx.GameContext, querier db.Querier) (*G
 		Phase:        game.CurrentPhase,
 		WinnerUserID: winnerUserID,
 	}, nil
+}
+
+func (s *ServiceImpl) GetUserGames(ctx ctx.UserContext) ([]int64, error) {
+	ctx.Log().Infow("getting user games")
+
+	userGames, err := s.querier.GetUserGames(ctx, ctx.UserID())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get joined games: %w", err)
+	}
+
+	ctx.Log().Infow("got user games", "games", userGames)
+
+	return userGames, nil
 }

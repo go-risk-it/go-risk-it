@@ -32,6 +32,7 @@ type Querier interface {
 	GetRegionsByPlayer(ctx context.Context, id int64) ([]Region, error)
 	GetTwoContinentsMission(ctx context.Context, missionID int64) (TwoContinentsMission, error)
 	GetTwoContinentsPlusOneMission(ctx context.Context, missionID int64) (TwoContinentsPlusOneMission, error)
+	GetUserGames(ctx context.Context, userID string) ([]int64, error)
 	GrantRegionTroops(ctx context.Context, arg GrantRegionTroopsParams) error
 	HasConqueredInTurn(ctx context.Context, arg HasConqueredInTurnParams) (bool, error)
 	IncreaseRegionTroops(ctx context.Context, arg IncreaseRegionTroopsParams) error
