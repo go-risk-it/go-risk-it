@@ -65,6 +65,6 @@ func (s *ServiceImpl) GetDeployableTroopsQ(
 	return deployableTroops, nil
 }
 
-func (s *ServiceImpl) PhaseType() sqlc.PhaseType {
-	return sqlc.PhaseTypeDEPLOY
+func (s *ServiceImpl) PhaseType() sqlc.GamePhaseType {
+	return sqlc.GamePhaseTypeDEPLOY
 }

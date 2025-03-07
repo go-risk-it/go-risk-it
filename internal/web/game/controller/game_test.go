@@ -23,7 +23,7 @@ package controller_test
 //		Return(&state.Game{
 //			ID:    gameID,
 //			Turn:  0,
-//			CurrentPhase: sqlc.PhaseTypeCARDS,
+//			CurrentPhase: sqlc.GamePhaseTypeCARDS,
 //		}, nil)
 //
 //	// Call the method under test

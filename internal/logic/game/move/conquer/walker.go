@@ -12,15 +12,15 @@ func (s *ServiceImpl) WalkQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	_ bool,
-) (sqlc.PhaseType, error) {
+) (sqlc.GamePhaseType, error) {
 	canContinueAttacking, err := s.attackService.CanContinueAttackingQ(ctx, querier)
 	if err != nil {
 		return "", fmt.Errorf("failed to check if can continue attacking: %w", err)
 	}
 
 	if !canContinueAttacking {
-		return sqlc.PhaseTypeREINFORCE, nil
+		return sqlc.GamePhaseTypeREINFORCE, nil
 	}
 
-	return sqlc.PhaseTypeATTACK, nil
+	return sqlc.GamePhaseTypeATTACK, nil
 }

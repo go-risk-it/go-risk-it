@@ -32,7 +32,7 @@ func TestServiceImpl_CreateRegions(t *testing.T) {
 		"francesco",
 	)
 
-	players := []sqlc.Player{
+	players := []sqlc.GamePlayer{
 		{ID: 1, GameID: 1, UserID: "francesco", TurnIndex: 0},
 		{ID: 2, GameID: 1, UserID: "gabriele", TurnIndex: 1},
 		{ID: 3, GameID: 1, UserID: "giovanni", TurnIndex: 2},
@@ -92,7 +92,7 @@ func TestServiceImpl_CreateRegions_NoPlayers(t *testing.T) {
 	)
 
 	var (
-		players []sqlc.Player
+		players []sqlc.GamePlayer
 		regions []string
 	)
 
@@ -121,7 +121,7 @@ func TestServiceImpl_CreateRegions_PlayersNotInSameGame(t *testing.T) {
 		ctx2.WithSpan(ctx2.WithLog(context.Background(), zap.NewExample().Sugar()), noop.Span{}),
 		"francesco",
 	)
-	players := []sqlc.Player{
+	players := []sqlc.GamePlayer{
 		{ID: 1, GameID: 1, UserID: "francesco", TurnIndex: 0},
 		{ID: 2, GameID: 2, UserID: "gabriele", TurnIndex: 1},
 		{ID: 3, GameID: 1, UserID: "giovanni", TurnIndex: 2},
@@ -154,7 +154,7 @@ func TestServiceImpl_CreateRegions_InsertRegionsError(t *testing.T) {
 		ctx2.WithSpan(ctx2.WithLog(context.Background(), zap.NewExample().Sugar()), noop.Span{}),
 		"francesco",
 	)
-	players := []sqlc.Player{
+	players := []sqlc.GamePlayer{
 		{ID: 1, GameID: 1, UserID: "francesco", TurnIndex: 0},
 		{ID: 2, GameID: 1, UserID: "gabriele", TurnIndex: 1},
 		{ID: 3, GameID: 1, UserID: "giovanni", TurnIndex: 2},

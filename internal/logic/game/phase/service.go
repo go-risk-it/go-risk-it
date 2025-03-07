@@ -15,8 +15,8 @@ type Service interface {
 	InsertPhaseQ(
 		ctx ctx.GameContext,
 		querier db.Querier,
-		phaseType sqlc.PhaseType,
-	) (*sqlc.Phase, error)
+		phaseType sqlc.GamePhaseType,
+	) (*sqlc.GamePhase, error)
 }
 
 type ServiceImpl struct {
@@ -36,8 +36,8 @@ func NewService(gameService state.Service, playerService player.Service) *Servic
 func (s *ServiceImpl) InsertPhaseQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
-	phaseType sqlc.PhaseType,
-) (*sqlc.Phase, error) {
+	phaseType sqlc.GamePhaseType,
+) (*sqlc.GamePhase, error) {
 	ctx.Log().Infow("checking if phase needs to be advanced")
 
 	gameState, err := s.gameService.GetGameStateQ(ctx, querier)
@@ -82,11 +82,11 @@ func (s *ServiceImpl) getNextTurn(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	gameState *state.Game,
-	currentPhase sqlc.PhaseType,
+	currentPhase sqlc.GamePhaseType,
 ) (int64, error) {
 	turn := gameState.Turn
 
-	if currentPhase == sqlc.PhaseTypeREINFORCE {
+	if currentPhase == sqlc.GamePhaseTypeREINFORCE {
 		playersState, err := s.playerService.GetPlayersStateQ(ctx, querier)
 		if err != nil {
 			return 0, fmt.Errorf("failed to get players state: %w", err)
@@ -107,9 +107,9 @@ func (s *ServiceImpl) insertPhaseQ(
 	ctx ctx.UserContext,
 	querier db.Querier,
 	gameID int64,
-	phaseType sqlc.PhaseType,
+	phaseType sqlc.GamePhaseType,
 	turn int64,
-) (*sqlc.Phase, error) {
+) (*sqlc.GamePhase, error) {
 	ctx.Log().Infow("creating phase", "gameID", gameID, "turn", turn)
 
 	phase, err := querier.InsertPhase(ctx, sqlc.InsertPhaseParams{

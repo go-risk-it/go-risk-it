@@ -78,6 +78,6 @@ func (s *ServiceImpl) GetPhaseStateQ(
 	return conquerPhase, nil
 }
 
-func (s *ServiceImpl) PhaseType() sqlc.PhaseType {
-	return sqlc.PhaseTypeCONQUER
+func (s *ServiceImpl) PhaseType() sqlc.GamePhaseType {
+	return sqlc.GamePhaseTypeCONQUER
 }

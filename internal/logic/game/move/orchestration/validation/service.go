@@ -63,7 +63,7 @@ func (s *ServiceImpl) checkTurn(
 	return nil
 }
 
-func extractPlayerFrom(players []sqlc.Player, userID string) *sqlc.Player {
+func extractPlayerFrom(players []sqlc.GamePlayer, userID string) *sqlc.GamePlayer {
 	for _, p := range players {
 		if p.UserID == userID {
 			return &p

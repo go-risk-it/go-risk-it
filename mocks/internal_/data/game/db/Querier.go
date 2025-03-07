@@ -76,22 +76,22 @@ func (_c *Querier_AssignGameWinner_Call) RunAndReturn(run func(context.Context, 
 }
 
 // CreateMoveLog provides a mock function with given fields: _a0, arg
-func (_m *Querier) CreateMoveLog(_a0 context.Context, arg sqlc.CreateMoveLogParams) (sqlc.MoveLog, error) {
+func (_m *Querier) CreateMoveLog(_a0 context.Context, arg sqlc.CreateMoveLogParams) (sqlc.GameMoveLog, error) {
 	ret := _m.Called(_a0, arg)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateMoveLog")
 	}
 
-	var r0 sqlc.MoveLog
+	var r0 sqlc.GameMoveLog
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, sqlc.CreateMoveLogParams) (sqlc.MoveLog, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.CreateMoveLogParams) (sqlc.GameMoveLog, error)); ok {
 		return rf(_a0, arg)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, sqlc.CreateMoveLogParams) sqlc.MoveLog); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.CreateMoveLogParams) sqlc.GameMoveLog); ok {
 		r0 = rf(_a0, arg)
 	} else {
-		r0 = ret.Get(0).(sqlc.MoveLog)
+		r0 = ret.Get(0).(sqlc.GameMoveLog)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, sqlc.CreateMoveLogParams) error); ok {
@@ -122,12 +122,12 @@ func (_c *Querier_CreateMoveLog_Call) Run(run func(_a0 context.Context, arg sqlc
 	return _c
 }
 
-func (_c *Querier_CreateMoveLog_Call) Return(_a0 sqlc.MoveLog, _a1 error) *Querier_CreateMoveLog_Call {
+func (_c *Querier_CreateMoveLog_Call) Return(_a0 sqlc.GameMoveLog, _a1 error) *Querier_CreateMoveLog_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_CreateMoveLog_Call) RunAndReturn(run func(context.Context, sqlc.CreateMoveLogParams) (sqlc.MoveLog, error)) *Querier_CreateMoveLog_Call {
+func (_c *Querier_CreateMoveLog_Call) RunAndReturn(run func(context.Context, sqlc.CreateMoveLogParams) (sqlc.GameMoveLog, error)) *Querier_CreateMoveLog_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -393,23 +393,23 @@ func (_c *Querier_ExecuteInTransactionWithIsolation_Call) RunAndReturn(run func(
 }
 
 // GetAvailableCards provides a mock function with given fields: _a0, id
-func (_m *Querier) GetAvailableCards(_a0 context.Context, id int64) ([]sqlc.Card, error) {
+func (_m *Querier) GetAvailableCards(_a0 context.Context, id int64) ([]sqlc.GameCard, error) {
 	ret := _m.Called(_a0, id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAvailableCards")
 	}
 
-	var r0 []sqlc.Card
+	var r0 []sqlc.GameCard
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) ([]sqlc.Card, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64) ([]sqlc.GameCard, error)); ok {
 		return rf(_a0, id)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64) []sqlc.Card); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64) []sqlc.GameCard); ok {
 		r0 = rf(_a0, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]sqlc.Card)
+			r0 = ret.Get(0).([]sqlc.GameCard)
 		}
 	}
 
@@ -441,12 +441,12 @@ func (_c *Querier_GetAvailableCards_Call) Run(run func(_a0 context.Context, id i
 	return _c
 }
 
-func (_c *Querier_GetAvailableCards_Call) Return(_a0 []sqlc.Card, _a1 error) *Querier_GetAvailableCards_Call {
+func (_c *Querier_GetAvailableCards_Call) Return(_a0 []sqlc.GameCard, _a1 error) *Querier_GetAvailableCards_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_GetAvailableCards_Call) RunAndReturn(run func(context.Context, int64) ([]sqlc.Card, error)) *Querier_GetAvailableCards_Call {
+func (_c *Querier_GetAvailableCards_Call) RunAndReturn(run func(context.Context, int64) ([]sqlc.GameCard, error)) *Querier_GetAvailableCards_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -568,22 +568,22 @@ func (_c *Querier_GetConquerPhaseState_Call) RunAndReturn(run func(context.Conte
 }
 
 // GetCurrentPhase provides a mock function with given fields: _a0, id
-func (_m *Querier) GetCurrentPhase(_a0 context.Context, id int64) (sqlc.PhaseType, error) {
+func (_m *Querier) GetCurrentPhase(_a0 context.Context, id int64) (sqlc.GamePhaseType, error) {
 	ret := _m.Called(_a0, id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetCurrentPhase")
 	}
 
-	var r0 sqlc.PhaseType
+	var r0 sqlc.GamePhaseType
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) (sqlc.PhaseType, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (sqlc.GamePhaseType, error)); ok {
 		return rf(_a0, id)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64) sqlc.PhaseType); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64) sqlc.GamePhaseType); ok {
 		r0 = rf(_a0, id)
 	} else {
-		r0 = ret.Get(0).(sqlc.PhaseType)
+		r0 = ret.Get(0).(sqlc.GamePhaseType)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
@@ -614,33 +614,33 @@ func (_c *Querier_GetCurrentPhase_Call) Run(run func(_a0 context.Context, id int
 	return _c
 }
 
-func (_c *Querier_GetCurrentPhase_Call) Return(_a0 sqlc.PhaseType, _a1 error) *Querier_GetCurrentPhase_Call {
+func (_c *Querier_GetCurrentPhase_Call) Return(_a0 sqlc.GamePhaseType, _a1 error) *Querier_GetCurrentPhase_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_GetCurrentPhase_Call) RunAndReturn(run func(context.Context, int64) (sqlc.PhaseType, error)) *Querier_GetCurrentPhase_Call {
+func (_c *Querier_GetCurrentPhase_Call) RunAndReturn(run func(context.Context, int64) (sqlc.GamePhaseType, error)) *Querier_GetCurrentPhase_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetCurrentPlayer provides a mock function with given fields: _a0, gameID
-func (_m *Querier) GetCurrentPlayer(_a0 context.Context, gameID int64) (sqlc.Player, error) {
+func (_m *Querier) GetCurrentPlayer(_a0 context.Context, gameID int64) (sqlc.GamePlayer, error) {
 	ret := _m.Called(_a0, gameID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetCurrentPlayer")
 	}
 
-	var r0 sqlc.Player
+	var r0 sqlc.GamePlayer
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) (sqlc.Player, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (sqlc.GamePlayer, error)); ok {
 		return rf(_a0, gameID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64) sqlc.Player); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64) sqlc.GamePlayer); ok {
 		r0 = rf(_a0, gameID)
 	} else {
-		r0 = ret.Get(0).(sqlc.Player)
+		r0 = ret.Get(0).(sqlc.GamePlayer)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
@@ -671,12 +671,12 @@ func (_c *Querier_GetCurrentPlayer_Call) Run(run func(_a0 context.Context, gameI
 	return _c
 }
 
-func (_c *Querier_GetCurrentPlayer_Call) Return(_a0 sqlc.Player, _a1 error) *Querier_GetCurrentPlayer_Call {
+func (_c *Querier_GetCurrentPlayer_Call) Return(_a0 sqlc.GamePlayer, _a1 error) *Querier_GetCurrentPlayer_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_GetCurrentPlayer_Call) RunAndReturn(run func(context.Context, int64) (sqlc.Player, error)) *Querier_GetCurrentPlayer_Call {
+func (_c *Querier_GetCurrentPlayer_Call) RunAndReturn(run func(context.Context, int64) (sqlc.GamePlayer, error)) *Querier_GetCurrentPlayer_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -739,22 +739,22 @@ func (_c *Querier_GetDeployableTroops_Call) RunAndReturn(run func(context.Contex
 }
 
 // GetEliminatePlayerMission provides a mock function with given fields: _a0, missionID
-func (_m *Querier) GetEliminatePlayerMission(_a0 context.Context, missionID int64) (sqlc.EliminatePlayerMission, error) {
+func (_m *Querier) GetEliminatePlayerMission(_a0 context.Context, missionID int64) (sqlc.GameEliminatePlayerMission, error) {
 	ret := _m.Called(_a0, missionID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetEliminatePlayerMission")
 	}
 
-	var r0 sqlc.EliminatePlayerMission
+	var r0 sqlc.GameEliminatePlayerMission
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) (sqlc.EliminatePlayerMission, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (sqlc.GameEliminatePlayerMission, error)); ok {
 		return rf(_a0, missionID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64) sqlc.EliminatePlayerMission); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64) sqlc.GameEliminatePlayerMission); ok {
 		r0 = rf(_a0, missionID)
 	} else {
-		r0 = ret.Get(0).(sqlc.EliminatePlayerMission)
+		r0 = ret.Get(0).(sqlc.GameEliminatePlayerMission)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
@@ -785,12 +785,12 @@ func (_c *Querier_GetEliminatePlayerMission_Call) Run(run func(_a0 context.Conte
 	return _c
 }
 
-func (_c *Querier_GetEliminatePlayerMission_Call) Return(_a0 sqlc.EliminatePlayerMission, _a1 error) *Querier_GetEliminatePlayerMission_Call {
+func (_c *Querier_GetEliminatePlayerMission_Call) Return(_a0 sqlc.GameEliminatePlayerMission, _a1 error) *Querier_GetEliminatePlayerMission_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_GetEliminatePlayerMission_Call) RunAndReturn(run func(context.Context, int64) (sqlc.EliminatePlayerMission, error)) *Querier_GetEliminatePlayerMission_Call {
+func (_c *Querier_GetEliminatePlayerMission_Call) RunAndReturn(run func(context.Context, int64) (sqlc.GameEliminatePlayerMission, error)) *Querier_GetEliminatePlayerMission_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -853,22 +853,22 @@ func (_c *Querier_GetGame_Call) RunAndReturn(run func(context.Context, int64) (s
 }
 
 // GetMission provides a mock function with given fields: _a0, arg
-func (_m *Querier) GetMission(_a0 context.Context, arg sqlc.GetMissionParams) (sqlc.Mission, error) {
+func (_m *Querier) GetMission(_a0 context.Context, arg sqlc.GetMissionParams) (sqlc.GameMission, error) {
 	ret := _m.Called(_a0, arg)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetMission")
 	}
 
-	var r0 sqlc.Mission
+	var r0 sqlc.GameMission
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, sqlc.GetMissionParams) (sqlc.Mission, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.GetMissionParams) (sqlc.GameMission, error)); ok {
 		return rf(_a0, arg)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, sqlc.GetMissionParams) sqlc.Mission); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.GetMissionParams) sqlc.GameMission); ok {
 		r0 = rf(_a0, arg)
 	} else {
-		r0 = ret.Get(0).(sqlc.Mission)
+		r0 = ret.Get(0).(sqlc.GameMission)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, sqlc.GetMissionParams) error); ok {
@@ -899,12 +899,12 @@ func (_c *Querier_GetMission_Call) Run(run func(_a0 context.Context, arg sqlc.Ge
 	return _c
 }
 
-func (_c *Querier_GetMission_Call) Return(_a0 sqlc.Mission, _a1 error) *Querier_GetMission_Call {
+func (_c *Querier_GetMission_Call) Return(_a0 sqlc.GameMission, _a1 error) *Querier_GetMission_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_GetMission_Call) RunAndReturn(run func(context.Context, sqlc.GetMissionParams) (sqlc.Mission, error)) *Querier_GetMission_Call {
+func (_c *Querier_GetMission_Call) RunAndReturn(run func(context.Context, sqlc.GetMissionParams) (sqlc.GameMission, error)) *Querier_GetMission_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -969,22 +969,22 @@ func (_c *Querier_GetMoveLogs_Call) RunAndReturn(run func(context.Context, sqlc.
 }
 
 // GetNextPlayer provides a mock function with given fields: _a0, gameID
-func (_m *Querier) GetNextPlayer(_a0 context.Context, gameID int64) (sqlc.Player, error) {
+func (_m *Querier) GetNextPlayer(_a0 context.Context, gameID int64) (sqlc.GamePlayer, error) {
 	ret := _m.Called(_a0, gameID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetNextPlayer")
 	}
 
-	var r0 sqlc.Player
+	var r0 sqlc.GamePlayer
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) (sqlc.Player, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (sqlc.GamePlayer, error)); ok {
 		return rf(_a0, gameID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64) sqlc.Player); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64) sqlc.GamePlayer); ok {
 		r0 = rf(_a0, gameID)
 	} else {
-		r0 = ret.Get(0).(sqlc.Player)
+		r0 = ret.Get(0).(sqlc.GamePlayer)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
@@ -1015,33 +1015,33 @@ func (_c *Querier_GetNextPlayer_Call) Run(run func(_a0 context.Context, gameID i
 	return _c
 }
 
-func (_c *Querier_GetNextPlayer_Call) Return(_a0 sqlc.Player, _a1 error) *Querier_GetNextPlayer_Call {
+func (_c *Querier_GetNextPlayer_Call) Return(_a0 sqlc.GamePlayer, _a1 error) *Querier_GetNextPlayer_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_GetNextPlayer_Call) RunAndReturn(run func(context.Context, int64) (sqlc.Player, error)) *Querier_GetNextPlayer_Call {
+func (_c *Querier_GetNextPlayer_Call) RunAndReturn(run func(context.Context, int64) (sqlc.GamePlayer, error)) *Querier_GetNextPlayer_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetPlayerByUserId provides a mock function with given fields: _a0, userID
-func (_m *Querier) GetPlayerByUserId(_a0 context.Context, userID string) (sqlc.Player, error) {
+func (_m *Querier) GetPlayerByUserId(_a0 context.Context, userID string) (sqlc.GamePlayer, error) {
 	ret := _m.Called(_a0, userID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetPlayerByUserId")
 	}
 
-	var r0 sqlc.Player
+	var r0 sqlc.GamePlayer
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (sqlc.Player, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) (sqlc.GamePlayer, error)); ok {
 		return rf(_a0, userID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) sqlc.Player); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) sqlc.GamePlayer); ok {
 		r0 = rf(_a0, userID)
 	} else {
-		r0 = ret.Get(0).(sqlc.Player)
+		r0 = ret.Get(0).(sqlc.GamePlayer)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
@@ -1072,34 +1072,34 @@ func (_c *Querier_GetPlayerByUserId_Call) Run(run func(_a0 context.Context, user
 	return _c
 }
 
-func (_c *Querier_GetPlayerByUserId_Call) Return(_a0 sqlc.Player, _a1 error) *Querier_GetPlayerByUserId_Call {
+func (_c *Querier_GetPlayerByUserId_Call) Return(_a0 sqlc.GamePlayer, _a1 error) *Querier_GetPlayerByUserId_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_GetPlayerByUserId_Call) RunAndReturn(run func(context.Context, string) (sqlc.Player, error)) *Querier_GetPlayerByUserId_Call {
+func (_c *Querier_GetPlayerByUserId_Call) RunAndReturn(run func(context.Context, string) (sqlc.GamePlayer, error)) *Querier_GetPlayerByUserId_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetPlayersByGame provides a mock function with given fields: _a0, gameID
-func (_m *Querier) GetPlayersByGame(_a0 context.Context, gameID int64) ([]sqlc.Player, error) {
+func (_m *Querier) GetPlayersByGame(_a0 context.Context, gameID int64) ([]sqlc.GamePlayer, error) {
 	ret := _m.Called(_a0, gameID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetPlayersByGame")
 	}
 
-	var r0 []sqlc.Player
+	var r0 []sqlc.GamePlayer
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) ([]sqlc.Player, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64) ([]sqlc.GamePlayer, error)); ok {
 		return rf(_a0, gameID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64) []sqlc.Player); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64) []sqlc.GamePlayer); ok {
 		r0 = rf(_a0, gameID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]sqlc.Player)
+			r0 = ret.Get(0).([]sqlc.GamePlayer)
 		}
 	}
 
@@ -1131,12 +1131,12 @@ func (_c *Querier_GetPlayersByGame_Call) Run(run func(_a0 context.Context, gameI
 	return _c
 }
 
-func (_c *Querier_GetPlayersByGame_Call) Return(_a0 []sqlc.Player, _a1 error) *Querier_GetPlayersByGame_Call {
+func (_c *Querier_GetPlayersByGame_Call) Return(_a0 []sqlc.GamePlayer, _a1 error) *Querier_GetPlayersByGame_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_GetPlayersByGame_Call) RunAndReturn(run func(context.Context, int64) ([]sqlc.Player, error)) *Querier_GetPlayersByGame_Call {
+func (_c *Querier_GetPlayersByGame_Call) RunAndReturn(run func(context.Context, int64) ([]sqlc.GamePlayer, error)) *Querier_GetPlayersByGame_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1260,23 +1260,23 @@ func (_c *Querier_GetRegionsByGame_Call) RunAndReturn(run func(context.Context, 
 }
 
 // GetRegionsByPlayer provides a mock function with given fields: _a0, id
-func (_m *Querier) GetRegionsByPlayer(_a0 context.Context, id int64) ([]sqlc.Region, error) {
+func (_m *Querier) GetRegionsByPlayer(_a0 context.Context, id int64) ([]sqlc.GameRegion, error) {
 	ret := _m.Called(_a0, id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetRegionsByPlayer")
 	}
 
-	var r0 []sqlc.Region
+	var r0 []sqlc.GameRegion
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) ([]sqlc.Region, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64) ([]sqlc.GameRegion, error)); ok {
 		return rf(_a0, id)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64) []sqlc.Region); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64) []sqlc.GameRegion); ok {
 		r0 = rf(_a0, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]sqlc.Region)
+			r0 = ret.Get(0).([]sqlc.GameRegion)
 		}
 	}
 
@@ -1308,33 +1308,33 @@ func (_c *Querier_GetRegionsByPlayer_Call) Run(run func(_a0 context.Context, id 
 	return _c
 }
 
-func (_c *Querier_GetRegionsByPlayer_Call) Return(_a0 []sqlc.Region, _a1 error) *Querier_GetRegionsByPlayer_Call {
+func (_c *Querier_GetRegionsByPlayer_Call) Return(_a0 []sqlc.GameRegion, _a1 error) *Querier_GetRegionsByPlayer_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_GetRegionsByPlayer_Call) RunAndReturn(run func(context.Context, int64) ([]sqlc.Region, error)) *Querier_GetRegionsByPlayer_Call {
+func (_c *Querier_GetRegionsByPlayer_Call) RunAndReturn(run func(context.Context, int64) ([]sqlc.GameRegion, error)) *Querier_GetRegionsByPlayer_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetTwoContinentsMission provides a mock function with given fields: _a0, missionID
-func (_m *Querier) GetTwoContinentsMission(_a0 context.Context, missionID int64) (sqlc.TwoContinentsMission, error) {
+func (_m *Querier) GetTwoContinentsMission(_a0 context.Context, missionID int64) (sqlc.GameTwoContinentsMission, error) {
 	ret := _m.Called(_a0, missionID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetTwoContinentsMission")
 	}
 
-	var r0 sqlc.TwoContinentsMission
+	var r0 sqlc.GameTwoContinentsMission
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) (sqlc.TwoContinentsMission, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (sqlc.GameTwoContinentsMission, error)); ok {
 		return rf(_a0, missionID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64) sqlc.TwoContinentsMission); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64) sqlc.GameTwoContinentsMission); ok {
 		r0 = rf(_a0, missionID)
 	} else {
-		r0 = ret.Get(0).(sqlc.TwoContinentsMission)
+		r0 = ret.Get(0).(sqlc.GameTwoContinentsMission)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
@@ -1365,33 +1365,33 @@ func (_c *Querier_GetTwoContinentsMission_Call) Run(run func(_a0 context.Context
 	return _c
 }
 
-func (_c *Querier_GetTwoContinentsMission_Call) Return(_a0 sqlc.TwoContinentsMission, _a1 error) *Querier_GetTwoContinentsMission_Call {
+func (_c *Querier_GetTwoContinentsMission_Call) Return(_a0 sqlc.GameTwoContinentsMission, _a1 error) *Querier_GetTwoContinentsMission_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_GetTwoContinentsMission_Call) RunAndReturn(run func(context.Context, int64) (sqlc.TwoContinentsMission, error)) *Querier_GetTwoContinentsMission_Call {
+func (_c *Querier_GetTwoContinentsMission_Call) RunAndReturn(run func(context.Context, int64) (sqlc.GameTwoContinentsMission, error)) *Querier_GetTwoContinentsMission_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetTwoContinentsPlusOneMission provides a mock function with given fields: _a0, missionID
-func (_m *Querier) GetTwoContinentsPlusOneMission(_a0 context.Context, missionID int64) (sqlc.TwoContinentsPlusOneMission, error) {
+func (_m *Querier) GetTwoContinentsPlusOneMission(_a0 context.Context, missionID int64) (sqlc.GameTwoContinentsPlusOneMission, error) {
 	ret := _m.Called(_a0, missionID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetTwoContinentsPlusOneMission")
 	}
 
-	var r0 sqlc.TwoContinentsPlusOneMission
+	var r0 sqlc.GameTwoContinentsPlusOneMission
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) (sqlc.TwoContinentsPlusOneMission, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (sqlc.GameTwoContinentsPlusOneMission, error)); ok {
 		return rf(_a0, missionID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64) sqlc.TwoContinentsPlusOneMission); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64) sqlc.GameTwoContinentsPlusOneMission); ok {
 		r0 = rf(_a0, missionID)
 	} else {
-		r0 = ret.Get(0).(sqlc.TwoContinentsPlusOneMission)
+		r0 = ret.Get(0).(sqlc.GameTwoContinentsPlusOneMission)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
@@ -1422,12 +1422,12 @@ func (_c *Querier_GetTwoContinentsPlusOneMission_Call) Run(run func(_a0 context.
 	return _c
 }
 
-func (_c *Querier_GetTwoContinentsPlusOneMission_Call) Return(_a0 sqlc.TwoContinentsPlusOneMission, _a1 error) *Querier_GetTwoContinentsPlusOneMission_Call {
+func (_c *Querier_GetTwoContinentsPlusOneMission_Call) Return(_a0 sqlc.GameTwoContinentsPlusOneMission, _a1 error) *Querier_GetTwoContinentsPlusOneMission_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_GetTwoContinentsPlusOneMission_Call) RunAndReturn(run func(context.Context, int64) (sqlc.TwoContinentsPlusOneMission, error)) *Querier_GetTwoContinentsPlusOneMission_Call {
+func (_c *Querier_GetTwoContinentsPlusOneMission_Call) RunAndReturn(run func(context.Context, int64) (sqlc.GameTwoContinentsPlusOneMission, error)) *Querier_GetTwoContinentsPlusOneMission_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1700,22 +1700,22 @@ func (_c *Querier_InsertCards_Call) RunAndReturn(run func(context.Context, []sql
 }
 
 // InsertConquerPhase provides a mock function with given fields: _a0, arg
-func (_m *Querier) InsertConquerPhase(_a0 context.Context, arg sqlc.InsertConquerPhaseParams) (sqlc.ConquerPhase, error) {
+func (_m *Querier) InsertConquerPhase(_a0 context.Context, arg sqlc.InsertConquerPhaseParams) (sqlc.GameConquerPhase, error) {
 	ret := _m.Called(_a0, arg)
 
 	if len(ret) == 0 {
 		panic("no return value specified for InsertConquerPhase")
 	}
 
-	var r0 sqlc.ConquerPhase
+	var r0 sqlc.GameConquerPhase
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, sqlc.InsertConquerPhaseParams) (sqlc.ConquerPhase, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.InsertConquerPhaseParams) (sqlc.GameConquerPhase, error)); ok {
 		return rf(_a0, arg)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, sqlc.InsertConquerPhaseParams) sqlc.ConquerPhase); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.InsertConquerPhaseParams) sqlc.GameConquerPhase); ok {
 		r0 = rf(_a0, arg)
 	} else {
-		r0 = ret.Get(0).(sqlc.ConquerPhase)
+		r0 = ret.Get(0).(sqlc.GameConquerPhase)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, sqlc.InsertConquerPhaseParams) error); ok {
@@ -1746,33 +1746,33 @@ func (_c *Querier_InsertConquerPhase_Call) Run(run func(_a0 context.Context, arg
 	return _c
 }
 
-func (_c *Querier_InsertConquerPhase_Call) Return(_a0 sqlc.ConquerPhase, _a1 error) *Querier_InsertConquerPhase_Call {
+func (_c *Querier_InsertConquerPhase_Call) Return(_a0 sqlc.GameConquerPhase, _a1 error) *Querier_InsertConquerPhase_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_InsertConquerPhase_Call) RunAndReturn(run func(context.Context, sqlc.InsertConquerPhaseParams) (sqlc.ConquerPhase, error)) *Querier_InsertConquerPhase_Call {
+func (_c *Querier_InsertConquerPhase_Call) RunAndReturn(run func(context.Context, sqlc.InsertConquerPhaseParams) (sqlc.GameConquerPhase, error)) *Querier_InsertConquerPhase_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // InsertDeployPhase provides a mock function with given fields: _a0, arg
-func (_m *Querier) InsertDeployPhase(_a0 context.Context, arg sqlc.InsertDeployPhaseParams) (sqlc.DeployPhase, error) {
+func (_m *Querier) InsertDeployPhase(_a0 context.Context, arg sqlc.InsertDeployPhaseParams) (sqlc.GameDeployPhase, error) {
 	ret := _m.Called(_a0, arg)
 
 	if len(ret) == 0 {
 		panic("no return value specified for InsertDeployPhase")
 	}
 
-	var r0 sqlc.DeployPhase
+	var r0 sqlc.GameDeployPhase
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, sqlc.InsertDeployPhaseParams) (sqlc.DeployPhase, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.InsertDeployPhaseParams) (sqlc.GameDeployPhase, error)); ok {
 		return rf(_a0, arg)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, sqlc.InsertDeployPhaseParams) sqlc.DeployPhase); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.InsertDeployPhaseParams) sqlc.GameDeployPhase); ok {
 		r0 = rf(_a0, arg)
 	} else {
-		r0 = ret.Get(0).(sqlc.DeployPhase)
+		r0 = ret.Get(0).(sqlc.GameDeployPhase)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, sqlc.InsertDeployPhaseParams) error); ok {
@@ -1803,12 +1803,12 @@ func (_c *Querier_InsertDeployPhase_Call) Run(run func(_a0 context.Context, arg 
 	return _c
 }
 
-func (_c *Querier_InsertDeployPhase_Call) Return(_a0 sqlc.DeployPhase, _a1 error) *Querier_InsertDeployPhase_Call {
+func (_c *Querier_InsertDeployPhase_Call) Return(_a0 sqlc.GameDeployPhase, _a1 error) *Querier_InsertDeployPhase_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_InsertDeployPhase_Call) RunAndReturn(run func(context.Context, sqlc.InsertDeployPhaseParams) (sqlc.DeployPhase, error)) *Querier_InsertDeployPhase_Call {
+func (_c *Querier_InsertDeployPhase_Call) RunAndReturn(run func(context.Context, sqlc.InsertDeployPhaseParams) (sqlc.GameDeployPhase, error)) *Querier_InsertDeployPhase_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1861,22 +1861,22 @@ func (_c *Querier_InsertEliminatePlayerMission_Call) RunAndReturn(run func(conte
 }
 
 // InsertGame provides a mock function with given fields: _a0
-func (_m *Querier) InsertGame(_a0 context.Context) (sqlc.Game, error) {
+func (_m *Querier) InsertGame(_a0 context.Context) (sqlc.GameGame, error) {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for InsertGame")
 	}
 
-	var r0 sqlc.Game
+	var r0 sqlc.GameGame
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (sqlc.Game, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) (sqlc.GameGame, error)); ok {
 		return rf(_a0)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) sqlc.Game); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) sqlc.GameGame); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(sqlc.Game)
+		r0 = ret.Get(0).(sqlc.GameGame)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
@@ -1906,12 +1906,12 @@ func (_c *Querier_InsertGame_Call) Run(run func(_a0 context.Context)) *Querier_I
 	return _c
 }
 
-func (_c *Querier_InsertGame_Call) Return(_a0 sqlc.Game, _a1 error) *Querier_InsertGame_Call {
+func (_c *Querier_InsertGame_Call) Return(_a0 sqlc.GameGame, _a1 error) *Querier_InsertGame_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_InsertGame_Call) RunAndReturn(run func(context.Context) (sqlc.Game, error)) *Querier_InsertGame_Call {
+func (_c *Querier_InsertGame_Call) RunAndReturn(run func(context.Context) (sqlc.GameGame, error)) *Querier_InsertGame_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1974,22 +1974,22 @@ func (_c *Querier_InsertMission_Call) RunAndReturn(run func(context.Context, sql
 }
 
 // InsertPhase provides a mock function with given fields: _a0, arg
-func (_m *Querier) InsertPhase(_a0 context.Context, arg sqlc.InsertPhaseParams) (sqlc.Phase, error) {
+func (_m *Querier) InsertPhase(_a0 context.Context, arg sqlc.InsertPhaseParams) (sqlc.GamePhase, error) {
 	ret := _m.Called(_a0, arg)
 
 	if len(ret) == 0 {
 		panic("no return value specified for InsertPhase")
 	}
 
-	var r0 sqlc.Phase
+	var r0 sqlc.GamePhase
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, sqlc.InsertPhaseParams) (sqlc.Phase, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.InsertPhaseParams) (sqlc.GamePhase, error)); ok {
 		return rf(_a0, arg)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, sqlc.InsertPhaseParams) sqlc.Phase); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.InsertPhaseParams) sqlc.GamePhase); ok {
 		r0 = rf(_a0, arg)
 	} else {
-		r0 = ret.Get(0).(sqlc.Phase)
+		r0 = ret.Get(0).(sqlc.GamePhase)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, sqlc.InsertPhaseParams) error); ok {
@@ -2020,12 +2020,12 @@ func (_c *Querier_InsertPhase_Call) Run(run func(_a0 context.Context, arg sqlc.I
 	return _c
 }
 
-func (_c *Querier_InsertPhase_Call) Return(_a0 sqlc.Phase, _a1 error) *Querier_InsertPhase_Call {
+func (_c *Querier_InsertPhase_Call) Return(_a0 sqlc.GamePhase, _a1 error) *Querier_InsertPhase_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_InsertPhase_Call) RunAndReturn(run func(context.Context, sqlc.InsertPhaseParams) (sqlc.Phase, error)) *Querier_InsertPhase_Call {
+func (_c *Querier_InsertPhase_Call) RunAndReturn(run func(context.Context, sqlc.InsertPhaseParams) (sqlc.GamePhase, error)) *Querier_InsertPhase_Call {
 	_c.Call.Return(run)
 	return _c
 }

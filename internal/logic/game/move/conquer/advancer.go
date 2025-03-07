@@ -11,10 +11,10 @@ import (
 func (s *ServiceImpl) AdvanceQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
-	targetPhase sqlc.PhaseType,
+	targetPhase sqlc.GamePhaseType,
 	_ *MoveResult,
 ) error {
-	if targetPhase != sqlc.PhaseTypeATTACK && targetPhase != sqlc.PhaseTypeREINFORCE {
+	if targetPhase != sqlc.GamePhaseTypeATTACK && targetPhase != sqlc.GamePhaseTypeREINFORCE {
 		return fmt.Errorf("cannot advance conquer phase to %s", targetPhase)
 	}
 

@@ -62,8 +62,8 @@ func NewService(
 	}
 }
 
-func (s *ServiceImpl) PhaseType() sqlc.PhaseType {
-	return sqlc.PhaseTypeCARDS
+func (s *ServiceImpl) PhaseType() sqlc.GamePhaseType {
+	return sqlc.GamePhaseTypeCARDS
 }
 
 func (s *ServiceImpl) Draw(ctx ctx.GameContext, querier db.Querier) error {

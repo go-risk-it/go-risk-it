@@ -20,7 +20,7 @@ func Execute(
 ) error {
 	log.Infow("preparing to execute migrations", "schema", schema)
 
-	connStr := config.BuildConnectionString(schema)
+	connStr := config.BuildConnectionString()
 
 	if err := createSchema(log, connStr, schema); err != nil {
 		return fmt.Errorf("failed to create schema: %w", err)

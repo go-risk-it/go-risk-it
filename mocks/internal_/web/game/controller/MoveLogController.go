@@ -24,7 +24,7 @@ func (_m *MoveLogController) EXPECT() *MoveLogController_Expecter {
 }
 
 // ConvertMoveLogs provides a mock function with given fields: _a0, sqlcLogs
-func (_m *MoveLogController) ConvertMoveLogs(_a0 ctx.GameContext, sqlcLogs []sqlc.MoveLog) (messaging.MoveHistory, error) {
+func (_m *MoveLogController) ConvertMoveLogs(_a0 ctx.GameContext, sqlcLogs []sqlc.GameMoveLog) (messaging.MoveHistory, error) {
 	ret := _m.Called(_a0, sqlcLogs)
 
 	if len(ret) == 0 {
@@ -33,16 +33,16 @@ func (_m *MoveLogController) ConvertMoveLogs(_a0 ctx.GameContext, sqlcLogs []sql
 
 	var r0 messaging.MoveHistory
 	var r1 error
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, []sqlc.MoveLog) (messaging.MoveHistory, error)); ok {
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, []sqlc.GameMoveLog) (messaging.MoveHistory, error)); ok {
 		return rf(_a0, sqlcLogs)
 	}
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, []sqlc.MoveLog) messaging.MoveHistory); ok {
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, []sqlc.GameMoveLog) messaging.MoveHistory); ok {
 		r0 = rf(_a0, sqlcLogs)
 	} else {
 		r0 = ret.Get(0).(messaging.MoveHistory)
 	}
 
-	if rf, ok := ret.Get(1).(func(ctx.GameContext, []sqlc.MoveLog) error); ok {
+	if rf, ok := ret.Get(1).(func(ctx.GameContext, []sqlc.GameMoveLog) error); ok {
 		r1 = rf(_a0, sqlcLogs)
 	} else {
 		r1 = ret.Error(1)
@@ -58,14 +58,14 @@ type MoveLogController_ConvertMoveLogs_Call struct {
 
 // ConvertMoveLogs is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
-//   - sqlcLogs []sqlc.MoveLog
+//   - sqlcLogs []sqlc.GameMoveLog
 func (_e *MoveLogController_Expecter) ConvertMoveLogs(_a0 interface{}, sqlcLogs interface{}) *MoveLogController_ConvertMoveLogs_Call {
 	return &MoveLogController_ConvertMoveLogs_Call{Call: _e.mock.On("ConvertMoveLogs", _a0, sqlcLogs)}
 }
 
-func (_c *MoveLogController_ConvertMoveLogs_Call) Run(run func(_a0 ctx.GameContext, sqlcLogs []sqlc.MoveLog)) *MoveLogController_ConvertMoveLogs_Call {
+func (_c *MoveLogController_ConvertMoveLogs_Call) Run(run func(_a0 ctx.GameContext, sqlcLogs []sqlc.GameMoveLog)) *MoveLogController_ConvertMoveLogs_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.GameContext), args[1].([]sqlc.MoveLog))
+		run(args[0].(ctx.GameContext), args[1].([]sqlc.GameMoveLog))
 	})
 	return _c
 }
@@ -75,7 +75,7 @@ func (_c *MoveLogController_ConvertMoveLogs_Call) Return(_a0 messaging.MoveHisto
 	return _c
 }
 
-func (_c *MoveLogController_ConvertMoveLogs_Call) RunAndReturn(run func(ctx.GameContext, []sqlc.MoveLog) (messaging.MoveHistory, error)) *MoveLogController_ConvertMoveLogs_Call {
+func (_c *MoveLogController_ConvertMoveLogs_Call) RunAndReturn(run func(ctx.GameContext, []sqlc.GameMoveLog) (messaging.MoveHistory, error)) *MoveLogController_ConvertMoveLogs_Call {
 	_c.Call.Return(run)
 	return _c
 }

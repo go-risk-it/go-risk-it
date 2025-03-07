@@ -58,15 +58,15 @@ func convertCard(card sqlc.GetCardsForPlayerRow) messaging.Card {
 	}
 }
 
-func convertCartType(sqlcCardType sqlc.CardType) messaging.CardType {
+func convertCartType(sqlcCardType sqlc.GameCardType) messaging.CardType {
 	switch sqlcCardType {
-	case sqlc.CardTypeCAVALRY:
+	case sqlc.GameCardTypeCAVALRY:
 		return messaging.Cavalry
-	case sqlc.CardTypeARTILLERY:
+	case sqlc.GameCardTypeARTILLERY:
 		return messaging.Infantry
-	case sqlc.CardTypeINFANTRY:
+	case sqlc.GameCardTypeINFANTRY:
 		return messaging.Artillery
-	case sqlc.CardTypeJOLLY:
+	case sqlc.GameCardTypeJOLLY:
 		return messaging.Jolly
 	default:
 		panic("unknown card type")

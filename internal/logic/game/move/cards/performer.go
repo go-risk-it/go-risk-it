@@ -184,13 +184,13 @@ func identifyCombination(
 	return 0, errors.New("invalid combination")
 }
 
-func getCardValue(cardType sqlc.CardType) int64 {
+func getCardValue(cardType sqlc.GameCardType) int64 {
 	switch cardType {
-	case sqlc.CardTypeARTILLERY:
+	case sqlc.GameCardTypeARTILLERY:
 		return ARTILLERY
-	case sqlc.CardTypeINFANTRY:
+	case sqlc.GameCardTypeINFANTRY:
 		return INFANTRY
-	case sqlc.CardTypeCAVALRY:
+	case sqlc.GameCardTypeCAVALRY:
 		return CAVALRY
 	default:
 		return JOLLY

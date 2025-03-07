@@ -1,4 +1,4 @@
 -- name: InsertGame :one
-INSERT INTO game DEFAULT
+INSERT INTO game.game DEFAULT
 VALUES
 RETURNING *;

@@ -25,7 +25,7 @@ func (_m *Service) EXPECT() *Service_Expecter {
 }
 
 // CreateMissionsQ provides a mock function with given fields: _a0, querier, players
-func (_m *Service) CreateMissionsQ(_a0 ctx.GameContext, querier db.Querier, players []sqlc.Player) error {
+func (_m *Service) CreateMissionsQ(_a0 ctx.GameContext, querier db.Querier, players []sqlc.GamePlayer) error {
 	ret := _m.Called(_a0, querier, players)
 
 	if len(ret) == 0 {
@@ -33,7 +33,7 @@ func (_m *Service) CreateMissionsQ(_a0 ctx.GameContext, querier db.Querier, play
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, []sqlc.Player) error); ok {
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, []sqlc.GamePlayer) error); ok {
 		r0 = rf(_a0, querier, players)
 	} else {
 		r0 = ret.Error(0)
@@ -50,14 +50,14 @@ type Service_CreateMissionsQ_Call struct {
 // CreateMissionsQ is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
-//   - players []sqlc.Player
+//   - players []sqlc.GamePlayer
 func (_e *Service_Expecter) CreateMissionsQ(_a0 interface{}, querier interface{}, players interface{}) *Service_CreateMissionsQ_Call {
 	return &Service_CreateMissionsQ_Call{Call: _e.mock.On("CreateMissionsQ", _a0, querier, players)}
 }
 
-func (_c *Service_CreateMissionsQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, players []sqlc.Player)) *Service_CreateMissionsQ_Call {
+func (_c *Service_CreateMissionsQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, players []sqlc.GamePlayer)) *Service_CreateMissionsQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].([]sqlc.Player))
+		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].([]sqlc.GamePlayer))
 	})
 	return _c
 }
@@ -67,7 +67,7 @@ func (_c *Service_CreateMissionsQ_Call) Return(_a0 error) *Service_CreateMission
 	return _c
 }
 
-func (_c *Service_CreateMissionsQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, []sqlc.Player) error) *Service_CreateMissionsQ_Call {
+func (_c *Service_CreateMissionsQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, []sqlc.GamePlayer) error) *Service_CreateMissionsQ_Call {
 	_c.Call.Return(run)
 	return _c
 }

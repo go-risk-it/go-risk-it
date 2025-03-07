@@ -12,7 +12,7 @@ import (
 )
 
 const assignGameWinner = `-- name: AssignGameWinner :exec
-UPDATE game
+UPDATE game.game
 SET winner_player_id = $1
 WHERE id = $2
 `
@@ -28,16 +28,16 @@ func (q *Queries) AssignGameWinner(ctx context.Context, arg AssignGameWinnerPara
 }
 
 const createMoveLog = `-- name: CreateMoveLog :one
-INSERT INTO move_log (game_id,
+INSERT INTO game.move_log (game_id,
                       player_id,
                       phase,
                       move_data,
                       result)
 VALUES ($1,
-        (SELECT id FROM player WHERE game_id = $1 AND user_id = $2),
+        (SELECT id FROM game.player WHERE game_id = $1 AND user_id = $2),
         (SELECT p.type
-         FROM phase p
-                  join game g on g.current_phase_id = p.id
+         FROM game.phase p
+                  join game.game g on g.current_phase_id = p.id
          WHERE g.id = $1),
         $3,
         $4)
@@ -51,14 +51,14 @@ type CreateMoveLogParams struct {
 	Result   []byte
 }
 
-func (q *Queries) CreateMoveLog(ctx context.Context, arg CreateMoveLogParams) (MoveLog, error) {
+func (q *Queries) CreateMoveLog(ctx context.Context, arg CreateMoveLogParams) (GameMoveLog, error) {
 	row := q.db.QueryRow(ctx, createMoveLog,
 		arg.GameID,
 		arg.UserID,
 		arg.MoveData,
 		arg.Result,
 	)
-	var i MoveLog
+	var i GameMoveLog
 	err := row.Scan(
 		&i.ID,
 		&i.GameID,
@@ -72,12 +72,12 @@ func (q *Queries) CreateMoveLog(ctx context.Context, arg CreateMoveLogParams) (M
 }
 
 const decreaseDeployableTroops = `-- name: DecreaseDeployableTroops :exec
-UPDATE deploy_phase
-SET deployable_troops = deploy_phase.deployable_troops - $2
+UPDATE game.deploy_phase
+SET deployable_troops = game.deploy_phase.deployable_troops - $2
 WHERE id = (select dp.id
-            from game g
-                     join phase p on g.current_phase_id = p.id
-                     join deploy_phase dp on p.id = dp.phase_id
+            from game.game g
+                     join game.phase p on g.current_phase_id = p.id
+                     join game.deploy_phase dp on p.id = dp.phase_id
             where g.id = $1)
 `
 
@@ -93,10 +93,10 @@ func (q *Queries) DecreaseDeployableTroops(ctx context.Context, arg DecreaseDepl
 
 const deleteSpuriousEliminatePlayerMissions = `-- name: DeleteSpuriousEliminatePlayerMissions :exec
 DELETE
-FROM eliminate_player_mission
+FROM game.eliminate_player_mission
 WHERE mission_id in (SELECT m.id
-                     FROM mission m
-                              JOIN player p on m.player_id = p.id
+                     FROM game.mission m
+                              JOIN game.player p on m.player_id = p.id
                      WHERE p.game_id = $1
                        AND m.type = 'TWENTY_FOUR_TERRITORIES')
 `
@@ -107,9 +107,9 @@ func (q *Queries) DeleteSpuriousEliminatePlayerMissions(ctx context.Context, gam
 }
 
 const drawCard = `-- name: DrawCard :exec
-update card
-set owner_id = (select player.id from player where player.user_id = $2 and player.game_id = $3)
-where card.id = $1
+update game.card
+set owner_id = (select game.player.id from game.player where game.player.user_id = $2 and game.player.game_id = $3)
+where game.card.id = $1
 `
 
 type DrawCardParams struct {
@@ -125,21 +125,21 @@ func (q *Queries) DrawCard(ctx context.Context, arg DrawCardParams) error {
 
 const getAvailableCards = `-- name: GetAvailableCards :many
 select c.id, c.game_id, c.region_id, c.owner_id, c.card_type
-from game g
-         join card c on c.game_id = g.id
+from game.game g
+         join game.card c on c.game_id = g.id
 where g.id = $1
   and c.owner_id is null
 `
 
-func (q *Queries) GetAvailableCards(ctx context.Context, id int64) ([]Card, error) {
+func (q *Queries) GetAvailableCards(ctx context.Context, id int64) ([]GameCard, error) {
 	rows, err := q.db.Query(ctx, getAvailableCards, id)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Card
+	var items []GameCard
 	for rows.Next() {
-		var i Card
+		var i GameCard
 		if err := rows.Scan(
 			&i.ID,
 			&i.GameID,
@@ -159,10 +159,10 @@ func (q *Queries) GetAvailableCards(ctx context.Context, id int64) ([]Card, erro
 
 const getCardsForPlayer = `-- name: GetCardsForPlayer :many
 SELECT c.id, c.card_type, r.external_reference as region
-FROM game g
-         JOIN player p on g.id = p.game_id
-         JOIN card c ON c.owner_id = p.id
-         LEFT JOIN region r ON c.region_id = r.id
+FROM game.game g
+         JOIN game.player p on g.id = p.game_id
+         JOIN game.card c ON c.owner_id = p.id
+         LEFT JOIN game.region r ON c.region_id = r.id
 WHERE g.id = $1
   AND p.user_id = $2
 `
@@ -174,7 +174,7 @@ type GetCardsForPlayerParams struct {
 
 type GetCardsForPlayerRow struct {
 	ID       int64
-	CardType CardType
+	CardType GameCardType
 	Region   pgtype.Text
 }
 
@@ -202,11 +202,11 @@ const getConquerPhaseState = `-- name: GetConquerPhaseState :one
 select source_region.external_reference as source_region,
        target_region.external_reference as target_region,
        cp.minimum_troops
-from game g
-         join phase p on g.current_phase_id = p.id
-         join conquer_phase cp on p.id = cp.phase_id
-         join region source_region on cp.source_region_id = source_region.id
-         join region target_region on cp.target_region_id = target_region.id
+from game.game g
+         join game.phase p on g.current_phase_id = p.id
+         join game.conquer_phase cp on p.id = cp.phase_id
+         join game.region source_region on cp.source_region_id = source_region.id
+         join game.region target_region on cp.target_region_id = target_region.id
 where g.id = $1
 `
 
@@ -225,32 +225,32 @@ func (q *Queries) GetConquerPhaseState(ctx context.Context, id int64) (GetConque
 
 const getCurrentPhase = `-- name: GetCurrentPhase :one
 SELECT p.type
-FROM phase p
-         JOIN GAME g on g.current_phase_id = p.id
+FROM game.phase p
+         JOIN game.game g on g.current_phase_id = p.id
 WHERE g.id = $1
 `
 
-func (q *Queries) GetCurrentPhase(ctx context.Context, id int64) (PhaseType, error) {
+func (q *Queries) GetCurrentPhase(ctx context.Context, id int64) (GamePhaseType, error) {
 	row := q.db.QueryRow(ctx, getCurrentPhase, id)
-	var type_ PhaseType
+	var type_ GamePhaseType
 	err := row.Scan(&type_)
 	return type_, err
 }
 
 const getCurrentPlayer = `-- name: GetCurrentPlayer :one
 SELECT id, game_id, name, user_id, turn_index
-FROM player
-WHERE player.game_id = $1
-  AND player.turn_index = ((SELECT p.turn
-                            FROM game g
-                                     JOIN phase p on g.current_phase_id = p.id
+FROM game.player
+WHERE game.player.game_id = $1
+  AND game.player.turn_index = ((SELECT p.turn
+                            FROM game.game g
+                                     JOIN game.phase p on g.current_phase_id = p.id
                             WHERE g.id = $1)
-    % (SELECT COUNT (player.id) FROM player WHERE player.game_id = $1))
+    % (SELECT COUNT (player.id) FROM game.player WHERE player.game_id = $1))
 `
 
-func (q *Queries) GetCurrentPlayer(ctx context.Context, gameID int64) (Player, error) {
+func (q *Queries) GetCurrentPlayer(ctx context.Context, gameID int64) (GamePlayer, error) {
 	row := q.db.QueryRow(ctx, getCurrentPlayer, gameID)
-	var i Player
+	var i GamePlayer
 	err := row.Scan(
 		&i.ID,
 		&i.GameID,
@@ -263,9 +263,9 @@ func (q *Queries) GetCurrentPlayer(ctx context.Context, gameID int64) (Player, e
 
 const getDeployableTroops = `-- name: GetDeployableTroops :one
 SELECT deploy_phase.deployable_troops
-FROM game
-         JOIN phase ON game.current_phase_id = phase.id
-         JOIN deploy_phase ON phase.id = deploy_phase.phase_id
+FROM game.game
+         JOIN game.phase ON game.current_phase_id = game.phase.id
+         JOIN game.deploy_phase ON game.phase.id = game.deploy_phase.phase_id
 WHERE game.id = $1
 `
 
@@ -278,28 +278,28 @@ func (q *Queries) GetDeployableTroops(ctx context.Context, id int64) (int64, err
 
 const getEliminatePlayerMission = `-- name: GetEliminatePlayerMission :one
 SELECT mission_id, target_player_id
-FROM eliminate_player_mission
+FROM game.eliminate_player_mission
 WHERE mission_id = $1
 `
 
-func (q *Queries) GetEliminatePlayerMission(ctx context.Context, missionID int64) (EliminatePlayerMission, error) {
+func (q *Queries) GetEliminatePlayerMission(ctx context.Context, missionID int64) (GameEliminatePlayerMission, error) {
 	row := q.db.QueryRow(ctx, getEliminatePlayerMission, missionID)
-	var i EliminatePlayerMission
+	var i GameEliminatePlayerMission
 	err := row.Scan(&i.MissionID, &i.TargetPlayerID)
 	return i, err
 }
 
 const getGame = `-- name: GetGame :one
-SELECT game.id, phase.type AS current_phase, phase.turn, winner_player.user_id AS winner_user_id
-FROM game
-         JOIN phase ON game.current_phase_id = phase.id
-         LEFT JOIN player winner_player ON game.winner_player_id = winner_player.id
-WHERE game.id = $1
+SELECT g.id, p.type AS current_phase, p.turn, winner_player.user_id AS winner_user_id
+FROM game.game g
+         JOIN game.phase p ON g.current_phase_id = p.id
+         LEFT JOIN game.player winner_player ON g.winner_player_id = winner_player.id
+WHERE g.id = $1
 `
 
 type GetGameRow struct {
 	ID           int64
-	CurrentPhase PhaseType
+	CurrentPhase GamePhaseType
 	Turn         int64
 	WinnerUserID pgtype.Text
 }
@@ -318,8 +318,8 @@ func (q *Queries) GetGame(ctx context.Context, id int64) (GetGameRow, error) {
 
 const getMission = `-- name: GetMission :one
 SELECT m.id, m.player_id, m.type
-FROM mission m
-         JOIN player p ON m.player_id = p.id
+FROM game.mission m
+         JOIN game.player p ON m.player_id = p.id
 WHERE p.game_id = $1
   AND p.user_id = $2
 `
@@ -329,18 +329,18 @@ type GetMissionParams struct {
 	UserID string
 }
 
-func (q *Queries) GetMission(ctx context.Context, arg GetMissionParams) (Mission, error) {
+func (q *Queries) GetMission(ctx context.Context, arg GetMissionParams) (GameMission, error) {
 	row := q.db.QueryRow(ctx, getMission, arg.GameID, arg.UserID)
-	var i Mission
+	var i GameMission
 	err := row.Scan(&i.ID, &i.PlayerID, &i.Type)
 	return i, err
 }
 
 const getMoveLogs = `-- name: GetMoveLogs :many
 SELECT move_log.phase, move_log.move_data, move_log.result, move_log.created, player.user_id
-FROM move_log
-         JOIN player ON player.id = player_id
-WHERE move_log.game_id = $1
+FROM game.move_log
+         JOIN game.player ON game.player.id = player_id
+WHERE game.move_log.game_id = $1
 ORDER BY created DESC
 LIMIT $2::bigint
 `
@@ -351,7 +351,7 @@ type GetMoveLogsParams struct {
 }
 
 type GetMoveLogsRow struct {
-	Phase    PhaseType
+	Phase    GamePhaseType
 	MoveData []byte
 	Result   []byte
 	Created  pgtype.Timestamptz
@@ -386,18 +386,18 @@ func (q *Queries) GetMoveLogs(ctx context.Context, arg GetMoveLogsParams) ([]Get
 
 const getNextPlayer = `-- name: GetNextPlayer :one
 SELECT id, game_id, name, user_id, turn_index
-FROM player
-WHERE player.game_id = $1
-  AND player.turn_index = ((1 + (SELECT p.turn
-                                 FROM game g
-                                          JOIN phase p on g.current_phase_id = p.id
+FROM game.player
+WHERE game.player.game_id = $1
+  AND game.player.turn_index = ((1 + (SELECT p.turn
+                                 FROM game.game g
+                                          JOIN game.phase p on g.current_phase_id = p.id
                                  WHERE g.id = $1))
-    % (SELECT COUNT (player.id) FROM player WHERE player.game_id = $1))
+    % (SELECT COUNT (game.player.id) FROM game.player WHERE game.player.game_id = $1))
 `
 
-func (q *Queries) GetNextPlayer(ctx context.Context, gameID int64) (Player, error) {
+func (q *Queries) GetNextPlayer(ctx context.Context, gameID int64) (GamePlayer, error) {
 	row := q.db.QueryRow(ctx, getNextPlayer, gameID)
-	var i Player
+	var i GamePlayer
 	err := row.Scan(
 		&i.ID,
 		&i.GameID,
@@ -410,13 +410,13 @@ func (q *Queries) GetNextPlayer(ctx context.Context, gameID int64) (Player, erro
 
 const getPlayerByUserId = `-- name: GetPlayerByUserId :one
 SELECT id, game_id, name, user_id, turn_index
-FROM player
+FROM game.player
 WHERE user_id = $1
 `
 
-func (q *Queries) GetPlayerByUserId(ctx context.Context, userID string) (Player, error) {
+func (q *Queries) GetPlayerByUserId(ctx context.Context, userID string) (GamePlayer, error) {
 	row := q.db.QueryRow(ctx, getPlayerByUserId, userID)
-	var i Player
+	var i GamePlayer
 	err := row.Scan(
 		&i.ID,
 		&i.GameID,
@@ -429,19 +429,19 @@ func (q *Queries) GetPlayerByUserId(ctx context.Context, userID string) (Player,
 
 const getPlayersByGame = `-- name: GetPlayersByGame :many
 SELECT id, game_id, name, user_id, turn_index
-FROM player
+FROM game.player
 WHERE game_id = $1
 `
 
-func (q *Queries) GetPlayersByGame(ctx context.Context, gameID int64) ([]Player, error) {
+func (q *Queries) GetPlayersByGame(ctx context.Context, gameID int64) ([]GamePlayer, error) {
 	rows, err := q.db.Query(ctx, getPlayersByGame, gameID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Player
+	var items []GamePlayer
 	for rows.Next() {
-		var i Player
+		var i GamePlayer
 		if err := rows.Scan(
 			&i.ID,
 			&i.GameID,
@@ -461,9 +461,9 @@ func (q *Queries) GetPlayersByGame(ctx context.Context, gameID int64) ([]Player,
 
 const getPlayersState = `-- name: GetPlayersState :many
 SELECT p.user_id, p.name, p.turn_index, COUNT(distinct c.id) as card_count, COUNT(distinct r.id) as region_count
-FROM player p
-         LEFT JOIN card c on p.id = c.owner_id
-         LEFT JOIN region r on r.player_id = p.id
+FROM game.player p
+         LEFT JOIN game.card c on p.id = c.owner_id
+         LEFT JOIN game.region r on r.player_id = p.id
 WHERE p.game_id = $1
 GROUP BY p.id
 ORDER BY p.turn_index
@@ -505,9 +505,9 @@ func (q *Queries) GetPlayersState(ctx context.Context, gameID int64) ([]GetPlaye
 
 const getRegionsByGame = `-- name: GetRegionsByGame :many
 SELECT r.id, r.external_reference, r.troops, p.user_id
-FROM region r
-         JOIN player p on r.player_id = p.id
-         JOIN game g on p.game_id = g.id
+FROM game.region r
+         JOIN game.player p on r.player_id = p.id
+         JOIN game.game g on p.game_id = g.id
 WHERE g.id = $1
 `
 
@@ -545,20 +545,20 @@ func (q *Queries) GetRegionsByGame(ctx context.Context, id int64) ([]GetRegionsB
 
 const getRegionsByPlayer = `-- name: GetRegionsByPlayer :many
 SELECT r.id, r.external_reference, r.player_id, r.troops
-FROM region r
-         JOIN player p on r.player_id = p.id
+FROM game.region r
+         JOIN game.player p on r.player_id = p.id
 WHERE p.id = $1
 `
 
-func (q *Queries) GetRegionsByPlayer(ctx context.Context, id int64) ([]Region, error) {
+func (q *Queries) GetRegionsByPlayer(ctx context.Context, id int64) ([]GameRegion, error) {
 	rows, err := q.db.Query(ctx, getRegionsByPlayer, id)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Region
+	var items []GameRegion
 	for rows.Next() {
-		var i Region
+		var i GameRegion
 		if err := rows.Scan(
 			&i.ID,
 			&i.ExternalReference,
@@ -577,34 +577,34 @@ func (q *Queries) GetRegionsByPlayer(ctx context.Context, id int64) ([]Region, e
 
 const getTwoContinentsMission = `-- name: GetTwoContinentsMission :one
 SELECT mission_id, continent_1, continent_2
-FROM two_continents_mission
+FROM game.two_continents_mission
 WHERE mission_id = $1
 `
 
-func (q *Queries) GetTwoContinentsMission(ctx context.Context, missionID int64) (TwoContinentsMission, error) {
+func (q *Queries) GetTwoContinentsMission(ctx context.Context, missionID int64) (GameTwoContinentsMission, error) {
 	row := q.db.QueryRow(ctx, getTwoContinentsMission, missionID)
-	var i TwoContinentsMission
+	var i GameTwoContinentsMission
 	err := row.Scan(&i.MissionID, &i.Continent1, &i.Continent2)
 	return i, err
 }
 
 const getTwoContinentsPlusOneMission = `-- name: GetTwoContinentsPlusOneMission :one
 SELECT mission_id, continent_1, continent_2
-FROM two_continents_plus_one_mission
+FROM game.two_continents_plus_one_mission
 WHERE mission_id = $1
 `
 
-func (q *Queries) GetTwoContinentsPlusOneMission(ctx context.Context, missionID int64) (TwoContinentsPlusOneMission, error) {
+func (q *Queries) GetTwoContinentsPlusOneMission(ctx context.Context, missionID int64) (GameTwoContinentsPlusOneMission, error) {
 	row := q.db.QueryRow(ctx, getTwoContinentsPlusOneMission, missionID)
-	var i TwoContinentsPlusOneMission
+	var i GameTwoContinentsPlusOneMission
 	err := row.Scan(&i.MissionID, &i.Continent1, &i.Continent2)
 	return i, err
 }
 
 const getUserGames = `-- name: GetUserGames :many
 SELECT DISTINCT g.id
-FROM game g
-         JOIN player p on g.id = p.game_id
+FROM game.game g
+         JOIN game.player p on g.id = p.game_id
 WHERE p.user_id = $1
   and g.winner_player_id IS NULL
 `
@@ -630,7 +630,7 @@ func (q *Queries) GetUserGames(ctx context.Context, userID string) ([]int64, err
 }
 
 const grantRegionTroops = `-- name: GrantRegionTroops :exec
-UPDATE region
+UPDATE game.region
 set troops = troops + $1
 where id = ANY ($2::bigint[])
 `
@@ -648,8 +648,8 @@ func (q *Queries) GrantRegionTroops(ctx context.Context, arg GrantRegionTroopsPa
 const hasConqueredInTurn = `-- name: HasConqueredInTurn :one
 select exists
            (select p.id
-            from game g
-                     join phase p on p.game_id = g.id
+            from game.game g
+                     join game.phase p on p.game_id = g.id
             where g.id = $1
               and p.type = 'CONQUER'
               and p.turn = $2)
@@ -668,7 +668,7 @@ func (q *Queries) HasConqueredInTurn(ctx context.Context, arg HasConqueredInTurn
 }
 
 const increaseRegionTroops = `-- name: IncreaseRegionTroops :exec
-UPDATE region
+UPDATE game.region
 SET troops = troops + $2
 WHERE id = $1
 `
@@ -686,22 +686,22 @@ func (q *Queries) IncreaseRegionTroops(ctx context.Context, arg IncreaseRegionTr
 type InsertCardsParams struct {
 	RegionID pgtype.Int8
 	GameID   int64
-	CardType CardType
+	CardType GameCardType
 }
 
 const insertConquerPhase = `-- name: InsertConquerPhase :one
-INSERT INTO conquer_phase(phase_id, source_region_id, target_region_id, minimum_troops)
+INSERT INTO game.conquer_phase(phase_id, source_region_id, target_region_id, minimum_troops)
 VALUES ($1,
         (select r.id
-         from game g
-                  join player p on g.id = p.game_id
-                  join region r on p.id = r.player_id
+         from game.game g
+                  join game.player p on g.id = p.game_id
+                  join game.region r on p.id = r.player_id
          where g.id = $2
            and r.external_reference = $3),
         (select r.id
-         from game g
-                  join player p on g.id = p.game_id
-                  join region r on p.id = r.player_id
+         from game.game g
+                  join game.player p on g.id = p.game_id
+                  join game.region r on p.id = r.player_id
          where g.id = $2
            and r.external_reference = $4),
         $5)
@@ -716,7 +716,7 @@ type InsertConquerPhaseParams struct {
 	MinimumTroops       int64
 }
 
-func (q *Queries) InsertConquerPhase(ctx context.Context, arg InsertConquerPhaseParams) (ConquerPhase, error) {
+func (q *Queries) InsertConquerPhase(ctx context.Context, arg InsertConquerPhaseParams) (GameConquerPhase, error) {
 	row := q.db.QueryRow(ctx, insertConquerPhase,
 		arg.PhaseID,
 		arg.ID,
@@ -724,7 +724,7 @@ func (q *Queries) InsertConquerPhase(ctx context.Context, arg InsertConquerPhase
 		arg.ExternalReference_2,
 		arg.MinimumTroops,
 	)
-	var i ConquerPhase
+	var i GameConquerPhase
 	err := row.Scan(
 		&i.ID,
 		&i.PhaseID,
@@ -736,7 +736,7 @@ func (q *Queries) InsertConquerPhase(ctx context.Context, arg InsertConquerPhase
 }
 
 const insertDeployPhase = `-- name: InsertDeployPhase :one
-INSERT INTO deploy_phase (phase_id, deployable_troops)
+INSERT INTO game.deploy_phase (phase_id, deployable_troops)
 VALUES ($1, $2) RETURNING id, phase_id, deployable_troops
 `
 
@@ -745,15 +745,15 @@ type InsertDeployPhaseParams struct {
 	DeployableTroops int64
 }
 
-func (q *Queries) InsertDeployPhase(ctx context.Context, arg InsertDeployPhaseParams) (DeployPhase, error) {
+func (q *Queries) InsertDeployPhase(ctx context.Context, arg InsertDeployPhaseParams) (GameDeployPhase, error) {
 	row := q.db.QueryRow(ctx, insertDeployPhase, arg.PhaseID, arg.DeployableTroops)
-	var i DeployPhase
+	var i GameDeployPhase
 	err := row.Scan(&i.ID, &i.PhaseID, &i.DeployableTroops)
 	return i, err
 }
 
 const insertEliminatePlayerMission = `-- name: InsertEliminatePlayerMission :exec
-INSERT INTO eliminate_player_mission (mission_id, target_player_id)
+INSERT INTO game.eliminate_player_mission (mission_id, target_player_id)
 VALUES ($1, $2)
 `
 
@@ -768,27 +768,27 @@ func (q *Queries) InsertEliminatePlayerMission(ctx context.Context, arg InsertEl
 }
 
 const insertGame = `-- name: InsertGame :one
-INSERT INTO game DEFAULT
+INSERT INTO game.game DEFAULT
 VALUES
 RETURNING id, current_phase_id, winner_player_id
 `
 
-func (q *Queries) InsertGame(ctx context.Context) (Game, error) {
+func (q *Queries) InsertGame(ctx context.Context) (GameGame, error) {
 	row := q.db.QueryRow(ctx, insertGame)
-	var i Game
+	var i GameGame
 	err := row.Scan(&i.ID, &i.CurrentPhaseID, &i.WinnerPlayerID)
 	return i, err
 }
 
 const insertMission = `-- name: InsertMission :one
-INSERT INTO mission (player_id, type)
+INSERT INTO game.mission (player_id, type)
 VALUES ($1, $2)
 RETURNING id
 `
 
 type InsertMissionParams struct {
 	PlayerID int64
-	Type     MissionType
+	Type     GameMissionType
 }
 
 func (q *Queries) InsertMission(ctx context.Context, arg InsertMissionParams) (int64, error) {
@@ -799,19 +799,19 @@ func (q *Queries) InsertMission(ctx context.Context, arg InsertMissionParams) (i
 }
 
 const insertPhase = `-- name: InsertPhase :one
-INSERT INTO phase (game_id, type, turn)
+INSERT INTO game.phase (game_id, type, turn)
 VALUES ($1, $2, $3) RETURNING id, game_id, type, turn
 `
 
 type InsertPhaseParams struct {
 	GameID int64
-	Type   PhaseType
+	Type   GamePhaseType
 	Turn   int64
 }
 
-func (q *Queries) InsertPhase(ctx context.Context, arg InsertPhaseParams) (Phase, error) {
+func (q *Queries) InsertPhase(ctx context.Context, arg InsertPhaseParams) (GamePhase, error) {
 	row := q.db.QueryRow(ctx, insertPhase, arg.GameID, arg.Type, arg.Turn)
-	var i Phase
+	var i GamePhase
 	err := row.Scan(
 		&i.ID,
 		&i.GameID,
@@ -835,7 +835,7 @@ type InsertRegionsParams struct {
 }
 
 const insertTwoContinentsMission = `-- name: InsertTwoContinentsMission :exec
-INSERT INTO two_continents_mission (mission_id, continent_1, continent_2)
+INSERT INTO game.two_continents_mission (mission_id, continent_1, continent_2)
 VALUES ($1, $2, $3)
 `
 
@@ -851,7 +851,7 @@ func (q *Queries) InsertTwoContinentsMission(ctx context.Context, arg InsertTwoC
 }
 
 const insertTwoContinentsPlusOneMission = `-- name: InsertTwoContinentsPlusOneMission :exec
-INSERT INTO two_continents_plus_one_mission (mission_id, continent_1, continent_2)
+INSERT INTO game.two_continents_plus_one_mission (mission_id, continent_1, continent_2)
 VALUES ($1, $2, $3)
 `
 
@@ -867,12 +867,12 @@ func (q *Queries) InsertTwoContinentsPlusOneMission(ctx context.Context, arg Ins
 }
 
 const reassignMissions = `-- name: ReassignMissions :exec
-UPDATE mission
+UPDATE game.mission
 SET type = 'TWENTY_FOUR_TERRITORIES'
 WHERE id in (SELECT m.id
-             FROM mission m
-                      JOIN player p on m.player_id = p.id
-                      JOIN eliminate_player_mission em on m.id = em.mission_id
+             FROM game.mission m
+                      JOIN game.player p on m.player_id = p.id
+                      JOIN game.eliminate_player_mission em on m.id = em.mission_id
              WHERE p.game_id = $1
                AND em.target_player_id = $3
                AND p.user_id <> $2)
@@ -890,7 +890,7 @@ func (q *Queries) ReassignMissions(ctx context.Context, arg ReassignMissionsPara
 }
 
 const setGamePhase = `-- name: SetGamePhase :exec
-UPDATE game
+UPDATE game.game
 SET current_phase_id = $2
 WHERE id = $1
 `
@@ -906,8 +906,8 @@ func (q *Queries) SetGamePhase(ctx context.Context, arg SetGamePhaseParams) erro
 }
 
 const transferCardsOwnership = `-- name: TransferCardsOwnership :exec
-UPDATE card
-SET owner_id = (SELECT id from player WHERE player.user_id = $2::text AND player.game_id = $1)
+UPDATE game.card
+SET owner_id = (SELECT id from game.player WHERE player.user_id = $2::text AND player.game_id = $1)
 WHERE owner_id = $3
 `
 
@@ -923,7 +923,7 @@ func (q *Queries) TransferCardsOwnership(ctx context.Context, arg TransferCardsO
 }
 
 const unlinkCardsFromOwner = `-- name: UnlinkCardsFromOwner :exec
-UPDATE card
+UPDATE game.card
 SET owner_id = NULL
 WHERE id = ANY ($1::bigint[])
 `
@@ -935,10 +935,10 @@ func (q *Queries) UnlinkCardsFromOwner(ctx context.Context, cards []int64) error
 
 const updateRegionOwner = `-- name: UpdateRegionOwner :one
 WITH old_value AS (
-    SELECT player_id FROM region WHERE id = $3
+    SELECT player_id FROM game.region WHERE id = $3
 )
-UPDATE region
-SET player_id = (SELECT player.id FROM player WHERE user_id = $2 AND game_id = $1)
+UPDATE game.region
+SET player_id = (SELECT player.id FROM game.player WHERE user_id = $2 AND game_id = $1)
 WHERE region.id = $3
 RETURNING (SELECT player_id FROM old_value) AS old_player_id
 `

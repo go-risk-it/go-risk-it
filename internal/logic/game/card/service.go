@@ -96,10 +96,10 @@ func (s *ServiceImpl) buildCards(
 	})
 
 	cards := make([]sqlc.InsertCardsParams, 0, len(regions))
-	cardTypes := []sqlc.CardType{
-		sqlc.CardTypeINFANTRY,
-		sqlc.CardTypeARTILLERY,
-		sqlc.CardTypeCAVALRY,
+	cardTypes := []sqlc.GameCardType{
+		sqlc.GameCardTypeINFANTRY,
+		sqlc.GameCardTypeARTILLERY,
+		sqlc.GameCardTypeCAVALRY,
 	}
 
 	nCardsPerType := len(regions) / 3
@@ -115,7 +115,7 @@ func (s *ServiceImpl) buildCards(
 		cards = append(cards, sqlc.InsertCardsParams{
 			RegionID: pgtype.Int8{Int64: 0, Valid: false},
 			GameID:   ctx.GameID(),
-			CardType: sqlc.CardTypeJOLLY,
+			CardType: sqlc.GameCardTypeJOLLY,
 		})
 	}
 

@@ -40,7 +40,7 @@ func (r iteratorForInsertCards) Err() error {
 }
 
 func (q *Queries) InsertCards(ctx context.Context, arg []InsertCardsParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"card"}, []string{"region_id", "game_id", "card_type"}, &iteratorForInsertCards{rows: arg})
+	return q.db.CopyFrom(ctx, []string{"game", "card"}, []string{"region_id", "game_id", "card_type"}, &iteratorForInsertCards{rows: arg})
 }
 
 // iteratorForInsertPlayers implements pgx.CopyFromSource.
@@ -75,7 +75,7 @@ func (r iteratorForInsertPlayers) Err() error {
 }
 
 func (q *Queries) InsertPlayers(ctx context.Context, arg []InsertPlayersParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"player"}, []string{"game_id", "user_id", "name", "turn_index"}, &iteratorForInsertPlayers{rows: arg})
+	return q.db.CopyFrom(ctx, []string{"game", "player"}, []string{"game_id", "user_id", "name", "turn_index"}, &iteratorForInsertPlayers{rows: arg})
 }
 
 // iteratorForInsertRegions implements pgx.CopyFromSource.
@@ -109,5 +109,5 @@ func (r iteratorForInsertRegions) Err() error {
 }
 
 func (q *Queries) InsertRegions(ctx context.Context, arg []InsertRegionsParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"region"}, []string{"external_reference", "player_id", "troops"}, &iteratorForInsertRegions{rows: arg})
+	return q.db.CopyFrom(ctx, []string{"game", "region"}, []string{"external_reference", "player_id", "troops"}, &iteratorForInsertRegions{rows: arg})
 }

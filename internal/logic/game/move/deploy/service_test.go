@@ -58,7 +58,7 @@ func TestServiceImpl_DeployShouldFailWhenPlayerDoesntHaveEnoughDeployableTroops(
 
 	game := &state.Game{
 		ID:    ctx.GameID(),
-		Phase: sqlc.PhaseTypeDEPLOY,
+		Phase: sqlc.GamePhaseTypeDEPLOY,
 		Turn:  2,
 	}
 
@@ -109,7 +109,7 @@ func TestServiceImpl_DeployShouldFail(t *testing.T) {
 
 			game := &state.Game{
 				ID:    ctx.GameID(),
-				Phase: sqlc.PhaseTypeDEPLOY,
+				Phase: sqlc.GamePhaseTypeDEPLOY,
 				Turn:  2,
 			}
 
@@ -167,7 +167,7 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 
 			game := &state.Game{
 				ID:    ctx.GameID(),
-				Phase: sqlc.PhaseTypeDEPLOY,
+				Phase: sqlc.GamePhaseTypeDEPLOY,
 				Turn:  2,
 			}
 

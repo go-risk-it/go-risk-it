@@ -73,18 +73,18 @@ func (_c *Mission_Persist_Call) RunAndReturn(run func(ctx.GameContext, db.Querie
 }
 
 // Type provides a mock function with no fields
-func (_m *Mission) Type() sqlc.MissionType {
+func (_m *Mission) Type() sqlc.GameMissionType {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Type")
 	}
 
-	var r0 sqlc.MissionType
-	if rf, ok := ret.Get(0).(func() sqlc.MissionType); ok {
+	var r0 sqlc.GameMissionType
+	if rf, ok := ret.Get(0).(func() sqlc.GameMissionType); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(sqlc.MissionType)
+		r0 = ret.Get(0).(sqlc.GameMissionType)
 	}
 
 	return r0
@@ -107,12 +107,12 @@ func (_c *Mission_Type_Call) Run(run func()) *Mission_Type_Call {
 	return _c
 }
 
-func (_c *Mission_Type_Call) Return(_a0 sqlc.MissionType) *Mission_Type_Call {
+func (_c *Mission_Type_Call) Return(_a0 sqlc.GameMissionType) *Mission_Type_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Mission_Type_Call) RunAndReturn(run func() sqlc.MissionType) *Mission_Type_Call {
+func (_c *Mission_Type_Call) RunAndReturn(run func() sqlc.GameMissionType) *Mission_Type_Call {
 	_c.Call.Return(run)
 	return _c
 }

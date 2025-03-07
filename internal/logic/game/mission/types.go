@@ -7,7 +7,7 @@ import (
 )
 
 type Mission interface {
-	Type() sqlc.MissionType
+	Type() sqlc.GameMissionType
 	Persist(ctx ctx.GameContext, querier db.Querier, missionID int64) error
 }
 
@@ -29,24 +29,24 @@ type EliminatePlayerMission struct {
 	TargetPlayerID int64
 }
 
-func (m *TwoContinentsMission) Type() sqlc.MissionType {
-	return sqlc.MissionTypeTWOCONTINENTS
+func (m *TwoContinentsMission) Type() sqlc.GameMissionType {
+	return sqlc.GameMissionTypeTWOCONTINENTS
 }
 
-func (m *TwoContinentsPlusOneMission) Type() sqlc.MissionType {
-	return sqlc.MissionTypeTWOCONTINENTSPLUSONE
+func (m *TwoContinentsPlusOneMission) Type() sqlc.GameMissionType {
+	return sqlc.GameMissionTypeTWOCONTINENTSPLUSONE
 }
 
-func (m *EighteenTerritoriesTwoTroopsMission) Type() sqlc.MissionType {
-	return sqlc.MissionTypeEIGHTEENTERRITORIESTWOTROOPS
+func (m *EighteenTerritoriesTwoTroopsMission) Type() sqlc.GameMissionType {
+	return sqlc.GameMissionTypeEIGHTEENTERRITORIESTWOTROOPS
 }
 
-func (m *TwentyFourTerritoriesMission) Type() sqlc.MissionType {
-	return sqlc.MissionTypeTWENTYFOURTERRITORIES
+func (m *TwentyFourTerritoriesMission) Type() sqlc.GameMissionType {
+	return sqlc.GameMissionTypeTWENTYFOURTERRITORIES
 }
 
-func (m *EliminatePlayerMission) Type() sqlc.MissionType {
-	return sqlc.MissionTypeELIMINATEPLAYER
+func (m *EliminatePlayerMission) Type() sqlc.GameMissionType {
+	return sqlc.GameMissionTypeELIMINATEPLAYER
 }
 
 func (m *TwoContinentsMission) Persist(

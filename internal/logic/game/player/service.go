@@ -16,14 +16,14 @@ type Service interface {
 		gameID int64,
 		players []request.Player,
 	) (
-		[]sqlc.Player,
+		[]sqlc.GamePlayer,
 		error,
 	)
 	GetPlayersState(ctx ctx.GameContext) ([]sqlc.GetPlayersStateRow, error)
 	GetPlayersStateQ(ctx ctx.GameContext, querier db.Querier) ([]sqlc.GetPlayersStateRow, error)
-	GetPlayersQ(ctx ctx.GameContext, querier db.Querier) ([]sqlc.Player, error)
-	GetCurrentPlayerQ(ctx ctx.GameContext, querier db.Querier) (sqlc.Player, error)
-	GetNextPlayerQ(ctx ctx.GameContext, querier db.Querier) (sqlc.Player, error)
+	GetPlayersQ(ctx ctx.GameContext, querier db.Querier) ([]sqlc.GamePlayer, error)
+	GetCurrentPlayerQ(ctx ctx.GameContext, querier db.Querier) (sqlc.GamePlayer, error)
+	GetNextPlayerQ(ctx ctx.GameContext, querier db.Querier) (sqlc.GamePlayer, error)
 }
 
 type ServiceImpl struct {
@@ -56,7 +56,10 @@ func (s *ServiceImpl) GetPlayersStateQ(
 	return result, nil
 }
 
-func (s *ServiceImpl) GetPlayersQ(ctx ctx.GameContext, querier db.Querier) ([]sqlc.Player, error) {
+func (s *ServiceImpl) GetPlayersQ(
+	ctx ctx.GameContext,
+	querier db.Querier,
+) ([]sqlc.GamePlayer, error) {
 	result, err := querier.GetPlayersByGame(ctx, ctx.GameID())
 	if err != nil {
 		return result, fmt.Errorf("failed to get players: %w", err)
@@ -70,10 +73,10 @@ func (s *ServiceImpl) GetPlayersQ(ctx ctx.GameContext, querier db.Querier) ([]sq
 func (s *ServiceImpl) GetCurrentPlayerQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
-) (sqlc.Player, error) {
+) (sqlc.GamePlayer, error) {
 	result, err := querier.GetCurrentPlayer(ctx, ctx.GameID())
 	if err != nil {
-		return sqlc.Player{}, fmt.Errorf("failed to get current player: %w", err)
+		return sqlc.GamePlayer{}, fmt.Errorf("failed to get current player: %w", err)
 	}
 
 	ctx.Log().Infow("got current player", "player", nil)
@@ -84,10 +87,10 @@ func (s *ServiceImpl) GetCurrentPlayerQ(
 func (s *ServiceImpl) GetNextPlayerQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
-) (sqlc.Player, error) {
+) (sqlc.GamePlayer, error) {
 	result, err := querier.GetNextPlayer(ctx, ctx.GameID())
 	if err != nil {
-		return sqlc.Player{}, fmt.Errorf("failed to get next player: %w", err)
+		return sqlc.GamePlayer{}, fmt.Errorf("failed to get next player: %w", err)
 	}
 
 	ctx.Log().Infow("got next player", "player", result)
@@ -100,7 +103,7 @@ func (s *ServiceImpl) CreatePlayersQ(
 	querier db.Querier,
 	gameID int64,
 	players []request.Player,
-) ([]sqlc.Player, error) {
+) ([]sqlc.GamePlayer, error) {
 	ctx.Log().Infow("creating players", "players", players)
 
 	turnIndex := int64(0)

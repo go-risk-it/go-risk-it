@@ -4,10 +4,10 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 )
 
-type RegionAssignment map[string]sqlc.Player
+type RegionAssignment map[string]sqlc.GamePlayer
 
 type Service interface {
-	AssignRegionsToPlayers(players []sqlc.Player, regions []string) RegionAssignment
+	AssignRegionsToPlayers(players []sqlc.GamePlayer, regions []string) RegionAssignment
 }
 
 type ServiceImpl struct{}
@@ -19,10 +19,10 @@ func NewAssignmentService() *ServiceImpl {
 }
 
 func (s *ServiceImpl) AssignRegionsToPlayers(
-	players []sqlc.Player,
+	players []sqlc.GamePlayer,
 	regions []string,
 ) RegionAssignment {
-	regionsToPlayers := make(map[string]sqlc.Player)
+	regionsToPlayers := make(map[string]sqlc.GamePlayer)
 	for i, region := range regions {
 		regionsToPlayers[region] = players[i%len(players)]
 	}

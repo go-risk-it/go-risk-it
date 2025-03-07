@@ -19,7 +19,7 @@ type Service interface {
 	CreateRegionsQ(
 		ctx ctx.LogContext,
 		querier db.Querier,
-		players []sqlc.Player,
+		players []sqlc.GamePlayer,
 		regions []string,
 	) error
 	GetRegionQ(
@@ -34,7 +34,7 @@ type Service interface {
 		ctx ctx.GameContext,
 		querier db.Querier,
 		playerID int64,
-	) ([]sqlc.Region, error)
+	) ([]sqlc.GameRegion, error)
 	UpdateTroopsInRegionQ(
 		ctx ctx.GameContext,
 		querier db.Querier,
@@ -55,7 +55,7 @@ func (s *ServiceImpl) GetRegionsControlledByPlayerQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	playerID int64,
-) ([]sqlc.Region, error) {
+) ([]sqlc.GameRegion, error) {
 	return querier.GetRegionsByPlayer(ctx, playerID)
 }
 
@@ -68,7 +68,7 @@ func NewService(querier db.Querier, assignmentService assignment.Service) *Servi
 func (s *ServiceImpl) CreateRegionsQ(
 	ctx ctx.LogContext,
 	querier db.Querier,
-	players []sqlc.Player,
+	players []sqlc.GamePlayer,
 	regions []string,
 ) error {
 	ctx.Log().Infow("creating regions", "players_size", len(players), "regions_size", len(regions))

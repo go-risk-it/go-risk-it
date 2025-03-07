@@ -76,15 +76,15 @@ func fetchGameState[T any](
 	var fetcher phase.Fetcher
 
 	switch gameState.Phase {
-	case sqlc.PhaseTypeDEPLOY:
+	case sqlc.GamePhaseTypeDEPLOY:
 		fetcher = params.DeployPhaseFetcher
-	case sqlc.PhaseTypeATTACK:
+	case sqlc.GamePhaseTypeATTACK:
 		fetcher = params.AttackPhaseFetcher
-	case sqlc.PhaseTypeCONQUER:
+	case sqlc.GamePhaseTypeCONQUER:
 		fetcher = params.ConquerPhaseFetcher
-	case sqlc.PhaseTypeREINFORCE:
+	case sqlc.GamePhaseTypeREINFORCE:
 		fetcher = params.ReinforcePhaseFetcher
-	case sqlc.PhaseTypeCARDS:
+	case sqlc.GamePhaseTypeCARDS:
 		fetcher = params.CardsPhaseFetcher
 	default:
 		gameContext.Log().Errorf("unknown phase type: %v", gameState.Phase)

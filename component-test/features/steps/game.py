@@ -62,4 +62,4 @@ def step_impl(context: RiskItContext, player: str):
 
 @then("{amount} games are available")
 def step_impl(context: RiskItContext, amount: str):
-    assert len(context.games.games) == int(amount), f"Expected {amount} games, but got {len(context.games)}"
+    assert len(context.games.games) == int(amount), f"Expected {amount} games, but got {context.games.games}"

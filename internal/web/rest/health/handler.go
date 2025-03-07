@@ -33,7 +33,7 @@ func New(databaseConfig config.DatabaseConfig) *HandlerImpl {
 				Timeout:   5 * time.Second,
 				SkipOnErr: false,
 				Check: postgres.New(postgres.Config{
-					DSN: databaseConfig.BuildConnectionString("game"),
+					DSN: databaseConfig.BuildConnectionString(),
 				}),
 			},
 		),

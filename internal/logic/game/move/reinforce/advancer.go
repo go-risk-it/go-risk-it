@@ -11,10 +11,10 @@ import (
 func (s *ServiceImpl) AdvanceQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
-	targetPhase sqlc.PhaseType,
+	targetPhase sqlc.GamePhaseType,
 	_ *MoveResult,
 ) error {
-	if targetPhase != sqlc.PhaseTypeDEPLOY && targetPhase != sqlc.PhaseTypeCARDS {
+	if targetPhase != sqlc.GamePhaseTypeDEPLOY && targetPhase != sqlc.GamePhaseTypeCARDS {
 		return fmt.Errorf("cannot advance reinforce phase to %s", targetPhase)
 	}
 
@@ -41,7 +41,7 @@ func (s *ServiceImpl) AdvanceQ(
 		}
 	}
 
-	if targetPhase == sqlc.PhaseTypeDEPLOY {
+	if targetPhase == sqlc.GamePhaseTypeDEPLOY {
 		if err := s.cardsService.AdvanceQ(ctx, querier, targetPhase, nil); err != nil {
 			return fmt.Errorf("failed to advance cards phase: %w", err)
 		}
@@ -49,7 +49,7 @@ func (s *ServiceImpl) AdvanceQ(
 		return nil
 	}
 
-	if _, err = s.phaseService.InsertPhaseQ(ctx, querier, sqlc.PhaseTypeCARDS); err != nil {
+	if _, err = s.phaseService.InsertPhaseQ(ctx, querier, sqlc.GamePhaseTypeCARDS); err != nil {
 		return fmt.Errorf("failed to create cards phase: %w", err)
 	}
 

@@ -12,30 +12,36 @@ func (s *ServiceImpl) WalkQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	voluntaryAdvancement bool,
-) (sqlc.PhaseType, error) {
+) (sqlc.GamePhaseType, error) {
 	hasConquered, err := s.HasConqueredQ(ctx, querier)
 	if err != nil {
-		return sqlc.PhaseTypeATTACK, fmt.Errorf("failed to check if attack has conquered: %w", err)
+		return sqlc.GamePhaseTypeATTACK, fmt.Errorf(
+			"failed to check if attack has conquered: %w",
+			err,
+		)
 	}
 
 	if hasConquered {
 		ctx.Log().Infow("must advance phase to CONQUER")
 
-		return sqlc.PhaseTypeCONQUER, nil
+		return sqlc.GamePhaseTypeCONQUER, nil
 	}
 
 	canContinueAttacking, err := s.CanContinueAttackingQ(ctx, querier)
 	if err != nil {
-		return sqlc.PhaseTypeATTACK, fmt.Errorf("failed to check if attack can continue: %w", err)
+		return sqlc.GamePhaseTypeATTACK, fmt.Errorf(
+			"failed to check if attack can continue: %w",
+			err,
+		)
 	}
 
 	if voluntaryAdvancement || !canContinueAttacking {
 		ctx.Log().Infow("must advance phase to REINFORCE")
 
-		return sqlc.PhaseTypeREINFORCE, nil
+		return sqlc.GamePhaseTypeREINFORCE, nil
 	}
 
-	return sqlc.PhaseTypeATTACK, nil
+	return sqlc.GamePhaseTypeATTACK, nil
 }
 
 // HasConqueredQ returns true if the player has conquered any region.

@@ -48,13 +48,9 @@ func NewConnectionPool(
 ) *pgxpool.Pool {
 	ctx := context.Background()
 
-	pool, err := pgxpool.New(ctx, config.BuildConnectionString("game"))
+	pool, err := pgxpool.New(ctx, config.BuildConnectionString())
 	if err != nil {
 		panic("Unable to create connection pool")
-	}
-
-	if _, err := pool.Exec(ctx, "SET search_path TO game;"); err != nil {
-		panic("cannot create DB connection pool")
 	}
 
 	log.Infow("created connection pool", "schema", "game")

@@ -11,14 +11,14 @@ import (
 func (s *ServiceImpl) AdvanceQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
-	targetPhase sqlc.PhaseType,
+	targetPhase sqlc.GamePhaseType,
 	_ *MoveResult,
 ) error {
-	if targetPhase != sqlc.PhaseTypeATTACK {
+	if targetPhase != sqlc.GamePhaseTypeATTACK {
 		return fmt.Errorf("cannot advance deploy phase to %s", targetPhase)
 	}
 
-	_, err := s.phaseService.InsertPhaseQ(ctx, querier, sqlc.PhaseTypeATTACK)
+	_, err := s.phaseService.InsertPhaseQ(ctx, querier, sqlc.GamePhaseTypeATTACK)
 	if err != nil {
 		return fmt.Errorf("failed to create attack phase: %w", err)
 	}

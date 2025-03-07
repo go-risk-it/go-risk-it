@@ -66,7 +66,7 @@ func TestServiceImpl_CreatePlayers_WithValidData(t *testing.T) {
 		},
 	}).Return(int64(2), nil)
 
-	querier.On("GetPlayersByGame", ctx, gameID).Return([]sqlc.Player{
+	querier.On("GetPlayersByGame", ctx, gameID).Return([]sqlc.GamePlayer{
 		{
 			ID:        1,
 			GameID:    gameID,

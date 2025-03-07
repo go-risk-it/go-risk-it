@@ -11,7 +11,7 @@ import (
 type Game struct {
 	ID           int64
 	Turn         int64
-	Phase        sqlc.PhaseType
+	Phase        sqlc.GamePhaseType
 	WinnerUserID string
 }
 

@@ -27,23 +27,23 @@ func (_m *Service) EXPECT() *Service_Expecter {
 }
 
 // CreatePlayersQ provides a mock function with given fields: _a0, querier, gameID, players
-func (_m *Service) CreatePlayersQ(_a0 ctx.GameContext, querier db.Querier, gameID int64, players []request.Player) ([]sqlc.Player, error) {
+func (_m *Service) CreatePlayersQ(_a0 ctx.GameContext, querier db.Querier, gameID int64, players []request.Player) ([]sqlc.GamePlayer, error) {
 	ret := _m.Called(_a0, querier, gameID, players)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreatePlayersQ")
 	}
 
-	var r0 []sqlc.Player
+	var r0 []sqlc.GamePlayer
 	var r1 error
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, int64, []request.Player) ([]sqlc.Player, error)); ok {
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, int64, []request.Player) ([]sqlc.GamePlayer, error)); ok {
 		return rf(_a0, querier, gameID, players)
 	}
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, int64, []request.Player) []sqlc.Player); ok {
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, int64, []request.Player) []sqlc.GamePlayer); ok {
 		r0 = rf(_a0, querier, gameID, players)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]sqlc.Player)
+			r0 = ret.Get(0).([]sqlc.GamePlayer)
 		}
 	}
 
@@ -77,33 +77,33 @@ func (_c *Service_CreatePlayersQ_Call) Run(run func(_a0 ctx.GameContext, querier
 	return _c
 }
 
-func (_c *Service_CreatePlayersQ_Call) Return(_a0 []sqlc.Player, _a1 error) *Service_CreatePlayersQ_Call {
+func (_c *Service_CreatePlayersQ_Call) Return(_a0 []sqlc.GamePlayer, _a1 error) *Service_CreatePlayersQ_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_CreatePlayersQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, int64, []request.Player) ([]sqlc.Player, error)) *Service_CreatePlayersQ_Call {
+func (_c *Service_CreatePlayersQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, int64, []request.Player) ([]sqlc.GamePlayer, error)) *Service_CreatePlayersQ_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetCurrentPlayerQ provides a mock function with given fields: _a0, querier
-func (_m *Service) GetCurrentPlayerQ(_a0 ctx.GameContext, querier db.Querier) (sqlc.Player, error) {
+func (_m *Service) GetCurrentPlayerQ(_a0 ctx.GameContext, querier db.Querier) (sqlc.GamePlayer, error) {
 	ret := _m.Called(_a0, querier)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetCurrentPlayerQ")
 	}
 
-	var r0 sqlc.Player
+	var r0 sqlc.GamePlayer
 	var r1 error
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) (sqlc.Player, error)); ok {
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) (sqlc.GamePlayer, error)); ok {
 		return rf(_a0, querier)
 	}
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) sqlc.Player); ok {
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) sqlc.GamePlayer); ok {
 		r0 = rf(_a0, querier)
 	} else {
-		r0 = ret.Get(0).(sqlc.Player)
+		r0 = ret.Get(0).(sqlc.GamePlayer)
 	}
 
 	if rf, ok := ret.Get(1).(func(ctx.GameContext, db.Querier) error); ok {
@@ -134,33 +134,33 @@ func (_c *Service_GetCurrentPlayerQ_Call) Run(run func(_a0 ctx.GameContext, quer
 	return _c
 }
 
-func (_c *Service_GetCurrentPlayerQ_Call) Return(_a0 sqlc.Player, _a1 error) *Service_GetCurrentPlayerQ_Call {
+func (_c *Service_GetCurrentPlayerQ_Call) Return(_a0 sqlc.GamePlayer, _a1 error) *Service_GetCurrentPlayerQ_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_GetCurrentPlayerQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier) (sqlc.Player, error)) *Service_GetCurrentPlayerQ_Call {
+func (_c *Service_GetCurrentPlayerQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier) (sqlc.GamePlayer, error)) *Service_GetCurrentPlayerQ_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetNextPlayerQ provides a mock function with given fields: _a0, querier
-func (_m *Service) GetNextPlayerQ(_a0 ctx.GameContext, querier db.Querier) (sqlc.Player, error) {
+func (_m *Service) GetNextPlayerQ(_a0 ctx.GameContext, querier db.Querier) (sqlc.GamePlayer, error) {
 	ret := _m.Called(_a0, querier)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetNextPlayerQ")
 	}
 
-	var r0 sqlc.Player
+	var r0 sqlc.GamePlayer
 	var r1 error
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) (sqlc.Player, error)); ok {
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) (sqlc.GamePlayer, error)); ok {
 		return rf(_a0, querier)
 	}
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) sqlc.Player); ok {
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) sqlc.GamePlayer); ok {
 		r0 = rf(_a0, querier)
 	} else {
-		r0 = ret.Get(0).(sqlc.Player)
+		r0 = ret.Get(0).(sqlc.GamePlayer)
 	}
 
 	if rf, ok := ret.Get(1).(func(ctx.GameContext, db.Querier) error); ok {
@@ -191,34 +191,34 @@ func (_c *Service_GetNextPlayerQ_Call) Run(run func(_a0 ctx.GameContext, querier
 	return _c
 }
 
-func (_c *Service_GetNextPlayerQ_Call) Return(_a0 sqlc.Player, _a1 error) *Service_GetNextPlayerQ_Call {
+func (_c *Service_GetNextPlayerQ_Call) Return(_a0 sqlc.GamePlayer, _a1 error) *Service_GetNextPlayerQ_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_GetNextPlayerQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier) (sqlc.Player, error)) *Service_GetNextPlayerQ_Call {
+func (_c *Service_GetNextPlayerQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier) (sqlc.GamePlayer, error)) *Service_GetNextPlayerQ_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetPlayersQ provides a mock function with given fields: _a0, querier
-func (_m *Service) GetPlayersQ(_a0 ctx.GameContext, querier db.Querier) ([]sqlc.Player, error) {
+func (_m *Service) GetPlayersQ(_a0 ctx.GameContext, querier db.Querier) ([]sqlc.GamePlayer, error) {
 	ret := _m.Called(_a0, querier)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetPlayersQ")
 	}
 
-	var r0 []sqlc.Player
+	var r0 []sqlc.GamePlayer
 	var r1 error
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) ([]sqlc.Player, error)); ok {
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) ([]sqlc.GamePlayer, error)); ok {
 		return rf(_a0, querier)
 	}
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) []sqlc.Player); ok {
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) []sqlc.GamePlayer); ok {
 		r0 = rf(_a0, querier)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]sqlc.Player)
+			r0 = ret.Get(0).([]sqlc.GamePlayer)
 		}
 	}
 
@@ -250,12 +250,12 @@ func (_c *Service_GetPlayersQ_Call) Run(run func(_a0 ctx.GameContext, querier db
 	return _c
 }
 
-func (_c *Service_GetPlayersQ_Call) Return(_a0 []sqlc.Player, _a1 error) *Service_GetPlayersQ_Call {
+func (_c *Service_GetPlayersQ_Call) Return(_a0 []sqlc.GamePlayer, _a1 error) *Service_GetPlayersQ_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_GetPlayersQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier) ([]sqlc.Player, error)) *Service_GetPlayersQ_Call {
+func (_c *Service_GetPlayersQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier) ([]sqlc.GamePlayer, error)) *Service_GetPlayersQ_Call {
 	_c.Call.Return(run)
 	return _c
 }

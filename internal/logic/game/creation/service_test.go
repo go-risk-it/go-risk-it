@@ -42,7 +42,7 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 
 	mockQuerier := db.NewQuerier(t)
 
-	players := []sqlc.Player{
+	players := []sqlc.GamePlayer{
 		{ID: 420, TurnIndex: 1, GameID: gameID, UserID: "Giovanni"},
 		{ID: 69, TurnIndex: 2, GameID: gameID, UserID: "Gabriele"},
 	}
@@ -55,7 +55,7 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 	}
 
 	// setup mocks
-	mockQuerier.EXPECT().InsertGame(context).Return(sqlc.Game{
+	mockQuerier.EXPECT().InsertGame(context).Return(sqlc.GameGame{
 		ID:             gameID,
 		CurrentPhaseID: pgtype.Int8{Int64: 1, Valid: true},
 	}, nil)
@@ -64,9 +64,9 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 
 	mockQuerier.EXPECT().InsertPhase(gameContext, sqlc.InsertPhaseParams{
 		GameID: gameID,
-		Type:   sqlc.PhaseTypeDEPLOY,
+		Type:   sqlc.GamePhaseTypeDEPLOY,
 		Turn:   0,
-	}).Return(sqlc.Phase{ID: phaseID}, nil)
+	}).Return(sqlc.GamePhase{ID: phaseID}, nil)
 
 	mockQuerier.EXPECT().SetGamePhase(gameContext, sqlc.SetGamePhaseParams{
 		ID:             gameID,
@@ -76,7 +76,7 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 	mockQuerier.EXPECT().InsertDeployPhase(gameContext, sqlc.InsertDeployPhaseParams{
 		PhaseID:          phaseID,
 		DeployableTroops: int64(3),
-	}).Return(sqlc.DeployPhase{ID: 1}, nil)
+	}).Return(sqlc.GameDeployPhase{ID: 1}, nil)
 
 	playerServiceMock := player.NewService(t)
 	playerServiceMock.
@@ -150,7 +150,7 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 	// Set up expectations for InsertGame method
 	querier.
 		EXPECT().
-		InsertGame(ctx).Return(sqlc.Game{}, errInsertGame)
+		InsertGame(ctx).Return(sqlc.GameGame{}, errInsertGame)
 
 	// Call the method under test
 	gameID, err := service.CreateGameQ(ctx, querier, []string{}, users)
@@ -199,7 +199,7 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 	querier.
 		EXPECT().
 		InsertGame(context).
-		Return(sqlc.Game{
+		Return(sqlc.GameGame{
 			ID: gameID,
 		}, nil)
 

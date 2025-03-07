@@ -11,10 +11,10 @@ import (
 func (s *ServiceImpl) AdvanceQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
-	targetPhase sqlc.PhaseType,
+	targetPhase sqlc.GamePhaseType,
 	performResult *MoveResult,
 ) error {
-	if targetPhase != sqlc.PhaseTypeCONQUER && targetPhase != sqlc.PhaseTypeREINFORCE {
+	if targetPhase != sqlc.GamePhaseTypeCONQUER && targetPhase != sqlc.GamePhaseTypeREINFORCE {
 		return fmt.Errorf("cannot advance attack phase to %s", targetPhase)
 	}
 
@@ -23,7 +23,7 @@ func (s *ServiceImpl) AdvanceQ(
 		return fmt.Errorf("failed to create phase: %w", err)
 	}
 
-	if targetPhase == sqlc.PhaseTypeCONQUER {
+	if targetPhase == sqlc.GamePhaseTypeCONQUER {
 		return s.advanceToConquerPhase(ctx, querier, performResult, *phase)
 	}
 
@@ -34,7 +34,7 @@ func (s *ServiceImpl) advanceToConquerPhase(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	performResult *MoveResult,
-	phase sqlc.Phase,
+	phase sqlc.GamePhase,
 ) error {
 	if _, err := querier.InsertConquerPhase(ctx, sqlc.InsertConquerPhaseParams{
 		PhaseID:             phase.ID,
