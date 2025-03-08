@@ -22,15 +22,15 @@ var _ Service = (*ServiceImpl)(nil)
 
 func NewService(pool pool.DB, dbConfig config.DatabaseConfig) *ServiceImpl {
 	tables := []string{
-		"player",
-		"game",
-		"region",
-		"card",
-		"mission",
-		"deploy_phase",
-		"conquer_phase",
-		"phase",
-		"move_log",
+		"game.player",
+		"game.game",
+		"game.region",
+		"game.card",
+		"game.mission",
+		"game.deploy_phase",
+		"game.conquer_phase",
+		"game.phase",
+		"game.move_log",
 	}
 
 	return &ServiceImpl{pool: pool, dbConfig: dbConfig, tables: tables}
