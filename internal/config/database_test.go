@@ -35,7 +35,7 @@ func TestDatabaseConfig_BuildConnectionString(t *testing.T) {
 				Password:   "pass",
 				DisableSSL: true,
 			},
-			want: "postgresql://user:pass@localhost:5432/testdb?sslmode=disable&search_path=public",
+			want: "postgresql://user:pass@localhost:5432/testdb?sslmode=disable",
 		},
 		{
 			name: "connection with special characters",
