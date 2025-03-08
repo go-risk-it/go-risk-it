@@ -1,6 +1,6 @@
 # === Stage 1: Build Stage ===
 # Use a Golang image as the base image for the build stage
-FROM golang:1.23@sha256:8c10f21bec412f08f73aa7b97ca5ac5f28a39d8a88030ad8a339fd0a781d72b4 AS builder
+FROM golang:1.23@sha256:1acb493b9f9dfdfe705042ce09e8ded908ce4fb342405ecf3ca61ce7f3b168c7 AS builder
 
 WORKDIR /src
 COPY go.mod go.sum ./
