@@ -12,6 +12,9 @@ jwt:
 dice:
   roll_strategy: random
 
+regionassignment:
+  assignment_strategy: random
+
 history:
   size: 50
 

@@ -12,6 +12,9 @@ jwt:
 dice:
   roll_strategy: attacker_always_wins
 
+regionassignment:
+  assignment_strategy: sequential
+
 history:
   size: 999
 

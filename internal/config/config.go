@@ -16,21 +16,23 @@ import (
 const EnvironmentKey = "ENVIRONMENT"
 
 type Config struct {
-	Jwt      JwtConfig
-	Database DatabaseConfig
-	Dice     DiceConfig
-	History  HistoryConfig
-	Otel     OtelConfig
+	Jwt              JwtConfig
+	Database         DatabaseConfig
+	Dice             DiceConfig
+	Regionassignment RegionassignmentConfig
+	History          HistoryConfig
+	Otel             OtelConfig
 }
 
 type Result struct {
 	fx.Out
 
-	JwtConfig      JwtConfig
-	DatabaseConfig DatabaseConfig
-	DiceConfig     DiceConfig
-	HistoryConfig  HistoryConfig
-	OtelConfig     OtelConfig
+	JwtConfig              JwtConfig
+	DatabaseConfig         DatabaseConfig
+	DiceConfig             DiceConfig
+	RegionassignmentConfig RegionassignmentConfig
+	HistoryConfig          HistoryConfig
+	OtelConfig             OtelConfig
 }
 
 func newConfig(log *zap.SugaredLogger) Result {
@@ -52,11 +54,12 @@ func newConfig(log *zap.SugaredLogger) Result {
 	log.Debugf("Loaded config: %+v", koanfManager)
 
 	return Result{
-		JwtConfig:      config.Jwt,
-		DatabaseConfig: config.Database,
-		DiceConfig:     config.Dice,
-		HistoryConfig:  config.History,
-		OtelConfig:     config.Otel,
+		JwtConfig:              config.Jwt,
+		DatabaseConfig:         config.Database,
+		DiceConfig:             config.Dice,
+		RegionassignmentConfig: config.Regionassignment,
+		HistoryConfig:          config.History,
+		OtelConfig:             config.Otel,
 	}
 }
 
