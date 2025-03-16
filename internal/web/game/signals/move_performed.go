@@ -10,7 +10,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
-	fetcher2 "github.com/go-risk-it/go-risk-it/internal/web/game/fetchers/fetcher"
+	"github.com/go-risk-it/go-risk-it/internal/web/game/fetcher"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 	"go.uber.org/fx"
@@ -23,7 +23,7 @@ type MovePerformedHandlerParams struct {
 	Log               *zap.SugaredLogger
 	Signal            signals.MovePerformedSignal
 	MoveLogController controller.MoveLogController
-	MoveLogFetcher    fetcher2.MoveLogFetcher
+	MoveLogFetcher    fetcher.MoveLogFetcher
 	ConnectionManager ws.Manager
 }
 
@@ -43,7 +43,7 @@ func HandleMovePerformed(
 		fetchStateAndPublish(
 			gameContext,
 			func(gameCtx ctx.GameContext, stateChannel chan json.RawMessage) {
-				fetcher2.FetchState(
+				fetcher.FetchState(
 					gameCtx,
 					message.MoveHistory,
 					func(gameCtx2 ctx.GameContext) (messaging.MoveHistory, error) {

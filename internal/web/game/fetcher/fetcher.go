@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
+	"go.uber.org/fx"
 )
 
 type Fetcher interface {
@@ -34,3 +35,14 @@ func FetchState[T any](
 
 	stateChannel <- rawResponse
 }
+
+var Module = fx.Options(
+	fx.Provide(
+		NewBoardFetcher,
+		NewPlayerFetcher,
+		NewCardFetcher,
+		NewMoveLogFetcher,
+		NewMissionFetcher,
+		NewGameFetcher,
+	),
+)

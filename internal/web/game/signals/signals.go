@@ -4,10 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
-	"github.com/go-risk-it/go-risk-it/internal/web/game/fetchers/fetcher"
-	"github.com/go-risk-it/go-risk-it/internal/web/game/fetchers/phase"
+	"github.com/go-risk-it/go-risk-it/internal/web/game/fetcher"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -24,18 +21,12 @@ var Module = fx.Options(
 type HandlerParams[T any] struct {
 	fx.In
 
-	PublicFetchers        []fetcher.Fetcher `group:"public_fetchers"`
-	PrivateFetchers       []fetcher.Fetcher `group:"private_fetchers"`
-	Log                   *zap.SugaredLogger
-	Signal                T
-	GameService           state.Service
-	DeployPhaseFetcher    phase.DeployPhaseFetcher
-	AttackPhaseFetcher    phase.AttackPhaseFetcher
-	ConquerPhaseFetcher   phase.ConquerPhaseFetcher
-	ReinforcePhaseFetcher phase.ReinforcePhaseFetcher
-	CardsPhaseFetcher     phase.CardsPhaseFetcher
-	MoveLogFetcher        fetcher.MoveLogFetcher
-	ConnectionManager     ws.Manager
+	PublicFetchers    []fetcher.Fetcher `group:"public_fetchers"`
+	PrivateFetchers   []fetcher.Fetcher `group:"private_fetchers"`
+	Log               *zap.SugaredLogger
+	Signal            T
+	MoveLogFetcher    fetcher.MoveLogFetcher
+	ConnectionManager ws.Manager
 }
 
 func fetchAllStatesAndPublish[T any](
@@ -43,11 +34,6 @@ func fetchAllStatesAndPublish[T any](
 	params HandlerParams[T],
 	publisher func(ctx.GameContext, json.RawMessage),
 ) {
-	go fetchGameState(
-		context,
-		params,
-		publisher)
-
 	for _, fetcher := range params.PublicFetchers {
 		go fetchStateAndPublish(context, fetcher.FetchState, publisher)
 	}
@@ -59,45 +45,6 @@ func fetchAllStatesAndPublish[T any](
 			params.ConnectionManager.WriteMessage,
 		)
 	}
-}
-
-func fetchGameState[T any](
-	gameContext ctx.GameContext,
-	params HandlerParams[T],
-	publisher func(ctx.GameContext, json.RawMessage),
-) {
-	gameState, err := params.GameService.GetGameState(gameContext)
-	if err != nil {
-		gameContext.Log().Errorf("failed to get game state: %v", err)
-
-		return
-	}
-
-	var fetcher phase.Fetcher
-
-	switch gameState.Phase {
-	case sqlc.GamePhaseTypeDEPLOY:
-		fetcher = params.DeployPhaseFetcher
-	case sqlc.GamePhaseTypeATTACK:
-		fetcher = params.AttackPhaseFetcher
-	case sqlc.GamePhaseTypeCONQUER:
-		fetcher = params.ConquerPhaseFetcher
-	case sqlc.GamePhaseTypeREINFORCE:
-		fetcher = params.ReinforcePhaseFetcher
-	case sqlc.GamePhaseTypeCARDS:
-		fetcher = params.CardsPhaseFetcher
-	default:
-		gameContext.Log().Errorf("unknown phase type: %v", gameState.Phase)
-
-		return
-	}
-
-	fetchStateAndPublish(
-		gameContext,
-		func(ctx ctx.GameContext, channel chan json.RawMessage) {
-			fetcher.FetchState(ctx, gameState, channel)
-		},
-		publisher)
 }
 
 func fetchStateAndPublish(
