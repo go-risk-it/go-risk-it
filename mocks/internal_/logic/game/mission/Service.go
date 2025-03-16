@@ -6,6 +6,8 @@ import (
 	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
 	db "github.com/go-risk-it/go-risk-it/internal/data/game/db"
 
+	mission "github.com/go-risk-it/go-risk-it/internal/logic/game/mission"
+
 	mock "github.com/stretchr/testify/mock"
 
 	sqlc "github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
@@ -68,6 +70,233 @@ func (_c *Service_CreateMissionsQ_Call) Return(_a0 error) *Service_CreateMission
 }
 
 func (_c *Service_CreateMissionsQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, []sqlc.GamePlayer) error) *Service_CreateMissionsQ_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetBaseMission provides a mock function with given fields: _a0
+func (_m *Service) GetBaseMission(_a0 ctx.GameContext) (sqlc.GameMission, error) {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetBaseMission")
+	}
+
+	var r0 sqlc.GameMission
+	var r1 error
+	if rf, ok := ret.Get(0).(func(ctx.GameContext) (sqlc.GameMission, error)); ok {
+		return rf(_a0)
+	}
+	if rf, ok := ret.Get(0).(func(ctx.GameContext) sqlc.GameMission); ok {
+		r0 = rf(_a0)
+	} else {
+		r0 = ret.Get(0).(sqlc.GameMission)
+	}
+
+	if rf, ok := ret.Get(1).(func(ctx.GameContext) error); ok {
+		r1 = rf(_a0)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Service_GetBaseMission_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetBaseMission'
+type Service_GetBaseMission_Call struct {
+	*mock.Call
+}
+
+// GetBaseMission is a helper method to define mock.On call
+//   - _a0 ctx.GameContext
+func (_e *Service_Expecter) GetBaseMission(_a0 interface{}) *Service_GetBaseMission_Call {
+	return &Service_GetBaseMission_Call{Call: _e.mock.On("GetBaseMission", _a0)}
+}
+
+func (_c *Service_GetBaseMission_Call) Run(run func(_a0 ctx.GameContext)) *Service_GetBaseMission_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.GameContext))
+	})
+	return _c
+}
+
+func (_c *Service_GetBaseMission_Call) Return(_a0 sqlc.GameMission, _a1 error) *Service_GetBaseMission_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Service_GetBaseMission_Call) RunAndReturn(run func(ctx.GameContext) (sqlc.GameMission, error)) *Service_GetBaseMission_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetEliminatePlayerMission provides a mock function with given fields: _a0, missionID
+func (_m *Service) GetEliminatePlayerMission(_a0 ctx.GameContext, missionID int64) (string, error) {
+	ret := _m.Called(_a0, missionID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetEliminatePlayerMission")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, int64) (string, error)); ok {
+		return rf(_a0, missionID)
+	}
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, int64) string); ok {
+		r0 = rf(_a0, missionID)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(ctx.GameContext, int64) error); ok {
+		r1 = rf(_a0, missionID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Service_GetEliminatePlayerMission_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetEliminatePlayerMission'
+type Service_GetEliminatePlayerMission_Call struct {
+	*mock.Call
+}
+
+// GetEliminatePlayerMission is a helper method to define mock.On call
+//   - _a0 ctx.GameContext
+//   - missionID int64
+func (_e *Service_Expecter) GetEliminatePlayerMission(_a0 interface{}, missionID interface{}) *Service_GetEliminatePlayerMission_Call {
+	return &Service_GetEliminatePlayerMission_Call{Call: _e.mock.On("GetEliminatePlayerMission", _a0, missionID)}
+}
+
+func (_c *Service_GetEliminatePlayerMission_Call) Run(run func(_a0 ctx.GameContext, missionID int64)) *Service_GetEliminatePlayerMission_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.GameContext), args[1].(int64))
+	})
+	return _c
+}
+
+func (_c *Service_GetEliminatePlayerMission_Call) Return(_a0 string, _a1 error) *Service_GetEliminatePlayerMission_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Service_GetEliminatePlayerMission_Call) RunAndReturn(run func(ctx.GameContext, int64) (string, error)) *Service_GetEliminatePlayerMission_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetTwoContinentsMission provides a mock function with given fields: _a0, missionID
+func (_m *Service) GetTwoContinentsMission(_a0 ctx.GameContext, missionID int64) (mission.TwoContinentsMission, error) {
+	ret := _m.Called(_a0, missionID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTwoContinentsMission")
+	}
+
+	var r0 mission.TwoContinentsMission
+	var r1 error
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, int64) (mission.TwoContinentsMission, error)); ok {
+		return rf(_a0, missionID)
+	}
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, int64) mission.TwoContinentsMission); ok {
+		r0 = rf(_a0, missionID)
+	} else {
+		r0 = ret.Get(0).(mission.TwoContinentsMission)
+	}
+
+	if rf, ok := ret.Get(1).(func(ctx.GameContext, int64) error); ok {
+		r1 = rf(_a0, missionID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Service_GetTwoContinentsMission_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTwoContinentsMission'
+type Service_GetTwoContinentsMission_Call struct {
+	*mock.Call
+}
+
+// GetTwoContinentsMission is a helper method to define mock.On call
+//   - _a0 ctx.GameContext
+//   - missionID int64
+func (_e *Service_Expecter) GetTwoContinentsMission(_a0 interface{}, missionID interface{}) *Service_GetTwoContinentsMission_Call {
+	return &Service_GetTwoContinentsMission_Call{Call: _e.mock.On("GetTwoContinentsMission", _a0, missionID)}
+}
+
+func (_c *Service_GetTwoContinentsMission_Call) Run(run func(_a0 ctx.GameContext, missionID int64)) *Service_GetTwoContinentsMission_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.GameContext), args[1].(int64))
+	})
+	return _c
+}
+
+func (_c *Service_GetTwoContinentsMission_Call) Return(_a0 mission.TwoContinentsMission, _a1 error) *Service_GetTwoContinentsMission_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Service_GetTwoContinentsMission_Call) RunAndReturn(run func(ctx.GameContext, int64) (mission.TwoContinentsMission, error)) *Service_GetTwoContinentsMission_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetTwoContinentsPlusOneMission provides a mock function with given fields: _a0, missionID
+func (_m *Service) GetTwoContinentsPlusOneMission(_a0 ctx.GameContext, missionID int64) (mission.TwoContinentsPlusOneMission, error) {
+	ret := _m.Called(_a0, missionID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTwoContinentsPlusOneMission")
+	}
+
+	var r0 mission.TwoContinentsPlusOneMission
+	var r1 error
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, int64) (mission.TwoContinentsPlusOneMission, error)); ok {
+		return rf(_a0, missionID)
+	}
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, int64) mission.TwoContinentsPlusOneMission); ok {
+		r0 = rf(_a0, missionID)
+	} else {
+		r0 = ret.Get(0).(mission.TwoContinentsPlusOneMission)
+	}
+
+	if rf, ok := ret.Get(1).(func(ctx.GameContext, int64) error); ok {
+		r1 = rf(_a0, missionID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Service_GetTwoContinentsPlusOneMission_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTwoContinentsPlusOneMission'
+type Service_GetTwoContinentsPlusOneMission_Call struct {
+	*mock.Call
+}
+
+// GetTwoContinentsPlusOneMission is a helper method to define mock.On call
+//   - _a0 ctx.GameContext
+//   - missionID int64
+func (_e *Service_Expecter) GetTwoContinentsPlusOneMission(_a0 interface{}, missionID interface{}) *Service_GetTwoContinentsPlusOneMission_Call {
+	return &Service_GetTwoContinentsPlusOneMission_Call{Call: _e.mock.On("GetTwoContinentsPlusOneMission", _a0, missionID)}
+}
+
+func (_c *Service_GetTwoContinentsPlusOneMission_Call) Run(run func(_a0 ctx.GameContext, missionID int64)) *Service_GetTwoContinentsPlusOneMission_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.GameContext), args[1].(int64))
+	})
+	return _c
+}
+
+func (_c *Service_GetTwoContinentsPlusOneMission_Call) Return(_a0 mission.TwoContinentsPlusOneMission, _a1 error) *Service_GetTwoContinentsPlusOneMission_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Service_GetTwoContinentsPlusOneMission_Call) RunAndReturn(run func(ctx.GameContext, int64) (mission.TwoContinentsPlusOneMission, error)) *Service_GetTwoContinentsPlusOneMission_Call {
 	_c.Call.Return(run)
 	return _c
 }

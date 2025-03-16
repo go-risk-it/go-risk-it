@@ -38,5 +38,9 @@ var Module = fx.Options(
 			NewMoveLogController,
 			fx.As(new(MoveLogController)),
 		),
+		fx.Annotate(
+			NewMissionController,
+			fx.As(new(MissionController)),
+		),
 	),
 )

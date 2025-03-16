@@ -8,12 +8,13 @@ import (
 type Type string
 
 const (
-	GameState   Type = "gameState"
-	BoardState  Type = "boardState"
-	PlayerState Type = "playerState"
-	CardState   Type = "cardState"
-	MoveHistory Type = "moveHistory"
-	LobbyState  Type = "lobbyState"
+	GameState    Type = "gameState"
+	BoardState   Type = "boardState"
+	PlayerState  Type = "playerState"
+	CardState    Type = "cardState"
+	MissionState Type = "missionState"
+	MoveHistory  Type = "moveHistory"
+	LobbyState   Type = "lobbyState"
 )
 
 type Message struct {

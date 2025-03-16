@@ -22,10 +22,24 @@ type Service interface {
 	) error
 	IsMissionAccomplishedQ(ctx ctx.GameContext, querier db.Querier) (bool, error)
 	ReassignMissionsQ(ctx ctx.GameContext, querier db.Querier, eliminatedPlayerID int64) error
-}
 
+	GetBaseMission(ctx ctx.GameContext) (sqlc.GameMission, error)
+	GetTwoContinentsMission(
+		ctx ctx.GameContext,
+		missionID int64,
+	) (TwoContinentsMission, error)
+	GetTwoContinentsPlusOneMission(
+		ctx ctx.GameContext,
+		missionID int64,
+	) (TwoContinentsPlusOneMission, error)
+	GetEliminatePlayerMission(
+		ctx ctx.GameContext,
+		missionID int64,
+	) (string, error)
+}
 type ServiceImpl struct {
 	rng           rand.RNG
+	querier       db.Querier
 	boardService  board.Service
 	regionService region.Service
 }
@@ -34,14 +48,73 @@ var _ Service = (*ServiceImpl)(nil)
 
 func New(
 	rng rand.RNG,
+	querier db.Querier,
 	boardService board.Service,
 	regionService region.Service,
 ) *ServiceImpl {
 	return &ServiceImpl{
 		rng:           rng,
+		querier:       querier,
 		boardService:  boardService,
 		regionService: regionService,
 	}
+}
+
+func (s *ServiceImpl) GetBaseMission(ctx ctx.GameContext) (sqlc.GameMission, error) {
+	baseMission, err := s.querier.GetMission(ctx, sqlc.GetMissionParams{
+		GameID: ctx.GameID(),
+		UserID: ctx.UserID(),
+	})
+	if err != nil {
+		return sqlc.GameMission{}, fmt.Errorf("failed to get mission: %w", err)
+	}
+
+	return baseMission, nil
+}
+
+func (s *ServiceImpl) GetTwoContinentsMission(
+	ctx ctx.GameContext,
+	missionID int64,
+) (TwoContinentsMission, error) {
+	mission, err := s.querier.GetTwoContinentsMission(ctx, missionID)
+	if err != nil {
+		return TwoContinentsMission{}, fmt.Errorf("failed to get two continents mission: %w", err)
+	}
+
+	return TwoContinentsMission{
+		Continent1: mission.Continent1,
+		Continent2: mission.Continent2,
+	}, nil
+}
+
+func (s *ServiceImpl) GetTwoContinentsPlusOneMission(
+	ctx ctx.GameContext,
+	missionID int64,
+) (TwoContinentsPlusOneMission, error) {
+	mission, err := s.querier.GetTwoContinentsPlusOneMission(ctx, missionID)
+	if err != nil {
+		return TwoContinentsPlusOneMission{}, fmt.Errorf(
+			"failed to get two continents plus one mission: %w",
+			err,
+		)
+	}
+
+	return TwoContinentsPlusOneMission{
+		Continent1: mission.Continent1,
+		Continent2: mission.Continent2,
+	}, nil
+}
+
+func (s *ServiceImpl) GetEliminatePlayerMission(
+	ctx ctx.GameContext,
+	missionID int64,
+) (string, error) {
+	targetUser, err := s.querier.GetPlayerToEliminate(ctx, missionID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get eliminate player mission: %w", err)
+	}
+
+	return targetUser, nil
 }
 
 func (s *ServiceImpl) CreateMissionsQ(
@@ -74,7 +147,7 @@ func (s *ServiceImpl) CreateMissionsQ(
 			return fmt.Errorf("failed to insert missions: %w", err)
 		}
 
-		if err := mission.Persist(ctx, querier, missionID); err != nil {
+		if err := mission.PersistQ(ctx, querier, missionID); err != nil {
 			return fmt.Errorf("failed to persist mission specifics: %w", err)
 		}
 	}
@@ -86,9 +159,9 @@ func (s *ServiceImpl) CreateMissionsQ(
 
 func (s *ServiceImpl) pickMission(
 	player sqlc.GamePlayer,
-	missions []Mission,
+	missions []BaseMission,
 	usedMissions []bool,
-) (Mission, error) {
+) (BaseMission, error) {
 	for index := range missions {
 		mission, isEliminatePlayer := missions[index].(*EliminatePlayerMission)
 
@@ -103,8 +176,8 @@ func (s *ServiceImpl) pickMission(
 	return nil, errors.New("no missions left")
 }
 
-func (s *ServiceImpl) GetAvailableMissions(players []sqlc.GamePlayer) []Mission {
-	missions := []Mission{
+func (s *ServiceImpl) GetAvailableMissions(players []sqlc.GamePlayer) []BaseMission {
+	missions := []BaseMission{
 		&EighteenTerritoriesTwoTroopsMission{},
 		&TwentyFourTerritoriesMission{},
 		&TwoContinentsMission{
@@ -133,7 +206,7 @@ func (s *ServiceImpl) GetAvailableMissions(players []sqlc.GamePlayer) []Mission 
 		},
 	}
 
-	eliminatePlayerMissions := make([]Mission, len(players))
+	eliminatePlayerMissions := make([]BaseMission, len(players))
 	for i := range eliminatePlayerMissions {
 		eliminatePlayerMissions[i] = &EliminatePlayerMission{
 			TargetPlayerID: players[i].ID,

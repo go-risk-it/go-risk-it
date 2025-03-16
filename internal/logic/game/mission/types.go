@@ -6,9 +6,9 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 )
 
-type Mission interface {
+type BaseMission interface {
 	Type() sqlc.GameMissionType
-	Persist(ctx ctx.GameContext, querier db.Querier, missionID int64) error
+	PersistQ(ctx ctx.GameContext, querier db.Querier, missionID int64) error
 }
 
 type TwoContinentsMission struct {
@@ -49,7 +49,7 @@ func (m *EliminatePlayerMission) Type() sqlc.GameMissionType {
 	return sqlc.GameMissionTypeELIMINATEPLAYER
 }
 
-func (m *TwoContinentsMission) Persist(
+func (m *TwoContinentsMission) PersistQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	missionID int64,
@@ -63,7 +63,7 @@ func (m *TwoContinentsMission) Persist(
 		})
 }
 
-func (m *TwoContinentsPlusOneMission) Persist(
+func (m *TwoContinentsPlusOneMission) PersistQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	missionID int64,
@@ -77,7 +77,7 @@ func (m *TwoContinentsPlusOneMission) Persist(
 		})
 }
 
-func (m *EliminatePlayerMission) Persist(
+func (m *EliminatePlayerMission) PersistQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	missionID int64,
@@ -90,7 +90,7 @@ func (m *EliminatePlayerMission) Persist(
 		})
 }
 
-func (m *EighteenTerritoriesTwoTroopsMission) Persist(
+func (m *EighteenTerritoriesTwoTroopsMission) PersistQ(
 	_ ctx.GameContext,
 	_ db.Querier,
 	_ int64,
@@ -98,7 +98,7 @@ func (m *EighteenTerritoriesTwoTroopsMission) Persist(
 	return nil
 }
 
-func (m *TwentyFourTerritoriesMission) Persist(
+func (m *TwentyFourTerritoriesMission) PersistQ(
 	_ ctx.GameContext,
 	_ db.Querier,
 	_ int64,
@@ -107,9 +107,9 @@ func (m *TwentyFourTerritoriesMission) Persist(
 }
 
 var (
-	_ Mission = (*TwoContinentsMission)(nil)
-	_ Mission = (*TwoContinentsPlusOneMission)(nil)
-	_ Mission = (*EighteenTerritoriesTwoTroopsMission)(nil)
-	_ Mission = (*TwentyFourTerritoriesMission)(nil)
-	_ Mission = (*EliminatePlayerMission)(nil)
+	_ BaseMission = (*TwoContinentsMission)(nil)
+	_ BaseMission = (*TwoContinentsPlusOneMission)(nil)
+	_ BaseMission = (*EliminatePlayerMission)(nil)
+	_ BaseMission = (*EighteenTerritoriesTwoTroopsMission)(nil)
+	_ BaseMission = (*TwentyFourTerritoriesMission)(nil)
 )

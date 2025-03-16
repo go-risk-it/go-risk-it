@@ -957,6 +957,63 @@ func (_c *Querier_GetPlayerByUserId_Call) RunAndReturn(run func(context.Context,
 	return _c
 }
 
+// GetPlayerToEliminate provides a mock function with given fields: ctx, missionID
+func (_m *Querier) GetPlayerToEliminate(ctx context.Context, missionID int64) (string, error) {
+	ret := _m.Called(ctx, missionID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetPlayerToEliminate")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (string, error)); ok {
+		return rf(ctx, missionID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int64) string); ok {
+		r0 = rf(ctx, missionID)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(ctx, missionID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_GetPlayerToEliminate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetPlayerToEliminate'
+type Querier_GetPlayerToEliminate_Call struct {
+	*mock.Call
+}
+
+// GetPlayerToEliminate is a helper method to define mock.On call
+//   - ctx context.Context
+//   - missionID int64
+func (_e *Querier_Expecter) GetPlayerToEliminate(ctx interface{}, missionID interface{}) *Querier_GetPlayerToEliminate_Call {
+	return &Querier_GetPlayerToEliminate_Call{Call: _e.mock.On("GetPlayerToEliminate", ctx, missionID)}
+}
+
+func (_c *Querier_GetPlayerToEliminate_Call) Run(run func(ctx context.Context, missionID int64)) *Querier_GetPlayerToEliminate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int64))
+	})
+	return _c
+}
+
+func (_c *Querier_GetPlayerToEliminate_Call) Return(_a0 string, _a1 error) *Querier_GetPlayerToEliminate_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_GetPlayerToEliminate_Call) RunAndReturn(run func(context.Context, int64) (string, error)) *Querier_GetPlayerToEliminate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetPlayersByGame provides a mock function with given fields: ctx, gameID
 func (_m *Querier) GetPlayersByGame(ctx context.Context, gameID int64) ([]sqlc.GamePlayer, error) {
 	ret := _m.Called(ctx, gameID)

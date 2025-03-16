@@ -37,6 +37,12 @@ SELECT *
 FROM game.eliminate_player_mission
 WHERE mission_id = $1;
 
+-- name: GetPlayerToEliminate :one
+SELECT p.user_id
+FROM game.eliminate_player_mission em
+         JOIN game.player p on em.target_player_id = p.id
+WHERE mission_id = $1;
+
 -- name: ReassignMissions :exec
 UPDATE game.mission
 SET type = 'TWENTY_FOUR_TERRITORIES'

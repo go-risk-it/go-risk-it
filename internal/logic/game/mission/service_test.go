@@ -30,7 +30,7 @@ func setup(t *testing.T) (
 	regionService := region.NewService(t)
 	rng := rand.NewRNG(t)
 
-	service := mission.New(rng, boardService, regionService)
+	service := mission.New(rng, querier, boardService, regionService)
 
 	return querier, boardService, regionService, service
 }

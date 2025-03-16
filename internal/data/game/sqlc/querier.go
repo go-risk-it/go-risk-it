@@ -26,6 +26,7 @@ type Querier interface {
 	GetMoveLogs(ctx context.Context, arg GetMoveLogsParams) ([]GetMoveLogsRow, error)
 	GetNextPlayer(ctx context.Context, gameID int64) (GamePlayer, error)
 	GetPlayerByUserId(ctx context.Context, userID string) (GamePlayer, error)
+	GetPlayerToEliminate(ctx context.Context, missionID int64) (string, error)
 	GetPlayersByGame(ctx context.Context, gameID int64) ([]GamePlayer, error)
 	GetPlayersState(ctx context.Context, gameID int64) ([]GetPlayersStateRow, error)
 	GetRegionsByGame(ctx context.Context, id int64) ([]GetRegionsByGameRow, error)

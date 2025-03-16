@@ -427,6 +427,20 @@ func (q *Queries) GetPlayerByUserId(ctx context.Context, userID string) (GamePla
 	return i, err
 }
 
+const getPlayerToEliminate = `-- name: GetPlayerToEliminate :one
+SELECT p.user_id
+FROM game.eliminate_player_mission em
+         JOIN game.player p on em.target_player_id = p.id
+WHERE mission_id = $1
+`
+
+func (q *Queries) GetPlayerToEliminate(ctx context.Context, missionID int64) (string, error) {
+	row := q.db.QueryRow(ctx, getPlayerToEliminate, missionID)
+	var user_id string
+	err := row.Scan(&user_id)
+	return user_id, err
+}
+
 const getPlayersByGame = `-- name: GetPlayersByGame :many
 SELECT id, game_id, name, user_id, turn_index
 FROM game.player
