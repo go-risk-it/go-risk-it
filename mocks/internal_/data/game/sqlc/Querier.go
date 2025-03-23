@@ -900,6 +900,63 @@ func (_c *Querier_GetNextPlayer_Call) RunAndReturn(run func(context.Context, int
 	return _c
 }
 
+// GetPlayerAtTurnIndex provides a mock function with given fields: ctx, arg
+func (_m *Querier) GetPlayerAtTurnIndex(ctx context.Context, arg sqlc.GetPlayerAtTurnIndexParams) (sqlc.GamePlayer, error) {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetPlayerAtTurnIndex")
+	}
+
+	var r0 sqlc.GamePlayer
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.GetPlayerAtTurnIndexParams) (sqlc.GamePlayer, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, sqlc.GetPlayerAtTurnIndexParams) sqlc.GamePlayer); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(sqlc.GamePlayer)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, sqlc.GetPlayerAtTurnIndexParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_GetPlayerAtTurnIndex_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetPlayerAtTurnIndex'
+type Querier_GetPlayerAtTurnIndex_Call struct {
+	*mock.Call
+}
+
+// GetPlayerAtTurnIndex is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg sqlc.GetPlayerAtTurnIndexParams
+func (_e *Querier_Expecter) GetPlayerAtTurnIndex(ctx interface{}, arg interface{}) *Querier_GetPlayerAtTurnIndex_Call {
+	return &Querier_GetPlayerAtTurnIndex_Call{Call: _e.mock.On("GetPlayerAtTurnIndex", ctx, arg)}
+}
+
+func (_c *Querier_GetPlayerAtTurnIndex_Call) Run(run func(ctx context.Context, arg sqlc.GetPlayerAtTurnIndexParams)) *Querier_GetPlayerAtTurnIndex_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(sqlc.GetPlayerAtTurnIndexParams))
+	})
+	return _c
+}
+
+func (_c *Querier_GetPlayerAtTurnIndex_Call) Return(_a0 sqlc.GamePlayer, _a1 error) *Querier_GetPlayerAtTurnIndex_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_GetPlayerAtTurnIndex_Call) RunAndReturn(run func(context.Context, sqlc.GetPlayerAtTurnIndexParams) (sqlc.GamePlayer, error)) *Querier_GetPlayerAtTurnIndex_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetPlayerByUserId provides a mock function with given fields: ctx, userID
 func (_m *Querier) GetPlayerByUserId(ctx context.Context, userID string) (sqlc.GamePlayer, error) {
 	ret := _m.Called(ctx, userID)

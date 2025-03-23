@@ -25,20 +25,27 @@ VALUES ($1, $2, $3, $4);
 SELECT *
 FROM game.player
 WHERE game.player.game_id = $1
-  AND game.player.turn_index = ((1 + (SELECT p.turn
-                                 FROM game.game g
-                                          JOIN game.phase p on g.current_phase_id = p.id
-                                 WHERE g.id = $1))
-    % (SELECT COUNT (game.player.id) FROM game.player WHERE game.player.game_id = $1));
+  AND game.player.turn_index = (
+    (1 + (SELECT p.turn
+          FROM game.game g
+                   JOIN game.phase p on g.current_phase_id = p.id
+          WHERE g.id = $1))
+        % (SELECT COUNT(game.player.id) FROM game.player WHERE game.player.game_id = $1));
+
+-- name: GetPlayerAtTurnIndex :one
+SELECT *
+FROM game.player
+WHERE game.player.game_id = $1
+  AND game.player.turn_index = (sqlc.arg(turn) % (SELECT COUNT(game.player.id) FROM game.player WHERE game.player.game_id = $1));
 
 -- name: GetCurrentPlayer :one
 SELECT *
 FROM game.player
 WHERE game.player.game_id = $1
   AND game.player.turn_index = ((SELECT p.turn
-                            FROM game.game g
-                                     JOIN game.phase p on g.current_phase_id = p.id
-                            WHERE g.id = $1)
-    % (SELECT COUNT (player.id) FROM game.player WHERE player.game_id = $1));
+                                 FROM game.game g
+                                          JOIN game.phase p on g.current_phase_id = p.id
+                                 WHERE g.id = $1)
+    % (SELECT COUNT(player.id) FROM game.player WHERE player.game_id = $1));
 
 

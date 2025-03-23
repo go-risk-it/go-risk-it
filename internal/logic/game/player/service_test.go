@@ -7,9 +7,10 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
 	ctx2 "github.com/go-risk-it/go-risk-it/internal/ctx"
-	sqlc "github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/game/db"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/state"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/zap"
@@ -26,9 +27,10 @@ func TestServiceImpl_CreatePlayers_WithValidData(t *testing.T) {
 	// Initialize dependencies
 	logger := zap.NewExample().Sugar()
 	querier := db.NewQuerier(t)
+	gameService := state.NewService(t)
 
 	// Initialize the state under test
-	service := player.NewService(querier)
+	service := player.NewService(querier, gameService)
 
 	// Set up test data
 	gameID := int64(1)
@@ -110,9 +112,10 @@ func TestServiceImpl_CreatePlayers_InsertPlayersError(t *testing.T) {
 	// Initialize dependencies
 	logger := zap.NewExample().Sugar()
 	querier := db.NewQuerier(t)
+	gameService := state.NewService(t)
 
 	// Initialize the state under test
-	service := player.NewService(querier)
+	service := player.NewService(querier, gameService)
 
 	// Set up test data
 	gameID := int64(1)
@@ -167,9 +170,10 @@ func TestServiceImpl_CreatePlayers_GetPlayersByGameError(t *testing.T) {
 	// Initialize dependencies
 	logger := zap.NewExample().Sugar()
 	querier := db.NewQuerier(t)
+	gameService := state.NewService(t)
 
 	// Initialize the state under test
-	service := player.NewService(querier)
+	service := player.NewService(querier, gameService)
 
 	// Set up test data
 	gameID := int64(1)

@@ -242,10 +242,10 @@ SELECT id, game_id, name, user_id, turn_index
 FROM game.player
 WHERE game.player.game_id = $1
   AND game.player.turn_index = ((SELECT p.turn
-                            FROM game.game g
-                                     JOIN game.phase p on g.current_phase_id = p.id
-                            WHERE g.id = $1)
-    % (SELECT COUNT (player.id) FROM game.player WHERE player.game_id = $1))
+                                 FROM game.game g
+                                          JOIN game.phase p on g.current_phase_id = p.id
+                                 WHERE g.id = $1)
+    % (SELECT COUNT(player.id) FROM game.player WHERE player.game_id = $1))
 `
 
 func (q *Queries) GetCurrentPlayer(ctx context.Context, gameID int64) (GamePlayer, error) {
@@ -388,15 +388,41 @@ const getNextPlayer = `-- name: GetNextPlayer :one
 SELECT id, game_id, name, user_id, turn_index
 FROM game.player
 WHERE game.player.game_id = $1
-  AND game.player.turn_index = ((1 + (SELECT p.turn
-                                 FROM game.game g
-                                          JOIN game.phase p on g.current_phase_id = p.id
-                                 WHERE g.id = $1))
-    % (SELECT COUNT (game.player.id) FROM game.player WHERE game.player.game_id = $1))
+  AND game.player.turn_index = (
+    (1 + (SELECT p.turn
+          FROM game.game g
+                   JOIN game.phase p on g.current_phase_id = p.id
+          WHERE g.id = $1))
+        % (SELECT COUNT(game.player.id) FROM game.player WHERE game.player.game_id = $1))
 `
 
 func (q *Queries) GetNextPlayer(ctx context.Context, gameID int64) (GamePlayer, error) {
 	row := q.db.QueryRow(ctx, getNextPlayer, gameID)
+	var i GamePlayer
+	err := row.Scan(
+		&i.ID,
+		&i.GameID,
+		&i.Name,
+		&i.UserID,
+		&i.TurnIndex,
+	)
+	return i, err
+}
+
+const getPlayerAtTurnIndex = `-- name: GetPlayerAtTurnIndex :one
+SELECT id, game_id, name, user_id, turn_index
+FROM game.player
+WHERE game.player.game_id = $1
+  AND game.player.turn_index = ($2 % (SELECT COUNT(game.player.id) FROM game.player WHERE game.player.game_id = $1))
+`
+
+type GetPlayerAtTurnIndexParams struct {
+	GameID int64
+	Turn   int64
+}
+
+func (q *Queries) GetPlayerAtTurnIndex(ctx context.Context, arg GetPlayerAtTurnIndexParams) (GamePlayer, error) {
+	row := q.db.QueryRow(ctx, getPlayerAtTurnIndex, arg.GameID, arg.Turn)
 	var i GamePlayer
 	err := row.Scan(
 		&i.ID,
