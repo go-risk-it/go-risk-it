@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - name: Checkout git repository 🕝
-        uses: actions/checkout@b80ff79f1755d06ba70441c368a6fe801f5f3a62
+        uses: actions/checkout@85e6279cec87321a52edac9c87bce653a07cf6c2
 
       - name: Download gomplate
         working-directory: component-test
