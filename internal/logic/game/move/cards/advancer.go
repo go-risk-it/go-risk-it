@@ -64,7 +64,7 @@ func (s *ServiceImpl) getDeployableTroops(
 		return -1, fmt.Errorf("failed to get regions: %w", err)
 	}
 
-	regionReward := min(int64(len(playerRegions)/3), 3)
+	regionReward := max(int64(len(playerRegions)/3), 3)
 
 	continentReward, err := s.getContinentReward(ctx, querier, currentPlayer)
 	if err != nil {
