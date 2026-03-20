@@ -16,5 +16,6 @@ var Module = fx.Options(
 			fx.As(new(Service)),
 		),
 		route.AsRoute(NewResetHandler),
+		route.AsRoute(NewSetupNearWinHandler),
 	),
 )
