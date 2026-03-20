@@ -318,3 +318,6 @@ pyrightconfig.json
 
 # Mac os
 .DS_Store
+
+# Claude Code
+CLAUDE.md
