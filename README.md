@@ -3,6 +3,7 @@
 [![Go](https://github.com/go-risk-it/go-risk-it/actions/workflows/go.yml/badge.svg)](https://github.com/go-risk-it/go-risk-it/actions/workflows/go.yml)
 [![golangci-lint](https://github.com/go-risk-it/go-risk-it/actions/workflows/golangci-lint.yml/badge.svg)](https://github.com/go-risk-it/go-risk-it/actions/workflows/golangci-lint.yml)
 [![Component tests](https://github.com/go-risk-it/go-risk-it/actions/workflows/component-test.yml/badge.svg)](https://github.com/go-risk-it/go-risk-it/actions/workflows/component-test.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/giovannizotta/c7a818e871018f2841c29b4a992c95aa/raw/go-risk-it-coverage.json)](https://github.com/go-risk-it/go-risk-it/actions/workflows/go.yml)
 
 A multiplayer online [Risk](https://en.wikipedia.org/wiki/Risk_(game)) board game built in Go. Players compete to fulfill secret missions by conquering territories, managing armies, and eliminating opponents in real-time.
 
@@ -41,7 +42,7 @@ See [Architecture Docs](docs/architecture.md) for the full system design, Go pac
 ## Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) and Docker Compose
-- [Go 1.23+](https://go.dev/dl/)
+- [Go 1.24+](https://go.dev/dl/)
 - [Python 3](https://www.python.org/) + [Poetry](https://python-poetry.org/) (for component tests)
 
 ## Quick Start
@@ -160,7 +161,7 @@ internal/
 
 | Component | Technology |
 |-----------|-----------|
-| Language | Go 1.23 |
+| Language | Go 1.24 |
 | Web / WebSocket | [nbio](https://github.com/lesismal/nbio) |
 | Database | PostgreSQL + [pgx](https://github.com/jackc/pgx) |
 | Query generation | [SQLC](https://sqlc.dev/) |
