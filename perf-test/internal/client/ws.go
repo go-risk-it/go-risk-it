@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/gamestate"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
 	"github.com/gorilla/websocket"
 )
 
@@ -37,10 +38,17 @@ type WS struct {
 
 	// pingStop stops the current connection's ping goroutine.
 	pingStop chan struct{}
+
+	collector *metrics.Collector
 }
 
 // ConnectWS establishes a WebSocket connection to a game.
-func ConnectWS(baseURL string, gameID int64, token string) (*WS, error) {
+func ConnectWS(
+	baseURL string,
+	gameID int64,
+	token string,
+	collector *metrics.Collector,
+) (*WS, error) {
 	wsURL := fmt.Sprintf("%s/ws?gameID=%d", baseURL, gameID)
 
 	header := http.Header{}
@@ -52,12 +60,13 @@ func ConnectWS(baseURL string, gameID int64, token string) (*WS, error) {
 	}
 
 	ws := &WS{
-		conn:     conn,
-		wsURL:    wsURL,
-		header:   header,
-		view:     gamestate.NewView(),
-		done:     make(chan struct{}),
-		pingStop: make(chan struct{}),
+		conn:      conn,
+		wsURL:     wsURL,
+		header:    header,
+		view:      gamestate.NewView(),
+		done:      make(chan struct{}),
+		pingStop:  make(chan struct{}),
+		collector: collector,
 	}
 
 	go ws.readLoop()
@@ -154,6 +163,11 @@ func (ws *WS) reconnect() bool {
 	for attempt := range reconnectRetries {
 		log.Printf("ws reconnecting (attempt %d/%d, backoff %v)",
 			attempt+1, reconnectRetries, backoff)
+
+		if ws.collector != nil {
+			ws.collector.RecordReconnect()
+		}
+
 		time.Sleep(backoff)
 
 		ws.mu.Lock()
@@ -189,6 +203,10 @@ func (ws *WS) reconnect() bool {
 	}
 
 	log.Printf("ws reconnect failed after %d attempts, giving up", reconnectRetries)
+
+	if ws.collector != nil {
+		ws.collector.RecordReconnectFailure()
+	}
 
 	return false
 }

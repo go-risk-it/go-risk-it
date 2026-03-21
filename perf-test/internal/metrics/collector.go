@@ -30,6 +30,12 @@ type Collector struct {
 	totalErrors    atomic.Int64
 	gamesCompleted atomic.Int64
 	gamesTimedOut  atomic.Int64
+
+	// Resilience counters.
+	totalRetries           atomic.Int64
+	totalConflicts         atomic.Int64
+	totalReconnects        atomic.Int64
+	totalReconnectFailures atomic.Int64
 }
 
 // NewCollector creates a new metrics collector with initialized histograms.
@@ -120,6 +126,26 @@ func (c *Collector) RecordGameTimedOut() {
 	c.gamesTimedOut.Add(1)
 }
 
+// RecordRetry increments the REST retry counter.
+func (c *Collector) RecordRetry() {
+	c.totalRetries.Add(1)
+}
+
+// RecordConflict increments the 409 conflict counter.
+func (c *Collector) RecordConflict() {
+	c.totalConflicts.Add(1)
+}
+
+// RecordReconnect increments the WS reconnection attempt counter.
+func (c *Collector) RecordReconnect() {
+	c.totalReconnects.Add(1)
+}
+
+// RecordReconnectFailure increments the WS reconnection failure counter.
+func (c *Collector) RecordReconnectFailure() {
+	c.totalReconnectFailures.Add(1)
+}
+
 // Snapshot returns a point-in-time copy of all metrics for reporting.
 func (c *Collector) Snapshot() *Snapshot {
 	c.mu.Lock()
@@ -131,13 +157,17 @@ func (c *Collector) Snapshot() *Snapshot {
 	}
 
 	return &Snapshot{
-		RESTLatency:    rest,
-		WSDelivery:     snapshotHist(c.wsDelivery),
-		E2EMove:        snapshotHist(c.e2eMove),
-		TotalMoves:     c.totalMoves.Load(),
-		TotalErrors:    c.totalErrors.Load(),
-		GamesCompleted: c.gamesCompleted.Load(),
-		GamesTimedOut:  c.gamesTimedOut.Load(),
+		RESTLatency:            rest,
+		WSDelivery:             snapshotHist(c.wsDelivery),
+		E2EMove:                snapshotHist(c.e2eMove),
+		TotalMoves:             c.totalMoves.Load(),
+		TotalErrors:            c.totalErrors.Load(),
+		GamesCompleted:         c.gamesCompleted.Load(),
+		GamesTimedOut:          c.gamesTimedOut.Load(),
+		TotalRetries:           c.totalRetries.Load(),
+		TotalConflicts:         c.totalConflicts.Load(),
+		TotalReconnects:        c.totalReconnects.Load(),
+		TotalReconnectFailures: c.totalReconnectFailures.Load(),
 	}
 }
 
@@ -150,6 +180,12 @@ type Snapshot struct {
 	TotalErrors    int64
 	GamesCompleted int64
 	GamesTimedOut  int64
+
+	// Resilience counters.
+	TotalRetries           int64
+	TotalConflicts         int64
+	TotalReconnects        int64
+	TotalReconnectFailures int64
 }
 
 // HistogramSnapshot holds percentile values from an HDR histogram.

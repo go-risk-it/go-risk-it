@@ -117,7 +117,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 			UserID: authResult.UserID,
 			Name:   fmt.Sprintf("bot-%d-%d", gameIndex, i),
 			Auth:   authResult,
-			REST:   client.NewREST(gr.baseURL, authResult.AccessToken, transport),
+			REST:   client.NewREST(gr.baseURL, authResult.AccessToken, transport, gr.collector),
 		}
 	}
 
@@ -144,7 +144,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 
 	// 3. All players connect WebSocket.
 	for i, p := range players {
-		ws, err := client.ConnectWS(gr.wsURL, gameID, p.Auth.AccessToken)
+		ws, err := client.ConnectWS(gr.wsURL, gameID, p.Auth.AccessToken, gr.collector)
 		if err != nil {
 			result.FatalError = fmt.Errorf("ws connect player %d: %w", i, err)
 			result.Duration = time.Since(start)
@@ -270,6 +270,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 				// before retrying, to avoid rapid-fire 409 loops.
 				log.Printf("[game %d] 409 for %s (stale view): %v",
 					gameIndex, activePlayer.Name, err)
+				gr.collector.RecordConflict()
 				waitForPhaseChange(activePlayer, snap.CurrentPhase(), gr.timeouts.PhaseChangeWait)
 
 				continue

@@ -8,8 +8,25 @@ import (
 	"time"
 )
 
+// GameResult holds per-game stats for reporting.
+type GameResult struct {
+	GameIndex  int
+	Duration   time.Duration
+	Moves      int
+	Errors     int
+	Winner     string
+	TimedOut   bool
+	FatalError error
+}
+
 // PrintReport writes a human-readable performance report to w.
-func PrintReport(w io.Writer, snap *Snapshot, totalDuration time.Duration, fatalErrors int) {
+func PrintReport(
+	w io.Writer,
+	snap *Snapshot,
+	totalDuration time.Duration,
+	fatalErrors int,
+	results []GameResult,
+) {
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "=== Performance Test Report ===")
 
@@ -70,7 +87,36 @@ func PrintReport(w io.Writer, snap *Snapshot, totalDuration time.Duration, fatal
 	}
 
 	fmt.Fprintf(w, "\nErrors: %d (%.2f%%)\n", snap.TotalErrors, errorRate)
+
+	// Resilience.
+	fmt.Fprintf(
+		w,
+		"Resilience: %d retries, %d conflicts (409), %d reconnects, %d reconnect failures\n",
+		snap.TotalRetries,
+		snap.TotalConflicts,
+		snap.TotalReconnects,
+		snap.TotalReconnectFailures,
+	)
+
 	fmt.Fprintf(w, "Duration: %s\n", totalDuration.Round(time.Millisecond))
+
+	// Per-game results table (only when multiple games).
+	if len(results) > 1 {
+		fmt.Fprintln(w)
+		fmt.Fprintln(w, "Per-Game Results:")
+		fmt.Fprintf(w, "  %5s %10s %7s %7s  %s\n", "Game", "Duration", "Moves", "Errors", "Status")
+
+		for _, r := range results {
+			status := gameStatus(r)
+			fmt.Fprintf(w, "  %5d %10s %7d %7d  %s\n",
+				r.GameIndex,
+				r.Duration.Round(100*time.Millisecond),
+				r.Moves,
+				r.Errors,
+				status,
+			)
+		}
+	}
 }
 
 // JSONReport is the machine-readable report structure.
@@ -91,7 +137,24 @@ type JSONReport struct {
 		Total int64   `json:"total"`
 		Rate  float64 `json:"rate_pct"`
 	} `json:"errors"`
-	DurationMs int64 `json:"duration_ms"`
+	Resilience struct {
+		Retries           int64 `json:"retries"`
+		Conflicts         int64 `json:"conflicts"`
+		Reconnects        int64 `json:"reconnects"`
+		ReconnectFailures int64 `json:"reconnect_failures"`
+	} `json:"resilience"`
+	DurationMs int64            `json:"duration_ms"`
+	PerGame    []JSONGameResult `json:"per_game,omitempty"`
+}
+
+// JSONGameResult is the JSON representation of a single game's result.
+type JSONGameResult struct {
+	GameIndex  int    `json:"game_index"`
+	DurationMs int64  `json:"duration_ms"`
+	Moves      int    `json:"moves"`
+	Errors     int    `json:"errors"`
+	Status     string `json:"status"`
+	Winner     string `json:"winner,omitempty"`
 }
 
 // JSONHistogram is the JSON representation of a histogram snapshot.
@@ -104,7 +167,13 @@ type JSONHistogram struct {
 }
 
 // PrintJSON writes a machine-readable JSON report to w.
-func PrintJSON(w io.Writer, snap *Snapshot, totalDuration time.Duration, fatalErrors int) error {
+func PrintJSON(
+	w io.Writer,
+	snap *Snapshot,
+	totalDuration time.Duration,
+	fatalErrors int,
+	results []GameResult,
+) error {
 	report := JSONReport{}
 	report.Games.Completed = snap.GamesCompleted
 	report.Games.TimedOut = snap.GamesTimedOut
@@ -133,6 +202,25 @@ func PrintJSON(w io.Writer, snap *Snapshot, totalDuration time.Duration, fatalEr
 
 	report.DurationMs = totalDuration.Milliseconds()
 
+	report.Resilience.Retries = snap.TotalRetries
+	report.Resilience.Conflicts = snap.TotalConflicts
+	report.Resilience.Reconnects = snap.TotalReconnects
+	report.Resilience.ReconnectFailures = snap.TotalReconnectFailures
+
+	if len(results) > 0 {
+		report.PerGame = make([]JSONGameResult, len(results))
+		for i, r := range results {
+			report.PerGame[i] = JSONGameResult{
+				GameIndex:  r.GameIndex,
+				DurationMs: r.Duration.Milliseconds(),
+				Moves:      r.Moves,
+				Errors:     r.Errors,
+				Status:     gameStatus(r),
+				Winner:     r.Winner,
+			}
+		}
+	}
+
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
 
@@ -152,4 +240,22 @@ func sortedKeys(m map[string]HistogramSnapshot) []string {
 	sort.Strings(keys)
 
 	return keys
+}
+
+func gameStatus(r GameResult) string {
+	switch {
+	case r.FatalError != nil:
+		return "fatal: " + r.FatalError.Error()
+	case r.TimedOut:
+		return "timed out"
+	case r.Winner != "":
+		winner := r.Winner
+		if len(winner) > 8 {
+			winner = winner[:8]
+		}
+
+		return "completed (winner: " + winner + ")"
+	default:
+		return "completed"
+	}
 }

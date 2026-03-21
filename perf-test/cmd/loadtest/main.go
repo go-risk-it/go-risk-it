@@ -91,11 +91,23 @@ func main() {
 	results := orchestrator.Run(cfg, runner, collector)
 	totalDuration := time.Since(start)
 
-	// Count fatal errors.
+	// Count fatal errors and build report results.
 	fatalErrors := 0
-	for _, r := range results {
+
+	reportResults := make([]metrics.GameResult, len(results))
+	for i, r := range results {
 		if r.FatalError != nil {
 			fatalErrors++
+		}
+
+		reportResults[i] = metrics.GameResult{
+			GameIndex:  r.GameIndex,
+			Duration:   r.Duration,
+			Moves:      r.Moves,
+			Errors:     r.Errors,
+			Winner:     r.Winner,
+			TimedOut:   r.TimedOut,
+			FatalError: r.FatalError,
 		}
 	}
 
@@ -104,11 +116,11 @@ func main() {
 
 	switch *output {
 	case "json":
-		if err := metrics.PrintJSON(os.Stdout, snap, totalDuration, fatalErrors); err != nil {
+		if err := metrics.PrintJSON(os.Stdout, snap, totalDuration, fatalErrors, reportResults); err != nil {
 			log.Fatalf("json report: %v", err)
 		}
 	case "text":
-		metrics.PrintReport(os.Stdout, snap, totalDuration, fatalErrors)
+		metrics.PrintReport(os.Stdout, snap, totalDuration, fatalErrors, reportResults)
 	default:
 		log.Fatalf("unknown output format: %q", *output)
 	}

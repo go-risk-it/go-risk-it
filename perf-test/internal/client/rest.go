@@ -9,6 +9,8 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
 )
 
 const (
@@ -28,14 +30,19 @@ func (e *ConflictError) Error() string {
 
 // REST handles HTTP API calls to the go-risk-it server.
 type REST struct {
-	baseURL string
-	token   string
-	client  *http.Client
+	baseURL   string
+	token     string
+	client    *http.Client
+	collector *metrics.Collector
 }
 
 // NewREST creates a REST client. If transport is non-nil it is used for
 // connection pooling; otherwise a default transport is created.
-func NewREST(baseURL, token string, transport *http.Transport) *REST {
+func NewREST(
+	baseURL, token string,
+	transport *http.Transport,
+	collector *metrics.Collector,
+) *REST {
 	var httpClient *http.Client
 	if transport != nil {
 		httpClient = &http.Client{Transport: transport}
@@ -44,9 +51,10 @@ func NewREST(baseURL, token string, transport *http.Transport) *REST {
 	}
 
 	return &REST{
-		baseURL: baseURL,
-		token:   token,
-		client:  httpClient,
+		baseURL:   baseURL,
+		token:     token,
+		client:    httpClient,
+		collector: collector,
 	}
 }
 
@@ -84,6 +92,11 @@ func (r *REST) do(method, path string, body any) (*http.Response, error) {
 			if classified := classifyNetError(err); classified != nil && attempt < maxRetries-1 {
 				log.Printf("retrying %s %s (attempt %d/%d): %v",
 					method, path, attempt+2, maxRetries, err)
+
+				if r.collector != nil {
+					r.collector.RecordRetry()
+				}
+
 				time.Sleep(backoff)
 				backoff *= backoffFactor
 
@@ -100,6 +113,11 @@ func (r *REST) do(method, path string, body any) (*http.Response, error) {
 				resp.Body.Close()
 				log.Printf("retrying %s %s (attempt %d/%d): HTTP %d: %s",
 					method, path, attempt+2, maxRetries, resp.StatusCode, body)
+
+				if r.collector != nil {
+					r.collector.RecordRetry()
+				}
+
 				time.Sleep(backoff)
 				backoff *= backoffFactor
 
