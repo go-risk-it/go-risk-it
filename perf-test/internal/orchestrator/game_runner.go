@@ -171,6 +171,8 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 	deadline := time.After(gr.timeout)
 	consecutiveErrors := 0
 
+	var lastPhase string
+
 	for {
 		// Check context cancellation.
 		select {
@@ -231,6 +233,13 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 
 		snap := activePlayer.WS.View().Snapshot()
 
+		// Track phase transitions.
+		currentPhase := strings.ToLower(string(snap.CurrentPhase()))
+		if currentPhase != lastPhase {
+			gr.collector.RecordPhaseEntry(currentPhase)
+			lastPhase = currentPhase
+		}
+
 		// Decide move.
 		action, err := gr.strategy.DecideMove(snap, activePlayer.UserID)
 		if err != nil {
@@ -239,6 +248,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 			result.Errors++
 			consecutiveErrors++
 			gr.collector.RecordError()
+			gr.collector.RecordErrorType("strategy")
 
 			if consecutiveErrors > gr.timeouts.MaxConsecutiveErr {
 				result.FatalError = fmt.Errorf("too many consecutive errors")
@@ -283,6 +293,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 			if errors.As(err, &transientErr) {
 				log.Printf("[game %d] transient error for %s (retries exhausted): %v",
 					gameIndex, activePlayer.Name, err)
+				gr.collector.RecordErrorType("transient")
 				waitForAnyUpdate(players, gr.timeouts.UpdateWait)
 
 				continue
@@ -292,6 +303,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 			result.Errors++
 			consecutiveErrors++
 			gr.collector.RecordError()
+			gr.collector.RecordErrorType("execution")
 
 			if consecutiveErrors > gr.timeouts.MaxConsecutiveErr {
 				result.FatalError = fmt.Errorf("too many consecutive errors")
@@ -332,6 +344,9 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 		t3 := time.Now()
 		gr.collector.RecordWSDelivery(t3.Sub(t2))
 		gr.collector.RecordE2E(t3.Sub(t1))
+		gr.collector.RecordPhaseLatency(currentPhase, t3.Sub(t1))
+		gr.collector.RecordPhaseMove(currentPhase)
+		gr.collector.RecordTimedMove()
 
 		result.Moves++
 		consecutiveErrors = 0

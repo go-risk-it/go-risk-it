@@ -67,6 +67,47 @@ func PrintReport(
 		}
 	}
 
+	// Phase latency table.
+	if len(snap.PhaseLatency) > 0 {
+		fmt.Fprintln(w)
+		fmt.Fprintln(w, "Phase Latency (ms):")
+		fmt.Fprintf(w, "  %-12s %6s %6s %6s %6s %8s\n",
+			"Phase", "p50", "p95", "p99", "max", "count")
+
+		names := sortedKeys(snap.PhaseLatency)
+		for _, name := range names {
+			h := snap.PhaseLatency[name]
+			fmt.Fprintf(w, "  %-12s %6d %6d %6d %6d %8d\n",
+				name, h.P50, h.P95, h.P99, h.Max, h.Count)
+		}
+	}
+
+	// Phase flow table.
+	if hasNonZeroPhaseFlow(snap) {
+		fmt.Fprintln(w)
+		fmt.Fprintln(w, "Phase Flow:")
+		fmt.Fprintf(w, "  %-12s %8s %7s %17s\n",
+			"Phase", "entries", "moves", "avg-moves/entry")
+
+		phases := sortedStringKeys(snap.PhaseEntries)
+		for _, phase := range phases {
+			entries := snap.PhaseEntries[phase]
+			moves := snap.PhaseMoves[phase]
+
+			if entries == 0 && moves == 0 {
+				continue
+			}
+
+			avg := float64(0)
+			if entries > 0 {
+				avg = float64(moves) / float64(entries)
+			}
+
+			fmt.Fprintf(w, "  %-12s %8d %7d %17.1f\n",
+				phase, entries, moves, avg)
+		}
+	}
+
 	// WS delivery.
 	if snap.WSDelivery.Count > 0 {
 		fmt.Fprintln(w)
@@ -80,13 +121,23 @@ func PrintReport(
 			snap.E2EMove.P50, snap.E2EMove.P95, snap.E2EMove.P99, snap.E2EMove.Max)
 	}
 
-	// Errors.
+	// Errors with breakdown.
 	errorRate := float64(0)
 	if snap.TotalMoves > 0 {
 		errorRate = float64(snap.TotalErrors) / float64(snap.TotalMoves) * 100
 	}
 
-	fmt.Fprintf(w, "\nErrors: %d (%.2f%%)\n", snap.TotalErrors, errorRate)
+	fmt.Fprintf(w, "\nErrors: %d (%.2f%%)", snap.TotalErrors, errorRate)
+
+	if len(snap.ErrorBreakdown) > 0 {
+		fmt.Fprintf(w, "  [strategy=%d execution=%d transient=%d timeout=%d]",
+			snap.ErrorBreakdown["strategy"],
+			snap.ErrorBreakdown["execution"],
+			snap.ErrorBreakdown["transient"],
+			snap.ErrorBreakdown["timeout"])
+	}
+
+	fmt.Fprintln(w)
 
 	// Resilience.
 	fmt.Fprintf(
@@ -97,6 +148,41 @@ func PrintReport(
 		snap.TotalReconnects,
 		snap.TotalReconnectFailures,
 	)
+
+	// HTTP status distribution.
+	if len(snap.HTTPStatusCounts) > 0 {
+		fmt.Fprint(w, "HTTP Status:")
+		codes := sortedIntKeys(snap.HTTPStatusCounts)
+
+		for _, code := range codes {
+			count := snap.HTTPStatusCounts[code]
+			if count > 0 {
+				fmt.Fprintf(w, " %d=%d", code, count)
+			}
+		}
+
+		fmt.Fprintln(w)
+	}
+
+	// Throughput summary.
+	if len(snap.ThroughputBuckets) > 0 {
+		var totalMoves int64
+
+		var peakMoves int64
+
+		for _, b := range snap.ThroughputBuckets {
+			totalMoves += b.Moves
+			if b.Moves > peakMoves {
+				peakMoves = b.Moves
+			}
+		}
+
+		// Average = total moves / number of seconds covered by non-zero buckets.
+		numBuckets := len(snap.ThroughputBuckets)
+		avgPerSec := float64(totalMoves) / (float64(numBuckets) * 5.0)
+		peakPerSec := float64(peakMoves) / 5.0
+		fmt.Fprintf(w, "Throughput: %.1f/s avg, %.1f/s peak (5s buckets)\n", avgPerSec, peakPerSec)
+	}
 
 	fmt.Fprintf(w, "Duration: %s\n", totalDuration.Round(time.Millisecond))
 
@@ -130,12 +216,17 @@ type JSONReport struct {
 		Total  int64   `json:"total"`
 		PerSec float64 `json:"per_sec"`
 	} `json:"moves"`
-	RESTLatency map[string]JSONHistogram `json:"rest_latency"`
-	WSDelivery  JSONHistogram            `json:"ws_delivery"`
-	E2EMove     JSONHistogram            `json:"e2e_move"`
-	Errors      struct {
-		Total int64   `json:"total"`
-		Rate  float64 `json:"rate_pct"`
+	RESTLatency      map[string]JSONHistogram `json:"rest_latency"`
+	WSDelivery       JSONHistogram            `json:"ws_delivery"`
+	E2EMove          JSONHistogram            `json:"e2e_move"`
+	PhaseLatency     map[string]JSONHistogram `json:"phase_latency"`
+	PhaseFlow        map[string]JSONPhaseFlow `json:"phase_flow"`
+	HTTPStatusCounts map[string]int64         `json:"http_status_counts"`
+	ThroughputSeries []JSONThroughputBucket   `json:"throughput_series"`
+	Errors           struct {
+		Total     int64            `json:"total"`
+		Rate      float64          `json:"rate_pct"`
+		Breakdown map[string]int64 `json:"breakdown"`
 	} `json:"errors"`
 	Resilience struct {
 		Retries           int64 `json:"retries"`
@@ -145,6 +236,19 @@ type JSONReport struct {
 	} `json:"resilience"`
 	DurationMs int64            `json:"duration_ms"`
 	PerGame    []JSONGameResult `json:"per_game,omitempty"`
+}
+
+// JSONPhaseFlow is the JSON representation of phase transition stats.
+type JSONPhaseFlow struct {
+	Entries          int64   `json:"entries"`
+	Moves            int64   `json:"moves"`
+	AvgMovesPerEntry float64 `json:"avg_moves_per_entry"`
+}
+
+// JSONThroughputBucket is the JSON representation of a throughput time bucket.
+type JSONThroughputBucket struct {
+	OffsetSec float64 `json:"offset_sec"`
+	Moves     int64   `json:"moves"`
 }
 
 // JSONGameResult is the JSON representation of a single game's result.
@@ -200,6 +304,48 @@ func PrintJSON(
 		report.Errors.Rate = float64(snap.TotalErrors) / float64(snap.TotalMoves) * 100
 	}
 
+	report.Errors.Breakdown = snap.ErrorBreakdown
+
+	// Phase latency.
+	report.PhaseLatency = make(map[string]JSONHistogram, len(snap.PhaseLatency))
+	for name, h := range snap.PhaseLatency {
+		report.PhaseLatency[name] = JSONHistogram{
+			P50: h.P50, P95: h.P95, P99: h.P99, Max: h.Max, Count: h.Count,
+		}
+	}
+
+	// Phase flow.
+	report.PhaseFlow = make(map[string]JSONPhaseFlow, len(snap.PhaseEntries))
+	for phase, entries := range snap.PhaseEntries {
+		moves := snap.PhaseMoves[phase]
+		avg := float64(0)
+
+		if entries > 0 {
+			avg = float64(moves) / float64(entries)
+		}
+
+		report.PhaseFlow[phase] = JSONPhaseFlow{
+			Entries:          entries,
+			Moves:            moves,
+			AvgMovesPerEntry: avg,
+		}
+	}
+
+	// HTTP status counts (use string keys for JSON).
+	report.HTTPStatusCounts = make(map[string]int64, len(snap.HTTPStatusCounts))
+	for code, count := range snap.HTTPStatusCounts {
+		report.HTTPStatusCounts[fmt.Sprintf("%d", code)] = count
+	}
+
+	// Throughput series.
+	report.ThroughputSeries = make([]JSONThroughputBucket, len(snap.ThroughputBuckets))
+	for i, b := range snap.ThroughputBuckets {
+		report.ThroughputSeries[i] = JSONThroughputBucket{
+			OffsetSec: b.OffsetSec,
+			Moves:     b.Moves,
+		}
+	}
+
 	report.DurationMs = totalDuration.Milliseconds()
 
 	report.Resilience.Retries = snap.TotalRetries
@@ -240,6 +386,44 @@ func sortedKeys(m map[string]HistogramSnapshot) []string {
 	sort.Strings(keys)
 
 	return keys
+}
+
+func sortedStringKeys(m map[string]int64) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	return keys
+}
+
+func sortedIntKeys(m map[int]int64) []int {
+	keys := make([]int, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+
+	sort.Ints(keys)
+
+	return keys
+}
+
+func hasNonZeroPhaseFlow(snap *Snapshot) bool {
+	for _, v := range snap.PhaseEntries {
+		if v > 0 {
+			return true
+		}
+	}
+
+	for _, v := range snap.PhaseMoves {
+		if v > 0 {
+			return true
+		}
+	}
+
+	return false
 }
 
 func gameStatus(r GameResult) string {

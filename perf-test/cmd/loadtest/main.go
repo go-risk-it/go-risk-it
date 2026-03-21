@@ -74,7 +74,7 @@ func main() {
 
 	// Create shared components.
 	strategy := heuristic.New(graph)
-	collector := metrics.NewCollector()
+	collector := metrics.NewCollector(cfg.GameTimeout)
 	runner := orchestrator.NewGameRunner(
 		*url,
 		wsURL,

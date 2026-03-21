@@ -106,6 +106,11 @@ func (r *REST) do(method, path string, body any) (*http.Response, error) {
 			return nil, err
 		}
 
+		// Record every HTTP response status.
+		if r.collector != nil {
+			r.collector.RecordHTTPStatus(resp.StatusCode)
+		}
+
 		// Check for retryable HTTP status.
 		if attempt < maxRetries-1 {
 			if transient := classifyHTTPStatus(resp.StatusCode, nil); transient != nil {
