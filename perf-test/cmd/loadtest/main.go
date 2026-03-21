@@ -83,6 +83,7 @@ func main() {
 		cfg.GameTimeout,
 		collector,
 		*thinkTime,
+		orchestrator.DefaultTimeouts(),
 	)
 
 	// Run games.

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"strings"
 	"time"
 
@@ -13,6 +14,26 @@ import (
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/player"
 )
+
+// Timeouts holds all configurable timing parameters for the game loop.
+type Timeouts struct {
+	InitialStateWait  time.Duration // wait for first WS state after connect
+	UpdateWait        time.Duration // wait for state update after move
+	PhaseChangeWait   time.Duration // wait for phase change on 409
+	PostMoveSettle    time.Duration // settle time after WS update
+	MaxConsecutiveErr int           // consecutive errors before fatal
+}
+
+// DefaultTimeouts returns sensible defaults for all timing parameters.
+func DefaultTimeouts() Timeouts {
+	return Timeouts{
+		InitialStateWait:  1 * time.Second,
+		UpdateWait:        3 * time.Second,
+		PhaseChangeWait:   3 * time.Second,
+		PostMoveSettle:    50 * time.Millisecond,
+		MaxConsecutiveErr: 20,
+	}
+}
 
 // PlayerInfo holds all state for a single player in a game.
 type PlayerInfo struct {
@@ -32,6 +53,7 @@ type GameRunner struct {
 	timeout   time.Duration
 	collector *metrics.Collector
 	thinkTime time.Duration
+	timeouts  Timeouts
 }
 
 func NewGameRunner(
@@ -40,6 +62,7 @@ func NewGameRunner(
 	timeout time.Duration,
 	collector *metrics.Collector,
 	thinkTime time.Duration,
+	timeouts Timeouts,
 ) *GameRunner {
 	return &GameRunner{
 		baseURL:   baseURL,
@@ -49,6 +72,7 @@ func NewGameRunner(
 		timeout:   timeout,
 		collector: collector,
 		thinkTime: thinkTime,
+		timeouts:  timeouts,
 	}
 }
 
@@ -67,6 +91,11 @@ type GameResult struct {
 func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameResult {
 	start := time.Now()
 	result := GameResult{GameIndex: gameIndex}
+
+	// Shared transport for connection pooling across all players in this game.
+	transport := &http.Transport{
+		MaxIdleConnsPerHost: numPlayers,
+	}
 
 	// 1. Create and authenticate players.
 	auth := client.NewAuth(gr.baseURL, gr.anonKey)
@@ -88,7 +117,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 			UserID: authResult.UserID,
 			Name:   fmt.Sprintf("bot-%d-%d", gameIndex, i),
 			Auth:   authResult,
-			REST:   client.NewREST(gr.baseURL, authResult.AccessToken),
+			REST:   client.NewREST(gr.baseURL, authResult.AccessToken, transport),
 		}
 	}
 
@@ -130,7 +159,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 	log.Printf("[game %d] all players connected via WebSocket", gameIndex)
 
 	// 4. Wait for initial state to arrive on all connections.
-	time.Sleep(1 * time.Second)
+	time.Sleep(gr.timeouts.InitialStateWait)
 
 	// Build a userID→player index for turn lookup.
 	userIndex := make(map[string]int)
@@ -187,7 +216,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 		}
 
 		if refSnap.GameState == nil || refSnap.PlayersState == nil {
-			waitForAnyUpdate(players, 2*time.Second)
+			waitForAnyUpdate(players, gr.timeouts.UpdateWait)
 
 			continue
 		}
@@ -195,7 +224,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 		activePlayer := findActivePlayer(refSnap, players, userIndex)
 		if activePlayer == nil {
 			log.Printf("[game %d] no active player for turn %d", gameIndex, refSnap.GameState.Turn)
-			waitForAnyUpdate(players, 2*time.Second)
+			waitForAnyUpdate(players, gr.timeouts.UpdateWait)
 
 			continue
 		}
@@ -211,14 +240,14 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 			consecutiveErrors++
 			gr.collector.RecordError()
 
-			if consecutiveErrors > 20 {
+			if consecutiveErrors > gr.timeouts.MaxConsecutiveErr {
 				result.FatalError = fmt.Errorf("too many consecutive errors")
 				result.Duration = time.Since(start)
 
 				return result
 			}
 
-			waitForAnyUpdate(players, 1*time.Second)
+			waitForAnyUpdate(players, gr.timeouts.InitialStateWait)
 
 			continue
 		}
@@ -241,7 +270,19 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 				// before retrying, to avoid rapid-fire 409 loops.
 				log.Printf("[game %d] 409 for %s (stale view): %v",
 					gameIndex, activePlayer.Name, err)
-				waitForPhaseChange(activePlayer, snap.CurrentPhase(), 3*time.Second)
+				waitForPhaseChange(activePlayer, snap.CurrentPhase(), gr.timeouts.PhaseChangeWait)
+
+				continue
+			}
+
+			// Transient errors (503, timeout, etc.) are logged but not counted
+			// toward consecutive errors — the retry loop in do() already handled
+			// retries, so this is a final failure after all attempts.
+			var transientErr *client.TransientError
+			if errors.As(err, &transientErr) {
+				log.Printf("[game %d] transient error for %s (retries exhausted): %v",
+					gameIndex, activePlayer.Name, err)
+				waitForAnyUpdate(players, gr.timeouts.UpdateWait)
 
 				continue
 			}
@@ -251,7 +292,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 			consecutiveErrors++
 			gr.collector.RecordError()
 
-			if consecutiveErrors > 20 {
+			if consecutiveErrors > gr.timeouts.MaxConsecutiveErr {
 				result.FatalError = fmt.Errorf("too many consecutive errors")
 				result.Duration = time.Since(start)
 
@@ -269,13 +310,13 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 					gr.collector.RecordMove()
 				}
 
-				waitForAnyUpdate(players, 3*time.Second)
-				time.Sleep(50 * time.Millisecond)
+				waitForAnyUpdate(players, gr.timeouts.UpdateWait)
+				time.Sleep(gr.timeouts.PostMoveSettle)
 
 				continue
 			}
 
-			waitForAnyUpdate(players, 2*time.Second)
+			waitForAnyUpdate(players, gr.timeouts.UpdateWait)
 
 			continue
 		}
@@ -284,8 +325,8 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 		gr.collector.RecordREST(actionName, t2.Sub(t1))
 
 		// Wait for state to propagate.
-		waitForAnyUpdate(players, 3*time.Second)
-		time.Sleep(50 * time.Millisecond)
+		waitForAnyUpdate(players, gr.timeouts.UpdateWait)
+		time.Sleep(gr.timeouts.PostMoveSettle)
 
 		t3 := time.Now()
 		gr.collector.RecordWSDelivery(t3.Sub(t2))

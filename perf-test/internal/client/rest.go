@@ -3,9 +3,18 @@ package client
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"time"
+)
+
+const (
+	maxRetries    = 3
+	baseBackoff   = 100 * time.Millisecond
+	backoffFactor = 2
 )
 
 // ConflictError is returned on HTTP 409 (stale state).
@@ -24,16 +33,26 @@ type REST struct {
 	client  *http.Client
 }
 
-func NewREST(baseURL, token string) *REST {
+// NewREST creates a REST client. If transport is non-nil it is used for
+// connection pooling; otherwise a default transport is created.
+func NewREST(baseURL, token string, transport *http.Transport) *REST {
+	var httpClient *http.Client
+	if transport != nil {
+		httpClient = &http.Client{Transport: transport}
+	} else {
+		httpClient = &http.Client{}
+	}
+
 	return &REST{
 		baseURL: baseURL,
 		token:   token,
-		client:  &http.Client{},
+		client:  httpClient,
 	}
 }
 
 func (r *REST) do(method, path string, body any) (*http.Response, error) {
-	var bodyReader io.Reader
+	// Marshal body once so it can be replayed on retry.
+	var bodyBytes []byte
 
 	if body != nil {
 		data, err := json.Marshal(body)
@@ -41,18 +60,58 @@ func (r *REST) do(method, path string, body any) (*http.Response, error) {
 			return nil, fmt.Errorf("marshal request body: %w", err)
 		}
 
-		bodyReader = bytes.NewReader(data)
+		bodyBytes = data
 	}
 
-	req, err := http.NewRequest(method, r.baseURL+path, bodyReader)
-	if err != nil {
-		return nil, fmt.Errorf("create request: %w", err)
+	backoff := baseBackoff
+
+	for attempt := range maxRetries {
+		var bodyReader io.Reader
+		if bodyBytes != nil {
+			bodyReader = bytes.NewReader(bodyBytes)
+		}
+
+		req, err := http.NewRequest(method, r.baseURL+path, bodyReader)
+		if err != nil {
+			return nil, fmt.Errorf("create request: %w", err)
+		}
+
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+r.token)
+
+		resp, err := r.client.Do(req)
+		if err != nil {
+			if classified := classifyNetError(err); classified != nil && attempt < maxRetries-1 {
+				log.Printf("retrying %s %s (attempt %d/%d): %v",
+					method, path, attempt+2, maxRetries, err)
+				time.Sleep(backoff)
+				backoff *= backoffFactor
+
+				continue
+			}
+
+			return nil, err
+		}
+
+		// Check for retryable HTTP status.
+		if attempt < maxRetries-1 {
+			if transient := classifyHTTPStatus(resp.StatusCode, nil); transient != nil {
+				body, _ := io.ReadAll(resp.Body)
+				resp.Body.Close()
+				log.Printf("retrying %s %s (attempt %d/%d): HTTP %d: %s",
+					method, path, attempt+2, maxRetries, resp.StatusCode, body)
+				time.Sleep(backoff)
+				backoff *= backoffFactor
+
+				continue
+			}
+		}
+
+		return resp, nil
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+r.token)
-
-	return r.client.Do(req)
+	// Unreachable, but the compiler needs it.
+	return nil, errors.New("retry loop exhausted")
 }
 
 // Game creation types.
@@ -78,6 +137,7 @@ func (r *REST) CreateGame(req CreateGameRequest) (int64, error) {
 
 	if resp.StatusCode != http.StatusCreated {
 		body, _ := io.ReadAll(resp.Body)
+
 		return 0, fmt.Errorf("create game: status %d: %s", resp.StatusCode, body)
 	}
 
@@ -156,6 +216,10 @@ func (r *REST) Advance(gameID int64, currentPhase string) error {
 		Advancement{CurrentPhase: currentPhase},
 	)
 	if err != nil {
+		if classified := classifyNetError(err); classified != nil {
+			return fmt.Errorf("advance: %w", classified)
+		}
+
 		return fmt.Errorf("advance: %w", err)
 	}
 	defer resp.Body.Close()
@@ -166,6 +230,10 @@ func (r *REST) Advance(gameID int64, currentPhase string) error {
 
 		if resp.StatusCode == http.StatusConflict {
 			return &ConflictError{Message: msg}
+		}
+
+		if transient := classifyHTTPStatus(resp.StatusCode, fmt.Errorf("%s", msg)); transient != nil {
+			return transient
 		}
 
 		return fmt.Errorf("%s", msg)
@@ -181,6 +249,10 @@ func (r *REST) doMove(gameID int64, moveType string, move any) error {
 		move,
 	)
 	if err != nil {
+		if classified := classifyNetError(err); classified != nil {
+			return fmt.Errorf("%s: %w", moveType, classified)
+		}
+
 		return fmt.Errorf("%s: %w", moveType, err)
 	}
 	defer resp.Body.Close()
@@ -191,6 +263,10 @@ func (r *REST) doMove(gameID int64, moveType string, move any) error {
 
 		if resp.StatusCode == http.StatusConflict {
 			return &ConflictError{Message: msg}
+		}
+
+		if transient := classifyHTTPStatus(resp.StatusCode, fmt.Errorf("%s", msg)); transient != nil {
+			return transient
 		}
 
 		return fmt.Errorf("%s", msg)
