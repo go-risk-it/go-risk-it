@@ -48,8 +48,31 @@ Trade sets of three cards for bonus troops. Card combinations:
 Place your available troops on regions you own. Troop count is calculated from:
 
 - Number of territories owned (territories / 3, minimum 3)
-- Continent bonuses (own all territories in a continent)
-- Card trade-in bonuses
+- Continent bonuses (own all territories in a continent — see table below)
+- Card trade-in bonuses (see table below)
+
+### Continent Bonus Troops
+
+| Continent | Regions | Bonus Troops |
+|-----------|---------|--------------|
+| Asia | 12 | 7 |
+| North America | 9 | 5 |
+| Europe | 7 | 5 |
+| Africa | 6 | 3 |
+| South America | 4 | 2 |
+| Oceania | 4 | 2 |
+
+### Card Trade-In Values
+
+| Combination | Troops |
+|-------------|--------|
+| 3 Artillery | 4 |
+| 3 Infantry | 6 |
+| 3 Cavalry | 8 |
+| 1 of each type | 10 |
+| 2 of any type + 1 Jolly | 12 |
+
+If a traded card depicts a region you own, you receive **2 additional troops** on that region.
 
 ### 3. Attack
 

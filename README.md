@@ -1,8 +1,42 @@
 # GO Risk-It
 
+[![Go](https://github.com/go-risk-it/go-risk-it/actions/workflows/go.yml/badge.svg)](https://github.com/go-risk-it/go-risk-it/actions/workflows/go.yml)
+[![golangci-lint](https://github.com/go-risk-it/go-risk-it/actions/workflows/golangci-lint.yml/badge.svg)](https://github.com/go-risk-it/go-risk-it/actions/workflows/golangci-lint.yml)
+[![Component tests](https://github.com/go-risk-it/go-risk-it/actions/workflows/component-test.yml/badge.svg)](https://github.com/go-risk-it/go-risk-it/actions/workflows/component-test.yml)
+
 A multiplayer online [Risk](https://en.wikipedia.org/wiki/Risk_(game)) board game built in Go. Players compete to fulfill secret missions by conquering territories, managing armies, and eliminating opponents in real-time.
 
 **[Frontend Repository](https://github.com/go-risk-it/go-risk-it-frontend)** | **[Architecture Docs](docs/architecture.md)** | **[Game Rules](docs/game-rules.md)**
+
+## Architecture at a Glance
+
+```mermaid
+graph TD
+    subgraph Client
+        FE["Svelte 5 Frontend\n:5173"]
+    end
+
+    subgraph Backend
+        WEB["Web Layer\nHTTP + WebSocket (nbio)"]
+        LOGIC["Logic Layer\nGame engine + move orchestration"]
+        DATA["Data Layer\nSQLC + migrations"]
+    end
+
+    subgraph Infrastructure
+        PG[("PostgreSQL")]
+        AUTH["GoTrue (Supabase)\nvia Kong"]
+        JAEGER["Jaeger\ntracing"]
+    end
+
+    FE -->|"REST + WebSocket"| WEB
+    FE -->|"auth"| AUTH
+    WEB --> LOGIC
+    LOGIC --> DATA
+    DATA --> PG
+    WEB -->|"OTLP"| JAEGER
+```
+
+See [Architecture Docs](docs/architecture.md) for the full system design, Go package structure, move execution flow, and API reference.
 
 ## Prerequisites
 
@@ -21,6 +55,25 @@ make run
 This spins up all services via Docker Compose. The API is available at `http://localhost:8080`.
 
 Then start the [frontend](https://github.com/go-risk-it/go-risk-it-frontend) to play in the browser.
+
+## Running the Full Stack
+
+The game requires both the backend and frontend running together:
+
+1. **Backend** — Start all backend services (Go server, PostgreSQL, Supabase auth, Jaeger):
+   ```bash
+   make run
+   ```
+
+2. **Frontend** — In a separate terminal, clone and start the frontend:
+   ```bash
+   git clone https://github.com/go-risk-it/go-risk-it-frontend.git
+   cd go-risk-it-frontend
+   npm install
+   npm run dev
+   ```
+
+3. **Play** — Open `http://localhost:5173` in your browser. Sign up two accounts in separate browser windows to start a game.
 
 ## Development
 
