@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/chaos"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/client"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/gamestate"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
@@ -46,14 +47,15 @@ type PlayerInfo struct {
 
 // GameRunner runs a single game to completion.
 type GameRunner struct {
-	baseURL   string
-	wsURL     string
-	anonKey   string
-	strategy  player.Strategy
-	timeout   time.Duration
-	collector *metrics.Collector
-	thinkTime time.Duration
-	timeouts  Timeouts
+	baseURL       string
+	wsURL         string
+	anonKey       string
+	strategy      player.Strategy
+	timeout       time.Duration
+	collector     *metrics.Collector
+	thinkTime     time.Duration
+	timeouts      Timeouts
+	chaosInjector *chaos.Injector
 }
 
 func NewGameRunner(
@@ -63,16 +65,18 @@ func NewGameRunner(
 	collector *metrics.Collector,
 	thinkTime time.Duration,
 	timeouts Timeouts,
+	chaosInjector *chaos.Injector,
 ) *GameRunner {
 	return &GameRunner{
-		baseURL:   baseURL,
-		wsURL:     wsURL,
-		anonKey:   anonKey,
-		strategy:  strategy,
-		timeout:   timeout,
-		collector: collector,
-		thinkTime: thinkTime,
-		timeouts:  timeouts,
+		baseURL:       baseURL,
+		wsURL:         wsURL,
+		anonKey:       anonKey,
+		strategy:      strategy,
+		timeout:       timeout,
+		collector:     collector,
+		thinkTime:     thinkTime,
+		timeouts:      timeouts,
+		chaosInjector: chaosInjector,
 	}
 }
 
@@ -223,7 +227,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 			continue
 		}
 
-		activePlayer := findActivePlayer(refSnap, players, userIndex)
+		activeIdx, activePlayer := findActivePlayer(refSnap, players, userIndex)
 		if activePlayer == nil {
 			log.Printf("[game %d] no active player for turn %d", gameIndex, refSnap.GameState.Turn)
 			waitForAnyUpdate(players, gr.timeouts.UpdateWait)
@@ -238,6 +242,16 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 		if currentPhase != lastPhase {
 			gr.collector.RecordPhaseEntry(currentPhase)
 			lastPhase = currentPhase
+		}
+
+		// Chaos: maybe disconnect a non-active player.
+		if gr.chaosInjector != nil {
+			handles := make([]chaos.PlayerHandle, len(players))
+			for i, p := range players {
+				handles[i] = chaos.PlayerHandle{Name: p.Name, WS: p.WS}
+			}
+
+			gr.chaosInjector.MaybeDisconnect(handles, activeIdx)
 		}
 
 		// Decide move.
@@ -373,31 +387,31 @@ func actionTypeName(t player.ActionType) string {
 	}
 }
 
-// findActivePlayer finds the player whose turn it is.
+// findActivePlayer finds the player whose turn it is and returns their index.
 func findActivePlayer(
 	snap gamestate.ViewSnapshot,
 	players []*PlayerInfo,
 	userIndex map[string]int,
-) *PlayerInfo {
+) (int, *PlayerInfo) {
 	if snap.GameState == nil || snap.PlayersState == nil {
-		return nil
+		return -1, nil
 	}
 
 	numPlayers := int64(len(snap.PlayersState.Players))
 	if numPlayers == 0 {
-		return nil
+		return -1, nil
 	}
 
 	currentIndex := snap.GameState.Turn % numPlayers
 	for _, p := range snap.PlayersState.Players {
 		if p.Index == currentIndex {
 			if idx, ok := userIndex[p.UserID]; ok {
-				return players[idx]
+				return idx, players[idx]
 			}
 		}
 	}
 
-	return nil
+	return -1, nil
 }
 
 // waitForAnyUpdate waits for a state update from any player's WS connection.

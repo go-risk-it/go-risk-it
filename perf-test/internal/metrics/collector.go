@@ -56,6 +56,9 @@ type Collector struct {
 	// Error breakdown by category (pre-initialized).
 	errorCounts map[string]*atomic.Int64
 
+	// Chaos event counters (pre-initialized).
+	chaosEvents map[string]*atomic.Int64
+
 	// Throughput time-series buckets.
 	startTime   time.Time
 	moveBuckets []atomic.Int64
@@ -81,6 +84,13 @@ func NewCollector(maxDuration time.Duration) *Collector {
 		"timeout":   {},
 	}
 
+	chaosEvents := map[string]*atomic.Int64{
+		"disconnect": {},
+		"reconnect":  {},
+		"slow_move":  {},
+		"error_move": {},
+	}
+
 	return &Collector{
 		restLatency:      make(map[string]*hdrhistogram.Histogram),
 		phaseLatency:     make(map[string]*hdrhistogram.Histogram),
@@ -90,6 +100,7 @@ func NewCollector(maxDuration time.Duration) *Collector {
 		phaseEntries:     phaseEntries,
 		phaseMoves:       phaseMoves,
 		errorCounts:      errorCounts,
+		chaosEvents:      chaosEvents,
 		startTime:        time.Now(),
 		moveBuckets:      make([]atomic.Int64, numBuckets),
 	}
@@ -243,6 +254,13 @@ func (c *Collector) RecordReconnectFailure() {
 	c.totalReconnectFailures.Add(1)
 }
 
+// RecordChaosEvent increments the counter for the given chaos event type.
+func (c *Collector) RecordChaosEvent(eventType string) {
+	if counter, ok := c.chaosEvents[eventType]; ok {
+		counter.Add(1)
+	}
+}
+
 // ThroughputBucket represents moves in a fixed time window.
 type ThroughputBucket struct {
 	OffsetSec float64
@@ -284,6 +302,14 @@ func (c *Collector) Snapshot() *Snapshot {
 		errorBreakdown[name] = counter.Load()
 	}
 
+	chaosEvents := make(map[string]int64, len(c.chaosEvents))
+	for name, counter := range c.chaosEvents {
+		v := counter.Load()
+		if v > 0 {
+			chaosEvents[name] = v
+		}
+	}
+
 	// Only include non-zero throughput buckets.
 	var throughputBuckets []ThroughputBucket
 	for i := range c.moveBuckets {
@@ -313,6 +339,7 @@ func (c *Collector) Snapshot() *Snapshot {
 		PhaseMoves:             phaseMoves,
 		HTTPStatusCounts:       httpStatusCounts,
 		ErrorBreakdown:         errorBreakdown,
+		ChaosEvents:            chaosEvents,
 		ThroughputBuckets:      throughputBuckets,
 	}
 }
@@ -343,6 +370,9 @@ type Snapshot struct {
 
 	// Error breakdown by category.
 	ErrorBreakdown map[string]int64
+
+	// Chaos event counters (only non-zero events).
+	ChaosEvents map[string]int64
 
 	// Throughput time-series.
 	ThroughputBuckets []ThroughputBucket

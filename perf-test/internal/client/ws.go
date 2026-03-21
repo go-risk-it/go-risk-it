@@ -85,6 +85,20 @@ func (ws *WS) Done() <-chan struct{} {
 	return ws.done
 }
 
+// Disrupt force-closes the underlying connection without marking the WS as
+// intentionally closed. This triggers the readLoop's auto-reconnect logic.
+func (ws *WS) Disrupt() {
+	ws.mu.Lock()
+	defer ws.mu.Unlock()
+
+	if ws.closed {
+		return
+	}
+
+	// Close the underlying conn; readLoop will get a read error and reconnect.
+	ws.conn.Close()
+}
+
 // Close closes the WebSocket connection. Safe to call multiple times.
 func (ws *WS) Close() error {
 	ws.mu.Lock()

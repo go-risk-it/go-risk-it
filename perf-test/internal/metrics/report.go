@@ -149,6 +149,17 @@ func PrintReport(
 		snap.TotalReconnectFailures,
 	)
 
+	// Chaos events (only if any occurred).
+	if len(snap.ChaosEvents) > 0 {
+		fmt.Fprint(w, "Chaos:")
+
+		for _, name := range sortedStringKeys(snap.ChaosEvents) {
+			fmt.Fprintf(w, " %d %s,", snap.ChaosEvents[name], name)
+		}
+
+		fmt.Fprintln(w)
+	}
+
 	// HTTP status distribution.
 	if len(snap.HTTPStatusCounts) > 0 {
 		fmt.Fprint(w, "HTTP Status:")
@@ -236,6 +247,9 @@ type JSONReport struct {
 	} `json:"resilience"`
 	DurationMs int64            `json:"duration_ms"`
 	PerGame    []JSONGameResult `json:"per_game,omitempty"`
+
+	// Chaos events (only present when chaos was active).
+	ChaosEvents map[string]int64 `json:"chaos_events,omitempty"`
 }
 
 // JSONPhaseFlow is the JSON representation of phase transition stats.
@@ -352,6 +366,10 @@ func PrintJSON(
 	report.Resilience.Conflicts = snap.TotalConflicts
 	report.Resilience.Reconnects = snap.TotalReconnects
 	report.Resilience.ReconnectFailures = snap.TotalReconnectFailures
+
+	if len(snap.ChaosEvents) > 0 {
+		report.ChaosEvents = snap.ChaosEvents
+	}
 
 	if len(results) > 0 {
 		report.PerGame = make([]JSONGameResult, len(results))

@@ -8,9 +8,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/chaos"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/mapgraph"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/orchestrator"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/player"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/player/heuristic"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/scenario"
 )
@@ -30,6 +32,22 @@ func main() {
 	)
 	output := flag.String("output", "text", "Output format: text or json")
 	thinkTime := flag.Duration("think-time", 0, "Artificial delay between moves")
+
+	// Chaos flags.
+	chaosDisconnect := flag.Float64(
+		"chaos-disconnect",
+		0,
+		"Player disconnect probability per loop iteration",
+	)
+	chaosSlowMove := flag.Float64("chaos-slow-move", 0, "Slow move probability")
+	chaosSlowDelay := flag.Duration("chaos-slow-delay", 2*time.Second, "Slow move delay")
+	chaosErrorMove := flag.Float64("chaos-error-move", 0, "Strategy error injection probability")
+	chaosReconnectDelay := flag.Duration(
+		"chaos-reconnect-delay",
+		2*time.Second,
+		"Delay before reconnecting after chaos disconnect",
+	)
+
 	flag.Parse()
 
 	if *anonKey == "" {
@@ -56,16 +74,40 @@ func main() {
 		GameTimeout: *gameTimeout,
 	}
 
+	// Chaos config from CLI flags.
+	chaosCfg := chaos.Config{
+		DisconnectRate: *chaosDisconnect,
+		SlowMoveRate:   *chaosSlowMove,
+		SlowMoveDelay:  *chaosSlowDelay,
+		ErrorMoveRate:  *chaosErrorMove,
+		ReconnectDelay: *chaosReconnectDelay,
+	}
+
 	// Override with preset if specified.
 	if *preset != "" {
-		presetCfg, err := scenario.Get(*preset)
+		s, err := scenario.Get(*preset)
 		if err != nil {
 			log.Fatalf("preset: %v", err)
 		}
 
-		cfg = presetCfg
+		cfg = s.Config
+
+		// Preset chaos config is used unless CLI flags override.
+		if !chaosCfg.Enabled() && s.ChaosConfig.Enabled() {
+			chaosCfg = s.ChaosConfig
+		}
+
 		log.Printf("using preset %q: %d games, %d players, timeout=%v, ramp=%v",
 			*preset, cfg.NumGames, cfg.NumPlayers, cfg.GameTimeout, cfg.RampUp)
+	}
+
+	if chaosCfg.Enabled() {
+		if err := chaosCfg.Validate(); err != nil {
+			log.Fatalf("chaos config: %v", err)
+		}
+
+		log.Printf("chaos enabled: disconnect=%.0f%% slow_move=%.0f%% error_move=%.0f%%",
+			chaosCfg.DisconnectRate*100, chaosCfg.SlowMoveRate*100, chaosCfg.ErrorMoveRate*100)
 	}
 
 	// Build WS URL from HTTP URL.
@@ -73,8 +115,18 @@ func main() {
 	wsURL = strings.Replace(wsURL, "https://", "wss://", 1)
 
 	// Create shared components.
-	strategy := heuristic.New(graph)
 	collector := metrics.NewCollector(cfg.GameTimeout)
+
+	var strategy player.Strategy = heuristic.New(graph)
+	if chaosCfg.Enabled() {
+		strategy = chaos.WrapStrategy(strategy, chaosCfg, collector)
+	}
+
+	var injector *chaos.Injector
+	if chaosCfg.DisconnectRate > 0 {
+		injector = chaos.NewInjector(chaosCfg, collector)
+	}
+
 	runner := orchestrator.NewGameRunner(
 		*url,
 		wsURL,
@@ -84,6 +136,7 @@ func main() {
 		collector,
 		*thinkTime,
 		orchestrator.DefaultTimeouts(),
+		injector,
 	)
 
 	// Run games.

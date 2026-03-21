@@ -5,50 +5,97 @@ import (
 	"sort"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/chaos"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/orchestrator"
 )
 
-var presets = map[string]orchestrator.Config{
+// Scenario bundles an orchestrator config with optional chaos injection config.
+type Scenario struct {
+	Config      orchestrator.Config
+	ChaosConfig chaos.Config
+}
+
+var presets = map[string]Scenario{
 	"smoke": {
-		NumGames:    1,
-		NumPlayers:  3,
-		GameTimeout: 5 * time.Minute,
-		RampUp:      0,
+		Config: orchestrator.Config{
+			NumGames:    1,
+			NumPlayers:  3,
+			GameTimeout: 5 * time.Minute,
+			RampUp:      0,
+		},
 	},
 	"light": {
-		NumGames:    10,
-		NumPlayers:  4,
-		GameTimeout: 10 * time.Minute,
-		RampUp:      30 * time.Second,
+		Config: orchestrator.Config{
+			NumGames:    10,
+			NumPlayers:  4,
+			GameTimeout: 10 * time.Minute,
+			RampUp:      30 * time.Second,
+		},
 	},
 	"medium": {
-		NumGames:    50,
-		NumPlayers:  4,
-		GameTimeout: 15 * time.Minute,
-		RampUp:      60 * time.Second,
+		Config: orchestrator.Config{
+			NumGames:    50,
+			NumPlayers:  4,
+			GameTimeout: 15 * time.Minute,
+			RampUp:      60 * time.Second,
+		},
 	},
 	"heavy": {
-		NumGames:    100,
-		NumPlayers:  4,
-		GameTimeout: 20 * time.Minute,
-		RampUp:      120 * time.Second,
+		Config: orchestrator.Config{
+			NumGames:    100,
+			NumPlayers:  4,
+			GameTimeout: 20 * time.Minute,
+			RampUp:      120 * time.Second,
+		},
 	},
 	"soak": {
-		NumGames:    20,
-		NumPlayers:  4,
-		GameTimeout: 60 * time.Minute,
-		RampUp:      60 * time.Second,
+		Config: orchestrator.Config{
+			NumGames:    20,
+			NumPlayers:  4,
+			GameTimeout: 60 * time.Minute,
+			RampUp:      60 * time.Second,
+		},
+	},
+	"chaos-light": {
+		Config: orchestrator.Config{
+			NumGames:    5,
+			NumPlayers:  4,
+			GameTimeout: 10 * time.Minute,
+			RampUp:      0,
+		},
+		ChaosConfig: chaos.Config{
+			DisconnectRate: 0.05,
+			SlowMoveRate:   0.10,
+			SlowMoveDelay:  1 * time.Second,
+			ErrorMoveRate:  0.02,
+			ReconnectDelay: 2 * time.Second,
+		},
+	},
+	"chaos-heavy": {
+		Config: orchestrator.Config{
+			NumGames:    20,
+			NumPlayers:  4,
+			GameTimeout: 15 * time.Minute,
+			RampUp:      0,
+		},
+		ChaosConfig: chaos.Config{
+			DisconnectRate: 0.15,
+			SlowMoveRate:   0.20,
+			SlowMoveDelay:  3 * time.Second,
+			ErrorMoveRate:  0.05,
+			ReconnectDelay: 5 * time.Second,
+		},
 	},
 }
 
-// Get returns the config for a named preset.
-func Get(name string) (orchestrator.Config, error) {
-	cfg, ok := presets[name]
+// Get returns the scenario for a named preset.
+func Get(name string) (Scenario, error) {
+	s, ok := presets[name]
 	if !ok {
-		return orchestrator.Config{}, fmt.Errorf("unknown preset %q, available: %v", name, List())
+		return Scenario{}, fmt.Errorf("unknown preset %q, available: %v", name, List())
 	}
 
-	return cfg, nil
+	return s, nil
 }
 
 // List returns sorted preset names.
