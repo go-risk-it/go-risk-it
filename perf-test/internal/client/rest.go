@@ -8,6 +8,15 @@ import (
 	"net/http"
 )
 
+// ConflictError is returned on HTTP 409 (stale state).
+type ConflictError struct {
+	Message string
+}
+
+func (e *ConflictError) Error() string {
+	return e.Message
+}
+
 // REST handles HTTP API calls to the go-risk-it server.
 type REST struct {
 	baseURL string
@@ -153,7 +162,13 @@ func (r *REST) Advance(gameID int64, currentPhase string) error {
 
 	if resp.StatusCode != http.StatusNoContent {
 		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("advance: status %d: %s", resp.StatusCode, body)
+		msg := fmt.Sprintf("advance: status %d: %s", resp.StatusCode, body)
+
+		if resp.StatusCode == http.StatusConflict {
+			return &ConflictError{Message: msg}
+		}
+
+		return fmt.Errorf("%s", msg)
 	}
 
 	return nil
@@ -172,7 +187,13 @@ func (r *REST) doMove(gameID int64, moveType string, move any) error {
 
 	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("%s: status %d: %s", moveType, resp.StatusCode, body)
+		msg := fmt.Sprintf("%s: status %d: %s", moveType, resp.StatusCode, body)
+
+		if resp.StatusCode == http.StatusConflict {
+			return &ConflictError{Message: msg}
+		}
+
+		return fmt.Errorf("%s", msg)
 	}
 
 	return nil

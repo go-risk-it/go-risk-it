@@ -2,6 +2,7 @@ package orchestrator
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -234,6 +235,17 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 		t1 := time.Now()
 
 		if err := executeAction(activePlayer.REST, gameID, action); err != nil {
+			var conflictErr *client.ConflictError
+			if errors.As(err, &conflictErr) {
+				// 409 = stale view, not a real error. Wait for the phase to change
+				// before retrying, to avoid rapid-fire 409 loops.
+				log.Printf("[game %d] 409 for %s (stale view): %v",
+					gameIndex, activePlayer.Name, err)
+				waitForPhaseChange(activePlayer, snap.CurrentPhase(), 3*time.Second)
+
+				continue
+			}
+
 			log.Printf("[game %d] execute error for %s: %v", gameIndex, activePlayer.Name, err)
 			result.Errors++
 			consecutiveErrors++
@@ -357,6 +369,30 @@ func waitForAnyUpdate(players []*PlayerInfo, timeout time.Duration) {
 	select {
 	case <-signal:
 	case <-timer:
+	}
+}
+
+// waitForPhaseChange waits until the player's view shows a different phase
+// than oldPhase, or until the timeout expires. This prevents rapid-fire
+// retries on 409 errors where the view hasn't caught up to the server state.
+func waitForPhaseChange(
+	p *PlayerInfo,
+	oldPhase gamestate.PhaseType,
+	timeout time.Duration,
+) {
+	deadline := time.After(timeout)
+
+	for {
+		select {
+		case <-deadline:
+			return
+		case <-p.WS.View().Updated():
+			if p.WS.View().Snapshot().CurrentPhase() != oldPhase {
+				return
+			}
+		case <-p.WS.Done():
+			return
+		}
 	}
 }
 
