@@ -32,6 +32,26 @@ jobs:
         name: coverage
         path: coverage.out
         if-no-files-found: ignore
+    - name: Extract coverage percentage
+      if: github.ref == 'refs/heads/main'
+      id: coverage
+      run: |
+        if [ -f coverage.out ]; then
+          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+          echo "percentage=$COVERAGE" >> "$GITHUB_OUTPUT"
+        fi
+    - name: Update coverage badge
+      if: github.ref == 'refs/heads/main' && steps.coverage.outputs.percentage != ''
+      uses: schneegans/dynamic-badges-action@e9a478b16159b4d31420099ba146cdc50f134483 # v1.7.0
+      with:
+        auth: ${{ secrets.GIST_TOKEN }}
+        gistID: c7a818e871018f2841c29b4a992c95aa
+        filename: go-risk-it-coverage.json
+        label: coverage
+        message: ${{ steps.coverage.outputs.percentage }}%
+        valColorRange: ${{ steps.coverage.outputs.percentage }}
+        minColorRange: 0
+        maxColorRange: 100
 
   security:
     runs-on: ubuntu-latest
