@@ -12,7 +12,7 @@ type Upgrader interface {
 		w http.ResponseWriter,
 		r *http.Request,
 		responseHeader http.Header,
-		args ...interface{},
+		args ...any,
 	) (*websocket.Conn, error)
 }
 
@@ -20,7 +20,7 @@ type UpgraderImpl struct {
 	*websocket.Upgrader
 }
 
-func New(log *zap.SugaredLogger, _ ...interface{}) *UpgraderImpl {
+func New(log *zap.SugaredLogger, _ ...any) *UpgraderImpl {
 	//exhaustruct:ignore
 	upgrader := UpgraderImpl{
 		Upgrader: websocket.NewUpgrader(),

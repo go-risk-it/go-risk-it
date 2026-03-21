@@ -1,7 +1,6 @@
 package state_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
@@ -27,7 +26,7 @@ func TestServiceImpl_GetGameState(t *testing.T) {
 	gameID := int64(1)
 	ctx := ctx.WithGameID(
 		ctx.WithUserID(
-			ctx.WithSpan(ctx.WithLog(context.Background(), zap.NewExample().Sugar()), noop.Span{}),
+			ctx.WithSpan(ctx.WithLog(t.Context(), zap.NewExample().Sugar()), noop.Span{}),
 			"francesco",
 		),
 		gameID,
@@ -52,5 +51,5 @@ func TestServiceImpl_GetGameState(t *testing.T) {
 
 	// Verify that the expected methods were called
 	require.Equal(t, gameID, result.ID)
-	require.Equal(t, "", result.WinnerUserID)
+	require.Empty(t, result.WinnerUserID)
 }

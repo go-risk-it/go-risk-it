@@ -1,7 +1,6 @@
 package db_test
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -16,7 +15,7 @@ import (
 func TestQueries_ExecuteInTransaction_ShouldRollbackIfPanic(t *testing.T) {
 	t.Parallel()
 
-	logContext := ctx.WithLog(context.Background(), zap.NewNop().Sugar())
+	logContext := ctx.WithLog(t.Context(), zap.NewNop().Sugar())
 	mockDB := pool.NewDB(t)
 	mockTransaction := pool.NewTransaction(t)
 
@@ -35,7 +34,7 @@ func TestQueries_ExecuteInTransaction_ShouldRollbackIfPanic(t *testing.T) {
 
 	_, err := querier.ExecuteInTransaction(
 		logContext,
-		func(querier db.Querier) (interface{}, error) {
+		func(querier db.Querier) (any, error) {
 			panic("test")
 		},
 	)
@@ -48,7 +47,7 @@ func TestQueries_ExecuteInTransaction_ShouldRollbackIfPanic(t *testing.T) {
 func TestQueries_ExecuteInTransaction_ShouldRollbackIfErr(t *testing.T) {
 	t.Parallel()
 
-	ctx := ctx.WithLog(context.Background(), zap.NewNop().Sugar())
+	ctx := ctx.WithLog(t.Context(), zap.NewNop().Sugar())
 	mockDB := pool.NewDB(t)
 	mockTransaction := pool.NewTransaction(t)
 
@@ -59,7 +58,7 @@ func TestQueries_ExecuteInTransaction_ShouldRollbackIfErr(t *testing.T) {
 
 	querier := db.New(mockDB)
 
-	_, err := querier.ExecuteInTransaction(ctx, func(querier db.Querier) (interface{}, error) {
+	_, err := querier.ExecuteInTransaction(ctx, func(querier db.Querier) (any, error) {
 		return nil, errors.New("test")
 	})
 	require.Error(t, err)
@@ -71,7 +70,7 @@ func TestQueries_ExecuteInTransaction_ShouldRollbackIfErr(t *testing.T) {
 func TestQueries_ExecuteInTransaction_ShouldCommitIfNoErr(t *testing.T) {
 	t.Parallel()
 
-	ctx := ctx.WithLog(context.Background(), zap.NewNop().Sugar())
+	ctx := ctx.WithLog(t.Context(), zap.NewNop().Sugar())
 	mockDB := pool.NewDB(t)
 	mockTransaction := pool.NewTransaction(t)
 
@@ -82,7 +81,7 @@ func TestQueries_ExecuteInTransaction_ShouldCommitIfNoErr(t *testing.T) {
 
 	querier := db.New(mockDB)
 
-	_, err := querier.ExecuteInTransaction(ctx, func(querier db.Querier) (interface{}, error) {
+	_, err := querier.ExecuteInTransaction(ctx, func(querier db.Querier) (any, error) {
 		return -1, nil
 	})
 	require.NoError(t, err)

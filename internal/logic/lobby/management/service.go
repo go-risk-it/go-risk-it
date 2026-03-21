@@ -38,7 +38,7 @@ func NewService(
 }
 
 func (s *ServiceImpl) JoinLobby(ctx ctx.LobbyContext, name string) error {
-	if _, err := s.querier.ExecuteInTransaction(ctx, func(qtx db.Querier) (interface{}, error) {
+	if _, err := s.querier.ExecuteInTransaction(ctx, func(qtx db.Querier) (any, error) {
 		return nil, s.JoinLobbyQ(ctx, qtx, name)
 	}); err != nil {
 		return fmt.Errorf("failed to join lobby: %w", err)

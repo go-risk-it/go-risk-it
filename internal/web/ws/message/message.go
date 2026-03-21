@@ -24,7 +24,7 @@ type Message struct {
 
 func BuildMessage(
 	messageType Type,
-	payload interface{},
+	payload any,
 ) (json.RawMessage, error) {
 	var result Message
 	result.Type = messageType

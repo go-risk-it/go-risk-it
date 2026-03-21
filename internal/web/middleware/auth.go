@@ -66,7 +66,7 @@ func (m *AuthMiddlewareImpl) verifyJWT(request *http.Request) (string, error) {
 	authHeader := request.Header.Get("Authorization") // Bearer <token>
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
 		return m.jwtConfig.Secret, nil
 	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 	if err != nil {

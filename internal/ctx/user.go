@@ -7,6 +7,7 @@ type UserContext interface {
 
 type userContext struct {
 	TraceContext
+
 	userID string
 }
 

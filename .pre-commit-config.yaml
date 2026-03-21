@@ -1,7 +1,7 @@
 repos:
   # formatting
   - repo: https://github.com/segmentio/golines
-    rev: v0.12.2
+    rev: v0.13.0
     hooks:
       - id: golines
         args: ["-m", "99"]
@@ -17,6 +17,6 @@ repos:
         exclude: "^(mocks/.*|internal/data/(copyfrom|data|models|querier|query.sql)).go$"
   # linting
   - repo: https://github.com/golangci/golangci-lint
-    rev: v1.62.2
+    rev: v2.11.3
     hooks:
       - id: golangci-lint-full

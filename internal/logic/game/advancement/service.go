@@ -45,7 +45,7 @@ func (s *ServiceImpl[T, R]) Advance(ctx ctx.GameContext) error {
 	_, err := s.querier.ExecuteInTransactionWithIsolation(
 		ctx,
 		pgx.RepeatableRead,
-		func(q db.Querier) (interface{}, error) {
+		func(q db.Querier) (any, error) {
 			err := s.AdvanceQ(ctx, q)
 			if err != nil {
 				return struct{}{}, err

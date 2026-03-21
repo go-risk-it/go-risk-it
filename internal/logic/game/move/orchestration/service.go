@@ -53,7 +53,7 @@ func (s *OrchestratorImpl[T, R]) OrchestrateMove(ctx ctx.GameContext, move T) er
 	_, err := s.querier.ExecuteInTransactionWithIsolation(
 		ctx,
 		pgx.RepeatableRead,
-		func(querier db.Querier) (interface{}, error) {
+		func(querier db.Querier) (any, error) {
 			phase := s.service.PhaseType()
 			ctx.SetLog(ctx.Log().With("phase", phase))
 

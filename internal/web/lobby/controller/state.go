@@ -37,7 +37,7 @@ func (s *StateControllerImpl) GetLobbyState(ctx ctx.LobbyContext) (messaging.Lob
 }
 
 func convertParticipants(participants []state.Participant) []messaging.Participant {
-	result := make([]messaging.Participant, 0)
+	result := make([]messaging.Participant, 0, len(participants))
 	for _, participant := range participants {
 		result = append(result, messaging.Participant{
 			UserID: participant.UserID,

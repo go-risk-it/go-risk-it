@@ -59,7 +59,7 @@ func (s *ServiceImpl) CreateGameWithTx(
 	regions []string,
 	players []request.Player,
 ) (int64, error) {
-	gameID, err := s.querier.ExecuteInTransaction(ctx, func(qtx db.Querier) (interface{}, error) {
+	gameID, err := s.querier.ExecuteInTransaction(ctx, func(qtx db.Querier) (any, error) {
 		return s.CreateGameQ(ctx, qtx, regions, players)
 	})
 	if err != nil {

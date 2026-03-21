@@ -1,7 +1,6 @@
 package controller_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
@@ -29,7 +28,7 @@ func TestControllerImpl_GetPlayerState(t *testing.T) {
 	gameID := int64(1)
 	ctx := ctx2.WithGameID(
 		ctx2.WithUserID(
-			ctx2.WithSpan(ctx2.WithLog(context.Background(), zap.NewNop().Sugar()), noop.Span{}),
+			ctx2.WithSpan(ctx2.WithLog(t.Context(), zap.NewNop().Sugar()), noop.Span{}),
 			"francesco",
 		),
 		gameID,

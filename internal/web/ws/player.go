@@ -12,6 +12,7 @@ import (
 
 type PlayerConnections struct {
 	upgradablerwmutex.UpgradableRWMutex
+
 	playerConnections map[string]*websocket.Conn
 }
 
@@ -110,7 +111,7 @@ func (p *PlayerConnections) GetConnectedPlayers(ctx ctx.UserContext) []string {
 	p.RLock()
 	defer p.RUnlock()
 
-	result := make([]string, 0)
+	result := make([]string, 0, len(p.playerConnections))
 	for player := range p.playerConnections {
 		result = append(result, player)
 	}

@@ -11,18 +11,19 @@ type Querier interface {
 	sqlc.Querier
 	ExecuteInTransaction(
 		ctx ctx.LogContext,
-		txFunc func(Querier) (interface{}, error)) (interface{}, error)
+		txFunc func(Querier) (any, error)) (any, error)
 	ExecuteInTransactionWithIsolation(
 		ctx ctx.LogContext,
 		isolationLevel pgx.TxIsoLevel,
-		txFunc func(Querier) (interface{}, error),
-	) (interface{}, error)
+		txFunc func(Querier) (any, error),
+	) (any, error)
 }
 
 var _ Querier = (*Queries)(nil)
 
 type Queries struct {
 	*sqlc.Queries
+
 	db pool.DB
 }
 

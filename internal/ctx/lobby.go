@@ -7,6 +7,7 @@ type LobbyContext interface {
 
 type lobbyContext struct {
 	UserContext
+
 	lobbyID int64
 }
 

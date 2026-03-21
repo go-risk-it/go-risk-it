@@ -18,6 +18,7 @@ type Manager interface {
 
 type ManagerImpl struct {
 	upgradablerwmutex.UpgradableRWMutex
+
 	lobbyConnections      map[int64]*ws.PlayerConnections
 	playerConnectedSignal signals.PlayerConnectedSignal
 }

@@ -177,7 +177,8 @@ func (s *ServiceImpl) pickMission(
 }
 
 func (s *ServiceImpl) GetAvailableMissions(players []sqlc.GamePlayer) []BaseMission {
-	missions := []BaseMission{
+	missions := make([]BaseMission, 0, 8+len(players))
+	missions = append(missions, []BaseMission{
 		&EighteenTerritoriesTwoTroopsMission{},
 		&TwentyFourTerritoriesMission{},
 		&TwoContinentsMission{
@@ -204,7 +205,7 @@ func (s *ServiceImpl) GetAvailableMissions(players []sqlc.GamePlayer) []BaseMiss
 			Continent1: "europe",
 			Continent2: "oceania",
 		},
-	}
+	}...)
 
 	eliminatePlayerMissions := make([]BaseMission, len(players))
 	for i := range eliminatePlayerMissions {
