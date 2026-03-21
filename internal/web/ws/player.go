@@ -11,7 +11,7 @@ import (
 )
 
 type PlayerConnections struct {
-	upgradablerwmutex.UpgradableRWMutex
+	mu upgradablerwmutex.UpgradableRWMutex
 
 	playerConnections map[string]*websocket.Conn
 }
@@ -23,8 +23,8 @@ func NewPlayerConnections() *PlayerConnections {
 }
 
 func (p *PlayerConnections) Broadcast(ctx ctx.UserContext, message json.RawMessage) {
-	p.UpgradableRLock()
-	defer p.UpgradableRUnlock()
+	p.mu.UpgradableRLock()
+	defer p.mu.UpgradableRUnlock()
 
 	if len(p.playerConnections) == 0 {
 		ctx.Log().Warnw("no connections for given game")
@@ -49,8 +49,8 @@ func (p *PlayerConnections) Broadcast(ctx ctx.UserContext, message json.RawMessa
 }
 
 func (p *PlayerConnections) Write(ctx ctx.UserContext, message json.RawMessage) {
-	p.UpgradableRLock()
-	defer p.UpgradableRUnlock()
+	p.mu.UpgradableRLock()
+	defer p.mu.UpgradableRUnlock()
 
 	if len(p.playerConnections) == 0 {
 		ctx.Log().Warnw("no connections for given game")
@@ -82,7 +82,7 @@ func (p *PlayerConnections) cleanUpConnections(ctx ctx.UserContext, toCleanup []
 
 	ctx.Log().Debugw("cleaning up connections", "users", toCleanup)
 
-	p.UpgradeWLock()
+	p.mu.UpgradeWLock()
 
 	for _, player := range toCleanup {
 		delete(p.playerConnections, player)
@@ -96,8 +96,8 @@ func (p *PlayerConnections) ConnectPlayer(ctx ctx.UserContext, connection *webso
 		"Connecting player",
 		"remoteAddress", connection.RemoteAddr().String())
 
-	p.Lock()
-	defer p.Unlock()
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	if p.playerConnections[ctx.UserID()] != nil {
 		ctx.Log().Warnw("player already connected, overwriting")
@@ -108,8 +108,8 @@ func (p *PlayerConnections) ConnectPlayer(ctx ctx.UserContext, connection *webso
 }
 
 func (p *PlayerConnections) GetConnectedPlayers(ctx ctx.UserContext) []string {
-	p.RLock()
-	defer p.RUnlock()
+	p.mu.RLock()
+	defer p.mu.RUnlock()
 
 	result := make([]string, 0, len(p.playerConnections))
 	for player := range p.playerConnections {

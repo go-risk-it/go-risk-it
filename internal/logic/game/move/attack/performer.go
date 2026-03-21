@@ -1,13 +1,13 @@
 package attack
 
 import (
-	"errors"
 	"fmt"
 	"slices"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 )
 
 func (s *ServiceImpl) PerformQ(
@@ -144,7 +144,7 @@ func (s *ServiceImpl) validate(
 	}
 
 	if !areNeighbours {
-		return errors.New("attacking region cannot reach defending region")
+		return domainerrors.NewValidationError("attacking region cannot reach defending region")
 	}
 
 	ctx.Log().Infow("attack move validation passed", "move", move)
@@ -161,11 +161,11 @@ func checkTroops(
 	ctx.Log().Infow("checking troops")
 
 	if move.AttackingTroops < 1 {
-		return errors.New("at least one troop is required to attack")
+		return domainerrors.NewValidationError("at least one troop is required to attack")
 	}
 
 	if attackingRegion.Troops <= move.AttackingTroops {
-		return errors.New("attacking region does not have enough troops")
+		return domainerrors.NewValidationError("attacking region does not have enough troops")
 	}
 
 	if defendingRegion.Troops < 1 {
@@ -175,7 +175,7 @@ func checkTroops(
 			defendingRegion.ExternalReference,
 		)
 
-		return errors.New("defending region does not have enough troops")
+		return domainerrors.NewValidationError("defending region does not have enough troops")
 	}
 
 	if err := checkDeclaredValues(ctx, attackingRegion, defendingRegion, move); err != nil {
@@ -195,11 +195,11 @@ func checkRegionOwnership(
 	ctx.Log().Infow("checking region ownership")
 
 	if attackingRegion.UserID != ctx.UserID() {
-		return errors.New("attacking region is not owned by player")
+		return domainerrors.NewValidationError("attacking region is not owned by player")
 	}
 
 	if defendingRegion.UserID == ctx.UserID() {
-		return errors.New("cannot attack your own region")
+		return domainerrors.NewValidationError("cannot attack your own region")
 	}
 
 	ctx.Log().Infow("region ownership check passed")
@@ -216,11 +216,15 @@ func checkDeclaredValues(
 	ctx.Log().Infow("checking declared values")
 
 	if attackingRegion.Troops != move.TroopsInSource {
-		return errors.New("attacking region doesn't have the declared number of troops")
+		return domainerrors.NewValidationError(
+			"attacking region doesn't have the declared number of troops",
+		)
 	}
 
 	if defendingRegion.Troops != move.TroopsInTarget {
-		return errors.New("defending region doesn't have the declared number of troops")
+		return domainerrors.NewValidationError(
+			"defending region doesn't have the declared number of troops",
+		)
 	}
 
 	ctx.Log().Infow("declared values check passed")

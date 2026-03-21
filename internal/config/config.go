@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -35,7 +36,7 @@ type Result struct {
 	OtelConfig             OtelConfig
 }
 
-func newConfig(log *zap.SugaredLogger) Result {
+func newConfig(log *zap.SugaredLogger) (Result, error) {
 	koanfManager := koanf.New(".")
 
 	err := godotenv.Load(".env")
@@ -43,12 +44,17 @@ func newConfig(log *zap.SugaredLogger) Result {
 		log.Debugw("failed to load .env")
 	}
 
-	readFromConfigFile(koanfManager)
-	readFromEnv(koanfManager)
+	if err := readFromConfigFile(koanfManager); err != nil {
+		return Result{}, fmt.Errorf("failed to read config file: %w", err)
+	}
+
+	if err := readFromEnv(koanfManager); err != nil {
+		return Result{}, fmt.Errorf("failed to read env config: %w", err)
+	}
 
 	var config Config
 	if err := koanfManager.Unmarshal("", &config); err != nil {
-		panic(err)
+		return Result{}, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
 	log.Debugf("Loaded config: %+v", koanfManager)
@@ -60,13 +66,15 @@ func newConfig(log *zap.SugaredLogger) Result {
 		RegionassignmentConfig: config.Regionassignment,
 		HistoryConfig:          config.History,
 		OtelConfig:             config.Otel,
-	}
+	}, nil
 }
 
-func readFromConfigFile(k *koanf.Koanf) {
+func readFromConfigFile(k *koanf.Koanf) error {
 	if err := k.Load(file.Provider(getEnv()+".yml"), yaml.Parser()); err != nil {
-		panic(err)
+		return fmt.Errorf("failed to load config file %s.yml: %w", getEnv(), err)
 	}
+
+	return nil
 }
 
 func getEnv() string {
@@ -78,14 +86,16 @@ func getEnv() string {
 	return environment
 }
 
-func readFromEnv(k *koanf.Koanf) {
+func readFromEnv(k *koanf.Koanf) error {
 	err := k.Load(env.Provider("", ".", func(s string) string {
 		return strings.ReplaceAll(strings.ToLower(
 			strings.TrimPrefix(s, "")), "_", ".")
 	}), nil)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("failed to load env vars: %w", err)
 	}
+
+	return nil
 }
 
 var Module = fx.Options(

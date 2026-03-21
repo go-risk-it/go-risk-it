@@ -2,6 +2,7 @@ package pool
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/sqlc"
@@ -45,16 +46,16 @@ func NewConnectionPool(
 	lifecycle fx.Lifecycle,
 	log *zap.SugaredLogger,
 	config config.DatabaseConfig,
-) *pgxpool.Pool {
+) (*pgxpool.Pool, error) {
 	ctx := context.Background()
 
 	pool, err := pgxpool.New(ctx, config.BuildConnectionString())
 	if err != nil {
-		panic("Unable to create connection pool")
+		return nil, fmt.Errorf("unable to create lobby connection pool: %w", err)
 	}
 
 	if _, err := pool.Exec(ctx, "SET search_path TO lobby;"); err != nil {
-		panic("cannot create DB connection pool")
+		return nil, fmt.Errorf("unable to set lobby search path: %w", err)
 	}
 
 	log.Infow("created connection pool", "schema", "lobby")
@@ -70,5 +71,5 @@ func NewConnectionPool(
 		},
 	)
 
-	return pool
+	return pool, nil
 }

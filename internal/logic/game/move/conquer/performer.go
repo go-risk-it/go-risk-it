@@ -1,12 +1,12 @@
 package conquer
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 )
 
 func (s *ServiceImpl) PerformQ(
@@ -22,7 +22,10 @@ func (s *ServiceImpl) PerformQ(
 	}
 
 	if phaseState.MinimumTroops > move.Troops {
-		return nil, fmt.Errorf("must move at least %d troops", phaseState.MinimumTroops)
+		return nil, domainerrors.NewValidationErrorf(
+			"must move at least %d troops",
+			phaseState.MinimumTroops,
+		)
 	}
 
 	sourceRegion, err := s.regionService.GetRegionQ(ctx, querier, phaseState.SourceRegion)
@@ -36,7 +39,7 @@ func (s *ServiceImpl) PerformQ(
 	}
 
 	if sourceRegion.Troops-move.Troops < 1 {
-		return nil, errors.New("source region does not have enough troops")
+		return nil, domainerrors.NewValidationError("source region does not have enough troops")
 	}
 
 	defeatedPlayerID, err := s.updateRegionTroops(ctx, querier, move, sourceRegion, targetRegion)

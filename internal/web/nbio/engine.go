@@ -21,7 +21,7 @@ func NewEngine(lc fx.Lifecycle, config nbhttp.Config, log *zap.SugaredLogger) *n
 				log.Info("Starting engine...")
 				err := engine.Start()
 				if err != nil {
-					panic("nbio.Start failed")
+					log.Fatalf("nbio.Start failed: %v", err)
 				}
 				log.Info("Engine started!")
 

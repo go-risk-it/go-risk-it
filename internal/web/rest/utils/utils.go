@@ -5,17 +5,78 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
+
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 )
+
+// ErrorResponse is the standard JSON error envelope for API responses.
+type ErrorResponse struct {
+	Error  string `json:"error"`
+	Code   string `json:"code,omitempty"`
+	Detail string `json:"detail,omitempty"`
+}
 
 func WriteResponse(writer http.ResponseWriter, body []byte, status int) {
 	writer.WriteHeader(status)
 
 	_, err := writer.Write(body)
 	if err != nil {
-		panic(err)
+		log.Printf("failed to write HTTP response: %v", err)
 	}
+}
+
+// WriteError maps domain errors to appropriate HTTP status codes and writes a JSON error response.
+// For 4xx errors, the error message is sent to the client (these are user-safe domain errors).
+// For 5xx errors, a generic message is sent to the client and the original error is returned
+// so the caller can log it with request context.
+func WriteError(writer http.ResponseWriter, err error) error {
+	status, code, clientMsg := mapErrorToResponse(err)
+	writeJSONError(writer, status, code, clientMsg)
+
+	if status >= http.StatusInternalServerError {
+		return err
+	}
+
+	return nil
+}
+
+func writeJSONError(writer http.ResponseWriter, status int, code string, msg string) {
+	resp := ErrorResponse{
+		Error: msg,
+		Code:  code,
+	}
+
+	body, marshalErr := json.Marshal(resp)
+	if marshalErr != nil {
+		http.Error(writer, msg, status)
+
+		return
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	WriteResponse(writer, body, status)
+}
+
+func mapErrorToResponse(err error) (int, string, string) {
+	var validationErr *domainerrors.ValidationError
+	if errors.As(err, &validationErr) {
+		return http.StatusBadRequest, "VALIDATION_ERROR", err.Error()
+	}
+
+	var conflictErr *domainerrors.ConflictError
+	if errors.As(err, &conflictErr) {
+		return http.StatusConflict, "CONFLICT", err.Error()
+	}
+
+	var forbiddenErr *domainerrors.ForbiddenError
+	if errors.As(err, &forbiddenErr) {
+		return http.StatusForbidden, "FORBIDDEN", err.Error()
+	}
+
+	return http.StatusInternalServerError, "INTERNAL_ERROR", "an internal error occurred"
 }
 
 type malformedRequestError struct {
@@ -27,6 +88,11 @@ func (mr *malformedRequestError) Error() string {
 	return mr.msg
 }
 
+// Validatable is an opt-in interface for request types that need boundary validation.
+type Validatable interface {
+	Validate() error
+}
+
 func DecodeRequest[T any](writer http.ResponseWriter, req *http.Request) (T, error) {
 	var result T
 
@@ -34,16 +100,25 @@ func DecodeRequest[T any](writer http.ResponseWriter, req *http.Request) (T, err
 	if err != nil {
 		var mr *malformedRequestError
 		if errors.As(err, &mr) {
-			http.Error(writer, mr.msg, mr.status)
+			writeJSONError(writer, mr.status, "MALFORMED_REQUEST", mr.msg)
 		} else {
-			http.Error(
+			writeJSONError(
 				writer,
-				http.StatusText(http.StatusInternalServerError),
 				http.StatusInternalServerError,
+				"INTERNAL_ERROR",
+				http.StatusText(http.StatusInternalServerError),
 			)
 		}
 
 		return result, err
+	}
+
+	if v, ok := any(result).(Validatable); ok {
+		if err := v.Validate(); err != nil {
+			writeJSONError(writer, http.StatusBadRequest, "VALIDATION_ERROR", err.Error())
+
+			return result, err
+		}
 	}
 
 	return result, nil
@@ -67,7 +142,7 @@ func decodeJSONBody[T any](writer http.ResponseWriter, req *http.Request, dst T)
 
 	err := decode(dec, dst)
 	if err != nil {
-		return fmt.Errorf("failed to decode request body: %writer", err)
+		return fmt.Errorf("failed to decode request body: %w", err)
 	}
 
 	return nil

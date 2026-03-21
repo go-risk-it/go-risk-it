@@ -1,12 +1,12 @@
 package deploy
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 )
 
 func (s *ServiceImpl) PerformQ(
@@ -23,7 +23,7 @@ func (s *ServiceImpl) PerformQ(
 
 	troops := move.DesiredTroops - move.CurrentTroops
 	if deployableTroops < troops {
-		return nil, errors.New("not enough deployable troops")
+		return nil, domainerrors.NewValidationError("not enough deployable troops")
 	}
 
 	thisRegion, err := s.regionService.GetRegionQ(ctx, querier, move.RegionID)
@@ -32,15 +32,17 @@ func (s *ServiceImpl) PerformQ(
 	}
 
 	if troops < 1 {
-		return nil, errors.New("must deploy at least 1 troop")
+		return nil, domainerrors.NewValidationError("must deploy at least 1 troop")
 	}
 
 	if thisRegion.UserID != ctx.UserID() {
-		return nil, errors.New("region is not owned by player")
+		return nil, domainerrors.NewValidationError("region is not owned by player")
 	}
 
 	if thisRegion.Troops != move.CurrentTroops {
-		return nil, errors.New("region has different number of troops than declared")
+		return nil, domainerrors.NewValidationError(
+			"region has different number of troops than declared",
+		)
 	}
 
 	if err := s.executeDeploy(ctx, querier, thisRegion, troops); err != nil {

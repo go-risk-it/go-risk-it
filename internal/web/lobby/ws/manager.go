@@ -17,7 +17,7 @@ type Manager interface {
 }
 
 type ManagerImpl struct {
-	upgradablerwmutex.UpgradableRWMutex
+	mu upgradablerwmutex.UpgradableRWMutex
 
 	lobbyConnections      map[int64]*ws.PlayerConnections
 	playerConnectedSignal signals.PlayerConnectedSignal
@@ -51,14 +51,19 @@ func (m *ManagerImpl) WriteMessage(ctx ctx.LobbyContext, message json.RawMessage
 }
 
 func (m *ManagerImpl) playerConnections(ctx ctx.LobbyContext) *ws.PlayerConnections {
-	m.UpgradableRLock()
-	defer m.UpgradableRUnlock()
+	m.mu.UpgradableRLock()
+	defer m.mu.UpgradableRUnlock()
 
 	connections, ok := m.lobbyConnections[ctx.LobbyID()]
 	if !ok {
-		connections = ws.NewPlayerConnections()
+		m.mu.UpgradeWLock()
 
-		m.UpgradeWLock()
+		// Re-check after acquiring write lock — another goroutine may have inserted.
+		if existing, exists := m.lobbyConnections[ctx.LobbyID()]; exists {
+			return existing
+		}
+
+		connections = ws.NewPlayerConnections()
 		m.lobbyConnections[ctx.LobbyID()] = connections
 	}
 

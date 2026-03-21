@@ -2,7 +2,6 @@ package rest
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
@@ -45,25 +44,24 @@ func (h *HandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 
 	userContext, ok := req.Context().(ctx.UserContext)
 	if !ok {
-		http.Error(
-			writer,
-			fmt.Sprintf("invalid user context in route: %v", h.Pattern()),
-			http.StatusInternalServerError,
-		)
+		http.Error(writer, "an internal error occurred", http.StatusInternalServerError)
 
 		return
 	}
 
 	gameID, err := h.gameController.CreateGame(userContext, createGameRequest)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		if logErr := restutils.WriteError(writer, err); logErr != nil {
+			userContext.Log().Errorw("request failed", "error", logErr)
+		}
 
 		return
 	}
 
 	createGameResponse, err := json.Marshal(response.CreateGame{GameID: gameID})
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		http.Error(writer, "an internal error occurred", http.StatusInternalServerError)
+		userContext.Log().Errorw("failed to marshal response", "error", err)
 
 		return
 	}

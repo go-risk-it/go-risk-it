@@ -26,19 +26,14 @@ func NewService(querier db.Querier) *ServiceImpl {
 }
 
 func (s *ServiceImpl) CreateLobby(ctx ctx.UserContext, ownerName string) (int64, error) {
-	lobbyID, err := s.querier.ExecuteInTransaction(ctx, func(qtx db.Querier) (any, error) {
+	lobbyID, err := db.InTransaction(s.querier, ctx, func(qtx db.Querier) (int64, error) {
 		return s.CreateLobbyQ(ctx, qtx, ownerName)
 	})
 	if err != nil {
 		return -1, fmt.Errorf("failed to create lobby: %w", err)
 	}
 
-	lobbyIDInt, ok := lobbyID.(int64)
-	if !ok {
-		return -1, fmt.Errorf("failed to convert lobbyID to int64: %w", err)
-	}
-
-	return lobbyIDInt, nil
+	return lobbyID, nil
 }
 
 func (s *ServiceImpl) CreateLobbyQ(

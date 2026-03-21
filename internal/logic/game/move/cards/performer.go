@@ -1,13 +1,13 @@
 package cards
 
 import (
-	"errors"
 	"fmt"
 	"slices"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 )
 
 func (s *ServiceImpl) PerformQ(
@@ -33,7 +33,7 @@ func (s *ServiceImpl) PerformQ(
 	}
 
 	if len(move.Combinations) == 0 {
-		return nil, errors.New("no combinations provided")
+		return nil, domainerrors.NewValidationError("no combinations provided")
 	}
 
 	if err := validateAllCardsDifferent(move); err != nil {
@@ -118,7 +118,7 @@ func validateAllCardsDifferent(move Move) error {
 	for _, combination := range move.Combinations {
 		for _, cardID := range combination.CardIDs {
 			if _, ok := cardMap[cardID]; ok {
-				return errors.New("all cards must be different")
+				return domainerrors.NewValidationError("all cards must be different")
 			}
 
 			cardMap[cardID] = struct{}{}
@@ -140,13 +140,13 @@ func validateCombination(
 	cardIndex map[int64]sqlc.GetCardsForPlayerRow,
 ) error {
 	if len(combination.CardIDs) != 3 {
-		return errors.New("combination must have exactly 3 cards")
+		return domainerrors.NewValidationError("combination must have exactly 3 cards")
 	}
 
 	// check if the cards are owned by this player
 	for _, cardID := range combination.CardIDs {
 		if _, ok := cardIndex[cardID]; !ok {
-			return errors.New("player does not own one of the cards")
+			return domainerrors.NewValidationError("player does not own one of the cards")
 		}
 	}
 
@@ -174,14 +174,16 @@ func identifyCombination(
 	}
 
 	if combinationValue >= 2*JOLLY {
-		return 0, errors.New("cannot use more than 2 jolly cards in a combination")
+		return 0, domainerrors.NewValidationError(
+			"cannot use more than 2 jolly cards in a combination",
+		)
 	}
 
 	if troops, ok := combinationToTroops[combinationValue]; ok {
 		return troops, nil
 	}
 
-	return 0, errors.New("invalid combination")
+	return 0, domainerrors.NewValidationError("invalid combination")
 }
 
 func getCardValue(cardType sqlc.GameCardType) int64 {

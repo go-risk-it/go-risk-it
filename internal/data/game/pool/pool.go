@@ -2,6 +2,7 @@ package pool
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
@@ -45,12 +46,12 @@ func NewConnectionPool(
 	lifecycle fx.Lifecycle,
 	log *zap.SugaredLogger,
 	config config.DatabaseConfig,
-) *pgxpool.Pool {
+) (*pgxpool.Pool, error) {
 	ctx := context.Background()
 
 	pool, err := pgxpool.New(ctx, config.BuildConnectionString())
 	if err != nil {
-		panic("Unable to create connection pool")
+		return nil, fmt.Errorf("unable to create game connection pool: %w", err)
 	}
 
 	log.Infow("created connection pool", "schema", "game")
@@ -66,5 +67,5 @@ func NewConnectionPool(
 		},
 	)
 
-	return pool
+	return pool, nil
 }

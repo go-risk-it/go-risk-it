@@ -59,19 +59,14 @@ func (s *ServiceImpl) CreateGameWithTx(
 	regions []string,
 	players []request.Player,
 ) (int64, error) {
-	gameID, err := s.querier.ExecuteInTransaction(ctx, func(qtx db.Querier) (any, error) {
+	gameID, err := db.InTransaction(s.querier, ctx, func(qtx db.Querier) (int64, error) {
 		return s.CreateGameQ(ctx, qtx, regions, players)
 	})
 	if err != nil {
 		return -1, fmt.Errorf("failed to create game: %w", err)
 	}
 
-	gameIDInt, ok := gameID.(int64)
-	if !ok {
-		return -1, fmt.Errorf("failed to convert gameID to int64: %w", err)
-	}
-
-	return gameIDInt, nil
+	return gameID, nil
 }
 
 func (s *ServiceImpl) CreateGameQ(

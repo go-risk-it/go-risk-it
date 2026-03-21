@@ -6,6 +6,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
 )
 
 func (s *ServiceImpl) AdvanceQ(
@@ -14,8 +15,8 @@ func (s *ServiceImpl) AdvanceQ(
 	targetPhase sqlc.GamePhaseType,
 	_ *MoveResult,
 ) error {
-	if targetPhase != sqlc.GamePhaseTypeDEPLOY && targetPhase != sqlc.GamePhaseTypeCARDS {
-		return fmt.Errorf("cannot advance reinforce phase to %s", targetPhase)
+	if err := phase.ValidateTransition(sqlc.GamePhaseTypeREINFORCE, targetPhase); err != nil {
+		return fmt.Errorf("invalid phase transition: %w", err)
 	}
 
 	game, err := s.gameService.GetGameStateQ(ctx, querier)

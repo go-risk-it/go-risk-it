@@ -5,6 +5,8 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
+	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/validation"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
@@ -14,7 +16,7 @@ import (
 
 type Service[T, R any] interface {
 	Advance(ctx ctx.GameContext) error
-	AdvanceQ(ctx ctx.GameContext, querier db.Querier) error
+	AdvanceQ(ctx ctx.GameContext, querier db.Querier) (sqlc.GamePhaseType, error)
 }
 
 type ServiceImpl[T, R any] struct {
@@ -42,54 +44,62 @@ func NewService[T, R any](
 }
 
 func (s *ServiceImpl[T, R]) Advance(ctx ctx.GameContext) error {
-	_, err := s.querier.ExecuteInTransactionWithIsolation(
+	currentPhase := s.moveService.PhaseType()
+
+	targetPhase, err := db.InTransactionWithIsolation(
+		s.querier,
 		ctx,
 		pgx.RepeatableRead,
-		func(q db.Querier) (any, error) {
-			err := s.AdvanceQ(ctx, q)
-			if err != nil {
-				return struct{}{}, err
-			}
-
-			return struct{}{}, nil
+		func(q db.Querier) (sqlc.GamePhaseType, error) {
+			return s.AdvanceQ(ctx, q)
 		},
 	)
 	if err != nil {
 		return fmt.Errorf("unable to perform move: %w", err)
 	}
 
-	go s.gameStateChangedSignal.Emit(ctx, signals.GameStateChangedData{})
+	s.gameStateChangedSignal.Emit(ctx, signals.GameStateChangedData{
+		FromPhase: currentPhase,
+		ToPhase:   targetPhase,
+	})
 
 	return nil
 }
 
-func (s *ServiceImpl[T, R]) AdvanceQ(ctx ctx.GameContext, querier db.Querier) error {
+func (s *ServiceImpl[T, R]) AdvanceQ(
+	ctx ctx.GameContext,
+	querier db.Querier,
+) (sqlc.GamePhaseType, error) {
 	currentPhase := s.moveService.PhaseType()
 
 	ctx.Log().Infow("processing request to advance phase", "currentPhase", currentPhase)
 
 	game, err := s.gameState.GetGameStateQ(ctx, querier)
 	if err != nil {
-		return fmt.Errorf("unable to get game state: %w", err)
+		return "", fmt.Errorf("unable to get game state: %w", err)
 	}
 
 	if err := s.validationService.ValidateQ(ctx, querier, game); err != nil {
 		ctx.Log().Errorw("validation failed", "error", err)
 
-		return fmt.Errorf("validation failed: %w", err)
+		return "", fmt.Errorf("validation failed: %w", err)
 	}
 
 	ctx.Log().Infof("game is in phase %s", game.Phase)
 
 	if game.Phase != currentPhase {
-		return fmt.Errorf("game is not in phase %s", currentPhase)
+		return "", domainerrors.NewConflictErrorf(
+			"game is in phase %s, expected %s",
+			game.Phase,
+			currentPhase,
+		)
 	}
 
 	var performResult R
 
 	targetPhase, err := s.moveService.WalkQ(ctx, querier, true)
 	if err != nil {
-		return fmt.Errorf("unable to walk to target phase: %w", err)
+		return "", fmt.Errorf("unable to walk to target phase: %w", err)
 	}
 
 	err = s.moveService.AdvanceQ(
@@ -99,10 +109,10 @@ func (s *ServiceImpl[T, R]) AdvanceQ(ctx ctx.GameContext, querier db.Querier) er
 		performResult,
 	)
 	if err != nil {
-		return fmt.Errorf("unable to perform move: %w", err)
+		return "", fmt.Errorf("unable to perform move: %w", err)
 	}
 
 	ctx.Log().Infow("phase advanced successfully", "from", currentPhase)
 
-	return nil
+	return targetPhase, nil
 }

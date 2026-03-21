@@ -1,12 +1,12 @@
 package rest
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
+	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 )
 
 type StartHandler interface {
@@ -38,17 +38,15 @@ func (h *StartHandlerImpl) RequiresAuth() bool {
 func (h *StartHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	lobbyContext, ok := req.Context().(ctx.LobbyContext)
 	if !ok {
-		http.Error(
-			writer,
-			fmt.Sprintf("invalid user context in route: %v", h.Pattern()),
-			http.StatusInternalServerError,
-		)
+		http.Error(writer, "an internal error occurred", http.StatusInternalServerError)
 
 		return
 	}
 
 	if err := h.startController.StartGame(lobbyContext); err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
+		if logErr := restutils.WriteError(writer, err); logErr != nil {
+			lobbyContext.Log().Errorw("request failed", "error", logErr)
+		}
 
 		return
 	}

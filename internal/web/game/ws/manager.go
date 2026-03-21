@@ -23,7 +23,7 @@ type Manager interface {
 }
 
 type ManagerImpl struct {
-	upgradablerwmutex.UpgradableRWMutex
+	mu upgradablerwmutex.UpgradableRWMutex
 
 	gameStateService      state.Service
 	playerService         player.Service
@@ -110,14 +110,19 @@ func (m *ManagerImpl) WriteMessage(ctx ctx.GameContext, message json.RawMessage)
 }
 
 func (m *ManagerImpl) playerConnections(ctx ctx.GameContext) *ws.PlayerConnections {
-	m.UpgradableRLock()
-	defer m.UpgradableRUnlock()
+	m.mu.UpgradableRLock()
+	defer m.mu.UpgradableRUnlock()
 
 	connections, ok := m.gameConnections[ctx.GameID()]
 	if !ok {
-		connections = ws.NewPlayerConnections()
+		m.mu.UpgradeWLock()
 
-		m.UpgradeWLock()
+		// Re-check after acquiring write lock — another goroutine may have inserted.
+		if existing, exists := m.gameConnections[ctx.GameID()]; exists {
+			return existing
+		}
+
+		connections = ws.NewPlayerConnections()
 		m.gameConnections[ctx.GameID()] = connections
 	}
 
