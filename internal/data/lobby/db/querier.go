@@ -1,7 +1,9 @@
 package db
 
 import (
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	"context"
+
+	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/pool"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/sqlc"
 	"github.com/jackc/pgx/v5"
@@ -9,14 +11,7 @@ import (
 
 type Querier interface {
 	sqlc.Querier
-	ExecuteInTransaction(
-		ctx ctx.LogContext,
-		txFunc func(Querier) (any, error)) (any, error)
-	ExecuteInTransactionWithIsolation(
-		ctx ctx.LogContext,
-		isolationLevel pgx.TxIsoLevel,
-		txFunc func(Querier) (any, error),
-	) (any, error)
+	db.Transactable[Querier]
 }
 
 var _ Querier = (*Queries)(nil)
@@ -31,5 +26,16 @@ func New(db pool.DB) Querier {
 	return &Queries{
 		Queries: sqlc.New(db),
 		db:      db,
+	}
+}
+
+func (q *Queries) BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error) {
+	return q.db.BeginTx(ctx, txOptions)
+}
+
+func (q *Queries) WithTx(tx pgx.Tx) Querier {
+	return &Queries{
+		Queries: q.Queries.WithTx(tx),
+		db:      q.db,
 	}
 }

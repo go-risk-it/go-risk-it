@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	dbutil "github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
@@ -46,7 +47,7 @@ func NewService[T, R any](
 func (s *ServiceImpl[T, R]) Advance(ctx ctx.GameContext) error {
 	currentPhase := s.moveService.PhaseType()
 
-	targetPhase, err := db.InTransactionWithIsolation(
+	targetPhase, err := dbutil.InTransactionWithIsolation(
 		s.querier,
 		ctx,
 		pgx.RepeatableRead,

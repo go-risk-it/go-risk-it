@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	dbutil "github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/game/pool"
 	"github.com/jackc/pgx/v5"
@@ -12,7 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestQueries_ExecuteInTransaction_ShouldRollbackIfPanic(t *testing.T) {
+func TestInTransaction_ShouldRollbackIfPanic(t *testing.T) {
 	t.Parallel()
 
 	logContext := ctx.WithLog(t.Context(), zap.NewNop().Sugar())
@@ -32,7 +33,8 @@ func TestQueries_ExecuteInTransaction_ShouldRollbackIfPanic(t *testing.T) {
 		}
 	}()
 
-	_, err := querier.ExecuteInTransaction(
+	_, err := dbutil.InTransaction(
+		querier,
 		logContext,
 		func(querier db.Querier) (any, error) {
 			panic("test")
@@ -44,7 +46,7 @@ func TestQueries_ExecuteInTransaction_ShouldRollbackIfPanic(t *testing.T) {
 	mockTransaction.AssertExpectations(t)
 }
 
-func TestQueries_ExecuteInTransaction_ShouldRollbackIfErr(t *testing.T) {
+func TestInTransaction_ShouldRollbackIfErr(t *testing.T) {
 	t.Parallel()
 
 	ctx := ctx.WithLog(t.Context(), zap.NewNop().Sugar())
@@ -58,7 +60,7 @@ func TestQueries_ExecuteInTransaction_ShouldRollbackIfErr(t *testing.T) {
 
 	querier := db.New(mockDB)
 
-	_, err := querier.ExecuteInTransaction(ctx, func(querier db.Querier) (any, error) {
+	_, err := dbutil.InTransaction(querier, ctx, func(querier db.Querier) (any, error) {
 		return nil, errors.New("test")
 	})
 	require.Error(t, err)
@@ -67,7 +69,7 @@ func TestQueries_ExecuteInTransaction_ShouldRollbackIfErr(t *testing.T) {
 	mockTransaction.AssertExpectations(t)
 }
 
-func TestQueries_ExecuteInTransaction_ShouldCommitIfNoErr(t *testing.T) {
+func TestInTransaction_ShouldCommitIfNoErr(t *testing.T) {
 	t.Parallel()
 
 	ctx := ctx.WithLog(t.Context(), zap.NewNop().Sugar())
@@ -81,7 +83,7 @@ func TestQueries_ExecuteInTransaction_ShouldCommitIfNoErr(t *testing.T) {
 
 	querier := db.New(mockDB)
 
-	_, err := querier.ExecuteInTransaction(ctx, func(querier db.Querier) (any, error) {
+	_, err := dbutil.InTransaction(querier, ctx, func(querier db.Querier) (any, error) {
 		return -1, nil
 	})
 	require.NoError(t, err)

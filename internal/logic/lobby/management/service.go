@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	dbutil "github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/lobby/signals"
@@ -38,7 +39,7 @@ func NewService(
 }
 
 func (s *ServiceImpl) JoinLobby(ctx ctx.LobbyContext, name string) error {
-	if _, err := db.InTransaction(s.querier, ctx, func(qtx db.Querier) (struct{}, error) {
+	if _, err := dbutil.InTransaction(s.querier, ctx, func(qtx db.Querier) (struct{}, error) {
 		return struct{}{}, s.JoinLobbyQ(ctx, qtx, name)
 	}); err != nil {
 		return fmt.Errorf("failed to join lobby: %w", err)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	dbutil "github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/sqlc"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -26,7 +27,7 @@ func NewService(querier db.Querier) *ServiceImpl {
 }
 
 func (s *ServiceImpl) CreateLobby(ctx ctx.UserContext, ownerName string) (int64, error) {
-	lobbyID, err := db.InTransaction(s.querier, ctx, func(qtx db.Querier) (int64, error) {
+	lobbyID, err := dbutil.InTransaction(s.querier, ctx, func(qtx db.Querier) (int64, error) {
 		return s.CreateLobbyQ(ctx, qtx, ownerName)
 	})
 	if err != nil {

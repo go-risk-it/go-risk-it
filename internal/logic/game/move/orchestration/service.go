@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	dbutil "github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
@@ -51,7 +52,7 @@ func NewOrchestrator[T, R any](
 }
 
 func (s *OrchestratorImpl[T, R]) OrchestrateMove(ctx ctx.GameContext, move T) error {
-	targetPhase, err := db.InTransactionWithIsolation(
+	targetPhase, err := dbutil.InTransactionWithIsolation(
 		s.querier,
 		ctx,
 		pgx.RepeatableRead,
