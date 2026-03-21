@@ -66,6 +66,53 @@ func (_c *Controller_ResetState_Call) RunAndReturn(run func(ctx.LogContext) erro
 	return _c
 }
 
+// SetupNearWin provides a mock function with given fields: _a0, gameID
+func (_m *Controller) SetupNearWin(_a0 ctx.LogContext, gameID int64) error {
+	ret := _m.Called(_a0, gameID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SetupNearWin")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(ctx.LogContext, int64) error); ok {
+		r0 = rf(_a0, gameID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Controller_SetupNearWin_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetupNearWin'
+type Controller_SetupNearWin_Call struct {
+	*mock.Call
+}
+
+// SetupNearWin is a helper method to define mock.On call
+//   - _a0 ctx.LogContext
+//   - gameID int64
+func (_e *Controller_Expecter) SetupNearWin(_a0 interface{}, gameID interface{}) *Controller_SetupNearWin_Call {
+	return &Controller_SetupNearWin_Call{Call: _e.mock.On("SetupNearWin", _a0, gameID)}
+}
+
+func (_c *Controller_SetupNearWin_Call) Run(run func(_a0 ctx.LogContext, gameID int64)) *Controller_SetupNearWin_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.LogContext), args[1].(int64))
+	})
+	return _c
+}
+
+func (_c *Controller_SetupNearWin_Call) Return(_a0 error) *Controller_SetupNearWin_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Controller_SetupNearWin_Call) RunAndReturn(run func(ctx.LogContext, int64) error) *Controller_SetupNearWin_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewController creates a new instance of Controller. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewController(t interface {
