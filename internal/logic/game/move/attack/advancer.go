@@ -1,6 +1,7 @@
 package attack
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
@@ -13,7 +14,6 @@ func (s *ServiceImpl) AdvanceQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	targetPhase sqlc.GamePhaseType,
-	performResult *MoveResult,
 ) error {
 	if err := phase.ValidateTransition(sqlc.GamePhaseTypeATTACK, targetPhase); err != nil {
 		return fmt.Errorf("invalid phase transition: %w", err)
@@ -25,7 +25,7 @@ func (s *ServiceImpl) AdvanceQ(
 	}
 
 	if targetPhase == sqlc.GamePhaseTypeCONQUER {
-		return s.advanceToConquerPhase(ctx, querier, performResult, *phase)
+		return s.advanceToConquerPhase(ctx, querier, *phase)
 	}
 
 	return nil
@@ -34,15 +34,18 @@ func (s *ServiceImpl) AdvanceQ(
 func (s *ServiceImpl) advanceToConquerPhase(
 	ctx ctx.GameContext,
 	querier db.Querier,
-	performResult *MoveResult,
 	phase sqlc.GamePhase,
 ) error {
+	if s.lastResult == nil {
+		return errors.New("no attack result available for conquer phase creation")
+	}
+
 	if _, err := querier.InsertConquerPhase(ctx, sqlc.InsertConquerPhaseParams{
 		PhaseID:             phase.ID,
 		ID:                  ctx.GameID(),
-		ExternalReference:   performResult.AttackingRegionID,
-		ExternalReference_2: performResult.DefendingRegionID,
-		MinimumTroops:       performResult.ConqueringTroops,
+		ExternalReference:   s.lastResult.AttackingRegionID,
+		ExternalReference_2: s.lastResult.DefendingRegionID,
+		MinimumTroops:       s.lastResult.ConqueringTroops,
 	}); err != nil {
 		return fmt.Errorf("failed to create conquer phase: %w", err)
 	}

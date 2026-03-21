@@ -18,10 +18,8 @@ type Move struct {
 	Troops int64 `json:"troops"`
 }
 
-type MoveResult struct{}
-
 type Service interface {
-	service.Service[Move, *MoveResult]
+	service.Service[Move]
 	GetPhaseState(ctx ctx.GameContext) (sqlc.GetConquerPhaseStateRow, error)
 	GetPhaseStateQ(ctx ctx.GameContext, querier db.Querier) (sqlc.GetConquerPhaseStateRow, error)
 }

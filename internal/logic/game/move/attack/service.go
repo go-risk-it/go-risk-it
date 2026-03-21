@@ -24,8 +24,9 @@ type MoveResult struct {
 	DefendingRegionID string `json:"defendingRegionId"`
 	ConqueringTroops  int64  `json:"conqueringTroops"`
 }
+
 type Service interface {
-	service.Service[Move, *MoveResult]
+	service.Service[Move]
 
 	HasConqueredQ(ctx ctx.GameContext, querier db.Querier) (bool, error)
 	CanContinueAttackingQ(ctx ctx.GameContext, querier db.Querier) (bool, error)
@@ -36,6 +37,12 @@ type ServiceImpl struct {
 	diceService   dice.Service
 	phaseService  phase.Service
 	regionService region.Service
+
+	// lastResult stores the result of the most recent PerformQ call.
+	// It is read by AdvanceQ to create the conquer phase when needed.
+	// This is safe because PerformQ and AdvanceQ are always called
+	// within the same transaction in the orchestrator.
+	lastResult *MoveResult
 }
 
 var _ Service = &ServiceImpl{}

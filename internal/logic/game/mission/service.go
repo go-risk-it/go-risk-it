@@ -3,13 +3,11 @@ package mission
 import (
 	"errors"
 	"fmt"
-	"slices"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission/checker"
 	"github.com/go-risk-it/go-risk-it/internal/rand"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -38,10 +36,9 @@ type Service interface {
 	) (string, error)
 }
 type ServiceImpl struct {
-	rng           rand.RNG
-	querier       db.Querier
-	boardService  board.Service
-	regionService region.Service
+	rng             rand.RNG
+	querier         db.Querier
+	checkerRegistry *checker.Registry
 }
 
 var _ Service = (*ServiceImpl)(nil)
@@ -49,14 +46,12 @@ var _ Service = (*ServiceImpl)(nil)
 func New(
 	rng rand.RNG,
 	querier db.Querier,
-	boardService board.Service,
-	regionService region.Service,
+	checkerRegistry *checker.Registry,
 ) *ServiceImpl {
 	return &ServiceImpl{
-		rng:           rng,
-		querier:       querier,
-		boardService:  boardService,
-		regionService: regionService,
+		rng:             rng,
+		querier:         querier,
+		checkerRegistry: checkerRegistry,
 	}
 }
 
@@ -262,133 +257,12 @@ func (s *ServiceImpl) isMissionAccomplished(
 	querier db.Querier,
 	baseMission sqlc.GameMission,
 ) (bool, error) {
-	switch baseMission.Type {
-	case sqlc.GameMissionTypeTWOCONTINENTS:
-		return s.isTwoContinentsMissionAccomplished(ctx, querier, baseMission)
-	case sqlc.GameMissionTypeTWOCONTINENTSPLUSONE:
-		return s.isTwoContinentsPlusOneMissionAccomplished(ctx, querier, baseMission)
-	case sqlc.GameMissionTypeEIGHTEENTERRITORIESTWOTROOPS:
-		return s.isEighteenTerritoriesTwoTroopsMissionAccomplished(ctx, querier, baseMission)
-	case sqlc.GameMissionTypeTWENTYFOURTERRITORIES:
-		return s.isTwentyFourTerritoriesMissionAccomplished(ctx, querier, baseMission)
-	case sqlc.GameMissionTypeELIMINATEPLAYER:
-		return s.isEliminatePlayerMissionAccomplished(ctx, querier, baseMission)
-	default:
-		return false, fmt.Errorf("unknown mission type: %s", baseMission.Type)
-	}
-}
-
-func continentEquals(cont string) func(continent *board.Continent) bool {
-	return func(continent *board.Continent) bool {
-		return continent.ExternalReference == cont
-	}
-}
-
-func (s *ServiceImpl) isTwoContinentsMissionAccomplished(
-	ctx ctx.GameContext,
-	querier db.Querier,
-	baseMission sqlc.GameMission,
-) (bool, error) {
-	mission, err := querier.GetTwoContinentsMission(ctx, baseMission.ID)
+	c, err := s.checkerRegistry.GetChecker(baseMission.Type)
 	if err != nil {
-		return false, fmt.Errorf("failed to get two continents mission: %w", err)
+		return false, err
 	}
 
-	continents, err := s.boardService.GetContinentsControlledByPlayerQ(
-		ctx,
-		querier,
-		baseMission.PlayerID,
-	)
-	if err != nil {
-		return false, fmt.Errorf("failed to get continents controlled by player: %w", err)
-	}
-
-	return slices.ContainsFunc(continents, continentEquals(mission.Continent1)) &&
-		slices.ContainsFunc(continents, continentEquals(mission.Continent2)), nil
-}
-
-func (s *ServiceImpl) isTwoContinentsPlusOneMissionAccomplished(
-	ctx ctx.GameContext,
-	querier db.Querier,
-	baseMission sqlc.GameMission,
-) (bool, error) {
-	mission, err := querier.GetTwoContinentsPlusOneMission(ctx, baseMission.ID)
-	if err != nil {
-		return false, fmt.Errorf("failed to get two continents plus one mission: %w", err)
-	}
-
-	continents, err := s.boardService.GetContinentsControlledByPlayerQ(
-		ctx,
-		querier,
-		baseMission.PlayerID,
-	)
-	if err != nil {
-		return false, fmt.Errorf("failed to get continents controlled by player: %w", err)
-	}
-
-	playerControlsTwoMandatoryContinents := slices.ContainsFunc(
-		continents,
-		continentEquals(mission.Continent1),
-	) &&
-		slices.ContainsFunc(continents, continentEquals(mission.Continent2))
-
-	return playerControlsTwoMandatoryContinents && len(continents) > 2, nil
-}
-
-func (s *ServiceImpl) isEighteenTerritoriesTwoTroopsMissionAccomplished(
-	ctx ctx.GameContext,
-	querier db.Querier,
-	_ sqlc.GameMission,
-) (bool, error) {
-	regions, err := s.regionService.GetPlayerRegionsQ(ctx, querier)
-	if err != nil {
-		return false, fmt.Errorf("failed to get player regions: %w", err)
-	}
-
-	count := 0
-
-	for _, region := range regions {
-		if region.Troops > 1 {
-			count++
-		}
-	}
-
-	return count >= 18, nil
-}
-
-func (s *ServiceImpl) isTwentyFourTerritoriesMissionAccomplished(
-	ctx ctx.GameContext,
-	querier db.Querier,
-	_ sqlc.GameMission,
-) (bool, error) {
-	regions, err := s.regionService.GetPlayerRegionsQ(ctx, querier)
-	if err != nil {
-		return false, fmt.Errorf("failed to get player regions: %w", err)
-	}
-
-	return len(regions) >= 24, nil
-}
-
-func (s *ServiceImpl) isEliminatePlayerMissionAccomplished(
-	ctx ctx.GameContext,
-	querier db.Querier,
-	baseMission sqlc.GameMission,
-) (bool, error) {
-	mission, err := querier.GetEliminatePlayerMission(ctx, baseMission.ID)
-	if err != nil {
-		return false, fmt.Errorf("failed to get eliminate player mission: %w", err)
-	}
-
-	targetPlayerRegions, err := s.regionService.GetRegionsControlledByPlayerQ(
-		ctx,
-		querier,
-		mission.TargetPlayerID,
-	)
-	if err != nil {
-		return false, fmt.Errorf("failed to get player regions: %w", err)
-	}
-
-	return len(targetPlayerRegions) == 0, nil
+	return c.Check(ctx, querier, baseMission)
 }
 
 func (s *ServiceImpl) ReassignMissionsQ(

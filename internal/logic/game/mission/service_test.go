@@ -9,6 +9,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	board2 "github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission/checker"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/game/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region"
@@ -31,7 +32,16 @@ func setup(t *testing.T) (
 	regionService := region.NewService(t)
 	rng := rand.NewRNG(t)
 
-	service := mission.New(rng, querier, boardService, regionService)
+	registry, err := checker.NewRegistry([]checker.MissionChecker{
+		checker.NewTwoContinentsChecker(boardService),
+		checker.NewTwoContinentsPlusOneChecker(boardService),
+		checker.NewEighteenTerritoriesChecker(regionService),
+		checker.NewTwentyFourTerritoriesChecker(regionService),
+		checker.NewEliminatePlayerChecker(regionService),
+	})
+	require.NoError(t, err)
+
+	service := mission.New(rng, querier, registry)
 
 	return querier, boardService, regionService, service
 }

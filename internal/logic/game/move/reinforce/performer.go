@@ -14,7 +14,7 @@ func (s *ServiceImpl) PerformQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	move Move,
-) (*MoveResult, error) {
+) (any, error) {
 	ctx.Log().Infow("performing reinforce move", "move", move)
 
 	sourceRegion, err := s.regionService.GetRegionQ(ctx, querier, move.SourceRegionID)
@@ -37,7 +37,7 @@ func (s *ServiceImpl) PerformQ(
 		return nil, fmt.Errorf("unable to perform attack move: %w", err)
 	}
 
-	return &MoveResult{}, nil
+	return nil, nil //nolint:nilnil // no result needed for reinforce
 }
 
 func (s *ServiceImpl) perform(

@@ -15,7 +15,7 @@ func (s *ServiceImpl) PerformQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	move Move,
-) (*MoveResult, error) {
+) (any, error) {
 	ctx.Log().Infow("performing attack move", "move", move)
 
 	attackingRegion, err := s.regionService.GetRegionQ(ctx, querier, move.AttackingRegionID)
@@ -41,11 +41,15 @@ func (s *ServiceImpl) PerformQ(
 
 	ctx.Log().Infow("attack executed successfully")
 
-	return &MoveResult{
+	result := &MoveResult{
 		AttackingRegionID: move.AttackingRegionID,
 		DefendingRegionID: move.DefendingRegionID,
 		ConqueringTroops:  move.AttackingTroops - casualties.attacking,
-	}, nil
+	}
+
+	s.lastResult = result
+
+	return result, nil
 }
 
 func (s *ServiceImpl) perform(

@@ -32,32 +32,32 @@ type CardsOrchestrator interface {
 }
 
 var (
-	_ DeployOrchestrator    = (*OrchestratorImpl[deploy.Move, *deploy.MoveResult])(nil)
-	_ AttackOrchestrator    = (*OrchestratorImpl[attack.Move, *attack.MoveResult])(nil)
-	_ ConquerOrchestrator   = (*OrchestratorImpl[conquer.Move, *conquer.MoveResult])(nil)
-	_ ReinforceOrchestrator = (*OrchestratorImpl[reinforce.Move, *reinforce.MoveResult])(nil)
+	_ DeployOrchestrator    = (*OrchestratorImpl[deploy.Move])(nil)
+	_ AttackOrchestrator    = (*OrchestratorImpl[attack.Move])(nil)
+	_ ConquerOrchestrator   = (*OrchestratorImpl[conquer.Move])(nil)
+	_ ReinforceOrchestrator = (*OrchestratorImpl[reinforce.Move])(nil)
 )
 
 var Module = fx.Options(
 	fx.Provide(
 		fx.Annotate(
-			NewOrchestrator[deploy.Move, *deploy.MoveResult],
+			NewOrchestrator[deploy.Move],
 			fx.As(new(DeployOrchestrator)),
 		),
 		fx.Annotate(
-			NewOrchestrator[attack.Move, *attack.MoveResult],
+			NewOrchestrator[attack.Move],
 			fx.As(new(AttackOrchestrator)),
 		),
 		fx.Annotate(
-			NewOrchestrator[conquer.Move, *conquer.MoveResult],
+			NewOrchestrator[conquer.Move],
 			fx.As(new(ConquerOrchestrator)),
 		),
 		fx.Annotate(
-			NewOrchestrator[reinforce.Move, *reinforce.MoveResult],
+			NewOrchestrator[reinforce.Move],
 			fx.As(new(ReinforceOrchestrator)),
 		),
 		fx.Annotate(
-			NewOrchestrator[cards.Move, *cards.MoveResult],
+			NewOrchestrator[cards.Move],
 			fx.As(new(CardsOrchestrator)),
 		),
 		fx.Annotate(

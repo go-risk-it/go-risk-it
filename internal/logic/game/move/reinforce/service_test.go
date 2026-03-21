@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	realcards "github.com/go-risk-it/go-risk-it/internal/logic/game/move/cards"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/reinforce"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/game/db"
@@ -266,7 +265,7 @@ func TestServiceImpl_PerformQ_ShouldMoveTroops(t *testing.T) {
 		UpdateTroopsInRegionQ(ctx, querier, targetRegion, int64(3)).
 		Return(nil)
 
-	result, err := service.PerformQ(ctx, querier, reinforce.Move{
+	_, err := service.PerformQ(ctx, querier, reinforce.Move{
 		SourceRegionID: "greenland",
 		TargetRegionID: "iceland",
 		TroopsInSource: 5,
@@ -275,7 +274,6 @@ func TestServiceImpl_PerformQ_ShouldMoveTroops(t *testing.T) {
 	})
 
 	require.NoError(t, err)
-	require.NotNil(t, result)
 }
 
 func TestServiceImpl_WalkQ(t *testing.T) {
@@ -349,7 +347,7 @@ func TestServiceImpl_AdvanceQ_ToCards_WithConquerInTurn(t *testing.T) {
 		InsertPhaseQ(ctx, querier, sqlc.GamePhaseTypeCARDS).
 		Return(&sqlc.GamePhase{}, nil)
 
-	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeCARDS, &reinforce.MoveResult{})
+	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeCARDS)
 
 	require.NoError(t, err)
 }
@@ -379,7 +377,7 @@ func TestServiceImpl_AdvanceQ_ToCards_WithoutConquerInTurn(t *testing.T) {
 		InsertPhaseQ(ctx, querier, sqlc.GamePhaseTypeCARDS).
 		Return(&sqlc.GamePhase{}, nil)
 
-	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeCARDS, &reinforce.MoveResult{})
+	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeCARDS)
 
 	require.NoError(t, err)
 }
@@ -410,10 +408,10 @@ func TestServiceImpl_AdvanceQ_ToDeploy_WithConquerInTurn(t *testing.T) {
 		Return(nil)
 	cardsService.
 		EXPECT().
-		AdvanceQ(ctx, querier, sqlc.GamePhaseTypeDEPLOY, (*realcards.MoveResult)(nil)).
+		AdvanceQ(ctx, querier, sqlc.GamePhaseTypeDEPLOY).
 		Return(nil)
 
-	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeDEPLOY, &reinforce.MoveResult{})
+	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeDEPLOY)
 
 	require.NoError(t, err)
 }
@@ -440,10 +438,10 @@ func TestServiceImpl_AdvanceQ_ToDeploy_WithoutConquerInTurn(t *testing.T) {
 		Return(false, nil)
 	cardsService.
 		EXPECT().
-		AdvanceQ(ctx, querier, sqlc.GamePhaseTypeDEPLOY, (*realcards.MoveResult)(nil)).
+		AdvanceQ(ctx, querier, sqlc.GamePhaseTypeDEPLOY).
 		Return(nil)
 
-	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeDEPLOY, &reinforce.MoveResult{})
+	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeDEPLOY)
 
 	require.NoError(t, err)
 }
@@ -454,7 +452,7 @@ func TestServiceImpl_AdvanceQ_InvalidTransition(t *testing.T) {
 	querier, _, _, _, _, _, service := setup(t)
 	ctx := input()
 
-	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeATTACK, &reinforce.MoveResult{})
+	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeATTACK)
 
 	require.Error(t, err)
 	require.ErrorContains(t, err, "invalid phase transition")

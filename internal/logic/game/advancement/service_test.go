@@ -20,28 +20,25 @@ import (
 	"go.uber.org/zap"
 )
 
-// Using concrete types for the generic Service: string for move type T, int for result type R.
-type (
-	testMove   = string
-	testResult = int
-)
+// Using a concrete type for the generic Service: string for move type T.
+type testMove = string
 
 func setup(t *testing.T) (
 	*mockdb.Querier,
 	*mockstate.Service,
-	*mockmoveservice.Service[testMove, testResult],
+	*mockmoveservice.Service[testMove],
 	*mockvalidation.Service,
-	*advancement.ServiceImpl[testMove, testResult],
+	*advancement.ServiceImpl[testMove],
 ) {
 	t.Helper()
 
 	querier := mockdb.NewQuerier(t)
 	gameState := mockstate.NewService(t)
-	moveService := mockmoveservice.NewService[testMove, testResult](t)
+	moveService := mockmoveservice.NewService[testMove](t)
 	validationService := mockvalidation.NewService(t)
 	signal := mocksignals.NewGameStateChangedSignal(t)
 
-	service := advancement.NewService[testMove, testResult](
+	service := advancement.NewService[testMove](
 		gameState,
 		querier,
 		moveService,
@@ -81,7 +78,7 @@ func TestAdvanceQ_HappyPath(t *testing.T) {
 	validationService.EXPECT().ValidateQ(gameCtx, querier, game).Return(nil)
 	moveService.EXPECT().WalkQ(gameCtx, querier, true).Return(sqlc.GamePhaseTypeREINFORCE, nil)
 	moveService.EXPECT().
-		AdvanceQ(gameCtx, querier, sqlc.GamePhaseTypeREINFORCE, 0).
+		AdvanceQ(gameCtx, querier, sqlc.GamePhaseTypeREINFORCE).
 		Return(nil)
 
 	targetPhase, err := service.AdvanceQ(gameCtx, querier)
@@ -209,7 +206,7 @@ func TestAdvanceQ_AdvanceFails(t *testing.T) {
 	validationService.EXPECT().ValidateQ(gameCtx, querier, game).Return(nil)
 	moveService.EXPECT().WalkQ(gameCtx, querier, true).Return(sqlc.GamePhaseTypeREINFORCE, nil)
 	moveService.EXPECT().
-		AdvanceQ(gameCtx, querier, sqlc.GamePhaseTypeREINFORCE, 0).
+		AdvanceQ(gameCtx, querier, sqlc.GamePhaseTypeREINFORCE).
 		Return(errors.New("advance db write failed"))
 
 	targetPhase, err := service.AdvanceQ(gameCtx, querier)
@@ -268,7 +265,7 @@ func TestAdvanceQ_DifferentPhaseTransitions(t *testing.T) {
 			validationService.EXPECT().ValidateQ(gameCtx, querier, game).Return(nil)
 			moveService.EXPECT().WalkQ(gameCtx, querier, true).Return(testCase.targetPhase, nil)
 			moveService.EXPECT().
-				AdvanceQ(gameCtx, querier, testCase.targetPhase, 0).
+				AdvanceQ(gameCtx, querier, testCase.targetPhase).
 				Return(nil)
 
 			resultPhase, err := service.AdvanceQ(gameCtx, querier)

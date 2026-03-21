@@ -18,10 +18,8 @@ type Move struct {
 	MovingTroops   int64  `json:"movingTroops"`
 }
 
-type MoveResult struct{}
-
 type Service interface {
-	service.Service[Move, *MoveResult]
+	service.Service[Move]
 }
 
 type ServiceImpl struct {

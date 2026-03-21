@@ -15,27 +15,27 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type Service[T, R any] interface {
+type Service[T any] interface {
 	Advance(ctx ctx.GameContext) error
 	AdvanceQ(ctx ctx.GameContext, querier db.Querier) (sqlc.GamePhaseType, error)
 }
 
-type ServiceImpl[T, R any] struct {
+type ServiceImpl[T any] struct {
 	querier                db.Querier
 	gameState              state.Service
-	moveService            service.Service[T, R]
+	moveService            service.Service[T]
 	validationService      validation.Service
 	gameStateChangedSignal signals.GameStateChangedSignal
 }
 
-func NewService[T, R any](
+func NewService[T any](
 	gameState state.Service,
 	querier db.Querier,
-	moveService service.Service[T, R],
+	moveService service.Service[T],
 	validationService validation.Service,
 	gameStateChangedSignal signals.GameStateChangedSignal,
-) *ServiceImpl[T, R] {
-	return &ServiceImpl[T, R]{
+) *ServiceImpl[T] {
+	return &ServiceImpl[T]{
 		gameState:              gameState,
 		querier:                querier,
 		moveService:            moveService,
@@ -44,7 +44,7 @@ func NewService[T, R any](
 	}
 }
 
-func (s *ServiceImpl[T, R]) Advance(ctx ctx.GameContext) error {
+func (s *ServiceImpl[T]) Advance(ctx ctx.GameContext) error {
 	currentPhase := s.moveService.PhaseType()
 
 	targetPhase, err := dbutil.InTransactionWithIsolation(
@@ -67,7 +67,7 @@ func (s *ServiceImpl[T, R]) Advance(ctx ctx.GameContext) error {
 	return nil
 }
 
-func (s *ServiceImpl[T, R]) AdvanceQ(
+func (s *ServiceImpl[T]) AdvanceQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) (sqlc.GamePhaseType, error) {
@@ -96,8 +96,6 @@ func (s *ServiceImpl[T, R]) AdvanceQ(
 		)
 	}
 
-	var performResult R
-
 	targetPhase, err := s.moveService.WalkQ(ctx, querier, true)
 	if err != nil {
 		return "", fmt.Errorf("unable to walk to target phase: %w", err)
@@ -107,7 +105,6 @@ func (s *ServiceImpl[T, R]) AdvanceQ(
 		ctx,
 		querier,
 		targetPhase,
-		performResult,
 	)
 	if err != nil {
 		return "", fmt.Errorf("unable to perform move: %w", err)

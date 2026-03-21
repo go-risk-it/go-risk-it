@@ -190,12 +190,11 @@ func TestServiceImpl_PerformQ_ShouldTransferTroopsAndOwnership(t *testing.T) {
 			{ID: 10},
 		}, nil)
 
-	result, err := service.PerformQ(ctx, querier, conquer.Move{
+	_, err := service.PerformQ(ctx, querier, conquer.Move{
 		Troops: 3,
 	})
 
 	require.NoError(t, err)
-	require.NotNil(t, result)
 }
 
 func TestServiceImpl_PerformQ_ShouldHandlePlayerElimination(t *testing.T) {
@@ -260,12 +259,11 @@ func TestServiceImpl_PerformQ_ShouldHandlePlayerElimination(t *testing.T) {
 		ReassignMissionsQ(ctx, querier, defeatedPlayerID).
 		Return(nil)
 
-	result, err := service.PerformQ(ctx, querier, conquer.Move{
+	_, err := service.PerformQ(ctx, querier, conquer.Move{
 		Troops: 3,
 	})
 
 	require.NoError(t, err)
-	require.NotNil(t, result)
 }
 
 func TestServiceImpl_WalkQ(t *testing.T) {
@@ -330,7 +328,7 @@ func TestServiceImpl_AdvanceQ_ShouldCreatePhaseForValidTransition(t *testing.T) 
 		InsertPhaseQ(ctx, querier, sqlc.GamePhaseTypeATTACK).
 		Return(&sqlc.GamePhase{}, nil)
 
-	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeATTACK, &conquer.MoveResult{})
+	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeATTACK)
 
 	require.NoError(t, err)
 }
@@ -341,7 +339,7 @@ func TestServiceImpl_AdvanceQ_ShouldFailForInvalidTransition(t *testing.T) {
 	querier, _, _, _, _, service := setup(t)
 	ctx := input()
 
-	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeDEPLOY, &conquer.MoveResult{})
+	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeDEPLOY)
 
 	require.Error(t, err)
 	require.ErrorContains(t, err, "invalid phase transition")
