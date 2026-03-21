@@ -35,6 +35,146 @@ graph LR
 | PostgreSQL | 5432 | Persistent storage (game + lobby schemas) |
 | Jaeger | 16686 | Distributed tracing UI |
 
+## Go Package Architecture
+
+The backend follows a strict **4-layer architecture** enforced through Go packages and Uber Fx dependency injection. Each layer only depends on the layers below it.
+
+```mermaid
+graph TD
+    subgraph Web["Web Layer (internal/web)"]
+        direction LR
+        rest["rest/\nHTTP handlers"]
+        wsm["ws/\nWebSocket manager"]
+        ctrl["controller/\nRequest → domain"]
+        mw["middleware/\nJWT auth"]
+        sig_w["signals/\nWS broadcast"]
+    end
+
+    subgraph Logic["Logic Layer (internal/logic)"]
+        direction LR
+        orch["move/orchestration/\nTransaction + pipeline"]
+        move["move/{attack,deploy,...}\nPerform + Walk + Advance"]
+        phase["phase/\nPhase management"]
+        mission["mission/\nVictory checking"]
+        card["card/\nCard logic"]
+        board["board/\nRegion adjacency"]
+        player["player/\nPlayer state"]
+        adv["advancement/\nPhase advancement"]
+        creation["creation/\nGame setup"]
+    end
+
+    subgraph Data["Data Layer (internal/data)"]
+        direction LR
+        sqlc["game/\nSQLC queries"]
+        ldb["lobby/\nSQLC queries"]
+        pool["pool/\nConnection pool"]
+        mig["migration/\nSchema migrations"]
+    end
+
+    subgraph Config["Config Layer (internal/config)"]
+        direction LR
+        koanf["Koanf\nYAML + env vars"]
+    end
+
+    Web -->|"calls"| Logic
+    Logic -->|"queries"| Data
+    Data -->|"reads"| Config
+    Web -->|"reads"| Config
+```
+
+### Uber Fx Dependency Injection
+
+The application uses [Uber Fx](https://github.com/uber-go/fx) for compile-time-safe dependency injection. The module hierarchy mirrors the package layers:
+
+```
+app.Module
+├── config.Module        # Koanf config loading
+├── loggerfx.Module      # Zap logger setup
+├── data.Module          # DB pools, SQLC queries, migrations
+│   ├── game.Module
+│   └── lobby.Module
+├── logic.Module         # Business logic services
+│   ├── game.Module      # Game engine (move/, phase/, mission/, card/, board/, ...)
+│   └── lobby.Module     # Lobby management
+├── web.Module           # HTTP/WS servers
+│   ├── game.Module      # Game REST + WS + signal handlers
+│   ├── lobby.Module     # Lobby REST + WS + signal handlers
+│   ├── middleware.Module # JWT auth middleware
+│   ├── mux.Module       # Route registration
+│   ├── nbio.Module      # nbio HTTP engine
+│   ├── otel.Module      # OpenTelemetry setup
+│   └── rest.Module      # Health check + route helpers
+└── rand.Module          # Random number generation
+```
+
+Each package exposes a `var Module = fx.Options(...)` that declares its providers. Fx wires everything together at startup — if a dependency is missing or circular, the app fails to start with a clear error message.
+
+## Move Execution Flow
+
+This sequence shows how a move request (e.g., an attack) flows through the code layers:
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Handler as AttackHandler<br/>(web/rest/move)
+    participant Controller as MoveController<br/>(web/controller)
+    participant Orchestrator as Orchestrator[T,R]<br/>(logic/move/orchestration)
+    participant Service as AttackService<br/>(logic/move/attack)
+    participant DB as PostgreSQL
+    participant Signal as GameStateChangedSignal
+    participant WS as WebSocket Clients
+
+    Client->>Handler: POST /moves/attacks
+    Handler->>Handler: Decode request body
+    Handler->>Controller: PerformAttackMove()
+    Controller->>Orchestrator: OrchestrateMove()
+
+    Note over Orchestrator,DB: RepeatableRead Transaction
+    Orchestrator->>DB: Begin TX
+    Orchestrator->>Service: ValidateQ() — pre-move checks
+    Orchestrator->>Service: PerformQ() — roll dice, update troops
+    Service->>DB: UPDATE region SET troops = ...
+    Service-->>Orchestrator: MoveResult (casualties, outcome)
+    Orchestrator->>DB: LogMoveQ() — record to move_log
+    Orchestrator->>Orchestrator: IsMissionAccomplishedQ()
+    Orchestrator->>Service: WalkQ() — determine next phase
+    Service-->>Orchestrator: CONQUER (if conquered) or ATTACK/REINFORCE
+    Orchestrator->>Service: AdvanceQ() — insert new phase record
+    Service->>DB: INSERT INTO phase ...
+    Orchestrator->>DB: Commit TX
+
+    Orchestrator--)Signal: Emit(GameStateChanged)
+    Signal--)WS: Broadcast updated state
+    WS--)Client: gameState, boardState, playerState
+```
+
+### Service Interface Pattern
+
+Each move type (deploy, attack, conquer, reinforce, cards) implements a generic `Service[T, R]` interface composed of three roles:
+
+| Role | Method | Responsibility |
+|------|--------|----------------|
+| **Performer** | `PerformQ(ctx, querier, move T) → R` | Execute the move logic |
+| **PhaseWalker** | `WalkQ(ctx, querier, voluntary bool) → PhaseType` | Determine next phase |
+| **Advancer** | `AdvanceQ(ctx, querier, targetPhase, result R)` | Transition to new phase |
+
+The orchestrator calls these three methods in sequence inside a single database transaction with `RepeatableRead` isolation, ensuring atomic state transitions.
+
+## Board Topology
+
+The game board consists of **42 regions** organized into **6 continents**. Controlling all regions in a continent grants bonus troops each turn.
+
+| Continent | Regions | Bonus Troops |
+|-----------|---------|--------------|
+| Asia | 12 | 7 |
+| North America | 9 | 5 |
+| Europe | 7 | 5 |
+| Africa | 6 | 3 |
+| South America | 4 | 2 |
+| Oceania | 4 | 2 |
+
+Region adjacency (including cross-continent links) is defined in [`map.json`](../map.json) and loaded at game creation. The board topology is a static graph — adjacency is used for attack validation, conquer movement, and BFS-based reinforcement pathfinding.
+
 ## Authentication Flow
 
 ```mermaid
