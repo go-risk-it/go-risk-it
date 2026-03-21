@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	sharedfetcher "github.com/go-risk-it/go-risk-it/internal/web/fetcher"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 	"go.uber.org/fx"
@@ -38,7 +39,7 @@ func NewBoardFetcher(boardController controller.BoardController) BoardFetcherRes
 }
 
 func (f *BoardFetcherImpl) FetchState(ctx ctx.GameContext, stateChannel chan json.RawMessage) {
-	FetchState(
+	sharedfetcher.FetchState(
 		ctx,
 		message.BoardState,
 		f.boardController.GetBoardState,

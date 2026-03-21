@@ -2,11 +2,11 @@ package pool
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/data/migration"
+	poolfactory "github.com/go-risk-it/go-risk-it/internal/data/pool"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/fx"
@@ -45,31 +45,7 @@ var Module = fx.Options(
 func NewConnectionPool(
 	lifecycle fx.Lifecycle,
 	log *zap.SugaredLogger,
-	config config.DatabaseConfig,
+	cfg config.DatabaseConfig,
 ) (*pgxpool.Pool, error) {
-	ctx := context.Background()
-
-	pool, err := pgxpool.New(ctx, config.BuildConnectionString())
-	if err != nil {
-		return nil, fmt.Errorf("unable to create lobby connection pool: %w", err)
-	}
-
-	if _, err := pool.Exec(ctx, "SET search_path TO lobby;"); err != nil {
-		return nil, fmt.Errorf("unable to set lobby search path: %w", err)
-	}
-
-	log.Infow("created connection pool", "schema", "lobby")
-
-	lifecycle.Append(
-		fx.Hook{
-			OnStart: nil,
-			OnStop: func(ctx context.Context) error {
-				pool.Close()
-
-				return nil
-			},
-		},
-	)
-
-	return pool, nil
+	return poolfactory.NewConnectionPool(lifecycle, log, cfg, "lobby", "SET search_path TO lobby;")
 }

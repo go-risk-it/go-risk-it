@@ -7,6 +7,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
+	sharedfetcher "github.com/go-risk-it/go-risk-it/internal/web/fetcher"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 	"go.uber.org/fx"
@@ -55,31 +56,31 @@ func (g *GameFetcherImpl) FetchState(ctx ctx.GameContext, stateChannel chan json
 
 	switch gameState.Phase {
 	case sqlc.GamePhaseTypeDEPLOY:
-		FetchState(
+		sharedfetcher.FetchState(
 			ctx,
 			message.GameState,
 			getGameFetcherFunc(gameState, g.phaseController.GetDeployPhaseState),
 			stateChannel)
 	case sqlc.GamePhaseTypeATTACK:
-		FetchState(
+		sharedfetcher.FetchState(
 			ctx,
 			message.GameState,
 			getGameFetcherFunc(gameState, g.phaseController.GetAttackPhaseState),
 			stateChannel)
 	case sqlc.GamePhaseTypeCONQUER:
-		FetchState(
+		sharedfetcher.FetchState(
 			ctx,
 			message.GameState,
 			getGameFetcherFunc(gameState, g.phaseController.GetConquerPhaseState),
 			stateChannel)
 	case sqlc.GamePhaseTypeREINFORCE:
-		FetchState(
+		sharedfetcher.FetchState(
 			ctx,
 			message.GameState,
 			getGameFetcherFunc(gameState, g.phaseController.GetReinforcePhaseState),
 			stateChannel)
 	case sqlc.GamePhaseTypeCARDS:
-		FetchState(
+		sharedfetcher.FetchState(
 			ctx,
 			message.GameState,
 			getGameFetcherFunc(gameState, g.phaseController.GetCardsPhaseState),

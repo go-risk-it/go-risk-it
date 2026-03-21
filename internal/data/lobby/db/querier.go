@@ -1,8 +1,6 @@
 package db
 
 import (
-	"context"
-
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/pool"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/sqlc"
@@ -21,24 +19,19 @@ var (
 
 type Queries struct {
 	*sqlc.Queries
-
-	db pool.DB
+	db.TxSupport
 }
 
-func New(db pool.DB) Querier {
+func New(d pool.DB) Querier {
 	return &Queries{
-		Queries: sqlc.New(db),
-		db:      db,
+		Queries:   sqlc.New(d),
+		TxSupport: db.TxSupport{DB: d},
 	}
-}
-
-func (q *Queries) BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error) {
-	return q.db.BeginTx(ctx, txOptions)
 }
 
 func (q *Queries) WithTx(tx pgx.Tx) Querier {
 	return &Queries{
-		Queries: q.Queries.WithTx(tx),
-		db:      q.db,
+		Queries:   q.Queries.WithTx(tx),
+		TxSupport: q.TxSupport,
 	}
 }

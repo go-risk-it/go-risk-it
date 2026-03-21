@@ -6,6 +6,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
 	"github.com/go-risk-it/go-risk-it/internal/config"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	sharedfetcher "github.com/go-risk-it/go-risk-it/internal/web/fetcher"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 )
@@ -36,7 +37,7 @@ func (f *MoveLogFetcherImpl) FetchState(
 ) {
 	context.Log().Infow("history size:", "size", f.historyConfig.Size)
 
-	FetchState(
+	sharedfetcher.FetchState(
 		context,
 		message.MoveHistory,
 		func(context ctx.GameContext) (messaging.MoveHistory, error) {

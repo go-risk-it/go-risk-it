@@ -8,6 +8,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/validation"
 )
 
 func (s *ServiceImpl) PerformQ(
@@ -178,7 +179,13 @@ func checkTroops(
 		return domainerrors.NewValidationError("defending region does not have enough troops")
 	}
 
-	if err := checkDeclaredValues(ctx, attackingRegion, defendingRegion, move); err != nil {
+	if err := validation.CheckDeclaredTroops(
+		ctx,
+		attackingRegion.Troops,
+		defendingRegion.Troops,
+		move.TroopsInSource,
+		move.TroopsInTarget,
+	); err != nil {
 		return fmt.Errorf("declared values are invalid: %w", err)
 	}
 
@@ -203,31 +210,6 @@ func checkRegionOwnership(
 	}
 
 	ctx.Log().Infow("region ownership check passed")
-
-	return nil
-}
-
-func checkDeclaredValues(
-	ctx ctx.GameContext,
-	attackingRegion *sqlc.GetRegionsByGameRow,
-	defendingRegion *sqlc.GetRegionsByGameRow,
-	move Move,
-) error {
-	ctx.Log().Infow("checking declared values")
-
-	if attackingRegion.Troops != move.TroopsInSource {
-		return domainerrors.NewValidationError(
-			"attacking region doesn't have the declared number of troops",
-		)
-	}
-
-	if defendingRegion.Troops != move.TroopsInTarget {
-		return domainerrors.NewValidationError(
-			"defending region doesn't have the declared number of troops",
-		)
-	}
-
-	ctx.Log().Infow("declared values check passed")
 
 	return nil
 }
