@@ -1,6 +1,7 @@
 package orchestrator
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/client"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/gamestate"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/player"
 )
 
@@ -22,29 +24,36 @@ type PlayerInfo struct {
 
 // GameRunner runs a single game to completion.
 type GameRunner struct {
-	baseURL  string
-	wsURL    string
-	anonKey  string
-	strategy player.Strategy
-	timeout  time.Duration
+	baseURL   string
+	wsURL     string
+	anonKey   string
+	strategy  player.Strategy
+	timeout   time.Duration
+	collector *metrics.Collector
+	thinkTime time.Duration
 }
 
 func NewGameRunner(
 	baseURL, wsURL, anonKey string,
 	strategy player.Strategy,
 	timeout time.Duration,
+	collector *metrics.Collector,
+	thinkTime time.Duration,
 ) *GameRunner {
 	return &GameRunner{
-		baseURL:  baseURL,
-		wsURL:    wsURL,
-		anonKey:  anonKey,
-		strategy: strategy,
-		timeout:  timeout,
+		baseURL:   baseURL,
+		wsURL:     wsURL,
+		anonKey:   anonKey,
+		strategy:  strategy,
+		timeout:   timeout,
+		collector: collector,
+		thinkTime: thinkTime,
 	}
 }
 
 // GameResult holds stats from a completed game.
 type GameResult struct {
+	GameIndex  int
 	Duration   time.Duration
 	Moves      int
 	Errors     int
@@ -54,9 +63,9 @@ type GameResult struct {
 }
 
 // Run executes a single game with the given number of players.
-func (gr *GameRunner) Run(gameIndex, numPlayers int) GameResult {
+func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameResult {
 	start := time.Now()
-	result := GameResult{}
+	result := GameResult{GameIndex: gameIndex}
 
 	// 1. Create and authenticate players.
 	auth := client.NewAuth(gr.baseURL, gr.anonKey)
@@ -129,16 +138,26 @@ func (gr *GameRunner) Run(gameIndex, numPlayers int) GameResult {
 	}
 
 	// 5. Event-driven game loop.
-	// Use player 0's view as the canonical state source. After each move,
-	// wait for player 0's view to update before deciding the next action.
 	deadline := time.After(gr.timeout)
 	consecutiveErrors := 0
 
 	for {
+		// Check context cancellation.
 		select {
+		case <-ctx.Done():
+			result.Duration = time.Since(start)
+			log.Printf(
+				"[game %d] cancelled (%d moves, %d errors)",
+				gameIndex,
+				result.Moves,
+				result.Errors,
+			)
+
+			return result
 		case <-deadline:
 			result.TimedOut = true
 			result.Duration = time.Since(start)
+			gr.collector.RecordGameTimedOut()
 
 			log.Printf(
 				"[game %d] timed out after %v (%d moves, %d errors)",
@@ -153,12 +172,12 @@ func (gr *GameRunner) Run(gameIndex, numPlayers int) GameResult {
 		}
 
 		// Use the active player's own view — they have the most accurate card state.
-		// First, figure out whose turn it is from player 0's view.
 		refSnap := players[0].WS.View().Snapshot()
 
 		if refSnap.IsGameOver() {
 			result.Winner = refSnap.GameState.WinnerUserID
 			result.Duration = time.Since(start)
+			gr.collector.RecordGameComplete()
 
 			log.Printf("[game %d] finished in %v (%d moves, %d errors, winner: %s)",
 				gameIndex, result.Duration, result.Moves, result.Errors, abbreviate(result.Winner))
@@ -167,32 +186,29 @@ func (gr *GameRunner) Run(gameIndex, numPlayers int) GameResult {
 		}
 
 		if refSnap.GameState == nil || refSnap.PlayersState == nil {
-			// State not yet received — wait.
 			waitForAnyUpdate(players, 2*time.Second)
 
 			continue
 		}
 
-		// Find the current player by turn index.
 		activePlayer := findActivePlayer(refSnap, players, userIndex)
 		if activePlayer == nil {
-			// Turn doesn't map to any player (shouldn't happen) — wait.
 			log.Printf("[game %d] no active player for turn %d", gameIndex, refSnap.GameState.Turn)
 			waitForAnyUpdate(players, 2*time.Second)
 
 			continue
 		}
 
-		// Use the active player's own snapshot (has their card state).
 		snap := activePlayer.WS.View().Snapshot()
 
-		// Decide and execute.
+		// Decide move.
 		action, err := gr.strategy.DecideMove(snap, activePlayer.UserID)
 		if err != nil {
 			log.Printf("[game %d] strategy error for %s (phase=%s): %v",
 				gameIndex, activePlayer.Name, snap.CurrentPhase(), err)
 			result.Errors++
 			consecutiveErrors++
+			gr.collector.RecordError()
 
 			if consecutiveErrors > 20 {
 				result.FatalError = fmt.Errorf("too many consecutive errors")
@@ -208,10 +224,20 @@ func (gr *GameRunner) Run(gameIndex, numPlayers int) GameResult {
 
 		logAction(gameIndex, activePlayer.Name, action)
 
+		// Apply think time if configured.
+		if gr.thinkTime > 0 {
+			time.Sleep(gr.thinkTime)
+		}
+
+		// --- Instrumented move execution ---
+		actionName := actionTypeName(action.Type)
+		t1 := time.Now()
+
 		if err := executeAction(activePlayer.REST, gameID, action); err != nil {
 			log.Printf("[game %d] execute error for %s: %v", gameIndex, activePlayer.Name, err)
 			result.Errors++
 			consecutiveErrors++
+			gr.collector.RecordError()
 
 			if consecutiveErrors > 20 {
 				result.FatalError = fmt.Errorf("too many consecutive errors")
@@ -228,6 +254,7 @@ func (gr *GameRunner) Run(gameIndex, numPlayers int) GameResult {
 					log.Printf("[game %d] advance past cards also failed: %v", gameIndex, advErr)
 				} else {
 					result.Moves++
+					gr.collector.RecordMove()
 				}
 
 				waitForAnyUpdate(players, 3*time.Second)
@@ -236,25 +263,48 @@ func (gr *GameRunner) Run(gameIndex, numPlayers int) GameResult {
 				continue
 			}
 
-			// On 409 (stale state), wait for a WS update and retry.
 			waitForAnyUpdate(players, 2*time.Second)
 
 			continue
 		}
 
+		t2 := time.Now()
+		gr.collector.RecordREST(actionName, t2.Sub(t1))
+
+		// Wait for state to propagate.
+		waitForAnyUpdate(players, 3*time.Second)
+		time.Sleep(50 * time.Millisecond)
+
+		t3 := time.Now()
+		gr.collector.RecordWSDelivery(t3.Sub(t2))
+		gr.collector.RecordE2E(t3.Sub(t1))
+
 		result.Moves++
 		consecutiveErrors = 0
+		gr.collector.RecordMove()
+	}
+}
 
-		// Wait for state to propagate. After a move, multiple WS messages arrive
-		// (boardState, gameState, playerState, etc.). Wait for a burst to settle.
-		waitForAnyUpdate(players, 3*time.Second)
-		// Small extra delay to let remaining burst messages arrive.
-		time.Sleep(50 * time.Millisecond)
+func actionTypeName(t player.ActionType) string {
+	switch t {
+	case player.ActionDeploy:
+		return "deploy"
+	case player.ActionAttack:
+		return "attack"
+	case player.ActionConquer:
+		return "conquer"
+	case player.ActionReinforce:
+		return "reinforce"
+	case player.ActionPlayCards:
+		return "cards"
+	case player.ActionAdvance:
+		return "advance"
+	default:
+		return "unknown"
 	}
 }
 
 // findActivePlayer finds the player whose turn it is.
-// Turn is a monotonically increasing counter; current player = Turn % numPlayers.
 func findActivePlayer(
 	snap gamestate.ViewSnapshot,
 	players []*PlayerInfo,
@@ -281,8 +331,7 @@ func findActivePlayer(
 	return nil
 }
 
-// waitForAnyUpdate waits for a state update from any player's WS connection,
-// or returns if all connections are closed.
+// waitForAnyUpdate waits for a state update from any player's WS connection.
 func waitForAnyUpdate(players []*PlayerInfo, timeout time.Duration) {
 	timer := time.After(timeout)
 
