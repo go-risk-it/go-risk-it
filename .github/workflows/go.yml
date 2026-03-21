@@ -35,6 +35,9 @@ jobs:
 
   security:
     runs-on: ubuntu-latest
+    # Informational: reports vulns but doesn't block merging
+    # (Go stdlib vulns can't be fixed until next Go minor release)
+    continue-on-error: true
     steps:
     - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
     - name: Set up Go
