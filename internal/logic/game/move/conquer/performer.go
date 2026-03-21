@@ -13,7 +13,7 @@ func (s *ServiceImpl) PerformQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	move Move,
-) (*MoveResult, error) {
+) (any, error) {
 	ctx.Log().Infow("performing conquer move", "move", move)
 
 	phaseState, err := s.GetPhaseStateQ(ctx, querier)
@@ -64,7 +64,7 @@ func (s *ServiceImpl) PerformQ(
 
 	ctx.Log().Infow("conquer executed successfully")
 
-	return &MoveResult{}, nil
+	return nil, nil //nolint:nilnil // no result needed for conquer
 }
 
 func (s *ServiceImpl) updateRegionTroops(

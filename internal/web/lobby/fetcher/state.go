@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	sharedfetcher "github.com/go-risk-it/go-risk-it/internal/web/fetcher"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 )
@@ -28,7 +29,7 @@ func (f *LobbyStateFetcherImpl) FetchState(
 	context ctx.LobbyContext,
 	stateChannel chan json.RawMessage,
 ) {
-	FetchState(
+	sharedfetcher.FetchState(
 		context,
 		message.LobbyState,
 		f.stateController.GetLobbyState,

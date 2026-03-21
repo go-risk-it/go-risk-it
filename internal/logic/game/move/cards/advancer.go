@@ -13,7 +13,6 @@ func (s *ServiceImpl) AdvanceQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	targetPhase sqlc.GamePhaseType,
-	moveResult *MoveResult,
 ) error {
 	if err := phase.ValidateTransition(sqlc.GamePhaseTypeCARDS, targetPhase); err != nil {
 		return fmt.Errorf("invalid phase transition: %w", err)
@@ -24,7 +23,7 @@ func (s *ServiceImpl) AdvanceQ(
 		return fmt.Errorf("failed to create phase: %w", err)
 	}
 
-	deployableTroops, err := s.getDeployableTroops(ctx, querier, moveResult)
+	deployableTroops, err := s.getDeployableTroops(ctx, querier)
 	if err != nil {
 		return fmt.Errorf("failed to get deployable troops: %w", err)
 	}
@@ -44,7 +43,6 @@ func (s *ServiceImpl) AdvanceQ(
 func (s *ServiceImpl) getDeployableTroops(
 	ctx ctx.GameContext,
 	querier db.Querier,
-	moveResult *MoveResult,
 ) (int64, error) {
 	currentPlayer, err := s.playerService.GetCurrentPlayerQ(ctx, querier)
 	if err != nil {
@@ -52,8 +50,8 @@ func (s *ServiceImpl) getDeployableTroops(
 	}
 
 	cardReward := int64(0)
-	if moveResult != nil {
-		cardReward = moveResult.ExtraDeployableTroops
+	if s.lastResult != nil {
+		cardReward = s.lastResult.ExtraDeployableTroops
 	}
 
 	playerRegions, err := s.regionService.GetRegionsControlledByPlayerQ(

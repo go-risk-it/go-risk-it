@@ -13,7 +13,7 @@ func (s *ServiceImpl) PerformQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	move Move,
-) (*MoveResult, error) {
+) (any, error) {
 	ctx.Log().Infow("performing deploy move", "move", move)
 
 	deployableTroops, err := s.GetDeployableTroopsQ(ctx, querier)
@@ -49,7 +49,7 @@ func (s *ServiceImpl) PerformQ(
 		return nil, fmt.Errorf("failed to execute deploy: %w", err)
 	}
 
-	return &MoveResult{}, nil
+	return nil, nil //nolint:nilnil // no result needed for deploy
 }
 
 func (s *ServiceImpl) executeDeploy(

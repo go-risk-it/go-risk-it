@@ -167,7 +167,7 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 			"giovanni",
 			"gabriele",
 			true,
-			"validation failed: troops check failed: declared values are invalid: attacking region doesn't have the declared number of troops",
+			"validation failed: troops check failed: declared values are invalid: source region doesn't have the declared number of troops",
 		},
 		{
 			"When defending region doesn't have the declared number of troops",
@@ -181,7 +181,7 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 			"giovanni",
 			"gabriele",
 			true,
-			"validation failed: troops check failed: declared values are invalid: defending region doesn't have the declared number of troops",
+			"validation failed: troops check failed: declared values are invalid: target region doesn't have the declared number of troops",
 		},
 		{
 			"When attacking and defending regions are not neighbours",

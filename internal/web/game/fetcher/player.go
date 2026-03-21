@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	sharedfetcher "github.com/go-risk-it/go-risk-it/internal/web/fetcher"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 	"go.uber.org/fx"
@@ -42,7 +43,7 @@ func (f *PlayerFetcherImpl) FetchState(
 	context ctx.GameContext,
 	stateChannel chan json.RawMessage,
 ) {
-	FetchState(
+	sharedfetcher.FetchState(
 		context,
 		message.PlayerState,
 		f.playerController.GetPlayerState,

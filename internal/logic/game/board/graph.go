@@ -3,6 +3,7 @@ package board
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
@@ -24,14 +25,7 @@ type GraphImpl struct {
 }
 
 func (g *GraphImpl) GetRegions() []string {
-	result := make([]string, 0, len(g.Edges))
-	for region := range g.Edges {
-		result = append(result, region)
-	}
-
-	slices.Sort(result)
-
-	return result
+	return slices.Sorted(maps.Keys(g.Edges))
 }
 
 var _ Graph = (*GraphImpl)(nil)

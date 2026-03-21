@@ -9,6 +9,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
+	sharedfetcher "github.com/go-risk-it/go-risk-it/internal/web/fetcher"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/fetcher"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/ws"
@@ -43,7 +44,7 @@ func HandleMovePerformed(
 		fetchStateAndPublish(
 			gameContext,
 			func(gameCtx ctx.GameContext, stateChannel chan json.RawMessage) {
-				fetcher.FetchState(
+				sharedfetcher.FetchState(
 					gameCtx,
 					message.MoveHistory,
 					func(gameCtx2 ctx.GameContext) (messaging.MoveHistory, error) {

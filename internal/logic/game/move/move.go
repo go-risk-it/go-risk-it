@@ -17,27 +17,27 @@ var Module = fx.Options(
 		fx.Annotate(
 			deploy.NewService,
 			fx.As(new(deploy.Service)),
-			fx.As(new(service.Service[deploy.Move, *deploy.MoveResult])),
+			fx.As(new(service.Service[deploy.Move])),
 		),
 		fx.Annotate(
 			attack.NewService,
 			fx.As(new(attack.Service)),
-			fx.As(new(service.Service[attack.Move, *attack.MoveResult])),
+			fx.As(new(service.Service[attack.Move])),
 		),
 		fx.Annotate(
 			conquer.NewService,
 			fx.As(new(conquer.Service)),
-			fx.As(new(service.Service[conquer.Move, *conquer.MoveResult])),
+			fx.As(new(service.Service[conquer.Move])),
 		),
 		fx.Annotate(
 			reinforce.NewService,
 			fx.As(new(reinforce.Service)),
-			fx.As(new(service.Service[reinforce.Move, *reinforce.MoveResult])),
+			fx.As(new(service.Service[reinforce.Move])),
 		),
 		fx.Annotate(
 			cards.NewService,
 			fx.As(new(cards.Service)),
-			fx.As(new(service.Service[cards.Move, *cards.MoveResult])),
+			fx.As(new(service.Service[cards.Move])),
 		),
 	),
 	dice.Module,

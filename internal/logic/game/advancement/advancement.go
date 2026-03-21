@@ -8,29 +8,29 @@ import (
 )
 
 type AttackAdvancer interface {
-	Service[attack.Move, *attack.MoveResult]
+	Service[attack.Move]
 }
 
 type CardsAdvancer interface {
-	Service[cards.Move, *cards.MoveResult]
+	Service[cards.Move]
 }
 
 type ReinforceAdvancer interface {
-	Service[reinforce.Move, *reinforce.MoveResult]
+	Service[reinforce.Move]
 }
 
 var Module = fx.Options(
 	fx.Provide(
 		fx.Annotate(
-			NewService[attack.Move, *attack.MoveResult],
+			NewService[attack.Move],
 			fx.As(new(AttackAdvancer)),
 		),
 		fx.Annotate(
-			NewService[cards.Move, *cards.MoveResult],
+			NewService[cards.Move],
 			fx.As(new(CardsAdvancer)),
 		),
 		fx.Annotate(
-			NewService[reinforce.Move, *reinforce.MoveResult],
+			NewService[reinforce.Move],
 			fx.As(new(ReinforceAdvancer)),
 		),
 	),

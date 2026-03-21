@@ -21,10 +21,16 @@ jobs:
     - name: Test
       run: go test -v ./...
     - name: Coverage
-      continue-on-error: true
       run: |
-        go test -coverprofile=coverage.out ./...
-        go tool cover -func=coverage.out | tail -1
+        PACKAGES=$(go list ./... | grep -v /mocks/)
+        go test -coverprofile=coverage.out $PACKAGES
+        COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+        echo "Total coverage (excluding mocks): ${COVERAGE}%"
+        THRESHOLD=20
+        if [ "$(echo "$COVERAGE < $THRESHOLD" | bc -l)" -eq 1 ]; then
+          echo "::error::Coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
+          exit 1
+        fi
     - name: Upload coverage
       if: success() || failure()
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

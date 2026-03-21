@@ -326,10 +326,13 @@ func TestServiceImpl_ValidCombinations(t *testing.T) {
 				GetRegionsQ(ctx, querier).
 				Return(regions, nil)
 
-			extraTroops, _ := service.PerformQ(ctx, querier, cards.Move{
+			result, err := service.PerformQ(ctx, querier, cards.Move{
 				Combinations: test.combinations,
 			})
 
+			require.NoError(t, err)
+			extraTroops, ok := result.(*cards.MoveResult)
+			require.True(t, ok)
 			require.Equal(t, test.expectedExtraTroops, extraTroops.ExtraDeployableTroops)
 		})
 	}

@@ -21,9 +21,9 @@ type Orchestrator[T any] interface {
 	OrchestrateMove(ctx ctx.GameContext, move T) error
 }
 
-type OrchestratorImpl[T, R any] struct {
+type OrchestratorImpl[T any] struct {
 	querier                db.Querier
-	service                service.Service[T, R]
+	service                service.Service[T]
 	gameService            state.Service
 	loggingService         logging.Service
 	missionService         mission.Service
@@ -31,16 +31,16 @@ type OrchestratorImpl[T, R any] struct {
 	gameStateChangedSignal signals.GameStateChangedSignal
 }
 
-func NewOrchestrator[T, R any](
+func NewOrchestrator[T any](
 	querier db.Querier,
-	service service.Service[T, R],
+	service service.Service[T],
 	gameService state.Service,
 	loggingService logging.Service,
 	missionService mission.Service,
 	validationService validation.Service,
 	gameStateChangedSignal signals.GameStateChangedSignal,
-) *OrchestratorImpl[T, R] {
-	return &OrchestratorImpl[T, R]{
+) *OrchestratorImpl[T] {
+	return &OrchestratorImpl[T]{
 		querier:                querier,
 		service:                service,
 		gameService:            gameService,
@@ -51,7 +51,7 @@ func NewOrchestrator[T, R any](
 	}
 }
 
-func (s *OrchestratorImpl[T, R]) OrchestrateMove(ctx ctx.GameContext, move T) error {
+func (s *OrchestratorImpl[T]) OrchestrateMove(ctx ctx.GameContext, move T) error {
 	targetPhase, err := dbutil.InTransactionWithIsolation(
 		s.querier,
 		ctx,
@@ -91,7 +91,7 @@ func (s *OrchestratorImpl[T, R]) OrchestrateMove(ctx ctx.GameContext, move T) er
 	return nil
 }
 
-func (s *OrchestratorImpl[T, R]) OrchestrateMoveQ(
+func (s *OrchestratorImpl[T]) OrchestrateMoveQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	move T,
@@ -136,7 +136,7 @@ func (s *OrchestratorImpl[T, R]) OrchestrateMoveQ(
 
 	ctx.Log().Infow("advancing phase", "target", targetPhase)
 
-	if err := s.service.AdvanceQ(ctx, querier, targetPhase, performResult); err != nil {
+	if err := s.service.AdvanceQ(ctx, querier, targetPhase); err != nil {
 		return "", fmt.Errorf("unable to advance move: %w", err)
 	}
 

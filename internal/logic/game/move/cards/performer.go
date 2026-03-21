@@ -14,11 +14,43 @@ func (s *ServiceImpl) PerformQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	move Move,
-) (*MoveResult, error) {
+) (any, error) {
 	ctx.Log().Infow("performing cards move", "move", move)
 
-	extraDeployableTroops := int64(0)
+	cardIndex, err := s.buildCardIndex(ctx, querier)
+	if err != nil {
+		return nil, err
+	}
 
+	extraDeployableTroops, playedCards, err := s.processCombinations(ctx, move, cardIndex)
+	if err != nil {
+		return nil, err
+	}
+
+	err = querier.UnlinkCardsFromOwner(ctx, playedCards)
+	if err != nil {
+		return nil, fmt.Errorf("unable to unlink cards from owner: %w", err)
+	}
+
+	regionTroopGrants, err := s.grantRegionTroops(ctx, querier, cardIndex, playedCards)
+	if err != nil {
+		return nil, fmt.Errorf("unable to grant region troops: %w", err)
+	}
+
+	result := &MoveResult{
+		ExtraDeployableTroops: extraDeployableTroops,
+		RegionTroopGrants:     regionTroopGrants,
+	}
+
+	s.lastResult = result
+
+	return result, nil
+}
+
+func (s *ServiceImpl) buildCardIndex(
+	ctx ctx.GameContext,
+	querier db.Querier,
+) (map[int64]sqlc.GetCardsForPlayerRow, error) {
 	thisPlayerCards, err := querier.GetCardsForPlayer(ctx, sqlc.GetCardsForPlayerParams{
 		ID:     ctx.GameID(),
 		UserID: ctx.UserID(),
@@ -32,24 +64,33 @@ func (s *ServiceImpl) PerformQ(
 		cardIndex[card.ID] = card
 	}
 
+	return cardIndex, nil
+}
+
+func (s *ServiceImpl) processCombinations(
+	ctx ctx.GameContext,
+	move Move,
+	cardIndex map[int64]sqlc.GetCardsForPlayerRow,
+) (int64, []int64, error) {
 	if len(move.Combinations) == 0 {
-		return nil, domainerrors.NewValidationError("no combinations provided")
+		return 0, nil, domainerrors.NewValidationError("no combinations provided")
 	}
 
 	if err := validateAllCardsDifferent(move); err != nil {
-		return nil, fmt.Errorf("validation failed: %w", err)
+		return 0, nil, fmt.Errorf("validation failed: %w", err)
 	}
 
+	extraDeployableTroops := int64(0)
 	playedCards := make([]int64, 0, len(move.Combinations)*3)
 
 	for _, combination := range move.Combinations {
 		if err := validateCombination(combination, cardIndex); err != nil {
-			return nil, fmt.Errorf("validation failed: %w", err)
+			return 0, nil, fmt.Errorf("validation failed: %w", err)
 		}
 
 		combinationTroops, err := identifyCombination(combination, cardIndex)
 		if err != nil {
-			return nil, fmt.Errorf("validation failed: %w", err)
+			return 0, nil, fmt.Errorf("validation failed: %w", err)
 		}
 
 		extraDeployableTroops += combinationTroops
@@ -57,20 +98,9 @@ func (s *ServiceImpl) PerformQ(
 		playedCards = append(playedCards, combination.CardIDs...)
 	}
 
-	err = querier.UnlinkCardsFromOwner(ctx, playedCards)
-	if err != nil {
-		return nil, fmt.Errorf("unable to unlink cards from owner: %w", err)
-	}
+	ctx.Log().Infow("processed combinations", "extraTroops", extraDeployableTroops)
 
-	regionTroopGrants, err := s.grantRegionTroops(ctx, querier, cardIndex, playedCards)
-	if err != nil {
-		return nil, fmt.Errorf("unable to grant region troops: %w", err)
-	}
-
-	return &MoveResult{
-		ExtraDeployableTroops: extraDeployableTroops,
-		RegionTroopGrants:     regionTroopGrants,
-	}, nil
+	return extraDeployableTroops, playedCards, nil
 }
 
 type RegionTroopGrant struct {

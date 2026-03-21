@@ -7,13 +7,14 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/validation"
 )
 
 func (s *ServiceImpl) PerformQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	move Move,
-) (*MoveResult, error) {
+) (any, error) {
 	ctx.Log().Infow("performing reinforce move", "move", move)
 
 	sourceRegion, err := s.regionService.GetRegionQ(ctx, querier, move.SourceRegionID)
@@ -36,7 +37,7 @@ func (s *ServiceImpl) PerformQ(
 		return nil, fmt.Errorf("unable to perform attack move: %w", err)
 	}
 
-	return &MoveResult{}, nil
+	return nil, nil //nolint:nilnil // no result needed for reinforce
 }
 
 func (s *ServiceImpl) perform(
@@ -141,36 +142,17 @@ func checkTroops(
 		return domainerrors.NewValidationError("source region does not have enough troops")
 	}
 
-	if err := checkDeclaredValues(ctx, sourceRegion, targetRegion, move); err != nil {
+	if err := validation.CheckDeclaredTroops(
+		ctx,
+		sourceRegion.Troops,
+		targetRegion.Troops,
+		move.TroopsInSource,
+		move.TroopsInTarget,
+	); err != nil {
 		return fmt.Errorf("declared values are invalid: %w", err)
 	}
 
 	ctx.Log().Infow("troops check passed")
-
-	return nil
-}
-
-func checkDeclaredValues(
-	ctx ctx.GameContext,
-	sourceRegion *sqlc.GetRegionsByGameRow,
-	targetRegion *sqlc.GetRegionsByGameRow,
-	move Move,
-) error {
-	ctx.Log().Infow("checking declared values")
-
-	if sourceRegion.Troops != move.TroopsInSource {
-		return domainerrors.NewValidationError(
-			"source region doesn't have the declared number of troops",
-		)
-	}
-
-	if targetRegion.Troops != move.TroopsInTarget {
-		return domainerrors.NewValidationError(
-			"target region doesn't have the declared number of troops",
-		)
-	}
-
-	ctx.Log().Infow("declared values check passed")
 
 	return nil
 }

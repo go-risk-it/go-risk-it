@@ -1,9 +1,41 @@
 package mission
 
-import "go.uber.org/fx"
+import (
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission/checker"
+	"go.uber.org/fx"
+)
 
 var Module = fx.Options(
 	fx.Provide(
+		fx.Annotate(
+			checker.NewTwoContinentsChecker,
+			fx.As(new(checker.MissionChecker)),
+			fx.ResultTags(`group:"mission_checkers"`),
+		),
+		fx.Annotate(
+			checker.NewTwoContinentsPlusOneChecker,
+			fx.As(new(checker.MissionChecker)),
+			fx.ResultTags(`group:"mission_checkers"`),
+		),
+		fx.Annotate(
+			checker.NewEighteenTerritoriesChecker,
+			fx.As(new(checker.MissionChecker)),
+			fx.ResultTags(`group:"mission_checkers"`),
+		),
+		fx.Annotate(
+			checker.NewTwentyFourTerritoriesChecker,
+			fx.As(new(checker.MissionChecker)),
+			fx.ResultTags(`group:"mission_checkers"`),
+		),
+		fx.Annotate(
+			checker.NewEliminatePlayerChecker,
+			fx.As(new(checker.MissionChecker)),
+			fx.ResultTags(`group:"mission_checkers"`),
+		),
+		fx.Annotate(
+			checker.NewRegistry,
+			fx.ParamTags(`group:"mission_checkers"`),
+		),
 		fx.Annotate(
 			New,
 			fx.As(new(Service)),

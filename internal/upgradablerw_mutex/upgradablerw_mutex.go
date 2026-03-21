@@ -147,7 +147,7 @@ func (rw *UpgradableRWMutex) Unlock() {
 		panic("sync: Unlock of unlocked UpgradableRWMutex")
 	}
 	// Unblock blocked readers, if any.
-	for i := 0; i < int(r); i++ {
+	for range int(r) {
 		semaphoreRelease(&rw.readerSem, false, 0)
 	}
 	// Allow other writers to proceed.

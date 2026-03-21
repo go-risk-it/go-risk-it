@@ -7,6 +7,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission"
+	sharedfetcher "github.com/go-risk-it/go-risk-it/internal/web/fetcher"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 	"go.uber.org/fx"
@@ -57,25 +58,25 @@ func (f *MissionFetcherImpl) FetchState(ctx ctx.GameContext, stateChannel chan j
 
 	switch baseMission.Type {
 	case sqlc.GameMissionTypeTWOCONTINENTS:
-		FetchState(
+		sharedfetcher.FetchState(
 			ctx,
 			message.MissionState,
 			getFetcherFunc(f.missionController.GetTwoContinentsMission, baseMission.ID),
 			stateChannel)
 	case sqlc.GameMissionTypeTWOCONTINENTSPLUSONE:
-		FetchState(
+		sharedfetcher.FetchState(
 			ctx,
 			message.MissionState,
 			getFetcherFunc(f.missionController.GetTwoContinentsPlusOneMission, baseMission.ID),
 			stateChannel)
 	case sqlc.GameMissionTypeELIMINATEPLAYER:
-		FetchState(
+		sharedfetcher.FetchState(
 			ctx,
 			message.MissionState,
 			getFetcherFunc(f.missionController.GetEliminatePlayerMission, baseMission.ID),
 			stateChannel)
 	case sqlc.GameMissionTypeEIGHTEENTERRITORIESTWOTROOPS:
-		FetchState(
+		sharedfetcher.FetchState(
 			ctx,
 			message.MissionState,
 			getFetcherFunc(
@@ -85,7 +86,7 @@ func (f *MissionFetcherImpl) FetchState(ctx ctx.GameContext, stateChannel chan j
 			stateChannel,
 		)
 	case sqlc.GameMissionTypeTWENTYFOURTERRITORIES:
-		FetchState(
+		sharedfetcher.FetchState(
 			ctx,
 			message.MissionState,
 			getFetcherFunc(f.missionController.GetTwentyFourTerritoriesMission, baseMission.ID),

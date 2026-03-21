@@ -17,10 +17,8 @@ type Move struct {
 	DesiredTroops int64  `json:"desiredTroops"`
 }
 
-type MoveResult struct{}
-
 type Service interface {
-	service.Service[Move, *MoveResult]
+	service.Service[Move]
 	GetDeployableTroops(ctx ctx.GameContext) (int64, error)
 	GetDeployableTroopsQ(ctx ctx.GameContext, querier db.Querier) (int64, error)
 }

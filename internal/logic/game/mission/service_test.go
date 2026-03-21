@@ -2,12 +2,14 @@ package mission_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	board2 "github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission/checker"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/game/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region"
@@ -30,7 +32,16 @@ func setup(t *testing.T) (
 	regionService := region.NewService(t)
 	rng := rand.NewRNG(t)
 
-	service := mission.New(rng, querier, boardService, regionService)
+	registry, err := checker.NewRegistry([]checker.MissionChecker{
+		checker.NewTwoContinentsChecker(boardService),
+		checker.NewTwoContinentsPlusOneChecker(boardService),
+		checker.NewEighteenTerritoriesChecker(regionService),
+		checker.NewTwentyFourTerritoriesChecker(regionService),
+		checker.NewEliminatePlayerChecker(regionService),
+	})
+	require.NoError(t, err)
+
+	service := mission.New(rng, querier, registry)
 
 	return querier, boardService, regionService, service
 }
@@ -287,6 +298,224 @@ func TestServiceImpl_IsTwoContinentsPlusOneMissionAccomplished(t *testing.T) {
 				EXPECT().
 				GetContinentsControlledByPlayerQ(ctx, querier, int64(1)).
 				Return(test.controlledContinents, nil)
+
+			if test.expectedResult {
+				querier.
+					EXPECT().
+					AssignGameWinner(ctx, sqlc.AssignGameWinnerParams{
+						WinnerPlayerID: pgtype.Int8{
+							Int64: 1,
+							Valid: true,
+						},
+						GameID: ctx.GameID(),
+					}).
+					Return(nil)
+			}
+
+			result, err := service.IsMissionAccomplishedQ(ctx, querier)
+
+			require.NoError(t, err)
+			require.Equal(t, test.expectedResult, result)
+		})
+	}
+}
+
+func TestServiceImpl_IsEighteenTerritoriesTwoTroopsMissionAccomplished(t *testing.T) {
+	t.Parallel()
+
+	type inputType struct {
+		name           string
+		playerRegions  []sqlc.GetRegionsByGameRow
+		expectedResult bool
+	}
+
+	tests := []inputType{
+		{
+			"17 regions with 2 troops is not enough",
+			func() []sqlc.GetRegionsByGameRow {
+				regions := make([]sqlc.GetRegionsByGameRow, 17)
+				for i := range regions {
+					regions[i] = sqlc.GetRegionsByGameRow{
+						ID:                int64(i + 1),
+						ExternalReference: fmt.Sprintf("region_%d", i+1),
+						Troops:            2,
+						UserID:            "giovanni",
+					}
+				}
+
+				return regions
+			}(),
+			false,
+		},
+		{
+			"18 regions with 2 troops is enough",
+			func() []sqlc.GetRegionsByGameRow {
+				regions := make([]sqlc.GetRegionsByGameRow, 18)
+				for i := range regions {
+					regions[i] = sqlc.GetRegionsByGameRow{
+						ID:                int64(i + 1),
+						ExternalReference: fmt.Sprintf("region_%d", i+1),
+						Troops:            2,
+						UserID:            "giovanni",
+					}
+				}
+
+				return regions
+			}(),
+			true,
+		},
+		{
+			"18 regions but only 17 with 2 troops is not enough",
+			func() []sqlc.GetRegionsByGameRow {
+				regions := make([]sqlc.GetRegionsByGameRow, 18)
+				for i := range regions {
+					regions[i] = sqlc.GetRegionsByGameRow{
+						ID:                int64(i + 1),
+						ExternalReference: fmt.Sprintf("region_%d", i+1),
+						Troops:            2,
+						UserID:            "giovanni",
+					}
+				}
+				regions[0].Troops = 1
+
+				return regions
+			}(),
+			false,
+		},
+		{
+			"19 regions but only 18 with 2 troops is enough",
+			func() []sqlc.GetRegionsByGameRow {
+				regions := make([]sqlc.GetRegionsByGameRow, 19)
+				for i := range regions {
+					regions[i] = sqlc.GetRegionsByGameRow{
+						ID:                int64(i + 1),
+						ExternalReference: fmt.Sprintf("region_%d", i+1),
+						Troops:            2,
+						UserID:            "giovanni",
+					}
+				}
+				regions[0].Troops = 1
+
+				return regions
+			}(),
+			true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			querier, _, regionService, service := setup(t)
+			ctx := input()
+
+			baseMission := sqlc.GameMission{
+				ID:       1,
+				PlayerID: 1,
+				Type:     sqlc.GameMissionTypeEIGHTEENTERRITORIESTWOTROOPS,
+			}
+
+			querier.
+				EXPECT().
+				GetMission(ctx, sqlc.GetMissionParams{
+					GameID: ctx.GameID(),
+					UserID: ctx.UserID(),
+				}).Return(baseMission, nil)
+
+			regionService.
+				EXPECT().
+				GetPlayerRegionsQ(ctx, querier).
+				Return(test.playerRegions, nil)
+
+			if test.expectedResult {
+				querier.
+					EXPECT().
+					AssignGameWinner(ctx, sqlc.AssignGameWinnerParams{
+						WinnerPlayerID: pgtype.Int8{
+							Int64: 1,
+							Valid: true,
+						},
+						GameID: ctx.GameID(),
+					}).
+					Return(nil)
+			}
+
+			result, err := service.IsMissionAccomplishedQ(ctx, querier)
+
+			require.NoError(t, err)
+			require.Equal(t, test.expectedResult, result)
+		})
+	}
+}
+
+func TestServiceImpl_IsTwentyFourTerritoriesMissionAccomplished(t *testing.T) {
+	t.Parallel()
+
+	type inputType struct {
+		name           string
+		playerRegions  []sqlc.GetRegionsByGameRow
+		expectedResult bool
+	}
+
+	tests := []inputType{
+		{
+			"23 regions is not enough",
+			func() []sqlc.GetRegionsByGameRow {
+				regions := make([]sqlc.GetRegionsByGameRow, 23)
+				for i := range regions {
+					regions[i] = sqlc.GetRegionsByGameRow{
+						ID:                int64(i + 1),
+						ExternalReference: fmt.Sprintf("region_%d", i+1),
+						Troops:            1,
+						UserID:            "giovanni",
+					}
+				}
+
+				return regions
+			}(),
+			false,
+		},
+		{
+			"24 regions is enough",
+			func() []sqlc.GetRegionsByGameRow {
+				regions := make([]sqlc.GetRegionsByGameRow, 24)
+				for i := range regions {
+					regions[i] = sqlc.GetRegionsByGameRow{
+						ID:                int64(i + 1),
+						ExternalReference: fmt.Sprintf("region_%d", i+1),
+						Troops:            1,
+						UserID:            "giovanni",
+					}
+				}
+
+				return regions
+			}(),
+			true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			querier, _, regionService, service := setup(t)
+			ctx := input()
+
+			baseMission := sqlc.GameMission{
+				ID:       1,
+				PlayerID: 1,
+				Type:     sqlc.GameMissionTypeTWENTYFOURTERRITORIES,
+			}
+
+			querier.
+				EXPECT().
+				GetMission(ctx, sqlc.GetMissionParams{
+					GameID: ctx.GameID(),
+					UserID: ctx.UserID(),
+				}).Return(baseMission, nil)
+
+			regionService.
+				EXPECT().
+				GetPlayerRegionsQ(ctx, querier).
+				Return(test.playerRegions, nil)
 
 			if test.expectedResult {
 				querier.

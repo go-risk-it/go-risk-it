@@ -26,17 +26,17 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
-// AdvanceQ provides a mock function with given fields: _a0, querier, targetPhase, performResult
-func (_m *Service) AdvanceQ(_a0 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType, performResult *attack.MoveResult) error {
-	ret := _m.Called(_a0, querier, targetPhase, performResult)
+// AdvanceQ provides a mock function with given fields: _a0, querier, targetPhase
+func (_m *Service) AdvanceQ(_a0 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType) error {
+	ret := _m.Called(_a0, querier, targetPhase)
 
 	if len(ret) == 0 {
 		panic("no return value specified for AdvanceQ")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, sqlc.GamePhaseType, *attack.MoveResult) error); ok {
-		r0 = rf(_a0, querier, targetPhase, performResult)
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, sqlc.GamePhaseType) error); ok {
+		r0 = rf(_a0, querier, targetPhase)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -53,14 +53,13 @@ type Service_AdvanceQ_Call struct {
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
 //   - targetPhase sqlc.GamePhaseType
-//   - performResult *attack.MoveResult
-func (_e *Service_Expecter) AdvanceQ(_a0 interface{}, querier interface{}, targetPhase interface{}, performResult interface{}) *Service_AdvanceQ_Call {
-	return &Service_AdvanceQ_Call{Call: _e.mock.On("AdvanceQ", _a0, querier, targetPhase, performResult)}
+func (_e *Service_Expecter) AdvanceQ(_a0 interface{}, querier interface{}, targetPhase interface{}) *Service_AdvanceQ_Call {
+	return &Service_AdvanceQ_Call{Call: _e.mock.On("AdvanceQ", _a0, querier, targetPhase)}
 }
 
-func (_c *Service_AdvanceQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType, performResult *attack.MoveResult)) *Service_AdvanceQ_Call {
+func (_c *Service_AdvanceQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType)) *Service_AdvanceQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(sqlc.GamePhaseType), args[3].(*attack.MoveResult))
+		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(sqlc.GamePhaseType))
 	})
 	return _c
 }
@@ -70,7 +69,7 @@ func (_c *Service_AdvanceQ_Call) Return(_a0 error) *Service_AdvanceQ_Call {
 	return _c
 }
 
-func (_c *Service_AdvanceQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, sqlc.GamePhaseType, *attack.MoveResult) error) *Service_AdvanceQ_Call {
+func (_c *Service_AdvanceQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, sqlc.GamePhaseType) error) *Service_AdvanceQ_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -190,23 +189,23 @@ func (_c *Service_HasConqueredQ_Call) RunAndReturn(run func(ctx.GameContext, db.
 }
 
 // PerformQ provides a mock function with given fields: _a0, querier, move
-func (_m *Service) PerformQ(_a0 ctx.GameContext, querier db.Querier, move attack.Move) (*attack.MoveResult, error) {
+func (_m *Service) PerformQ(_a0 ctx.GameContext, querier db.Querier, move attack.Move) (any, error) {
 	ret := _m.Called(_a0, querier, move)
 
 	if len(ret) == 0 {
 		panic("no return value specified for PerformQ")
 	}
 
-	var r0 *attack.MoveResult
+	var r0 any
 	var r1 error
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, attack.Move) (*attack.MoveResult, error)); ok {
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, attack.Move) (any, error)); ok {
 		return rf(_a0, querier, move)
 	}
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, attack.Move) *attack.MoveResult); ok {
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, attack.Move) any); ok {
 		r0 = rf(_a0, querier, move)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*attack.MoveResult)
+			r0 = ret.Get(0).(any)
 		}
 	}
 
@@ -239,12 +238,12 @@ func (_c *Service_PerformQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Qu
 	return _c
 }
 
-func (_c *Service_PerformQ_Call) Return(_a0 *attack.MoveResult, _a1 error) *Service_PerformQ_Call {
+func (_c *Service_PerformQ_Call) Return(_a0 any, _a1 error) *Service_PerformQ_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_PerformQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, attack.Move) (*attack.MoveResult, error)) *Service_PerformQ_Call {
+func (_c *Service_PerformQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, attack.Move) (any, error)) *Service_PerformQ_Call {
 	_c.Call.Return(run)
 	return _c
 }
