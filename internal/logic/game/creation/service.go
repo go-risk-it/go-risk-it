@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	dbutil "github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/card"
@@ -59,7 +60,7 @@ func (s *ServiceImpl) CreateGameWithTx(
 	regions []string,
 	players []request.Player,
 ) (int64, error) {
-	gameID, err := db.InTransaction(s.querier, ctx, func(qtx db.Querier) (int64, error) {
+	gameID, err := dbutil.InTransaction(s.querier, ctx, func(qtx db.Querier) (int64, error) {
 		return s.CreateGameQ(ctx, qtx, regions, players)
 	})
 	if err != nil {

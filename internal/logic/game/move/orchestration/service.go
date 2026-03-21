@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	dbutil "github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
@@ -16,7 +17,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type Orchestrator[T, R any] interface {
+type Orchestrator[T any] interface {
 	OrchestrateMove(ctx ctx.GameContext, move T) error
 }
 
@@ -51,7 +52,7 @@ func NewOrchestrator[T, R any](
 }
 
 func (s *OrchestratorImpl[T, R]) OrchestrateMove(ctx ctx.GameContext, move T) error {
-	targetPhase, err := db.InTransactionWithIsolation(
+	targetPhase, err := dbutil.InTransactionWithIsolation(
 		s.querier,
 		ctx,
 		pgx.RepeatableRead,
