@@ -13,7 +13,7 @@ services:
       service: kong
 
   sqlc:
-    image: sqlc/sqlc:latest@sha256:da028c7f0a30afd26cce5c3f7a097fa05b3319b71837fec38f2e9349aeede3e6
+    image: sqlc/sqlc:latest@sha256:b8d1092c720438e093a231e75eba5d55b7696122f390292acabd5b6d3e986a12
     env_file:
       - component-test/.env
     volumes:
