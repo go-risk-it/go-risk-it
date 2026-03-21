@@ -14,7 +14,10 @@ type Querier interface {
 	db.Transactable[Querier]
 }
 
-var _ Querier = (*Queries)(nil)
+var (
+	_ Querier                  = (*Queries)(nil)
+	_ db.Transactable[Querier] = (*Queries)(nil)
+)
 
 type Queries struct {
 	*sqlc.Queries

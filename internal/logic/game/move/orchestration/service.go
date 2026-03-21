@@ -17,7 +17,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type Orchestrator[T, R any] interface {
+type Orchestrator[T any] interface {
 	OrchestrateMove(ctx ctx.GameContext, move T) error
 }
 

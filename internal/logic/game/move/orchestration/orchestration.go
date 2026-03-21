@@ -12,23 +12,23 @@ import (
 )
 
 type DeployOrchestrator interface {
-	Orchestrator[deploy.Move, *deploy.MoveResult]
+	Orchestrator[deploy.Move]
 }
 
 type AttackOrchestrator interface {
-	Orchestrator[attack.Move, *attack.MoveResult]
+	Orchestrator[attack.Move]
 }
 
 type ConquerOrchestrator interface {
-	Orchestrator[conquer.Move, *conquer.MoveResult]
+	Orchestrator[conquer.Move]
 }
 
 type ReinforceOrchestrator interface {
-	Orchestrator[reinforce.Move, *reinforce.MoveResult]
+	Orchestrator[reinforce.Move]
 }
 
 type CardsOrchestrator interface {
-	Orchestrator[cards.Move, *cards.MoveResult]
+	Orchestrator[cards.Move]
 }
 
 var (

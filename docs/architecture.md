@@ -118,7 +118,7 @@ sequenceDiagram
     participant Client
     participant Handler as AttackHandler<br/>(web/rest/move)
     participant Controller as MoveController<br/>(web/controller)
-    participant Orchestrator as Orchestrator[T,R]<br/>(logic/move/orchestration)
+    participant Orchestrator as Orchestrator[T]<br/>(logic/move/orchestration)
     participant Service as AttackService<br/>(logic/move/attack)
     participant DB as PostgreSQL
     participant Signal as GameStateChangedSignal

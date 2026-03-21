@@ -50,7 +50,7 @@ func NewMoveController(
 func performMove[Move any](
 	ctx ctx.GameContext,
 	move Move,
-	orchestrator orchestration.Orchestrator[Move, any],
+	orchestrator orchestration.Orchestrator[Move],
 ) error {
 	if err := orchestrator.OrchestrateMove(ctx, move); err != nil {
 		return fmt.Errorf("unable to perform move: %w", err)
