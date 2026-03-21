@@ -53,19 +53,19 @@ func convertCard(card sqlc.GetCardsForPlayerRow) messaging.Card {
 
 	return messaging.Card{
 		ID:     card.ID,
-		Type:   convertCartType(card.CardType),
+		Type:   convertCardType(card.CardType),
 		Region: region,
 	}
 }
 
-func convertCartType(sqlcCardType sqlc.GameCardType) messaging.CardType {
+func convertCardType(sqlcCardType sqlc.GameCardType) messaging.CardType {
 	switch sqlcCardType {
 	case sqlc.GameCardTypeCAVALRY:
 		return messaging.Cavalry
 	case sqlc.GameCardTypeARTILLERY:
-		return messaging.Infantry
-	case sqlc.GameCardTypeINFANTRY:
 		return messaging.Artillery
+	case sqlc.GameCardTypeINFANTRY:
+		return messaging.Infantry
 	case sqlc.GameCardTypeJOLLY:
 		return messaging.Jolly
 	default:
