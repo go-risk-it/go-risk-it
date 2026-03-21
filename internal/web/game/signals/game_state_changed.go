@@ -18,7 +18,11 @@ func HandleGameStateChanged(
 			return
 		}
 
-		gameContext.Log().Infow("handling game state changed")
+		gameContext.Log().Infow(
+			"handling game state changed",
+			"fromPhase", data.FromPhase,
+			"toPhase", data.ToPhase,
+		)
 
 		fetchAllStatesAndPublish(gameContext, params, params.ConnectionManager.Broadcast)
 	})

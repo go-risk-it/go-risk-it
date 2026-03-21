@@ -2,7 +2,6 @@ package rest
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/lobby/rest/request"
@@ -47,25 +46,24 @@ func (h *CreationHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Re
 
 	userContext, ok := req.Context().(ctx.UserContext)
 	if !ok {
-		http.Error(
-			writer,
-			fmt.Sprintf("invalid user context in route: %v", h.Pattern()),
-			http.StatusInternalServerError,
-		)
+		http.Error(writer, "an internal error occurred", http.StatusInternalServerError)
 
 		return
 	}
 
 	lobbyID, err := h.creationController.CreateLobby(userContext, createLobbyRequest)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		if logErr := restutils.WriteError(writer, err); logErr != nil {
+			userContext.Log().Errorw("request failed", "error", logErr)
+		}
 
 		return
 	}
 
 	response, err := json.Marshal(response.CreateLobby{LobbyID: lobbyID})
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		http.Error(writer, "an internal error occurred", http.StatusInternalServerError)
+		userContext.Log().Errorw("failed to marshal response", "error", err)
 
 		return
 	}

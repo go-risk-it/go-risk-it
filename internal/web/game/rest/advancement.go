@@ -51,7 +51,9 @@ func (h *AdvancementHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http
 
 	err = h.advancementController.Advance(gameContext, advancementRequest)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		if logErr := restutils.WriteError(writer, err); logErr != nil {
+			gameContext.Log().Errorw("request failed", "error", logErr)
+		}
 
 		return
 	}

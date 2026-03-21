@@ -1,12 +1,12 @@
 package reinforce
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 )
 
 func (s *ServiceImpl) PerformQ(
@@ -97,7 +97,7 @@ func (s *ServiceImpl) validate(
 	}
 
 	if !canReach {
-		return errors.New("player cannot reach target region")
+		return domainerrors.NewValidationError("player cannot reach target region")
 	}
 
 	ctx.Log().Infow("reinforce move validation passed")
@@ -113,11 +113,11 @@ func checkRegionOwnership(
 	ctx.Log().Infow("checking region ownership")
 
 	if sourceRegion.UserID != ctx.UserID() {
-		return errors.New("source region is not owned by player")
+		return domainerrors.NewValidationError("source region is not owned by player")
 	}
 
 	if targetRegion.UserID != ctx.UserID() {
-		return errors.New("target region is not owned by player")
+		return domainerrors.NewValidationError("target region is not owned by player")
 	}
 
 	ctx.Log().Infow("region ownership check passed")
@@ -134,11 +134,11 @@ func checkTroops(
 	ctx.Log().Infow("checking troops")
 
 	if move.MovingTroops < 1 {
-		return errors.New("at least one troop is required to reinforce")
+		return domainerrors.NewValidationError("at least one troop is required to reinforce")
 	}
 
 	if sourceRegion.Troops <= move.MovingTroops {
-		return errors.New("source region does not have enough troops")
+		return domainerrors.NewValidationError("source region does not have enough troops")
 	}
 
 	if err := checkDeclaredValues(ctx, sourceRegion, targetRegion, move); err != nil {
@@ -159,11 +159,15 @@ func checkDeclaredValues(
 	ctx.Log().Infow("checking declared values")
 
 	if sourceRegion.Troops != move.TroopsInSource {
-		return errors.New("source region doesn't have the declared number of troops")
+		return domainerrors.NewValidationError(
+			"source region doesn't have the declared number of troops",
+		)
 	}
 
 	if targetRegion.Troops != move.TroopsInTarget {
-		return errors.New("target region doesn't have the declared number of troops")
+		return domainerrors.NewValidationError(
+			"target region doesn't have the declared number of troops",
+		)
 	}
 
 	ctx.Log().Infow("declared values check passed")

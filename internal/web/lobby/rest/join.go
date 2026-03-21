@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/lobby/rest/request"
@@ -45,17 +44,15 @@ func (h *JoinHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Reques
 
 	lobbyContext, ok := req.Context().(ctx.LobbyContext)
 	if !ok {
-		http.Error(
-			writer,
-			fmt.Sprintf("invalid user context in route: %v", h.Pattern()),
-			http.StatusInternalServerError,
-		)
+		http.Error(writer, "an internal error occurred", http.StatusInternalServerError)
 
 		return
 	}
 
 	if err := h.managementController.JoinLobby(lobbyContext, joinLobbyRequest); err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
+		if logErr := restutils.WriteError(writer, err); logErr != nil {
+			lobbyContext.Log().Errorw("request failed", "error", logErr)
+		}
 
 		return
 	}

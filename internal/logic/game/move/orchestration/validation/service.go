@@ -1,12 +1,12 @@
 package validation
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 )
@@ -29,7 +29,7 @@ func (s *ServiceImpl) ValidateQ(ctx ctx.GameContext, querier db.Querier, game *s
 	ctx.Log().Infow("performing generic move validation")
 
 	if game.WinnerUserID != "" {
-		return errors.New("game is already over")
+		return domainerrors.NewConflictError("game is already over")
 	}
 
 	players, err := s.playerService.GetPlayersQ(ctx, querier)
@@ -39,7 +39,7 @@ func (s *ServiceImpl) ValidateQ(ctx ctx.GameContext, querier db.Querier, game *s
 
 	thisPlayer := extractPlayerFrom(players, ctx.UserID())
 	if thisPlayer == nil {
-		return errors.New("player is not in game")
+		return domainerrors.NewForbiddenError("player is not in game")
 	}
 
 	if err := s.checkTurn(game, int64(len(players)), thisPlayer.TurnIndex); err != nil {
@@ -57,7 +57,7 @@ func (s *ServiceImpl) checkTurn(
 	playerTurn int64,
 ) error {
 	if game.Turn%playersInGame != playerTurn {
-		return errors.New("it is not the player's turn")
+		return domainerrors.NewConflictError("it is not the player's turn")
 	}
 
 	return nil

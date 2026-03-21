@@ -1,11 +1,12 @@
 package orchestration
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
+	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/logging"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/validation"
@@ -50,34 +51,41 @@ func NewOrchestrator[T, R any](
 }
 
 func (s *OrchestratorImpl[T, R]) OrchestrateMove(ctx ctx.GameContext, move T) error {
-	_, err := s.querier.ExecuteInTransactionWithIsolation(
+	targetPhase, err := db.InTransactionWithIsolation(
+		s.querier,
 		ctx,
 		pgx.RepeatableRead,
-		func(querier db.Querier) (any, error) {
+		func(querier db.Querier) (sqlc.GamePhaseType, error) {
 			phase := s.service.PhaseType()
 			ctx.SetLog(ctx.Log().With("phase", phase))
 
 			gameState, err := s.gameService.GetGameStateQ(ctx, querier)
 			if err != nil {
-				return struct{}{}, fmt.Errorf("unable to get game state: %w", err)
+				return "", fmt.Errorf("unable to get game state: %w", err)
 			}
 
 			if gameState.Phase != phase {
-				return struct{}{}, errors.New("game is not in the correct phase to perform move")
+				return "", domainerrors.NewConflictErrorf(
+					"game is in phase %s, expected %s", gameState.Phase, phase,
+				)
 			}
 
-			if err := s.OrchestrateMoveQ(ctx, querier, move, gameState); err != nil {
-				return struct{}{}, fmt.Errorf("unable to orchestrate move: %w", err)
+			resultPhase, err := s.OrchestrateMoveQ(ctx, querier, move, gameState)
+			if err != nil {
+				return "", fmt.Errorf("unable to orchestrate move: %w", err)
 			}
 
-			return struct{}{}, nil
+			return resultPhase, nil
 		},
 	)
 	if err != nil {
 		return fmt.Errorf("unable to perform move: %w", err)
 	}
 
-	go s.gameStateChangedSignal.Emit(ctx, signals.GameStateChangedData{})
+	s.gameStateChangedSignal.Emit(ctx, signals.GameStateChangedData{
+		FromPhase: s.service.PhaseType(),
+		ToPhase:   targetPhase,
+	})
 
 	return nil
 }
@@ -87,51 +95,51 @@ func (s *OrchestratorImpl[T, R]) OrchestrateMoveQ(
 	querier db.Querier,
 	move T,
 	gameState *state.Game,
-) error {
+) (sqlc.GamePhaseType, error) {
 	ctx.Log().Infow("orchestrating move", "move", move)
 
 	if err := s.validationService.ValidateQ(ctx, querier, gameState); err != nil {
-		return fmt.Errorf("invalid move: %w", err)
+		return "", fmt.Errorf("invalid move: %w", err)
 	}
 
 	performResult, err := s.service.PerformQ(ctx, querier, move)
 	if err != nil {
-		return fmt.Errorf("unable to perform move: %w", err)
+		return "", fmt.Errorf("unable to perform move: %w", err)
 	}
 
 	if err := s.loggingService.LogMoveQ(ctx, querier, move, performResult); err != nil {
-		return fmt.Errorf("unable to log move: %w", err)
+		return "", fmt.Errorf("unable to log move: %w", err)
 	}
 
 	isMissionAccomplished, err := s.missionService.IsMissionAccomplishedQ(ctx, querier)
 	if err != nil {
-		return fmt.Errorf("unable to check if mission is accomplished: %w", err)
+		return "", fmt.Errorf("unable to check if mission is accomplished: %w", err)
 	}
 
 	if isMissionAccomplished {
 		ctx.Log().Infow("game is over")
 
-		return nil
+		return s.service.PhaseType(), nil
 	}
 
 	targetPhase, err := s.service.WalkQ(ctx, querier, false)
 	if err != nil {
-		return fmt.Errorf("unable to walk phase: %w", err)
+		return "", fmt.Errorf("unable to walk phase: %w", err)
 	}
 
 	if targetPhase == s.service.PhaseType() {
 		ctx.Log().Infow("no need to advance")
 
-		return nil
+		return targetPhase, nil
 	}
 
 	ctx.Log().Infow("advancing phase", "target", targetPhase)
 
 	if err := s.service.AdvanceQ(ctx, querier, targetPhase, performResult); err != nil {
-		return fmt.Errorf("unable to advance move: %w", err)
+		return "", fmt.Errorf("unable to advance move: %w", err)
 	}
 
 	ctx.Log().Infow("successfully advanced phase", "target", targetPhase)
 
-	return nil
+	return targetPhase, nil
 }

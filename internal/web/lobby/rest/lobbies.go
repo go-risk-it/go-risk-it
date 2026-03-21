@@ -2,7 +2,6 @@ package rest
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
@@ -40,25 +39,24 @@ func (h *LobbiesHandlerImpl) RequiresAuth() bool {
 func (h *LobbiesHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	userContext, ok := req.Context().(ctx.UserContext)
 	if !ok {
-		http.Error(
-			writer,
-			fmt.Sprintf("invalid user context in route: %v", h.Pattern()),
-			http.StatusInternalServerError,
-		)
+		http.Error(writer, "an internal error occurred", http.StatusInternalServerError)
 
 		return
 	}
 
 	lobbies, err := h.managementController.GetUserLobbies(userContext)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
+		if logErr := restutils.WriteError(writer, err); logErr != nil {
+			userContext.Log().Errorw("request failed", "error", logErr)
+		}
 
 		return
 	}
 
 	lobbiesResponse, err := json.Marshal(lobbies)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		http.Error(writer, "an internal error occurred", http.StatusInternalServerError)
+		userContext.Log().Errorw("failed to marshal response", "error", err)
 
 		return
 	}

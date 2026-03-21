@@ -1,6 +1,7 @@
 package health
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -20,7 +21,7 @@ type HandlerImpl struct {
 
 var _ Handler = (*HandlerImpl)(nil)
 
-func New(databaseConfig config.DatabaseConfig) *HandlerImpl {
+func New(databaseConfig config.DatabaseConfig) (*HandlerImpl, error) {
 	health, err := health.New(
 		health.WithComponent(health.Component{
 			Name:    "go-risk-it",
@@ -39,12 +40,12 @@ func New(databaseConfig config.DatabaseConfig) *HandlerImpl {
 		),
 	)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to create health handler: %w", err)
 	}
 
 	return &HandlerImpl{
 		Health: health,
-	}
+	}, nil
 }
 
 func (h *HandlerImpl) Pattern() string {

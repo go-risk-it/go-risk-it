@@ -39,7 +39,11 @@ func serveMove[T any](
 	}
 
 	if err := perform(gameContext, moveRequest); err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		if logErr := restutils.WriteError(writer, err); logErr != nil {
+			gameContext.Log().Errorw("request failed", "error", logErr)
+		}
+
+		return
 	}
 
 	restutils.WriteResponse(writer, []byte{}, http.StatusNoContent)
