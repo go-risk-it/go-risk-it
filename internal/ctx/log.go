@@ -14,6 +14,7 @@ type LogContext interface {
 
 type logContext struct {
 	context.Context
+
 	log *zap.SugaredLogger
 }
 

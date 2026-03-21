@@ -9,6 +9,7 @@ type TraceContext interface {
 
 type traceContext struct {
 	LogContext
+
 	span trace.Span
 }
 

@@ -24,6 +24,7 @@ type Manager interface {
 
 type ManagerImpl struct {
 	upgradablerwmutex.UpgradableRWMutex
+
 	gameStateService      state.Service
 	playerService         player.Service
 	gameConnections       map[int64]*ws.PlayerConnections

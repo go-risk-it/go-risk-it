@@ -26,7 +26,7 @@ func NewService(querier db.Querier) *ServiceImpl {
 }
 
 func (s *ServiceImpl) CreateLobby(ctx ctx.UserContext, ownerName string) (int64, error) {
-	lobbyID, err := s.querier.ExecuteInTransaction(ctx, func(qtx db.Querier) (interface{}, error) {
+	lobbyID, err := s.querier.ExecuteInTransaction(ctx, func(qtx db.Querier) (any, error) {
 		return s.CreateLobbyQ(ctx, qtx, ownerName)
 	})
 	if err != nil {

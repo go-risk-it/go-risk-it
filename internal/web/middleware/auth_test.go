@@ -1,7 +1,6 @@
 package middleware_test
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -80,7 +79,7 @@ func TestAuthMiddleware_Wrap(t *testing.T) {
 					})))
 
 			request, _ := http.NewRequestWithContext(
-				ctx.WithSpan(ctx.WithLog(context.Background(), zap.NewNop().Sugar()), noop.Span{}),
+				ctx.WithSpan(ctx.WithLog(t.Context(), zap.NewNop().Sugar()), noop.Span{}),
 				http.MethodGet,
 				"/",
 				nil,

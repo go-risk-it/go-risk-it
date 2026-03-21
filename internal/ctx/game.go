@@ -7,6 +7,7 @@ type GameContext interface {
 
 type gameContext struct {
 	UserContext
+
 	gameID int64
 }
 

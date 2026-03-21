@@ -18,16 +18,16 @@ func (q *Queries) WithTx(tx pool.Transaction) Querier {
 // ExecuteInTransaction with default isolation level (ReadCommitted).
 func (q *Queries) ExecuteInTransaction(
 	ctx ctx.LogContext,
-	txFunc func(Querier) (interface{}, error),
-) (interface{}, error) {
+	txFunc func(Querier) (any, error),
+) (any, error) {
 	return q.ExecuteInTransactionWithIsolation(ctx, pgx.ReadCommitted, txFunc)
 }
 
 func (q *Queries) ExecuteInTransactionWithIsolation(
 	ctx ctx.LogContext,
 	isolationLevel pgx.TxIsoLevel,
-	txFunc func(Querier) (interface{}, error),
-) (interface{}, error) {
+	txFunc func(Querier) (any, error),
+) (any, error) {
 	ctx.Log().Infow("starting transaction", "isolation", isolationLevel)
 
 	transaction, err := q.db.BeginTx(ctx, pgx.TxOptions{IsoLevel: isolationLevel})
@@ -40,9 +40,9 @@ func (q *Queries) ExecuteInTransactionWithIsolation(
 
 func (q *Queries) executeTransaction(
 	ctx ctx.LogContext,
-	txFunc func(Querier) (interface{}, error),
+	txFunc func(Querier) (any, error),
 	transaction pgx.Tx,
-) (interface{}, error) {
+) (any, error) {
 	ctx.Log().Infow("started transaction")
 
 	var err error

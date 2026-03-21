@@ -41,7 +41,7 @@ func SetupOTelSDK(
 }
 
 func setupOTelSDK(otelConfig config.OtelConfig) (func(context.Context) error, error) {
-	var shutdownFuncs []func(context.Context) error
+	shutdownFuncs := make([]func(context.Context) error, 0, 1)
 
 	// shutdown calls cleanup functions registered via shutdownFuncs.
 	// The errors from the calls are joined.

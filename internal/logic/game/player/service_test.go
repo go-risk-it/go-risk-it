@@ -1,7 +1,6 @@
 package player_test
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -36,7 +35,7 @@ func TestServiceImpl_CreatePlayers_WithValidData(t *testing.T) {
 	gameID := int64(1)
 	ctx := ctx2.WithGameID(ctx2.WithUserID(
 		ctx2.WithSpan(
-			ctx2.WithLog(context.Background(), logger),
+			ctx2.WithLog(t.Context(), logger),
 			noop.Span{}),
 		"5a4fde41-4a68-4625-b42b-a9f5f938b394",
 	), gameID)
@@ -121,7 +120,7 @@ func TestServiceImpl_CreatePlayers_InsertPlayersError(t *testing.T) {
 	gameID := int64(1)
 	ctx := ctx2.WithGameID(ctx2.WithUserID(
 		ctx2.WithSpan(
-			ctx2.WithLog(context.Background(), logger),
+			ctx2.WithLog(t.Context(), logger),
 			noop.Span{}),
 		"5a4fde41-4a68-4625-b42b-a9f5f938b394",
 	), gameID)
@@ -179,7 +178,7 @@ func TestServiceImpl_CreatePlayers_GetPlayersByGameError(t *testing.T) {
 	gameID := int64(1)
 	ctx := ctx2.WithGameID(ctx2.WithUserID(
 		ctx2.WithSpan(
-			ctx2.WithLog(context.Background(), logger),
+			ctx2.WithLog(t.Context(), logger),
 			noop.Span{}),
 		"5a4fde41-4a68-4625-b42b-a9f5f938b394",
 	), gameID)
