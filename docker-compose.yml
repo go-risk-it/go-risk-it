@@ -22,7 +22,7 @@ services:
     command: generate
 
   mockery:
-    image: vektra/mockery:v2.50@sha256:6dc0f49b76eee76f4436a69684a92a8aa5a72513c3c0ca12d93c2b625b670b48
+    image: vektra/mockery:v2.53@sha256:77b5e3b443ae4b3517966f2844ec8f5f48b188d85d6f3ba28f4050816d0a032d
     volumes:
       - ./:/src
     working_dir: /src
