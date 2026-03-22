@@ -116,6 +116,8 @@ services:
       - synchronous_commit=off
       - -c
       - full_page_writes=off
+      - -c
+      - max_connections=200
     restart: unless-stopped
     ports:
       # Pass down internal port because it's set dynamically by other services

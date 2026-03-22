@@ -20,6 +20,8 @@ func FetchState[C ctx.LogContext, T any](
 	state, err := fetcherFunc(logContext)
 	if err != nil {
 		logContext.Log().Errorf("unable to fetch state: %v", err)
+
+		return
 	}
 
 	logContext.Log().Debugf("got state %v, writing message", reflect.TypeOf(state))
@@ -27,6 +29,8 @@ func FetchState[C ctx.LogContext, T any](
 	rawResponse, err := message.BuildMessage(messageType, state)
 	if err != nil {
 		logContext.Log().Errorf("unable to build message: %v", err)
+
+		return
 	}
 
 	stateChannel <- rawResponse

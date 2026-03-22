@@ -37,22 +37,38 @@ services:
       - "8080:8080"
     environment:
       - OTEL_RESOURCE_ATTRIBUTES=service.name=risk-it,service.version=0.1.0
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://lgtm:4318
     depends_on:
       db:
         condition: service_healthy
+      lgtm:
+        condition: service_started
 
-  jaeger:
-    image: jaegertracing/jaeger:2.16.0@sha256:bf7f805da4c2bc8d58a6c81ee650fdb6b8e4287698f95fbe231c09c865bc397f
+  lgtm:
+    image: grafana/otel-lgtm:latest
     ports:
-      - "16686:16686"
+      - "3000:3000"
       - "4317:4317"
       - "4318:4318"
-      - "5778:5778"
-      - "9411:9411"
+    volumes:
+      - lgtm-data:/data
+      - ./grafana/dashboards/dashboards.yml:/otel-lgtm/grafana/conf/provisioning/dashboards/go-risk-it.yaml
+      - ./grafana/dashboards:/otel-lgtm/go-risk-it-dashboards
+      - ./grafana/otelcol-extra.yaml:/otel-lgtm/otelcol-config.yaml
+
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:latest
+    environment:
+      DATA_SOURCE_NAME: "postgresql://postgres:${DATABASE_PASSWORD}@db:5432/postgres?sslmode=disable"
+    depends_on:
+      db:
+        condition: service_healthy
+      lgtm:
+        condition: service_started
 
 
 volumes:
   postgres_data:
   socket:
   db-config:
+  lgtm-data:

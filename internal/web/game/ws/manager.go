@@ -10,6 +10,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
+	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	upgradablerwmutex "github.com/go-risk-it/go-risk-it/internal/upgradablerw_mutex"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws"
 	"github.com/lesismal/nbio/nbhttp/websocket"
@@ -29,6 +30,7 @@ type ManagerImpl struct {
 	playerService         player.Service
 	gameConnections       map[int64]*ws.PlayerConnections
 	playerConnectedSignal signals.PlayerConnectedSignal
+	metrics               *metrics.Metrics
 }
 
 func (m *ManagerImpl) GetConnectedPlayers(ctx ctx.GameContext) []string {
@@ -41,12 +43,14 @@ func NewManager(
 	gameStateService state.Service,
 	playerService player.Service,
 	playerConnectedSignal signals.PlayerConnectedSignal,
+	metrics *metrics.Metrics,
 ) *ManagerImpl {
 	return &ManagerImpl{
 		gameStateService:      gameStateService,
 		playerService:         playerService,
 		gameConnections:       make(map[int64]*ws.PlayerConnections),
 		playerConnectedSignal: playerConnectedSignal,
+		metrics:               metrics,
 	}
 }
 
@@ -122,7 +126,7 @@ func (m *ManagerImpl) playerConnections(ctx ctx.GameContext) *ws.PlayerConnectio
 			return existing
 		}
 
-		connections = ws.NewPlayerConnections()
+		connections = ws.NewPlayerConnections(m.metrics)
 		m.gameConnections[ctx.GameID()] = connections
 	}
 

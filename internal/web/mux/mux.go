@@ -27,17 +27,14 @@ func NewServeMux(
 	for _, route := range routes {
 		mux.Handle(
 			route.Pattern(),
-			otelhttp.WithRouteTag(
-				route.Pattern(),
-				logMiddleware.Wrap(
-					otelMiddleware.Wrap(
-						corsMiddleware.Wrap(
-							websocketAuthMiddleware.Wrap(
-								authMiddleware.Wrap(
-									lobbyMiddleware.Wrap(
-										gameMiddleware.Wrap(
-											route,
-										),
+			logMiddleware.Wrap(
+				otelMiddleware.Wrap(
+					corsMiddleware.Wrap(
+						websocketAuthMiddleware.Wrap(
+							authMiddleware.Wrap(
+								lobbyMiddleware.Wrap(
+									gameMiddleware.Wrap(
+										route,
 									),
 								),
 							),
@@ -52,9 +49,7 @@ func NewServeMux(
 
 	log.Infow("Registered routes", "routes", routeNames)
 
-	handler := otelhttp.NewHandler(mux, "/")
-
-	return handler
+	return otelhttp.NewHandler(mux, "/")
 }
 
 var Module = fx.Options(

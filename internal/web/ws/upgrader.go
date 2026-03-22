@@ -2,9 +2,17 @@ package ws
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/lesismal/nbio/nbhttp/websocket"
 	"go.uber.org/zap"
+)
+
+const (
+	// pingInterval is how often the server sends a WebSocket ping to each client.
+	// Must be well below the idle timeout (30s in nbio's default task pool) to
+	// prevent the close/handle race that causes nil-pointer panics.
+	pingInterval = 10 * time.Second
 )
 
 type Upgrader interface {
@@ -34,6 +42,11 @@ func New(log *zap.SugaredLogger, _ ...any) *UpgraderImpl {
 
 	upgrader.OnOpen(func(connection *websocket.Conn) {
 		log.Infow("Connection opened", "remoteAddress", connection.RemoteAddr().String())
+		connection.Keepalive(pingInterval)
+	})
+
+	upgrader.SetPingHandler(func(conn *websocket.Conn, data string) {
+		_ = conn.WriteMessage(websocket.PongMessage, []byte(data))
 	})
 
 	upgrader.OnMessage(nil)

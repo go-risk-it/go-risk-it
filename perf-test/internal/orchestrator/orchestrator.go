@@ -85,10 +85,16 @@ func Run(cfg Config, runner *GameRunner, collector *metrics.Collector) []GameRes
 			select {
 			case <-ticker.C:
 				snap := collector.Snapshot()
-				active := int64(cfg.NumGames) - snap.GamesCompleted - snap.GamesTimedOut
+				active := int64(
+					cfg.NumGames,
+				) - snap.GamesCompleted - snap.GamesTimedOut - snap.GamesFatal
 				log.Printf(
-					"[progress] active=%d completed=%d moves=%d errors=%d",
-					active, snap.GamesCompleted, snap.TotalMoves, snap.TotalErrors,
+					"[progress] active=%d completed=%d fatal=%d moves=%d errors=%d",
+					active,
+					snap.GamesCompleted,
+					snap.GamesFatal,
+					snap.TotalMoves,
+					snap.TotalErrors,
 				)
 			case <-ctx.Done():
 				return

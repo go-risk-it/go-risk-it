@@ -8,6 +8,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/creation"
+	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/game/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/card"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/mission"
@@ -15,7 +16,8 @@ import (
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace/noop"
+	"go.opentelemetry.io/otel/metric/noop"
+	tracenoop "go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/zap"
 )
 
@@ -23,6 +25,15 @@ var (
 	errCreatePlayers = errors.New("error inserting players")
 	errInsertGame    = errors.New("insert logic error")
 )
+
+func testMetrics(t *testing.T) *metrics.Metrics {
+	t.Helper()
+
+	m, err := metrics.NewMetrics(noop.Meter{})
+	require.NoError(t, err)
+
+	return m
+}
 
 // creates a game with a valid board and list of users.
 func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
@@ -35,7 +46,7 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "Gabriele"},
 	}
 	context := ctx.WithUserID(
-		ctx.WithSpan(ctx.WithLog(t.Context(), zap.NewExample().Sugar()), noop.Span{}),
+		ctx.WithSpan(ctx.WithLog(t.Context(), zap.NewExample().Sugar()), tracenoop.Span{}),
 		"dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
 	)
 
@@ -108,6 +119,7 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 		missionServiceMock,
 		playerServiceMock,
 		regionServiceMock,
+		testMetrics(t),
 	)
 
 	gameID, err := service.CreateGameQ(context, mockQuerier, regions, users)
@@ -134,11 +146,12 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 		missionService,
 		playerService,
 		regionService,
+		testMetrics(t),
 	)
 
 	// Set up test data
 	ctx := ctx.WithUserID(
-		ctx.WithSpan(ctx.WithLog(t.Context(), zap.NewExample().Sugar()), noop.Span{}),
+		ctx.WithSpan(ctx.WithLog(t.Context(), zap.NewExample().Sugar()), tracenoop.Span{}),
 		"dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
 	)
 	users := []request.Player{
@@ -181,11 +194,12 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 		missionService,
 		playerService,
 		regionService,
+		testMetrics(t),
 	)
 
 	// Set up test data
 	context := ctx.WithUserID(
-		ctx.WithSpan(ctx.WithLog(t.Context(), zap.NewExample().Sugar()), noop.Span{}),
+		ctx.WithSpan(ctx.WithLog(t.Context(), zap.NewExample().Sugar()), tracenoop.Span{}),
 		"dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
 	)
 	users := []request.Player{

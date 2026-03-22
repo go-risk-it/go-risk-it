@@ -2,6 +2,7 @@ package orchestration
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	dbutil "github.com/go-risk-it/go-risk-it/internal/data/db"
@@ -14,7 +15,10 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
+	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/jackc/pgx/v5"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 )
 
 type Orchestrator[T any] interface {
@@ -29,6 +33,7 @@ type OrchestratorImpl[T any] struct {
 	missionService         mission.Service
 	validationService      validation.Service
 	gameStateChangedSignal signals.GameStateChangedSignal
+	metrics                *metrics.Metrics
 }
 
 func NewOrchestrator[T any](
@@ -39,6 +44,7 @@ func NewOrchestrator[T any](
 	missionService mission.Service,
 	validationService validation.Service,
 	gameStateChangedSignal signals.GameStateChangedSignal,
+	metrics *metrics.Metrics,
 ) *OrchestratorImpl[T] {
 	return &OrchestratorImpl[T]{
 		querier:                querier,
@@ -48,10 +54,13 @@ func NewOrchestrator[T any](
 		missionService:         missionService,
 		validationService:      validationService,
 		gameStateChangedSignal: gameStateChangedSignal,
+		metrics:                metrics,
 	}
 }
 
 func (s *OrchestratorImpl[T]) OrchestrateMove(ctx ctx.GameContext, move T) error {
+	start := time.Now()
+
 	targetPhase, err := dbutil.InTransactionWithIsolation(
 		s.querier,
 		ctx,
@@ -82,6 +91,12 @@ func (s *OrchestratorImpl[T]) OrchestrateMove(ctx ctx.GameContext, move T) error
 	if err != nil {
 		return fmt.Errorf("unable to perform move: %w", err)
 	}
+
+	phase := string(s.service.PhaseType())
+	phaseAttr := metric.WithAttributes(attribute.String("phase", phase))
+
+	s.metrics.MovesTotal.Add(ctx, 1, phaseAttr)
+	s.metrics.PhaseDuration.Record(ctx, time.Since(start).Seconds(), phaseAttr)
 
 	s.gameStateChangedSignal.Emit(ctx, signals.GameStateChangedData{
 		FromPhase: s.service.PhaseType(),
@@ -120,6 +135,9 @@ func (s *OrchestratorImpl[T]) OrchestrateMoveQ(
 	if isMissionAccomplished {
 		ctx.Log().Infow("game is over")
 
+		s.metrics.GamesFinished.Add(ctx, 1)
+		s.metrics.ActiveGames.Add(ctx, -1)
+
 		return s.service.PhaseType(), nil
 	}
 
@@ -136,7 +154,7 @@ func (s *OrchestratorImpl[T]) OrchestrateMoveQ(
 
 	ctx.Log().Infow("advancing phase", "target", targetPhase)
 
-	if err := s.service.AdvanceQ(ctx, querier, targetPhase); err != nil {
+	if err := s.service.AdvanceQ(ctx, querier, targetPhase, performResult); err != nil {
 		return "", fmt.Errorf("unable to advance move: %w", err)
 	}
 

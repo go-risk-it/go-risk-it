@@ -42,12 +42,6 @@ type ServiceImpl struct {
 	playerService player.Service
 	regionService region.Service
 	rng           rand.RNG
-
-	// lastResult stores the result of the most recent PerformQ call.
-	// It is read by AdvanceQ to compute deployable troops.
-	// This is safe because PerformQ and AdvanceQ are always called
-	// within the same transaction in the orchestrator.
-	lastResult *MoveResult
 }
 
 var _ Service = (*ServiceImpl)(nil)

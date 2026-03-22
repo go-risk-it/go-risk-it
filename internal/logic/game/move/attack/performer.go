@@ -47,8 +47,6 @@ func (s *ServiceImpl) PerformQ(
 		ConqueringTroops:  move.AttackingTroops - casualties.attacking,
 	}
 
-	s.lastResult = result
-
 	return result, nil
 }
 
@@ -175,9 +173,16 @@ func checkTroops(
 
 	if defendingRegion.Troops < 1 {
 		ctx.Log().Errorw(
-			"attempting to attack a region with no troops",
-			"region",
-			defendingRegion.ExternalReference,
+			"attempting to attack a region with no troops — possible server bug",
+			"defendingRegion", defendingRegion.ExternalReference,
+			"defendingTroops", defendingRegion.Troops,
+			"defendingOwner", defendingRegion.UserID,
+			"attackingRegion", attackingRegion.ExternalReference,
+			"attackingTroops", attackingRegion.Troops,
+			"attackingOwner", attackingRegion.UserID,
+			"moveAttackingTroops", move.AttackingTroops,
+			"gameID", ctx.GameID(),
+			"userID", ctx.UserID(),
 		)
 
 		return domainerrors.NewValidationError("defending region does not have enough troops")

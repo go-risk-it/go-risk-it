@@ -5,6 +5,9 @@ database:
   user: ${DATABASE_USER}
   password: ${DATABASE_PASSWORD}
   disable_ssl: true
+  max_conns: 50
+  min_conns: 10
+  max_conn_idle_time: 5m
 
 jwt:
   secret: ${JWT_SECRET}

@@ -13,6 +13,7 @@ func (s *ServiceImpl) AdvanceQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	targetPhase sqlc.GamePhaseType,
+	_ any,
 ) error {
 	if err := phase.ValidateTransition(sqlc.GamePhaseTypeREINFORCE, targetPhase); err != nil {
 		return fmt.Errorf("invalid phase transition: %w", err)
@@ -42,7 +43,7 @@ func (s *ServiceImpl) AdvanceQ(
 	}
 
 	if targetPhase == sqlc.GamePhaseTypeDEPLOY {
-		if err := s.cardsService.AdvanceQ(ctx, querier, targetPhase); err != nil {
+		if err := s.cardsService.AdvanceQ(ctx, querier, targetPhase, nil); err != nil {
 			return fmt.Errorf("failed to advance cards phase: %w", err)
 		}
 

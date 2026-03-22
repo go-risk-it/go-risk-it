@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/lobby/signals"
+	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	upgradablerwmutex "github.com/go-risk-it/go-risk-it/internal/upgradablerw_mutex"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws"
 	"github.com/lesismal/nbio/nbhttp/websocket"
@@ -21,16 +22,19 @@ type ManagerImpl struct {
 
 	lobbyConnections      map[int64]*ws.PlayerConnections
 	playerConnectedSignal signals.PlayerConnectedSignal
+	metrics               *metrics.Metrics
 }
 
 var _ Manager = (*ManagerImpl)(nil)
 
 func NewManager(
 	playerConnectedSignal signals.PlayerConnectedSignal,
+	metrics *metrics.Metrics,
 ) *ManagerImpl {
 	return &ManagerImpl{
 		lobbyConnections:      make(map[int64]*ws.PlayerConnections),
 		playerConnectedSignal: playerConnectedSignal,
+		metrics:               metrics,
 	}
 }
 
@@ -63,7 +67,7 @@ func (m *ManagerImpl) playerConnections(ctx ctx.LobbyContext) *ws.PlayerConnecti
 			return existing
 		}
 
-		connections = ws.NewPlayerConnections()
+		connections = ws.NewPlayerConnections(m.metrics)
 		m.lobbyConnections[ctx.LobbyID()] = connections
 	}
 

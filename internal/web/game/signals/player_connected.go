@@ -20,11 +20,11 @@ func HandlePlayerConnected(
 
 		gameContext.Log().Infow("handling player connected. fetching all states and publishing")
 
-		fetchAllStatesAndPublish(gameContext, params, params.ConnectionManager.WriteMessage)
+		go fetchAllStatesAndPublish(gameContext, params, params.ConnectionManager.WriteMessage)
 
 		gameContext.Log().Infow("fetching move logs and publishing")
 
-		fetchStateAndPublish(
+		go fetchStateAndPublish(
 			gameContext,
 			params.MoveLogFetcher.FetchState,
 			params.ConnectionManager.WriteMessage,

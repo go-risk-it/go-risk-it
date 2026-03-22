@@ -6,11 +6,23 @@ import (
 	"testing/synctest"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	metricnoop "go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/zap"
 )
+
+func testMetrics(t *testing.T) *metrics.Metrics {
+	t.Helper()
+
+	m, err := metrics.NewMetrics(metricnoop.Meter{})
+	require.NoError(t, err)
+
+	return m
+}
 
 func gameContext(gameID int64) ctx.GameContext {
 	userContext := ctx.WithUserID(
@@ -27,7 +39,7 @@ func gameContext(gameID int64) ctx.GameContext {
 func TestManagerImpl_GetConnectedPlayers_ConcurrentSameGame(t *testing.T) {
 	t.Parallel()
 	synctest.Test(t, func(t *testing.T) {
-		manager := ws.NewManager(nil, nil, nil)
+		manager := ws.NewManager(nil, nil, nil, testMetrics(t))
 
 		const numGoroutines = 100
 
@@ -55,7 +67,7 @@ func TestManagerImpl_GetConnectedPlayers_ConcurrentSameGame(t *testing.T) {
 func TestManagerImpl_GetConnectedPlayers_ConcurrentDifferentGames(t *testing.T) {
 	t.Parallel()
 	synctest.Test(t, func(t *testing.T) {
-		manager := ws.NewManager(nil, nil, nil)
+		manager := ws.NewManager(nil, nil, nil, testMetrics(t))
 
 		const numGoroutines = 100
 
@@ -80,7 +92,7 @@ func TestManagerImpl_GetConnectedPlayers_ConcurrentDifferentGames(t *testing.T) 
 func TestManagerImpl_GetConnectedPlayers_MixedConcurrent(t *testing.T) {
 	t.Parallel()
 	synctest.Test(t, func(t *testing.T) {
-		manager := ws.NewManager(nil, nil, nil)
+		manager := ws.NewManager(nil, nil, nil, testMetrics(t))
 
 		const (
 			numGames          = 5

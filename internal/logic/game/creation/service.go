@@ -12,6 +12,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
+	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -35,6 +36,7 @@ type ServiceImpl struct {
 	missionService mission.Service
 	playerService  player.Service
 	regionService  region.Service
+	metrics        *metrics.Metrics
 }
 
 var _ Service = (*ServiceImpl)(nil)
@@ -45,6 +47,7 @@ func NewService(
 	missionService mission.Service,
 	playerService player.Service,
 	regionService region.Service,
+	metrics *metrics.Metrics,
 ) *ServiceImpl {
 	return &ServiceImpl{
 		querier:        querier,
@@ -52,6 +55,7 @@ func NewService(
 		missionService: missionService,
 		regionService:  regionService,
 		cardService:    cardService,
+		metrics:        metrics,
 	}
 }
 
@@ -66,6 +70,9 @@ func (s *ServiceImpl) CreateGameWithTx(
 	if err != nil {
 		return -1, fmt.Errorf("failed to create game: %w", err)
 	}
+
+	s.metrics.GamesCreated.Add(ctx, 1)
+	s.metrics.ActiveGames.Add(ctx, 1)
 
 	return gameID, nil
 }

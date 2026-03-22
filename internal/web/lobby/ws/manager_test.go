@@ -7,10 +7,22 @@ import (
 	"testing/synctest"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby/ws"
+	"github.com/stretchr/testify/require"
+	metricnoop "go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/zap"
 )
+
+func testMetrics(t *testing.T) *metrics.Metrics {
+	t.Helper()
+
+	m, err := metrics.NewMetrics(metricnoop.Meter{})
+	require.NoError(t, err)
+
+	return m
+}
 
 func lobbyContext(lobbyID int64) ctx.LobbyContext {
 	userContext := ctx.WithUserID(
@@ -27,7 +39,7 @@ func lobbyContext(lobbyID int64) ctx.LobbyContext {
 func TestManagerImpl_Broadcast_ConcurrentSameLobby(t *testing.T) {
 	t.Parallel()
 	synctest.Test(t, func(t *testing.T) {
-		manager := ws.NewManager(nil)
+		manager := ws.NewManager(nil, testMetrics(t))
 
 		const numGoroutines = 100
 
@@ -50,7 +62,7 @@ func TestManagerImpl_Broadcast_ConcurrentSameLobby(t *testing.T) {
 func TestManagerImpl_Broadcast_ConcurrentDifferentLobbies(t *testing.T) {
 	t.Parallel()
 	synctest.Test(t, func(t *testing.T) {
-		manager := ws.NewManager(nil)
+		manager := ws.NewManager(nil, testMetrics(t))
 
 		const numGoroutines = 100
 
@@ -69,7 +81,7 @@ func TestManagerImpl_Broadcast_ConcurrentDifferentLobbies(t *testing.T) {
 func TestManagerImpl_Broadcast_MixedConcurrent(t *testing.T) {
 	t.Parallel()
 	synctest.Test(t, func(t *testing.T) {
-		manager := ws.NewManager(nil)
+		manager := ws.NewManager(nil, testMetrics(t))
 
 		const (
 			numLobbies         = 5
