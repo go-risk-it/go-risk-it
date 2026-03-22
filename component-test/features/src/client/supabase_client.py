@@ -1,9 +1,8 @@
 import logging
 import os
 
-from gotrue import AuthResponse
-from gotrue.http_clients import SyncClient
-from supabase import create_client, ClientOptions
+from supabase import Client, ClientOptions, create_client
+from supabase_auth import AuthResponse
 
 from src.core.player import Player
 from src.core.user import User
@@ -12,7 +11,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class SupabaseClient:
-    client: SyncClient
+    client: Client
 
     def __init__(self):
         self.client = create_client(
