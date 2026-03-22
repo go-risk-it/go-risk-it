@@ -9,76 +9,42 @@ on:
 
 env:
   DEFAULT_PYTHON_VERSION: "3.11"
+  POETRY_VERSION: "1.8.5"
 
 jobs:
   test:
     name: Component tests
     runs-on: ubuntu-22.04
-    
-    #missing matrix
-    strategy:
-      fail-fast: false
 
     steps:
-      - name: Checkout git repository 🕝
+      - name: Checkout git repository
         uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
 
-      - name: Download gomplate
-        working-directory: component-test
-        run: |-
-          sudo curl -o /usr/local/bin/gomplate -sSL https://github.com/hairyhenderson/gomplate/releases/download/v3.9.0/gomplate_linux-amd64
-          sudo chmod +x /usr/local/bin/gomplate
-
-      - name: Set up Python ${{ env.DEFAULT_PYTHON_VERSION }} 🐍
+      - name: Set up Python ${{ env.DEFAULT_PYTHON_VERSION }}
         uses: actions/setup-python@28f2168f4d98ee0445e3c6321f6e6616c83dd5ec
         with:
           python-version: ${{ env.DEFAULT_PYTHON_VERSION }}
-        
 
-      - name: Read Poetry Version 🔢
-        run: |
-          echo "POETRY_VERSION=$(scripts/poetry-version.sh)" >> $GITHUB_ENV
-        shell: bash
-
-      - name: Install poetry 🦄
+      - name: Install poetry
         uses: Gr1N/setup-poetry@48b0f77c8c1b1b19cb962f0f00dff7b4be8f81ec # v9
         with:
           poetry-version: ${{ env.POETRY_VERSION }}
 
-      - name: Load Poetry Cached Libraries ⬇
+      - name: Load Poetry Cached Libraries
         id: cache-poetry
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7
         with:
-          path: .venv
-          key: ${{ runner.os }}-poetry-${{ env.POETRY_VERSION }}-${{ env.DEFAULT_PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ secrets.POETRY_CACHE_VERSION }}
-          restore-keys: ${{ runner.os }}-poetry-${{ env.DEFAULT_PYTHON_VERSION }}
+          path: component-test/.venv
+          key: ${{ runner.os }}-poetry-${{ env.POETRY_VERSION }}-${{ env.DEFAULT_PYTHON_VERSION }}-${{ hashFiles('component-test/poetry.lock') }}
 
-      - name: Clear Poetry cache
-        if: steps.cache-poetry.outputs.cache-hit == 'true' && contains(github.event.pull_request.labels.*.name, 'tools:clear-poetry-cache-unit-tests')
-        run: rm -r .venv
-        working-directory: component-test
-
-      - name: Create virtual environment
-        if: (steps.cache-poetry.outputs.cache-hit != 'true' || contains(github.event.pull_request.labels.*.name, 'tools:clear-poetry-cache-unit-tests'))
-        run: python -m venv create .venv
-        working-directory: component-test
-
-      - name: Set up virtual environment
+      - name: Configure virtual environment
         run: poetry config virtualenvs.in-project true
         working-directory: component-test
 
-      - name: Install Dependencies 📦
-        run: |
-          poetry install
+      - name: Install Dependencies
+        run: poetry install
         working-directory: component-test
 
-      # - name: Lint Code 🎎
-      #   run: |
-      #     poetry run ruff check .github --extend-ignore D
-      #     poetry run black --check .github
-      #   working-directory: component-test
-
-      - name: Test Code 🔍
-        run: |
-          poetry run behave
+      - name: Test Code
+        run: poetry run behave
         working-directory: component-test
