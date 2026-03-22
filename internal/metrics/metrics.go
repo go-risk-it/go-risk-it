@@ -21,11 +21,6 @@ type Metrics struct {
 	BroadcastDuration metric.Float64Histogram
 	MessagesSent      metric.Int64Counter
 	BroadcastErrors   metric.Int64Counter
-
-	// Database metrics
-	QueryDuration       metric.Float64Histogram
-	TransactionDuration metric.Float64Histogram
-	PoolWaitDuration    metric.Float64Histogram
 }
 
 func NewMetrics(meter metric.Meter) (*Metrics, error) {
@@ -40,10 +35,6 @@ func NewMetrics(meter metric.Meter) (*Metrics, error) {
 	}
 
 	if err := metrics.initWebSocketMetrics(meter); err != nil {
-		return nil, err
-	}
-
-	if err := metrics.initDatabaseMetrics(meter); err != nil {
 		return nil, err
 	}
 
@@ -130,33 +121,6 @@ func (metrics *Metrics) initWebSocketMetrics(meter metric.Meter) error {
 
 	if metrics.BroadcastErrors, err = meter.Int64Counter("ws.broadcast.errors.total",
 		metric.WithDescription("Total number of broadcast errors"),
-	); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (metrics *Metrics) initDatabaseMetrics(meter metric.Meter) error {
-	var err error
-
-	if metrics.QueryDuration, err = meter.Float64Histogram("db.query.duration",
-		metric.WithDescription("Duration of database queries in seconds"),
-		metric.WithUnit("s"),
-	); err != nil {
-		return err
-	}
-
-	if metrics.TransactionDuration, err = meter.Float64Histogram("db.transaction.duration",
-		metric.WithDescription("Duration of database transactions in seconds"),
-		metric.WithUnit("s"),
-	); err != nil {
-		return err
-	}
-
-	if metrics.PoolWaitDuration, err = meter.Float64Histogram("db.pool.wait.duration",
-		metric.WithDescription("Time spent waiting for a pool connection in seconds"),
-		metric.WithUnit("s"),
 	); err != nil {
 		return err
 	}

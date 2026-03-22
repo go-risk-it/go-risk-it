@@ -4,15 +4,19 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"time"
 )
 
 type DatabaseConfig struct {
-	Host       string `koanf:"host"`
-	Port       int    `koanf:"port"`
-	Name       string `koanf:"name"`
-	User       string `koanf:"user"`
-	Password   string `koanf:"password"`
-	DisableSSL bool   `koanf:"disable_ssl"`
+	Host            string        `koanf:"host"`
+	Port            int           `koanf:"port"`
+	Name            string        `koanf:"name"`
+	User            string        `koanf:"user"`
+	Password        string        `koanf:"password"`
+	DisableSSL      bool          `koanf:"disable_ssl"`
+	MaxConns        int32         `koanf:"max_conns"`
+	MinConns        int32         `koanf:"min_conns"`
+	MaxConnIdleTime time.Duration `koanf:"max_conn_idle_time"`
 }
 
 func (c *DatabaseConfig) BuildConnectionString() string {

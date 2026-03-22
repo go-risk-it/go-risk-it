@@ -1,11 +1,14 @@
 package metrics
 
 import (
+	"context"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/HdrHistogram/hdrhistogram-go"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 )
 
 // maxLatencyMs is the upper bound for histogram recording (30 seconds in ms).
@@ -21,6 +24,9 @@ var knownPhases = []string{"cards", "deploy", "attack", "conquer", "reinforce"}
 // All methods are safe for concurrent use.
 type Collector struct {
 	mu sync.Mutex
+
+	// Optional OTel exporter for live metrics.
+	otel *OTelExporter
 
 	// Per-operation REST latency histograms (keyed by action type name).
 	restLatency map[string]*hdrhistogram.Histogram
@@ -107,6 +113,11 @@ func NewCollector(maxDuration time.Duration) *Collector {
 	}
 }
 
+// SetOTelExporter attaches an OTel exporter for live metric export.
+func (c *Collector) SetOTelExporter(o *OTelExporter) {
+	c.otel = o
+}
+
 // getOrCreateHist returns the histogram for the given action type, creating it if needed.
 func (c *Collector) getOrCreateHist(actionType string) *hdrhistogram.Histogram {
 	h, ok := c.restLatency[actionType]
@@ -148,6 +159,11 @@ func (c *Collector) RecordREST(actionType string, d time.Duration) {
 	c.mu.Lock()
 	_ = c.getOrCreateHist(actionType).RecordValue(clampMs(d))
 	c.mu.Unlock()
+
+	if c.otel != nil {
+		c.otel.restDuration.Record(context.Background(), d.Seconds(),
+			metric.WithAttributes(attribute.String("action", actionType)))
+	}
 }
 
 // RecordWSDelivery records the latency from REST response to WS state update arriving.
@@ -155,6 +171,10 @@ func (c *Collector) RecordWSDelivery(d time.Duration) {
 	c.mu.Lock()
 	_ = c.wsDelivery.RecordValue(clampMs(d))
 	c.mu.Unlock()
+
+	if c.otel != nil {
+		c.otel.wsDuration.Record(context.Background(), d.Seconds())
+	}
 }
 
 // RecordE2E records end-to-end move latency (from before action to after WS update).
@@ -162,6 +182,10 @@ func (c *Collector) RecordE2E(d time.Duration) {
 	c.mu.Lock()
 	_ = c.e2eMove.RecordValue(clampMs(d))
 	c.mu.Unlock()
+
+	if c.otel != nil {
+		c.otel.e2eDuration.Record(context.Background(), d.Seconds())
+	}
 }
 
 // RecordPhaseLatency records E2E latency tagged by game phase.
@@ -203,6 +227,11 @@ func (c *Collector) RecordErrorType(errorType string) {
 	if counter, ok := c.errorCounts[errorType]; ok {
 		counter.Add(1)
 	}
+
+	if c.otel != nil {
+		c.otel.errorsTotal.Add(context.Background(), 1,
+			metric.WithAttributes(attribute.String("type", errorType)))
+	}
 }
 
 // RecordTimedMove records a move in the throughput time-series bucket.
@@ -218,41 +247,83 @@ func (c *Collector) RecordTimedMove() {
 // RecordMove increments the total moves counter.
 func (c *Collector) RecordMove() {
 	c.totalMoves.Add(1)
+
+	if c.otel != nil {
+		c.otel.movesTotal.Add(context.Background(), 1)
+	}
 }
 
 // RecordError increments the total errors counter.
 func (c *Collector) RecordError() {
 	c.totalErrors.Add(1)
+
+	if c.otel != nil {
+		c.otel.errorsTotal.Add(context.Background(), 1)
+	}
 }
 
 // RecordGameComplete increments the games completed counter.
 func (c *Collector) RecordGameComplete() {
 	c.gamesCompleted.Add(1)
+
+	if c.otel != nil {
+		c.otel.gamesCompleted.Add(context.Background(), 1)
+		c.otel.gamesActive.Add(context.Background(), -1)
+	}
 }
 
 // RecordGameTimedOut increments the games timed out counter.
 func (c *Collector) RecordGameTimedOut() {
 	c.gamesTimedOut.Add(1)
+
+	if c.otel != nil {
+		c.otel.gamesTimedOut.Add(context.Background(), 1)
+		c.otel.gamesActive.Add(context.Background(), -1)
+	}
 }
 
 // RecordGameFatal increments the games fatal error counter.
 func (c *Collector) RecordGameFatal() {
 	c.gamesFatal.Add(1)
+
+	if c.otel != nil {
+		c.otel.gamesFatal.Add(context.Background(), 1)
+		c.otel.gamesActive.Add(context.Background(), -1)
+	}
+}
+
+// RecordGameStarted increments the active games counter (OTel only, no HDR equivalent).
+func (c *Collector) RecordGameStarted() {
+	if c.otel != nil {
+		c.otel.gamesActive.Add(context.Background(), 1)
+	}
 }
 
 // RecordRetry increments the REST retry counter.
 func (c *Collector) RecordRetry() {
 	c.totalRetries.Add(1)
+
+	if c.otel != nil {
+		c.otel.retriesTotal.Add(context.Background(), 1)
+	}
 }
 
 // RecordConflict increments the 409 conflict counter.
 func (c *Collector) RecordConflict() {
 	c.totalConflicts.Add(1)
+
+	if c.otel != nil {
+		c.otel.conflictsTotal.Add(context.Background(), 1)
+	}
 }
 
 // RecordReconnect increments the WS reconnection attempt counter.
 func (c *Collector) RecordReconnect() {
 	c.totalReconnects.Add(1)
+
+	if c.otel != nil {
+		c.otel.reconnectsTotal.Add(context.Background(), 1)
+	}
 }
 
 // RecordReconnectFailure increments the WS reconnection failure counter.

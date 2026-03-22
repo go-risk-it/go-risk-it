@@ -13,6 +13,8 @@ import (
 type Scenario struct {
 	Config      orchestrator.Config
 	ChaosConfig chaos.Config
+	// Ramp mode config (nil = batch mode).
+	RampConfig *orchestrator.RampConfig
 }
 
 var presets = map[string]Scenario{
@@ -84,6 +86,33 @@ var presets = map[string]Scenario{
 			SlowMoveDelay:  3 * time.Second,
 			ErrorMoveRate:  0.05,
 			ReconnectDelay: 5 * time.Second,
+		},
+	},
+	"ramp-slow": {
+		RampConfig: &orchestrator.RampConfig{
+			GamesPerMinute: 5,
+			MaxGames:       100,
+			ErrorThreshold: 0.10,
+			GameTimeout:    15 * time.Minute,
+			NumPlayers:     4,
+		},
+	},
+	"ramp-medium": {
+		RampConfig: &orchestrator.RampConfig{
+			GamesPerMinute: 20,
+			MaxGames:       500,
+			ErrorThreshold: 0.10,
+			GameTimeout:    15 * time.Minute,
+			NumPlayers:     4,
+		},
+	},
+	"ramp-fast": {
+		RampConfig: &orchestrator.RampConfig{
+			GamesPerMinute: 50,
+			MaxGames:       1000,
+			ErrorThreshold: 0.05,
+			GameTimeout:    20 * time.Minute,
+			NumPlayers:     4,
 		},
 	},
 }

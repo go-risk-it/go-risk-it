@@ -96,6 +96,8 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 	start := time.Now()
 	result := GameResult{GameIndex: gameIndex}
 
+	gr.collector.RecordGameStarted()
+
 	// Shared transport for connection pooling across all players in this game.
 	transport := &http.Transport{
 		MaxIdleConnsPerHost: numPlayers,
