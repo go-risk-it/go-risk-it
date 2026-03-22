@@ -4,6 +4,13 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
+// latencyBuckets defines histogram bucket boundaries in seconds,
+// suitable for sub-second API and phase latencies.
+var latencyBuckets = []float64{ //nolint:gochecknoglobals
+	0.001, 0.005, 0.01, 0.025, 0.05,
+	0.1, 0.25, 0.5, 1, 2.5, 5, 10,
+}
+
 type Metrics struct {
 	// HTTP metrics
 	HTTPRequestDuration metric.Float64Histogram
@@ -47,6 +54,7 @@ func (metrics *Metrics) initHTTPMetrics(meter metric.Meter) error {
 	if metrics.HTTPRequestDuration, err = meter.Float64Histogram("http.server.request.duration",
 		metric.WithDescription("Duration of HTTP requests in seconds"),
 		metric.WithUnit("s"),
+		metric.WithExplicitBucketBoundaries(latencyBuckets...),
 	); err != nil {
 		return err
 	}
@@ -78,6 +86,7 @@ func (metrics *Metrics) initGameMetrics(meter metric.Meter) error {
 	if metrics.PhaseDuration, err = meter.Float64Histogram("game.phase.duration",
 		metric.WithDescription("Duration of phase execution in seconds"),
 		metric.WithUnit("s"),
+		metric.WithExplicitBucketBoundaries(latencyBuckets...),
 	); err != nil {
 		return err
 	}
@@ -109,6 +118,7 @@ func (metrics *Metrics) initWebSocketMetrics(meter metric.Meter) error {
 	if metrics.BroadcastDuration, err = meter.Float64Histogram("ws.broadcast.duration",
 		metric.WithDescription("Duration of broadcast operations in seconds"),
 		metric.WithUnit("s"),
+		metric.WithExplicitBucketBoundaries(latencyBuckets...),
 	); err != nil {
 		return err
 	}

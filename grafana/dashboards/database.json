@@ -159,6 +159,142 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       }
+    },
+    {
+      "id": 5,
+      "title": "Postgres Active Connections",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "pg_stat_database_numbackends{datname=\"postgres\"}",
+          "legendFormat": "active backends"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 15,
+            "lineWidth": 2, "pointSize": 5, "showPoints": "never",
+            "spanNulls": false, "stacking": { "group": "A", "mode": "none" }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Postgres Transactions/sec",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(pg_stat_database_xact_commit_total{datname=~\"postgres\"}[1m])",
+          "legendFormat": "commits/sec"
+        },
+        {
+          "refId": "B",
+          "expr": "rate(pg_stat_database_xact_rollback_total{datname=~\"postgres\"}[1m])",
+          "legendFormat": "rollbacks/sec"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10,
+            "lineWidth": 2, "pointSize": 5, "showPoints": "never",
+            "spanNulls": false, "stacking": { "group": "A", "mode": "none" }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Postgres Rows Read/Written",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(pg_stat_database_tup_fetched_total{datname=~\"postgres\"}[1m])",
+          "legendFormat": "rows fetched/sec"
+        },
+        {
+          "refId": "B",
+          "expr": "rate(pg_stat_database_tup_inserted_total{datname=~\"postgres\"}[1m])",
+          "legendFormat": "rows inserted/sec"
+        },
+        {
+          "refId": "C",
+          "expr": "rate(pg_stat_database_tup_updated_total{datname=~\"postgres\"}[1m])",
+          "legendFormat": "rows updated/sec"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10,
+            "lineWidth": 2, "pointSize": 5, "showPoints": "never",
+            "spanNulls": false, "stacking": { "group": "A", "mode": "none" }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      }
+    },
+    {
+      "id": 8,
+      "title": "Postgres Cache Hit Rate",
+      "type": "gauge",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "pg_stat_database_blks_hit_total{datname=~\"postgres\"} / (pg_stat_database_blks_hit_total{datname=~\"postgres\"} + pg_stat_database_blks_read_total{datname=~\"postgres\"}) * 100",
+          "legendFormat": "cache hit %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 90 },
+              { "color": "green", "value": 99 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      }
     }
   ]
 }

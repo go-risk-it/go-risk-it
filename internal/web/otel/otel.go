@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
+	"go.opentelemetry.io/contrib/instrumentation/host"
 	"go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
@@ -84,6 +85,10 @@ func setupOTelSDK(otelConfig config.OtelConfig) (func(context.Context) error, er
 	if otelConfig.Enabled {
 		if err := runtime.Start(runtime.WithMinimumReadMemStatsInterval(time.Second)); err != nil {
 			return shutdown, fmt.Errorf("failed to start runtime instrumentation: %w", err)
+		}
+
+		if err := host.Start(); err != nil {
+			return shutdown, fmt.Errorf("failed to start host instrumentation: %w", err)
 		}
 	}
 

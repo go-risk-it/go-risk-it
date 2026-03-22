@@ -8,6 +8,7 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
@@ -43,9 +44,15 @@ type OTelExporter struct {
 
 // NewOTelExporter creates an OTel metric exporter pointing at the given OTLP HTTP endpoint.
 func NewOTelExporter(ctx context.Context, endpoint string) (*OTelExporter, error) {
-	exporter, err := otlpmetrichttp.New(ctx,
+	exporter, err := otlpmetrichttp.New(
+		ctx,
 		otlpmetrichttp.WithEndpoint(endpoint),
 		otlpmetrichttp.WithInsecure(),
+		otlpmetrichttp.WithTemporalitySelector(
+			func(_ sdkmetric.InstrumentKind) metricdata.Temporality {
+				return metricdata.CumulativeTemporality
+			},
+		),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("create OTLP metric exporter: %w", err)
@@ -140,6 +147,7 @@ func (o *OTelExporter) initInstruments(meter metric.Meter) error {
 	if o.restDuration, err = meter.Float64Histogram("perftest.rest.duration",
 		metric.WithDescription("REST API call duration"),
 		metric.WithUnit("s"),
+		metric.WithExplicitBucketBoundaries(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10),
 	); err != nil {
 		return err
 	}
@@ -147,6 +155,7 @@ func (o *OTelExporter) initInstruments(meter metric.Meter) error {
 	if o.e2eDuration, err = meter.Float64Histogram("perftest.e2e.duration",
 		metric.WithDescription("End-to-end move duration"),
 		metric.WithUnit("s"),
+		metric.WithExplicitBucketBoundaries(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10),
 	); err != nil {
 		return err
 	}
@@ -154,6 +163,7 @@ func (o *OTelExporter) initInstruments(meter metric.Meter) error {
 	if o.wsDuration, err = meter.Float64Histogram("perftest.ws.delivery.duration",
 		metric.WithDescription("WebSocket delivery latency"),
 		metric.WithUnit("s"),
+		metric.WithExplicitBucketBoundaries(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10),
 	); err != nil {
 		return err
 	}

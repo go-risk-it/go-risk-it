@@ -54,6 +54,17 @@ services:
       - lgtm-data:/data
       - ./grafana/dashboards/dashboards.yml:/otel-lgtm/grafana/conf/provisioning/dashboards/go-risk-it.yaml
       - ./grafana/dashboards:/otel-lgtm/go-risk-it-dashboards
+      - ./grafana/otelcol-extra.yaml:/otel-lgtm/otelcol-config.yaml
+
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:latest
+    environment:
+      DATA_SOURCE_NAME: "postgresql://postgres:${DATABASE_PASSWORD}@db:5432/postgres?sslmode=disable"
+    depends_on:
+      db:
+        condition: service_healthy
+      lgtm:
+        condition: service_started
 
 
 volumes:
