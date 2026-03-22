@@ -42,8 +42,6 @@ func (s *ServiceImpl) PerformQ(
 		RegionTroopGrants:     regionTroopGrants,
 	}
 
-	s.lastResult = result
-
 	return result, nil
 }
 

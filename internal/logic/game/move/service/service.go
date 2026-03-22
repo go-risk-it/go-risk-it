@@ -15,6 +15,7 @@ type Advancer interface {
 		ctx ctx.GameContext,
 		querier db.Querier,
 		targetPhase sqlc.GamePhaseType,
+		performResult any,
 	) error
 }
 

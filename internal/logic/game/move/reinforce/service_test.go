@@ -347,7 +347,7 @@ func TestServiceImpl_AdvanceQ_ToCards_WithConquerInTurn(t *testing.T) {
 		InsertPhaseQ(ctx, querier, sqlc.GamePhaseTypeCARDS).
 		Return(&sqlc.GamePhase{}, nil)
 
-	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeCARDS)
+	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeCARDS, nil)
 
 	require.NoError(t, err)
 }
@@ -377,7 +377,7 @@ func TestServiceImpl_AdvanceQ_ToCards_WithoutConquerInTurn(t *testing.T) {
 		InsertPhaseQ(ctx, querier, sqlc.GamePhaseTypeCARDS).
 		Return(&sqlc.GamePhase{}, nil)
 
-	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeCARDS)
+	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeCARDS, nil)
 
 	require.NoError(t, err)
 }
@@ -408,10 +408,10 @@ func TestServiceImpl_AdvanceQ_ToDeploy_WithConquerInTurn(t *testing.T) {
 		Return(nil)
 	cardsService.
 		EXPECT().
-		AdvanceQ(ctx, querier, sqlc.GamePhaseTypeDEPLOY).
+		AdvanceQ(ctx, querier, sqlc.GamePhaseTypeDEPLOY, nil).
 		Return(nil)
 
-	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeDEPLOY)
+	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeDEPLOY, nil)
 
 	require.NoError(t, err)
 }
@@ -438,10 +438,10 @@ func TestServiceImpl_AdvanceQ_ToDeploy_WithoutConquerInTurn(t *testing.T) {
 		Return(false, nil)
 	cardsService.
 		EXPECT().
-		AdvanceQ(ctx, querier, sqlc.GamePhaseTypeDEPLOY).
+		AdvanceQ(ctx, querier, sqlc.GamePhaseTypeDEPLOY, nil).
 		Return(nil)
 
-	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeDEPLOY)
+	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeDEPLOY, nil)
 
 	require.NoError(t, err)
 }
@@ -452,7 +452,7 @@ func TestServiceImpl_AdvanceQ_InvalidTransition(t *testing.T) {
 	querier, _, _, _, _, _, service := setup(t)
 	ctx := input()
 
-	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeATTACK)
+	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeATTACK, nil)
 
 	require.Error(t, err)
 	require.ErrorContains(t, err, "invalid phase transition")

@@ -154,7 +154,7 @@ func (s *OrchestratorImpl[T]) OrchestrateMoveQ(
 
 	ctx.Log().Infow("advancing phase", "target", targetPhase)
 
-	if err := s.service.AdvanceQ(ctx, querier, targetPhase); err != nil {
+	if err := s.service.AdvanceQ(ctx, querier, targetPhase, performResult); err != nil {
 		return "", fmt.Errorf("unable to advance move: %w", err)
 	}
 

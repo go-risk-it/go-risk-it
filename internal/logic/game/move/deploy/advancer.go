@@ -13,6 +13,7 @@ func (s *ServiceImpl) AdvanceQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	targetPhase sqlc.GamePhaseType,
+	_ any,
 ) error {
 	if err := phase.ValidateTransition(sqlc.GamePhaseTypeDEPLOY, targetPhase); err != nil {
 		return fmt.Errorf("invalid phase transition: %w", err)

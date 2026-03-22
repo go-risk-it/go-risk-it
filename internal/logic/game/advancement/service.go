@@ -105,6 +105,7 @@ func (s *ServiceImpl[T]) AdvanceQ(
 		ctx,
 		querier,
 		targetPhase,
+		nil,
 	)
 	if err != nil {
 		return "", fmt.Errorf("unable to perform move: %w", err)

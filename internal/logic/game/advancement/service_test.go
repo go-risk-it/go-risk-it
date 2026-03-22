@@ -78,7 +78,7 @@ func TestAdvanceQ_HappyPath(t *testing.T) {
 	validationService.EXPECT().ValidateQ(gameCtx, querier, game).Return(nil)
 	moveService.EXPECT().WalkQ(gameCtx, querier, true).Return(sqlc.GamePhaseTypeREINFORCE, nil)
 	moveService.EXPECT().
-		AdvanceQ(gameCtx, querier, sqlc.GamePhaseTypeREINFORCE).
+		AdvanceQ(gameCtx, querier, sqlc.GamePhaseTypeREINFORCE, nil).
 		Return(nil)
 
 	targetPhase, err := service.AdvanceQ(gameCtx, querier)
@@ -206,7 +206,7 @@ func TestAdvanceQ_AdvanceFails(t *testing.T) {
 	validationService.EXPECT().ValidateQ(gameCtx, querier, game).Return(nil)
 	moveService.EXPECT().WalkQ(gameCtx, querier, true).Return(sqlc.GamePhaseTypeREINFORCE, nil)
 	moveService.EXPECT().
-		AdvanceQ(gameCtx, querier, sqlc.GamePhaseTypeREINFORCE).
+		AdvanceQ(gameCtx, querier, sqlc.GamePhaseTypeREINFORCE, nil).
 		Return(errors.New("advance db write failed"))
 
 	targetPhase, err := service.AdvanceQ(gameCtx, querier)
@@ -265,7 +265,7 @@ func TestAdvanceQ_DifferentPhaseTransitions(t *testing.T) {
 			validationService.EXPECT().ValidateQ(gameCtx, querier, game).Return(nil)
 			moveService.EXPECT().WalkQ(gameCtx, querier, true).Return(testCase.targetPhase, nil)
 			moveService.EXPECT().
-				AdvanceQ(gameCtx, querier, testCase.targetPhase).
+				AdvanceQ(gameCtx, querier, testCase.targetPhase, nil).
 				Return(nil)
 
 			resultPhase, err := service.AdvanceQ(gameCtx, querier)
