@@ -43,7 +43,7 @@ services:
         condition: service_healthy
 
   jaeger:
-    image: jaegertracing/jaeger:2.2.0@sha256:1dedb5660e77c8505ca2a40eeca957feabaaebeccf7bcf583965326176abc40d
+    image: jaegertracing/jaeger:2.16.0@sha256:bf7f805da4c2bc8d58a6c81ee650fdb6b8e4287698f95fbe231c09c865bc397f
     ports:
       - "16686:16686"
       - "4317:4317"
