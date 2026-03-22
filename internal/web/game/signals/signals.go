@@ -2,6 +2,7 @@ package signals
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/fetcher"
@@ -9,6 +10,8 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
+
+const fetchTimeout = 10 * time.Second
 
 var Module = fx.Options(
 	fx.Invoke(
@@ -48,17 +51,19 @@ func fetchAllStatesAndPublish[T any](
 }
 
 func fetchStateAndPublish(
-	ctx ctx.GameContext,
+	gameCtx ctx.GameContext,
 	fetcher func(ctx.GameContext, chan json.RawMessage),
 	publisher func(ctx.GameContext, json.RawMessage),
 ) {
-	channel := make(chan json.RawMessage)
-	go fetcher(ctx, channel)
+	detached := ctx.DetachGameContext(gameCtx)
+
+	channel := make(chan json.RawMessage, 1)
+	go fetcher(detached, channel)
 
 	select {
 	case msg := <-channel:
-		publisher(ctx, msg)
-	case <-ctx.Done():
-		ctx.Log().Errorf("timeout while fetching state: %v", ctx.Err())
+		publisher(detached, msg)
+	case <-time.After(fetchTimeout):
+		detached.Log().Errorf("timeout while fetching state after %v", fetchTimeout)
 	}
 }

@@ -3,7 +3,6 @@ package logging
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
@@ -57,7 +56,7 @@ func (s *ServiceImpl) LogMoveQ(ctx ctx.GameContext, querier db.Querier, move, re
 	}
 
 	var resultJSON []byte
-	if !reflect.ValueOf(result).IsZero() {
+	if result != nil {
 		resultJSON, err = json.Marshal(result)
 		if err != nil {
 			return fmt.Errorf("failed to marshal result: %w", err)
