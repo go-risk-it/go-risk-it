@@ -57,6 +57,7 @@ func (p *PlayerConnections) Broadcast(ctx ctx.UserContext, message json.RawMessa
 
 	p.metrics.MessagesSent.Add(ctx, int64(sent))
 	p.metrics.BroadcastDuration.Record(ctx, time.Since(start).Seconds())
+	p.metrics.BroadcastFanOut.Record(ctx, int64(len(p.playerConnections)))
 
 	p.cleanUpConnections(ctx, toCleanup)
 }

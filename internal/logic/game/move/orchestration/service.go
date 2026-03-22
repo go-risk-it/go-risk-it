@@ -134,9 +134,7 @@ func (s *OrchestratorImpl[T]) OrchestrateMoveQ(
 
 	if isMissionAccomplished {
 		ctx.Log().Infow("game is over")
-
-		s.metrics.GamesFinished.Add(ctx, 1)
-		s.metrics.ActiveGames.Add(ctx, -1)
+		s.recordGameFinished(ctx)
 
 		return s.service.PhaseType(), nil
 	}
@@ -161,4 +159,15 @@ func (s *OrchestratorImpl[T]) OrchestrateMoveQ(
 	ctx.Log().Infow("successfully advanced phase", "target", targetPhase)
 
 	return targetPhase, nil
+}
+
+func (s *OrchestratorImpl[T]) recordGameFinished(ctx ctx.GameContext) {
+	s.metrics.GamesFinished.Add(ctx, 1)
+	s.metrics.ActiveGames.Add(ctx, -1)
+
+	if startTime, ok := s.metrics.GameStartTimes.LoadAndDelete(ctx.GameID()); ok {
+		if t, ok := startTime.(time.Time); ok {
+			s.metrics.GameDuration.Record(ctx, time.Since(t).Seconds())
+		}
+	}
 }

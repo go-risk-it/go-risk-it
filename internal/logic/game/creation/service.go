@@ -2,6 +2,7 @@ package creation
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
@@ -73,6 +74,7 @@ func (s *ServiceImpl) CreateGameWithTx(
 
 	s.metrics.GamesCreated.Add(ctx, 1)
 	s.metrics.ActiveGames.Add(ctx, 1)
+	s.metrics.GameStartTimes.Store(gameID, time.Now())
 
 	return gameID, nil
 }

@@ -3,9 +3,13 @@ package db
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/jackc/pgx/v5"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 )
 
 // Transactable is the minimal interface a querier must satisfy to participate
@@ -13,6 +17,40 @@ import (
 type Transactable[Q any] interface {
 	BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error)
 	WithTx(tx pgx.Tx) Q
+}
+
+// Transaction metrics — initialized lazily via sync.Once inside the OTel meter.
+var ( //nolint:gochecknoglobals
+	txDuration  metric.Float64Histogram
+	txRollbacks metric.Int64Counter
+)
+
+func init() { //nolint:gochecknoinits
+	meter := otel.Meter("db.transaction")
+
+	txDuration, _ = meter.Float64Histogram(
+		"db.transaction.duration",
+		metric.WithDescription("Duration of database transactions"),
+		metric.WithUnit("s"),
+		metric.WithExplicitBucketBoundaries(
+			0.001,
+			0.005,
+			0.01,
+			0.025,
+			0.05,
+			0.1,
+			0.25,
+			0.5,
+			1,
+			2.5,
+			5,
+			10,
+		),
+	)
+
+	txRollbacks, _ = meter.Int64Counter("db.transaction.rollbacks.total",
+		metric.WithDescription("Total number of transaction rollbacks"),
+	)
 }
 
 // InTransaction executes txFunc within a transaction with default isolation (ReadCommitted).
@@ -41,17 +79,21 @@ func InTransactionWithIsolation[Q Transactable[Q], T any](
 		return zero, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
-	return executeTransaction(querier, ctx, txFunc, transaction)
+	return executeTransaction(querier, ctx, isolationLevel, txFunc, transaction)
 }
 
 //nolint:nonamedreturns // named returns needed for defer-based commit/rollback
 func executeTransaction[Q Transactable[Q], T any](
 	querier Q,
 	ctx ctx.LogContext,
+	isolationLevel pgx.TxIsoLevel,
 	txFunc func(Q) (T, error),
 	transaction pgx.Tx,
 ) (result T, err error) {
 	ctx.Log().Infow("started transaction")
+
+	txStart := time.Now()
+	isoAttr := metric.WithAttributes(attribute.String("isolation", string(isolationLevel)))
 
 	defer func() {
 		if panicking := recover(); panicking != nil {
@@ -70,6 +112,8 @@ func executeTransaction[Q Transactable[Q], T any](
 				ctx.Log().Infow("committed transaction")
 			}
 		}
+
+		txDuration.Record(ctx, time.Since(txStart).Seconds(), isoAttr)
 	}()
 
 	result, err = txFunc(querier.WithTx(transaction))
@@ -79,6 +123,8 @@ func executeTransaction[Q Transactable[Q], T any](
 
 func rollback(transaction pgx.Tx, ctx ctx.LogContext) {
 	ctx.Log().Infow("rolling back transaction")
+
+	txRollbacks.Add(ctx, 1)
 
 	err := transaction.Rollback(ctx)
 	if err != nil {

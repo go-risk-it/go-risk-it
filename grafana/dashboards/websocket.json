@@ -205,6 +205,40 @@
           "sort": "desc"
         }
       }
+    },
+    {
+      "id": 5,
+      "title": "Broadcast Fan-Out",
+      "description": "Number of connections per broadcast — distinguishes 'each write is slow' from 'too many connections'",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, sum(rate(ws_broadcast_fanout_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+          "legendFormat": "P50",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(ws_broadcast_fanout_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+          "legendFormat": "P95",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10,
+            "pointSize": 5, "showPoints": "auto"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      }
     }
   ],
   "templating": {

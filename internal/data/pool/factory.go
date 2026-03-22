@@ -116,6 +116,18 @@ func reportPoolStats(pool *pgxpool.Pool, done <-chan struct{}) {
 		metric.WithDescription("Average time to acquire a connection"),
 		metric.WithUnit("s"),
 	)
+	emptyAcquires, _ := meter.Int64ObservableCounter(
+		"db.pool.empty_acquires.total",
+		metric.WithDescription(
+			"Cumulative acquires that waited for a connection (pool was empty)",
+		),
+	)
+	canceledAcquires, _ := meter.Int64ObservableCounter("db.pool.canceled_acquires.total",
+		metric.WithDescription("Cumulative acquires canceled while waiting"),
+	)
+	maxConns, _ := meter.Int64ObservableGauge("db.pool.max_conns",
+		metric.WithDescription("Maximum number of connections allowed in the pool"),
+	)
 
 	_, _ = meter.RegisterCallback(
 		func(_ context.Context, observer metric.Observer) error {
@@ -127,6 +139,9 @@ func reportPoolStats(pool *pgxpool.Pool, done <-chan struct{}) {
 			observer.ObserveInt64(idleConns, idle)
 			observer.ObserveInt64(totalConns, int64(stat.TotalConns()))
 			observer.ObserveInt64(acquireCount, stat.AcquireCount())
+			observer.ObserveInt64(emptyAcquires, stat.EmptyAcquireCount())
+			observer.ObserveInt64(canceledAcquires, stat.CanceledAcquireCount())
+			observer.ObserveInt64(maxConns, int64(stat.MaxConns()))
 
 			if stat.AcquireCount() > 0 {
 				avgAcquire := stat.AcquireDuration().Seconds() / float64(stat.AcquireCount())
@@ -136,6 +151,7 @@ func reportPoolStats(pool *pgxpool.Pool, done <-chan struct{}) {
 			return nil
 		},
 		activeConns, idleConns, totalConns, acquireCount, acquireDuration,
+		emptyAcquires, canceledAcquires, maxConns,
 	)
 
 	// Keep goroutine alive until done signal.

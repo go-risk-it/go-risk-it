@@ -282,23 +282,27 @@ func (c *Collector) RecordError() {
 	}
 }
 
-// RecordGameComplete increments the games completed counter.
-func (c *Collector) RecordGameComplete() {
+// RecordGameComplete increments the games completed counter and records game-level metrics.
+func (c *Collector) RecordGameComplete(duration time.Duration, moves int) {
 	c.gamesCompleted.Add(1)
 
 	if c.otel != nil {
 		c.otel.gamesCompleted.Add(context.Background(), 1)
 		c.otel.gamesActive.Add(context.Background(), -1)
+		c.otel.gameDuration.Record(context.Background(), duration.Seconds())
+		c.otel.gameMoves.Record(context.Background(), int64(moves))
 	}
 }
 
-// RecordGameTimedOut increments the games timed out counter.
-func (c *Collector) RecordGameTimedOut() {
+// RecordGameTimedOut increments the games timed out counter and records game-level metrics.
+func (c *Collector) RecordGameTimedOut(duration time.Duration, moves int) {
 	c.gamesTimedOut.Add(1)
 
 	if c.otel != nil {
 		c.otel.gamesTimedOut.Add(context.Background(), 1)
 		c.otel.gamesActive.Add(context.Background(), -1)
+		c.otel.gameDuration.Record(context.Background(), duration.Seconds())
+		c.otel.gameMoves.Record(context.Background(), int64(moves))
 	}
 }
 

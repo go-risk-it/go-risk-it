@@ -40,6 +40,10 @@ type OTelExporter struct {
 	restDuration metric.Float64Histogram
 	e2eDuration  metric.Float64Histogram
 	wsDuration   metric.Float64Histogram
+
+	// Game-level histograms.
+	gameDuration metric.Float64Histogram
+	gameMoves    metric.Int64Histogram
 }
 
 // NewOTelExporter creates an OTel metric exporter pointing at the given OTLP HTTP endpoint.
@@ -164,6 +168,21 @@ func (o *OTelExporter) initInstruments(meter metric.Meter) error {
 		metric.WithDescription("WebSocket delivery latency"),
 		metric.WithUnit("s"),
 		metric.WithExplicitBucketBoundaries(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10),
+	); err != nil {
+		return err
+	}
+
+	if o.gameDuration, err = meter.Float64Histogram("perftest.game.duration",
+		metric.WithDescription("Duration of completed games"),
+		metric.WithUnit("s"),
+		metric.WithExplicitBucketBoundaries(1, 5, 10, 30, 60, 120, 300, 600, 1800, 3600),
+	); err != nil {
+		return err
+	}
+
+	if o.gameMoves, err = meter.Int64Histogram("perftest.game.moves",
+		metric.WithDescription("Number of moves per game"),
+		metric.WithExplicitBucketBoundaries(10, 25, 50, 100, 200, 500, 1000),
 	); err != nil {
 		return err
 	}

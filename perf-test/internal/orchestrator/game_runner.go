@@ -203,7 +203,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 		case <-deadline:
 			result.TimedOut = true
 			result.Duration = time.Since(start)
-			gr.collector.RecordGameTimedOut()
+			gr.collector.RecordGameTimedOut(result.Duration, result.Moves)
 
 			log.Printf(
 				"[game %d] timed out after %v (%d moves, %d errors)",
@@ -223,7 +223,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 		if refSnap.IsGameOver() {
 			result.Winner = refSnap.GameState.WinnerUserID
 			result.Duration = time.Since(start)
-			gr.collector.RecordGameComplete()
+			gr.collector.RecordGameComplete(result.Duration, result.Moves)
 
 			log.Printf("[game %d] finished in %v (%d moves, %d errors, winner: %s)",
 				gameIndex, result.Duration, result.Moves, result.Errors, abbreviate(result.Winner))
