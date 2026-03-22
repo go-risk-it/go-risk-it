@@ -52,7 +52,8 @@ services:
       - "4318:4318"
     volumes:
       - lgtm-data:/data
-      - ./grafana/dashboards:/otel-lgtm/grafana/agentd/dashboards
+      - ./grafana/dashboards/dashboards.yml:/otel-lgtm/grafana/conf/provisioning/dashboards/go-risk-it.yaml
+      - ./grafana/dashboards:/otel-lgtm/go-risk-it-dashboards
 
 
 volumes:

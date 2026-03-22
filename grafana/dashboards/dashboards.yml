@@ -10,5 +10,5 @@ providers:
     updateIntervalSeconds: 10
     allowUiUpdates: true
     options:
-      path: /otel-lgtm/grafana/agentd/dashboards
+      path: /otel-lgtm/go-risk-it-dashboards
       foldersFromFilesStructure: false

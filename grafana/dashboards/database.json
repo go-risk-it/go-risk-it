@@ -52,7 +52,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.5, sum(rate(db_client_operation_duration_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+          "expr": "histogram_quantile(0.5, sum(rate(db_client_operation_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
           "legendFormat": "p50",
           "datasource": {
             "type": "prometheus",
@@ -61,7 +61,7 @@
         },
         {
           "refId": "B",
-          "expr": "histogram_quantile(0.95, sum(rate(db_client_operation_duration_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(db_client_operation_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
           "legendFormat": "p95",
           "datasource": {
             "type": "prometheus",
@@ -70,7 +70,7 @@
         },
         {
           "refId": "C",
-          "expr": "histogram_quantile(0.99, sum(rate(db_client_operation_duration_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(db_client_operation_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
           "legendFormat": "p99",
           "datasource": {
             "type": "prometheus",
@@ -119,7 +119,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(rate(db_client_operation_duration_count{service_name=\"risk-it\"}[1m]))",
+          "expr": "sum(rate(db_client_operation_duration_seconds_count{service_name=\"risk-it\"}[1m]))",
           "legendFormat": "queries/sec",
           "datasource": {
             "type": "prometheus",
@@ -168,7 +168,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.95, sum(rate(db_client_operation_duration_bucket{service_name=\"risk-it\"}[1m])) by (le, db_operation_name))",
+          "expr": "histogram_quantile(0.95, sum(rate(db_client_operation_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le, db_operation_name))",
           "legendFormat": "{{db_operation_name}}",
           "datasource": {
             "type": "prometheus",
@@ -179,7 +179,7 @@
     },
     {
       "id": 4,
-      "title": "Connection Pool Usage",
+      "title": "Total DB Operations",
       "type": "timeseries",
       "gridPos": {
         "h": 8,
@@ -193,15 +193,13 @@
       },
       "fieldConfig": {
         "defaults": {
+          "unit": "ops",
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
             "fillOpacity": 10,
             "pointSize": 5,
-            "showPoints": "never",
-            "stacking": {
-              "mode": "normal"
-            }
+            "showPoints": "never"
           }
         },
         "overrides": []
@@ -219,17 +217,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "db_client_connections_usage{service_name=\"risk-it\",state=\"used\"}",
-          "legendFormat": "used",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          }
-        },
-        {
-          "refId": "B",
-          "expr": "db_client_connections_usage{service_name=\"risk-it\",state=\"idle\"}",
-          "legendFormat": "idle",
+          "expr": "sum(rate(db_client_operation_duration_seconds_count{service_name=\"risk-it\"}[1m])) by (db_operation_name)",
+          "legendFormat": "{{db_operation_name}}",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"

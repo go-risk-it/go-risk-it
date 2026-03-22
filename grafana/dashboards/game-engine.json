@@ -235,7 +235,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.5, sum(rate(game_phase_duration_bucket{service_name=\"risk-it\"}[1m])) by (le, phase))",
+          "expr": "histogram_quantile(0.5, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le, phase))",
           "legendFormat": "{{phase}} P50",
           "refId": "A"
         },
@@ -244,7 +244,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.95, sum(rate(game_phase_duration_bucket{service_name=\"risk-it\"}[1m])) by (le, phase))",
+          "expr": "histogram_quantile(0.95, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le, phase))",
           "legendFormat": "{{phase}} P95",
           "refId": "B"
         }
@@ -302,7 +302,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(rate(game_phase_duration_bucket{service_name=\"risk-it\"}[1m])) by (le)",
+          "expr": "sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le)",
           "format": "heatmap",
           "legendFormat": "{{le}}",
           "refId": "A"

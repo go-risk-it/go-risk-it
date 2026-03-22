@@ -118,17 +118,17 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.5, sum(rate(ws_broadcast_duration_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+          "expr": "histogram_quantile(0.5, sum(rate(ws_broadcast_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
           "legendFormat": "P50",
           "refId": "A"
         },
         {
-          "expr": "histogram_quantile(0.95, sum(rate(ws_broadcast_duration_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(ws_broadcast_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
           "legendFormat": "P95",
           "refId": "B"
         },
         {
-          "expr": "histogram_quantile(0.99, sum(rate(ws_broadcast_duration_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(ws_broadcast_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
           "legendFormat": "P99",
           "refId": "C"
         }

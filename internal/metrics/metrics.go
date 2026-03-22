@@ -5,6 +5,10 @@ import (
 )
 
 type Metrics struct {
+	// HTTP metrics
+	HTTPRequestDuration metric.Float64Histogram
+	HTTPRequestsTotal   metric.Int64Counter
+
 	// Game metrics
 	ActiveGames   metric.Int64UpDownCounter
 	MovesTotal    metric.Int64Counter
@@ -27,6 +31,10 @@ type Metrics struct {
 func NewMetrics(meter metric.Meter) (*Metrics, error) {
 	metrics := &Metrics{}
 
+	if err := metrics.initHTTPMetrics(meter); err != nil {
+		return nil, err
+	}
+
 	if err := metrics.initGameMetrics(meter); err != nil {
 		return nil, err
 	}
@@ -40,6 +48,25 @@ func NewMetrics(meter metric.Meter) (*Metrics, error) {
 	}
 
 	return metrics, nil
+}
+
+func (metrics *Metrics) initHTTPMetrics(meter metric.Meter) error {
+	var err error
+
+	if metrics.HTTPRequestDuration, err = meter.Float64Histogram("http.server.request.duration",
+		metric.WithDescription("Duration of HTTP requests in seconds"),
+		metric.WithUnit("s"),
+	); err != nil {
+		return err
+	}
+
+	if metrics.HTTPRequestsTotal, err = meter.Int64Counter("http.server.requests.total",
+		metric.WithDescription("Total number of HTTP requests"),
+	); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (metrics *Metrics) initGameMetrics(meter metric.Meter) error {
