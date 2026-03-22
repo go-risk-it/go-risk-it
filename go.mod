@@ -14,7 +14,7 @@ require (
 	github.com/knadh/koanf/providers/file v0.1.0
 	github.com/knadh/koanf/v2 v2.3.4
 	github.com/lesismal/nbio v1.6.8
-	github.com/maniartech/signals v1.2.0
+	github.com/maniartech/signals v1.3.1
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.35.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.35.0
