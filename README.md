@@ -3,7 +3,7 @@
 [![Go](https://github.com/go-risk-it/go-risk-it/actions/workflows/go.yml/badge.svg)](https://github.com/go-risk-it/go-risk-it/actions/workflows/go.yml)
 [![golangci-lint](https://github.com/go-risk-it/go-risk-it/actions/workflows/golangci-lint.yml/badge.svg)](https://github.com/go-risk-it/go-risk-it/actions/workflows/golangci-lint.yml)
 [![Component tests](https://github.com/go-risk-it/go-risk-it/actions/workflows/component-test.yml/badge.svg)](https://github.com/go-risk-it/go-risk-it/actions/workflows/component-test.yml)
-[![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/giovannizotta/c7a818e871018f2841c29b4a992c95aa/raw/go-risk-it-coverage.json)](https://github.com/go-risk-it/go-risk-it/actions/workflows/go.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/go-risk-it/go-risk-it/badges/badges/coverage.json)](https://github.com/go-risk-it/go-risk-it/actions/workflows/go.yml)
 
 A multiplayer online [Risk](https://en.wikipedia.org/wiki/Risk_(game)) board game built in Go. Players compete to fulfill secret missions by conquering territories, managing armies, and eliminating opponents in real-time.
 

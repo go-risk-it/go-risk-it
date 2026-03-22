@@ -10,6 +10,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
     - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
     - name: Set up Go
@@ -38,27 +40,36 @@ jobs:
         name: coverage
         path: coverage.out
         if-no-files-found: ignore
-    - name: Extract coverage percentage
-      if: github.ref == 'refs/heads/main'
-      id: coverage
-      run: |
-        if [ -f coverage.out ]; then
-          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
-          echo "percentage=$COVERAGE" >> "$GITHUB_OUTPUT"
-        fi
     - name: Update coverage badge
-      if: github.ref == 'refs/heads/main' && steps.coverage.outputs.percentage != ''
-      continue-on-error: true
-      uses: schneegans/dynamic-badges-action@e9a478b16159b4d31420099ba146cdc50f134483 # v1.7.0
-      with:
-        auth: ${{ secrets.GIST_TOKEN }}
-        gistID: c7a818e871018f2841c29b4a992c95aa
-        filename: go-risk-it-coverage.json
-        label: coverage
-        message: ${{ steps.coverage.outputs.percentage }}%
-        valColorRange: ${{ steps.coverage.outputs.percentage }}
-        minColorRange: 0
-        maxColorRange: 100
+      if: github.ref == 'refs/heads/main'
+      run: |
+        if [ ! -f coverage.out ]; then exit 0; fi
+        COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+
+        # Pick color based on coverage
+        if [ "$(echo "$COVERAGE >= 80" | bc -l)" -eq 1 ]; then COLOR="brightgreen"
+        elif [ "$(echo "$COVERAGE >= 60" | bc -l)" -eq 1 ]; then COLOR="green"
+        elif [ "$(echo "$COVERAGE >= 40" | bc -l)" -eq 1 ]; then COLOR="yellowgreen"
+        elif [ "$(echo "$COVERAGE >= 20" | bc -l)" -eq 1 ]; then COLOR="orange"
+        else COLOR="red"; fi
+
+        # Write shields.io endpoint JSON
+        mkdir -p badges
+        cat > badges/coverage.json <<BADGE
+        {"schemaVersion":1,"label":"coverage","message":"${COVERAGE}%","color":"${COLOR}"}
+        BADGE
+
+        # Push to badges branch
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add -f badges/coverage.json
+        git stash
+        git fetch origin badges:badges 2>/dev/null || git checkout --orphan badges
+        git checkout badges
+        git checkout stash -- badges/coverage.json
+        git add badges/coverage.json
+        git diff --cached --quiet || git commit -m "Update coverage badge: ${COVERAGE}%"
+        git push origin badges
 
   security:
     runs-on: ubuntu-latest
