@@ -288,6 +288,10 @@ func (r *REST) doMove(gameID int64, moveType string, move any) error {
 			return &ConflictError{Message: msg}
 		}
 
+		if resp.StatusCode == http.StatusBadRequest {
+			return &StaleStateError{Message: msg}
+		}
+
 		if transient := classifyHTTPStatus(resp.StatusCode, fmt.Errorf("%s", msg)); transient != nil {
 			return transient
 		}

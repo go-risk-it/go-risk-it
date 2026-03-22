@@ -113,6 +113,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 		if err != nil {
 			result.FatalError = fmt.Errorf("signup player %d: %w", i, err)
 			result.Duration = time.Since(start)
+			gr.collector.RecordGameFatal()
 
 			return result
 		}
@@ -140,6 +141,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 	if err != nil {
 		result.FatalError = fmt.Errorf("create game: %w", err)
 		result.Duration = time.Since(start)
+		gr.collector.RecordGameFatal()
 
 		return result
 	}
@@ -152,6 +154,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 		if err != nil {
 			result.FatalError = fmt.Errorf("ws connect player %d: %w", i, err)
 			result.Duration = time.Since(start)
+			gr.collector.RecordGameFatal()
 
 			return result
 		}
@@ -174,6 +177,11 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 	// 5. Event-driven game loop.
 	deadline := time.After(gr.timeout)
 	consecutiveErrors := 0
+	consecutiveStaleErrors := 0
+	consecutiveAdvanceFails := 0
+
+	const maxStaleRetries = 5
+	const maxAdvanceFails = 3
 
 	var lastPhase string
 
@@ -267,6 +275,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 			if consecutiveErrors > gr.timeouts.MaxConsecutiveErr {
 				result.FatalError = fmt.Errorf("too many consecutive errors")
 				result.Duration = time.Since(start)
+				gr.collector.RecordGameFatal()
 
 				return result
 			}
@@ -300,6 +309,61 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 				continue
 			}
 
+			var staleErr *client.StaleStateError
+			if errors.As(err, &staleErr) {
+				consecutiveStaleErrors++
+				log.Printf("[game %d] 400 for %s (stale state %d/%d, will re-decide): %v",
+					gameIndex, activePlayer.Name, consecutiveStaleErrors, maxStaleRetries, err)
+				gr.collector.RecordErrorType("stale_state")
+
+				if consecutiveStaleErrors >= maxStaleRetries {
+					log.Printf("[game %d] %d stale retries exhausted, advancing past %s",
+						gameIndex, maxStaleRetries, snap.CurrentPhase())
+
+					if advErr := activePlayer.REST.Advance(gameID, string(snap.CurrentPhase())); advErr != nil {
+						consecutiveAdvanceFails++
+						log.Printf(
+							"[game %d] advance past %s failed (%d/%d): %v",
+							gameIndex,
+							snap.CurrentPhase(),
+							consecutiveAdvanceFails,
+							maxAdvanceFails,
+							advErr,
+						)
+
+						if consecutiveAdvanceFails >= maxAdvanceFails {
+							result.FatalError = fmt.Errorf(
+								"stuck in %s: %d advance attempts failed (likely server state bug)",
+								snap.CurrentPhase(),
+								consecutiveAdvanceFails,
+							)
+							result.Duration = time.Since(start)
+							gr.collector.RecordGameFatal()
+
+							return result
+						}
+					} else {
+						result.Moves++
+						gr.collector.RecordMove()
+						consecutiveAdvanceFails = 0
+					}
+
+					consecutiveStaleErrors = 0
+					waitForAnyUpdate(players, gr.timeouts.UpdateWait)
+					time.Sleep(gr.timeouts.PostMoveSettle)
+
+					continue
+				}
+
+				// Wait for a WS update so the snapshot refreshes before
+				// re-deciding — PostMoveSettle alone (50ms) is too short
+				// and causes the same stale move to be generated.
+				waitForAnyUpdate(players, gr.timeouts.UpdateWait)
+				time.Sleep(gr.timeouts.PostMoveSettle)
+
+				continue
+			}
+
 			// Transient errors (503, timeout, etc.) are logged but not counted
 			// toward consecutive errors — the retry loop in do() already handled
 			// retries, so this is a final failure after all attempts.
@@ -322,6 +386,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 			if consecutiveErrors > gr.timeouts.MaxConsecutiveErr {
 				result.FatalError = fmt.Errorf("too many consecutive errors")
 				result.Duration = time.Since(start)
+				gr.collector.RecordGameFatal()
 
 				return result
 			}
@@ -364,6 +429,8 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 
 		result.Moves++
 		consecutiveErrors = 0
+		consecutiveStaleErrors = 0
+		consecutiveAdvanceFails = 0
 		gr.collector.RecordMove()
 	}
 }

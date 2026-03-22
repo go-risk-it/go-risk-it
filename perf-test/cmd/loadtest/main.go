@@ -14,6 +14,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/orchestrator"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/player"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/player/heuristic"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/player/smart"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/scenario"
 )
 
@@ -32,6 +33,11 @@ func main() {
 	)
 	output := flag.String("output", "text", "Output format: text or json")
 	thinkTime := flag.Duration("think-time", 0, "Artificial delay between moves")
+	strategyFlag := flag.String(
+		"strategy",
+		"heuristic",
+		"Bot strategy: heuristic, beginner, normal, or expert",
+	)
 
 	// Chaos flags.
 	chaosDisconnect := flag.Float64(
@@ -117,7 +123,26 @@ func main() {
 	// Create shared components.
 	collector := metrics.NewCollector(cfg.GameTimeout)
 
-	var strategy player.Strategy = heuristic.New(graph)
+	var strategy player.Strategy
+
+	switch *strategyFlag {
+	case "heuristic":
+		strategy = heuristic.New(graph)
+	case "beginner":
+		strategy = smart.New(graph, smart.Beginner())
+	case "normal":
+		strategy = smart.New(graph, smart.Normal())
+	case "expert":
+		strategy = smart.New(graph, smart.Expert())
+	default:
+		log.Fatalf(
+			"unknown strategy: %q (valid: heuristic, beginner, normal, expert)",
+			*strategyFlag,
+		)
+	}
+
+	log.Printf("using strategy: %s", strategy.Name())
+
 	if chaosCfg.Enabled() {
 		strategy = chaos.WrapStrategy(strategy, chaosCfg, collector)
 	}

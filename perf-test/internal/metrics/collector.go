@@ -42,6 +42,7 @@ type Collector struct {
 	totalErrors    atomic.Int64
 	gamesCompleted atomic.Int64
 	gamesTimedOut  atomic.Int64
+	gamesFatal     atomic.Int64
 
 	// Resilience counters.
 	totalRetries           atomic.Int64
@@ -234,6 +235,11 @@ func (c *Collector) RecordGameTimedOut() {
 	c.gamesTimedOut.Add(1)
 }
 
+// RecordGameFatal increments the games fatal error counter.
+func (c *Collector) RecordGameFatal() {
+	c.gamesFatal.Add(1)
+}
+
 // RecordRetry increments the REST retry counter.
 func (c *Collector) RecordRetry() {
 	c.totalRetries.Add(1)
@@ -330,6 +336,7 @@ func (c *Collector) Snapshot() *Snapshot {
 		TotalErrors:            c.totalErrors.Load(),
 		GamesCompleted:         c.gamesCompleted.Load(),
 		GamesTimedOut:          c.gamesTimedOut.Load(),
+		GamesFatal:             c.gamesFatal.Load(),
 		TotalRetries:           c.totalRetries.Load(),
 		TotalConflicts:         c.totalConflicts.Load(),
 		TotalReconnects:        c.totalReconnects.Load(),
@@ -353,6 +360,7 @@ type Snapshot struct {
 	TotalErrors    int64
 	GamesCompleted int64
 	GamesTimedOut  int64
+	GamesFatal     int64
 
 	// Resilience counters.
 	TotalRetries           int64

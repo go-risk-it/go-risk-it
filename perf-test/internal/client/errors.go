@@ -26,6 +26,18 @@ func (e *TransientError) Unwrap() error {
 	return e.Cause
 }
 
+// StaleStateError is returned on HTTP 400 when the server rejects a move
+// due to stale client state (e.g., "region does not have enough troops").
+// The bot should wait for a fresh state update and re-decide, not retry
+// the same invalid move.
+type StaleStateError struct {
+	Message string
+}
+
+func (e *StaleStateError) Error() string {
+	return e.Message
+}
+
 // classifyHTTPStatus returns a TransientError for retryable HTTP status codes,
 // or nil if the status is not retryable.
 func classifyHTTPStatus(statusCode int, cause error) error {
