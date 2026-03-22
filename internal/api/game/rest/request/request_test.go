@@ -32,6 +32,11 @@ func TestDeployMove_Validate(t *testing.T) {
 			move:    request.DeployMove{RegionID: "r1", DesiredTroops: -1},
 			wantErr: "desiredTroops",
 		},
+		{
+			name:    "troops exceeds maximum",
+			move:    request.DeployMove{RegionID: "r1", DesiredTroops: 10001},
+			wantErr: "exceeds maximum",
+		},
 	}
 
 	for _, testCase := range tests {
@@ -101,6 +106,15 @@ func TestAttackMove_Validate(t *testing.T) {
 			},
 			wantErr: "attackingTroops",
 		},
+		{
+			name: "troops exceeds maximum",
+			move: request.AttackMove{
+				SourceRegionID:  "r1",
+				TargetRegionID:  "r2",
+				AttackingTroops: 10001,
+			},
+			wantErr: "exceeds maximum",
+		},
 	}
 
 	for _, testCase := range tests {
@@ -129,6 +143,11 @@ func TestConquerMove_Validate(t *testing.T) {
 		{name: "valid", move: request.ConquerMove{Troops: 1}},
 		{name: "zero", move: request.ConquerMove{Troops: 0}, wantErr: "troops"},
 		{name: "negative", move: request.ConquerMove{Troops: -1}, wantErr: "troops"},
+		{
+			name:    "exceeds max",
+			move:    request.ConquerMove{Troops: 10001},
+			wantErr: "exceeds maximum",
+		},
 	}
 
 	for _, testCase := range tests {
@@ -179,6 +198,15 @@ func TestReinforceMove_Validate(t *testing.T) {
 				MovingTroops:   0,
 			},
 			wantErr: "movingTroops",
+		},
+		{
+			name: "troops exceeds maximum",
+			move: request.ReinforceMove{
+				SourceRegionID: "r1",
+				TargetRegionID: "r2",
+				MovingTroops:   10001,
+			},
+			wantErr: "exceeds maximum",
 		},
 	}
 

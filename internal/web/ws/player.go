@@ -115,8 +115,12 @@ func (p *PlayerConnections) ConnectPlayer(ctx ctx.UserContext, connection *webso
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if p.playerConnections[ctx.UserID()] != nil {
-		ctx.Log().Warnw("player already connected, overwriting")
+	if existing := p.playerConnections[ctx.UserID()]; existing != nil {
+		ctx.Log().Warnw("player already connected, closing old connection")
+
+		if err := existing.Close(); err != nil {
+			ctx.Log().Debugw("failed to close old connection", "error", err)
+		}
 	} else {
 		p.metrics.ActiveConnections.Add(ctx, 1)
 	}

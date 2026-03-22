@@ -68,7 +68,10 @@ func (m *AuthMiddlewareImpl) verifyJWT(request *http.Request) (string, error) {
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
 		return m.jwtConfig.Secret, nil
-	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
+	},
+		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}),
+		jwt.WithExpirationRequired(),
+	)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse token: %w", err)
 	}

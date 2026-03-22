@@ -3,9 +3,6 @@ package nbio
 import (
 	"context"
 	"fmt"
-	"os"
-	"os/signal"
-	"time"
 
 	"github.com/lesismal/nbio/nbhttp"
 	"go.uber.org/fx"
@@ -17,29 +14,26 @@ func NewEngine(lc fx.Lifecycle, config nbhttp.Config, log *zap.SugaredLogger) *n
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			go func() {
-				log.Info("Starting engine...")
-				err := engine.Start()
-				if err != nil {
-					log.Fatalf("nbio.Start failed: %v", err)
-				}
-				log.Info("Engine started!")
+			log.Info("Starting engine...")
 
-				interrupt := make(chan os.Signal, 1)
-				signal.Notify(interrupt, os.Interrupt)
-				<-interrupt
+			err := engine.Start()
+			if err != nil {
+				return fmt.Errorf("nbio.Start failed: %w", err)
+			}
 
-				_, cancel := context.WithTimeout(ctx, time.Second*3)
-				defer cancel()
-			}()
+			log.Info("Engine started!")
 
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
+			log.Info("Shutting down engine...")
+
 			err := engine.Shutdown(ctx)
 			if err != nil {
 				return fmt.Errorf("failure during engine shutdown: %w", err)
 			}
+
+			log.Info("Engine shut down successfully")
 
 			return nil
 		},

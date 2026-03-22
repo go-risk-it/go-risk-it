@@ -57,8 +57,14 @@ func TestAuthMiddleware_Wrap(t *testing.T) {
 			http.StatusUnauthorized,
 		},
 		{
-			"Should succeed when token is valid",
+			"Should fail when token has no expiration",
 			"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.XbPfbIHMI6arZ3Y922BhjWgQzWXcXNrz0ogtVhfEd2o",
+			"failed to parse token: token has invalid claims: token is missing required claim: exp claim is required\n",
+			http.StatusUnauthorized,
+		},
+		{
+			"Should succeed when token is valid",
+			"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjQxMDI0NDQ4MDAsImlhdCI6MTUxNjIzOTAyMiwibmFtZSI6IkpvaG4gRG9lIiwic3ViIjoiMTIzNDU2Nzg5MCJ9.AEzCmT-_46lhDrK0X-eUkUO8SDuxBvVcoR8STh9NvaE",
 			"",
 			http.StatusOK,
 		},

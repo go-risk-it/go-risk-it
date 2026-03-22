@@ -33,42 +33,57 @@ func (c *CardControllerImpl) GetCardState(
 		return messaging.CardState{}, fmt.Errorf("unable to get cards: %w", err)
 	}
 
-	return messaging.CardState{Cards: convertCards(cards)}, nil
-}
-
-func convertCards(cards []sqlc.GetCardsForPlayerRow) []messaging.Card {
-	result := make([]messaging.Card, len(cards))
-	for i, c := range cards {
-		result[i] = convertCard(c)
+	convertedCards, err := convertCards(cards)
+	if err != nil {
+		return messaging.CardState{}, fmt.Errorf("unable to convert cards: %w", err)
 	}
 
-	return result
+	return messaging.CardState{Cards: convertedCards}, nil
 }
 
-func convertCard(card sqlc.GetCardsForPlayerRow) messaging.Card {
+func convertCards(cards []sqlc.GetCardsForPlayerRow) ([]messaging.Card, error) {
+	result := make([]messaging.Card, len(cards))
+	for idx, c := range cards {
+		card, err := convertCard(c)
+		if err != nil {
+			return nil, err
+		}
+
+		result[idx] = card
+	}
+
+	return result, nil
+}
+
+func convertCard(card sqlc.GetCardsForPlayerRow) (messaging.Card, error) {
 	region := ""
 	if card.Region.Valid {
 		region = card.Region.String
 	}
 
+	cardType, err := convertCardType(card.CardType)
+	if err != nil {
+		return messaging.Card{}, err
+	}
+
 	return messaging.Card{
 		ID:     card.ID,
-		Type:   convertCardType(card.CardType),
+		Type:   cardType,
 		Region: region,
-	}
+	}, nil
 }
 
-func convertCardType(sqlcCardType sqlc.GameCardType) messaging.CardType {
+func convertCardType(sqlcCardType sqlc.GameCardType) (messaging.CardType, error) {
 	switch sqlcCardType {
 	case sqlc.GameCardTypeCAVALRY:
-		return messaging.Cavalry
+		return messaging.Cavalry, nil
 	case sqlc.GameCardTypeARTILLERY:
-		return messaging.Artillery
+		return messaging.Artillery, nil
 	case sqlc.GameCardTypeINFANTRY:
-		return messaging.Infantry
+		return messaging.Infantry, nil
 	case sqlc.GameCardTypeJOLLY:
-		return messaging.Jolly
+		return messaging.Jolly, nil
 	default:
-		panic("unknown card type")
+		return "", fmt.Errorf("unknown card type: %s", sqlcCardType)
 	}
 }

@@ -2,11 +2,13 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -19,10 +21,18 @@ type Transactable[Q any] interface {
 	WithTx(tx pgx.Tx) Q
 }
 
+const (
+	maxRetries           = 3
+	serializationFailure = "40001"
+	deadlockDetected     = "40P01"
+	retryBackoffBase     = 10 * time.Millisecond
+)
+
 // Transaction metrics — initialized lazily via sync.Once inside the OTel meter.
 var ( //nolint:gochecknoglobals
 	txDuration  metric.Float64Histogram
 	txRollbacks metric.Int64Counter
+	txRetries   metric.Int64Counter
 )
 
 func init() { //nolint:gochecknoinits
@@ -51,6 +61,13 @@ func init() { //nolint:gochecknoinits
 	txRollbacks, _ = meter.Int64Counter("db.transaction.rollbacks.total",
 		metric.WithDescription("Total number of transaction rollbacks"),
 	)
+
+	txRetries, _ = meter.Int64Counter(
+		"db.transaction.retries.total",
+		metric.WithDescription(
+			"Total number of transaction retries due to serialization failures",
+		),
+	)
 }
 
 // InTransaction executes txFunc within a transaction with default isolation (ReadCommitted).
@@ -63,23 +80,63 @@ func InTransaction[Q Transactable[Q], T any](
 }
 
 // InTransactionWithIsolation executes txFunc within a transaction
-// with the specified isolation level. Fully type-safe — no any boxing.
+// with the specified isolation level. Retries on serialization failures
+// (PostgreSQL 40001) and deadlocks (40P01) up to maxRetries times.
 func InTransactionWithIsolation[Q Transactable[Q], T any](
 	querier Q,
 	ctx ctx.LogContext,
 	isolationLevel pgx.TxIsoLevel,
 	txFunc func(Q) (T, error),
 ) (T, error) {
-	ctx.Log().Infow("starting transaction", "isolation", isolationLevel)
+	var lastErr error
 
-	transaction, err := querier.BeginTx(ctx, pgx.TxOptions{IsoLevel: isolationLevel})
-	if err != nil {
-		var zero T
+	for attempt := range maxRetries {
+		if attempt > 0 {
+			ctx.Log().Warnw("retrying transaction",
+				"attempt", attempt+1,
+				"maxRetries", maxRetries,
+				"lastError", lastErr,
+			)
 
-		return zero, fmt.Errorf("failed to begin transaction: %w", err)
+			txRetries.Add(ctx, 1)
+
+			time.Sleep(retryBackoffBase * time.Duration(1<<attempt))
+		}
+
+		ctx.Log().Infow("starting transaction",
+			"isolation", isolationLevel,
+			"attempt", attempt+1,
+		)
+
+		transaction, err := querier.BeginTx(ctx, pgx.TxOptions{IsoLevel: isolationLevel})
+		if err != nil {
+			var zero T
+
+			return zero, fmt.Errorf("failed to begin transaction: %w", err)
+		}
+
+		result, err := executeTransaction(querier, ctx, isolationLevel, txFunc, transaction)
+		if err != nil && isRetryable(err) {
+			lastErr = err
+
+			continue
+		}
+
+		return result, err
 	}
 
-	return executeTransaction(querier, ctx, isolationLevel, txFunc, transaction)
+	var zero T
+
+	return zero, fmt.Errorf("transaction failed after %d attempts: %w", maxRetries, lastErr)
+}
+
+func isRetryable(err error) bool {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		return pgErr.Code == serializationFailure || pgErr.Code == deadlockDetected
+	}
+
+	return false
 }
 
 //nolint:nonamedreturns // named returns needed for defer-based commit/rollback

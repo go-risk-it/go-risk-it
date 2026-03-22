@@ -27,5 +27,9 @@ func (r ReinforceMove) Validate() error {
 		return errors.New("movingTroops must be positive")
 	}
 
+	if r.MovingTroops > maxTroops {
+		return errors.New("movingTroops exceeds maximum")
+	}
+
 	return nil
 }

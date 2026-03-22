@@ -11,5 +11,9 @@ func (r ConquerMove) Validate() error {
 		return errors.New("troops must be positive")
 	}
 
+	if r.Troops > maxTroops {
+		return errors.New("troops exceeds maximum")
+	}
+
 	return nil
 }

@@ -23,6 +23,7 @@ type Config struct {
 	Regionassignment RegionassignmentConfig
 	History          HistoryConfig
 	Otel             OtelConfig
+	Server           ServerConfig
 }
 
 type Result struct {
@@ -34,6 +35,7 @@ type Result struct {
 	RegionassignmentConfig RegionassignmentConfig
 	HistoryConfig          HistoryConfig
 	OtelConfig             OtelConfig
+	ServerConfig           ServerConfig
 }
 
 func newConfig(log *zap.SugaredLogger) (Result, error) {
@@ -66,6 +68,7 @@ func newConfig(log *zap.SugaredLogger) (Result, error) {
 		RegionassignmentConfig: config.Regionassignment,
 		HistoryConfig:          config.History,
 		OtelConfig:             config.Otel,
+		ServerConfig:           config.Server,
 	}, nil
 }
 

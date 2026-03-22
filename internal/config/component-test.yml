@@ -23,3 +23,8 @@ history:
 
 otel:
   enabled: true
+
+server:
+  allowed_origins:
+    - "http://localhost:5173"
+    - "http://localhost:4173"

@@ -1,6 +1,9 @@
 package ctx
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 type GameContext interface {
 	UserContext
@@ -33,7 +36,24 @@ func WithGameID(ctx UserContext, gameID int64) GameContext {
 // This is useful for fire-and-forget goroutines that should not be cancelled
 // when the originating HTTP request completes.
 func DetachGameContext(original GameContext) GameContext {
-	logCtx := WithLog(context.Background(), original.Log())
+	return detachGameContext(original, context.Background())
+}
+
+// DetachGameContextWithTimeout creates a detached GameContext with a timeout.
+// The returned cancel function must be called to release resources.
+// This is useful for fire-and-forget goroutines that should be cancelled
+// if they don't complete within the timeout.
+func DetachGameContextWithTimeout(
+	original GameContext,
+	timeout time.Duration,
+) (GameContext, context.CancelFunc) {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), timeout)
+
+	return detachGameContext(original, timeoutCtx), cancel
+}
+
+func detachGameContext(original GameContext, parent context.Context) GameContext {
+	logCtx := WithLog(parent, original.Log())
 	userCtx := &userContext{
 		TraceContext: &traceContext{
 			LogContext: logCtx,

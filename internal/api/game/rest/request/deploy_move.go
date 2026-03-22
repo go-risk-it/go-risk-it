@@ -17,5 +17,9 @@ func (r DeployMove) Validate() error {
 		return errors.New("desiredTroops must be positive")
 	}
 
+	if r.DesiredTroops > maxTroops {
+		return errors.New("desiredTroops exceeds maximum")
+	}
+
 	return nil
 }

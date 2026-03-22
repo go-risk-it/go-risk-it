@@ -55,7 +55,8 @@ func fetchStateAndPublish(
 	fetcher func(ctx.GameContext, chan json.RawMessage),
 	publisher func(ctx.GameContext, json.RawMessage),
 ) {
-	detached := ctx.DetachGameContext(gameCtx)
+	detached, cancel := ctx.DetachGameContextWithTimeout(gameCtx, fetchTimeout)
+	defer cancel()
 
 	channel := make(chan json.RawMessage, 1)
 	go fetcher(detached, channel)
@@ -63,7 +64,7 @@ func fetchStateAndPublish(
 	select {
 	case msg := <-channel:
 		publisher(detached, msg)
-	case <-time.After(fetchTimeout):
+	case <-detached.Done():
 		detached.Log().Errorf("timeout while fetching state after %v", fetchTimeout)
 	}
 }

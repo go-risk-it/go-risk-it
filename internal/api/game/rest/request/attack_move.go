@@ -27,5 +27,9 @@ func (r AttackMove) Validate() error {
 		return errors.New("attackingTroops must be positive")
 	}
 
+	if r.AttackingTroops > maxTroops {
+		return errors.New("attackingTroops exceeds maximum")
+	}
+
 	return nil
 }

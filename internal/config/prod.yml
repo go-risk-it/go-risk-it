@@ -20,3 +20,7 @@ history:
 
 otel:
   enabled: false
+
+server:
+  allowed_origins:
+    - ${ALLOWED_ORIGIN}

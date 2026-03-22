@@ -1,6 +1,8 @@
 package assignment
 
 import (
+	"fmt"
+
 	"github.com/go-risk-it/go-risk-it/internal/config"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/rand"
@@ -22,22 +24,28 @@ type ServiceImpl struct {
 
 var _ Service = (*ServiceImpl)(nil)
 
-func NewAssignmentService(assignConfig config.RegionassignmentConfig, rng rand.RNG) *ServiceImpl {
-	assigner := getAssigner(assignConfig, rng)
+func NewAssignmentService(
+	assignConfig config.RegionassignmentConfig,
+	rng rand.RNG,
+) (*ServiceImpl, error) {
+	assigner, err := getAssigner(assignConfig, rng)
+	if err != nil {
+		return nil, err
+	}
 
 	return &ServiceImpl{
 		assigner: assigner,
-	}
+	}, nil
 }
 
-func getAssigner(assignConfig config.RegionassignmentConfig, rng rand.RNG) Assigner {
+func getAssigner(assignConfig config.RegionassignmentConfig, rng rand.RNG) (Assigner, error) {
 	switch assignConfig.AssignmentStrategy {
 	case "sequential":
-		return NewSequential()
+		return NewSequential(), nil
 	case "random":
-		return NewRandom(rng)
+		return NewRandom(rng), nil
 	default:
-		panic("unknown assignment strategy: " + assignConfig.AssignmentStrategy)
+		return nil, fmt.Errorf("unknown assignment strategy: %s", assignConfig.AssignmentStrategy)
 	}
 }
 

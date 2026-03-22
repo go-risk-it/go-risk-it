@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/config"
 	"github.com/lesismal/nbio/nbhttp/websocket"
 	"go.uber.org/zap"
 )
@@ -28,16 +29,25 @@ type UpgraderImpl struct {
 	*websocket.Upgrader
 }
 
-func New(log *zap.SugaredLogger, _ ...any) *UpgraderImpl {
+func New(log *zap.SugaredLogger, serverConfig config.ServerConfig, _ ...any) *UpgraderImpl {
 	//exhaustruct:ignore
 	upgrader := UpgraderImpl{
 		Upgrader: websocket.NewUpgrader(),
 	}
 	upgrader.Subprotocols = []string{"risk-it.websocket.auth.token"}
 
+	allowedOrigins := make(map[string]bool, len(serverConfig.AllowedOrigins))
+	for _, origin := range serverConfig.AllowedOrigins {
+		allowedOrigins[origin] = true
+	}
+
 	upgrader.CheckOrigin = func(r *http.Request) bool {
-		// plz fix
-		return true
+		origin := r.Header.Get("Origin")
+		if origin == "" {
+			return true
+		}
+
+		return allowedOrigins[origin]
 	}
 
 	upgrader.OnOpen(func(connection *websocket.Conn) {
