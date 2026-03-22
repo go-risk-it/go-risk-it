@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"net"
+	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	upgradablerwmutex "github.com/go-risk-it/go-risk-it/internal/upgradablerw_mutex"
 	"github.com/lesismal/nbio/nbhttp/websocket"
 )
@@ -14,15 +16,19 @@ type PlayerConnections struct {
 	mu upgradablerwmutex.UpgradableRWMutex
 
 	playerConnections map[string]*websocket.Conn
+	metrics           *metrics.Metrics
 }
 
-func NewPlayerConnections() *PlayerConnections {
+func NewPlayerConnections(m *metrics.Metrics) *PlayerConnections {
 	return &PlayerConnections{
 		playerConnections: make(map[string]*websocket.Conn),
+		metrics:           m,
 	}
 }
 
 func (p *PlayerConnections) Broadcast(ctx ctx.UserContext, message json.RawMessage) {
+	start := time.Now()
+
 	p.mu.UpgradableRLock()
 	defer p.mu.UpgradableRUnlock()
 
@@ -35,6 +41,7 @@ func (p *PlayerConnections) Broadcast(ctx ctx.UserContext, message json.RawMessa
 	ctx.Log().Infof("broadcasting message to %d players", len(p.playerConnections))
 
 	toCleanup := make([]string, 0)
+	sent := 0
 
 	for player, connection := range p.playerConnections {
 		err := connection.WriteMessage(websocket.TextMessage, message)
@@ -42,8 +49,14 @@ func (p *PlayerConnections) Broadcast(ctx ctx.UserContext, message json.RawMessa
 			ctx.Log().Debugw("unable to write message because connection is closed")
 
 			toCleanup = append(toCleanup, player)
+			p.metrics.BroadcastErrors.Add(ctx, 1)
+		} else {
+			sent++
 		}
 	}
+
+	p.metrics.MessagesSent.Add(ctx, int64(sent))
+	p.metrics.BroadcastDuration.Record(ctx, time.Since(start).Seconds())
 
 	p.cleanUpConnections(ctx, toCleanup)
 }
@@ -88,6 +101,8 @@ func (p *PlayerConnections) cleanUpConnections(ctx ctx.UserContext, toCleanup []
 		delete(p.playerConnections, player)
 	}
 
+	p.metrics.ActiveConnections.Add(ctx, -int64(len(toCleanup)))
+
 	ctx.Log().Debugw("cleaned up connections", "users", toCleanup)
 }
 
@@ -101,6 +116,8 @@ func (p *PlayerConnections) ConnectPlayer(ctx ctx.UserContext, connection *webso
 
 	if p.playerConnections[ctx.UserID()] != nil {
 		ctx.Log().Warnw("player already connected, overwriting")
+	} else {
+		p.metrics.ActiveConnections.Add(ctx, 1)
 	}
 
 	p.playerConnections[ctx.UserID()] = connection

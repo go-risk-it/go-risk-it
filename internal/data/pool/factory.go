@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/exaring/otelpgx"
 	"github.com/go-risk-it/go-risk-it/internal/config"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/fx"
@@ -21,7 +22,14 @@ func NewConnectionPool(
 ) (*pgxpool.Pool, error) {
 	ctx := context.Background()
 
-	connectionPool, err := pgxpool.New(ctx, cfg.BuildConnectionString())
+	poolConfig, err := pgxpool.ParseConfig(cfg.BuildConnectionString())
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse %s connection string: %w", schema, err)
+	}
+
+	poolConfig.ConnConfig.Tracer = otelpgx.NewTracer()
+
+	connectionPool, err := pgxpool.NewWithConfig(ctx, poolConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create %s connection pool: %w", schema, err)
 	}

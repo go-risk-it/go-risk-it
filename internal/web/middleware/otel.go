@@ -1,11 +1,13 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -30,7 +32,14 @@ func (m *OTelMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 		routeToWrap.Pattern(),
 		routeToWrap.RequiresAuth(),
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-			_, span := m.tracer.Start(request.Context(), "roll")
+			spanName := fmt.Sprintf("%s %s", request.Method, routeToWrap.Pattern())
+
+			_, span := m.tracer.Start(request.Context(), spanName,
+				trace.WithAttributes(
+					attribute.String("http.method", request.Method),
+					attribute.String("http.route", routeToWrap.Pattern()),
+				),
+			)
 			defer span.End()
 
 			logContext, ok := request.Context().(ctx.LogContext)

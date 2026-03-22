@@ -4,11 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
+	"go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/propagation"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -32,7 +36,7 @@ func SetupOTelSDK(
 	lifecycle.Append(fx.Hook{
 		OnStop: func(ctx context.Context) error {
 			if err := otelShutdown(ctx); err != nil {
-				log.Fatalw("failed to shutdown tracer provider", "error", err)
+				log.Fatalw("failed to shutdown OTel providers", "error", err)
 			}
 
 			return nil
@@ -41,11 +45,8 @@ func SetupOTelSDK(
 }
 
 func setupOTelSDK(otelConfig config.OtelConfig) (func(context.Context) error, error) {
-	shutdownFuncs := make([]func(context.Context) error, 0, 1)
+	shutdownFuncs := make([]func(context.Context) error, 0, 2)
 
-	// shutdown calls cleanup functions registered via shutdownFuncs.
-	// The errors from the calls are joined.
-	// Each registered cleanup will be invoked once.
 	shutdown := func(ctx context.Context) error {
 		var err error
 		for _, fn := range shutdownFuncs {
@@ -70,6 +71,22 @@ func setupOTelSDK(otelConfig config.OtelConfig) (func(context.Context) error, er
 	shutdownFuncs = append(shutdownFuncs, tracerProvider.Shutdown)
 	otel.SetTracerProvider(tracerProvider)
 
+	// Set up meter provider.
+	meterProvider, err := newMeterProvider(otelConfig)
+	if err != nil {
+		return shutdown, fmt.Errorf("failed to setup meter provider: %w", err)
+	}
+
+	shutdownFuncs = append(shutdownFuncs, meterProvider.Shutdown)
+	otel.SetMeterProvider(meterProvider)
+
+	// Start Go runtime metrics (goroutines, GC, heap, allocations).
+	if otelConfig.Enabled {
+		if err := runtime.Start(runtime.WithMinimumReadMemStatsInterval(time.Second)); err != nil {
+			return shutdown, fmt.Errorf("failed to start runtime instrumentation: %w", err)
+		}
+	}
+
 	return shutdown, nil
 }
 
@@ -88,33 +105,24 @@ func newTraceProvider(otelConfig config.OtelConfig) (*trace.TracerProvider, erro
 
 	if otelConfig.Enabled {
 		return trace.NewTracerProvider(trace.WithBatcher(exporter)), nil
-	} else {
-		return trace.NewTracerProvider(), nil
 	}
+
+	return trace.NewTracerProvider(), nil
 }
 
-// func newMeterProvider() (*metric.MeterProvider, error) {
-//	metricExporter, err := stdoutmetric.SetupOtelSDK()
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	meterProvider := metric.NewMeterProvider(
-//		metric.WithReader(metric.NewPeriodicReader(metricExporter,
-//			// Default is 1m. Set to 3s for demonstrative purposes.
-//			metric.WithInterval(3*time.Second))),
-//	)
-//	return meterProvider, nil
-//}
+func newMeterProvider(otelConfig config.OtelConfig) (*sdkmetric.MeterProvider, error) {
+	if !otelConfig.Enabled {
+		return sdkmetric.NewMeterProvider(), nil
+	}
 
-// func newLoggerProvider(logger *zap.SugaredLogger) (*log.LoggerProvider, error) {
-//	logExporter, err := stdoutlog.SetupOtelSDK()
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	loggerProvider := log.NewLoggerProvider(
-//		log.WithProcessor(log.NewBatchProcessor(logExporter)),
-//	)
-//	return loggerProvider, nil
-//}
+	exporter, err := otlpmetrichttp.New(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to create metric exporter: %w", err)
+	}
+
+	return sdkmetric.NewMeterProvider(
+		sdkmetric.WithReader(
+			sdkmetric.NewPeriodicReader(exporter, sdkmetric.WithInterval(10*time.Second)),
+		),
+	), nil
+}

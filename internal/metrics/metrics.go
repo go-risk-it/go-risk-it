@@ -1,0 +1,138 @@
+package metrics
+
+import (
+	"go.opentelemetry.io/otel/metric"
+)
+
+type Metrics struct {
+	// Game metrics
+	ActiveGames   metric.Int64UpDownCounter
+	MovesTotal    metric.Int64Counter
+	PhaseDuration metric.Float64Histogram
+	GamesCreated  metric.Int64Counter
+	GamesFinished metric.Int64Counter
+
+	// WebSocket metrics
+	ActiveConnections metric.Int64UpDownCounter
+	BroadcastDuration metric.Float64Histogram
+	MessagesSent      metric.Int64Counter
+	BroadcastErrors   metric.Int64Counter
+
+	// Database metrics
+	QueryDuration       metric.Float64Histogram
+	TransactionDuration metric.Float64Histogram
+	PoolWaitDuration    metric.Float64Histogram
+}
+
+func NewMetrics(meter metric.Meter) (*Metrics, error) {
+	metrics := &Metrics{}
+
+	if err := metrics.initGameMetrics(meter); err != nil {
+		return nil, err
+	}
+
+	if err := metrics.initWebSocketMetrics(meter); err != nil {
+		return nil, err
+	}
+
+	if err := metrics.initDatabaseMetrics(meter); err != nil {
+		return nil, err
+	}
+
+	return metrics, nil
+}
+
+func (metrics *Metrics) initGameMetrics(meter metric.Meter) error {
+	var err error
+
+	if metrics.ActiveGames, err = meter.Int64UpDownCounter("game.active",
+		metric.WithDescription("Number of currently active games"),
+	); err != nil {
+		return err
+	}
+
+	if metrics.MovesTotal, err = meter.Int64Counter("game.moves.total",
+		metric.WithDescription("Total number of moves performed"),
+	); err != nil {
+		return err
+	}
+
+	if metrics.PhaseDuration, err = meter.Float64Histogram("game.phase.duration",
+		metric.WithDescription("Duration of phase execution in seconds"),
+		metric.WithUnit("s"),
+	); err != nil {
+		return err
+	}
+
+	if metrics.GamesCreated, err = meter.Int64Counter("game.created.total",
+		metric.WithDescription("Total number of games created"),
+	); err != nil {
+		return err
+	}
+
+	if metrics.GamesFinished, err = meter.Int64Counter("game.finished.total",
+		metric.WithDescription("Total number of games finished"),
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (metrics *Metrics) initWebSocketMetrics(meter metric.Meter) error {
+	var err error
+
+	if metrics.ActiveConnections, err = meter.Int64UpDownCounter("ws.connections.active",
+		metric.WithDescription("Number of active WebSocket connections"),
+	); err != nil {
+		return err
+	}
+
+	if metrics.BroadcastDuration, err = meter.Float64Histogram("ws.broadcast.duration",
+		metric.WithDescription("Duration of broadcast operations in seconds"),
+		metric.WithUnit("s"),
+	); err != nil {
+		return err
+	}
+
+	if metrics.MessagesSent, err = meter.Int64Counter("ws.messages.sent.total",
+		metric.WithDescription("Total number of WebSocket messages sent"),
+	); err != nil {
+		return err
+	}
+
+	if metrics.BroadcastErrors, err = meter.Int64Counter("ws.broadcast.errors.total",
+		metric.WithDescription("Total number of broadcast errors"),
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (metrics *Metrics) initDatabaseMetrics(meter metric.Meter) error {
+	var err error
+
+	if metrics.QueryDuration, err = meter.Float64Histogram("db.query.duration",
+		metric.WithDescription("Duration of database queries in seconds"),
+		metric.WithUnit("s"),
+	); err != nil {
+		return err
+	}
+
+	if metrics.TransactionDuration, err = meter.Float64Histogram("db.transaction.duration",
+		metric.WithDescription("Duration of database transactions in seconds"),
+		metric.WithUnit("s"),
+	); err != nil {
+		return err
+	}
+
+	if metrics.PoolWaitDuration, err = meter.Float64Histogram("db.pool.wait.duration",
+		metric.WithDescription("Time spent waiting for a pool connection in seconds"),
+		metric.WithUnit("s"),
+	); err != nil {
+		return err
+	}
+
+	return nil
+}

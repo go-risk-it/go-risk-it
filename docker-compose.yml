@@ -37,22 +37,26 @@ services:
       - "8080:8080"
     environment:
       - OTEL_RESOURCE_ATTRIBUTES=service.name=risk-it,service.version=0.1.0
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://lgtm:4318
     depends_on:
       db:
         condition: service_healthy
+      lgtm:
+        condition: service_started
 
-  jaeger:
-    image: jaegertracing/jaeger:2.2.0@sha256:1dedb5660e77c8505ca2a40eeca957feabaaebeccf7bcf583965326176abc40d
+  lgtm:
+    image: grafana/otel-lgtm:latest
     ports:
-      - "16686:16686"
+      - "3000:3000"
       - "4317:4317"
       - "4318:4318"
-      - "5778:5778"
-      - "9411:9411"
+    volumes:
+      - lgtm-data:/data
+      - ./grafana/dashboards:/otel-lgtm/grafana/agentd/dashboards
 
 
 volumes:
   postgres_data:
   socket:
   db-config:
+  lgtm-data:
