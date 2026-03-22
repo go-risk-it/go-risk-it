@@ -45,13 +45,13 @@ func (s *Strategy) DecideMove(
 	s.mu.Unlock()
 
 	if errorRoll < s.config.ErrorMoveRate {
-		s.collector.RecordChaosEvent("error_move")
+		s.collector.RecordChaosEvent(metrics.ChaosEventErrorMove)
 
 		return nil, fmt.Errorf("chaos: injected strategy error")
 	}
 
 	if slowRoll < s.config.SlowMoveRate {
-		s.collector.RecordChaosEvent("slow_move")
+		s.collector.RecordChaosEvent(metrics.ChaosEventSlowMove)
 		time.Sleep(s.config.SlowMoveDelay)
 	}
 

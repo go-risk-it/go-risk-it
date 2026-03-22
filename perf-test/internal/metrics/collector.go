@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"context"
+	"log"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -19,6 +20,23 @@ const throughputBucketSize = 5 * time.Second
 
 // knownPhases are the 5 game phases, pre-initialized to avoid map contention.
 var knownPhases = []string{"cards", "deploy", "attack", "conquer", "reinforce"}
+
+// Error type constants used for RecordErrorType.
+const (
+	ErrorTypeStrategy   = "strategy"
+	ErrorTypeExecution  = "execution"
+	ErrorTypeTransient  = "transient"
+	ErrorTypeTimeout    = "timeout"
+	ErrorTypeStaleState = "stale_state"
+)
+
+// Chaos event type constants used for RecordChaosEvent.
+const (
+	ChaosEventDisconnect = "disconnect"
+	ChaosEventReconnect  = "reconnect"
+	ChaosEventSlowMove   = "slow_move"
+	ChaosEventErrorMove  = "error_move"
+)
 
 // Collector aggregates latency histograms and counters across concurrent games.
 // All methods are safe for concurrent use.
@@ -85,17 +103,17 @@ func NewCollector(maxDuration time.Duration) *Collector {
 	}
 
 	errorCounts := map[string]*atomic.Int64{
-		"strategy":  {},
-		"execution": {},
-		"transient": {},
-		"timeout":   {},
+		ErrorTypeStrategy:  {},
+		ErrorTypeExecution: {},
+		ErrorTypeTransient: {},
+		ErrorTypeTimeout:   {},
 	}
 
 	chaosEvents := map[string]*atomic.Int64{
-		"disconnect": {},
-		"reconnect":  {},
-		"slow_move":  {},
-		"error_move": {},
+		ChaosEventDisconnect: {},
+		ChaosEventReconnect:  {},
+		ChaosEventSlowMove:   {},
+		ChaosEventErrorMove:  {},
 	}
 
 	return &Collector{
@@ -241,6 +259,8 @@ func (c *Collector) RecordTimedMove() {
 
 	if idx >= 0 && idx < len(c.moveBuckets) {
 		c.moveBuckets[idx].Add(1)
+	} else {
+		log.Printf("[metrics] move at %v exceeds max duration, not counted in throughput", elapsed)
 	}
 }
 

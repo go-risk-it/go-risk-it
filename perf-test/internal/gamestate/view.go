@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
+	"time"
 )
 
 // View holds the latest game state received via WebSocket. Thread-safe.
@@ -14,6 +15,9 @@ type View struct {
 	BoardState   *BoardState
 	PlayersState *PlayersState
 	CardState    *CardState
+
+	// lastUpdateTime records when the most recent Apply() was called.
+	lastUpdateTime time.Time
 
 	// updated is closed and re-created on each state update.
 	updated chan struct{}
@@ -75,8 +79,17 @@ func (v *View) Apply(msg WSMessage) error {
 
 	close(v.updated)
 	v.updated = make(chan struct{})
+	v.lastUpdateTime = time.Now()
 
 	return nil
+}
+
+// LastUpdateTime returns the time of the most recent Apply() call.
+func (v *View) LastUpdateTime() time.Time {
+	v.mu.RLock()
+	defer v.mu.RUnlock()
+
+	return v.lastUpdateTime
 }
 
 // Snapshot returns a read-only copy of the current state.
@@ -93,6 +106,10 @@ func (v *View) Snapshot() ViewSnapshot {
 }
 
 // ViewSnapshot is an immutable snapshot for strategy decisions.
+// The snapshot shares pointer values with the View (e.g., *GameState), but
+// View.Apply() replaces pointers atomically rather than mutating the underlying
+// structs, so concurrent reads of a snapshot are safe. Do not mutate snapshot
+// fields — treat them as read-only.
 type ViewSnapshot struct {
 	GameState    *GameState
 	BoardState   *BoardState

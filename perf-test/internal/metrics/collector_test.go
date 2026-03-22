@@ -29,7 +29,7 @@ func TestNewCollector(t *testing.T) {
 	}
 
 	// Pre-initialized error categories should exist.
-	for _, cat := range []string{"strategy", "execution", "transient", "timeout"} {
+	for _, cat := range []string{ErrorTypeStrategy, ErrorTypeExecution, ErrorTypeTransient, ErrorTypeTimeout} {
 		if _, ok := snap.ErrorBreakdown[cat]; !ok {
 			t.Errorf("missing error category %q", cat)
 		}
@@ -131,27 +131,27 @@ func TestRecordHTTPStatus(t *testing.T) {
 func TestRecordErrorType(t *testing.T) {
 	c := NewCollector(1 * time.Minute)
 
-	c.RecordErrorType("strategy")
-	c.RecordErrorType("strategy")
-	c.RecordErrorType("execution")
-	c.RecordErrorType("transient")
+	c.RecordErrorType(ErrorTypeStrategy)
+	c.RecordErrorType(ErrorTypeStrategy)
+	c.RecordErrorType(ErrorTypeExecution)
+	c.RecordErrorType(ErrorTypeTransient)
 
 	snap := c.Snapshot()
 
-	if snap.ErrorBreakdown["strategy"] != 2 {
-		t.Errorf("expected 2 strategy errors, got %d", snap.ErrorBreakdown["strategy"])
+	if snap.ErrorBreakdown[ErrorTypeStrategy] != 2 {
+		t.Errorf("expected 2 strategy errors, got %d", snap.ErrorBreakdown[ErrorTypeStrategy])
 	}
 
-	if snap.ErrorBreakdown["execution"] != 1 {
-		t.Errorf("expected 1 execution error, got %d", snap.ErrorBreakdown["execution"])
+	if snap.ErrorBreakdown[ErrorTypeExecution] != 1 {
+		t.Errorf("expected 1 execution error, got %d", snap.ErrorBreakdown[ErrorTypeExecution])
 	}
 
-	if snap.ErrorBreakdown["transient"] != 1 {
-		t.Errorf("expected 1 transient error, got %d", snap.ErrorBreakdown["transient"])
+	if snap.ErrorBreakdown[ErrorTypeTransient] != 1 {
+		t.Errorf("expected 1 transient error, got %d", snap.ErrorBreakdown[ErrorTypeTransient])
 	}
 
-	if snap.ErrorBreakdown["timeout"] != 0 {
-		t.Errorf("expected 0 timeout errors, got %d", snap.ErrorBreakdown["timeout"])
+	if snap.ErrorBreakdown[ErrorTypeTimeout] != 0 {
+		t.Errorf("expected 0 timeout errors, got %d", snap.ErrorBreakdown[ErrorTypeTimeout])
 	}
 }
 

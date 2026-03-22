@@ -71,8 +71,11 @@ func TestStrategy_AlwaysError(t *testing.T) {
 
 	// Verify chaos event was recorded.
 	snap := collector.Snapshot()
-	if snap.ChaosEvents["error_move"] != 1 {
-		t.Fatalf("expected 1 error_move chaos event, got %d", snap.ChaosEvents["error_move"])
+	if snap.ChaosEvents[metrics.ChaosEventErrorMove] != 1 {
+		t.Fatalf(
+			"expected 1 error_move chaos event, got %d",
+			snap.ChaosEvents[metrics.ChaosEventErrorMove],
+		)
 	}
 }
 
@@ -105,7 +108,10 @@ func TestStrategy_AlwaysSlow(t *testing.T) {
 	}
 
 	snap := collector.Snapshot()
-	if snap.ChaosEvents["slow_move"] != 1 {
-		t.Fatalf("expected 1 slow_move chaos event, got %d", snap.ChaosEvents["slow_move"])
+	if snap.ChaosEvents[metrics.ChaosEventSlowMove] != 1 {
+		t.Fatalf(
+			"expected 1 slow_move chaos event, got %d",
+			snap.ChaosEvents[metrics.ChaosEventSlowMove],
+		)
 	}
 }

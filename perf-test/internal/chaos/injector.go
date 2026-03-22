@@ -79,7 +79,7 @@ func (inj *Injector) MaybeDisconnect(
 		target.WS.Close()
 	}
 
-	inj.collector.RecordChaosEvent("disconnect")
+	inj.collector.RecordChaosEvent(metrics.ChaosEventDisconnect)
 
 	return true
 }

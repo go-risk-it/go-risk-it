@@ -17,6 +17,7 @@ const (
 	maxRetries    = 3
 	baseBackoff   = 100 * time.Millisecond
 	backoffFactor = 2
+	clientTimeout = 30 * time.Second
 )
 
 // ConflictError is returned on HTTP 409 (stale state).
@@ -45,9 +46,9 @@ func NewREST(
 ) *REST {
 	var httpClient *http.Client
 	if transport != nil {
-		httpClient = &http.Client{Transport: transport}
+		httpClient = &http.Client{Timeout: clientTimeout, Transport: transport}
 	} else {
-		httpClient = &http.Client{}
+		httpClient = &http.Client{Timeout: clientTimeout}
 	}
 
 	return &REST{

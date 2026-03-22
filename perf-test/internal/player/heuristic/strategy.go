@@ -30,13 +30,13 @@ func (s *Strategy) DecideMove(snap gamestate.ViewSnapshot, userID string) (*play
 	case gamestate.Cards:
 		return s.decideCards(snap)
 	case gamestate.Deploy:
-		return s.decideDeploy(snap, userID)
+		return s.decideDeploy(snap, userID, buildRegionMap(snap))
 	case gamestate.Attack:
-		return s.decideAttack(snap, userID)
+		return s.decideAttack(snap, userID, buildRegionMap(snap))
 	case gamestate.Conquer:
 		return s.decideConquer(snap)
 	case gamestate.Reinforce:
-		return s.decideReinforce(snap, userID)
+		return s.decideReinforce(snap, userID, buildRegionMap(snap))
 	default:
 		return nil, fmt.Errorf("unknown phase: %s", phase)
 	}
@@ -108,6 +108,7 @@ func findCardCombo(cards []gamestate.Card) []int64 {
 func (s *Strategy) decideDeploy(
 	snap gamestate.ViewSnapshot,
 	userID string,
+	regionMap map[string]*gamestate.Region,
 ) (*player.Action, error) {
 	var state gamestate.DeployPhaseState
 
@@ -126,7 +127,7 @@ func (s *Strategy) decideDeploy(
 
 	for i := range myRegions {
 		r := &myRegions[i]
-		if s.isBorderRegion(r.ID, userID, snap) && r.Troops < bestScore {
+		if s.isBorderRegion(r.ID, userID, regionMap) && r.Troops < bestScore {
 			bestScore = r.Troops
 			bestRegion = r
 		}
@@ -160,9 +161,9 @@ func (s *Strategy) decideDeploy(
 func (s *Strategy) decideAttack(
 	snap gamestate.ViewSnapshot,
 	userID string,
+	regionMap map[string]*gamestate.Region,
 ) (*player.Action, error) {
 	myRegions := snap.MyRegions(userID)
-	regionMap := buildRegionMap(snap)
 
 	var bestSource, bestTarget *gamestate.Region
 	bestRatio := 0.0
@@ -223,6 +224,7 @@ func (s *Strategy) decideConquer(snap gamestate.ViewSnapshot) (*player.Action, e
 func (s *Strategy) decideReinforce(
 	snap gamestate.ViewSnapshot,
 	userID string,
+	regionMap map[string]*gamestate.Region,
 ) (*player.Action, error) {
 	myRegions := snap.MyRegions(userID)
 
@@ -237,7 +239,7 @@ func (s *Strategy) decideReinforce(
 			continue
 		}
 
-		enemyNeighbours := s.countEnemyNeighbours(r.ID, userID, snap)
+		enemyNeighbours := s.countEnemyNeighbours(r.ID, userID, regionMap)
 		interior := len(s.graph.NeighboursOf(r.ID)) - enemyNeighbours
 
 		if interior > bestInterior || (interior == bestInterior && r.Troops > bestTroops) {
@@ -247,13 +249,13 @@ func (s *Strategy) decideReinforce(
 		}
 	}
 
-	if bestSource == nil || !s.isBorderRegion(bestSource.ID, userID, snap) {
+	if bestSource == nil || !s.isBorderRegion(bestSource.ID, userID, regionMap) {
 		// Find a border target to reinforce.
 		if bestSource != nil {
 			for _, neighbourID := range s.graph.NeighboursOf(bestSource.ID) {
 				for j := range myRegions {
 					if myRegions[j].ID == neighbourID &&
-						s.isBorderRegion(neighbourID, userID, snap) {
+						s.isBorderRegion(neighbourID, userID, regionMap) {
 						tgt := &myRegions[j]
 						movable := bestSource.Troops - 1
 
@@ -278,9 +280,10 @@ func (s *Strategy) decideReinforce(
 	return advanceAction(gamestate.Reinforce), nil
 }
 
-func (s *Strategy) isBorderRegion(regionID, userID string, snap gamestate.ViewSnapshot) bool {
-	regionMap := buildRegionMap(snap)
-
+func (s *Strategy) isBorderRegion(
+	regionID, userID string,
+	regionMap map[string]*gamestate.Region,
+) bool {
 	for _, neighbourID := range s.graph.NeighboursOf(regionID) {
 		if r, ok := regionMap[neighbourID]; ok && r.OwnerID != userID {
 			return true
@@ -290,8 +293,10 @@ func (s *Strategy) isBorderRegion(regionID, userID string, snap gamestate.ViewSn
 	return false
 }
 
-func (s *Strategy) countEnemyNeighbours(regionID, userID string, snap gamestate.ViewSnapshot) int {
-	regionMap := buildRegionMap(snap)
+func (s *Strategy) countEnemyNeighbours(
+	regionID, userID string,
+	regionMap map[string]*gamestate.Region,
+) int {
 	count := 0
 
 	for _, neighbourID := range s.graph.NeighboursOf(regionID) {

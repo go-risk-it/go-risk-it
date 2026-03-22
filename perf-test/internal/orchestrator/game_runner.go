@@ -272,7 +272,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 			result.Errors++
 			consecutiveErrors++
 			gr.collector.RecordError()
-			gr.collector.RecordErrorType("strategy")
+			gr.collector.RecordErrorType(metrics.ErrorTypeStrategy)
 
 			if consecutiveErrors > gr.timeouts.MaxConsecutiveErr {
 				result.FatalError = fmt.Errorf("too many consecutive errors")
@@ -316,7 +316,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 				consecutiveStaleErrors++
 				log.Printf("[game %d] 400 for %s (stale state %d/%d, will re-decide): %v",
 					gameIndex, activePlayer.Name, consecutiveStaleErrors, maxStaleRetries, err)
-				gr.collector.RecordErrorType("stale_state")
+				gr.collector.RecordErrorType(metrics.ErrorTypeStaleState)
 
 				if consecutiveStaleErrors >= maxStaleRetries {
 					log.Printf("[game %d] %d stale retries exhausted, advancing past %s",
@@ -373,7 +373,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 			if errors.As(err, &transientErr) {
 				log.Printf("[game %d] transient error for %s (retries exhausted): %v",
 					gameIndex, activePlayer.Name, err)
-				gr.collector.RecordErrorType("transient")
+				gr.collector.RecordErrorType(metrics.ErrorTypeTransient)
 				waitForAnyUpdate(players, gr.timeouts.UpdateWait)
 
 				continue
@@ -383,7 +383,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 			result.Errors++
 			consecutiveErrors++
 			gr.collector.RecordError()
-			gr.collector.RecordErrorType("execution")
+			gr.collector.RecordErrorType(metrics.ErrorTypeExecution)
 
 			if consecutiveErrors > gr.timeouts.MaxConsecutiveErr {
 				result.FatalError = fmt.Errorf("too many consecutive errors")
@@ -423,7 +423,15 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 		time.Sleep(gr.timeouts.PostMoveSettle)
 
 		t3 := time.Now()
-		gr.collector.RecordWSDelivery(t3.Sub(t2))
+
+		// Use the actual WS update arrival time for accurate delivery latency.
+		wsUpdateTime := activePlayer.WS.View().LastUpdateTime()
+		if !wsUpdateTime.IsZero() && wsUpdateTime.After(t2) {
+			gr.collector.RecordWSDelivery(wsUpdateTime.Sub(t2))
+		} else {
+			gr.collector.RecordWSDelivery(t3.Sub(t2))
+		}
+
 		gr.collector.RecordE2E(t3.Sub(t1))
 		gr.collector.RecordPhaseLatency(currentPhase, t3.Sub(t1))
 		gr.collector.RecordPhaseMove(currentPhase)
@@ -485,7 +493,10 @@ func findActivePlayer(
 
 // waitForAnyUpdate waits for a state update from any player's WS connection.
 func waitForAnyUpdate(players []*PlayerInfo, timeout time.Duration) {
-	timer := time.After(timeout)
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+
+	done := make(chan struct{})
 
 	signal := make(chan struct{}, 1)
 	for _, p := range players {
@@ -501,15 +512,17 @@ func waitForAnyUpdate(players []*PlayerInfo, timeout time.Duration) {
 				case signal <- struct{}{}:
 				default:
 				}
-			case <-timer:
+			case <-done:
 			}
 		}(p.WS.View().Updated(), p.WS.Done())
 	}
 
 	select {
 	case <-signal:
-	case <-timer:
+	case <-timer.C:
 	}
+
+	close(done)
 }
 
 // waitForPhaseChange waits until the player's view shows a different phase
