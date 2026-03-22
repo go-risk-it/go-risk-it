@@ -19,6 +19,7 @@ type RampConfig struct {
 	ErrorThreshold float64
 	GameTimeout    time.Duration
 	NumPlayers     int
+	Multiplier     float64 // Rate multiplier per minute (e.g., 2.0 = double each minute). 0 means constant.
 }
 
 // RunContinuousRamp spawns games at a steady rate, stopping when MaxGames is reached
@@ -46,11 +47,21 @@ func RunContinuousRamp(
 		wg      sync.WaitGroup
 	)
 
-	interval := time.Minute / time.Duration(cfg.GamesPerMinute)
+	currentRate := float64(cfg.GamesPerMinute)
+	interval := time.Minute / time.Duration(currentRate)
 	launched := 0
+	minuteStart := time.Now()
+	minuteNumber := 1
 
-	log.Printf("[ramp] starting: %d games/min, max %d, error threshold %.0f%%",
-		cfg.GamesPerMinute, cfg.MaxGames, cfg.ErrorThreshold*100)
+	if cfg.Multiplier > 0 {
+		log.Printf(
+			"[ramp] starting: %d games/min ×%.1f/min, max %d, error threshold %.0f%%",
+			cfg.GamesPerMinute, cfg.Multiplier, cfg.MaxGames, cfg.ErrorThreshold*100,
+		)
+	} else {
+		log.Printf("[ramp] starting: %d games/min, max %d, error threshold %.0f%%",
+			cfg.GamesPerMinute, cfg.MaxGames, cfg.ErrorThreshold*100)
+	}
 
 	// Progress reporter.
 	progressDone := make(chan struct{})
@@ -119,6 +130,18 @@ func RunContinuousRamp(
 		}()
 
 		launched++
+
+		// Check if we need to escalate rate.
+		if cfg.Multiplier > 0 && time.Since(minuteStart) >= time.Minute {
+			minuteNumber++
+			currentRate *= cfg.Multiplier
+			interval = time.Minute / time.Duration(currentRate)
+
+			log.Printf("[ramp] minute %d: escalating to %.0f games/min",
+				minuteNumber, currentRate)
+
+			minuteStart = time.Now()
+		}
 
 		if launched < cfg.MaxGames {
 			time.Sleep(interval)

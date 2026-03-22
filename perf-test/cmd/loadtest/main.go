@@ -47,6 +47,11 @@ func main() {
 		0.10,
 		"Error rate threshold to stop (ramp mode only)",
 	)
+	rampMultiplier := flag.Float64(
+		"ramp-multiplier",
+		0,
+		"Rate multiplier per minute for exponential ramp (e.g., 2.0 = double each minute). 0 = constant.",
+	)
 
 	// Chaos flags.
 	chaosDisconnect := flag.Float64(
@@ -101,6 +106,7 @@ func main() {
 		ErrorThreshold: *errorThreshold,
 		GameTimeout:    *gameTimeout,
 		NumPlayers:     *players,
+		Multiplier:     *rampMultiplier,
 	}
 
 	// Chaos config from CLI flags.
@@ -158,7 +164,7 @@ func main() {
 	maxDuration := cfg.GameTimeout
 	if *mode == "ramp" {
 		// Estimate total runtime for ramp mode.
-		estimated := time.Duration(rampCfg.MaxGames/max(rampCfg.GamesPerMinute, 1)) * time.Minute
+		estimated := estimateRampDuration(rampCfg)
 		maxDuration = estimated + rampCfg.GameTimeout
 	}
 
@@ -294,4 +300,26 @@ func main() {
 		fmt.Fprintf(os.Stderr, "\n%d game(s) had fatal errors\n", fatalErrors)
 		os.Exit(1)
 	}
+}
+
+func estimateRampDuration(cfg *orchestrator.RampConfig) time.Duration {
+	if cfg.Multiplier <= 0 {
+		// Constant rate.
+		return time.Duration(
+			cfg.MaxGames/max(cfg.GamesPerMinute, 1),
+		) * time.Minute
+	}
+
+	// Exponential: sum games launched per minute until max reached.
+	rate := float64(cfg.GamesPerMinute)
+	total := 0
+	minutes := 0
+
+	for total < cfg.MaxGames {
+		total += int(rate)
+		minutes++
+		rate *= cfg.Multiplier
+	}
+
+	return time.Duration(minutes) * time.Minute
 }
