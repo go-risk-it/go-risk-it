@@ -12,7 +12,7 @@ def extract_player(player_name: str, players: list[Player]) -> Player:
     raise Exception(f"Player {player_name} is not in game")
 
 
-@then("There are {deployable_troops} deployable troops")
+@then("there are {deployable_troops} deployable troops")
 def step_impl(context: RiskItContext, deployable_troops: str):
     assert context.game_state.deploy_phase.deployableTroops == int(deployable_troops), \
         (f"Expected {deployable_troops} deployable troops, "
