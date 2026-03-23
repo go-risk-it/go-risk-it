@@ -19,7 +19,7 @@ func setup(t *testing.T) (*db.Querier, *creation.ServiceImpl) {
 	t.Helper()
 
 	querier := db.NewQuerier(t)
-	service := creation.NewService(querier)
+	service := creation.NewService(querier, nil)
 
 	return querier, service
 }

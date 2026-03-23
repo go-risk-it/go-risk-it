@@ -8,6 +8,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/creation"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/timing"
 	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/game/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/card"
@@ -120,6 +121,7 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 		playerServiceMock,
 		regionServiceMock,
 		testMetrics(t),
+		timing.NewGameTiming(),
 	)
 
 	gameID, err := service.CreateGameQ(context, mockQuerier, regions, users)
@@ -147,6 +149,7 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 		playerService,
 		regionService,
 		testMetrics(t),
+		timing.NewGameTiming(),
 	)
 
 	// Set up test data
@@ -195,6 +198,7 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 		playerService,
 		regionService,
 		testMetrics(t),
+		timing.NewGameTiming(),
 	)
 
 	// Set up test data

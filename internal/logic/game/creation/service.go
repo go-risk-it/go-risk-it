@@ -2,7 +2,6 @@ package creation
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
@@ -13,6 +12,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/timing"
 	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -38,6 +38,7 @@ type ServiceImpl struct {
 	playerService  player.Service
 	regionService  region.Service
 	metrics        *metrics.Metrics
+	gameTiming     *timing.GameTiming
 }
 
 var _ Service = (*ServiceImpl)(nil)
@@ -49,6 +50,7 @@ func NewService(
 	playerService player.Service,
 	regionService region.Service,
 	metrics *metrics.Metrics,
+	gameTiming *timing.GameTiming,
 ) *ServiceImpl {
 	return &ServiceImpl{
 		querier:        querier,
@@ -57,6 +59,7 @@ func NewService(
 		regionService:  regionService,
 		cardService:    cardService,
 		metrics:        metrics,
+		gameTiming:     gameTiming,
 	}
 }
 
@@ -65,16 +68,21 @@ func (s *ServiceImpl) CreateGameWithTx(
 	regions []string,
 	players []request.Player,
 ) (int64, error) {
-	gameID, err := dbutil.InTransaction(s.querier, ctx, func(qtx db.Querier) (int64, error) {
-		return s.CreateGameQ(ctx, qtx, regions, players)
-	})
+	gameID, err := dbutil.InTransaction(
+		s.querier,
+		ctx,
+		s.metrics,
+		func(qtx db.Querier) (int64, error) {
+			return s.CreateGameQ(ctx, qtx, regions, players)
+		},
+	)
 	if err != nil {
 		return -1, fmt.Errorf("failed to create game: %w", err)
 	}
 
 	s.metrics.GamesCreated.Add(ctx, 1)
 	s.metrics.ActiveGames.Add(ctx, 1)
-	s.metrics.GameStartTimes.Store(gameID, time.Now())
+	s.gameTiming.RecordStart(gameID)
 
 	return gameID, nil
 }

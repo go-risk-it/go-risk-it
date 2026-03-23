@@ -12,6 +12,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/timing"
 	"go.uber.org/fx"
 )
 
@@ -27,4 +28,5 @@ var Module = fx.Options(
 	signals.Module,
 	region.Module,
 	state.Module,
+	timing.Module,
 )

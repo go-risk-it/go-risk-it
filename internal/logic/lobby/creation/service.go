@@ -7,6 +7,7 @@ import (
 	dbutil "github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -16,20 +17,27 @@ type Service interface {
 
 type ServiceImpl struct {
 	querier db.Querier
+	metrics *metrics.Metrics
 }
 
 var _ Service = (*ServiceImpl)(nil)
 
-func NewService(querier db.Querier) *ServiceImpl {
+func NewService(querier db.Querier, m *metrics.Metrics) *ServiceImpl {
 	return &ServiceImpl{
 		querier: querier,
+		metrics: m,
 	}
 }
 
 func (s *ServiceImpl) CreateLobby(ctx ctx.UserContext, ownerName string) (int64, error) {
-	lobbyID, err := dbutil.InTransaction(s.querier, ctx, func(qtx db.Querier) (int64, error) {
-		return s.CreateLobbyQ(ctx, qtx, ownerName)
-	})
+	lobbyID, err := dbutil.InTransaction(
+		s.querier,
+		ctx,
+		s.metrics,
+		func(qtx db.Querier) (int64, error) {
+			return s.CreateLobbyQ(ctx, qtx, ownerName)
+		},
+	)
 	if err != nil {
 		return -1, fmt.Errorf("failed to create lobby: %w", err)
 	}

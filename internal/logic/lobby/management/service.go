@@ -8,6 +8,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/lobby/signals"
+	"github.com/go-risk-it/go-risk-it/internal/metrics"
 )
 
 type UserLobbies struct {
@@ -24,6 +25,7 @@ type Service interface {
 type ServiceImpl struct {
 	querier                 db.Querier
 	lobbyStateChangedSignal signals.LobbyStateChangedSignal
+	metrics                 *metrics.Metrics
 }
 
 var _ Service = (*ServiceImpl)(nil)
@@ -31,17 +33,23 @@ var _ Service = (*ServiceImpl)(nil)
 func NewService(
 	querier db.Querier,
 	lobbyStateChangedSignal signals.LobbyStateChangedSignal,
+	m *metrics.Metrics,
 ) *ServiceImpl {
 	return &ServiceImpl{
 		querier:                 querier,
 		lobbyStateChangedSignal: lobbyStateChangedSignal,
+		metrics:                 m,
 	}
 }
 
 func (s *ServiceImpl) JoinLobby(ctx ctx.LobbyContext, name string) error {
-	if _, err := dbutil.InTransaction(s.querier, ctx, func(qtx db.Querier) (struct{}, error) {
-		return struct{}{}, s.JoinLobbyQ(ctx, qtx, name)
-	}); err != nil {
+	if _, err := dbutil.InTransaction(
+		s.querier,
+		ctx,
+		s.metrics,
+		func(qtx db.Querier) (struct{}, error) {
+			return struct{}{}, s.JoinLobbyQ(ctx, qtx, name)
+		}); err != nil {
 		return fmt.Errorf("failed to join lobby: %w", err)
 	}
 

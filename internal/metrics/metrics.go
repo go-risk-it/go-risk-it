@@ -1,21 +1,19 @@
 package metrics
 
 import (
-	"sync"
-
 	"go.opentelemetry.io/otel/metric"
 )
 
-// latencyBuckets defines histogram bucket boundaries in seconds,
+// LatencyBuckets defines histogram bucket boundaries in seconds,
 // suitable for sub-second API and phase latencies.
-var latencyBuckets = []float64{ //nolint:gochecknoglobals
+var LatencyBuckets = []float64{ //nolint:gochecknoglobals
 	0.001, 0.005, 0.01, 0.025, 0.05,
 	0.1, 0.25, 0.5, 1, 2.5, 5, 10,
 }
 
-// gameDurationBuckets defines histogram bucket boundaries in seconds,
+// GameDurationBuckets defines histogram bucket boundaries in seconds,
 // suitable for game durations (seconds to minutes).
-var gameDurationBuckets = []float64{ //nolint:gochecknoglobals
+var GameDurationBuckets = []float64{ //nolint:gochecknoglobals
 	1, 5, 10, 30, 60, 120, 300, 600, 1800, 3600,
 }
 
@@ -39,8 +37,10 @@ type Metrics struct {
 	BroadcastErrors   metric.Int64Counter
 	BroadcastFanOut   metric.Int64Histogram
 
-	// Game start times for duration tracking (game ID → creation time).
-	GameStartTimes sync.Map
+	// DB metrics
+	TransactionDuration  metric.Float64Histogram
+	TransactionRollbacks metric.Int64Counter
+	TransactionRetries   metric.Int64Counter
 }
 
 func NewMetrics(meter metric.Meter) (*Metrics, error) {
@@ -58,6 +58,10 @@ func NewMetrics(meter metric.Meter) (*Metrics, error) {
 		return nil, err
 	}
 
+	if err := metrics.initDBMetrics(meter); err != nil {
+		return nil, err
+	}
+
 	return metrics, nil
 }
 
@@ -67,7 +71,7 @@ func (metrics *Metrics) initHTTPMetrics(meter metric.Meter) error {
 	if metrics.HTTPRequestDuration, err = meter.Float64Histogram("http.server.request.duration",
 		metric.WithDescription("Duration of HTTP requests in seconds"),
 		metric.WithUnit("s"),
-		metric.WithExplicitBucketBoundaries(latencyBuckets...),
+		metric.WithExplicitBucketBoundaries(LatencyBuckets...),
 	); err != nil {
 		return err
 	}
@@ -99,7 +103,7 @@ func (metrics *Metrics) initGameMetrics(meter metric.Meter) error {
 	if metrics.PhaseDuration, err = meter.Float64Histogram("game.phase.duration",
 		metric.WithDescription("Duration of phase execution in seconds"),
 		metric.WithUnit("s"),
-		metric.WithExplicitBucketBoundaries(latencyBuckets...),
+		metric.WithExplicitBucketBoundaries(LatencyBuckets...),
 	); err != nil {
 		return err
 	}
@@ -119,7 +123,7 @@ func (metrics *Metrics) initGameMetrics(meter metric.Meter) error {
 	if metrics.GameDuration, err = meter.Float64Histogram("game.duration",
 		metric.WithDescription("Duration of completed games in seconds"),
 		metric.WithUnit("s"),
-		metric.WithExplicitBucketBoundaries(gameDurationBuckets...),
+		metric.WithExplicitBucketBoundaries(GameDurationBuckets...),
 	); err != nil {
 		return err
 	}
@@ -139,7 +143,7 @@ func (metrics *Metrics) initWebSocketMetrics(meter metric.Meter) error {
 	if metrics.BroadcastDuration, err = meter.Float64Histogram("ws.broadcast.duration",
 		metric.WithDescription("Duration of broadcast operations in seconds"),
 		metric.WithUnit("s"),
-		metric.WithExplicitBucketBoundaries(latencyBuckets...),
+		metric.WithExplicitBucketBoundaries(LatencyBuckets...),
 	); err != nil {
 		return err
 	}
@@ -158,6 +162,35 @@ func (metrics *Metrics) initWebSocketMetrics(meter metric.Meter) error {
 
 	if metrics.BroadcastFanOut, err = meter.Int64Histogram("ws.broadcast.fanout",
 		metric.WithDescription("Number of connections per broadcast"),
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (metrics *Metrics) initDBMetrics(meter metric.Meter) error {
+	var err error
+
+	if metrics.TransactionDuration, err = meter.Float64Histogram("db.transaction.duration",
+		metric.WithDescription("Duration of database transactions"),
+		metric.WithUnit("s"),
+		metric.WithExplicitBucketBoundaries(LatencyBuckets...),
+	); err != nil {
+		return err
+	}
+
+	if metrics.TransactionRollbacks, err = meter.Int64Counter("db.transaction.rollbacks.total",
+		metric.WithDescription("Total number of transaction rollbacks"),
+	); err != nil {
+		return err
+	}
+
+	if metrics.TransactionRetries, err = meter.Int64Counter(
+		"db.transaction.retries.total",
+		metric.WithDescription(
+			"Total number of transaction retries due to serialization failures",
+		),
 	); err != nil {
 		return err
 	}

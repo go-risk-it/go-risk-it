@@ -15,6 +15,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/timing"
 	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/jackc/pgx/v5"
 	"go.opentelemetry.io/otel/attribute"
@@ -34,6 +35,7 @@ type OrchestratorImpl[T any] struct {
 	validationService      validation.Service
 	gameStateChangedSignal signals.GameStateChangedSignal
 	metrics                *metrics.Metrics
+	gameTiming             *timing.GameTiming
 }
 
 func NewOrchestrator[T any](
@@ -45,6 +47,7 @@ func NewOrchestrator[T any](
 	validationService validation.Service,
 	gameStateChangedSignal signals.GameStateChangedSignal,
 	metrics *metrics.Metrics,
+	gameTiming *timing.GameTiming,
 ) *OrchestratorImpl[T] {
 	return &OrchestratorImpl[T]{
 		querier:                querier,
@@ -55,6 +58,7 @@ func NewOrchestrator[T any](
 		validationService:      validationService,
 		gameStateChangedSignal: gameStateChangedSignal,
 		metrics:                metrics,
+		gameTiming:             gameTiming,
 	}
 }
 
@@ -64,6 +68,7 @@ func (s *OrchestratorImpl[T]) OrchestrateMove(ctx ctx.GameContext, move T) error
 	targetPhase, err := dbutil.InTransactionWithIsolation(
 		s.querier,
 		ctx,
+		s.metrics,
 		pgx.RepeatableRead,
 		func(querier db.Querier) (sqlc.GamePhaseType, error) {
 			phase := s.service.PhaseType()
@@ -165,9 +170,7 @@ func (s *OrchestratorImpl[T]) recordGameFinished(ctx ctx.GameContext) {
 	s.metrics.GamesFinished.Add(ctx, 1)
 	s.metrics.ActiveGames.Add(ctx, -1)
 
-	if startTime, ok := s.metrics.GameStartTimes.LoadAndDelete(ctx.GameID()); ok {
-		if t, ok := startTime.(time.Time); ok {
-			s.metrics.GameDuration.Record(ctx, time.Since(t).Seconds())
-		}
+	if elapsed, ok := s.gameTiming.ElapsedAndClear(ctx.GameID()); ok {
+		s.metrics.GameDuration.Record(ctx, elapsed.Seconds())
 	}
 }

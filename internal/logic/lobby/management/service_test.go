@@ -24,7 +24,7 @@ func setup(t *testing.T) (
 
 	querier := db.NewQuerier(t)
 	signal := signals.NewLobbyStateChangedSignal(t)
-	service := management.NewService(querier, signal)
+	service := management.NewService(querier, signal, nil)
 
 	return querier, service
 }

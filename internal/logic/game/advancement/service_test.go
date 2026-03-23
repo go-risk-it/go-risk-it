@@ -44,6 +44,7 @@ func setup(t *testing.T) (
 		moveService,
 		validationService,
 		signal,
+		nil,
 	)
 
 	return querier, gameState, moveService, validationService, service

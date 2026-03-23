@@ -18,6 +18,17 @@ const (
 	serviceName       = "perftest"
 )
 
+// latencyBuckets mirrors internal/metrics.LatencyBuckets from the server module.
+var latencyBuckets = []float64{ //nolint:gochecknoglobals
+	0.001, 0.005, 0.01, 0.025, 0.05,
+	0.1, 0.25, 0.5, 1, 2.5, 5, 10,
+}
+
+// gameDurationBuckets mirrors internal/metrics.GameDurationBuckets from the server module.
+var gameDurationBuckets = []float64{ //nolint:gochecknoglobals
+	1, 5, 10, 30, 60, 120, 300, 600, 1800, 3600,
+}
+
 // OTelExporter wraps OTel instruments that mirror the HDR histogram collector.
 // Each Record*() call on the Collector also records to these instruments for live export.
 type OTelExporter struct {
@@ -151,7 +162,7 @@ func (o *OTelExporter) initInstruments(meter metric.Meter) error {
 	if o.restDuration, err = meter.Float64Histogram("perftest.rest.duration",
 		metric.WithDescription("REST API call duration"),
 		metric.WithUnit("s"),
-		metric.WithExplicitBucketBoundaries(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10),
+		metric.WithExplicitBucketBoundaries(latencyBuckets...),
 	); err != nil {
 		return err
 	}
@@ -159,7 +170,7 @@ func (o *OTelExporter) initInstruments(meter metric.Meter) error {
 	if o.e2eDuration, err = meter.Float64Histogram("perftest.e2e.duration",
 		metric.WithDescription("End-to-end move duration"),
 		metric.WithUnit("s"),
-		metric.WithExplicitBucketBoundaries(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10),
+		metric.WithExplicitBucketBoundaries(latencyBuckets...),
 	); err != nil {
 		return err
 	}
@@ -167,7 +178,7 @@ func (o *OTelExporter) initInstruments(meter metric.Meter) error {
 	if o.wsDuration, err = meter.Float64Histogram("perftest.ws.delivery.duration",
 		metric.WithDescription("WebSocket delivery latency"),
 		metric.WithUnit("s"),
-		metric.WithExplicitBucketBoundaries(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10),
+		metric.WithExplicitBucketBoundaries(latencyBuckets...),
 	); err != nil {
 		return err
 	}
@@ -175,7 +186,7 @@ func (o *OTelExporter) initInstruments(meter metric.Meter) error {
 	if o.gameDuration, err = meter.Float64Histogram("perftest.game.duration",
 		metric.WithDescription("Duration of completed games"),
 		metric.WithUnit("s"),
-		metric.WithExplicitBucketBoundaries(1, 5, 10, 30, 60, 120, 300, 600, 1800, 3600),
+		metric.WithExplicitBucketBoundaries(gameDurationBuckets...),
 	); err != nil {
 		return err
 	}

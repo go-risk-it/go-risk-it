@@ -122,6 +122,7 @@ func TestInTransaction_ShouldRollbackIfPanic(t *testing.T) {
 	_, err := db.InTransaction(
 		querier,
 		logContext,
+		nil,
 		func(_ *mockQuerier) (any, error) {
 			panic("test")
 		},
@@ -143,7 +144,7 @@ func TestInTransaction_ShouldRollbackIfErr(t *testing.T) {
 		Return(transaction, nil)
 	transaction.On("Rollback", logContext).Return(nil)
 
-	_, err := db.InTransaction(querier, logContext, func(_ *mockQuerier) (any, error) {
+	_, err := db.InTransaction(querier, logContext, nil, func(_ *mockQuerier) (any, error) {
 		return nil, errors.New("test")
 	})
 	require.Error(t, err)
@@ -163,7 +164,7 @@ func TestInTransaction_ShouldCommitIfNoErr(t *testing.T) {
 		Return(transaction, nil)
 	transaction.On("Commit", logContext).Return(nil)
 
-	_, err := db.InTransaction(querier, logContext, func(_ *mockQuerier) (any, error) {
+	_, err := db.InTransaction(querier, logContext, nil, func(_ *mockQuerier) (any, error) {
 		return -1, nil
 	})
 	require.NoError(t, err)

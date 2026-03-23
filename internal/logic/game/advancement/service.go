@@ -12,6 +12,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
+	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -26,6 +27,7 @@ type ServiceImpl[T any] struct {
 	moveService            service.Service[T]
 	validationService      validation.Service
 	gameStateChangedSignal signals.GameStateChangedSignal
+	metrics                *metrics.Metrics
 }
 
 func NewService[T any](
@@ -34,6 +36,7 @@ func NewService[T any](
 	moveService service.Service[T],
 	validationService validation.Service,
 	gameStateChangedSignal signals.GameStateChangedSignal,
+	metrics *metrics.Metrics,
 ) *ServiceImpl[T] {
 	return &ServiceImpl[T]{
 		gameState:              gameState,
@@ -41,6 +44,7 @@ func NewService[T any](
 		moveService:            moveService,
 		validationService:      validationService,
 		gameStateChangedSignal: gameStateChangedSignal,
+		metrics:                metrics,
 	}
 }
 
@@ -50,6 +54,7 @@ func (s *ServiceImpl[T]) Advance(ctx ctx.GameContext) error {
 	targetPhase, err := dbutil.InTransactionWithIsolation(
 		s.querier,
 		ctx,
+		s.metrics,
 		pgx.RepeatableRead,
 		func(q db.Querier) (sqlc.GamePhaseType, error) {
 			return s.AdvanceQ(ctx, q)
