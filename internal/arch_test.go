@@ -190,37 +190,7 @@ func assertHasExportedInterface(t *testing.T, pkg goPackage) {
 	t.Errorf("%s has service.go but no exported interface declaration", pkg.ImportPath)
 }
 
-// Rule 6: no logic service file references db.Querier directly.
-// This rule drives increment 2.4 (per-service interfaces).
-func TestArch_LogicNeverReferencesDBQuerier(t *testing.T) {
-	t.Skip("enable after 2.4: per-service interfaces replace direct db.Querier usage")
-	t.Parallel()
-
-	pkgs := loadPackages(t, "./internal/logic/...")
-
-	for _, pkg := range pkgs {
-		for _, file := range pkg.GoFiles {
-			if strings.HasSuffix(file, "_test.go") {
-				continue
-			}
-
-			content, err := os.ReadFile(filepath.Join(pkg.Dir, file))
-			if err != nil {
-				t.Fatalf("failed to read %s: %v", filepath.Join(pkg.Dir, file), err)
-			}
-
-			if strings.Contains(string(content), "db.Querier") {
-				t.Errorf(
-					"%s/%s references db.Querier directly",
-					pkg.ImportPath,
-					file,
-				)
-			}
-		}
-	}
-}
-
-// Rule 7: every logic service package defines at least one exported interface.
+// Rule 6: every logic service package defines at least one exported interface.
 func TestArch_LogicServicesDefineExportedInterface(t *testing.T) {
 	t.Parallel()
 

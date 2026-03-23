@@ -23,10 +23,8 @@ PR convention: `hardening(X.Y): description`
 
 - [x] **2.1** Scaffold `arch_test.go` + Rule 1 (logic/ never imports web/ or api/)
 - [x] **2.2** Rules 2-5 (layer + cross-domain separation)
-- [x] **2.3** Rules 6-7 (interface boundary + structural)
-- [ ] **2.4a** Per-service interfaces: move services
-- [ ] **2.4b** Per-service interfaces: core game services
-- [ ] **2.4c** Per-service interfaces: support services
+- [x] **2.3** Rule 6 (every logic service defines exported interface)
+- ~~**2.4a-c**~~ Per-service interfaces — dropped (see ADR-006)
 - [ ] **2.5** Circular dependency check + CI
 
 ## Phase 3: Domain Invariant Testing
@@ -70,3 +68,9 @@ PR convention: `hardening(X.Y): description`
 **Date:** 2026-03-23
 **Decision:** Middleware (auth, otel, util) and the WS upgrader now use `restutils.WriteError()` instead of `http.Error()`. The single remaining `http.Error` call is in `writeJSONErrorWithTrace` as a last-resort fallback when JSON marshaling itself fails.
 **Rationale:** Consistent JSON error responses across all request paths. Also fixed a double-write bug in `util.go` where `buildContext` AND `buildDomainContext` both called `http.Error` on the same error path. Removed `writer` parameter from `buildContext` since it no longer writes responses.
+
+### ADR-006: Drop per-service querier interfaces (2.4)
+
+**Date:** 2026-03-23
+**Decision:** Removed the skipped "no logic service references db.Querier directly" arch test (old Rule 6) and dropped increments 2.4a-c from the roadmap. Services continue to accept `db.Querier` directly.
+**Rationale:** The codebase already enforces narrow abstractions at the correct layer: service interfaces (Rule 6, née Rule 7) ensure every logic service defines an exported interface with 2-5 methods. Controllers and orchestrators depend on these narrow service interfaces — they never see `db.Querier`. Narrowing `db.Querier` itself would fight the Q-suffixed transaction composition pattern (`InTransactionWithIsolation[Q Transactable[Q], T any]`), which requires a single concrete querier type flowing through the entire transaction. Go's "small interface" guidance applies to API boundaries, not implementation-internal data access. The sqlc-generated interface is the natural data contract and wrapping it in narrow per-service interfaces would create a maintenance surface with no meaningful benefit.
