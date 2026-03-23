@@ -91,14 +91,50 @@ func (m *OTelMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 			)
 
 			duration := time.Since(start).Seconds()
-			attrs := otelmetric.WithAttributes(
-				attribute.String("http.method", request.Method),
-				attribute.String("http.route", routeToWrap.Pattern()),
-				attribute.Int("http.status_code", recorder.statusCode),
-			)
 
-			m.metrics.HTTPRequestDuration.Record(request.Context(), duration, attrs)
-			m.metrics.HTTPRequestsTotal.Add(request.Context(), 1, attrs)
+			m.recordHTTPMetrics(request, routeToWrap.Pattern(), recorder.statusCode, duration)
 		}),
 	)
+}
+
+func (m *OTelMiddlewareImpl) recordHTTPMetrics(
+	request *http.Request,
+	pattern string,
+	statusCode int,
+	duration float64,
+) {
+	attrs := otelmetric.WithAttributes(
+		attribute.String("http.method", request.Method),
+		attribute.String("http.route", pattern),
+		attribute.Int("http.status_code", statusCode),
+	)
+
+	m.metrics.HTTPRequestDuration.Record(request.Context(), duration, attrs)
+	m.metrics.HTTPRequestsTotal.Add(request.Context(), 1, attrs)
+
+	if statusCode >= http.StatusBadRequest {
+		errorAttrs := otelmetric.WithAttributes(
+			attribute.String("http.method", request.Method),
+			attribute.String("http.route", pattern),
+			attribute.String("error.category", StatusToCategory(statusCode)),
+		)
+		m.metrics.HTTPErrorsTotal.Add(request.Context(), 1, errorAttrs)
+	}
+}
+
+func StatusToCategory(code int) string {
+	switch code {
+	case http.StatusBadRequest:
+		return "VALIDATION_ERROR"
+	case http.StatusUnauthorized:
+		return "UNAUTHORIZED"
+	case http.StatusForbidden:
+		return "FORBIDDEN"
+	case http.StatusNotFound:
+		return "NOT_FOUND"
+	case http.StatusConflict:
+		return "CONFLICT"
+	default:
+		return "INTERNAL_ERROR"
+	}
 }

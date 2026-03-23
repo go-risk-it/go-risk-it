@@ -17,7 +17,7 @@ PR convention: `hardening(X.Y): description`
 - [x] **1.4** Convert move handlers
 - [x] **1.5** Convert lobby + game management handlers
 - [x] **1.6** Convert middleware + websocket upgrader callsites
-- [ ] **1.7** OTel error metrics
+- [x] **1.7** OTel error metrics
 
 ## Phase 2: Architecture Tests
 
@@ -25,7 +25,7 @@ PR convention: `hardening(X.Y): description`
 - [x] **2.2** Rules 2-5 (layer + cross-domain separation)
 - [x] **2.3** Rule 6 (every logic service defines exported interface)
 - ~~**2.4a-c**~~ Per-service interfaces — dropped (see ADR-006)
-- [ ] **2.5** Circular dependency check + CI
+- [x] **2.5** Circular dependency check + CI — already covered (see ADR-007)
 
 ## Phase 3: Domain Invariant Testing
 
@@ -74,3 +74,9 @@ PR convention: `hardening(X.Y): description`
 **Date:** 2026-03-23
 **Decision:** Removed the skipped "no logic service references db.Querier directly" arch test (old Rule 6) and dropped increments 2.4a-c from the roadmap. Services continue to accept `db.Querier` directly.
 **Rationale:** The codebase already enforces narrow abstractions at the correct layer: service interfaces (Rule 6, née Rule 7) ensure every logic service defines an exported interface with 2-5 methods. Controllers and orchestrators depend on these narrow service interfaces — they never see `db.Querier`. Narrowing `db.Querier` itself would fight the Q-suffixed transaction composition pattern (`InTransactionWithIsolation[Q Transactable[Q], T any]`), which requires a single concrete querier type flowing through the entire transaction. Go's "small interface" guidance applies to API boundaries, not implementation-internal data access. The sqlc-generated interface is the natural data contract and wrapping it in narrow per-service interfaces would create a maintenance surface with no meaningful benefit.
+
+### ADR-007: Circular dependency check already covered by Go compiler + CI
+
+**Date:** 2026-03-24
+**Decision:** Marked increment 2.5 as complete without new code. Go's compiler prevents circular imports at build time. The existing CI workflow runs `go build ./...` and `go test ./...` (which includes 6 arch tests in `internal/arch_test.go`) on every push/PR.
+**Rationale:** A runtime circular dependency test is redundant — Go rejects import cycles during compilation. The arch tests already enforce stricter layering rules (no `logic/` → `web/`, no `data/` → `logic/`, domain isolation) that subsume simple cycle detection. Adding a separate CI job or test would add maintenance cost with no additional coverage.

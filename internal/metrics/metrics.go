@@ -21,6 +21,7 @@ type Metrics struct {
 	// HTTP metrics
 	HTTPRequestDuration metric.Float64Histogram
 	HTTPRequestsTotal   metric.Int64Counter
+	HTTPErrorsTotal     metric.Int64Counter
 
 	// Game metrics
 	ActiveGames   metric.Int64UpDownCounter
@@ -78,6 +79,12 @@ func (metrics *Metrics) initHTTPMetrics(meter metric.Meter) error {
 
 	if metrics.HTTPRequestsTotal, err = meter.Int64Counter("http.server.requests.total",
 		metric.WithDescription("Total number of HTTP requests"),
+	); err != nil {
+		return err
+	}
+
+	if metrics.HTTPErrorsTotal, err = meter.Int64Counter("http.server.errors.total",
+		metric.WithDescription("Total number of HTTP error responses"),
 	); err != nil {
 		return err
 	}
