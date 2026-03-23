@@ -23,7 +23,7 @@ PR convention: `hardening(X.Y): description`
 
 - [x] **2.1** Scaffold `arch_test.go` + Rule 1 (logic/ never imports web/ or api/)
 - [x] **2.2** Rules 2-5 (layer + cross-domain separation)
-- [ ] **2.3** Rules 6-8 (interface boundary + structural)
+- [x] **2.3** Rules 6-7 (interface boundary + structural)
 - [ ] **2.4a** Per-service interfaces: move services
 - [ ] **2.4b** Per-service interfaces: core game services
 - [ ] **2.4c** Per-service interfaces: support services

@@ -2,7 +2,11 @@ package internal_test
 
 import (
 	"encoding/json"
+	"os"
 	"os/exec"
+	"path/filepath"
+	"regexp"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -13,6 +17,8 @@ const modulePrefix = "github.com/go-risk-it/go-risk-it/internal/"
 type goPackage struct {
 	ImportPath string   `json:"ImportPath"` //nolint:tagliatelle // matches go list -json output
 	Imports    []string `json:"Imports"`    //nolint:tagliatelle // matches go list -json output
+	Dir        string   `json:"Dir"`        //nolint:tagliatelle // matches go list -json output
+	GoFiles    []string `json:"GoFiles"`    //nolint:tagliatelle // matches go list -json output
 }
 
 // loadPackages runs `go list -json` for the given pattern and returns parsed packages.
@@ -151,4 +157,80 @@ func TestArch_WebGameAndLobbyIsolated(t *testing.T) {
 
 	lobbyPkgs := loadPackages(t, "./internal/web/lobby/...")
 	assertNoImports(t, lobbyPkgs, modulePrefix+"web/game/")
+}
+
+// containsFile checks if a package has a specific file in its GoFiles list.
+func containsFile(pkg goPackage, name string) bool {
+	return slices.Contains(pkg.GoFiles, name)
+}
+
+// exportedInterfacePattern matches "type <Exported> interface" declarations.
+var exportedInterfacePattern = regexp.MustCompile(`type\s+[A-Z]\w*\s+interface\b`)
+
+// assertHasExportedInterface verifies that at least one Go source file in the package
+// contains an exported interface declaration.
+func assertHasExportedInterface(t *testing.T, pkg goPackage) {
+	t.Helper()
+
+	for _, file := range pkg.GoFiles {
+		if strings.HasSuffix(file, "_test.go") {
+			continue
+		}
+
+		content, err := os.ReadFile(filepath.Join(pkg.Dir, file))
+		if err != nil {
+			t.Fatalf("failed to read %s: %v", filepath.Join(pkg.Dir, file), err)
+		}
+
+		if exportedInterfacePattern.Match(content) {
+			return
+		}
+	}
+
+	t.Errorf("%s has service.go but no exported interface declaration", pkg.ImportPath)
+}
+
+// Rule 6: no logic service file references db.Querier directly.
+// This rule drives increment 2.4 (per-service interfaces).
+func TestArch_LogicNeverReferencesDBQuerier(t *testing.T) {
+	t.Skip("enable after 2.4: per-service interfaces replace direct db.Querier usage")
+	t.Parallel()
+
+	pkgs := loadPackages(t, "./internal/logic/...")
+
+	for _, pkg := range pkgs {
+		for _, file := range pkg.GoFiles {
+			if strings.HasSuffix(file, "_test.go") {
+				continue
+			}
+
+			content, err := os.ReadFile(filepath.Join(pkg.Dir, file))
+			if err != nil {
+				t.Fatalf("failed to read %s: %v", filepath.Join(pkg.Dir, file), err)
+			}
+
+			if strings.Contains(string(content), "db.Querier") {
+				t.Errorf(
+					"%s/%s references db.Querier directly",
+					pkg.ImportPath,
+					file,
+				)
+			}
+		}
+	}
+}
+
+// Rule 7: every logic service package defines at least one exported interface.
+func TestArch_LogicServicesDefineExportedInterface(t *testing.T) {
+	t.Parallel()
+
+	pkgs := loadPackages(t, "./internal/logic/...")
+
+	for _, pkg := range pkgs {
+		if !containsFile(pkg, "service.go") {
+			continue
+		}
+
+		assertHasExportedInterface(t, pkg)
+	}
 }
