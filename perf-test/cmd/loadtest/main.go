@@ -320,6 +320,11 @@ func main() {
 		log.Fatalf("unknown output format: %q", *output)
 	}
 
+	// Run insights analysis and print results.
+	metricsSnap := baseline.SnapshotToMetrics(snap, totalDuration.Seconds())
+	insights := baseline.Analyze(metricsSnap)
+	baseline.PrintInsights(os.Stdout, insights)
+
 	// Baseline operations.
 	handleBaseline(
 		*saveBaseline,
@@ -329,8 +334,8 @@ func main() {
 		cfg.NumPlayers,
 		cfg.NumGames,
 		*mode,
-		snap,
-		totalDuration,
+		metricsSnap,
+		insights,
 	)
 
 	// Exit with error if any game had a fatal error.
@@ -375,8 +380,8 @@ func handleBaseline(
 	numPlayers int,
 	numGames int,
 	mode string,
-	snap *metrics.Snapshot,
-	totalDuration time.Duration,
+	metricsSnap baseline.MetricsSnapshot,
+	insights []baseline.Insight,
 ) {
 	if !saveBaselineFlag && compareFile == "" {
 		return
@@ -387,8 +392,8 @@ func handleBaseline(
 		numPlayers,
 		numGames,
 		mode,
-		snap,
-		totalDuration,
+		metricsSnap,
+		insights,
 	)
 
 	if saveBaselineFlag {
@@ -428,8 +433,8 @@ func buildCurrentBaseline(
 	numPlayers int,
 	numGames int,
 	mode string,
-	snap *metrics.Snapshot,
-	totalDuration time.Duration,
+	metricsSnap baseline.MetricsSnapshot,
+	insights []baseline.Insight,
 ) baseline.Baseline {
 	commitSHA := "unknown"
 
@@ -447,7 +452,8 @@ func buildCurrentBaseline(
 			Games:   numGames,
 			Mode:    mode,
 		},
-		Metrics:     baseline.SnapshotToMetrics(snap, totalDuration.Seconds()),
+		Metrics:     metricsSnap,
 		Environment: baseline.CaptureEnvironment(),
+		Insights:    insights,
 	}
 }

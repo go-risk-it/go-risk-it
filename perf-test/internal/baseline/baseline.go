@@ -19,6 +19,7 @@ type Baseline struct {
 	Metrics        MetricsSnapshot `json:"metrics"`
 	Environment    Environment     `json:"environment"`
 	BreakingPoints []BreakingPoint `json:"breaking_points,omitempty"`
+	Insights       []Insight       `json:"insights,omitempty"`
 }
 
 // TestParams describes the test configuration that produced this baseline.

@@ -25,8 +25,8 @@ func TestBaseline_SaveAndLoad(t *testing.T) {
 			Mode:    "batch",
 		},
 		Metrics: baseline.MetricsSnapshot{
-			E2EP95:   0.312,
-			DBTxnP95: 0.042,
+			E2E:        baseline.LatencyProfile{P95: 0.312},
+			WSDelivery: baseline.LatencyProfile{P95: 0.1},
 		},
 	}
 
@@ -37,8 +37,8 @@ func TestBaseline_SaveAndLoad(t *testing.T) {
 	loaded, err := baseline.Load(path)
 	require.NoError(t, err)
 	assert.Equal(t, baselineData.CommitSHA, loaded.CommitSHA)
-	assert.InDelta(t, baselineData.Metrics.E2EP95, loaded.Metrics.E2EP95, 0.001)
-	assert.InDelta(t, baselineData.Metrics.DBTxnP95, loaded.Metrics.DBTxnP95, 0.001)
+	assert.InDelta(t, baselineData.Metrics.E2E.P95, loaded.Metrics.E2E.P95, 0.001)
+	assert.InDelta(t, baselineData.Metrics.WSDelivery.P95, loaded.Metrics.WSDelivery.P95, 0.001)
 	assert.Equal(t, baselineData.TestParams.Preset, loaded.TestParams.Preset)
 }
 
