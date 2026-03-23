@@ -71,12 +71,27 @@ func SnapshotToMetrics(snap *metrics.Snapshot, totalDurationSec float64) Metrics
 	phaseEntries := copyNonZeroMap(snap.PhaseEntries)
 	phaseMoves := copyNonZeroMap(snap.PhaseMoves)
 
+	// Compute move failure rate from ErrorBreakdown.
+	// TotalMoves counts successful moves only, so total attempts = TotalMoves + sum(ErrorBreakdown).
+	var moveFailureRate float64
+	if len(snap.ErrorBreakdown) > 0 {
+		var totalNonSuccess int64
+		for _, count := range snap.ErrorBreakdown {
+			totalNonSuccess += count
+		}
+
+		if totalAttempts := snap.TotalMoves + totalNonSuccess; totalAttempts > 0 {
+			moveFailureRate = float64(totalNonSuccess) / float64(totalAttempts)
+		}
+	}
+
 	return MetricsSnapshot{
 		E2E:                    histToProfile(snap.E2EMove),
 		WSDelivery:             histToProfile(snap.WSDelivery),
 		ThroughputMPS:          throughput,
 		ThroughputPeakMPS:      peakMPS,
 		HTTPErrorRate:          errorRate,
+		MoveFailureRate:        moveFailureRate,
 		TotalMoves:             snap.TotalMoves,
 		TotalErrors:            snap.TotalErrors,
 		GamesCompleted:         snap.GamesCompleted,

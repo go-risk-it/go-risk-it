@@ -130,11 +130,21 @@ func PrintReport(
 	fmt.Fprintf(w, "\nErrors: %d (%.2f%%)", snap.TotalErrors, errorRate)
 
 	if len(snap.ErrorBreakdown) > 0 {
-		fmt.Fprintf(w, "  [strategy=%d execution=%d transient=%d timeout=%d]",
-			snap.ErrorBreakdown["strategy"],
-			snap.ErrorBreakdown["execution"],
-			snap.ErrorBreakdown["transient"],
-			snap.ErrorBreakdown["timeout"])
+		fmt.Fprint(w, "  [")
+
+		first := true
+		for _, name := range sortedStringKeys(snap.ErrorBreakdown) {
+			if count := snap.ErrorBreakdown[name]; count > 0 {
+				if !first {
+					fmt.Fprint(w, " ")
+				}
+
+				fmt.Fprintf(w, "%s=%d", name, count)
+				first = false
+			}
+		}
+
+		fmt.Fprint(w, "]")
 	}
 
 	fmt.Fprintln(w)

@@ -366,13 +366,15 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 				continue
 			}
 
-			// Transient errors (503, timeout, etc.) are logged but not counted
-			// toward consecutive errors — the retry loop in do() already handled
-			// retries, so this is a final failure after all attempts.
+			// Transient errors (503, timeout, etc.) after retry exhaustion are
+			// real failures — the server was genuinely unavailable.
 			var transientErr *client.TransientError
 			if errors.As(err, &transientErr) {
 				log.Printf("[game %d] transient error for %s (retries exhausted): %v",
 					gameIndex, activePlayer.Name, err)
+				result.Errors++
+				consecutiveErrors++
+				gr.collector.RecordError()
 				gr.collector.RecordErrorType(metrics.ErrorTypeTransient)
 				waitForAnyUpdate(players, gr.timeouts.UpdateWait)
 

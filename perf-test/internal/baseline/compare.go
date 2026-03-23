@@ -43,6 +43,12 @@ func comparisonMetrics() []metricDef {
 			false,
 		},
 		{
+			"Move Failure Rate",
+			"ratio",
+			func(s MetricsSnapshot) float64 { return s.MoveFailureRate },
+			false,
+		},
+		{
 			"Throughput (avg)",
 			"moves/s",
 			func(s MetricsSnapshot) float64 { return s.ThroughputMPS },

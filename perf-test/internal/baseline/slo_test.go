@@ -60,9 +60,10 @@ func TestSLOs_Evaluate_P99Violations(t *testing.T) {
 	assert.Contains(t, names, "WS delivery latency p99")
 }
 
-func TestSLOs_EmptyBoundaryHealth(t *testing.T) {
+func TestSLOs_BoundaryHealth(t *testing.T) {
 	t.Parallel()
 
 	slos := baseline.DefaultSLOs()
-	assert.Empty(t, slos.BoundaryHealth, "server-side SLOs removed")
+	assert.Len(t, slos.BoundaryHealth, 1)
+	assert.Equal(t, "move_failure_rate", slos.BoundaryHealth[0].Metric)
 }

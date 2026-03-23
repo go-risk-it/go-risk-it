@@ -28,6 +28,7 @@ const (
 	ErrorTypeTransient  = "transient"
 	ErrorTypeTimeout    = "timeout"
 	ErrorTypeStaleState = "stale_state"
+	ErrorTypeConflict   = "conflict"
 )
 
 // Chaos event type constants used for RecordChaosEvent.
@@ -103,10 +104,12 @@ func NewCollector(maxDuration time.Duration) *Collector {
 	}
 
 	errorCounts := map[string]*atomic.Int64{
-		ErrorTypeStrategy:  {},
-		ErrorTypeExecution: {},
-		ErrorTypeTransient: {},
-		ErrorTypeTimeout:   {},
+		ErrorTypeStrategy:   {},
+		ErrorTypeExecution:  {},
+		ErrorTypeTransient:  {},
+		ErrorTypeTimeout:    {},
+		ErrorTypeStaleState: {},
+		ErrorTypeConflict:   {},
 	}
 
 	chaosEvents := map[string]*atomic.Int64{
@@ -335,6 +338,7 @@ func (c *Collector) RecordRetry() {
 // RecordConflict increments the 409 conflict counter.
 func (c *Collector) RecordConflict() {
 	c.totalConflicts.Add(1)
+	c.RecordErrorType(ErrorTypeConflict)
 
 	if c.otel != nil {
 		c.otel.conflictsTotal.Add(context.Background(), 1)

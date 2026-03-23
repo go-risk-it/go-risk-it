@@ -25,6 +25,7 @@ func Analyze(snap MetricsSnapshot) []Insight {
 	insights = append(insights, detectHighRetryRate(snap)...)
 	insights = append(insights, detectConflictStorm(snap)...)
 	insights = append(insights, detectErrorDominance(snap)...)
+	insights = append(insights, detectHighContentionRate(snap)...)
 	insights = append(insights, detectThroughputPlateau(snap)...)
 	insights = append(insights, detectSlowPhase(snap)...)
 	insights = append(insights, detectRESTHotspot(snap)...)
@@ -166,21 +167,85 @@ func detectConflictStorm(snap MetricsSnapshot) []Insight {
 	}}
 }
 
+func detectHighContentionRate(snap MetricsSnapshot) []Insight {
+	conflicts := snap.ErrorBreakdown["conflict"]
+	staleState := snap.ErrorBreakdown["stale_state"]
+	contentionTotal := conflicts + staleState
+
+	if contentionTotal == 0 {
+		return nil
+	}
+
+	// Total attempts = successful moves + all non-success outcomes.
+	var totalNonSuccess int64
+	for _, count := range snap.ErrorBreakdown {
+		totalNonSuccess += count
+	}
+
+	totalAttempts := snap.TotalMoves + totalNonSuccess
+	if totalAttempts == 0 {
+		return nil
+	}
+
+	rate := float64(contentionTotal) / float64(totalAttempts)
+
+	if rate > 0.25 {
+		return []Insight{{
+			Category: "bottleneck",
+			Severity: "critical",
+			Title:    "High contention rate",
+			Detail: fmt.Sprintf(
+				"%.0f%% of move attempts are contention (conflicts=%d, stale_state=%d, total_attempts=%d)",
+				rate*100,
+				conflicts,
+				staleState,
+				totalAttempts,
+			),
+		}}
+	}
+
+	if rate > 0.10 {
+		return []Insight{{
+			Category: "bottleneck",
+			Severity: "warning",
+			Title:    "High contention rate",
+			Detail: fmt.Sprintf(
+				"%.0f%% of move attempts are contention (conflicts=%d, stale_state=%d, total_attempts=%d)",
+				rate*100,
+				conflicts,
+				staleState,
+				totalAttempts,
+			),
+		}}
+	}
+
+	return nil
+}
+
 func detectErrorDominance(snap MetricsSnapshot) []Insight {
-	if snap.TotalErrors == 0 || len(snap.ErrorBreakdown) == 0 {
+	if len(snap.ErrorBreakdown) == 0 {
+		return nil
+	}
+
+	var total int64
+	for _, count := range snap.ErrorBreakdown {
+		total += count
+	}
+
+	if total == 0 {
 		return nil
 	}
 
 	for cat, count := range snap.ErrorBreakdown {
-		ratio := float64(count) / float64(snap.TotalErrors)
+		ratio := float64(count) / float64(total)
 		if ratio > 0.70 {
 			return []Insight{{
 				Category: "anomaly",
 				Severity: "warning",
 				Title:    "Error dominance",
 				Detail: fmt.Sprintf(
-					"%q accounts for %.0f%% of errors (%d/%d)",
-					cat, ratio*100, count, snap.TotalErrors,
+					"%q accounts for %.0f%% of non-success outcomes (%d/%d)",
+					cat, ratio*100, count, total,
 				),
 			}}
 		}

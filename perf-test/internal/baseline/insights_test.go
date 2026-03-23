@@ -126,6 +126,7 @@ func TestAnalyze_ErrorDominance(t *testing.T) {
 	found := findInsight(insights, "Error dominance")
 	require.NotNil(t, found)
 	assert.Contains(t, found.Detail, "timeout")
+	assert.Contains(t, found.Detail, "non-success outcomes")
 }
 
 func TestAnalyze_NoErrorDominance(t *testing.T) {
@@ -237,6 +238,66 @@ func TestPrintInsights_NonEmpty(t *testing.T) {
 	baseline.PrintInsights(&buf, insights)
 	assert.Contains(t, buf.String(), "1 detected")
 	assert.Contains(t, buf.String(), "Fatal games")
+}
+
+func TestAnalyze_ErrorDominance_WithContention(t *testing.T) {
+	t.Parallel()
+
+	// Contention categories are included in the denominator.
+	snap := baseline.MetricsSnapshot{
+		TotalErrors:    2,
+		ErrorBreakdown: map[string]int64{"conflict": 80, "execution": 2},
+	}
+
+	insights := baseline.Analyze(snap)
+	found := findInsight(insights, "Error dominance")
+	require.NotNil(t, found)
+	assert.Contains(t, found.Detail, "conflict")
+}
+
+func TestAnalyze_HighContentionRate_Warning(t *testing.T) {
+	t.Parallel()
+
+	// 15% contention rate (above 10% warning threshold).
+	snap := baseline.MetricsSnapshot{
+		TotalMoves:     850,
+		ErrorBreakdown: map[string]int64{"conflict": 100, "stale_state": 50},
+	}
+
+	insights := baseline.Analyze(snap)
+	found := findInsight(insights, "High contention rate")
+	require.NotNil(t, found)
+	assert.Equal(t, "warning", found.Severity)
+	assert.Contains(t, found.Detail, "conflicts=100")
+	assert.Contains(t, found.Detail, "stale_state=50")
+}
+
+func TestAnalyze_HighContentionRate_Critical(t *testing.T) {
+	t.Parallel()
+
+	// 30% contention rate (above 25% critical threshold).
+	snap := baseline.MetricsSnapshot{
+		TotalMoves:     700,
+		ErrorBreakdown: map[string]int64{"conflict": 250, "stale_state": 50},
+	}
+
+	insights := baseline.Analyze(snap)
+	found := findInsight(insights, "High contention rate")
+	require.NotNil(t, found)
+	assert.Equal(t, "critical", found.Severity)
+}
+
+func TestAnalyze_LowContentionRate_NoInsight(t *testing.T) {
+	t.Parallel()
+
+	// 5% contention rate (below 10% warning threshold).
+	snap := baseline.MetricsSnapshot{
+		TotalMoves:     950,
+		ErrorBreakdown: map[string]int64{"conflict": 40, "stale_state": 10},
+	}
+
+	insights := baseline.Analyze(snap)
+	assert.Nil(t, findInsight(insights, "High contention rate"))
 }
 
 func findInsight(insights []baseline.Insight, title string) *baseline.Insight {

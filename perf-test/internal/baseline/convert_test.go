@@ -100,6 +100,38 @@ func TestSnapshotToMetrics_Conversion(t *testing.T) {
 	assert.InDelta(t, 60.0, m.DurationSec, 0.0001)
 }
 
+func TestSnapshotToMetrics_MoveFailureRate(t *testing.T) {
+	t.Parallel()
+
+	snap := &metrics.Snapshot{
+		TotalMoves: 900,
+		ErrorBreakdown: map[string]int64{
+			"strategy":    5,
+			"execution":   3,
+			"conflict":    80,
+			"stale_state": 12,
+		},
+	}
+
+	m := baseline.SnapshotToMetrics(snap, 60.0)
+
+	// totalNonSuccess = 5+3+80+12 = 100, totalAttempts = 900+100 = 1000
+	assert.InDelta(t, 0.10, m.MoveFailureRate, 0.0001)
+}
+
+func TestSnapshotToMetrics_MoveFailureRate_ZeroBreakdown(t *testing.T) {
+	t.Parallel()
+
+	snap := &metrics.Snapshot{
+		TotalMoves:     1000,
+		ErrorBreakdown: map[string]int64{},
+	}
+
+	m := baseline.SnapshotToMetrics(snap, 60.0)
+
+	assert.Equal(t, 0.0, m.MoveFailureRate)
+}
+
 func TestSnapshotToMetrics_ZeroMoves(t *testing.T) {
 	t.Parallel()
 

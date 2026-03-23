@@ -29,7 +29,10 @@ func TestNewCollector(t *testing.T) {
 	}
 
 	// Pre-initialized error categories should exist.
-	for _, cat := range []string{ErrorTypeStrategy, ErrorTypeExecution, ErrorTypeTransient, ErrorTypeTimeout} {
+	for _, cat := range []string{
+		ErrorTypeStrategy, ErrorTypeExecution, ErrorTypeTransient, ErrorTypeTimeout,
+		ErrorTypeStaleState, ErrorTypeConflict,
+	} {
 		if _, ok := snap.ErrorBreakdown[cat]; !ok {
 			t.Errorf("missing error category %q", cat)
 		}
@@ -248,5 +251,40 @@ func TestBucketSizing(t *testing.T) {
 
 	if len(c2.moveBuckets) != 121 {
 		t.Errorf("expected 121 buckets for 10m, got %d", len(c2.moveBuckets))
+	}
+}
+
+func TestRecordErrorType_StaleState(t *testing.T) {
+	c := NewCollector(1 * time.Minute)
+
+	c.RecordErrorType(ErrorTypeStaleState)
+	c.RecordErrorType(ErrorTypeStaleState)
+	c.RecordErrorType(ErrorTypeStaleState)
+
+	snap := c.Snapshot()
+
+	if snap.ErrorBreakdown[ErrorTypeStaleState] != 3 {
+		t.Errorf("expected 3 stale_state errors, got %d", snap.ErrorBreakdown[ErrorTypeStaleState])
+	}
+}
+
+func TestRecordConflict_AppearsInBreakdown(t *testing.T) {
+	c := NewCollector(1 * time.Minute)
+
+	c.RecordConflict()
+	c.RecordConflict()
+
+	snap := c.Snapshot()
+
+	// Should appear in both TotalConflicts and ErrorBreakdown.
+	if snap.TotalConflicts != 2 {
+		t.Errorf("expected 2 total conflicts, got %d", snap.TotalConflicts)
+	}
+
+	if snap.ErrorBreakdown[ErrorTypeConflict] != 2 {
+		t.Errorf(
+			"expected 2 conflict errors in breakdown, got %d",
+			snap.ErrorBreakdown[ErrorTypeConflict],
+		)
 	}
 }

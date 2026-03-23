@@ -57,7 +57,7 @@ func TestPrintReport_ContainsNewSections(t *testing.T) {
 		"Phase Latency (ms):",
 		"Phase Flow:",
 		"avg-moves/entry",
-		"[strategy=1 execution=1 transient=0 timeout=0]",
+		"[execution=1 strategy=1]",
 		"HTTP Status:",
 		"204=80",
 		"409=1",

@@ -37,7 +37,8 @@ type MetricsSnapshot struct {
 	ThroughputPeakMPS float64 `json:"throughput_peak_moves_per_sec"`
 
 	// Error rate.
-	HTTPErrorRate float64 `json:"http_error_rate"`
+	HTTPErrorRate   float64 `json:"http_error_rate"`
+	MoveFailureRate float64 `json:"move_failure_rate,omitempty"`
 
 	// Counters.
 	TotalMoves     int64 `json:"total_moves"`
@@ -105,7 +106,14 @@ func DefaultSLOs() SLOSet {
 			},
 			{Name: "HTTP error rate", Metric: "http_error_rate", Threshold: 0.01, Unit: "ratio"},
 		},
-		BoundaryHealth: []SLO{},
+		BoundaryHealth: []SLO{
+			{
+				Name:      "Move failure rate",
+				Metric:    "move_failure_rate",
+				Threshold: 0.15,
+				Unit:      "ratio",
+			},
+		},
 	}
 }
 
@@ -136,5 +144,6 @@ func metricValues(snap MetricsSnapshot) map[string]float64 {
 		"ws_delivery_p95_s": snap.WSDelivery.P95,
 		"ws_delivery_p99_s": snap.WSDelivery.P99,
 		"http_error_rate":   snap.HTTPErrorRate,
+		"move_failure_rate": snap.MoveFailureRate,
 	}
 }

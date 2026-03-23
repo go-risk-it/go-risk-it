@@ -70,6 +70,7 @@ func TestCompare_IncludesAllMetrics(t *testing.T) {
 	assert.Contains(t, names, "E2E p99")
 	assert.Contains(t, names, "WS Delivery p95")
 	assert.Contains(t, names, "HTTP Error Rate")
+	assert.Contains(t, names, "Move Failure Rate")
 	assert.Contains(t, names, "Throughput (avg)")
 	assert.Contains(t, names, "Throughput (peak)")
 	assert.Contains(t, names, "Conflicts")
