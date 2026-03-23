@@ -90,6 +90,11 @@ func main() {
 		"",
 		"Path to previous baseline file for delta comparison",
 	)
+	baselineName := flag.String(
+		"baseline-name",
+		"",
+		"Named baseline for perf-journal (saves to perf-journal/baselines/ with sequence number)",
+	)
 
 	flag.Parse()
 
@@ -319,6 +324,7 @@ func main() {
 	handleBaseline(
 		*saveBaseline,
 		*compareFile,
+		*baselineName,
 		*preset,
 		cfg.NumPlayers,
 		cfg.NumGames,
@@ -359,6 +365,7 @@ func estimateRampDuration(cfg *orchestrator.RampConfig) time.Duration {
 func handleBaseline(
 	saveBaselineFlag bool,
 	compareFile string,
+	baselineName string,
 	presetName string,
 	numPlayers int,
 	numGames int,
@@ -380,7 +387,19 @@ func handleBaseline(
 	)
 
 	if saveBaselineFlag {
-		path, err := baseline.Save("baselines", currentBaseline)
+		var path string
+		var err error
+
+		if baselineName != "" {
+			path, err = baseline.SaveNumbered(
+				"perf-journal/baselines",
+				baselineName,
+				currentBaseline,
+			)
+		} else {
+			path, err = baseline.Save("baselines", currentBaseline)
+		}
+
 		if err != nil {
 			log.Printf("failed to save baseline: %v", err)
 		} else {

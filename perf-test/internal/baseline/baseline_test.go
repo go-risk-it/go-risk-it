@@ -1,6 +1,7 @@
 package baseline_test
 
 import (
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -46,4 +47,47 @@ func TestBaseline_Load_NonExistentFile(t *testing.T) {
 
 	_, err := baseline.Load("/nonexistent/path.json")
 	require.Error(t, err)
+}
+
+func TestSaveNumbered_SequentialNaming(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+
+	b := baseline.Baseline{
+		CommitSHA: "abc1234",
+		Timestamp: time.Now().Truncate(time.Second),
+		TestParams: baseline.TestParams{
+			Preset: "light",
+			Games:  1,
+			Mode:   "batch",
+		},
+	}
+
+	// First save should be 000.
+	path1, err := baseline.SaveNumbered(dir, "origin", b)
+	require.NoError(t, err)
+	assert.Equal(t, "000-origin-abc1234.json", filepath.Base(path1))
+
+	// Second save should be 001.
+	path2, err := baseline.SaveNumbered(dir, "tuning", b)
+	require.NoError(t, err)
+	assert.Equal(t, "001-tuning-abc1234.json", filepath.Base(path2))
+
+	// Verify roundtrip.
+	loaded, err := baseline.Load(path1)
+	require.NoError(t, err)
+	assert.Equal(t, "abc1234", loaded.CommitSHA)
+}
+
+func TestSaveNumbered_SlugSanitization(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+
+	b := baseline.Baseline{CommitSHA: "def5678"}
+
+	path, err := baseline.SaveNumbered(dir, "My Cool Test!!", b)
+	require.NoError(t, err)
+	assert.Equal(t, "000-my-cool-test-def5678.json", filepath.Base(path))
 }
