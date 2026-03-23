@@ -14,6 +14,7 @@ type Baseline struct {
 	Timestamp      time.Time       `json:"timestamp"`
 	TestParams     TestParams      `json:"test_params"`
 	Metrics        MetricsSnapshot `json:"metrics"`
+	Environment    Environment     `json:"environment"`
 	BreakingPoints []BreakingPoint `json:"breaking_points,omitempty"`
 }
 

@@ -423,6 +423,7 @@ func buildCurrentBaseline(
 			Games:   numGames,
 			Mode:    mode,
 		},
-		Metrics: baseline.SnapshotToMetrics(snap, totalDuration.Seconds()),
+		Metrics:     baseline.SnapshotToMetrics(snap, totalDuration.Seconds()),
+		Environment: baseline.CaptureEnvironment(),
 	}
 }

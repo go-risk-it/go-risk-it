@@ -92,6 +92,8 @@ func Compare(before, after MetricsSnapshot) []Delta {
 func PrintComparison(writer io.Writer, before, after Baseline) {
 	fmt.Fprintf(writer, "Baseline comparison: %s → %s\n\n", before.CommitSHA, after.CommitSHA)
 
+	printEnvironmentWarnings(writer, before.Environment, after.Environment)
+
 	tabWriter := tabwriter.NewWriter(writer, 0, 0, 2, ' ', 0)
 
 	fmt.Fprintln(tabWriter, "METRIC\tBEFORE\tAFTER\tCHANGE\tSTATUS")
@@ -125,4 +127,51 @@ func PrintComparison(writer io.Writer, before, after Baseline) {
 	}
 
 	tabWriter.Flush()
+}
+
+// printEnvironmentWarnings prints a warning block if key environment fields differ.
+func printEnvironmentWarnings(writer io.Writer, before, after Environment) {
+	type envDiff struct {
+		field     string
+		beforeVal string
+		afterVal  string
+	}
+
+	var diffs []envDiff
+
+	if before.GOOS != after.GOOS && before.GOOS != "" {
+		diffs = append(diffs, envDiff{"GOOS", before.GOOS, after.GOOS})
+	}
+
+	if before.GOARCH != after.GOARCH && before.GOARCH != "" {
+		diffs = append(diffs, envDiff{"GOARCH", before.GOARCH, after.GOARCH})
+	}
+
+	if before.NumCPU != after.NumCPU && before.NumCPU != 0 {
+		diffs = append(diffs, envDiff{
+			"NumCPU",
+			fmt.Sprintf("%d", before.NumCPU),
+			fmt.Sprintf("%d", after.NumCPU),
+		})
+	}
+
+	if before.GOMAXPROCS != after.GOMAXPROCS && before.GOMAXPROCS != 0 {
+		diffs = append(diffs, envDiff{
+			"GOMAXPROCS",
+			fmt.Sprintf("%d", before.GOMAXPROCS),
+			fmt.Sprintf("%d", after.GOMAXPROCS),
+		})
+	}
+
+	if len(diffs) == 0 {
+		return
+	}
+
+	fmt.Fprintln(writer, "WARNING: Environment differences detected:")
+
+	for _, d := range diffs {
+		fmt.Fprintf(writer, "  %s: %s → %s\n", d.field, d.beforeVal, d.afterVal)
+	}
+
+	fmt.Fprintln(writer)
 }
