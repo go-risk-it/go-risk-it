@@ -1,11 +1,13 @@
 package rest
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
+	"github.com/go-risk-it/go-risk-it/internal/web/middleware"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 )
@@ -37,26 +39,28 @@ func (h *AdvancementHandlerImpl) RequiresAuth() bool {
 }
 
 func (h *AdvancementHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
+	middleware.HandleErrors(h.handle).ServeHTTP(writer, req)
+}
+
+func (h *AdvancementHandlerImpl) handle(
+	writer http.ResponseWriter,
+	req *http.Request,
+) error {
 	gameContext, ok := req.Context().(ctx.GameContext)
 	if !ok {
-		http.Error(writer, "invalid move context", http.StatusInternalServerError)
-
-		return
+		return errors.New("invalid move context")
 	}
 
 	advancementRequest, err := restutils.DecodeRequest[request.Advancement](writer, req)
 	if err != nil {
-		return
+		return err
 	}
 
-	err = h.advancementController.Advance(gameContext, advancementRequest)
-	if err != nil {
-		if logErr := restutils.WriteError(writer, err); logErr != nil {
-			gameContext.Log().Errorw("request failed", "error", logErr)
-		}
-
-		return
+	if err = h.advancementController.Advance(gameContext, advancementRequest); err != nil {
+		return err
 	}
 
 	restutils.WriteResponse(writer, []byte{}, http.StatusNoContent)
+
+	return nil
 }

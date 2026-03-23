@@ -4,7 +4,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
 	ctx2 "github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
@@ -39,7 +38,7 @@ func TestServiceImpl_CreatePlayers_WithValidData(t *testing.T) {
 			noop.Span{}),
 		"5a4fde41-4a68-4625-b42b-a9f5f938b394",
 	), gameID)
-	users := []request.Player{
+	users := []player.Player{
 		{UserID: "5a4fde41-4a68-4625-b42b-a9f5f938b394", Name: "francesco"},
 		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "gabriele"},
 		{UserID: "fc497971-de4d-49c2-842a-4af62ec9e858", Name: "giovanni"},
@@ -124,7 +123,7 @@ func TestServiceImpl_CreatePlayers_InsertPlayersError(t *testing.T) {
 			noop.Span{}),
 		"5a4fde41-4a68-4625-b42b-a9f5f938b394",
 	), gameID)
-	users := []request.Player{
+	users := []player.Player{
 		{UserID: "5a4fde41-4a68-4625-b42b-a9f5f938b394", Name: "francesco"},
 		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "gabriele"},
 		{UserID: "fc497971-de4d-49c2-842a-4af62ec9e858", Name: "giovanni"},
@@ -182,7 +181,7 @@ func TestServiceImpl_CreatePlayers_GetPlayersByGameError(t *testing.T) {
 			noop.Span{}),
 		"5a4fde41-4a68-4625-b42b-a9f5f938b394",
 	), gameID)
-	users := []request.Player{
+	users := []player.Player{
 		{UserID: "5a4fde41-4a68-4625-b42b-a9f5f938b394", Name: "francesco"},
 		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "gabriele"},
 		{UserID: "fc497971-de4d-49c2-842a-4af62ec9e858", Name: "giovanni"},

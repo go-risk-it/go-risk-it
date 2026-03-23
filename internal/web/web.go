@@ -2,7 +2,9 @@ package web
 
 import (
 	"github.com/go-risk-it/go-risk-it/internal/web/game"
+	gamecontroller "github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby"
+	lobbycontroller "github.com/go-risk-it/go-risk-it/internal/web/lobby/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/middleware"
 	"github.com/go-risk-it/go-risk-it/internal/web/mux"
 	"github.com/go-risk-it/go-risk-it/internal/web/nbio"
@@ -21,4 +23,10 @@ var Module = fx.Options(
 	otel.Module,
 	rest.Module,
 	ws.Module,
+	fx.Provide(
+		fx.Annotate(
+			func(gc gamecontroller.GameController) lobbycontroller.GameCreator { return gc },
+			fx.As(new(lobbycontroller.GameCreator)),
+		),
+	),
 )

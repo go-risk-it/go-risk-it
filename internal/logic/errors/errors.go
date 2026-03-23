@@ -2,6 +2,37 @@ package domainerrors
 
 import "fmt"
 
+// ErrorCategory classifies domain errors for HTTP status mapping and metrics.
+type ErrorCategory int
+
+const (
+	CategoryValidation ErrorCategory = iota // 400
+	CategoryForbidden                       // 403
+	CategoryNotFound                        // 404
+	CategoryConflict                        // 409
+)
+
+func (c ErrorCategory) String() string {
+	switch c {
+	case CategoryValidation:
+		return "VALIDATION_ERROR"
+	case CategoryForbidden:
+		return "FORBIDDEN"
+	case CategoryNotFound:
+		return "NOT_FOUND"
+	case CategoryConflict:
+		return "CONFLICT"
+	default:
+		return "UNKNOWN"
+	}
+}
+
+// Categorizable is implemented by all domain error types.
+type Categorizable interface {
+	error
+	Category() ErrorCategory
+}
+
 // ValidationError indicates the client sent invalid input (HTTP 400).
 type ValidationError struct {
 	Msg   string
@@ -16,7 +47,8 @@ func (e *ValidationError) Error() string {
 	return e.Msg
 }
 
-func (e *ValidationError) Unwrap() error { return e.Cause }
+func (e *ValidationError) Unwrap() error           { return e.Cause }
+func (e *ValidationError) Category() ErrorCategory { return CategoryValidation }
 
 func NewValidationError(msg string) *ValidationError {
 	return &ValidationError{Msg: msg}
@@ -48,7 +80,8 @@ func (e *ConflictError) Error() string {
 	return e.Msg
 }
 
-func (e *ConflictError) Unwrap() error { return e.Cause }
+func (e *ConflictError) Unwrap() error           { return e.Cause }
+func (e *ConflictError) Category() ErrorCategory { return CategoryConflict }
 
 func NewConflictError(msg string) *ConflictError {
 	return &ConflictError{Msg: msg}
@@ -80,7 +113,8 @@ func (e *ForbiddenError) Error() string {
 	return e.Msg
 }
 
-func (e *ForbiddenError) Unwrap() error { return e.Cause }
+func (e *ForbiddenError) Unwrap() error           { return e.Cause }
+func (e *ForbiddenError) Category() ErrorCategory { return CategoryForbidden }
 
 func NewForbiddenError(msg string) *ForbiddenError {
 	return &ForbiddenError{Msg: msg}
@@ -92,4 +126,33 @@ func WrapForbiddenError(cause error, msg string) *ForbiddenError {
 
 func WrapForbiddenErrorf(cause error, format string, args ...any) *ForbiddenError {
 	return &ForbiddenError{Msg: fmt.Sprintf(format, args...), Cause: cause}
+}
+
+// NotFoundError indicates the requested resource does not exist (HTTP 404).
+type NotFoundError struct {
+	Msg   string
+	Cause error
+}
+
+func (e *NotFoundError) Error() string {
+	if e.Cause != nil {
+		return e.Msg + ": " + e.Cause.Error()
+	}
+
+	return e.Msg
+}
+
+func (e *NotFoundError) Unwrap() error           { return e.Cause }
+func (e *NotFoundError) Category() ErrorCategory { return CategoryNotFound }
+
+func NewNotFoundError(msg string) *NotFoundError {
+	return &NotFoundError{Msg: msg}
+}
+
+func NewNotFoundErrorf(format string, args ...any) *NotFoundError {
+	return &NotFoundError{Msg: fmt.Sprintf(format, args...)}
+}
+
+func WrapNotFoundError(cause error, msg string) *NotFoundError {
+	return &NotFoundError{Msg: msg, Cause: cause}
 }

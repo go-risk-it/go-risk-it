@@ -14,9 +14,10 @@ import (
 
 // ErrorResponse is the standard JSON error envelope for API responses.
 type ErrorResponse struct {
-	Error  string `json:"error"`
-	Code   string `json:"code,omitempty"`
-	Detail string `json:"detail,omitempty"`
+	Error   string `json:"error"`
+	Code    string `json:"code,omitempty"`
+	Detail  string `json:"detail,omitempty"`
+	TraceID string `json:"traceId,omitempty"`
 }
 
 func WriteResponse(writer http.ResponseWriter, body []byte, status int) {
@@ -33,8 +34,13 @@ func WriteResponse(writer http.ResponseWriter, body []byte, status int) {
 // For 5xx errors, a generic message is sent to the client and the original error is returned
 // so the caller can log it with request context.
 func WriteError(writer http.ResponseWriter, err error) error {
+	return WriteErrorWithTrace(writer, err, "")
+}
+
+// WriteErrorWithTrace is like WriteError but includes a trace ID in the response envelope.
+func WriteErrorWithTrace(writer http.ResponseWriter, err error, traceID string) error {
 	status, code, clientMsg := mapErrorToResponse(err)
-	writeJSONError(writer, status, code, clientMsg)
+	writeJSONErrorWithTrace(writer, status, code, clientMsg, traceID)
 
 	if status >= http.StatusInternalServerError {
 		return err
@@ -43,10 +49,17 @@ func WriteError(writer http.ResponseWriter, err error) error {
 	return nil
 }
 
-func writeJSONError(writer http.ResponseWriter, status int, code string, msg string) {
+func writeJSONErrorWithTrace(
+	writer http.ResponseWriter,
+	status int,
+	code string,
+	msg string,
+	traceID string,
+) {
 	resp := ErrorResponse{
-		Error: msg,
-		Code:  code,
+		Error:   msg,
+		Code:    code,
+		TraceID: traceID,
 	}
 
 	body, marshalErr := json.Marshal(resp)
@@ -60,32 +73,24 @@ func writeJSONError(writer http.ResponseWriter, status int, code string, msg str
 	WriteResponse(writer, body, status)
 }
 
+var categoryToHTTP = map[domainerrors.ErrorCategory]int{
+	domainerrors.CategoryValidation: http.StatusBadRequest,
+	domainerrors.CategoryForbidden:  http.StatusForbidden,
+	domainerrors.CategoryNotFound:   http.StatusNotFound,
+	domainerrors.CategoryConflict:   http.StatusConflict,
+}
+
 func mapErrorToResponse(err error) (int, string, string) {
-	var validationErr *domainerrors.ValidationError
-	if errors.As(err, &validationErr) {
-		return http.StatusBadRequest, "VALIDATION_ERROR", err.Error()
-	}
-
-	var conflictErr *domainerrors.ConflictError
-	if errors.As(err, &conflictErr) {
-		return http.StatusConflict, "CONFLICT", err.Error()
-	}
-
-	var forbiddenErr *domainerrors.ForbiddenError
-	if errors.As(err, &forbiddenErr) {
-		return http.StatusForbidden, "FORBIDDEN", err.Error()
+	var categorizable domainerrors.Categorizable
+	if errors.As(err, &categorizable) {
+		cat := categorizable.Category()
+		status, ok := categoryToHTTP[cat]
+		if ok {
+			return status, cat.String(), err.Error()
+		}
 	}
 
 	return http.StatusInternalServerError, "INTERNAL_ERROR", "an internal error occurred"
-}
-
-type malformedRequestError struct {
-	status int
-	msg    string
-}
-
-func (mr *malformedRequestError) Error() string {
-	return mr.msg
 }
 
 // Validatable is an opt-in interface for request types that need boundary validation.
@@ -93,31 +98,19 @@ type Validatable interface {
 	Validate() error
 }
 
+// DecodeRequest decodes the JSON request body into T and runs Validate() if T implements
+// Validatable. It returns domain errors (ValidationError for malformed/invalid requests)
+// that the error middleware translates into HTTP responses.
 func DecodeRequest[T any](writer http.ResponseWriter, req *http.Request) (T, error) {
 	var result T
 
-	err := decodeJSONBody(writer, req, &result)
-	if err != nil {
-		var mr *malformedRequestError
-		if errors.As(err, &mr) {
-			writeJSONError(writer, mr.status, "MALFORMED_REQUEST", mr.msg)
-		} else {
-			writeJSONError(
-				writer,
-				http.StatusInternalServerError,
-				"INTERNAL_ERROR",
-				http.StatusText(http.StatusInternalServerError),
-			)
-		}
-
+	if err := decodeJSONBody(writer, req, &result); err != nil {
 		return result, err
 	}
 
 	if v, ok := any(result).(Validatable); ok {
 		if err := v.Validate(); err != nil {
-			writeJSONError(writer, http.StatusBadRequest, "VALIDATION_ERROR", err.Error())
-
-			return result, err
+			return result, domainerrors.NewValidationError(err.Error())
 		}
 	}
 
@@ -129,9 +122,7 @@ func decodeJSONBody[T any](writer http.ResponseWriter, req *http.Request, dst T)
 	if ct != "" {
 		mediaType := strings.ToLower(strings.TrimSpace(strings.Split(ct, ";")[0]))
 		if mediaType != "application/json" {
-			msg := "Content-MissionType header is not application/json"
-
-			return &malformedRequestError{status: http.StatusUnsupportedMediaType, msg: msg}
+			return domainerrors.NewValidationError("Content-Type header is not application/json")
 		}
 	}
 
@@ -158,42 +149,33 @@ func decode[T any](dec *json.Decoder, dst T) error {
 
 		switch {
 		case errors.As(err, &syntaxError):
-			msg := fmt.Sprintf(
+			return domainerrors.NewValidationError(fmt.Sprintf(
 				"Request body contains badly-formed JSON (at position %d)",
 				syntaxError.Offset,
-			)
-
-			return &malformedRequestError{status: http.StatusBadRequest, msg: msg}
+			))
 
 		case errors.Is(err, io.ErrUnexpectedEOF):
-			msg := "Request body contains badly-formed JSON"
-
-			return &malformedRequestError{status: http.StatusBadRequest, msg: msg}
+			return domainerrors.NewValidationError("Request body contains badly-formed JSON")
 
 		case errors.As(err, &unmarshalTypeError):
-			msg := fmt.Sprintf(
+			return domainerrors.NewValidationError(fmt.Sprintf(
 				"Request body contains an invalid value for the %q field (at position %d)",
 				unmarshalTypeError.Field,
 				unmarshalTypeError.Offset,
-			)
-
-			return &malformedRequestError{status: http.StatusBadRequest, msg: msg}
+			))
 
 		case strings.HasPrefix(err.Error(), "json: unknown field "):
 			fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
-			msg := "Request body contains unknown field " + fieldName
 
-			return &malformedRequestError{status: http.StatusBadRequest, msg: msg}
+			return domainerrors.NewValidationError(
+				"Request body contains unknown field " + fieldName,
+			)
 
 		case errors.Is(err, io.EOF):
-			msg := "Request body must not be empty"
-
-			return &malformedRequestError{status: http.StatusBadRequest, msg: msg}
+			return domainerrors.NewValidationError("Request body must not be empty")
 
 		case err.Error() == "http: request body too large":
-			msg := "Request body must not be larger than 1MB"
-
-			return &malformedRequestError{status: http.StatusRequestEntityTooLarge, msg: msg}
+			return domainerrors.NewValidationError("Request body must not be larger than 1MB")
 
 		default:
 			return fmt.Errorf("unexpected error: %w", err)
@@ -202,9 +184,9 @@ func decode[T any](dec *json.Decoder, dst T) error {
 
 	err = dec.Decode(&struct{}{})
 	if !errors.Is(err, io.EOF) {
-		msg := "Request body must only contain a single JSON object"
-
-		return &malformedRequestError{status: http.StatusBadRequest, msg: msg}
+		return domainerrors.NewValidationError(
+			"Request body must only contain a single JSON object",
+		)
 	}
 
 	return nil

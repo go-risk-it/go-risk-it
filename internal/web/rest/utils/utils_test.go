@@ -1,6 +1,7 @@
 package restutils_test
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -70,4 +71,70 @@ func TestWriteError_InternalError_Returns500WithGenericMessageAndOriginalError(t
 	assert.NotContains(t, recorder.Body.String(), "db.internal")
 	assert.Contains(t, recorder.Body.String(), "an internal error occurred")
 	assert.Contains(t, recorder.Body.String(), "INTERNAL_ERROR")
+}
+
+func TestWriteError_NotFoundError_Returns404AndNil(t *testing.T) {
+	t.Parallel()
+
+	recorder := httptest.NewRecorder()
+	err := domainerrors.NewNotFoundError("game not found")
+
+	logErr := restutils.WriteError(recorder, err)
+
+	require.NoError(t, logErr)
+	assert.Equal(t, http.StatusNotFound, recorder.Code)
+	assert.Contains(t, recorder.Body.String(), "game not found")
+	assert.Contains(t, recorder.Body.String(), "NOT_FOUND")
+}
+
+func TestWriteErrorWithTrace_IncludesTraceID(t *testing.T) {
+	t.Parallel()
+
+	recorder := httptest.NewRecorder()
+	err := domainerrors.NewValidationError("bad input")
+
+	logErr := restutils.WriteErrorWithTrace(recorder, err, "abc123def456")
+
+	require.NoError(t, logErr)
+	assert.Equal(t, http.StatusBadRequest, recorder.Code)
+
+	var resp restutils.ErrorResponse
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &resp))
+	assert.Equal(t, "abc123def456", resp.TraceID)
+	assert.Equal(t, "bad input", resp.Error)
+	assert.Equal(t, "VALIDATION_ERROR", resp.Code)
+}
+
+func TestWriteErrorWithTrace_EmptyTraceID_OmitsField(t *testing.T) {
+	t.Parallel()
+
+	recorder := httptest.NewRecorder()
+	err := domainerrors.NewConflictError("wrong phase")
+
+	logErr := restutils.WriteErrorWithTrace(recorder, err, "")
+
+	require.NoError(t, logErr)
+
+	var resp map[string]any
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &resp))
+	_, hasTraceID := resp["traceId"]
+	assert.False(t, hasTraceID, "traceId should be omitted when empty")
+}
+
+func TestWriteErrorWithTrace_InternalError_NoMessageLeak(t *testing.T) {
+	t.Parallel()
+
+	recorder := httptest.NewRecorder()
+	err := errors.New("secret DB password: p4ssw0rd")
+
+	logErr := restutils.WriteErrorWithTrace(recorder, err, "trace-123")
+
+	require.Error(t, logErr)
+	assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+
+	var resp restutils.ErrorResponse
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &resp))
+	assert.Equal(t, "trace-123", resp.TraceID)
+	assert.Equal(t, "an internal error occurred", resp.Error)
+	assert.NotContains(t, recorder.Body.String(), "p4ssw0rd")
 }

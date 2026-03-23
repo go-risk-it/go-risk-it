@@ -4,16 +4,16 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/creation"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/timing"
 	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/game/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/card"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/mission"
-	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
+	playermock "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
@@ -42,7 +42,7 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 
 	gameID := int64(1)
 	phaseID := int64(1)
-	users := []request.Player{
+	users := []player.Player{
 		{UserID: "fc497971-de4d-49c2-842a-4af62ec9e858", Name: "Giovanni"},
 		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "Gabriele"},
 	}
@@ -89,7 +89,7 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 		DeployableTroops: int64(3),
 	}).Return(sqlc.GameDeployPhase{ID: 1}, nil)
 
-	playerServiceMock := player.NewService(t)
+	playerServiceMock := playermock.NewService(t)
 	playerServiceMock.
 		EXPECT().
 		CreatePlayersQ(gameContext, mockQuerier, gameID, users).
@@ -137,7 +137,7 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 	// Initialize dependencies
 	cardService := card.NewService(t)
 	missionService := mission.NewService(t)
-	playerService := player.NewService(t)
+	playerService := playermock.NewService(t)
 	regionService := region.NewService(t)
 	querier := db.NewQuerier(t)
 
@@ -157,7 +157,7 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 		ctx.WithSpan(ctx.WithLog(t.Context(), zap.NewExample().Sugar()), tracenoop.Span{}),
 		"dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
 	)
-	users := []request.Player{
+	users := []player.Player{
 		{UserID: "fc497971-de4d-49c2-842a-4af62ec9e858", Name: "user1"},
 		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "user2"},
 	}
@@ -187,7 +187,7 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 	querier := db.NewQuerier(t)
 	cardService := card.NewService(t)
 	missionService := mission.NewService(t)
-	playerService := player.NewService(t)
+	playerService := playermock.NewService(t)
 	regionService := region.NewService(t)
 
 	// Initialize the state under test
@@ -206,7 +206,7 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 		ctx.WithSpan(ctx.WithLog(t.Context(), zap.NewExample().Sugar()), tracenoop.Span{}),
 		"dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
 	)
-	users := []request.Player{
+	users := []player.Player{
 		{UserID: "fc497971-de4d-49c2-842a-4af62ec9e858", Name: "user1"},
 		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "user2"},
 	}

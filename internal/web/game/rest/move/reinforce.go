@@ -33,5 +33,5 @@ func (h *ReinforceHandlerImpl) RequiresAuth() bool {
 }
 
 func (h *ReinforceHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	serveMove[request.ReinforceMove](writer, req, h.moveController.PerformReinforceMove)
+	handleMove[request.ReinforceMove](writer, req, h.moveController.PerformReinforceMove)
 }

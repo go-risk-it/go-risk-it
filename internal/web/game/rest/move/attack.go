@@ -33,5 +33,5 @@ func (h *AttackHandlerImpl) RequiresAuth() bool {
 }
 
 func (h *AttackHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	serveMove[request.AttackMove](writer, req, h.moveController.PerformAttackMove)
+	handleMove[request.AttackMove](writer, req, h.moveController.PerformAttackMove)
 }

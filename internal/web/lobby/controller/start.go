@@ -8,27 +8,30 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/lobby/start"
-	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 )
+
+type GameCreator interface {
+	CreateGame(ctx ctx.UserContext, request request.CreateGame) (int64, error)
+}
 
 type StartController interface {
 	StartGame(ctx ctx.LobbyContext) error
 }
 
 type StartControllerImpl struct {
-	gameController controller.GameController
-	startService   start.Service
+	gameCreator  GameCreator
+	startService start.Service
 }
 
 var _ StartController = (*StartControllerImpl)(nil)
 
 func NewStartController(
-	gameController controller.GameController,
+	gameCreator GameCreator,
 	startService start.Service,
 ) *StartControllerImpl {
 	return &StartControllerImpl{
-		gameController: gameController,
-		startService:   startService,
+		gameCreator:  gameCreator,
+		startService: startService,
 	}
 }
 
@@ -47,7 +50,7 @@ func (c *StartControllerImpl) StartGame(ctx ctx.LobbyContext) error {
 		return fmt.Errorf("failed to get lobby players: %w", err)
 	}
 
-	gameID, err := c.gameController.CreateGame(ctx, buildCreateGameRequest(lobbyPlayers))
+	gameID, err := c.gameCreator.CreateGame(ctx, buildCreateGameRequest(lobbyPlayers))
 	if err != nil {
 		return fmt.Errorf("failed to create game: %w", err)
 	}

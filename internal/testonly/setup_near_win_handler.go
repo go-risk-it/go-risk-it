@@ -45,12 +45,14 @@ func (h *SetupNearWinHandlerImpl) RequiresAuth() bool {
 func (h *SetupNearWinHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	body, err := restutils.DecodeRequest[SetupNearWinRequest](writer, req)
 	if err != nil {
+		_ = restutils.WriteError(writer, err)
+
 		return
 	}
 
 	err = h.testOnlyController.SetupNearWin(ctx.WithLog(req.Context(), h.log), body.GameID)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		_ = restutils.WriteError(writer, err)
 
 		return
 	}

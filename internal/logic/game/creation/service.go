@@ -3,7 +3,6 @@ package creation
 import (
 	"fmt"
 
-	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	dbutil "github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
@@ -21,13 +20,13 @@ type Service interface {
 	CreateGameWithTx(
 		ctx ctx.UserContext,
 		regions []string,
-		players []request.Player,
+		players []player.Player,
 	) (int64, error)
 	CreateGameQ(
 		ctx ctx.UserContext,
 		querier db.Querier,
 		regions []string,
-		players []request.Player,
+		players []player.Player,
 	) (int64, error)
 }
 
@@ -66,7 +65,7 @@ func NewService(
 func (s *ServiceImpl) CreateGameWithTx(
 	ctx ctx.UserContext,
 	regions []string,
-	players []request.Player,
+	players []player.Player,
 ) (int64, error) {
 	gameID, err := dbutil.InTransaction(
 		s.querier,
@@ -91,7 +90,7 @@ func (s *ServiceImpl) CreateGameQ(
 	cont ctx.UserContext,
 	querier db.Querier,
 	regions []string,
-	players []request.Player,
+	players []player.Player,
 ) (int64, error) {
 	cont.Log().Infow("creating game", "regions", len(regions), "players", len(players))
 

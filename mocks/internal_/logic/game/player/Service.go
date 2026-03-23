@@ -8,7 +8,7 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
-	request "github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
+	player "github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 
 	sqlc "github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 )
@@ -27,7 +27,7 @@ func (_m *Service) EXPECT() *Service_Expecter {
 }
 
 // CreatePlayersQ provides a mock function with given fields: _a0, querier, gameID, players
-func (_m *Service) CreatePlayersQ(_a0 ctx.GameContext, querier db.Querier, gameID int64, players []request.Player) ([]sqlc.GamePlayer, error) {
+func (_m *Service) CreatePlayersQ(_a0 ctx.GameContext, querier db.Querier, gameID int64, players []player.Player) ([]sqlc.GamePlayer, error) {
 	ret := _m.Called(_a0, querier, gameID, players)
 
 	if len(ret) == 0 {
@@ -36,10 +36,10 @@ func (_m *Service) CreatePlayersQ(_a0 ctx.GameContext, querier db.Querier, gameI
 
 	var r0 []sqlc.GamePlayer
 	var r1 error
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, int64, []request.Player) ([]sqlc.GamePlayer, error)); ok {
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, int64, []player.Player) ([]sqlc.GamePlayer, error)); ok {
 		return rf(_a0, querier, gameID, players)
 	}
-	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, int64, []request.Player) []sqlc.GamePlayer); ok {
+	if rf, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, int64, []player.Player) []sqlc.GamePlayer); ok {
 		r0 = rf(_a0, querier, gameID, players)
 	} else {
 		if ret.Get(0) != nil {
@@ -47,7 +47,7 @@ func (_m *Service) CreatePlayersQ(_a0 ctx.GameContext, querier db.Querier, gameI
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(ctx.GameContext, db.Querier, int64, []request.Player) error); ok {
+	if rf, ok := ret.Get(1).(func(ctx.GameContext, db.Querier, int64, []player.Player) error); ok {
 		r1 = rf(_a0, querier, gameID, players)
 	} else {
 		r1 = ret.Error(1)
@@ -65,14 +65,14 @@ type Service_CreatePlayersQ_Call struct {
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
 //   - gameID int64
-//   - players []request.Player
+//   - players []player.Player
 func (_e *Service_Expecter) CreatePlayersQ(_a0 interface{}, querier interface{}, gameID interface{}, players interface{}) *Service_CreatePlayersQ_Call {
 	return &Service_CreatePlayersQ_Call{Call: _e.mock.On("CreatePlayersQ", _a0, querier, gameID, players)}
 }
 
-func (_c *Service_CreatePlayersQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, gameID int64, players []request.Player)) *Service_CreatePlayersQ_Call {
+func (_c *Service_CreatePlayersQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, gameID int64, players []player.Player)) *Service_CreatePlayersQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(int64), args[3].([]request.Player))
+		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(int64), args[3].([]player.Player))
 	})
 	return _c
 }
@@ -82,7 +82,7 @@ func (_c *Service_CreatePlayersQ_Call) Return(_a0 []sqlc.GamePlayer, _a1 error) 
 	return _c
 }
 
-func (_c *Service_CreatePlayersQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, int64, []request.Player) ([]sqlc.GamePlayer, error)) *Service_CreatePlayersQ_Call {
+func (_c *Service_CreatePlayersQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, int64, []player.Player) ([]sqlc.GamePlayer, error)) *Service_CreatePlayersQ_Call {
 	_c.Call.Return(run)
 	return _c
 }

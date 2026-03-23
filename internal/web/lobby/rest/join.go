@@ -1,11 +1,13 @@
 package rest
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/lobby/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby/controller"
+	"github.com/go-risk-it/go-risk-it/internal/web/middleware"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 )
@@ -37,25 +39,25 @@ func (h *JoinHandlerImpl) RequiresAuth() bool {
 }
 
 func (h *JoinHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
+	middleware.HandleErrors(h.handle).ServeHTTP(writer, req)
+}
+
+func (h *JoinHandlerImpl) handle(writer http.ResponseWriter, req *http.Request) error {
 	joinLobbyRequest, err := restutils.DecodeRequest[request.JoinLobby](writer, req)
 	if err != nil {
-		return
+		return err
 	}
 
 	lobbyContext, ok := req.Context().(ctx.LobbyContext)
 	if !ok {
-		http.Error(writer, "an internal error occurred", http.StatusInternalServerError)
-
-		return
+		return errors.New("invalid lobby context")
 	}
 
 	if err := h.managementController.JoinLobby(lobbyContext, joinLobbyRequest); err != nil {
-		if logErr := restutils.WriteError(writer, err); logErr != nil {
-			lobbyContext.Log().Errorw("request failed", "error", logErr)
-		}
-
-		return
+		return err
 	}
 
 	writer.WriteHeader(http.StatusOK)
+
+	return nil
 }

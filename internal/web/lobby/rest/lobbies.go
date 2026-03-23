@@ -2,10 +2,13 @@ package rest
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby/controller"
+	"github.com/go-risk-it/go-risk-it/internal/web/middleware"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 )
@@ -37,29 +40,26 @@ func (h *LobbiesHandlerImpl) RequiresAuth() bool {
 }
 
 func (h *LobbiesHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
+	middleware.HandleErrors(h.handle).ServeHTTP(writer, req)
+}
+
+func (h *LobbiesHandlerImpl) handle(writer http.ResponseWriter, req *http.Request) error {
 	userContext, ok := req.Context().(ctx.UserContext)
 	if !ok {
-		http.Error(writer, "an internal error occurred", http.StatusInternalServerError)
-
-		return
+		return errors.New("invalid user context")
 	}
 
 	lobbies, err := h.managementController.GetUserLobbies(userContext)
 	if err != nil {
-		if logErr := restutils.WriteError(writer, err); logErr != nil {
-			userContext.Log().Errorw("request failed", "error", logErr)
-		}
-
-		return
+		return err
 	}
 
 	lobbiesResponse, err := json.Marshal(lobbies)
 	if err != nil {
-		http.Error(writer, "an internal error occurred", http.StatusInternalServerError)
-		userContext.Log().Errorw("failed to marshal response", "error", err)
-
-		return
+		return fmt.Errorf("failed to marshal response: %w", err)
 	}
 
 	restutils.WriteResponse(writer, lobbiesResponse, http.StatusOK)
+
+	return nil
 }

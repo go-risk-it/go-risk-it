@@ -2,12 +2,15 @@ package rest
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/lobby/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/api/lobby/rest/response"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby/controller"
+	"github.com/go-risk-it/go-risk-it/internal/web/middleware"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 )
@@ -39,34 +42,31 @@ func (h *CreationHandlerImpl) RequiresAuth() bool {
 }
 
 func (h *CreationHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
+	middleware.HandleErrors(h.handle).ServeHTTP(writer, req)
+}
+
+func (h *CreationHandlerImpl) handle(writer http.ResponseWriter, req *http.Request) error {
 	createLobbyRequest, err := restutils.DecodeRequest[request.CreateLobby](writer, req)
 	if err != nil {
-		return
+		return err
 	}
 
 	userContext, ok := req.Context().(ctx.UserContext)
 	if !ok {
-		http.Error(writer, "an internal error occurred", http.StatusInternalServerError)
-
-		return
+		return errors.New("invalid user context")
 	}
 
 	lobbyID, err := h.creationController.CreateLobby(userContext, createLobbyRequest)
 	if err != nil {
-		if logErr := restutils.WriteError(writer, err); logErr != nil {
-			userContext.Log().Errorw("request failed", "error", logErr)
-		}
-
-		return
+		return err
 	}
 
-	response, err := json.Marshal(response.CreateLobby{LobbyID: lobbyID})
+	resp, err := json.Marshal(response.CreateLobby{LobbyID: lobbyID})
 	if err != nil {
-		http.Error(writer, "an internal error occurred", http.StatusInternalServerError)
-		userContext.Log().Errorw("failed to marshal response", "error", err)
-
-		return
+		return fmt.Errorf("failed to marshal response: %w", err)
 	}
 
-	restutils.WriteResponse(writer, response, http.StatusCreated)
+	restutils.WriteResponse(writer, resp, http.StatusCreated)
+
+	return nil
 }

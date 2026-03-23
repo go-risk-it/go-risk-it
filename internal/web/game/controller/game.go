@@ -8,6 +8,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/creation"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 )
 
@@ -37,14 +38,22 @@ func NewGameController(
 }
 
 func (c *GameControllerImpl) CreateGame(
-	ctx ctx.UserContext, request request.CreateGame,
+	ctx ctx.UserContext, req request.CreateGame,
 ) (int64, error) {
 	regions, err := c.boardService.GetBoardRegions(ctx)
 	if err != nil {
 		return -1, fmt.Errorf("failed to get board regions: %w", err)
 	}
 
-	gameID, err := c.creationService.CreateGameWithTx(ctx, regions, request.Players)
+	players := make([]player.Player, len(req.Players))
+	for i, p := range req.Players {
+		players[i] = player.Player{
+			UserID: p.UserID,
+			Name:   p.Name,
+		}
+	}
+
+	gameID, err := c.creationService.CreateGameWithTx(ctx, regions, players)
 	if err != nil {
 		return -1, fmt.Errorf("failed to create game: %w", err)
 	}

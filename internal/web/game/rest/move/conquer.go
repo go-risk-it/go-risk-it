@@ -33,5 +33,5 @@ func (h *ConquerHandlerImpl) RequiresAuth() bool {
 }
 
 func (h *ConquerHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	serveMove[request.ConquerMove](writer, req, h.moveController.PerformConquerMove)
+	handleMove[request.ConquerMove](writer, req, h.moveController.PerformConquerMove)
 }

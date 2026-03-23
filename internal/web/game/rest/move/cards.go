@@ -33,5 +33,5 @@ func (h *CardsHandlerImpl) RequiresAuth() bool {
 }
 
 func (h *CardsHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	serveMove[request.CardsMove](writer, req, h.moveController.PerformCardsMove)
+	handleMove[request.CardsMove](writer, req, h.moveController.PerformCardsMove)
 }

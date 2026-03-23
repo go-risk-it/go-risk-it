@@ -3,7 +3,6 @@ package player
 import (
 	"fmt"
 
-	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
@@ -15,7 +14,7 @@ type Service interface {
 		ctx ctx.GameContext,
 		querier db.Querier,
 		gameID int64,
-		players []request.Player,
+		players []Player,
 	) (
 		[]sqlc.GamePlayer,
 		error,
@@ -144,7 +143,7 @@ func (s *ServiceImpl) CreatePlayersQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	gameID int64,
-	players []request.Player,
+	players []Player,
 ) ([]sqlc.GamePlayer, error) {
 	ctx.Log().Infow("creating players", "players", players)
 
