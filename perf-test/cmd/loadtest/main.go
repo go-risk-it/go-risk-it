@@ -323,6 +323,8 @@ func main() {
 		cfg.NumPlayers,
 		cfg.NumGames,
 		*mode,
+		snap,
+		totalDuration,
 	)
 
 	// Exit with error if any game had a fatal error.
@@ -361,12 +363,21 @@ func handleBaseline(
 	numPlayers int,
 	numGames int,
 	mode string,
+	snap *metrics.Snapshot,
+	totalDuration time.Duration,
 ) {
 	if !saveBaselineFlag && compareFile == "" {
 		return
 	}
 
-	currentBaseline := buildCurrentBaseline(presetName, numPlayers, numGames, mode)
+	currentBaseline := buildCurrentBaseline(
+		presetName,
+		numPlayers,
+		numGames,
+		mode,
+		snap,
+		totalDuration,
+	)
 
 	if saveBaselineFlag {
 		path, err := baseline.Save("baselines", currentBaseline)
@@ -393,6 +404,8 @@ func buildCurrentBaseline(
 	numPlayers int,
 	numGames int,
 	mode string,
+	snap *metrics.Snapshot,
+	totalDuration time.Duration,
 ) baseline.Baseline {
 	commitSHA := "unknown"
 
@@ -410,11 +423,6 @@ func buildCurrentBaseline(
 			Games:   numGames,
 			Mode:    mode,
 		},
-		// Note: MetricsSnapshot would ideally be populated from the collector,
-		// but that requires adding a snapshot-to-baseline conversion.
-		// For now, the baseline captures test params and commit SHA.
-		// Full metrics population will be added when the collector exposes
-		// the required percentile values programmatically.
-		Metrics: baseline.MetricsSnapshot{},
+		Metrics: baseline.SnapshotToMetrics(snap, totalDuration.Seconds()),
 	}
 }
