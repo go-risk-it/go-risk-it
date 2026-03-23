@@ -7,18 +7,23 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"os/signal"
+	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/annotations"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/baseline"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/chaos"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/journal"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/mapgraph"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/orchestrator"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/player"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/player/heuristic"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/player/smart"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/resources"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/scenario"
 )
 
@@ -96,6 +101,26 @@ func main() {
 		"Named baseline for perf-journal (saves to perf-journal/baselines/ with sequence number)",
 	)
 
+	// Staircase flags.
+	saveJournal := flag.Bool("save-journal", false, "Save staircase journal entry")
+	journalName := flag.String("journal-name", "", "Name for journal entry file")
+	holdDuration := flag.Duration(
+		"hold-duration",
+		60*time.Second,
+		"Hold duration per staircase step",
+	)
+	stepsFlag := flag.String(
+		"steps",
+		"",
+		"Comma-separated staircase step counts (e.g., 5,10,20,40)",
+	)
+	stopOnBreach := flag.Bool("stop-on-breach", true, "Stop staircase on first SLO breach")
+	compareJournal := flag.String(
+		"compare-journal",
+		"",
+		"Path to previous journal entry for comparison",
+	)
+
 	flag.Parse()
 
 	if *anonKey == "" {
@@ -141,6 +166,9 @@ func main() {
 		ReconnectDelay: *chaosReconnectDelay,
 	}
 
+	// Staircase config (may be overridden by preset).
+	var staircaseCfg *orchestrator.StaircaseConfig
+
 	// Override with preset if specified.
 	if *preset != "" {
 		s, err := scenario.Get(*preset)
@@ -148,7 +176,16 @@ func main() {
 			log.Fatalf("preset: %v", err)
 		}
 
-		if s.RampConfig != nil {
+		if s.StaircaseConfig != nil {
+			// Staircase preset — force staircase mode.
+			*mode = "staircase"
+			staircaseCfg = s.StaircaseConfig
+
+			log.Printf(
+				"using staircase preset %q: steps=%v, hold=%v",
+				*preset, staircaseCfg.Steps, staircaseCfg.HoldDuration,
+			)
+		} else if s.RampConfig != nil {
 			// Ramp preset — force ramp mode.
 			*mode = "ramp"
 			rampCfg = s.RampConfig
@@ -189,15 +226,20 @@ func main() {
 		// Estimate total runtime for ramp mode.
 		estimated := estimateRampDuration(rampCfg)
 		maxDuration = estimated + rampCfg.GameTimeout
+	} else if *mode == "staircase" && staircaseCfg != nil {
+		maxDuration = staircaseCfg.HoldDuration
 	}
 
 	collector := metrics.NewCollector(maxDuration)
 
 	// Initialize OTel exporter if endpoint is provided.
+	var otelExporter *metrics.OTelExporter
+
 	if *otelEndpoint != "" {
 		ctx := context.Background()
 
-		otelExporter, err := metrics.NewOTelExporter(ctx, *otelEndpoint)
+		var err error
+		otelExporter, err = metrics.NewOTelExporter(ctx, *otelEndpoint)
 		if err != nil {
 			log.Fatalf("otel exporter: %v", err)
 		}
@@ -212,7 +254,7 @@ func main() {
 		}()
 
 		collector.SetOTelExporter(otelExporter)
-		log.Printf("OTel metrics export enabled → %s", *otelEndpoint)
+		log.Printf("OTel metrics export enabled -> %s", *otelEndpoint)
 	}
 
 	var strategy player.Strategy
@@ -280,8 +322,29 @@ func main() {
 			injector,
 		)
 		results = orchestrator.RunContinuousRamp(*rampCfg, runner, collector, annotator)
+	case "staircase":
+		runStaircase(
+			staircaseCfg,
+			*stepsFlag,
+			*holdDuration,
+			*stopOnBreach,
+			*url,
+			wsURL,
+			*anonKey,
+			strategy,
+			*thinkTime,
+			injector,
+			otelExporter,
+			annotator,
+			*saveJournal,
+			*journalName,
+			*preset,
+			*compareJournal,
+		)
+
+		return
 	default:
-		log.Fatalf("unknown mode: %q (valid: batch, ramp)", *mode)
+		log.Fatalf("unknown mode: %q (valid: batch, ramp, staircase)", *mode)
 	}
 
 	totalDuration := time.Since(start)
@@ -456,4 +519,204 @@ func buildCurrentBaseline(
 		Environment: baseline.CaptureEnvironment(),
 		Insights:    insights,
 	}
+}
+
+//nolint:funlen,cyclop
+func runStaircase(
+	staircaseCfg *orchestrator.StaircaseConfig,
+	stepsFlag string,
+	holdDuration time.Duration,
+	stopOnBreach bool,
+	baseURL, wsURL, anonKey string,
+	strategy player.Strategy,
+	thinkTime time.Duration,
+	injector *chaos.Injector,
+	otelExporter *metrics.OTelExporter,
+	annotator *annotations.Annotator,
+	saveJournal bool,
+	journalName string,
+	presetName string,
+	compareJournalFile string,
+) {
+	// Build staircase config from flags if not set by preset.
+	if staircaseCfg == nil {
+		steps := parseSteps(stepsFlag)
+		if len(steps) == 0 {
+			log.Fatal("staircase mode requires --preset or --steps flag")
+		}
+
+		staircaseCfg = &orchestrator.StaircaseConfig{
+			Steps:        steps,
+			HoldDuration: holdDuration,
+			NumPlayers:   4,
+			GameTimeout:  10 * time.Minute,
+			StopOnBreach: stopOnBreach,
+			StaggerDelay: 100 * time.Millisecond,
+			SLOs:         baseline.DefaultSLOs(),
+		}
+	}
+
+	// Set up context with signal handling (owned at the staircase level).
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-sigCh
+		log.Println("[staircase] shutdown signal received, stopping...")
+		cancel()
+	}()
+
+	// Build dependencies.
+	deps := orchestrator.StaircaseDeps{
+		RunnerFactory: func(c *metrics.Collector) orchestrator.RunFunc {
+			r := orchestrator.NewGameRunner(
+				baseURL, wsURL, anonKey, strategy,
+				staircaseCfg.GameTimeout, c, thinkTime,
+				orchestrator.DefaultTimeouts(), injector,
+			)
+
+			return r.Run
+		},
+		NewCollector:     metrics.NewCollector,
+		CollectResources: func() resources.ServerResources { return resources.CollectServerResources(resources.DefaultStatsFunc) },
+		Annotator:        annotator,
+		OTelExporter:     otelExporter,
+	}
+
+	// Run staircase.
+	start := time.Now()
+	stepOutputs := orchestrator.RunStaircase(ctx, *staircaseCfg, deps)
+	totalDuration := time.Since(start)
+
+	// Convert StepOutputs to journal StepResults.
+	slos := staircaseCfg.SLOs
+	stepResults := make([]journal.StepResult, len(stepOutputs))
+	levelResults := make([]baseline.LevelResult, len(stepOutputs))
+
+	for i, so := range stepOutputs {
+		metricsSnap := baseline.SnapshotToMetrics(so.Snapshot, so.Duration.Seconds())
+		evalResult := slos.Evaluate(metricsSnap)
+
+		stepResults[i] = journal.StepResult{
+			TargetGames:     so.TargetGames,
+			Metrics:         metricsSnap,
+			SLOEval:         evalResult,
+			ServerResources: so.ServerResources,
+			DurationSec:     so.Duration.Seconds(),
+		}
+
+		levelResults[i] = baseline.LevelResult{
+			Games:   so.TargetGames,
+			Metrics: metricsSnap,
+		}
+	}
+
+	// Compute SLO ceiling and breaking points.
+	ceiling := journal.FindSLOCeiling(stepResults)
+	breakingPoints := baseline.FindBreakingPoints(levelResults, slos)
+
+	// Get insights from the ceiling step (or last step).
+	var insights []baseline.Insight
+	if len(stepResults) > 0 {
+		lastIdx := len(stepResults) - 1
+		if ceiling.Games > 0 {
+			for i, sr := range stepResults {
+				if sr.TargetGames == ceiling.Games {
+					lastIdx = i
+
+					break
+				}
+			}
+		}
+
+		insights = baseline.Analyze(stepResults[lastIdx].Metrics)
+	}
+
+	// Build commit SHA.
+	commitSHA := "unknown"
+
+	out, err := exec.Command("git", "rev-parse", "--short", "HEAD").Output()
+	if err == nil {
+		commitSHA = strings.TrimSpace(string(out))
+	}
+
+	// Build journal entry.
+	entry := journal.Entry{
+		CommitSHA: commitSHA,
+		Timestamp: time.Now(),
+		Config: journal.StaircaseParams{
+			Steps:           staircaseCfg.Steps,
+			HoldDurationSec: staircaseCfg.HoldDuration.Seconds(),
+			NumPlayers:      staircaseCfg.NumPlayers,
+			GameTimeoutSec:  staircaseCfg.GameTimeout.Seconds(),
+			StopOnBreach:    staircaseCfg.StopOnBreach,
+		},
+		SLOCeiling:     ceiling,
+		Steps:          stepResults,
+		BreakingPoints: breakingPoints,
+		Environment:    baseline.CaptureEnvironment(),
+		Insights:       insights,
+	}
+
+	// Print report.
+	journal.PrintStaircaseReport(os.Stdout, entry)
+
+	if len(insights) > 0 {
+		baseline.PrintInsights(os.Stdout, insights)
+	}
+
+	log.Printf("[staircase] complete in %v: ceiling=%d games", totalDuration, ceiling.Games)
+
+	// Save journal entry.
+	if saveJournal {
+		slug := journalName
+		if slug == "" {
+			slug = presetName
+		}
+
+		if slug == "" {
+			slug = "staircase"
+		}
+
+		path, err := journal.SaveEntry("perf-journal/entries", slug, entry)
+		if err != nil {
+			log.Printf("failed to save journal entry: %v", err)
+		} else {
+			log.Printf("journal entry saved: %s", path)
+		}
+	}
+
+	// Comparison.
+	if compareJournalFile != "" {
+		prevEntry, err := journal.LoadEntry(compareJournalFile)
+		if err != nil {
+			log.Fatalf("failed to load journal entry: %v", err)
+		}
+
+		journal.PrintCeilingComparison(os.Stdout, prevEntry, entry)
+	}
+}
+
+// parseSteps parses a comma-separated list of step counts.
+func parseSteps(s string) []int {
+	if s == "" {
+		return nil
+	}
+
+	parts := strings.Split(s, ",")
+	steps := make([]int, 0, len(parts))
+
+	for _, p := range parts {
+		n, err := strconv.Atoi(strings.TrimSpace(p))
+		if err != nil {
+			log.Fatalf("invalid step count %q: %v", p, err)
+		}
+
+		steps = append(steps, n)
+	}
+
+	return steps
 }

@@ -5,6 +5,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/baseline"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/chaos"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/orchestrator"
 )
@@ -15,6 +16,8 @@ type Scenario struct {
 	ChaosConfig chaos.Config
 	// Ramp mode config (nil = batch mode).
 	RampConfig *orchestrator.RampConfig
+	// Staircase mode config (nil = not staircase mode).
+	StaircaseConfig *orchestrator.StaircaseConfig
 }
 
 var presets = map[string]Scenario{
@@ -124,6 +127,39 @@ var presets = map[string]Scenario{
 			ErrorThreshold: 0.05,
 			GameTimeout:    20 * time.Minute,
 			NumPlayers:     4,
+		},
+	},
+	"staircase-light": {
+		StaircaseConfig: &orchestrator.StaircaseConfig{
+			Steps:        []int{2, 5, 10, 20},
+			HoldDuration: 30 * time.Second,
+			NumPlayers:   4,
+			GameTimeout:  10 * time.Minute,
+			StopOnBreach: true,
+			StaggerDelay: 100 * time.Millisecond,
+			SLOs:         baseline.DefaultSLOs(),
+		},
+	},
+	"staircase": {
+		StaircaseConfig: &orchestrator.StaircaseConfig{
+			Steps:        []int{5, 10, 20, 40, 60, 80},
+			HoldDuration: 60 * time.Second,
+			NumPlayers:   4,
+			GameTimeout:  10 * time.Minute,
+			StopOnBreach: true,
+			StaggerDelay: 100 * time.Millisecond,
+			SLOs:         baseline.DefaultSLOs(),
+		},
+	},
+	"staircase-heavy": {
+		StaircaseConfig: &orchestrator.StaircaseConfig{
+			Steps:        []int{10, 20, 40, 60, 80, 100, 120},
+			HoldDuration: 120 * time.Second,
+			NumPlayers:   4,
+			GameTimeout:  15 * time.Minute,
+			StopOnBreach: true,
+			StaggerDelay: 100 * time.Millisecond,
+			SLOs:         baseline.DefaultSLOs(),
 		},
 	},
 }
