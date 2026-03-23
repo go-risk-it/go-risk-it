@@ -7,9 +7,11 @@ import (
 	"strconv"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 	gameWs "github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 	lobbyWs "github.com/go-risk-it/go-risk-it/internal/web/lobby/ws"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
+	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws"
 	"go.uber.org/zap"
 )
@@ -57,24 +59,29 @@ func (h *WebSocketUpgraderHandlerImpl) ServeHTTP(
 
 	userContext, ok := request.Context().(ctx.UserContext)
 	if !ok {
-		http.Error(writer, "unable to extract user context", http.StatusInternalServerError)
+		_ = restutils.WriteError(
+			writer,
+			errors.New("unable to extract user context"),
+		)
 
 		return
 	}
 
 	gameID, lobbyID, err := extractConnectionParams(request)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
+		_ = restutils.WriteError(
+			writer,
+			domainerrors.WrapValidationError(err, "invalid connection parameters"),
+		)
 
 		return
 	}
 
 	conn, err := h.upgrader.Upgrade(writer, request, nil)
 	if err != nil {
-		http.Error(
+		_ = restutils.WriteError(
 			writer,
-			"unable to upgrade websocket connection",
-			http.StatusInternalServerError,
+			fmt.Errorf("unable to upgrade websocket connection: %w", err),
 		)
 
 		return

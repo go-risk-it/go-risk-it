@@ -8,7 +8,9 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
+	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -37,7 +39,7 @@ func (m *AuthMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			traceContext, ok := request.Context().(ctx.TraceContext)
 			if !ok {
-				http.Error(writer, "invalid trace context", http.StatusInternalServerError)
+				_ = restutils.WriteError(writer, errors.New("invalid trace context"))
 
 				return
 			}
@@ -46,7 +48,10 @@ func (m *AuthMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 
 			subject, err := m.verifyJWT(request)
 			if err != nil {
-				http.Error(writer, err.Error(), http.StatusUnauthorized)
+				_ = restutils.WriteError(
+					writer,
+					domainerrors.WrapUnauthorizedError(err, "authentication failed"),
+				)
 
 				return
 			}

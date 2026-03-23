@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -8,6 +9,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
+	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	otelmetric "go.opentelemetry.io/otel/metric"
@@ -62,7 +64,10 @@ func (m *OTelMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 
 			logContext, ok := request.Context().(ctx.LogContext)
 			if !ok {
-				http.Error(writer, "invalid log context", http.StatusInternalServerError)
+				_ = restutils.WriteError(
+					writer,
+					errors.New("invalid log context"),
+				)
 
 				return
 			}

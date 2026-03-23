@@ -7,7 +7,9 @@ import (
 	"strconv"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
+	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 	"go.uber.org/zap"
 )
 
@@ -20,9 +22,9 @@ func buildDomainContext[T ctx.UserContext](
 	return func(writer http.ResponseWriter, request *http.Request) {
 		log.Debugf("applying %s middleware", domain)
 
-		result, err := buildContext[T](writer, request, contextFunc)
+		result, err := buildContext[T](request, contextFunc)
 		if err != nil {
-			http.Error(writer, "cannot build domain context", http.StatusInternalServerError)
+			_ = restutils.WriteError(writer, err)
 
 			return
 		}
@@ -35,7 +37,6 @@ func buildDomainContext[T ctx.UserContext](
 }
 
 func buildContext[T ctx.UserContext](
-	writer http.ResponseWriter,
 	request *http.Request,
 	contextFunc func(ctx ctx.UserContext, ID int64) T,
 ) (T, error) {
@@ -43,9 +44,7 @@ func buildContext[T ctx.UserContext](
 
 	extractedID, err := extractID(request)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
-
-		return result, err
+		return result, domainerrors.WrapValidationError(err, "invalid path parameter")
 	}
 
 	userContext, ok := request.Context().(ctx.UserContext)

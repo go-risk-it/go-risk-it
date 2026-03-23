@@ -74,10 +74,11 @@ func writeJSONErrorWithTrace(
 }
 
 var categoryToHTTP = map[domainerrors.ErrorCategory]int{
-	domainerrors.CategoryValidation: http.StatusBadRequest,
-	domainerrors.CategoryForbidden:  http.StatusForbidden,
-	domainerrors.CategoryNotFound:   http.StatusNotFound,
-	domainerrors.CategoryConflict:   http.StatusConflict,
+	domainerrors.CategoryValidation:   http.StatusBadRequest,
+	domainerrors.CategoryUnauthorized: http.StatusUnauthorized,
+	domainerrors.CategoryForbidden:    http.StatusForbidden,
+	domainerrors.CategoryNotFound:     http.StatusNotFound,
+	domainerrors.CategoryConflict:     http.StatusConflict,
 }
 
 func mapErrorToResponse(err error) (int, string, string) {

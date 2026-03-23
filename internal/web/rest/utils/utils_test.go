@@ -87,6 +87,20 @@ func TestWriteError_NotFoundError_Returns404AndNil(t *testing.T) {
 	assert.Contains(t, recorder.Body.String(), "NOT_FOUND")
 }
 
+func TestWriteError_UnauthorizedError_Returns401AndNil(t *testing.T) {
+	t.Parallel()
+
+	recorder := httptest.NewRecorder()
+	err := domainerrors.NewUnauthorizedError("invalid token")
+
+	logErr := restutils.WriteError(recorder, err)
+
+	require.NoError(t, logErr)
+	assert.Equal(t, http.StatusUnauthorized, recorder.Code)
+	assert.Contains(t, recorder.Body.String(), "invalid token")
+	assert.Contains(t, recorder.Body.String(), "UNAUTHORIZED")
+}
+
 func TestWriteErrorWithTrace_IncludesTraceID(t *testing.T) {
 	t.Parallel()
 

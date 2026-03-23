@@ -115,6 +115,28 @@ func TestHandleErrors_ForbiddenError_Returns403(t *testing.T) {
 	assert.Equal(t, "FORBIDDEN", resp.Code)
 }
 
+func TestHandleErrors_UnauthorizedError_Returns401(t *testing.T) {
+	t.Parallel()
+
+	ctx := newTestSpan(t)
+
+	handler := middleware.HandleErrors(func(_ http.ResponseWriter, _ *http.Request) error {
+		return domainerrors.NewUnauthorizedError("invalid token")
+	})
+
+	recorder := httptest.NewRecorder()
+	req := httptest.NewRequestWithContext(ctx, http.MethodPost, "/test", nil)
+
+	handler.ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusUnauthorized, recorder.Code)
+
+	var resp restutils.ErrorResponse
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &resp))
+	assert.Equal(t, "invalid token", resp.Error)
+	assert.Equal(t, "UNAUTHORIZED", resp.Code)
+}
+
 func TestHandleErrors_NotFoundError_Returns404(t *testing.T) {
 	t.Parallel()
 

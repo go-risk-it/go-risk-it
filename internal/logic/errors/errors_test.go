@@ -196,6 +196,37 @@ func TestNotFoundError_ErrorsAs(t *testing.T) {
 	assert.Equal(t, "game 42", notFoundErr.Error())
 }
 
+// --- UnauthorizedError tests ---
+
+func TestUnauthorizedError_Error_WithoutCause(t *testing.T) {
+	t.Parallel()
+
+	err := domainerrors.NewUnauthorizedError("invalid token")
+	assert.Equal(t, "invalid token", err.Error())
+}
+
+func TestUnauthorizedError_Error_WithCause(t *testing.T) {
+	t.Parallel()
+
+	err := domainerrors.WrapUnauthorizedError(errSentinel, "authentication failed")
+	assert.Equal(t, "authentication failed: underlying cause", err.Error())
+}
+
+func TestUnauthorizedError_Unwrap_PreservesCause(t *testing.T) {
+	t.Parallel()
+
+	err := domainerrors.WrapUnauthorizedError(errSentinel, "authentication failed")
+	assert.ErrorIs(t, err, errSentinel)
+}
+
+func TestUnauthorizedError_Category(t *testing.T) {
+	t.Parallel()
+
+	err := domainerrors.NewUnauthorizedError("invalid token")
+	assert.Equal(t, domainerrors.CategoryUnauthorized, err.Category())
+	assert.Equal(t, "UNAUTHORIZED", err.Category().String())
+}
+
 // --- Categorizable interface tests ---
 
 func TestCategorizable_AllTypesImplement(t *testing.T) {
@@ -207,6 +238,11 @@ func TestCategorizable_AllTypesImplement(t *testing.T) {
 		category domainerrors.ErrorCategory
 	}{
 		{"ValidationError", domainerrors.NewValidationError("x"), domainerrors.CategoryValidation},
+		{
+			"UnauthorizedError",
+			domainerrors.NewUnauthorizedError("x"),
+			domainerrors.CategoryUnauthorized,
+		},
 		{"ConflictError", domainerrors.NewConflictError("x"), domainerrors.CategoryConflict},
 		{"ForbiddenError", domainerrors.NewForbiddenError("x"), domainerrors.CategoryForbidden},
 		{"NotFoundError", domainerrors.NewNotFoundError("x"), domainerrors.CategoryNotFound},

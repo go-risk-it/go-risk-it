@@ -6,16 +6,19 @@ import "fmt"
 type ErrorCategory int
 
 const (
-	CategoryValidation ErrorCategory = iota // 400
-	CategoryForbidden                       // 403
-	CategoryNotFound                        // 404
-	CategoryConflict                        // 409
+	CategoryValidation   ErrorCategory = iota // 400
+	CategoryUnauthorized                      // 401
+	CategoryForbidden                         // 403
+	CategoryNotFound                          // 404
+	CategoryConflict                          // 409
 )
 
 func (c ErrorCategory) String() string {
 	switch c {
 	case CategoryValidation:
 		return "VALIDATION_ERROR"
+	case CategoryUnauthorized:
+		return "UNAUTHORIZED"
 	case CategoryForbidden:
 		return "FORBIDDEN"
 	case CategoryNotFound:
@@ -155,4 +158,29 @@ func NewNotFoundErrorf(format string, args ...any) *NotFoundError {
 
 func WrapNotFoundError(cause error, msg string) *NotFoundError {
 	return &NotFoundError{Msg: msg, Cause: cause}
+}
+
+// UnauthorizedError indicates missing or invalid credentials (HTTP 401).
+type UnauthorizedError struct {
+	Msg   string
+	Cause error
+}
+
+func (e *UnauthorizedError) Error() string {
+	if e.Cause != nil {
+		return e.Msg + ": " + e.Cause.Error()
+	}
+
+	return e.Msg
+}
+
+func (e *UnauthorizedError) Unwrap() error           { return e.Cause }
+func (e *UnauthorizedError) Category() ErrorCategory { return CategoryUnauthorized }
+
+func NewUnauthorizedError(msg string) *UnauthorizedError {
+	return &UnauthorizedError{Msg: msg}
+}
+
+func WrapUnauthorizedError(cause error, msg string) *UnauthorizedError {
+	return &UnauthorizedError{Msg: msg, Cause: cause}
 }
