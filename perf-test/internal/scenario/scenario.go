@@ -88,6 +88,16 @@ var presets = map[string]Scenario{
 			ReconnectDelay: 5 * time.Second,
 		},
 	},
+	"baseline": {
+		RampConfig: &orchestrator.RampConfig{
+			GamesPerMinute: 60,
+			MaxGames:       1000,
+			ErrorThreshold: 0.10,
+			GameTimeout:    10 * time.Minute,
+			NumPlayers:     4,
+			Multiplier:     1.5,
+		},
+	},
 	"ramp-slow": {
 		RampConfig: &orchestrator.RampConfig{
 			GamesPerMinute: 5,
