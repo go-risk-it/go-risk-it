@@ -35,7 +35,16 @@ func TestGet_StaircaseHeavyPreset(t *testing.T) {
 	s, err := scenario.Get("staircase-heavy")
 	require.NoError(t, err)
 	require.NotNil(t, s.StaircaseConfig)
-	assert.Equal(t, []int{20, 40, 80, 120, 160, 200}, s.StaircaseConfig.Steps)
+	assert.Equal(t, []int{40, 80, 120, 160, 200, 250, 300}, s.StaircaseConfig.Steps)
+}
+
+func TestGet_StaircaseExtremePreset(t *testing.T) {
+	t.Parallel()
+
+	s, err := scenario.Get("staircase-extreme")
+	require.NoError(t, err)
+	require.NotNil(t, s.StaircaseConfig)
+	assert.Equal(t, []int{100, 200, 300, 400, 500}, s.StaircaseConfig.Steps)
 }
 
 func TestGet_ExistingPresetsUnchanged(t *testing.T) {
@@ -58,4 +67,5 @@ func TestList_IncludesStaircasePresets(t *testing.T) {
 	assert.Contains(t, names, "staircase")
 	assert.Contains(t, names, "staircase-light")
 	assert.Contains(t, names, "staircase-heavy")
+	assert.Contains(t, names, "staircase-extreme")
 }

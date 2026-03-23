@@ -153,7 +153,18 @@ var presets = map[string]Scenario{
 	},
 	"staircase-heavy": {
 		StaircaseConfig: &orchestrator.StaircaseConfig{
-			Steps:        []int{20, 40, 80, 120, 160, 200},
+			Steps:        []int{40, 80, 120, 160, 200, 250, 300},
+			HoldDuration: 120 * time.Second,
+			NumPlayers:   4,
+			GameTimeout:  15 * time.Minute,
+			StopOnBreach: true,
+			StaggerDelay: 100 * time.Millisecond,
+			SLOs:         baseline.DefaultSLOs(),
+		},
+	},
+	"staircase-extreme": {
+		StaircaseConfig: &orchestrator.StaircaseConfig{
+			Steps:        []int{100, 200, 300, 400, 500},
 			HoldDuration: 120 * time.Second,
 			NumPlayers:   4,
 			GameTimeout:  15 * time.Minute,
