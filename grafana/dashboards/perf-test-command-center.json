@@ -175,7 +175,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(rate(http_server_requests_total{service_name=\"risk-it\",http_status_code=~\"5..\"}[1m])) / sum(rate(http_server_requests_total{service_name=\"risk-it\"}[1m]))",
+          "expr": "(sum(rate(http_server_requests_total{service_name=\"risk-it\",http_status_code=~\"5..\"}[1m])) or vector(0)) / sum(rate(http_server_requests_total{service_name=\"risk-it\"}[1m]))",
           "legendFormat": "Error Rate",
           "datasource": { "type": "prometheus", "uid": "prometheus" }
         }
@@ -283,7 +283,7 @@
     {
       "id": 6,
       "title": "DB Pool Utilization %",
-      "type": "timeseries",
+      "type": "stat",
       "gridPos": { "h": 6, "w": 4, "x": 0, "y": 15 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
@@ -296,32 +296,31 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1,
-            "lineInterpolation": "smooth", "showPoints": "never", "spanNulls": false,
-            "thresholdsStyle": { "mode": "line" }
-          },
           "unit": "percent",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
-              { "color": "red", "value": 80 }
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
             ]
-          }
+          },
+          "color": { "mode": "thresholds" }
         },
         "overrides": []
       },
       "options": {
-        "legend": { "displayMode": "hidden" },
-        "tooltip": { "mode": "single" }
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto"
       }
     },
     {
       "id": 7,
       "title": "DB Pool Wait Rate",
-      "type": "timeseries",
+      "type": "stat",
       "gridPos": { "h": 6, "w": 4, "x": 4, "y": 15 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
@@ -334,25 +333,31 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1,
-            "lineInterpolation": "smooth", "showPoints": "never", "spanNulls": false,
-            "thresholdsStyle": { "mode": "off" }
+          "unit": "ops",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 10 },
+              { "color": "red", "value": 100 }
+            ]
           },
-          "unit": "ops"
+          "color": { "mode": "thresholds" }
         },
         "overrides": []
       },
       "options": {
-        "legend": { "displayMode": "hidden" },
-        "tooltip": { "mode": "single" }
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto"
       }
     },
     {
       "id": 8,
       "title": "WS Active Connections",
-      "type": "timeseries",
+      "type": "stat",
       "gridPos": { "h": 6, "w": 4, "x": 8, "y": 15 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
@@ -365,25 +370,31 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1,
-            "lineInterpolation": "smooth", "showPoints": "never", "spanNulls": false,
-            "thresholdsStyle": { "mode": "off" }
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5000 },
+              { "color": "red", "value": 10000 }
+            ]
           },
-          "unit": "short"
+          "color": { "mode": "thresholds" }
         },
         "overrides": []
       },
       "options": {
-        "legend": { "displayMode": "hidden" },
-        "tooltip": { "mode": "single" }
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto"
       }
     },
     {
       "id": 9,
       "title": "WS Broadcast Rate",
-      "type": "timeseries",
+      "type": "stat",
       "gridPos": { "h": 6, "w": 4, "x": 12, "y": 15 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
@@ -396,25 +407,31 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1,
-            "lineInterpolation": "smooth", "showPoints": "never", "spanNulls": false,
-            "thresholdsStyle": { "mode": "off" }
+          "unit": "ops",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 50000 },
+              { "color": "red", "value": 100000 }
+            ]
           },
-          "unit": "ops"
+          "color": { "mode": "thresholds" }
         },
         "overrides": []
       },
       "options": {
-        "legend": { "displayMode": "hidden" },
-        "tooltip": { "mode": "single" }
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto"
       }
     },
     {
       "id": 10,
       "title": "Game Moves/s",
-      "type": "timeseries",
+      "type": "stat",
       "gridPos": { "h": 6, "w": 4, "x": 16, "y": 15 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
@@ -427,25 +444,31 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1,
-            "lineInterpolation": "smooth", "showPoints": "never", "spanNulls": false,
-            "thresholdsStyle": { "mode": "off" }
+          "unit": "ops",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5000 },
+              { "color": "red", "value": 10000 }
+            ]
           },
-          "unit": "ops"
+          "color": { "mode": "thresholds" }
         },
         "overrides": []
       },
       "options": {
-        "legend": { "displayMode": "hidden" },
-        "tooltip": { "mode": "single" }
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto"
       }
     },
     {
       "id": 11,
       "title": "HTTP Req/s",
-      "type": "timeseries",
+      "type": "stat",
       "gridPos": { "h": 6, "w": 4, "x": 20, "y": 15 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
@@ -458,19 +481,25 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1,
-            "lineInterpolation": "smooth", "showPoints": "never", "spanNulls": false,
-            "thresholdsStyle": { "mode": "off" }
+          "unit": "reqps",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5000 },
+              { "color": "red", "value": 10000 }
+            ]
           },
-          "unit": "reqps"
+          "color": { "mode": "thresholds" }
         },
         "overrides": []
       },
       "options": {
-        "legend": { "displayMode": "hidden" },
-        "tooltip": { "mode": "single" }
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto"
       }
     },
     {
@@ -675,7 +704,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "perftest_games_completed_total{service_name=\"perftest\"} / (perftest_games_completed_total{service_name=\"perftest\"} + perftest_games_timed_out_total{service_name=\"perftest\"} + perftest_games_fatal_total{service_name=\"perftest\"})",
+          "expr": "sum(perftest_games_completed_total{service_name=\"perftest\"}) / (sum(perftest_games_completed_total{service_name=\"perftest\"}) + (sum(perftest_games_timed_out_total{service_name=\"perftest\"}) or vector(0)) + (sum(perftest_games_fatal_total{service_name=\"perftest\"}) or vector(0)))",
           "legendFormat": "Completion",
           "datasource": { "type": "prometheus", "uid": "prometheus" }
         }

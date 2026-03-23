@@ -296,14 +296,14 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "process_resident_memory_bytes{service_name=\"risk-it\"}",
-          "legendFormat": "resident",
+          "expr": "go_memory_used_bytes{service_name=\"risk-it\"}",
+          "legendFormat": "heap",
           "datasource": { "type": "prometheus", "uid": "prometheus" }
         },
         {
           "refId": "B",
-          "expr": "process_virtual_memory_bytes{service_name=\"risk-it\"}",
-          "legendFormat": "virtual",
+          "expr": "go_memory_gc_goal_bytes{service_name=\"risk-it\"}",
+          "legendFormat": "gc goal",
           "datasource": { "type": "prometheus", "uid": "prometheus" }
         }
       ],
