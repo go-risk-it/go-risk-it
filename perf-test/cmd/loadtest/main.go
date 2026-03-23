@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"strings"
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/annotations"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/baseline"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/chaos"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/mapgraph"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
@@ -77,6 +79,16 @@ func main() {
 		"grafana-url",
 		"",
 		"Grafana URL for annotations (e.g., http://localhost:3000). Empty disables annotations.",
+	)
+	saveBaseline := flag.Bool(
+		"save-baseline",
+		false,
+		"Save performance baseline after test completes",
+	)
+	compareFile := flag.String(
+		"compare",
+		"",
+		"Path to previous baseline file for delta comparison",
 	)
 
 	flag.Parse()
@@ -303,6 +315,16 @@ func main() {
 		log.Fatalf("unknown output format: %q", *output)
 	}
 
+	// Baseline operations.
+	handleBaseline(
+		*saveBaseline,
+		*compareFile,
+		*preset,
+		cfg.NumPlayers,
+		cfg.NumGames,
+		*mode,
+	)
+
 	// Exit with error if any game had a fatal error.
 	if fatalErrors > 0 {
 		fmt.Fprintf(os.Stderr, "\n%d game(s) had fatal errors\n", fatalErrors)
@@ -330,4 +352,69 @@ func estimateRampDuration(cfg *orchestrator.RampConfig) time.Duration {
 	}
 
 	return time.Duration(minutes) * time.Minute
+}
+
+func handleBaseline(
+	saveBaselineFlag bool,
+	compareFile string,
+	presetName string,
+	numPlayers int,
+	numGames int,
+	mode string,
+) {
+	if !saveBaselineFlag && compareFile == "" {
+		return
+	}
+
+	currentBaseline := buildCurrentBaseline(presetName, numPlayers, numGames, mode)
+
+	if saveBaselineFlag {
+		path, err := baseline.Save("baselines", currentBaseline)
+		if err != nil {
+			log.Printf("failed to save baseline: %v", err)
+		} else {
+			log.Printf("baseline saved: %s", path)
+		}
+	}
+
+	if compareFile != "" {
+		referenceBaseline, err := baseline.Load(compareFile)
+		if err != nil {
+			log.Fatalf("failed to load baseline: %v", err)
+		}
+
+		fmt.Println()
+		baseline.PrintComparison(os.Stdout, referenceBaseline, currentBaseline)
+	}
+}
+
+func buildCurrentBaseline(
+	presetName string,
+	numPlayers int,
+	numGames int,
+	mode string,
+) baseline.Baseline {
+	commitSHA := "unknown"
+
+	out, err := exec.Command("git", "rev-parse", "--short", "HEAD").Output()
+	if err == nil {
+		commitSHA = strings.TrimSpace(string(out))
+	}
+
+	return baseline.Baseline{
+		CommitSHA: commitSHA,
+		Timestamp: time.Now(),
+		TestParams: baseline.TestParams{
+			Preset:  presetName,
+			Players: numPlayers,
+			Games:   numGames,
+			Mode:    mode,
+		},
+		// Note: MetricsSnapshot would ideally be populated from the collector,
+		// but that requires adding a snapshot-to-baseline conversion.
+		// For now, the baseline captures test params and commit SHA.
+		// Full metrics population will be added when the collector exposes
+		// the required percentile values programmatically.
+		Metrics: baseline.MetricsSnapshot{},
+	}
 }
