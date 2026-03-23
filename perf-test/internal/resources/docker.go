@@ -102,18 +102,18 @@ func parseMemoryValue(s string) float64 {
 func CollectServerResources(statsFn StatsFunc) ServerResources {
 	var res ServerResources
 
-	if raw, err := statsFn("risk-it"); err != nil {
-		log.Printf("docker stats risk-it: %v", err)
+	if raw, err := statsFn("go-risk-it-risk-it-1"); err != nil {
+		log.Printf("docker stats go-risk-it-risk-it-1: %v", err)
 	} else if stats, err := ParseDockerStats(raw); err != nil {
-		log.Printf("parse docker stats risk-it: %v", err)
+		log.Printf("parse docker stats go-risk-it-risk-it-1: %v", err)
 	} else {
 		res.RiskIt = stats
 	}
 
-	if raw, err := statsFn("db"); err != nil {
-		log.Printf("docker stats db: %v", err)
+	if raw, err := statsFn("supabase-db"); err != nil {
+		log.Printf("docker stats supabase-db: %v", err)
 	} else if stats, err := ParseDockerStats(raw); err != nil {
-		log.Printf("parse docker stats db: %v", err)
+		log.Printf("parse docker stats supabase-db: %v", err)
 	} else {
 		res.DB = stats
 	}

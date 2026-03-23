@@ -77,7 +77,7 @@ func TestCollectServerResources_ContainerDown(t *testing.T) {
 	t.Parallel()
 
 	fake := func(name string) ([]byte, error) {
-		if name == "risk-it" {
+		if name == "go-risk-it-risk-it-1" {
 			return nil, fmt.Errorf("container not running")
 		}
 
