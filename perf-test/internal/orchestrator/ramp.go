@@ -2,6 +2,7 @@ package orchestrator
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -9,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/annotations"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
 )
 
@@ -28,6 +30,7 @@ func RunContinuousRamp(
 	cfg RampConfig,
 	runner *GameRunner,
 	collector *metrics.Collector,
+	annotator *annotations.Annotator,
 ) []GameResult {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -62,6 +65,8 @@ func RunContinuousRamp(
 		log.Printf("[ramp] starting: %d games/min, max %d, error threshold %.0f%%",
 			cfg.GamesPerMinute, cfg.MaxGames, cfg.ErrorThreshold*100)
 	}
+
+	annotator.Annotate("ramp: started", "perf-test", "phase")
 
 	// Progress reporter.
 	progressDone := make(chan struct{})
@@ -111,6 +116,12 @@ func RunContinuousRamp(
 					launched,
 				)
 
+				annotator.Annotate(
+					"ramp: error threshold exceeded",
+					"perf-test",
+					"alert",
+				)
+
 				break
 			}
 		}
@@ -140,6 +151,12 @@ func RunContinuousRamp(
 			log.Printf("[ramp] minute %d: escalating to %.0f games/min",
 				minuteNumber, currentRate)
 
+			annotator.Annotate(
+				fmt.Sprintf("ramp: %.0f games/min", currentRate),
+				"perf-test",
+				"rate",
+			)
+
 			minuteStart = time.Now()
 		}
 
@@ -153,6 +170,8 @@ wait:
 	wg.Wait()
 	cancel()
 	<-progressDone
+
+	annotator.Annotate("ramp: complete", "perf-test", "phase")
 
 	return results
 }

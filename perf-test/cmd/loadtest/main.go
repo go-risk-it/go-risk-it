@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/annotations"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/chaos"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/mapgraph"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
@@ -71,6 +72,11 @@ func main() {
 		"otel-endpoint",
 		"",
 		"OTLP HTTP endpoint for live metrics export (e.g., localhost:4318). Empty disables export.",
+	)
+	grafanaURL := flag.String(
+		"grafana-url",
+		"",
+		"Grafana URL for annotations (e.g., http://localhost:3000). Empty disables annotations.",
 	)
 
 	flag.Parse()
@@ -194,6 +200,8 @@ func main() {
 
 	var strategy player.Strategy
 
+	annotator := annotations.NewAnnotator(*grafanaURL)
+
 	switch *strategyFlag {
 	case "heuristic":
 		strategy = heuristic.New(graph)
@@ -240,7 +248,7 @@ func main() {
 
 	switch *mode {
 	case "batch":
-		results = orchestrator.Run(cfg, runner, collector)
+		results = orchestrator.Run(cfg, runner, collector, annotator)
 	case "ramp":
 		// For ramp mode, use the ramp game timeout for the runner.
 		runner = orchestrator.NewGameRunner(
@@ -254,7 +262,7 @@ func main() {
 			orchestrator.DefaultTimeouts(),
 			injector,
 		)
-		results = orchestrator.RunContinuousRamp(*rampCfg, runner, collector)
+		results = orchestrator.RunContinuousRamp(*rampCfg, runner, collector, annotator)
 	default:
 		log.Fatalf("unknown mode: %q (valid: batch, ramp)", *mode)
 	}

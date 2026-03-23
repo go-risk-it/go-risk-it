@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/annotations"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
 )
 
@@ -22,7 +23,12 @@ type Config struct {
 
 // Run executes NumGames concurrently with ramp-up, collecting metrics.
 // It returns results for all games and handles graceful shutdown on SIGINT/SIGTERM.
-func Run(cfg Config, runner *GameRunner, collector *metrics.Collector) []GameResult {
+func Run(
+	cfg Config,
+	runner *GameRunner,
+	collector *metrics.Collector,
+	annotator *annotations.Annotator,
+) []GameResult {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -47,6 +53,8 @@ func Run(cfg Config, runner *GameRunner, collector *metrics.Collector) []GameRes
 	}
 
 	// Launch games with ramp-up.
+	annotator.Annotate("batch: started", "perf-test", "phase")
+
 	for i := 0; i < cfg.NumGames; i++ {
 		// Check if cancelled before launching.
 		select {
@@ -105,6 +113,8 @@ func Run(cfg Config, runner *GameRunner, collector *metrics.Collector) []GameRes
 	wg.Wait()
 	cancel() // Stop progress reporter.
 	<-progressDone
+
+	annotator.Annotate("batch: complete", "perf-test", "phase")
 
 	return results
 }
