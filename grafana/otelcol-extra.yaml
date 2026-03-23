@@ -49,15 +49,25 @@ exporters:
     tls:
       insecure: true
 
+connectors:
+  spanmetrics:
+    histogram:
+      explicit:
+        buckets: [1ms, 5ms, 10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1s, 2.5s, 5s, 10s]
+    dimensions:
+      - name: service.name
+      - name: span.name
+    metrics_flush_interval: 5s
+
 service:
   extensions: [health_check]
   pipelines:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlphttp/traces]
+      exporters: [otlphttp/traces, spanmetrics]
     metrics:
-      receivers: [otlp, prometheus/collector, prometheus/postgres]
+      receivers: [otlp, prometheus/collector, prometheus/postgres, spanmetrics]
       processors: [batch]
       exporters: [otlphttp/metrics]
     logs:
