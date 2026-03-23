@@ -15,7 +15,7 @@ func TestGet_StaircasePreset(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, s.StaircaseConfig)
 	assert.Nil(t, s.RampConfig)
-	assert.Equal(t, []int{5, 10, 20, 40, 60, 80}, s.StaircaseConfig.Steps)
+	assert.Equal(t, []int{10, 20, 40, 60, 80, 100, 120}, s.StaircaseConfig.Steps)
 	assert.Equal(t, 4, s.StaircaseConfig.NumPlayers)
 	assert.True(t, s.StaircaseConfig.StopOnBreach)
 }
@@ -26,7 +26,7 @@ func TestGet_StaircaseLightPreset(t *testing.T) {
 	s, err := scenario.Get("staircase-light")
 	require.NoError(t, err)
 	require.NotNil(t, s.StaircaseConfig)
-	assert.Equal(t, []int{2, 5, 10, 20}, s.StaircaseConfig.Steps)
+	assert.Equal(t, []int{5, 10, 20, 40}, s.StaircaseConfig.Steps)
 }
 
 func TestGet_StaircaseHeavyPreset(t *testing.T) {
@@ -35,7 +35,7 @@ func TestGet_StaircaseHeavyPreset(t *testing.T) {
 	s, err := scenario.Get("staircase-heavy")
 	require.NoError(t, err)
 	require.NotNil(t, s.StaircaseConfig)
-	assert.Equal(t, []int{10, 20, 40, 60, 80, 100, 120}, s.StaircaseConfig.Steps)
+	assert.Equal(t, []int{20, 40, 80, 120, 160, 200}, s.StaircaseConfig.Steps)
 }
 
 func TestGet_ExistingPresetsUnchanged(t *testing.T) {

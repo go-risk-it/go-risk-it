@@ -11,8 +11,8 @@ func TestSLOs_Evaluate_AllGreen(t *testing.T) {
 	t.Parallel()
 
 	result := baseline.DefaultSLOs().Evaluate(baseline.MetricsSnapshot{
-		E2E:           baseline.LatencyProfile{P95: 0.3, P99: 0.6},
-		WSDelivery:    baseline.LatencyProfile{P95: 0.1, P99: 0.3},
+		E2E:           baseline.LatencyProfile{P95: 0.15, P99: 0.3},
+		WSDelivery:    baseline.LatencyProfile{P95: 0.05, P99: 0.1},
 		HTTPErrorRate: 0.005,
 	})
 
@@ -24,8 +24,8 @@ func TestSLOs_Evaluate_WithViolations(t *testing.T) {
 	t.Parallel()
 
 	result := baseline.DefaultSLOs().Evaluate(baseline.MetricsSnapshot{
-		E2E:           baseline.LatencyProfile{P95: 0.6, P99: 1.2},
-		WSDelivery:    baseline.LatencyProfile{P95: 0.1, P99: 0.3},
+		E2E:           baseline.LatencyProfile{P95: 0.4, P99: 0.8},
+		WSDelivery:    baseline.LatencyProfile{P95: 0.05, P99: 0.1},
 		HTTPErrorRate: 0.005,
 	})
 
@@ -45,8 +45,8 @@ func TestSLOs_Evaluate_P99Violations(t *testing.T) {
 	t.Parallel()
 
 	result := baseline.DefaultSLOs().Evaluate(baseline.MetricsSnapshot{
-		E2E:           baseline.LatencyProfile{P95: 0.4, P99: 0.8},
-		WSDelivery:    baseline.LatencyProfile{P95: 0.15, P99: 0.6},
+		E2E:           baseline.LatencyProfile{P95: 0.2, P99: 0.4},
+		WSDelivery:    baseline.LatencyProfile{P95: 0.08, P99: 0.3},
 		HTTPErrorRate: 0.005,
 	})
 

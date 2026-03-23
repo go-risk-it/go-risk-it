@@ -131,7 +131,7 @@ var presets = map[string]Scenario{
 	},
 	"staircase-light": {
 		StaircaseConfig: &orchestrator.StaircaseConfig{
-			Steps:        []int{2, 5, 10, 20},
+			Steps:        []int{5, 10, 20, 40},
 			HoldDuration: 30 * time.Second,
 			NumPlayers:   4,
 			GameTimeout:  10 * time.Minute,
@@ -142,7 +142,7 @@ var presets = map[string]Scenario{
 	},
 	"staircase": {
 		StaircaseConfig: &orchestrator.StaircaseConfig{
-			Steps:        []int{5, 10, 20, 40, 60, 80},
+			Steps:        []int{10, 20, 40, 60, 80, 100, 120},
 			HoldDuration: 60 * time.Second,
 			NumPlayers:   4,
 			GameTimeout:  10 * time.Minute,
@@ -153,7 +153,7 @@ var presets = map[string]Scenario{
 	},
 	"staircase-heavy": {
 		StaircaseConfig: &orchestrator.StaircaseConfig{
-			Steps:        []int{10, 20, 40, 60, 80, 100, 120},
+			Steps:        []int{20, 40, 80, 120, 160, 200},
 			HoldDuration: 120 * time.Second,
 			NumPlayers:   4,
 			GameTimeout:  15 * time.Minute,

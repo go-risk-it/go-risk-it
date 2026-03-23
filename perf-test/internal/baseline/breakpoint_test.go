@@ -12,9 +12,9 @@ func TestFindBreakingPoints_DetectsE2ESaturation(t *testing.T) {
 	t.Parallel()
 
 	runs := []baseline.LevelResult{
-		{Games: 2, Metrics: baseline.MetricsSnapshot{E2E: baseline.LatencyProfile{P95: 0.2}}},
-		{Games: 4, Metrics: baseline.MetricsSnapshot{E2E: baseline.LatencyProfile{P95: 0.35}}},
-		{Games: 8, Metrics: baseline.MetricsSnapshot{E2E: baseline.LatencyProfile{P95: 0.65}}},
+		{Games: 2, Metrics: baseline.MetricsSnapshot{E2E: baseline.LatencyProfile{P95: 0.1}}},
+		{Games: 4, Metrics: baseline.MetricsSnapshot{E2E: baseline.LatencyProfile{P95: 0.2}}},
+		{Games: 8, Metrics: baseline.MetricsSnapshot{E2E: baseline.LatencyProfile{P95: 0.4}}},
 	}
 
 	slos := baseline.DefaultSLOs()
@@ -23,8 +23,8 @@ func TestFindBreakingPoints_DetectsE2ESaturation(t *testing.T) {
 	bp := findBP(breakingPoints, "E2E move latency p95")
 	require.NotNil(t, bp, "should find E2E p95 breaking point")
 	assert.Equal(t, 8, bp.BreaksAtGames)
-	assert.InDelta(t, 0.35, bp.LastGoodValue, 0.001)
-	assert.InDelta(t, 0.65, bp.BreakValue, 0.001)
+	assert.InDelta(t, 0.2, bp.LastGoodValue, 0.001)
+	assert.InDelta(t, 0.4, bp.BreakValue, 0.001)
 }
 
 func TestFindBreakingPoints_NoViolations(t *testing.T) {
@@ -49,10 +49,10 @@ func TestFindBreakingPoints_MultipleBreaks(t *testing.T) {
 
 	runs := []baseline.LevelResult{
 		{Games: 2, Metrics: baseline.MetricsSnapshot{
-			E2E: baseline.LatencyProfile{P95: 0.3, P99: 0.5},
+			E2E: baseline.LatencyProfile{P95: 0.15, P99: 0.3},
 		}},
 		{Games: 8, Metrics: baseline.MetricsSnapshot{
-			E2E: baseline.LatencyProfile{P95: 0.6, P99: 1.2},
+			E2E: baseline.LatencyProfile{P95: 0.4, P99: 0.8},
 		}},
 	}
 

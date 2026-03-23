@@ -90,18 +90,18 @@ func (r EvalResult) AllPassing() bool {
 func DefaultSLOs() SLOSet {
 	return SLOSet{
 		UserExperience: []SLO{
-			{Name: "E2E move latency p95", Metric: "e2e_p95_s", Threshold: 0.5, Unit: "s"},
-			{Name: "E2E move latency p99", Metric: "e2e_p99_s", Threshold: 1.0, Unit: "s"},
+			{Name: "E2E move latency p95", Metric: "e2e_p95_s", Threshold: 0.25, Unit: "s"},
+			{Name: "E2E move latency p99", Metric: "e2e_p99_s", Threshold: 0.5, Unit: "s"},
 			{
 				Name:      "WS delivery latency p95",
 				Metric:    "ws_delivery_p95_s",
-				Threshold: 0.2,
+				Threshold: 0.1,
 				Unit:      "s",
 			},
 			{
 				Name:      "WS delivery latency p99",
 				Metric:    "ws_delivery_p99_s",
-				Threshold: 0.5,
+				Threshold: 0.2,
 				Unit:      "s",
 			},
 			{Name: "HTTP error rate", Metric: "http_error_rate", Threshold: 0.01, Unit: "ratio"},
