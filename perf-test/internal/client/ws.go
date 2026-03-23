@@ -168,8 +168,10 @@ func (ws *WS) reconnect() bool {
 		return false
 	}
 
-	// Stop the old ping goroutine.
+	// Stop the old ping goroutine and replace with a fresh channel so
+	// Close() can safely close it even if reconnection fails.
 	close(ws.pingStop)
+	ws.pingStop = make(chan struct{})
 	ws.mu.Unlock()
 
 	backoff := reconnectBase
