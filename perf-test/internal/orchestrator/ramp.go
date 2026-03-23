@@ -21,7 +21,17 @@ type RampConfig struct {
 	ErrorThreshold float64
 	GameTimeout    time.Duration
 	NumPlayers     int
-	Multiplier     float64 // Rate multiplier per minute (e.g., 2.0 = double each minute). 0 means constant.
+	Multiplier     float64       // Rate multiplier per step (e.g., 1.5 = 50% increase each step). 0 means constant.
+	StepInterval   time.Duration // How often to apply the multiplier. 0 defaults to 1 minute.
+}
+
+// stepInterval returns the effective step interval, defaulting to 1 minute.
+func (c RampConfig) stepInterval() time.Duration {
+	if c.StepInterval > 0 {
+		return c.StepInterval
+	}
+
+	return time.Minute
 }
 
 // RunContinuousRamp spawns games at a steady rate, stopping when MaxGames is reached
@@ -58,8 +68,12 @@ func RunContinuousRamp(
 
 	if cfg.Multiplier > 0 {
 		log.Printf(
-			"[ramp] starting: %d games/min ×%.1f/min, max %d, error threshold %.0f%%",
-			cfg.GamesPerMinute, cfg.Multiplier, cfg.MaxGames, cfg.ErrorThreshold*100,
+			"[ramp] starting: %d games/min ×%.1f/%v, max %d, error threshold %.0f%%",
+			cfg.GamesPerMinute,
+			cfg.Multiplier,
+			cfg.stepInterval(),
+			cfg.MaxGames,
+			cfg.ErrorThreshold*100,
 		)
 	} else {
 		log.Printf("[ramp] starting: %d games/min, max %d, error threshold %.0f%%",
@@ -143,12 +157,12 @@ func RunContinuousRamp(
 		launched++
 
 		// Check if we need to escalate rate.
-		if cfg.Multiplier > 0 && time.Since(minuteStart) >= time.Minute {
+		if cfg.Multiplier > 0 && time.Since(minuteStart) >= cfg.stepInterval() {
 			minuteNumber++
 			currentRate *= cfg.Multiplier
 			interval = time.Minute / time.Duration(currentRate)
 
-			log.Printf("[ramp] minute %d: escalating to %.0f games/min",
+			log.Printf("[ramp] step %d: escalating to %.0f games/min",
 				minuteNumber, currentRate)
 
 			annotator.Annotate(

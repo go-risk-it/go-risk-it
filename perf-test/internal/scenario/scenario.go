@@ -90,12 +90,13 @@ var presets = map[string]Scenario{
 	},
 	"baseline": {
 		RampConfig: &orchestrator.RampConfig{
-			GamesPerMinute: 60,
+			GamesPerMinute: 30,
 			MaxGames:       1000,
 			ErrorThreshold: 0.10,
 			GameTimeout:    10 * time.Minute,
 			NumPlayers:     4,
 			Multiplier:     1.5,
+			StepInterval:   5 * time.Minute,
 		},
 	},
 	"ramp-slow": {

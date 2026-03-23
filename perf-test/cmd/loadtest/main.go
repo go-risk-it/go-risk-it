@@ -348,18 +348,23 @@ func estimateRampDuration(cfg *orchestrator.RampConfig) time.Duration {
 		) * time.Minute
 	}
 
-	// Exponential: sum games launched per minute until max reached.
+	// Exponential: sum games launched per step until max reached.
 	rate := float64(cfg.GamesPerMinute)
 	total := 0
-	minutes := 0
+	steps := 0
+
+	step := cfg.StepInterval
+	if step <= 0 {
+		step = time.Minute
+	}
 
 	for total < cfg.MaxGames {
 		total += int(rate)
-		minutes++
+		steps++
 		rate *= cfg.Multiplier
 	}
 
-	return time.Duration(minutes) * time.Minute
+	return time.Duration(steps) * step
 }
 
 func handleBaseline(
