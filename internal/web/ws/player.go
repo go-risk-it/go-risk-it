@@ -10,6 +10,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	upgradablerwmutex "github.com/go-risk-it/go-risk-it/internal/upgradablerw_mutex"
 	"github.com/lesismal/nbio/nbhttp/websocket"
+	"go.opentelemetry.io/otel"
 )
 
 type PlayerConnections struct {
@@ -27,6 +28,11 @@ func NewPlayerConnections(m *metrics.Metrics) *PlayerConnections {
 }
 
 func (p *PlayerConnections) Broadcast(ctx ctx.UserContext, message json.RawMessage) {
+	_, span := otel.GetTracerProvider().Tracer("go-risk-it-ws").Start(
+		ctx, "ws.broadcast",
+	)
+	defer span.End()
+
 	start := time.Now()
 
 	p.mu.UpgradableRLock()

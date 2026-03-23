@@ -10,8 +10,10 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Transactable is the minimal interface a querier must satisfy to participate
@@ -114,6 +116,14 @@ func executeTransaction[Q Transactable[Q], T any](
 	txFunc func(Q) (T, error),
 	transaction pgx.Tx,
 ) (result T, err error) {
+	_, span := otel.GetTracerProvider().Tracer("go-risk-it-db").Start(
+		ctx, "db.transaction",
+		trace.WithAttributes(
+			attribute.String("isolation", string(isolationLevel)),
+		),
+	)
+	defer span.End()
+
 	ctx.Log().Infow("started transaction")
 
 	txStart := time.Now()

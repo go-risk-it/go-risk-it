@@ -18,8 +18,10 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/timing"
 	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/jackc/pgx/v5"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Orchestrator[T any] interface {
@@ -63,6 +65,14 @@ func NewOrchestrator[T any](
 }
 
 func (s *OrchestratorImpl[T]) OrchestrateMove(ctx ctx.GameContext, move T) error {
+	_, span := otel.GetTracerProvider().Tracer("go-risk-it-game").Start(
+		ctx, "game.orchestrate_move",
+		trace.WithAttributes(
+			attribute.String("phase", string(s.service.PhaseType())),
+		),
+	)
+	defer span.End()
+
 	start := time.Now()
 
 	targetPhase, err := dbutil.InTransactionWithIsolation(
