@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 // Auth handles Supabase authentication.
@@ -24,7 +25,7 @@ func NewAuth(baseURL, anonKey string) *Auth {
 	return &Auth{
 		baseURL: baseURL,
 		anonKey: anonKey,
-		client:  &http.Client{},
+		client:  &http.Client{Timeout: 30 * time.Second},
 	}
 }
 

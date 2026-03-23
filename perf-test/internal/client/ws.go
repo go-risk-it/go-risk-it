@@ -168,10 +168,7 @@ func (ws *WS) reconnect() bool {
 		return false
 	}
 
-	// Stop the old ping goroutine and replace with a fresh channel so
-	// Close() can safely close it even if reconnection fails.
 	close(ws.pingStop)
-	ws.pingStop = make(chan struct{})
 	ws.mu.Unlock()
 
 	backoff := reconnectBase
@@ -224,6 +221,11 @@ func (ws *WS) reconnect() bool {
 		ws.collector.RecordReconnectFailure()
 	}
 
+	// Replace pingStop so Close() can safely close it.
+	ws.mu.Lock()
+	ws.pingStop = make(chan struct{})
+	ws.mu.Unlock()
+
 	return false
 }
 
@@ -241,6 +243,9 @@ func (ws *WS) pingLoop(stop chan struct{}) {
 			if err := conn.WriteControl(
 				websocket.PingMessage, nil, time.Now().Add(writeWait),
 			); err != nil {
+				log.Printf("ws ping failed, forcing reconnect: %v", err)
+				conn.Close()
+
 				return
 			}
 		case <-stop:

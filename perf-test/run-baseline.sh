@@ -32,10 +32,11 @@ if [[ -z "${ANON_KEY:-}" ]]; then
 fi
 
 # --- Check docker stack ---
-if ! docker compose --env-file "$ENV_FILE" -f "$PROJECT_ROOT/docker-compose.yml" ps --format '{{.Name}}' 2>/dev/null | grep -q "lgtm"; then
-    echo "WARNING: LGTM container not running. OTel metrics will not be collected." >&2
+if ! docker compose --env-file "$ENV_FILE" -f "$PROJECT_ROOT/docker-compose.yml" \
+    ps --format '{{.Name}}' 2>/dev/null | grep -q "lgtm"; then
+    echo "ERROR: LGTM container not running. OTel metrics will not be collected." >&2
     echo "  Start the stack: cd $PROJECT_ROOT && docker compose --env-file component-test/.env up -d" >&2
-    echo "" >&2
+    exit 1
 fi
 
 # --- Defaults (overridable via flags) ---
