@@ -11,47 +11,22 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 )
 
-type PhaseController interface {
-	GetDeployPhaseState(
-		ctx ctx.GameContext,
-		game *state.Game,
-	) (messaging.GameState[messaging.DeployPhaseState], error)
-	GetAttackPhaseState(
-		ctx ctx.GameContext,
-		game *state.Game,
-	) (messaging.GameState[messaging.EmptyState], error)
-	GetConquerPhaseState(
-		ctx ctx.GameContext,
-		game *state.Game,
-	) (messaging.GameState[messaging.ConquerPhaseState], error)
-	GetReinforcePhaseState(
-		ctx ctx.GameContext,
-		gameState *state.Game,
-	) (messaging.GameState[messaging.EmptyState], error)
-	GetCardsPhaseState(
-		ctx ctx.GameContext,
-		gameState *state.Game,
-	) (messaging.GameState[messaging.EmptyState], error)
-}
-
-type PhaseControllerImpl struct {
+type PhaseController struct {
 	conquerService conquer.Service
 	deployService  deploy.Service
 }
 
-var _ PhaseController = (*PhaseControllerImpl)(nil)
-
 func NewPhaseController(
 	conquerService conquer.Service,
 	deployService deploy.Service,
-) *PhaseControllerImpl {
-	return &PhaseControllerImpl{
+) *PhaseController {
+	return &PhaseController{
 		conquerService: conquerService,
 		deployService:  deployService,
 	}
 }
 
-func (c *PhaseControllerImpl) GetDeployPhaseState(
+func (c *PhaseController) GetDeployPhaseState(
 	ctx ctx.GameContext,
 	gameState *state.Game,
 ) (messaging.GameState[messaging.DeployPhaseState], error) {
@@ -78,7 +53,7 @@ func (c *PhaseControllerImpl) GetDeployPhaseState(
 	}, nil
 }
 
-func (c *PhaseControllerImpl) GetAttackPhaseState(
+func (c *PhaseController) GetAttackPhaseState(
 	ctx ctx.GameContext,
 	gameState *state.Game,
 ) (messaging.GameState[messaging.EmptyState], error) {
@@ -87,7 +62,7 @@ func (c *PhaseControllerImpl) GetAttackPhaseState(
 	return c.getEmptyPhaseState(ctx, gameState, game.Attack), nil
 }
 
-func (c *PhaseControllerImpl) GetConquerPhaseState(
+func (c *PhaseController) GetConquerPhaseState(
 	ctx ctx.GameContext,
 	gameState *state.Game,
 ) (messaging.GameState[messaging.ConquerPhaseState], error) {
@@ -116,7 +91,7 @@ func (c *PhaseControllerImpl) GetConquerPhaseState(
 	}, nil
 }
 
-func (c *PhaseControllerImpl) GetReinforcePhaseState(
+func (c *PhaseController) GetReinforcePhaseState(
 	ctx ctx.GameContext,
 	gameState *state.Game,
 ) (messaging.GameState[messaging.EmptyState], error) {
@@ -125,7 +100,7 @@ func (c *PhaseControllerImpl) GetReinforcePhaseState(
 	return c.getEmptyPhaseState(ctx, gameState, game.Reinforce), nil
 }
 
-func (c *PhaseControllerImpl) GetCardsPhaseState(
+func (c *PhaseController) GetCardsPhaseState(
 	ctx ctx.GameContext,
 	gameState *state.Game,
 ) (messaging.GameState[messaging.EmptyState], error) {
@@ -134,7 +109,7 @@ func (c *PhaseControllerImpl) GetCardsPhaseState(
 	return c.getEmptyPhaseState(ctx, gameState, game.Cards), nil
 }
 
-func (c *PhaseControllerImpl) getEmptyPhaseState(
+func (c *PhaseController) getEmptyPhaseState(
 	ctx ctx.GameContext,
 	game *state.Game,
 	phaseType game.PhaseType,

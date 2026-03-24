@@ -16,42 +16,30 @@ import (
 	"go.uber.org/zap"
 )
 
-type WebSocketUpgraderHandler interface {
-	route.Route
+func NewWebSocketHandler(
+	gameConnectionManager gameWs.Manager,
+	lobbyConnectionManager lobbyWs.Manager,
+	upgrader ws.Upgrader,
+	log *zap.SugaredLogger,
+) *route.Route {
+	handler := &webSocketHandler{
+		gameConnectionManager:  gameConnectionManager,
+		lobbyConnectionManager: lobbyConnectionManager,
+		upgrader:               upgrader,
+		log:                    log,
+	}
+
+	return route.New("/ws", true, handler)
 }
 
-type WebSocketUpgraderHandlerImpl struct {
+type webSocketHandler struct {
 	gameConnectionManager  gameWs.Manager
 	lobbyConnectionManager lobbyWs.Manager
 	upgrader               ws.Upgrader
 	log                    *zap.SugaredLogger
 }
 
-var _ WebSocketUpgraderHandler = (*WebSocketUpgraderHandlerImpl)(nil)
-
-func NewWebSocketHandler(
-	gameConnectionManager gameWs.Manager,
-	lobbyConnectionManager lobbyWs.Manager,
-	upgrader ws.Upgrader,
-	log *zap.SugaredLogger,
-) *WebSocketUpgraderHandlerImpl {
-	return &WebSocketUpgraderHandlerImpl{
-		gameConnectionManager:  gameConnectionManager,
-		lobbyConnectionManager: lobbyConnectionManager,
-		upgrader:               upgrader,
-		log:                    log,
-	}
-}
-
-func (h *WebSocketUpgraderHandlerImpl) Pattern() string {
-	return "/ws"
-}
-
-func (h *WebSocketUpgraderHandlerImpl) RequiresAuth() bool {
-	return true
-}
-
-func (h *WebSocketUpgraderHandlerImpl) ServeHTTP(
+func (h *webSocketHandler) ServeHTTP(
 	writer http.ResponseWriter,
 	request *http.Request,
 ) {

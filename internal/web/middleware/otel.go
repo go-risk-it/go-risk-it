@@ -16,19 +16,13 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-type OTelMiddleware interface {
-	Middleware
-}
-
-type OTelMiddlewareImpl struct {
+type OTelMiddleware struct {
 	tracer  trace.Tracer
 	metrics *metrics.Metrics
 }
 
-var _ OTelMiddleware = (*OTelMiddlewareImpl)(nil)
-
-func NewOTelMiddleware(metrics *metrics.Metrics) *OTelMiddlewareImpl {
-	return &OTelMiddlewareImpl{
+func NewOTelMiddleware(metrics *metrics.Metrics) *OTelMiddleware {
+	return &OTelMiddleware{
 		tracer:  otel.GetTracerProvider().Tracer("go-risk-it-http"),
 		metrics: metrics,
 	}
@@ -45,10 +39,10 @@ func (r *statusRecorder) WriteHeader(code int) {
 	r.ResponseWriter.WriteHeader(code)
 }
 
-func (m *OTelMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
+func (m *OTelMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
 	isWebSocket := routeToWrap.Pattern() == "/ws"
 
-	return route.NewRoute(
+	return route.New(
 		routeToWrap.Pattern(),
 		routeToWrap.RequiresAuth(),
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
@@ -97,7 +91,7 @@ func (m *OTelMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 	)
 }
 
-func (m *OTelMiddlewareImpl) recordHTTPMetrics(
+func (m *OTelMiddleware) recordHTTPMetrics(
 	request *http.Request,
 	pattern string,
 	statusCode int,

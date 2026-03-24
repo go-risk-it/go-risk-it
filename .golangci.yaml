@@ -38,7 +38,6 @@ linters:
         - generic
         - github\.com/go-risk-it/go-risk-it/internal/ctx\..*
         - github\.com/go-risk-it/go-risk-it/internal/data/.*/db\.Querier
-        - github\.com/go-risk-it/go-risk-it/internal/web/rest/route\.Route
         - github\.com/jackc/pgx/v5\..*
         - go\.opentelemetry\.io/otel/.*
         - github\.com/go-risk-it/go-risk-it/internal/logic/game/signals\..*

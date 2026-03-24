@@ -10,31 +10,25 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/advancement"
 )
 
-type AdvancementController interface {
-	Advance(ctx ctx.GameContext, advancement request.Advancement) error
-}
-
-type AdvancementControllerImpl struct {
+type AdvancementController struct {
 	attackAdvancer    advancement.AttackAdvancer
 	cardsAdvancer     advancement.CardsAdvancer
 	reinforceAdvancer advancement.ReinforceAdvancer
 }
 
-var _ AdvancementController = (*AdvancementControllerImpl)(nil)
-
 func NewAdvancementController(
 	attackAdvancer advancement.AttackAdvancer,
 	cardsAdvancer advancement.CardsAdvancer,
 	reinforceAdvancer advancement.ReinforceAdvancer,
-) *AdvancementControllerImpl {
-	return &AdvancementControllerImpl{
+) *AdvancementController {
+	return &AdvancementController{
 		attackAdvancer:    attackAdvancer,
 		cardsAdvancer:     cardsAdvancer,
 		reinforceAdvancer: reinforceAdvancer,
 	}
 }
 
-func (c *AdvancementControllerImpl) Advance(
+func (c *AdvancementController) Advance(
 	ctx ctx.GameContext,
 	advancement request.Advancement,
 ) error {

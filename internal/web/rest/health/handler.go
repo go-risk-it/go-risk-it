@@ -2,7 +2,6 @@ package health
 
 import (
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
@@ -11,18 +10,8 @@ import (
 	"github.com/hellofresh/health-go/v5/checks/postgres"
 )
 
-type Handler interface {
-	route.Route
-}
-
-type HandlerImpl struct {
-	*health.Health
-}
-
-var _ Handler = (*HandlerImpl)(nil)
-
-func New(databaseConfig config.DatabaseConfig) (*HandlerImpl, error) {
-	health, err := health.New(
+func New(databaseConfig config.DatabaseConfig) (*route.Route, error) {
+	healthCheck, err := health.New(
 		health.WithComponent(health.Component{
 			Name:    "go-risk-it",
 			Version: "1.0.0",
@@ -43,19 +32,5 @@ func New(databaseConfig config.DatabaseConfig) (*HandlerImpl, error) {
 		return nil, fmt.Errorf("failed to create health handler: %w", err)
 	}
 
-	return &HandlerImpl{
-		Health: health,
-	}, nil
-}
-
-func (h *HandlerImpl) Pattern() string {
-	return "/status"
-}
-
-func (h *HandlerImpl) RequiresAuth() bool {
-	return false
-}
-
-func (h *HandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	h.Handler().ServeHTTP(writer, req)
+	return route.New("/status", false, healthCheck.Handler()), nil
 }

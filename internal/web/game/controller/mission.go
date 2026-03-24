@@ -6,37 +6,17 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission"
 )
 
-type MissionController interface {
-	GetTwoContinentsMission(
-		ctx ctx.GameContext, missionID int64,
-	) (messaging.MissionState[messaging.TwoContinentsMission], error)
-	GetTwoContinentsPlusOneMission(
-		ctx ctx.GameContext, missionID int64,
-	) (messaging.MissionState[messaging.TwoContinentsPlusOneMission], error)
-	GetEighteenTerritoriesTwoTroopsMission(
-		ctx ctx.GameContext, missionID int64,
-	) (messaging.MissionState[messaging.EighteenTerritoriesTwoTroopsMission], error)
-	GetTwentyFourTerritoriesMission(
-		ctx ctx.GameContext, missionID int64,
-	) (messaging.MissionState[messaging.TwentyFourTerritoriesMission], error)
-	GetEliminatePlayerMission(
-		ctx ctx.GameContext, missionID int64,
-	) (messaging.MissionState[messaging.EliminatePlayerMission], error)
-}
-
-type MissionControllerImpl struct {
+type MissionController struct {
 	missionService mission.Service
 }
 
-var _ MissionController = (*MissionControllerImpl)(nil)
-
-func NewMissionController(missionService mission.Service) *MissionControllerImpl {
-	return &MissionControllerImpl{
+func NewMissionController(missionService mission.Service) *MissionController {
+	return &MissionController{
 		missionService: missionService,
 	}
 }
 
-func (m *MissionControllerImpl) GetTwoContinentsMission(
+func (m *MissionController) GetTwoContinentsMission(
 	ctx ctx.GameContext,
 	missionID int64,
 ) (messaging.MissionState[messaging.TwoContinentsMission], error) {
@@ -54,7 +34,7 @@ func (m *MissionControllerImpl) GetTwoContinentsMission(
 	}, nil
 }
 
-func (m *MissionControllerImpl) GetTwoContinentsPlusOneMission(
+func (m *MissionController) GetTwoContinentsPlusOneMission(
 	ctx ctx.GameContext,
 	missionID int64,
 ) (messaging.MissionState[messaging.TwoContinentsPlusOneMission], error) {
@@ -72,7 +52,7 @@ func (m *MissionControllerImpl) GetTwoContinentsPlusOneMission(
 	}, nil
 }
 
-func (m *MissionControllerImpl) GetEliminatePlayerMission(
+func (m *MissionController) GetEliminatePlayerMission(
 	ctx ctx.GameContext,
 	missionID int64,
 ) (messaging.MissionState[messaging.EliminatePlayerMission], error) {
@@ -89,7 +69,7 @@ func (m *MissionControllerImpl) GetEliminatePlayerMission(
 	}, nil
 }
 
-func (m *MissionControllerImpl) GetEighteenTerritoriesTwoTroopsMission(
+func (m *MissionController) GetEighteenTerritoriesTwoTroopsMission(
 	_ ctx.GameContext,
 	_ int64,
 ) (messaging.MissionState[messaging.EighteenTerritoriesTwoTroopsMission], error) {
@@ -99,7 +79,7 @@ func (m *MissionControllerImpl) GetEighteenTerritoriesTwoTroopsMission(
 	}, nil
 }
 
-func (m *MissionControllerImpl) GetTwentyFourTerritoriesMission(
+func (m *MissionController) GetTwentyFourTerritoriesMission(
 	_ ctx.GameContext,
 	_ int64,
 ) (messaging.MissionState[messaging.TwentyFourTerritoriesMission], error) {

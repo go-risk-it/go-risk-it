@@ -173,10 +173,18 @@ func runAdaptiveStep(
 ) (StepOutput, bool) {
 	collector := deps.NewCollector(cfg.HoldDuration)
 
+	// Time-based warm-up: wait for the stagger fill to complete.
+	// See staircase.go for rationale — completion-based warm-up fails at
+	// high concurrency where few games finish within the hold window.
 	if cfg.WarmUpCompletions > 0 || cfg.WarmUpDurationSec > 0 {
+		minDuration := time.Duration(targetGames) * cfg.StaggerDelay
+		if cfgDur := time.Duration(cfg.WarmUpDurationSec) * time.Second; cfgDur > minDuration {
+			minDuration = cfgDur
+		}
+
 		collector.ConfigureWarmUp(metrics.WarmUpConfig{
-			MinCompletions: int64(cfg.WarmUpCompletions),
-			MinDuration:    time.Duration(cfg.WarmUpDurationSec) * time.Second,
+			MinCompletions: 0,
+			MinDuration:    minDuration,
 		})
 	}
 

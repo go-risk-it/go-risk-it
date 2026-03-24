@@ -17,7 +17,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func setup(t *testing.T) (middleware.AuthMiddleware, *httptest.ResponseRecorder) {
+func setup(t *testing.T) (*middleware.AuthMiddleware, *httptest.ResponseRecorder) {
 	t.Helper()
 
 	jwtConfig := config.JwtConfig{
@@ -86,7 +86,7 @@ func TestAuthMiddleware_Wrap(t *testing.T) {
 			authMiddleware, responseWriter := setup(t)
 
 			wrappedHandler := authMiddleware.Wrap(
-				route.NewRoute(
+				route.New(
 					"/",
 					true,
 					http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {

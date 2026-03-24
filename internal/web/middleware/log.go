@@ -8,24 +8,18 @@ import (
 	"go.uber.org/zap"
 )
 
-type LogMiddleware interface {
-	Middleware
-}
-
-type LogMiddlewareImpl struct {
+type LogMiddleware struct {
 	log *zap.SugaredLogger
 }
 
-var _ LogMiddleware = (*LogMiddlewareImpl)(nil)
-
-func NewLogMiddleware(log *zap.SugaredLogger) *LogMiddlewareImpl {
-	return &LogMiddlewareImpl{
+func NewLogMiddleware(log *zap.SugaredLogger) *LogMiddleware {
+	return &LogMiddleware{
 		log: log,
 	}
 }
 
-func (m *LogMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
-	return route.NewRoute(
+func (m *LogMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
+	return route.New(
 		routeToWrap.Pattern(),
 		routeToWrap.RequiresAuth(),
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {

@@ -14,26 +14,20 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type AuthMiddleware interface {
-	Middleware
-}
-
-type AuthMiddlewareImpl struct {
+type AuthMiddleware struct {
 	jwtConfig config.JwtConfig
 }
 
-var _ AuthMiddleware = (*AuthMiddlewareImpl)(nil)
-
-func NewAuthMiddleware(jwtConfig config.JwtConfig) *AuthMiddlewareImpl {
-	return &AuthMiddlewareImpl{jwtConfig: jwtConfig}
+func NewAuthMiddleware(jwtConfig config.JwtConfig) *AuthMiddleware {
+	return &AuthMiddleware{jwtConfig: jwtConfig}
 }
 
-func (m *AuthMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
+func (m *AuthMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
 	if !routeToWrap.RequiresAuth() {
 		return routeToWrap
 	}
 
-	return route.NewRoute(
+	return route.New(
 		routeToWrap.Pattern(),
 		routeToWrap.RequiresAuth(),
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
@@ -67,7 +61,7 @@ func (m *AuthMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
 		}))
 }
 
-func (m *AuthMiddlewareImpl) verifyJWT(request *http.Request) (string, error) {
+func (m *AuthMiddleware) verifyJWT(request *http.Request) (string, error) {
 	authHeader := request.Header.Get("Authorization") // Bearer <token>
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 

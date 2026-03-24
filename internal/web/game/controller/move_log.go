@@ -11,25 +11,15 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/logging"
 )
 
-type MoveLogController interface {
-	ConvertMoveLogs(
-		ctx ctx.GameContext,
-		sqlcLogs []sqlc.GameMoveLog,
-	) (messaging.MoveHistory, error)
-	GetMoveLogs(ctx ctx.GameContext, limit int64) (messaging.MoveHistory, error)
-}
-
-type MoveLogControllerImpl struct {
+type MoveLogController struct {
 	loggingService logging.Service
 }
 
-var _ MoveLogController = (*MoveLogControllerImpl)(nil)
-
-func NewMoveLogController(loggingService logging.Service) *MoveLogControllerImpl {
-	return &MoveLogControllerImpl{loggingService: loggingService}
+func NewMoveLogController(loggingService logging.Service) *MoveLogController {
+	return &MoveLogController{loggingService: loggingService}
 }
 
-func (c *MoveLogControllerImpl) GetMoveLogs(
+func (c *MoveLogController) GetMoveLogs(
 	ctx ctx.GameContext,
 	limit int64,
 ) (messaging.MoveHistory, error) {
@@ -56,7 +46,7 @@ func (c *MoveLogControllerImpl) GetMoveLogs(
 	}, nil
 }
 
-func (c *MoveLogControllerImpl) ConvertMoveLogs(
+func (c *MoveLogController) ConvertMoveLogs(
 	ctx ctx.GameContext,
 	sqlcLogs []sqlc.GameMoveLog,
 ) (messaging.MoveHistory, error) {

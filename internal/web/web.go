@@ -24,9 +24,6 @@ var Module = fx.Options(
 	rest.Module,
 	ws.Module,
 	fx.Provide(
-		fx.Annotate(
-			func(gc gamecontroller.GameController) lobbycontroller.GameCreator { return gc },
-			fx.As(new(lobbycontroller.GameCreator)),
-		),
+		func(gc *gamecontroller.GameController) lobbycontroller.GameCreator { return gc },
 	),
 )

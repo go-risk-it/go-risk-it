@@ -8,31 +8,25 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 )
 
-type CorsMiddleware interface {
-	Middleware
-}
-
-type CorsMiddlewareImpl struct {
+type CorsMiddleware struct {
 	allowedOrigins map[string]bool
 	allowOriginStr string
 }
 
-var _ CorsMiddleware = (*CorsMiddlewareImpl)(nil)
-
-func NewCorsMiddleware(serverConfig config.ServerConfig) *CorsMiddlewareImpl {
+func NewCorsMiddleware(serverConfig config.ServerConfig) *CorsMiddleware {
 	allowed := make(map[string]bool, len(serverConfig.AllowedOrigins))
 	for _, origin := range serverConfig.AllowedOrigins {
 		allowed[origin] = true
 	}
 
-	return &CorsMiddlewareImpl{
+	return &CorsMiddleware{
 		allowedOrigins: allowed,
 		allowOriginStr: strings.Join(serverConfig.AllowedOrigins, ", "),
 	}
 }
 
-func (m *CorsMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
-	return route.NewRoute(
+func (m *CorsMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
+	return route.New(
 		routeToWrap.Pattern(),
 		routeToWrap.RequiresAuth(),
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {

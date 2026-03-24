@@ -8,30 +8,12 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 )
 
-type ConquerHandler interface {
-	route.Route
-}
-
-type ConquerHandlerImpl struct {
-	moveController controller.MoveController
-}
-
-var _ ConquerHandler = (*ConquerHandlerImpl)(nil)
-
-func NewConquerHandler(moveController controller.MoveController) *ConquerHandlerImpl {
-	return &ConquerHandlerImpl{
-		moveController: moveController,
-	}
-}
-
-func (h *ConquerHandlerImpl) Pattern() string {
-	return "/api/v1/games/{id}/moves/conquers"
-}
-
-func (h *ConquerHandlerImpl) RequiresAuth() bool {
-	return true
-}
-
-func (h *ConquerHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	handleMove[request.ConquerMove](writer, req, h.moveController.PerformConquerMove)
+func NewConquerHandler(moveController *controller.MoveController) *route.Route {
+	return route.New(
+		"/api/v1/games/{id}/moves/conquers",
+		true,
+		http.HandlerFunc(func(writer http.ResponseWriter, req *http.Request) {
+			handleMove[request.ConquerMove](writer, req, moveController.PerformConquerMove)
+		}),
+	)
 }

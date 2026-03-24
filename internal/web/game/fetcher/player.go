@@ -14,7 +14,7 @@ type PlayerFetcher interface {
 	Fetcher
 }
 type PlayerFetcherImpl struct {
-	playerController controller.PlayerController
+	playerController *controller.PlayerController
 }
 
 var _ PlayerFetcher = (*PlayerFetcherImpl)(nil)
@@ -27,7 +27,7 @@ type PlayerFetcherResult struct {
 }
 
 func NewPlayerFetcher(
-	playerController controller.PlayerController,
+	playerController *controller.PlayerController,
 ) PlayerFetcherResult {
 	res := &PlayerFetcherImpl{
 		playerController: playerController,

@@ -16,14 +16,14 @@ type MoveLogFetcher interface {
 }
 type MoveLogFetcherImpl struct {
 	historyConfig     config.HistoryConfig
-	moveLogController controller.MoveLogController
+	moveLogController *controller.MoveLogController
 }
 
 var _ MoveLogFetcher = (*MoveLogFetcherImpl)(nil)
 
 func NewMoveLogFetcher(
 	historyConfig config.HistoryConfig,
-	moveLogController controller.MoveLogController,
+	moveLogController *controller.MoveLogController,
 ) *MoveLogFetcherImpl {
 	return &MoveLogFetcherImpl{
 		historyConfig:     historyConfig,

@@ -90,11 +90,21 @@ func RunStaircase(
 		// Fresh collector per step for clean per-step percentiles.
 		collector := deps.NewCollector(cfg.HoldDuration)
 
-		// Configure warm-up filtering if specified.
+		// Configure warm-up filtering.
+		// Use time-based warm-up scaled to the stagger fill duration instead of
+		// completion-based warm-up. At high concurrency few games complete within
+		// the hold window, so a fixed completion threshold would leave histograms
+		// empty. The stagger duration (targetGames * StaggerDelay) is the real
+		// warm-up period — once the pool is full, measurements are stable.
 		if cfg.WarmUpCompletions > 0 || cfg.WarmUpDurationSec > 0 {
+			minDuration := time.Duration(targetGames) * cfg.StaggerDelay
+			if cfgDur := time.Duration(cfg.WarmUpDurationSec) * time.Second; cfgDur > minDuration {
+				minDuration = cfgDur
+			}
+
 			collector.ConfigureWarmUp(metrics.WarmUpConfig{
-				MinCompletions: int64(cfg.WarmUpCompletions),
-				MinDuration:    time.Duration(cfg.WarmUpDurationSec) * time.Second,
+				MinCompletions: 0,
+				MinDuration:    minDuration,
 			})
 		}
 

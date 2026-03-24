@@ -15,7 +15,7 @@ type BoardFetcher interface {
 }
 
 type BoardFetcherImpl struct {
-	boardController controller.BoardController
+	boardController *controller.BoardController
 }
 
 var _ BoardFetcher = (*BoardFetcherImpl)(nil)
@@ -27,7 +27,7 @@ type BoardFetcherResult struct {
 	Fetcher      Fetcher `group:"public_fetchers"`
 }
 
-func NewBoardFetcher(boardController controller.BoardController) BoardFetcherResult {
+func NewBoardFetcher(boardController *controller.BoardController) BoardFetcherResult {
 	res := &BoardFetcherImpl{
 		boardController: boardController,
 	}
