@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -27,247 +26,74 @@ import (
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/player/smart"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/resources"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/runner"
-	"github.com/go-risk-it/go-risk-it/perf-test/internal/scenario"
 )
 
 func main() {
-	url := flag.String("url", "http://localhost:8000", "Base URL of the server (Kong gateway)")
-	anonKey := flag.String("anon-key", "", "Supabase anon key")
-	players := flag.Int("players", 4, "Number of players per game")
-	gameTimeout := flag.Duration("game-timeout", 10*time.Minute, "Timeout per game")
-	mapFile := flag.String("map", "map.json", "Path to map.json")
-	games := flag.Int("games", 1, "Number of concurrent games")
-	ramp := flag.Duration("ramp", 0, "Ramp-up period for starting games")
-	preset := flag.String(
-		"preset",
-		"",
-		"Named scenario preset (overrides games/players/timeout/ramp)",
-	)
-	output := flag.String("output", "text", "Output format: text or json")
-	thinkTime := flag.Duration("think-time", 0, "Artificial delay between moves")
-	strategyFlag := flag.String(
-		"strategy",
-		"heuristic",
-		"Bot strategy: heuristic, beginner, normal, or expert",
-	)
-	mode := flag.String("mode", "batch", "Run mode: batch, ramp, staircase, or adaptive")
-	rampRate := flag.Int("ramp-rate", 10, "Games per minute (ramp mode only)")
-	maxGames := flag.Int("max-games", 100, "Maximum total games (ramp mode only)")
-	errorThreshold := flag.Float64(
-		"error-threshold",
-		0.10,
-		"Error rate threshold to stop (ramp mode only)",
-	)
-	rampMultiplier := flag.Float64(
-		"ramp-multiplier",
-		0,
-		"Rate multiplier per minute for exponential ramp (e.g., 2.0 = double each minute). 0 = constant.",
-	)
-
-	// Chaos flags.
-	chaosDisconnect := flag.Float64(
-		"chaos-disconnect",
-		0,
-		"Player disconnect probability per loop iteration",
-	)
-	chaosSlowMove := flag.Float64("chaos-slow-move", 0, "Slow move probability")
-	chaosSlowDelay := flag.Duration("chaos-slow-delay", 2*time.Second, "Slow move delay")
-	chaosErrorMove := flag.Float64("chaos-error-move", 0, "Strategy error injection probability")
-	chaosReconnectDelay := flag.Duration(
-		"chaos-reconnect-delay",
-		2*time.Second,
-		"Delay before reconnecting after chaos disconnect",
-	)
-	otelEndpoint := flag.String(
-		"otel-endpoint",
-		"",
-		"OTLP HTTP endpoint for live metrics export (e.g., localhost:4318). Empty disables export.",
-	)
-	grafanaURL := flag.String(
-		"grafana-url",
-		"",
-		"Grafana URL for annotations (e.g., http://localhost:3000). Empty disables annotations.",
-	)
-	saveBaseline := flag.Bool(
-		"save-baseline",
-		false,
-		"Save performance baseline after test completes",
-	)
-	compareFile := flag.String(
-		"compare",
-		"",
-		"Path to previous baseline file for delta comparison",
-	)
-	baselineName := flag.String(
-		"baseline-name",
-		"",
-		"Named baseline for perf-journal (saves to perf-journal/baselines/ with sequence number)",
-	)
-
-	// Staircase flags.
-	saveJournal := flag.Bool("save-journal", false, "Save staircase journal entry")
-	journalName := flag.String("journal-name", "", "Name for journal entry file")
-	holdDuration := flag.Duration(
-		"hold-duration",
-		60*time.Second,
-		"Hold duration per staircase step",
-	)
-	stepsFlag := flag.String(
-		"steps",
-		"",
-		"Comma-separated staircase step counts (e.g., 5,10,20,40)",
-	)
-	stopOnBreach := flag.Bool("stop-on-breach", true, "Stop staircase on first SLO breach")
-	compareJournal := flag.String(
-		"compare-journal",
-		"",
-		"Path to previous journal entry for comparison",
-	)
-	warmupCompletions := flag.Int(
-		"warmup-completions",
-		0,
-		"Games to complete before recording histograms per step (0 = disabled)",
-	)
-	warmupDuration := flag.Int(
-		"warmup-duration",
-		0,
-		"Seconds to wait before recording histograms per step (0 = disabled)",
-	)
-	hypothesis := flag.String(
-		"hypothesis",
-		"",
-		"Hypothesis for this optimization run (annotates session)",
-	)
-	adaptiveIncrease := flag.Int(
-		"adaptive-increase",
-		5,
-		"Games to add per successful step in adaptive mode",
-	)
-	adaptiveMaxSteps := flag.Int(
-		"adaptive-max-steps",
-		20,
-		"Maximum number of steps in adaptive mode",
-	)
-	adaptiveMaxGames := flag.Int(
-		"adaptive-max-games",
-		500,
-		"Hard ceiling on concurrent games in adaptive mode",
-	)
-	dbDSN := flag.String(
-		"db-dsn",
-		"",
-		"Postgres DSN for pg_stat_statements collection (e.g., postgres://user:pass@host:5432/db?sslmode=disable). Empty disables.",
-	)
-
-	flag.Parse()
-
-	if *anonKey == "" {
-		*anonKey = os.Getenv("ANON_KEY")
+	cfg := ParseFlags()
+	if err := cfg.ApplyPreset(); err != nil {
+		log.Fatal(err)
 	}
 
-	if *anonKey == "" {
-		log.Fatal("--anon-key flag or ANON_KEY env var is required")
+	if err := cfg.Validate(); err != nil {
+		log.Fatal(err)
+	}
+
+	if cfg.Chaos.Enabled() {
+		log.Printf("chaos enabled: disconnect=%.0f%% slow_move=%.0f%% error_move=%.0f%%",
+			cfg.Chaos.DisconnectRate*100, cfg.Chaos.SlowMoveRate*100, cfg.Chaos.ErrorMoveRate*100)
+	}
+
+	if cfg.staircaseCfg != nil {
+		log.Printf(
+			"using staircase preset %q: steps=%v, hold=%v",
+			cfg.Preset, cfg.staircaseCfg.Steps, cfg.staircaseCfg.HoldDuration,
+		)
+	} else if cfg.rampCfg != nil {
+		log.Printf("using ramp preset %q: %d games/min, max %d, threshold %.0f%%",
+			cfg.Preset, cfg.rampCfg.GamesPerMinute, cfg.rampCfg.MaxGames, cfg.rampCfg.ErrorThreshold*100)
+	} else if cfg.Preset != "" {
+		log.Printf("using preset %q: %d games, %d players, timeout=%v, ramp=%v",
+			cfg.Preset, cfg.NumGames, cfg.Game.NumPlayers, cfg.Game.GameTimeout, cfg.RampUp)
 	}
 
 	// Parse map.
-	graph, err := mapgraph.LoadFromFile(*mapFile)
+	graph, err := mapgraph.LoadFromFile(cfg.Server.MapFile)
 	if err != nil {
 		log.Fatalf("load map: %v", err)
 	}
 
 	log.Printf("loaded map: %d regions, %d continents", len(graph.Regions), len(graph.Continents))
 
-	// Build batch config (may be overridden by preset).
-	cfg := orchestrator.Config{
-		NumGames:    *games,
-		NumPlayers:  *players,
-		RampUp:      *ramp,
-		GameTimeout: *gameTimeout,
+	// Build batch config (may have been overridden by preset).
+	batchCfg := orchestrator.Config{
+		NumGames:    cfg.NumGames,
+		NumPlayers:  cfg.Game.NumPlayers,
+		RampUp:      cfg.RampUp,
+		GameTimeout: cfg.Game.GameTimeout,
 	}
 
-	// Build ramp config from CLI flags (may be overridden by preset).
-	rampCfg := &orchestrator.RampConfig{
-		GamesPerMinute: *rampRate,
-		MaxGames:       *maxGames,
-		ErrorThreshold: *errorThreshold,
-		GameTimeout:    *gameTimeout,
-		NumPlayers:     *players,
-		Multiplier:     *rampMultiplier,
-	}
-
-	// Chaos config from CLI flags.
-	chaosCfg := chaos.Config{
-		DisconnectRate: *chaosDisconnect,
-		SlowMoveRate:   *chaosSlowMove,
-		SlowMoveDelay:  *chaosSlowDelay,
-		ErrorMoveRate:  *chaosErrorMove,
-		ReconnectDelay: *chaosReconnectDelay,
-	}
-
-	// Staircase config (may be overridden by preset).
-	var staircaseCfg *orchestrator.StaircaseConfig
-
-	// Override with preset if specified.
-	if *preset != "" {
-		s, err := scenario.Get(*preset)
-		if err != nil {
-			log.Fatalf("preset: %v", err)
-		}
-
-		if s.StaircaseConfig != nil {
-			// Staircase preset — force staircase mode.
-			*mode = "staircase"
-			staircaseCfg = s.StaircaseConfig
-
-			log.Printf(
-				"using staircase preset %q: steps=%v, hold=%v",
-				*preset, staircaseCfg.Steps, staircaseCfg.HoldDuration,
-			)
-		} else if s.RampConfig != nil {
-			// Ramp preset — force ramp mode.
-			*mode = "ramp"
-			rampCfg = s.RampConfig
-			cfg.GameTimeout = s.RampConfig.GameTimeout
-
-			log.Printf("using ramp preset %q: %d games/min, max %d, threshold %.0f%%",
-				*preset, rampCfg.GamesPerMinute, rampCfg.MaxGames, rampCfg.ErrorThreshold*100)
-		} else {
-			// Batch preset.
-			cfg = s.Config
-
-			log.Printf("using preset %q: %d games, %d players, timeout=%v, ramp=%v",
-				*preset, cfg.NumGames, cfg.NumPlayers, cfg.GameTimeout, cfg.RampUp)
-		}
-
-		// Preset chaos config is used unless CLI flags override.
-		if !chaosCfg.Enabled() && s.ChaosConfig.Enabled() {
-			chaosCfg = s.ChaosConfig
+	// Build ramp config from CLI flags (may have been overridden by preset).
+	rampCfg := cfg.rampCfg
+	if rampCfg == nil {
+		rampCfg = &orchestrator.RampConfig{
+			GamesPerMinute: cfg.Ramp.Rate,
+			MaxGames:       cfg.Ramp.MaxGames,
+			ErrorThreshold: cfg.Ramp.ErrorThreshold,
+			GameTimeout:    cfg.Game.GameTimeout,
+			NumPlayers:     cfg.Game.NumPlayers,
+			Multiplier:     cfg.Ramp.Multiplier,
 		}
 	}
-
-	if chaosCfg.Enabled() {
-		if err := chaosCfg.Validate(); err != nil {
-			log.Fatalf("chaos config: %v", err)
-		}
-
-		log.Printf("chaos enabled: disconnect=%.0f%% slow_move=%.0f%% error_move=%.0f%%",
-			chaosCfg.DisconnectRate*100, chaosCfg.SlowMoveRate*100, chaosCfg.ErrorMoveRate*100)
-	}
-
-	// Build WS URL from HTTP URL.
-	wsURL := strings.Replace(*url, "http://", "ws://", 1)
-	wsURL = strings.Replace(wsURL, "https://", "wss://", 1)
 
 	// Determine collector max duration for throughput buckets.
-	maxDuration := cfg.GameTimeout
-	if *mode == "ramp" {
-		// Estimate total runtime for ramp mode.
+	maxDuration := cfg.Game.GameTimeout
+	if cfg.Mode == "ramp" {
 		estimated := estimateRampDuration(rampCfg)
 		maxDuration = estimated + rampCfg.GameTimeout
-	} else if *mode == "staircase" && staircaseCfg != nil {
-		maxDuration = staircaseCfg.HoldDuration
-	} else if *mode == "adaptive" {
-		maxDuration = *holdDuration
+	} else if cfg.Mode == "staircase" && cfg.staircaseCfg != nil {
+		maxDuration = cfg.staircaseCfg.HoldDuration
+	} else if cfg.Mode == "adaptive" {
+		maxDuration = cfg.Staircase.HoldDuration
 	}
 
 	collector := metrics.NewCollector(maxDuration)
@@ -275,11 +101,10 @@ func main() {
 	// Initialize OTel exporter if endpoint is provided.
 	var otelExporter *metrics.OTelExporter
 
-	if *otelEndpoint != "" {
+	if cfg.Obs.OTelEndpoint != "" {
 		ctx := context.Background()
 
-		var err error
-		otelExporter, err = metrics.NewOTelExporter(ctx, *otelEndpoint)
+		otelExporter, err = metrics.NewOTelExporter(ctx, cfg.Obs.OTelEndpoint)
 		if err != nil {
 			log.Fatalf("otel exporter: %v", err)
 		}
@@ -294,14 +119,14 @@ func main() {
 		}()
 
 		collector.SetOTelExporter(otelExporter)
-		log.Printf("OTel metrics export enabled -> %s", *otelEndpoint)
+		log.Printf("OTel metrics export enabled -> %s", cfg.Obs.OTelEndpoint)
 	}
 
 	var strategy player.Strategy
 
-	annotator := annotations.NewAnnotator(*grafanaURL)
+	annotator := annotations.NewAnnotator(cfg.Obs.GrafanaURL)
 
-	switch *strategyFlag {
+	switch cfg.Game.Strategy {
 	case "heuristic":
 		strategy = heuristic.New(graph)
 	case "beginner":
@@ -313,28 +138,26 @@ func main() {
 	default:
 		log.Fatalf(
 			"unknown strategy: %q (valid: heuristic, beginner, normal, expert)",
-			*strategyFlag,
+			cfg.Game.Strategy,
 		)
 	}
 
 	log.Printf("using strategy: %s", strategy.Name())
 
-	if chaosCfg.Enabled() {
-		strategy = chaos.WrapStrategy(strategy, chaosCfg, collector)
+	if cfg.Chaos.Enabled() {
+		strategy = chaos.WrapStrategy(strategy, cfg.Chaos, collector)
 	}
 
 	var injector *chaos.Injector
-	if chaosCfg.DisconnectRate > 0 {
-		injector = chaos.NewInjector(chaosCfg, collector)
+	if cfg.Chaos.DisconnectRate > 0 {
+		injector = chaos.NewInjector(cfg.Chaos, collector)
 	}
 
 	// Initialize DB stats collector if DSN is provided.
 	var dbStatsCollector *dbstats.Collector
 
-	if *dbDSN != "" {
-		var err error
-
-		dbStatsCollector, err = dbstats.NewCollector(*dbDSN)
+	if cfg.Obs.DBDSN != "" {
+		dbStatsCollector, err = dbstats.NewCollector(cfg.Obs.DBDSN)
 		if err != nil {
 			log.Printf("warning: db stats disabled: %v", err)
 		} else {
@@ -344,13 +167,13 @@ func main() {
 	}
 
 	runGame := runner.New(runner.Config{
-		BaseURL:       *url,
-		WSURL:         wsURL,
-		AnonKey:       *anonKey,
+		BaseURL:       cfg.Server.URL,
+		WSURL:         cfg.Server.WSURL,
+		AnonKey:       cfg.Server.AnonKey,
 		Strategy:      strategy,
-		Timeout:       cfg.GameTimeout,
+		Timeout:       cfg.Game.GameTimeout,
 		Collector:     collector,
-		ThinkTime:     *thinkTime,
+		ThinkTime:     cfg.Game.ThinkTime,
 		Timeouts:      runner.DefaultTimeouts(),
 		ChaosInjector: injector,
 	}).ToRunFunc()
@@ -360,74 +183,32 @@ func main() {
 
 	var results []orchestrator.GameResult
 
-	switch *mode {
+	switch cfg.Mode {
 	case "batch":
-		results = orchestrator.Run(cfg, runGame, collector, annotator)
+		results = orchestrator.Run(batchCfg, runGame, collector, annotator)
 	case "ramp":
-		// For ramp mode, use the ramp game timeout for the runner.
 		rampRunGame := runner.New(runner.Config{
-			BaseURL:       *url,
-			WSURL:         wsURL,
-			AnonKey:       *anonKey,
+			BaseURL:       cfg.Server.URL,
+			WSURL:         cfg.Server.WSURL,
+			AnonKey:       cfg.Server.AnonKey,
 			Strategy:      strategy,
 			Timeout:       rampCfg.GameTimeout,
 			Collector:     collector,
-			ThinkTime:     *thinkTime,
+			ThinkTime:     cfg.Game.ThinkTime,
 			Timeouts:      runner.DefaultTimeouts(),
 			ChaosInjector: injector,
 		}).ToRunFunc()
 		results = orchestrator.RunContinuousRamp(*rampCfg, rampRunGame, collector, annotator)
 	case "staircase":
-		runStaircase(
-			staircaseCfg,
-			*stepsFlag,
-			*holdDuration,
-			*stopOnBreach,
-			*url,
-			wsURL,
-			*anonKey,
-			strategy,
-			*thinkTime,
-			injector,
-			otelExporter,
-			annotator,
-			dbStatsCollector,
-			*saveJournal,
-			*journalName,
-			*preset,
-			*compareJournal,
-			*warmupCompletions,
-			*warmupDuration,
-			*hypothesis,
-		)
+		runStaircase(cfg, strategy, injector, otelExporter, annotator, dbStatsCollector)
 
 		return
 	case "adaptive":
-		runAdaptiveMode(
-			*url,
-			wsURL,
-			*anonKey,
-			strategy,
-			*thinkTime,
-			injector,
-			otelExporter,
-			annotator,
-			dbStatsCollector,
-			*holdDuration,
-			*adaptiveIncrease,
-			*adaptiveMaxSteps,
-			*adaptiveMaxGames,
-			*warmupCompletions,
-			*warmupDuration,
-			*saveJournal,
-			*journalName,
-			*compareJournal,
-			*hypothesis,
-		)
+		runAdaptiveMode(cfg, strategy, injector, otelExporter, annotator, dbStatsCollector)
 
 		return
 	default:
-		log.Fatalf("unknown mode: %q (valid: batch, ramp, staircase, adaptive)", *mode)
+		log.Fatalf("unknown mode: %q (valid: batch, ramp, staircase, adaptive)", cfg.Mode)
 	}
 
 	totalDuration := time.Since(start)
@@ -455,7 +236,7 @@ func main() {
 	// Print report.
 	snap := collector.Snapshot()
 
-	switch *output {
+	switch cfg.Output.Format {
 	case "json":
 		if err := metrics.PrintJSON(os.Stdout, snap, totalDuration, fatalErrors, reportResults); err != nil {
 			log.Fatalf("json report: %v", err)
@@ -463,7 +244,7 @@ func main() {
 	case "text":
 		metrics.PrintReport(os.Stdout, snap, totalDuration, fatalErrors, reportResults)
 	default:
-		log.Fatalf("unknown output format: %q", *output)
+		log.Fatalf("unknown output format: %q", cfg.Output.Format)
 	}
 
 	// Run insights analysis and print results.
@@ -473,13 +254,13 @@ func main() {
 
 	// Baseline operations.
 	handleBaseline(
-		*saveBaseline,
-		*compareFile,
-		*baselineName,
-		*preset,
-		cfg.NumPlayers,
+		cfg.Output.SaveBaseline,
+		cfg.Output.CompareFile,
+		cfg.Output.BaselineName,
+		cfg.Preset,
+		cfg.Game.NumPlayers,
 		cfg.NumGames,
-		*mode,
+		cfg.Mode,
 		metricsSnap,
 		insights,
 	)
@@ -491,28 +272,26 @@ func main() {
 	}
 }
 
-func estimateRampDuration(cfg *orchestrator.RampConfig) time.Duration {
-	if cfg.Multiplier <= 0 {
-		// Constant rate.
+func estimateRampDuration(rampCfg *orchestrator.RampConfig) time.Duration {
+	if rampCfg.Multiplier <= 0 {
 		return time.Duration(
-			cfg.MaxGames/max(cfg.GamesPerMinute, 1),
+			rampCfg.MaxGames/max(rampCfg.GamesPerMinute, 1),
 		) * time.Minute
 	}
 
-	// Exponential: sum games launched per step until max reached.
-	rate := float64(cfg.GamesPerMinute)
+	rate := float64(rampCfg.GamesPerMinute)
 	total := 0
 	steps := 0
 
-	step := cfg.StepInterval
+	step := rampCfg.StepInterval
 	if step <= 0 {
 		step = time.Minute
 	}
 
-	for total < cfg.MaxGames {
+	for total < rampCfg.MaxGames {
 		total += int(rate)
 		steps++
-		rate *= cfg.Multiplier
+		rate *= rampCfg.Multiplier
 	}
 
 	return time.Duration(steps) * step
@@ -606,55 +385,45 @@ func buildCurrentBaseline(
 
 //nolint:funlen,cyclop
 func runStaircase(
-	staircaseCfg *orchestrator.StaircaseConfig,
-	stepsFlag string,
-	holdDuration time.Duration,
-	stopOnBreach bool,
-	baseURL, wsURL, anonKey string,
+	cfg *Config,
 	strategy player.Strategy,
-	thinkTime time.Duration,
 	injector *chaos.Injector,
 	otelExporter *metrics.OTelExporter,
 	annotator *annotations.Annotator,
 	dbStatsCollector *dbstats.Collector,
-	saveJournal bool,
-	journalName string,
-	presetName string,
-	compareJournalFile string,
-	warmupCompletions int,
-	warmupDuration int,
-	hypothesis string,
 ) {
+	staircaseCfg := cfg.staircaseCfg
+
 	// Build staircase config from flags if not set by preset.
 	if staircaseCfg == nil {
-		steps := parseSteps(stepsFlag)
+		steps := parseSteps(cfg.Staircase.Steps)
 		if len(steps) == 0 {
 			log.Fatal("staircase mode requires --preset or --steps flag")
 		}
 
 		staircaseCfg = &orchestrator.StaircaseConfig{
 			Steps:             steps,
-			HoldDuration:      holdDuration,
+			HoldDuration:      cfg.Staircase.HoldDuration,
 			NumPlayers:        orchestrator.DefaultNumPlayers,
 			GameTimeout:       orchestrator.DefaultGameTimeout,
-			StopOnBreach:      stopOnBreach,
+			StopOnBreach:      cfg.Staircase.StopOnBreach,
 			StaggerDelay:      orchestrator.DefaultStaggerDelay,
 			SLOs:              baseline.DefaultSLOs(),
-			WarmUpCompletions: warmupCompletions,
-			WarmUpDurationSec: warmupDuration,
+			WarmUpCompletions: cfg.Staircase.WarmupCompletions,
+			WarmUpDurationSec: cfg.Staircase.WarmupDuration,
 		}
 	}
 
 	// CLI warm-up flags override preset values.
-	if warmupCompletions > 0 {
-		staircaseCfg.WarmUpCompletions = warmupCompletions
+	if cfg.Staircase.WarmupCompletions > 0 {
+		staircaseCfg.WarmUpCompletions = cfg.Staircase.WarmupCompletions
 	}
 
-	if warmupDuration > 0 {
-		staircaseCfg.WarmUpDurationSec = warmupDuration
+	if cfg.Staircase.WarmupDuration > 0 {
+		staircaseCfg.WarmUpDurationSec = cfg.Staircase.WarmupDuration
 	}
 
-	// Set up context with signal handling (owned at the staircase level).
+	// Set up context with signal handling.
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -671,13 +440,13 @@ func runStaircase(
 	deps := orchestrator.StaircaseDeps{
 		RunnerFactory: func(c *metrics.Collector, obs orchestrator.GameObserver) orchestrator.RunFunc {
 			return runner.New(runner.Config{
-				BaseURL:       baseURL,
-				WSURL:         wsURL,
-				AnonKey:       anonKey,
+				BaseURL:       cfg.Server.URL,
+				WSURL:         cfg.Server.WSURL,
+				AnonKey:       cfg.Server.AnonKey,
 				Strategy:      strategy,
 				Timeout:       staircaseCfg.GameTimeout,
 				Collector:     c,
-				ThinkTime:     thinkTime,
+				ThinkTime:     cfg.Game.ThinkTime,
 				Timeouts:      runner.DefaultTimeouts(),
 				ChaosInjector: injector,
 				Observer:      obs,
@@ -733,21 +502,21 @@ func runStaircase(
 	log.Printf("[staircase] complete in %v: ceiling=%d games", totalDuration, ceiling.Games)
 
 	// Save and compare.
-	if saveJournal {
-		slug := journalName
+	if cfg.Journal.Save {
+		slug := cfg.Journal.Name
 		if slug == "" {
-			slug = presetName
+			slug = cfg.Preset
 		}
 
 		if slug == "" {
 			slug = "staircase"
 		}
 
-		saveJournalEntry(entry, slug, branch, commitSHA, hypothesis)
+		saveJournalEntry(entry, slug, branch, commitSHA, cfg.Journal.Hypothesis)
 	}
 
-	if compareJournalFile != "" {
-		compareJournalEntries(compareJournalFile, entry)
+	if cfg.Journal.Compare != "" {
+		compareJournalEntries(cfg.Journal.Compare, entry)
 	}
 }
 
@@ -795,23 +564,12 @@ func handleSession(branch, commitSHA, entryPath string, ceilingGames int, hypoth
 
 //nolint:funlen,cyclop
 func runAdaptiveMode(
-	baseURL, wsURL, anonKey string,
+	cfg *Config,
 	strategy player.Strategy,
-	thinkTime time.Duration,
 	injector *chaos.Injector,
 	otelExporter *metrics.OTelExporter,
 	annotator *annotations.Annotator,
 	dbStatsCollector *dbstats.Collector,
-	holdDuration time.Duration,
-	adaptiveIncrease int,
-	adaptiveMaxSteps int,
-	adaptiveMaxGames int,
-	warmupCompletions int,
-	warmupDuration int,
-	saveJournal bool,
-	journalName string,
-	compareJournalFile string,
-	hypothesis string,
 ) {
 	// Set up context with signal handling.
 	ctx, cancel := context.WithCancel(context.Background())
@@ -841,31 +599,31 @@ func runAdaptiveMode(
 	}
 
 	// Build adaptive config.
-	cfg := orchestrator.AdaptiveConfig{
+	adaptiveCfg := orchestrator.AdaptiveConfig{
 		InitialCeiling:    initialCeiling,
-		AdditiveIncrease:  adaptiveIncrease,
-		HoldDuration:      holdDuration,
+		AdditiveIncrease:  cfg.Adaptive.Increase,
+		HoldDuration:      cfg.Staircase.HoldDuration,
 		NumPlayers:        4,
 		GameTimeout:       10 * time.Minute,
 		StaggerDelay:      100 * time.Millisecond,
 		SLOs:              baseline.DefaultSLOs(),
-		MaxSteps:          adaptiveMaxSteps,
-		MaxGames:          adaptiveMaxGames,
-		WarmUpCompletions: warmupCompletions,
-		WarmUpDurationSec: warmupDuration,
+		MaxSteps:          cfg.Adaptive.MaxSteps,
+		MaxGames:          cfg.Adaptive.MaxGames,
+		WarmUpCompletions: cfg.Staircase.WarmupCompletions,
+		WarmUpDurationSec: cfg.Staircase.WarmupDuration,
 	}
 
 	// Build dependencies (same as staircase).
 	deps := orchestrator.StaircaseDeps{
 		RunnerFactory: func(c *metrics.Collector, obs orchestrator.GameObserver) orchestrator.RunFunc {
 			return runner.New(runner.Config{
-				BaseURL:       baseURL,
-				WSURL:         wsURL,
-				AnonKey:       anonKey,
+				BaseURL:       cfg.Server.URL,
+				WSURL:         cfg.Server.WSURL,
+				AnonKey:       cfg.Server.AnonKey,
 				Strategy:      strategy,
-				Timeout:       cfg.GameTimeout,
+				Timeout:       adaptiveCfg.GameTimeout,
 				Collector:     c,
-				ThinkTime:     thinkTime,
+				ThinkTime:     cfg.Game.ThinkTime,
 				Timeouts:      runner.DefaultTimeouts(),
 				ChaosInjector: injector,
 				Observer:      obs,
@@ -880,11 +638,11 @@ func runAdaptiveMode(
 
 	// Run adaptive staircase.
 	start := time.Now()
-	result := orchestrator.RunAdaptive(ctx, cfg, deps)
+	result := orchestrator.RunAdaptive(ctx, adaptiveCfg, deps)
 	totalDuration := time.Since(start)
 
 	// Convert and analyze results.
-	stepResults, _ := convertStepResults(result.Steps, cfg.SLOs)
+	stepResults, _ := convertStepResults(result.Steps, adaptiveCfg.SLOs)
 	ceiling := journal.FindSLOCeiling(stepResults)
 
 	// Override ceiling games from the adaptive result (it knows the converged value).
@@ -909,11 +667,11 @@ func runAdaptiveMode(
 		Config: journal.StaircaseParams{
 			Mode:              "adaptive",
 			Steps:             configSteps,
-			HoldDurationSec:   holdDuration.Seconds(),
-			NumPlayers:        cfg.NumPlayers,
-			GameTimeoutSec:    cfg.GameTimeout.Seconds(),
-			WarmUpCompletions: warmupCompletions,
-			WarmUpDurationSec: warmupDuration,
+			HoldDurationSec:   cfg.Staircase.HoldDuration.Seconds(),
+			NumPlayers:        adaptiveCfg.NumPlayers,
+			GameTimeoutSec:    adaptiveCfg.GameTimeout.Seconds(),
+			WarmUpCompletions: cfg.Staircase.WarmupCompletions,
+			WarmUpDurationSec: cfg.Staircase.WarmupDuration,
 		},
 		SLOCeiling:  ceiling,
 		Steps:       stepResults,
@@ -941,17 +699,17 @@ func runAdaptiveMode(
 	)
 
 	// Save and compare.
-	if saveJournal {
-		slug := journalName
+	if cfg.Journal.Save {
+		slug := cfg.Journal.Name
 		if slug == "" {
 			slug = "adaptive"
 		}
 
-		saveJournalEntry(entry, slug, branch, commitSHA, hypothesis)
+		saveJournalEntry(entry, slug, branch, commitSHA, cfg.Journal.Hypothesis)
 	}
 
-	if compareJournalFile != "" {
-		compareJournalEntries(compareJournalFile, entry)
+	if cfg.Journal.Compare != "" {
+		compareJournalEntries(cfg.Journal.Compare, entry)
 	}
 }
 
