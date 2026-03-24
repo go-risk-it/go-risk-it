@@ -26,6 +26,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/player/heuristic"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/player/smart"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/resources"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/runner"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/scenario"
 )
 
@@ -342,17 +343,17 @@ func main() {
 		}
 	}
 
-	runner := orchestrator.NewGameRunner(
-		*url,
-		wsURL,
-		*anonKey,
-		strategy,
-		cfg.GameTimeout,
-		collector,
-		*thinkTime,
-		orchestrator.DefaultTimeouts(),
-		injector,
-	)
+	runGame := runner.New(runner.Config{
+		BaseURL:       *url,
+		WSURL:         wsURL,
+		AnonKey:       *anonKey,
+		Strategy:      strategy,
+		Timeout:       cfg.GameTimeout,
+		Collector:     collector,
+		ThinkTime:     *thinkTime,
+		Timeouts:      runner.DefaultTimeouts(),
+		ChaosInjector: injector,
+	}).ToRunFunc()
 
 	// Run games.
 	start := time.Now()
@@ -361,21 +362,21 @@ func main() {
 
 	switch *mode {
 	case "batch":
-		results = orchestrator.Run(cfg, runner, collector, annotator)
+		results = orchestrator.Run(cfg, runGame, collector, annotator)
 	case "ramp":
 		// For ramp mode, use the ramp game timeout for the runner.
-		runner = orchestrator.NewGameRunner(
-			*url,
-			wsURL,
-			*anonKey,
-			strategy,
-			rampCfg.GameTimeout,
-			collector,
-			*thinkTime,
-			orchestrator.DefaultTimeouts(),
-			injector,
-		)
-		results = orchestrator.RunContinuousRamp(*rampCfg, runner, collector, annotator)
+		rampRunGame := runner.New(runner.Config{
+			BaseURL:       *url,
+			WSURL:         wsURL,
+			AnonKey:       *anonKey,
+			Strategy:      strategy,
+			Timeout:       rampCfg.GameTimeout,
+			Collector:     collector,
+			ThinkTime:     *thinkTime,
+			Timeouts:      runner.DefaultTimeouts(),
+			ChaosInjector: injector,
+		}).ToRunFunc()
+		results = orchestrator.RunContinuousRamp(*rampCfg, rampRunGame, collector, annotator)
 	case "staircase":
 		runStaircase(
 			staircaseCfg,
@@ -669,14 +670,18 @@ func runStaircase(
 	// Build dependencies.
 	deps := orchestrator.StaircaseDeps{
 		RunnerFactory: func(c *metrics.Collector, obs orchestrator.GameObserver) orchestrator.RunFunc {
-			r := orchestrator.NewGameRunner(
-				baseURL, wsURL, anonKey, strategy,
-				staircaseCfg.GameTimeout, c, thinkTime,
-				orchestrator.DefaultTimeouts(), injector,
-			)
-			r.SetObserver(obs)
-
-			return r.Run
+			return runner.New(runner.Config{
+				BaseURL:       baseURL,
+				WSURL:         wsURL,
+				AnonKey:       anonKey,
+				Strategy:      strategy,
+				Timeout:       staircaseCfg.GameTimeout,
+				Collector:     c,
+				ThinkTime:     thinkTime,
+				Timeouts:      runner.DefaultTimeouts(),
+				ChaosInjector: injector,
+				Observer:      obs,
+			}).ToRunFunc()
 		},
 		NewCollector:     metrics.NewCollector,
 		CollectResources: func() resources.ServerResources { return resources.CollectServerResources(resources.DefaultStatsFunc) },
@@ -853,14 +858,18 @@ func runAdaptiveMode(
 	// Build dependencies (same as staircase).
 	deps := orchestrator.StaircaseDeps{
 		RunnerFactory: func(c *metrics.Collector, obs orchestrator.GameObserver) orchestrator.RunFunc {
-			r := orchestrator.NewGameRunner(
-				baseURL, wsURL, anonKey, strategy,
-				cfg.GameTimeout, c, thinkTime,
-				orchestrator.DefaultTimeouts(), injector,
-			)
-			r.SetObserver(obs)
-
-			return r.Run
+			return runner.New(runner.Config{
+				BaseURL:       baseURL,
+				WSURL:         wsURL,
+				AnonKey:       anonKey,
+				Strategy:      strategy,
+				Timeout:       cfg.GameTimeout,
+				Collector:     c,
+				ThinkTime:     thinkTime,
+				Timeouts:      runner.DefaultTimeouts(),
+				ChaosInjector: injector,
+				Observer:      obs,
+			}).ToRunFunc()
 		},
 		NewCollector:     metrics.NewCollector,
 		CollectResources: func() resources.ServerResources { return resources.CollectServerResources(resources.DefaultStatsFunc) },

@@ -38,7 +38,7 @@ func (c RampConfig) stepInterval() time.Duration {
 // or error rate exceeds ErrorThreshold.
 func RunContinuousRamp(
 	cfg RampConfig,
-	runner *GameRunner,
+	runGame RunFunc,
 	collector *metrics.Collector,
 	annotator *annotations.Annotator,
 ) []GameResult {
@@ -147,7 +147,7 @@ func RunContinuousRamp(
 		go func() {
 			defer wg.Done()
 
-			result := runner.Run(ctx, idx, cfg.NumPlayers)
+			result := runGame(ctx, idx, cfg.NumPlayers)
 
 			mu.Lock()
 			results = append(results, result)

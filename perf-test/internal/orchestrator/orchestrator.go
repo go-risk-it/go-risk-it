@@ -25,7 +25,7 @@ type Config struct {
 // It returns results for all games and handles graceful shutdown on SIGINT/SIGTERM.
 func Run(
 	cfg Config,
-	runner *GameRunner,
+	runGame RunFunc,
 	collector *metrics.Collector,
 	annotator *annotations.Annotator,
 ) []GameResult {
@@ -74,7 +74,7 @@ func Run(
 		go func(idx int) {
 			defer wg.Done()
 
-			results[idx] = runner.Run(ctx, idx, cfg.NumPlayers)
+			results[idx] = runGame(ctx, idx, cfg.NumPlayers)
 		}(i)
 
 		log.Printf("launched game %d/%d", i+1, cfg.NumGames)
