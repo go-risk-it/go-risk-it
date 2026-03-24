@@ -1,6 +1,7 @@
 package move
 
 import (
+	"log/slog"
 	"net/http"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
@@ -29,6 +30,7 @@ func (h *DeployHandlerImpl) Pattern() string {
 }
 
 func (h *DeployHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
+	slog.InfoContext(req.Context(), "deploy move received (slog spike)")
 	handleMove[request.DeployMove](writer, req, h.moveController.PerformDeployMove)
 }
 
