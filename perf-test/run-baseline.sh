@@ -91,6 +91,9 @@ if ! $HAS_NAME; then
     DEFAULT_ARGS+=(--baseline-name "$PRESET_NAME")
 fi
 
+# --- Wait for API readiness through Kong ---
+source "$SCRIPT_DIR/wait-for-api.sh"
+
 echo "=== Perf Test Baseline ==="
 echo "  OTel:    $OTEL_ENDPOINT"
 echo "  Grafana: $GRAFANA_URL"

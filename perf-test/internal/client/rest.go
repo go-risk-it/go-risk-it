@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	maxRetries    = 3
-	baseBackoff   = 100 * time.Millisecond
+	maxRetries    = 5
+	baseBackoff   = 200 * time.Millisecond
 	backoffFactor = 2
 	clientTimeout = 30 * time.Second
 )
