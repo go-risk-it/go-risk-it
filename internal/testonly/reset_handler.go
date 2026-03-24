@@ -10,24 +10,13 @@ import (
 func NewResetHandler(
 	testOnlyController Controller,
 ) *route.Route {
-	h := &resetHandler{
-		testOnlyController: testOnlyController,
-	}
+	return route.Authed("POST /api/v1/reset", func(w http.ResponseWriter, r *http.Request) error {
+		if err := testOnlyController.ResetState(r.Context()); err != nil {
+			return err
+		}
 
-	return route.New("/api/v1/reset", true, h)
-}
+		restutils.WriteResponse(w, []byte{}, http.StatusNoContent)
 
-type resetHandler struct {
-	testOnlyController Controller
-}
-
-func (h *resetHandler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	err := h.testOnlyController.ResetState(req.Context())
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-
-		return
-	}
-
-	restutils.WriteResponse(writer, []byte{}, http.StatusNoContent)
+		return nil
+	})
 }
