@@ -1,0 +1,16 @@
+{
+  "id": "gzotta-refactor-route-mux",
+  "branch": "gzotta/refactor-route-mux",
+  "baseline_entry": "perf-journal/entries/000-staircase-29c3284.json",
+  "started_at": "2026-03-24T13:43:29.261302+01:00",
+  "runs": [
+    {
+      "entry_path": "perf-journal/entries/000-staircase-29c3284.json",
+      "commit_sha": "29c3284",
+      "ceiling_games": 120,
+      "ceiling_delta": 120,
+      "timestamp": "2026-03-24T13:43:29.261818+01:00"
+    }
+  ],
+  "status": "active"
+}

@@ -1,0 +1,23 @@
+{
+  "id": "gzotta-refactor-slog-migration",
+  "branch": "gzotta/refactor-slog-migration",
+  "baseline_entry": "perf-journal/entries/001-staircase-heavy-23f00b6.json",
+  "started_at": "2026-03-24T14:01:26.721958+01:00",
+  "runs": [
+    {
+      "entry_path": "perf-journal/entries/001-staircase-heavy-23f00b6.json",
+      "commit_sha": "23f00b6",
+      "ceiling_games": 40,
+      "ceiling_delta": 40,
+      "timestamp": "2026-03-24T14:01:26.722191+01:00"
+    },
+    {
+      "entry_path": "perf-journal/entries/001-staircase-heavy-23f00b6.json",
+      "commit_sha": "23f00b6",
+      "ceiling_games": 250,
+      "ceiling_delta": 210,
+      "timestamp": "2026-03-24T14:25:52.828158+01:00"
+    }
+  ],
+  "status": "active"
+}

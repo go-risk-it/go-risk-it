@@ -28,7 +28,7 @@ type Timeouts struct {
 	MaxConsecutiveErr int
 }
 
-// DefaultTimeouts returns sensible defaults matching orchestrator.DefaultTimeouts().
+// DefaultTimeouts returns sensible defaults for all timing parameters.
 func DefaultTimeouts() Timeouts {
 	return Timeouts{
 		InitialStateWait:  1 * time.Second,

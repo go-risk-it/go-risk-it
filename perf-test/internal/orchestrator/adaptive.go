@@ -6,22 +6,23 @@ import (
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/baseline"
-	"github.com/go-risk-it/go-risk-it/perf-test/internal/health"
-	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
 )
 
 // AdaptiveConfig defines the TCP congestion control staircase parameters.
 type AdaptiveConfig struct {
-	InitialCeiling    int           // from session's last ceiling; 0 starts at 10
-	AdditiveIncrease  int           // games to add per successful step (default 5)
-	HoldDuration      time.Duration // how long to hold each level
+	InitialCeiling   int // from session's last ceiling; 0 starts at 10
+	AdditiveIncrease int // games to add per successful step (default 5)
+	SLOs             baseline.SLOSet
+	MaxSteps         int // upper bound on steps (default 20)
+	MaxGames         int // hard ceiling (default 500)
+	CooldownSec      int
+
+	// Fields below are consumed by StepExecutorConfig at construction time.
+	// RunAdaptive does not use them directly.
+	HoldDuration      time.Duration
 	NumPlayers        int
 	GameTimeout       time.Duration
 	StaggerDelay      time.Duration
-	SLOs              baseline.SLOSet
-	MaxSteps          int // upper bound on steps (default 20)
-	MaxGames          int // hard ceiling (default 500)
-	CooldownSec       int
 	WarmUpCompletions int
 	WarmUpDurationSec int
 }
@@ -48,7 +49,7 @@ func (c AdaptiveConfig) cooldown() time.Duration {
 func RunAdaptive(
 	ctx context.Context,
 	cfg AdaptiveConfig,
-	deps StaircaseDeps,
+	executor StepExecutor,
 ) AdaptiveResult {
 	if cfg.AdditiveIncrease <= 0 {
 		cfg.AdditiveIncrease = 5
@@ -84,7 +85,7 @@ func RunAdaptive(
 
 		log.Printf("[adaptive] probe step %d: %d games", stepNum+1, current)
 
-		output, passed := runAdaptiveStep(ctx, cfg, deps, current, indexOffset, stepNum)
+		output, passed := executeAndEvaluate(ctx, executor, cfg.SLOs, current, indexOffset)
 		result.Steps = append(result.Steps, output)
 		indexOffset += current * IndexOffsetMultiplier
 		stepNum++
@@ -95,7 +96,7 @@ func RunAdaptive(
 			// Phase 2: Binary search.
 			lastBad := current
 			result = binarySearch(
-				ctx, cfg, deps, lastGood, lastBad,
+				ctx, cfg, executor, lastGood, lastBad,
 				indexOffset, stepNum, result,
 			)
 
@@ -120,7 +121,7 @@ func RunAdaptive(
 func binarySearch(
 	ctx context.Context,
 	cfg AdaptiveConfig,
-	deps StaircaseDeps,
+	executor StepExecutor,
 	lastGood, lastBad int,
 	indexOffset, stepNum int,
 	result AdaptiveResult,
@@ -143,7 +144,7 @@ func binarySearch(
 			lastBad,
 		)
 
-		output, passed := runAdaptiveStep(ctx, cfg, deps, mid, indexOffset, stepNum)
+		output, passed := executeAndEvaluate(ctx, executor, cfg.SLOs, mid, indexOffset)
 		result.Steps = append(result.Steps, output)
 		indexOffset += mid * IndexOffsetMultiplier
 		stepNum++
@@ -163,64 +164,29 @@ func binarySearch(
 	return result
 }
 
-func runAdaptiveStep(
+// executeAndEvaluate runs a step and evaluates SLOs, returning the output and
+// whether all SLOs passed.
+func executeAndEvaluate(
 	ctx context.Context,
-	cfg AdaptiveConfig,
-	deps StaircaseDeps,
-	targetGames int,
-	indexOffset int,
-	stepIndex int,
+	executor StepExecutor,
+	slos baseline.SLOSet,
+	targetGames, indexOffset int,
 ) (StepOutput, bool) {
-	collector := deps.NewCollector(cfg.HoldDuration)
+	output, err := executor.Execute(ctx, targetGames, indexOffset)
+	if err != nil {
+		log.Printf("[adaptive] execute: %v", err)
 
-	// Time-based warm-up: wait for the stagger fill to complete.
-	// See staircase.go for rationale — completion-based warm-up fails at
-	// high concurrency where few games finish within the hold window.
-	if cfg.WarmUpCompletions > 0 || cfg.WarmUpDurationSec > 0 {
-		minDuration := time.Duration(targetGames) * cfg.StaggerDelay
-		if cfgDur := time.Duration(cfg.WarmUpDurationSec) * time.Second; cfgDur > minDuration {
-			minDuration = cfgDur
-		}
-
-		collector.ConfigureWarmUp(metrics.WarmUpConfig{
-			MinCompletions: 0,
-			MinDuration:    minDuration,
-		})
+		return StepOutput{TargetGames: targetGames}, false
 	}
 
-	if deps.OTelExporter != nil {
-		collector.SetOTelExporter(deps.OTelExporter)
+	if output.Snapshot == nil {
+		return *output, true
 	}
-
-	tracker := health.NewTracker(health.DefaultThresholds())
-	observer := health.NewTrackerObserver(tracker)
-	runFunc := deps.RunnerFactory(collector, observer)
-
-	staircaseCfg := StaircaseConfig{
-		Steps:        []int{targetGames},
-		HoldDuration: cfg.HoldDuration,
-		NumPlayers:   cfg.NumPlayers,
-		GameTimeout:  cfg.GameTimeout,
-		StaggerDelay: cfg.StaggerDelay,
-		SLOs:         cfg.SLOs,
-	}
-
-	output := runStep(
-		ctx,
-		staircaseCfg,
-		deps,
-		targetGames,
-		indexOffset,
-		stepIndex,
-		runFunc,
-		collector,
-		tracker,
-	)
 
 	metricsSnap := baseline.SnapshotToMetrics(output.Snapshot, output.Duration.Seconds())
-	evalResult := cfg.SLOs.Evaluate(metricsSnap)
+	evalResult := slos.Evaluate(metricsSnap)
 
-	return output, evalResult.AllPassing()
+	return *output, evalResult.AllPassing()
 }
 
 func cooldown(ctx context.Context, d time.Duration) {
