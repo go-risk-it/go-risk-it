@@ -34,7 +34,7 @@ func (c StaircaseConfig) cooldown() time.Duration {
 		return time.Duration(c.CooldownSec) * time.Second
 	}
 
-	return 5 * time.Second
+	return DefaultCooldownSec * time.Second
 }
 
 // StepOutput holds raw data from a single staircase step.
@@ -112,7 +112,7 @@ func RunStaircase(
 		output := runStep(ctx, cfg, deps, targetGames, indexOffset, i, runFunc, collector, tracker)
 		outputs = append(outputs, output)
 
-		indexOffset += targetGames * 10 // generous offset for replacement games
+		indexOffset += targetGames * IndexOffsetMultiplier // generous offset for replacement games
 
 		// Check SLOs if stop-on-breach is enabled.
 		if cfg.StopOnBreach {

@@ -634,10 +634,10 @@ func runStaircase(
 		staircaseCfg = &orchestrator.StaircaseConfig{
 			Steps:             steps,
 			HoldDuration:      holdDuration,
-			NumPlayers:        4,
-			GameTimeout:       10 * time.Minute,
+			NumPlayers:        orchestrator.DefaultNumPlayers,
+			GameTimeout:       orchestrator.DefaultGameTimeout,
 			StopOnBreach:      stopOnBreach,
-			StaggerDelay:      100 * time.Millisecond,
+			StaggerDelay:      orchestrator.DefaultStaggerDelay,
 			SLOs:              baseline.DefaultSLOs(),
 			WarmUpCompletions: warmupCompletions,
 			WarmUpDurationSec: warmupDuration,
@@ -690,66 +690,12 @@ func runStaircase(
 	stepOutputs := orchestrator.RunStaircase(ctx, *staircaseCfg, deps)
 	totalDuration := time.Since(start)
 
-	// Convert StepOutputs to journal StepResults.
-	slos := staircaseCfg.SLOs
-	stepResults := make([]journal.StepResult, len(stepOutputs))
-	levelResults := make([]baseline.LevelResult, len(stepOutputs))
-
-	for i, so := range stepOutputs {
-		metricsSnap := baseline.SnapshotToMetrics(so.Snapshot, so.Duration.Seconds())
-		evalResult := slos.Evaluate(metricsSnap)
-
-		stepResults[i] = journal.StepResult{
-			TargetGames:        so.TargetGames,
-			Metrics:            metricsSnap,
-			SLOEval:            evalResult,
-			ServerResources:    so.ServerResources,
-			DurationSec:        so.Duration.Seconds(),
-			HealthDistribution: so.HealthDistribution,
-			DBStats:            so.DBStats,
-		}
-
-		levelResults[i] = baseline.LevelResult{
-			Games:   so.TargetGames,
-			Metrics: metricsSnap,
-		}
-	}
-
-	// Compute SLO ceiling and breaking points.
+	// Convert and analyze results.
+	stepResults, levelResults := convertStepResults(stepOutputs, staircaseCfg.SLOs)
 	ceiling := journal.FindSLOCeiling(stepResults)
-	breakingPoints := baseline.FindBreakingPoints(levelResults, slos)
-
-	// Get insights from the ceiling step (or last step).
-	var insights []baseline.Insight
-	if len(stepResults) > 0 {
-		lastIdx := len(stepResults) - 1
-		if ceiling.Games > 0 {
-			for i, sr := range stepResults {
-				if sr.TargetGames == ceiling.Games {
-					lastIdx = i
-
-					break
-				}
-			}
-		}
-
-		insights = baseline.Analyze(stepResults[lastIdx].Metrics)
-	}
-
-	// Build commit SHA and branch.
-	commitSHA := "unknown"
-
-	out, err := exec.Command("git", "rev-parse", "--short", "HEAD").Output()
-	if err == nil {
-		commitSHA = strings.TrimSpace(string(out))
-	}
-
-	branch := ""
-
-	branchOut, err := exec.Command("git", "branch", "--show-current").Output()
-	if err == nil {
-		branch = strings.TrimSpace(string(branchOut))
-	}
+	breakingPoints := baseline.FindBreakingPoints(levelResults, staircaseCfg.SLOs)
+	insights := findCeilingInsights(stepResults, ceiling)
+	commitSHA, branch := getGitInfo()
 
 	// Build journal entry.
 	entry := journal.Entry{
@@ -781,7 +727,7 @@ func runStaircase(
 
 	log.Printf("[staircase] complete in %v: ceiling=%d games", totalDuration, ceiling.Games)
 
-	// Save journal entry.
+	// Save and compare.
 	if saveJournal {
 		slug := journalName
 		if slug == "" {
@@ -792,27 +738,11 @@ func runStaircase(
 			slug = "staircase"
 		}
 
-		path, err := journal.SaveEntry("perf-journal/entries", slug, entry)
-		if err != nil {
-			log.Printf("failed to save journal entry: %v", err)
-		} else {
-			log.Printf("journal entry saved: %s", path)
-
-			// Session integration: auto-create/update session for non-main branches.
-			if branch != "" && branch != "main" && branch != "master" {
-				handleSession(branch, commitSHA, path, ceiling.Games, hypothesis)
-			}
-		}
+		saveJournalEntry(entry, slug, branch, commitSHA, hypothesis)
 	}
 
-	// Comparison.
 	if compareJournalFile != "" {
-		prevEntry, err := journal.LoadEntry(compareJournalFile)
-		if err != nil {
-			log.Fatalf("failed to load journal entry: %v", err)
-		}
-
-		journal.PrintCeilingComparison(os.Stdout, prevEntry, entry)
+		compareJournalEntries(compareJournalFile, entry)
 	}
 }
 
@@ -892,12 +822,7 @@ func runAdaptiveMode(
 	}()
 
 	// Detect branch and read session's last ceiling.
-	branch := ""
-
-	branchOut, err := exec.Command("git", "branch", "--show-current").Output()
-	if err == nil {
-		branch = strings.TrimSpace(string(branchOut))
-	}
+	_, branch := getGitInfo()
 
 	initialCeiling := 0
 	if branch != "" && branch != "main" && branch != "master" {
@@ -949,26 +874,8 @@ func runAdaptiveMode(
 	result := orchestrator.RunAdaptive(ctx, cfg, deps)
 	totalDuration := time.Since(start)
 
-	// Convert StepOutputs to journal StepResults.
-	slos := cfg.SLOs
-	stepResults := make([]journal.StepResult, len(result.Steps))
-
-	for i, so := range result.Steps {
-		metricsSnap := baseline.SnapshotToMetrics(so.Snapshot, so.Duration.Seconds())
-		evalResult := slos.Evaluate(metricsSnap)
-
-		stepResults[i] = journal.StepResult{
-			TargetGames:        so.TargetGames,
-			Metrics:            metricsSnap,
-			SLOEval:            evalResult,
-			ServerResources:    so.ServerResources,
-			DurationSec:        so.Duration.Seconds(),
-			HealthDistribution: so.HealthDistribution,
-			DBStats:            so.DBStats,
-		}
-	}
-
-	// Compute SLO ceiling and breaking points.
+	// Convert and analyze results.
+	stepResults, _ := convertStepResults(result.Steps, cfg.SLOs)
 	ceiling := journal.FindSLOCeiling(stepResults)
 
 	// Override ceiling games from the adaptive result (it knows the converged value).
@@ -976,35 +883,13 @@ func runAdaptiveMode(
 		ceiling.Games = result.Ceiling
 	}
 
-	// Get insights from the ceiling step (or last step).
-	var insights []baseline.Insight
-	if len(stepResults) > 0 {
-		lastIdx := len(stepResults) - 1
-		if ceiling.Games > 0 {
-			for i, sr := range stepResults {
-				if sr.TargetGames == ceiling.Games {
-					lastIdx = i
-
-					break
-				}
-			}
-		}
-
-		insights = baseline.Analyze(stepResults[lastIdx].Metrics)
-	}
+	insights := findCeilingInsights(stepResults, ceiling)
+	commitSHA, _ := getGitInfo()
 
 	// Collect steps list for config.
 	configSteps := make([]int, len(result.Steps))
 	for i, so := range result.Steps {
 		configSteps[i] = so.TargetGames
-	}
-
-	// Build commit SHA.
-	commitSHA := "unknown"
-
-	out, err := exec.Command("git", "rev-parse", "--short", "HEAD").Output()
-	if err == nil {
-		commitSHA = strings.TrimSpace(string(out))
 	}
 
 	// Build journal entry.
@@ -1046,34 +931,18 @@ func runAdaptiveMode(
 		convergedStr,
 	)
 
-	// Save journal entry.
+	// Save and compare.
 	if saveJournal {
 		slug := journalName
 		if slug == "" {
 			slug = "adaptive"
 		}
 
-		path, err := journal.SaveEntry("perf-journal/entries", slug, entry)
-		if err != nil {
-			log.Printf("failed to save journal entry: %v", err)
-		} else {
-			log.Printf("journal entry saved: %s", path)
-
-			// Session integration: auto-create/update session for non-main branches.
-			if branch != "" && branch != "main" && branch != "master" {
-				handleSession(branch, commitSHA, path, ceiling.Games, hypothesis)
-			}
-		}
+		saveJournalEntry(entry, slug, branch, commitSHA, hypothesis)
 	}
 
-	// Comparison.
 	if compareJournalFile != "" {
-		prevEntry, err := journal.LoadEntry(compareJournalFile)
-		if err != nil {
-			log.Fatalf("failed to load journal entry: %v", err)
-		}
-
-		journal.PrintCeilingComparison(os.Stdout, prevEntry, entry)
+		compareJournalEntries(compareJournalFile, entry)
 	}
 }
 
@@ -1096,4 +965,107 @@ func parseSteps(s string) []int {
 	}
 
 	return steps
+}
+
+// convertStepResults converts orchestrator StepOutputs to journal StepResults
+// and baseline LevelResults.
+func convertStepResults(
+	outputs []orchestrator.StepOutput,
+	slos baseline.SLOSet,
+) ([]journal.StepResult, []baseline.LevelResult) {
+	stepResults := make([]journal.StepResult, len(outputs))
+	levelResults := make([]baseline.LevelResult, len(outputs))
+
+	for i, so := range outputs {
+		metricsSnap := baseline.SnapshotToMetrics(so.Snapshot, so.Duration.Seconds())
+		evalResult := slos.Evaluate(metricsSnap)
+
+		stepResults[i] = journal.StepResult{
+			TargetGames:        so.TargetGames,
+			Metrics:            metricsSnap,
+			SLOEval:            evalResult,
+			ServerResources:    so.ServerResources,
+			DurationSec:        so.Duration.Seconds(),
+			HealthDistribution: so.HealthDistribution,
+			DBStats:            so.DBStats,
+		}
+
+		levelResults[i] = baseline.LevelResult{
+			Games:   so.TargetGames,
+			Metrics: metricsSnap,
+		}
+	}
+
+	return stepResults, levelResults
+}
+
+// findCeilingInsights returns insights from the step that matches the ceiling,
+// or the last step if no ceiling.
+func findCeilingInsights(
+	stepResults []journal.StepResult,
+	ceiling journal.SLOCeiling,
+) []baseline.Insight {
+	if len(stepResults) == 0 {
+		return nil
+	}
+
+	lastIdx := len(stepResults) - 1
+	if ceiling.Games > 0 {
+		for i, sr := range stepResults {
+			if sr.TargetGames == ceiling.Games {
+				lastIdx = i
+
+				break
+			}
+		}
+	}
+
+	return baseline.Analyze(stepResults[lastIdx].Metrics)
+}
+
+// getGitInfo returns the current short commit SHA and branch name.
+func getGitInfo() (commitSHA, branch string) {
+	commitSHA = "unknown"
+
+	out, err := exec.Command("git", "rev-parse", "--short", "HEAD").Output()
+	if err == nil {
+		commitSHA = strings.TrimSpace(string(out))
+	}
+
+	branchOut, err := exec.Command("git", "branch", "--show-current").Output()
+	if err == nil {
+		branch = strings.TrimSpace(string(branchOut))
+	}
+
+	return commitSHA, branch
+}
+
+// saveJournalEntry saves the journal entry and handles session integration.
+func saveJournalEntry(
+	entry journal.Entry,
+	slug string,
+	branch, commitSHA, hypothesis string,
+) {
+	path, err := journal.SaveEntry("perf-journal/entries", slug, entry)
+	if err != nil {
+		log.Printf("failed to save journal entry: %v", err)
+
+		return
+	}
+
+	log.Printf("journal entry saved: %s", path)
+
+	if branch != "" && branch != "main" && branch != "master" {
+		handleSession(branch, commitSHA, path, entry.SLOCeiling.Games, hypothesis)
+	}
+}
+
+// compareJournalEntries prints a comparison between two journal entries.
+func compareJournalEntries(compareFile string, entry journal.Entry) {
+	prevEntry, err := journal.LoadEntry(compareFile)
+	if err != nil {
+		log.Fatalf("failed to load journal entry: %v", err)
+	}
+
+	journal.PrintCeilingComparison(os.Stdout, prevEntry, entry)
 }

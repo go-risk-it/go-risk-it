@@ -38,7 +38,7 @@ func (c AdaptiveConfig) cooldown() time.Duration {
 		return time.Duration(c.CooldownSec) * time.Second
 	}
 
-	return 5 * time.Second
+	return DefaultCooldownSec * time.Second
 }
 
 // RunAdaptive executes a TCP congestion control staircase:
@@ -86,7 +86,7 @@ func RunAdaptive(
 
 		output, passed := runAdaptiveStep(ctx, cfg, deps, current, indexOffset, stepNum)
 		result.Steps = append(result.Steps, output)
-		indexOffset += current * 10
+		indexOffset += current * IndexOffsetMultiplier
 		stepNum++
 
 		if !passed {
@@ -145,7 +145,7 @@ func binarySearch(
 
 		output, passed := runAdaptiveStep(ctx, cfg, deps, mid, indexOffset, stepNum)
 		result.Steps = append(result.Steps, output)
-		indexOffset += mid * 10
+		indexOffset += mid * IndexOffsetMultiplier
 		stepNum++
 
 		if passed {
