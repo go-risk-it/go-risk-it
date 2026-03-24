@@ -130,7 +130,7 @@ func TestAdvanceQ_ValidationFails(t *testing.T) {
 	require.Empty(t, targetPhase)
 	require.ErrorContains(t, err, "validation failed")
 
-	var conflictErr *domainerrors.ConflictError
+	var conflictErr *domainerrors.DomainError
 	require.ErrorAs(t, err, &conflictErr)
 }
 
@@ -156,7 +156,7 @@ func TestAdvanceQ_PhaseMismatchReturnsConflictError(t *testing.T) {
 	require.Error(t, err)
 	require.Empty(t, targetPhase)
 
-	var conflictErr *domainerrors.ConflictError
+	var conflictErr *domainerrors.DomainError
 	require.ErrorAs(t, err, &conflictErr)
 	require.Contains(t, conflictErr.Error(), "DEPLOY")
 	require.Contains(t, conflictErr.Error(), "ATTACK")
@@ -299,6 +299,6 @@ func TestAdvanceQ_ForbiddenErrorPropagated(t *testing.T) {
 	require.Error(t, err)
 	require.Empty(t, targetPhase)
 
-	var forbiddenErr *domainerrors.ForbiddenError
+	var forbiddenErr *domainerrors.DomainError
 	require.ErrorAs(t, err, &forbiddenErr)
 }

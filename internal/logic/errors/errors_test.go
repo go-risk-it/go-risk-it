@@ -46,11 +46,12 @@ func TestValidationError_ErrorsAs(t *testing.T) {
 	wrapped := domainerrors.WrapValidationError(errSentinel, "bad input")
 	outerErr := errors.Join(errors.New("context"), wrapped)
 
-	var validationErr *domainerrors.ValidationError
+	var domainErr *domainerrors.DomainError
 
-	require.ErrorAs(t, outerErr, &validationErr)
-	assert.Equal(t, "bad input: underlying cause", validationErr.Error())
-	assert.ErrorIs(t, validationErr, errSentinel)
+	require.ErrorAs(t, outerErr, &domainErr)
+	assert.Equal(t, "bad input: underlying cause", domainErr.Error())
+	require.ErrorIs(t, domainErr, errSentinel)
+	assert.Equal(t, domainerrors.CategoryValidation, domainErr.Category())
 }
 
 func TestValidationErrorf_Wrap(t *testing.T) {
@@ -88,10 +89,11 @@ func TestConflictError_ErrorsAs(t *testing.T) {
 	wrapped := domainerrors.WrapConflictErrorf(errSentinel, "phase %s", "deploy")
 	outerErr := errors.Join(errors.New("context"), wrapped)
 
-	var conflictErr *domainerrors.ConflictError
+	var domainErr *domainerrors.DomainError
 
-	require.ErrorAs(t, outerErr, &conflictErr)
-	assert.Equal(t, "phase deploy: underlying cause", conflictErr.Error())
+	require.ErrorAs(t, outerErr, &domainErr)
+	assert.Equal(t, "phase deploy: underlying cause", domainErr.Error())
+	assert.Equal(t, domainerrors.CategoryConflict, domainErr.Category())
 }
 
 func TestForbiddenError_Error_WithoutCause(t *testing.T) {
@@ -121,10 +123,11 @@ func TestForbiddenError_ErrorsAs(t *testing.T) {
 	wrapped := domainerrors.WrapForbiddenErrorf(errSentinel, "player %s", "alice")
 	outerErr := errors.Join(errors.New("context"), wrapped)
 
-	var forbiddenErr *domainerrors.ForbiddenError
+	var domainErr *domainerrors.DomainError
 
-	require.ErrorAs(t, outerErr, &forbiddenErr)
-	assert.Equal(t, "player alice: underlying cause", forbiddenErr.Error())
+	require.ErrorAs(t, outerErr, &domainErr)
+	assert.Equal(t, "player alice: underlying cause", domainErr.Error())
+	assert.Equal(t, domainerrors.CategoryForbidden, domainErr.Category())
 }
 
 // --- Category tests ---
@@ -190,10 +193,11 @@ func TestNotFoundError_ErrorsAs(t *testing.T) {
 	wrapped := domainerrors.NewNotFoundErrorf("game %d", 42)
 	outerErr := errors.Join(errors.New("context"), wrapped)
 
-	var notFoundErr *domainerrors.NotFoundError
+	var domainErr *domainerrors.DomainError
 
-	require.ErrorAs(t, outerErr, &notFoundErr)
-	assert.Equal(t, "game 42", notFoundErr.Error())
+	require.ErrorAs(t, outerErr, &domainErr)
+	assert.Equal(t, "game 42", domainErr.Error())
+	assert.Equal(t, domainerrors.CategoryNotFound, domainErr.Category())
 }
 
 // --- UnauthorizedError tests ---

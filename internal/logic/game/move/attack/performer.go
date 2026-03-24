@@ -30,8 +30,6 @@ func (s *ServiceImpl) PerformQ(
 	}
 
 	if err := s.validate(ctx, attackingRegion, defendingRegion, move); err != nil {
-		slog.InfoContext(ctx, "validation failed", "error", err)
-
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 

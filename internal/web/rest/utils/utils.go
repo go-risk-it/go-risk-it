@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -25,7 +25,7 @@ func WriteResponse(writer http.ResponseWriter, body []byte, status int) {
 
 	_, err := writer.Write(body)
 	if err != nil {
-		log.Printf("failed to write HTTP response: %v", err)
+		slog.Error("failed to write HTTP response", "error", err)
 	}
 }
 

@@ -29,7 +29,7 @@ type Service interface {
 }
 
 type ServiceImpl struct {
-	continents    Continents
+	continents    *ContinentsImpl
 	graph         Graph
 	regionService region.Service
 }
@@ -124,7 +124,7 @@ func (s *ServiceImpl) getGraph(ctx context.Context) (Graph, error) {
 	return s.graph, nil
 }
 
-func (s *ServiceImpl) getContinents(ctx ctx.GameContext) (Continents, error) {
+func (s *ServiceImpl) getContinents(ctx ctx.GameContext) (*ContinentsImpl, error) {
 	slog.InfoContext(ctx, "getting continents")
 
 	if s.continents != nil {

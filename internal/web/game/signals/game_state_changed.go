@@ -19,7 +19,7 @@ func HandleGameStateChanged(
 			return
 		}
 
-		slog.InfoContext( //nolint:contextcheck
+		slog.InfoContext(
 			gameContext,
 			"handling game state changed",
 			"fromPhase", data.FromPhase,

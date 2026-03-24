@@ -19,7 +19,7 @@ func HandlePlayerConnected(
 			return
 		}
 
-		slog.InfoContext( //nolint:contextcheck
+		slog.InfoContext(
 			gameContext, "handling player connected",
 		)
 
@@ -28,11 +28,10 @@ func HandlePlayerConnected(
 			params.ConnectionManager.WriteMessage,
 		)
 
-		slog.InfoContext( //nolint:contextcheck
+		slog.InfoContext(
 			gameContext, "fetching move logs and publishing",
 		)
 
-		//nolint:contextcheck // deliberate context detach
 		go fetchStateAndPublish(
 			gameContext,
 			params.MoveLogFetcher.FetchState,

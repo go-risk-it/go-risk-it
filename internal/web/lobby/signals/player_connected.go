@@ -19,11 +19,11 @@ func HandlePlayerConnected(
 			return
 		}
 
-		slog.InfoContext( //nolint:contextcheck
+		slog.InfoContext(
 			lobbyContext, "handling player connected",
 		)
 
-		fetchStateAndPublish( //nolint:contextcheck // inherited via type assertion
+		fetchStateAndPublish(
 			lobbyContext,
 			params.LobbyStateFetcher.FetchState,
 			params.ConnectionManager.WriteMessage,
