@@ -288,6 +288,66 @@ func TestLobby_InvalidID_ReturnsValidationError(t *testing.T) {
 	assert.Equal(t, "VALIDATION_ERROR", resp.Code)
 }
 
+// --- Wrap ---
+
+func TestRoute_Wrap_PreservesMetadata(t *testing.T) {
+	t.Parallel()
+
+	original := route.Game(
+		"POST /api/v1/games/{id}/deploy",
+		func(_ http.ResponseWriter, _ *http.Request, _ ctx.GameContext) error {
+			return nil
+		},
+	)
+
+	wrapped := original.Wrap(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		// no-op wrapper
+	}))
+
+	assert.Equal(t, original.Pattern(), wrapped.Pattern())
+	assert.Equal(t, original.RequiresAuth(), wrapped.RequiresAuth())
+	assert.Equal(t, original.IsWebSocket(), wrapped.IsWebSocket())
+}
+
+func TestRoute_Wrap_UsesNewHandler(t *testing.T) {
+	t.Parallel()
+
+	original := route.Public(
+		"GET /status",
+		func(_ http.ResponseWriter, _ *http.Request) error {
+			return nil
+		},
+	)
+
+	called := false
+	wrapped := original.Wrap(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		called = true
+	}))
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/status", nil)
+	wrapped.ServeHTTP(rec, req)
+
+	assert.True(t, called)
+}
+
+func TestRoute_Wrap_PreservesWebSocketFlag(t *testing.T) {
+	t.Parallel()
+
+	wsRoute := route.GameWS(
+		"GET /api/v1/games/{id}/ws",
+		func(_ http.ResponseWriter, _ *http.Request, _ ctx.GameContext) error {
+			return nil
+		},
+	)
+
+	wrapped := wsRoute.Wrap(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {}))
+
+	assert.True(t, wrapped.IsWebSocket())
+	assert.True(t, wrapped.RequiresAuth())
+	assert.Equal(t, wsRoute.Pattern(), wrapped.Pattern())
+}
+
 // --- GameWS ---
 
 func TestGameWS_IsWebSocket(t *testing.T) {

@@ -13,7 +13,7 @@ type Route struct {
 	isWebSocket  bool
 }
 
-func New(pattern string, requiresAuth bool, handler http.Handler) *Route {
+func newRoute(pattern string, requiresAuth bool, handler http.Handler) *Route {
 	return &Route{
 		pattern:      pattern,
 		handler:      handler,
@@ -21,12 +21,22 @@ func New(pattern string, requiresAuth bool, handler http.Handler) *Route {
 	}
 }
 
-func NewWebSocket(pattern string, requiresAuth bool, handler http.Handler) *Route {
+func newWebSocketRoute(pattern string, requiresAuth bool, handler http.Handler) *Route {
 	return &Route{
 		pattern:      pattern,
 		handler:      handler,
 		requiresAuth: requiresAuth,
 		isWebSocket:  true,
+	}
+}
+
+// Wrap creates a new Route with the same metadata but a different handler.
+func (r *Route) Wrap(handler http.Handler) *Route {
+	return &Route{
+		pattern:      r.pattern,
+		requiresAuth: r.requiresAuth,
+		isWebSocket:  r.isWebSocket,
+		handler:      handler,
 	}
 }
 
