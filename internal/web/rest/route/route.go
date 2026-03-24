@@ -2,8 +2,6 @@ package route
 
 import (
 	"net/http"
-
-	"go.uber.org/fx"
 )
 
 type Route struct {
@@ -54,11 +52,4 @@ func (r *Route) IsWebSocket() bool {
 
 func (r *Route) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	r.handler.ServeHTTP(w, req)
-}
-
-func AsRoute(f any) any {
-	return fx.Annotate(
-		f,
-		fx.ResultTags(`group:"routes"`),
-	)
 }
