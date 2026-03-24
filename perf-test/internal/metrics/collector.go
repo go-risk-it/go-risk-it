@@ -88,6 +88,12 @@ type Collector struct {
 	// Throughput time-series buckets.
 	startTime   time.Time
 	moveBuckets []atomic.Int64
+
+	// Warm-up filtering: gate histogram recording until both triggers are met.
+	warmUpConfig      *WarmUpConfig
+	warmUpDone        atomic.Bool
+	warmUpCompletions atomic.Int64
+	warmUpStart       time.Time
 }
 
 // NewCollector creates a new metrics collector with initialized histograms.
@@ -483,6 +489,10 @@ type Snapshot struct {
 
 	// Throughput time-series.
 	ThroughputBuckets []ThroughputBucket
+
+	// Warm-up status.
+	WarmUpComplete    bool
+	WarmUpDurationSec float64
 }
 
 // HistogramSnapshot holds percentile values from an HDR histogram.

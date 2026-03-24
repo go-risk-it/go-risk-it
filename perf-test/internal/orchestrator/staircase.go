@@ -14,14 +14,16 @@ import (
 
 // StaircaseConfig defines the staircase run parameters.
 type StaircaseConfig struct {
-	Steps        []int         // target concurrent games per step
-	HoldDuration time.Duration // how long to hold each step
-	NumPlayers   int
-	GameTimeout  time.Duration
-	StopOnBreach bool          // stop when SLOs fail
-	StaggerDelay time.Duration // between initial game launches within a step
-	SLOs         baseline.SLOSet
-	CooldownSec  int // seconds between steps (default 5)
+	Steps             []int         // target concurrent games per step
+	HoldDuration      time.Duration // how long to hold each step
+	NumPlayers        int
+	GameTimeout       time.Duration
+	StopOnBreach      bool          // stop when SLOs fail
+	StaggerDelay      time.Duration // between initial game launches within a step
+	SLOs              baseline.SLOSet
+	CooldownSec       int // seconds between steps (default 5)
+	WarmUpCompletions int // games to complete before recording histograms (0 = disabled)
+	WarmUpDurationSec int // seconds to wait before recording histograms (0 = disabled)
 }
 
 // cooldown returns the effective cooldown duration.
