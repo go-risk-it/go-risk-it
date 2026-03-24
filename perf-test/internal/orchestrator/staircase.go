@@ -85,6 +85,14 @@ func RunStaircase(
 		// Fresh collector per step for clean per-step percentiles.
 		collector := deps.NewCollector(cfg.HoldDuration)
 
+		// Configure warm-up filtering if specified.
+		if cfg.WarmUpCompletions > 0 || cfg.WarmUpDurationSec > 0 {
+			collector.ConfigureWarmUp(metrics.WarmUpConfig{
+				MinCompletions: int64(cfg.WarmUpCompletions),
+				MinDuration:    time.Duration(cfg.WarmUpDurationSec) * time.Second,
+			})
+		}
+
 		// Share the single OTelExporter across all steps.
 		if deps.OTelExporter != nil {
 			collector.SetOTelExporter(deps.OTelExporter)
