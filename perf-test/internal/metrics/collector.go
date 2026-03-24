@@ -183,9 +183,11 @@ func clampMs(d time.Duration) int64 {
 
 // RecordREST records a REST API call latency for the given action type.
 func (c *Collector) RecordREST(actionType string, d time.Duration) {
-	c.mu.Lock()
-	_ = c.getOrCreateHist(actionType).RecordValue(clampMs(d))
-	c.mu.Unlock()
+	if c.isWarmUpDone() {
+		c.mu.Lock()
+		_ = c.getOrCreateHist(actionType).RecordValue(clampMs(d))
+		c.mu.Unlock()
+	}
 
 	if c.otel != nil {
 		c.otel.restDuration.Record(context.Background(), d.Seconds(),
@@ -195,9 +197,11 @@ func (c *Collector) RecordREST(actionType string, d time.Duration) {
 
 // RecordWSDelivery records the latency from REST response to WS state update arriving.
 func (c *Collector) RecordWSDelivery(d time.Duration) {
-	c.mu.Lock()
-	_ = c.wsDelivery.RecordValue(clampMs(d))
-	c.mu.Unlock()
+	if c.isWarmUpDone() {
+		c.mu.Lock()
+		_ = c.wsDelivery.RecordValue(clampMs(d))
+		c.mu.Unlock()
+	}
 
 	if c.otel != nil {
 		c.otel.wsDuration.Record(context.Background(), d.Seconds())
@@ -206,9 +210,11 @@ func (c *Collector) RecordWSDelivery(d time.Duration) {
 
 // RecordE2E records end-to-end move latency (from before action to after WS update).
 func (c *Collector) RecordE2E(d time.Duration) {
-	c.mu.Lock()
-	_ = c.e2eMove.RecordValue(clampMs(d))
-	c.mu.Unlock()
+	if c.isWarmUpDone() {
+		c.mu.Lock()
+		_ = c.e2eMove.RecordValue(clampMs(d))
+		c.mu.Unlock()
+	}
 
 	if c.otel != nil {
 		c.otel.e2eDuration.Record(context.Background(), d.Seconds())
@@ -217,6 +223,10 @@ func (c *Collector) RecordE2E(d time.Duration) {
 
 // RecordPhaseLatency records E2E latency tagged by game phase.
 func (c *Collector) RecordPhaseLatency(phase string, d time.Duration) {
+	if !c.isWarmUpDone() {
+		return
+	}
+
 	c.mu.Lock()
 	_ = c.getOrCreatePhaseHist(phase).RecordValue(clampMs(d))
 	c.mu.Unlock()
@@ -294,6 +304,8 @@ func (c *Collector) RecordError() {
 // RecordGameComplete increments the games completed counter and records game-level metrics.
 func (c *Collector) RecordGameComplete(duration time.Duration, moves int) {
 	c.gamesCompleted.Add(1)
+	c.warmUpCompletions.Add(1)
+	c.checkWarmUpCompletion()
 
 	if c.otel != nil {
 		c.otel.gamesCompleted.Add(context.Background(), 1)
@@ -453,6 +465,8 @@ func (c *Collector) Snapshot() *Snapshot {
 		ErrorBreakdown:         errorBreakdown,
 		ChaosEvents:            chaosEvents,
 		ThroughputBuckets:      throughputBuckets,
+		WarmUpComplete:         c.isWarmUpDone(),
+		WarmUpDurationSec:      c.warmUpDurationSec(),
 	}
 }
 

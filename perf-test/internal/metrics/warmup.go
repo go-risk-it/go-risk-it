@@ -43,3 +43,12 @@ func (c *Collector) checkWarmUpCompletion() {
 		c.warmUpDone.Store(true)
 	}
 }
+
+// warmUpDurationSec returns the configured warm-up duration, or 0 if not configured.
+func (c *Collector) warmUpDurationSec() float64 {
+	if c.warmUpConfig == nil {
+		return 0
+	}
+
+	return c.warmUpConfig.MinDuration.Seconds()
+}
