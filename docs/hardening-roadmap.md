@@ -29,11 +29,11 @@ PR convention: `hardening(X.Y): description`
 
 ## Phase 3: Domain Invariant Testing
 
-- [ ] **3.1** Test infrastructure + DB bootstrapper
-- [ ] **3.2** Invariants 1-5 (structural + phase)
-- [ ] **3.3** Move generator: deploy + attack
-- [ ] **3.4** Move generator: conquer + reinforce + cards
-- [ ] **3.5** Invariants 6-10 + CI job
+- [x] **3.1** Test infrastructure + DB bootstrapper
+- [x] **3.2** Invariant checkers (8 invariants)
+- [x] **3.3** Move generators (all 5 phases)
+- [x] **3.4** Game loop simulation + TestGameToCompletion
+- [x] **3.5** CI workflow
 
 ---
 

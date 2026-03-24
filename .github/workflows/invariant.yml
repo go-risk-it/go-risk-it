@@ -1,0 +1,20 @@
+name: Invariant tests
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  merge_group:
+
+jobs:
+  invariant:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+    - name: Set up Go
+      uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+      with:
+        go-version-file: 'go.mod'
+    - name: Run invariant tests
+      run: go test -tags invariant -v -timeout 300s ./internal/testing/invariant/
