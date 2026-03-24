@@ -44,8 +44,6 @@ func allRegionsContained(continent *Continent, regions []string) bool {
 	return true
 }
 
-var _ Continents = (*ContinentsImpl)(nil)
-
 func validateContinents(board *BoardDto) error {
 	if len(board.Regions) == 0 {
 		return errors.New("no regions")
