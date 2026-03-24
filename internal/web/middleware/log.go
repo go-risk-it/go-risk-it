@@ -18,7 +18,7 @@ type LogMiddlewareImpl struct {
 
 var _ LogMiddleware = (*LogMiddlewareImpl)(nil)
 
-func NewLogMiddleware(log *zap.SugaredLogger) LogMiddleware {
+func NewLogMiddleware(log *zap.SugaredLogger) *LogMiddlewareImpl {
 	return &LogMiddlewareImpl{
 		log: log,
 	}

@@ -19,7 +19,7 @@ type CorsMiddlewareImpl struct {
 
 var _ CorsMiddleware = (*CorsMiddlewareImpl)(nil)
 
-func NewCorsMiddleware(serverConfig config.ServerConfig) CorsMiddleware {
+func NewCorsMiddleware(serverConfig config.ServerConfig) *CorsMiddlewareImpl {
 	allowed := make(map[string]bool, len(serverConfig.AllowedOrigins))
 	for _, origin := range serverConfig.AllowedOrigins {
 		allowed[origin] = true

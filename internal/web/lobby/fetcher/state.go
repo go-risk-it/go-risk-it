@@ -19,7 +19,7 @@ type LobbyStateFetcherImpl struct {
 
 var _ LobbyStateFetcher = (*LobbyStateFetcherImpl)(nil)
 
-func NewLobbyStateFetcher(stateController controller.StateController) LobbyStateFetcher {
+func NewLobbyStateFetcher(stateController controller.StateController) *LobbyStateFetcherImpl {
 	return &LobbyStateFetcherImpl{
 		stateController: stateController,
 	}
