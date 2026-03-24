@@ -323,3 +323,4 @@ pyrightconfig.json
 CLAUDE.md
 .claude/worktrees/
 perf-test/vendor/
+perf-test/loadtest
