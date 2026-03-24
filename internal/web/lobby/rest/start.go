@@ -50,7 +50,7 @@ func (h *StartHandlerImpl) handle(writer http.ResponseWriter, req *http.Request)
 		return err
 	}
 
-	writer.WriteHeader(http.StatusOK)
+	writer.WriteHeader(http.StatusNoContent)
 
 	return nil
 }

@@ -14,7 +14,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/config"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	gamedb "github.com/go-risk-it/go-risk-it/internal/data/game/db"
-	gamepool "github.com/go-risk-it/go-risk-it/internal/data/game/pool"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/advancement"
@@ -105,7 +104,7 @@ func buildFxApp(
 
 	app := fx.New(
 		fx.NopLogger,
-		fx.Provide(func() gamepool.DB { return dbPool }),
+		fx.Provide(func() gamedb.DB { return dbPool }),
 		fx.Provide(func() sqlc.DBTX { return dbPool }),
 		fx.Provide(gamedb.New),
 		game.Module,
