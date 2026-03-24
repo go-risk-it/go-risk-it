@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/v2"
 	"go.uber.org/fx"
-	"go.uber.org/zap"
 )
 
 const EnvironmentKey = "ENVIRONMENT"
@@ -38,12 +38,12 @@ type Result struct {
 	ServerConfig           ServerConfig
 }
 
-func newConfig(log *zap.SugaredLogger) (Result, error) {
+func newConfig() (Result, error) {
 	koanfManager := koanf.New(".")
 
 	err := godotenv.Load(".env")
 	if err != nil {
-		log.Debugw("failed to load .env")
+		slog.Debug("failed to load .env")
 	}
 
 	if err := readFromConfigFile(koanfManager); err != nil {
@@ -59,7 +59,7 @@ func newConfig(log *zap.SugaredLogger) (Result, error) {
 		return Result{}, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
-	log.Debugf("Loaded config: %+v", koanfManager)
+	slog.Debug("loaded config", "config", fmt.Sprintf("%+v", koanfManager))
 
 	return Result{
 		JwtConfig:              config.Jwt,

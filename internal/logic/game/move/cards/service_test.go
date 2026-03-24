@@ -16,7 +16,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
-	"go.uber.org/zap"
 )
 
 func setup(t *testing.T) (
@@ -41,7 +40,7 @@ func input() ctx.GameContext {
 	userID := "giovanni"
 
 	userContext := ctx.WithUserID(
-		ctx.WithSpan(ctx.WithLog(context.Background(), zap.NewExample().Sugar()), noop.Span{}),
+		ctx.WithSpan(context.Background(), noop.Span{}),
 		userID,
 	)
 

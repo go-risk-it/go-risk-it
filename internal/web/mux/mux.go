@@ -1,13 +1,13 @@
 package mux
 
 import (
+	"log/slog"
 	"net/http"
 
 	"github.com/go-risk-it/go-risk-it/internal/web/middleware"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.uber.org/fx"
-	"go.uber.org/zap"
 )
 
 func NewServeMux(
@@ -19,7 +19,6 @@ func NewServeMux(
 	logMiddleware *middleware.LogMiddleware,
 	otelMiddleware *middleware.OTelMiddleware,
 	websocketAuthMiddleware *middleware.WebsocketHeaderConversionMiddleware,
-	log *zap.SugaredLogger,
 ) http.Handler {
 	mux := http.NewServeMux()
 	routeNames := make([]string, 0, len(routes))
@@ -47,7 +46,7 @@ func NewServeMux(
 		routeNames = append(routeNames, route.Pattern())
 	}
 
-	log.Infow("Registered routes", "routes", routeNames)
+	slog.Info("Registered routes", "routes", routeNames)
 
 	return otelhttp.NewHandler(mux, "/")
 }

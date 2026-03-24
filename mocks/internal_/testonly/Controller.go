@@ -3,7 +3,8 @@
 package testonly
 
 import (
-	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
+	context "context"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -20,17 +21,17 @@ func (_m *Controller) EXPECT() *Controller_Expecter {
 	return &Controller_Expecter{mock: &_m.Mock}
 }
 
-// ResetState provides a mock function with given fields: _a0
-func (_m *Controller) ResetState(_a0 ctx.LogContext) error {
-	ret := _m.Called(_a0)
+// ResetState provides a mock function with given fields: ctx
+func (_m *Controller) ResetState(ctx context.Context) error {
+	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ResetState")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(ctx.LogContext) error); ok {
-		r0 = rf(_a0)
+	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = rf(ctx)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -44,14 +45,14 @@ type Controller_ResetState_Call struct {
 }
 
 // ResetState is a helper method to define mock.On call
-//   - _a0 ctx.LogContext
-func (_e *Controller_Expecter) ResetState(_a0 interface{}) *Controller_ResetState_Call {
-	return &Controller_ResetState_Call{Call: _e.mock.On("ResetState", _a0)}
+//   - ctx context.Context
+func (_e *Controller_Expecter) ResetState(ctx interface{}) *Controller_ResetState_Call {
+	return &Controller_ResetState_Call{Call: _e.mock.On("ResetState", ctx)}
 }
 
-func (_c *Controller_ResetState_Call) Run(run func(_a0 ctx.LogContext)) *Controller_ResetState_Call {
+func (_c *Controller_ResetState_Call) Run(run func(ctx context.Context)) *Controller_ResetState_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.LogContext))
+		run(args[0].(context.Context))
 	})
 	return _c
 }
@@ -61,22 +62,22 @@ func (_c *Controller_ResetState_Call) Return(_a0 error) *Controller_ResetState_C
 	return _c
 }
 
-func (_c *Controller_ResetState_Call) RunAndReturn(run func(ctx.LogContext) error) *Controller_ResetState_Call {
+func (_c *Controller_ResetState_Call) RunAndReturn(run func(context.Context) error) *Controller_ResetState_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// SetupNearWin provides a mock function with given fields: _a0, gameID
-func (_m *Controller) SetupNearWin(_a0 ctx.LogContext, gameID int64) error {
-	ret := _m.Called(_a0, gameID)
+// SetupNearWin provides a mock function with given fields: ctx, gameID
+func (_m *Controller) SetupNearWin(ctx context.Context, gameID int64) error {
+	ret := _m.Called(ctx, gameID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SetupNearWin")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(ctx.LogContext, int64) error); ok {
-		r0 = rf(_a0, gameID)
+	if rf, ok := ret.Get(0).(func(context.Context, int64) error); ok {
+		r0 = rf(ctx, gameID)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -90,15 +91,15 @@ type Controller_SetupNearWin_Call struct {
 }
 
 // SetupNearWin is a helper method to define mock.On call
-//   - _a0 ctx.LogContext
+//   - ctx context.Context
 //   - gameID int64
-func (_e *Controller_Expecter) SetupNearWin(_a0 interface{}, gameID interface{}) *Controller_SetupNearWin_Call {
-	return &Controller_SetupNearWin_Call{Call: _e.mock.On("SetupNearWin", _a0, gameID)}
+func (_e *Controller_Expecter) SetupNearWin(ctx interface{}, gameID interface{}) *Controller_SetupNearWin_Call {
+	return &Controller_SetupNearWin_Call{Call: _e.mock.On("SetupNearWin", ctx, gameID)}
 }
 
-func (_c *Controller_SetupNearWin_Call) Run(run func(_a0 ctx.LogContext, gameID int64)) *Controller_SetupNearWin_Call {
+func (_c *Controller_SetupNearWin_Call) Run(run func(ctx context.Context, gameID int64)) *Controller_SetupNearWin_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.LogContext), args[1].(int64))
+		run(args[0].(context.Context), args[1].(int64))
 	})
 	return _c
 }
@@ -108,7 +109,7 @@ func (_c *Controller_SetupNearWin_Call) Return(_a0 error) *Controller_SetupNearW
 	return _c
 }
 
-func (_c *Controller_SetupNearWin_Call) RunAndReturn(run func(ctx.LogContext, int64) error) *Controller_SetupNearWin_Call {
+func (_c *Controller_SetupNearWin_Call) RunAndReturn(run func(context.Context, int64) error) *Controller_SetupNearWin_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -2,6 +2,7 @@ package creation
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	dbutil "github.com/go-risk-it/go-risk-it/internal/data/db"
@@ -92,7 +93,7 @@ func (s *ServiceImpl) CreateGameQ(
 	regions []string,
 	players []player.Player,
 ) (int64, error) {
-	cont.Log().Infow("creating game", "regions", len(regions), "players", len(players))
+	slog.InfoContext(cont, "creating game", "regions", len(regions), "players", len(players))
 
 	game, err := querier.InsertGame(cont)
 	if err != nil {
@@ -118,14 +119,14 @@ func (s *ServiceImpl) CreateGameQ(
 		return -1, fmt.Errorf("failed to create cards: %w", err)
 	}
 
-	ctx.Log().Debugw("creating initial phase", "gameID", game.ID)
+	slog.DebugContext(ctx, "creating initial phase", "gameID", game.ID)
 
 	if err := s.createPhase(ctx, querier, game); err != nil {
 		return -1, fmt.Errorf("failed to create phase: %w", err)
 	}
 
-	ctx.Log().
-		Infow("successfully created game", "regions", len(regions), "players", len(players))
+	slog.InfoContext(ctx, "successfully created game",
+		"regions", len(regions), "players", len(players))
 
 	return game.ID, nil
 }
@@ -144,19 +145,18 @@ func (s *ServiceImpl) createPhase(
 		return fmt.Errorf("failed to create initial phase: %w", err)
 	}
 
-	ctx.Log().
-		Infow("updating game phase", "gameID", game.ID, "phaseID", phase.ID)
+	slog.InfoContext(ctx, "updating game phase", "gameID", game.ID, "phaseID", phase.ID)
 
 	if err := querier.SetGamePhase(ctx, sqlc.SetGamePhaseParams{
 		ID:             game.ID,
 		CurrentPhaseID: pgtype.Int8{Int64: phase.ID, Valid: true},
 	}); err != nil {
-		ctx.Log().Warnw("failed to update game phase", "err", err)
+		slog.WarnContext(ctx, "failed to update game phase", "error", err)
 
 		return fmt.Errorf("failed to update game phase: %w", err)
 	}
 
-	ctx.Log().Infow("updated phase, creating deploy phase")
+	slog.InfoContext(ctx, "updated phase, creating deploy phase")
 
 	if _, err = querier.InsertDeployPhase(ctx, sqlc.InsertDeployPhaseParams{
 		PhaseID:          phase.ID,

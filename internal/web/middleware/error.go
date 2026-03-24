@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
@@ -35,7 +36,7 @@ func HandleErrors(handler ErrorHandlerFunc) http.HandlerFunc {
 		}
 
 		if logErr := restutils.WriteErrorWithTrace(writer, err, traceID); logErr != nil {
-			logFromContext(request, logErr)
+			slog.ErrorContext(request.Context(), "request failed", "error", logErr)
 		}
 	}
 }
@@ -47,14 +48,4 @@ func errorDescription(err error) string {
 	}
 
 	return "INTERNAL_ERROR"
-}
-
-func logFromContext(r *http.Request, err error) {
-	type logger interface {
-		Errorw(msg string, keysAndValues ...any)
-	}
-
-	if l, ok := r.Context().(logger); ok {
-		l.Errorw("request failed", "error", err)
-	}
 }

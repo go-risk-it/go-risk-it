@@ -2,13 +2,13 @@ package signals
 
 import (
 	"encoding/json"
+	"log/slog"
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/fetcher"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 	"go.uber.org/fx"
-	"go.uber.org/zap"
 )
 
 const fetchTimeout = 10 * time.Second
@@ -26,7 +26,6 @@ type HandlerParams[T any] struct {
 
 	PublicFetchers    []fetcher.Fetcher `group:"public_fetchers"`
 	PrivateFetchers   []fetcher.Fetcher `group:"private_fetchers"`
-	Log               *zap.SugaredLogger
 	Signal            T
 	MoveLogFetcher    fetcher.MoveLogFetcher
 	ConnectionManager ws.Manager
@@ -65,6 +64,6 @@ func fetchStateAndPublish(
 	case msg := <-channel:
 		publisher(detached, msg)
 	case <-detached.Done():
-		detached.Log().Errorf("timeout while fetching state after %v", fetchTimeout)
+		slog.ErrorContext(detached, "timeout while fetching state", "timeout", fetchTimeout)
 	}
 }

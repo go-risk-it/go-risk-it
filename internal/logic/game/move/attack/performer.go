@@ -2,6 +2,7 @@ package attack
 
 import (
 	"fmt"
+	"log/slog"
 	"slices"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
@@ -16,7 +17,7 @@ func (s *ServiceImpl) PerformQ(
 	querier db.Querier,
 	move Move,
 ) (any, error) {
-	ctx.Log().Infow("performing attack move", "move", move)
+	slog.InfoContext(ctx, "performing attack move", "move", move)
 
 	attackingRegion, err := s.regionService.GetRegionQ(ctx, querier, move.AttackingRegionID)
 	if err != nil {
@@ -29,7 +30,7 @@ func (s *ServiceImpl) PerformQ(
 	}
 
 	if err := s.validate(ctx, attackingRegion, defendingRegion, move); err != nil {
-		ctx.Log().Infow("validation failed", "error", err)
+		slog.InfoContext(ctx, "validation failed", "error", err)
 
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
@@ -39,7 +40,7 @@ func (s *ServiceImpl) PerformQ(
 		return nil, fmt.Errorf("unable to perform attack move: %w", err)
 	}
 
-	ctx.Log().Infow("attack executed successfully")
+	slog.InfoContext(ctx, "attack executed successfully")
 
 	result := &MoveResult{
 		AttackingRegionID: move.AttackingRegionID,
@@ -60,11 +61,11 @@ func (s *ServiceImpl) perform(
 	attackDices := s.diceService.RollAttackingDices(int(move.AttackingTroops))
 	defenseDices := s.diceService.RollDefendingDices(int(min(defendingRegion.Troops, 3)))
 
-	ctx.Log().Infow("rolled dices", "attack", attackDices, "defense", defenseDices)
+	slog.InfoContext(ctx, "rolled dices", "attack", attackDices, "defense", defenseDices)
 
 	casualties := computeCasualties(ctx, attackDices, defenseDices)
 
-	ctx.Log().Infow("updating region troops")
+	slog.InfoContext(ctx, "updating region troops")
 
 	if err := s.regionService.UpdateTroopsInRegionQ(
 		ctx,
@@ -107,7 +108,7 @@ func computeCasualties(ctx ctx.GameContext, attackDices, defenseDices []int) *ca
 		}
 	}
 
-	ctx.Log().Infow(
+	slog.InfoContext(ctx,
 		"casualties",
 		"attacking",
 		casualties.attacking,
@@ -127,7 +128,7 @@ func (s *ServiceImpl) validate(
 	defendingRegion *sqlc.GetRegionsByGameRow,
 	move Move,
 ) error {
-	ctx.Log().Infow("validating attack move", "move", move)
+	slog.InfoContext(ctx, "validating attack move", "move", move)
 
 	if err := checkRegionOwnership(ctx, attackingRegion, defendingRegion); err != nil {
 		return fmt.Errorf("region ownership check failed: %w", err)
@@ -150,7 +151,7 @@ func (s *ServiceImpl) validate(
 		return domainerrors.NewValidationError("attacking region cannot reach defending region")
 	}
 
-	ctx.Log().Infow("attack move validation passed", "move", move)
+	slog.InfoContext(ctx, "attack move validation passed", "move", move)
 
 	return nil
 }
@@ -161,7 +162,7 @@ func checkTroops(
 	defendingRegion *sqlc.GetRegionsByGameRow,
 	move Move,
 ) error {
-	ctx.Log().Infow("checking troops")
+	slog.InfoContext(ctx, "checking troops")
 
 	if move.AttackingTroops < 1 {
 		return domainerrors.NewValidationError("at least one troop is required to attack")
@@ -172,7 +173,7 @@ func checkTroops(
 	}
 
 	if defendingRegion.Troops < 1 {
-		ctx.Log().Errorw(
+		slog.ErrorContext(ctx,
 			"attempting to attack a region with no troops — possible server bug",
 			"defendingRegion", defendingRegion.ExternalReference,
 			"defendingTroops", defendingRegion.Troops,
@@ -198,7 +199,7 @@ func checkTroops(
 		return fmt.Errorf("declared values are invalid: %w", err)
 	}
 
-	ctx.Log().Infow("troops check passed")
+	slog.InfoContext(ctx, "troops check passed")
 
 	return nil
 }
@@ -208,7 +209,7 @@ func checkRegionOwnership(
 	attackingRegion *sqlc.GetRegionsByGameRow,
 	defendingRegion *sqlc.GetRegionsByGameRow,
 ) error {
-	ctx.Log().Infow("checking region ownership")
+	slog.InfoContext(ctx, "checking region ownership")
 
 	if attackingRegion.UserID != ctx.UserID() {
 		return domainerrors.NewValidationError("attacking region is not owned by player")
@@ -218,7 +219,7 @@ func checkRegionOwnership(
 		return domainerrors.NewValidationError("cannot attack your own region")
 	}
 
-	ctx.Log().Infow("region ownership check passed")
+	slog.InfoContext(ctx, "region ownership check passed")
 
 	return nil
 }

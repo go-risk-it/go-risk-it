@@ -11,7 +11,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/web/game/ws"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
-	"go.uber.org/zap"
 )
 
 func TestControllerImpl_GetPlayerState(t *testing.T) {
@@ -28,7 +27,7 @@ func TestControllerImpl_GetPlayerState(t *testing.T) {
 	gameID := int64(1)
 	ctx := ctx2.WithGameID(
 		ctx2.WithUserID(
-			ctx2.WithSpan(ctx2.WithLog(t.Context(), zap.NewNop().Sugar()), noop.Span{}),
+			ctx2.WithSpan(t.Context(), noop.Span{}),
 			"francesco",
 		),
 		gameID,

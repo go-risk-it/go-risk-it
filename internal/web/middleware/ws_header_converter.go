@@ -2,21 +2,17 @@ package middleware
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 	"strings"
 
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
-	"go.uber.org/zap"
 )
 
-type WebsocketHeaderConversionMiddleware struct {
-	log *zap.SugaredLogger
-}
+type WebsocketHeaderConversionMiddleware struct{}
 
-func NewWebsocketAuthMiddleware(log *zap.SugaredLogger) *WebsocketHeaderConversionMiddleware {
-	return &WebsocketHeaderConversionMiddleware{
-		log: log,
-	}
+func NewWebsocketAuthMiddleware() *WebsocketHeaderConversionMiddleware {
+	return &WebsocketHeaderConversionMiddleware{}
 }
 
 // Wrap extracts the token from the subprotocol and adds it to the HTTP Authorization header.
@@ -36,7 +32,11 @@ func (m *WebsocketHeaderConversionMiddleware) Wrap(routeToWrap *route.Route) *ro
 			if subprotocol != "" {
 				token, err := extractToken(subprotocol)
 				if err != nil {
-					m.log.Errorw("unable to extract token from subprotocol", "error", err)
+					slog.ErrorContext(
+						request.Context(),
+						"unable to extract token from subprotocol",
+						"error", err,
+					)
 
 					return
 				}

@@ -1,6 +1,8 @@
 package validation
 
 import (
+	"log/slog"
+
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 )
@@ -13,7 +15,7 @@ func CheckDeclaredTroops(
 	declaredSourceTroops int64,
 	declaredTargetTroops int64,
 ) error {
-	ctx.Log().Infow("checking declared values")
+	slog.InfoContext(ctx, "checking declared values")
 
 	if sourceTroops != declaredSourceTroops {
 		return domainerrors.NewValidationError(
@@ -27,7 +29,7 @@ func CheckDeclaredTroops(
 		)
 	}
 
-	ctx.Log().Infow("declared values check passed")
+	slog.InfoContext(ctx, "declared values check passed")
 
 	return nil
 }

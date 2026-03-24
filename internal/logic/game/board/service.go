@@ -1,19 +1,20 @@
 package board
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
-	"go.uber.org/zap"
 )
 
 type Service interface {
-	GetBoardRegions(ctx ctx.LogContext) ([]string, error)
-	AreNeighbours(ctx ctx.LogContext, source string, target string) (bool, error)
+	GetBoardRegions(ctx context.Context) ([]string, error)
+	AreNeighbours(ctx context.Context, source string, target string) (bool, error)
 	CanPlayerReachQ(
 		ctx ctx.GameContext,
 		querier db.Querier,
@@ -28,7 +29,6 @@ type Service interface {
 }
 
 type ServiceImpl struct {
-	log           *zap.SugaredLogger
 	continents    Continents
 	graph         Graph
 	regionService region.Service
@@ -36,12 +36,12 @@ type ServiceImpl struct {
 
 var _ Service = (*ServiceImpl)(nil)
 
-func NewService(logger *zap.SugaredLogger, regionService region.Service) *ServiceImpl {
-	return &ServiceImpl{log: logger, graph: nil, regionService: regionService}
+func NewService(regionService region.Service) *ServiceImpl {
+	return &ServiceImpl{graph: nil, regionService: regionService}
 }
 
 func (s *ServiceImpl) AreNeighbours(
-	ctx ctx.LogContext,
+	ctx context.Context,
 	source string,
 	target string,
 ) (bool, error) {
@@ -59,7 +59,8 @@ func (s *ServiceImpl) CanPlayerReachQ(
 	source string,
 	target string,
 ) (bool, error) {
-	ctx.Log().Infow("checking if player can reach target", "source", source, "target", target)
+	slog.InfoContext(ctx, "checking if player can reach target",
+		"source", source, "target", target)
 
 	regions, err := s.regionService.GetRegionsQ(ctx, querier)
 	if err != nil {
@@ -82,8 +83,8 @@ func (s *ServiceImpl) CanPlayerReachQ(
 	return graph.CanReach(ctx, source, target, usableRegions), nil
 }
 
-func (s *ServiceImpl) GetBoardRegions(ctx ctx.LogContext) ([]string, error) {
-	ctx.Log().Infow("getting board regions")
+func (s *ServiceImpl) GetBoardRegions(ctx context.Context) ([]string, error) {
+	slog.InfoContext(ctx, "getting board regions")
 
 	graph, err := s.getGraph(ctx)
 	if err != nil {
@@ -92,21 +93,21 @@ func (s *ServiceImpl) GetBoardRegions(ctx ctx.LogContext) ([]string, error) {
 
 	result := graph.GetRegions()
 
-	ctx.Log().Infow("got board regions", "regions", result)
+	slog.InfoContext(ctx, "got board regions", "regions", result)
 
 	return result, nil
 }
 
-func (s *ServiceImpl) getGraph(ctx ctx.LogContext) (Graph, error) {
-	ctx.Log().Infow("getting graph")
+func (s *ServiceImpl) getGraph(ctx context.Context) (Graph, error) {
+	slog.InfoContext(ctx, "getting graph")
 
 	if s.graph != nil {
-		ctx.Log().Infow("graph cache hit")
+		slog.InfoContext(ctx, "graph cache hit")
 
 		return s.graph, nil
 	}
 
-	ctx.Log().Infow("graph cache miss, fetching board from file")
+	slog.InfoContext(ctx, "graph cache miss, fetching board from file")
 
 	boardDto, err := s.fetchFromFile(ctx)
 	if err != nil {
@@ -118,21 +119,21 @@ func (s *ServiceImpl) getGraph(ctx ctx.LogContext) (Graph, error) {
 		return nil, fmt.Errorf("failed to create graph: %w", err)
 	}
 
-	ctx.Log().Infow("graph cache updated")
+	slog.InfoContext(ctx, "graph cache updated")
 
 	return s.graph, nil
 }
 
 func (s *ServiceImpl) getContinents(ctx ctx.GameContext) (Continents, error) {
-	ctx.Log().Infow("getting continents")
+	slog.InfoContext(ctx, "getting continents")
 
 	if s.continents != nil {
-		ctx.Log().Infow("continents cache hit")
+		slog.InfoContext(ctx, "continents cache hit")
 
 		return s.continents, nil
 	}
 
-	ctx.Log().Infow("continents cache miss, fetching board from file")
+	slog.InfoContext(ctx, "continents cache miss, fetching board from file")
 
 	boardDto, err := s.fetchFromFile(ctx)
 	if err != nil {
@@ -144,12 +145,12 @@ func (s *ServiceImpl) getContinents(ctx ctx.GameContext) (Continents, error) {
 		return nil, fmt.Errorf("failed to create continents: %w", err)
 	}
 
-	ctx.Log().Infow("continents cache updated")
+	slog.InfoContext(ctx, "continents cache updated")
 
 	return s.continents, nil
 }
 
-func (s *ServiceImpl) fetchFromFile(ctx ctx.LogContext) (*BoardDto, error) {
+func (s *ServiceImpl) fetchFromFile(ctx context.Context) (*BoardDto, error) {
 	data, err := os.ReadFile("map.json")
 	if err != nil {
 		return nil, fmt.Errorf("error reading file: %w", err)
@@ -162,7 +163,7 @@ func (s *ServiceImpl) fetchFromFile(ctx ctx.LogContext) (*BoardDto, error) {
 		return nil, fmt.Errorf("error unmarshaling JSON: %w", err)
 	}
 
-	ctx.Log().Debugw("Read board from file", "board", board)
+	slog.DebugContext(ctx, "Read board from file", "board", board)
 
 	return board, nil
 }

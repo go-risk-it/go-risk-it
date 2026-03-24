@@ -3,6 +3,7 @@ package pool
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/exaring/otelpgx"
 	"github.com/go-risk-it/go-risk-it/internal/config"
@@ -10,14 +11,12 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/fx"
-	"go.uber.org/zap"
 )
 
 // NewConnectionPool creates a pgxpool.Pool, optionally executes initSQL statements,
 // and registers a shutdown hook.
 func NewConnectionPool(
 	lifecycle fx.Lifecycle,
-	log *zap.SugaredLogger,
 	cfg config.DatabaseConfig,
 	schema string,
 	initSQL ...string,
@@ -27,7 +26,7 @@ func NewConnectionPool(
 		return nil, err
 	}
 
-	log.Infow("created connection pool",
+	slog.Info("created connection pool",
 		"schema", schema,
 		"maxConns", cfg.MaxConns,
 		"minConns", cfg.MinConns,

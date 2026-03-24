@@ -1,13 +1,13 @@
 package data
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"path/filepath"
 	"runtime"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -21,7 +21,7 @@ import (
 
 var errGetPath = errors.New("failed to get path")
 
-func GetQuerier(ctx ctx.LogContext) (db.Querier, error) {
+func GetQuerier(ctx context.Context) (db.Querier, error) {
 	connStr, err := setupPostgresTestcontainer(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup postgres testcontainer: %w", err)
@@ -56,7 +56,7 @@ func GetQuerier(ctx ctx.LogContext) (db.Querier, error) {
 	return db.New(pool), nil
 }
 
-func setupPostgresTestcontainer(ctx ctx.LogContext) (string, error) {
+func setupPostgresTestcontainer(ctx context.Context) (string, error) {
 	dbName := "risk-it"
 	dbUser := "postgres"
 	dbPassword := "password"

@@ -2,6 +2,7 @@ package validation
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
@@ -26,7 +27,7 @@ func New(playerService player.Service) *ServiceImpl {
 }
 
 func (s *ServiceImpl) ValidateQ(ctx ctx.GameContext, querier db.Querier, game *state.Game) error {
-	ctx.Log().Infow("performing generic move validation")
+	slog.InfoContext(ctx, "performing generic move validation")
 
 	if game.WinnerUserID != "" {
 		return domainerrors.NewConflictError("game is already over")
@@ -46,7 +47,7 @@ func (s *ServiceImpl) ValidateQ(ctx ctx.GameContext, querier db.Querier, game *s
 		return fmt.Errorf("turn check failed: %w", err)
 	}
 
-	ctx.Log().Infow("generic move validation passed")
+	slog.InfoContext(ctx, "generic move validation passed")
 
 	return nil
 }

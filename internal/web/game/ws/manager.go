@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
@@ -59,14 +60,14 @@ func (m *ManagerImpl) Broadcast(ctx ctx.GameContext, message json.RawMessage) {
 }
 
 func (m *ManagerImpl) ConnectPlayer(ctx ctx.GameContext, connection *websocket.Conn) {
-	ctx.Log().Infow("connecting player to game")
+	slog.InfoContext(ctx, "connecting player to game")
 
 	if err := m.validateConnectionAttempt(ctx); err != nil {
-		ctx.Log().Debugw("failed to validate connection attempt", "error", err)
+		slog.DebugContext(ctx, "failed to validate connection attempt", "error", err)
 
 		err = connection.WriteClose(1003, "failed to validate connection attempt")
 		if err != nil {
-			ctx.Log().Errorw("failed to close websocket connection", "error", err)
+			slog.ErrorContext(ctx, "failed to close websocket connection", "error", err)
 
 			return
 		}
@@ -85,7 +86,7 @@ func (m *ManagerImpl) validateConnectionAttempt(ctx ctx.GameContext) error {
 		return fmt.Errorf("failed to get game state: %w", err)
 	}
 
-	ctx.Log().Debugw("game state", "state", gameState)
+	slog.DebugContext(ctx, "game state", "state", gameState)
 
 	players, err := m.playerService.GetPlayersState(ctx)
 	if err != nil {

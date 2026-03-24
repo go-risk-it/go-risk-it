@@ -2,6 +2,7 @@ package fetcher
 
 import (
 	"encoding/json"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
 	"github.com/go-risk-it/go-risk-it/internal/config"
@@ -35,7 +36,7 @@ func (f *MoveLogFetcherImpl) FetchState(
 	context ctx.GameContext,
 	stateChannel chan json.RawMessage,
 ) {
-	context.Log().Infow("history size:", "size", f.historyConfig.Size)
+	slog.InfoContext(context, "history size", "size", f.historyConfig.Size)
 
 	sharedfetcher.FetchState(
 		context,

@@ -2,6 +2,7 @@ package attack
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
@@ -22,7 +23,7 @@ func (s *ServiceImpl) WalkQ(
 	}
 
 	if hasConquered {
-		ctx.Log().Infow("must advance phase to CONQUER")
+		slog.InfoContext(ctx, "must advance phase to CONQUER")
 
 		return sqlc.GamePhaseTypeCONQUER, nil
 	}
@@ -36,7 +37,7 @@ func (s *ServiceImpl) WalkQ(
 	}
 
 	if voluntaryAdvancement || !canContinueAttacking {
-		ctx.Log().Infow("must advance phase to REINFORCE")
+		slog.InfoContext(ctx, "must advance phase to REINFORCE")
 
 		return sqlc.GamePhaseTypeREINFORCE, nil
 	}
@@ -53,17 +54,18 @@ func (s *ServiceImpl) HasConqueredQ(ctx ctx.GameContext, querier db.Querier) (bo
 		return false, fmt.Errorf("failed to get regions: %w", err)
 	}
 
-	ctx.Log().Infow("checking if player has conquered any region", "regions", len(regions))
+	slog.InfoContext(ctx, "checking if player has conquered any region", "regions", len(regions))
 
 	for _, region := range regions {
 		if region.UserID != ctx.UserID() && region.Troops == 0 {
-			ctx.Log().Infow("player has conquered a region", "region", region.ExternalReference)
+			slog.InfoContext(ctx, "player has conquered a region",
+				"region", region.ExternalReference)
 
 			return true, nil
 		}
 	}
 
-	ctx.Log().Infow("player has not conquered any region")
+	slog.InfoContext(ctx, "player has not conquered any region")
 
 	return false, nil
 }
@@ -79,17 +81,17 @@ func (s *ServiceImpl) CanContinueAttackingQ(
 		return false, fmt.Errorf("failed to get regions: %w", err)
 	}
 
-	ctx.Log().Infow("checking if player can continue attacking", "regions", len(regions))
+	slog.InfoContext(ctx, "checking if player can continue attacking", "regions", len(regions))
 
 	for _, region := range regions {
 		if region.UserID == ctx.UserID() && region.Troops > 1 {
-			ctx.Log().Infow("player can continue attacking")
+			slog.InfoContext(ctx, "player can continue attacking")
 
 			return true, nil
 		}
 	}
 
-	ctx.Log().Infow("player can not continue attacking")
+	slog.InfoContext(ctx, "player can not continue attacking")
 
 	return false, nil
 }

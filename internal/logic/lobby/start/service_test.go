@@ -12,7 +12,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
-	"go.uber.org/zap"
 )
 
 func setup(t *testing.T) (*db.Querier, *start.ServiceImpl) {
@@ -28,7 +27,7 @@ func lobbyContext() ctx.LobbyContext {
 	userID := "giovanni"
 
 	traceCtx := ctx.WithSpan(
-		ctx.WithLog(context.Background(), zap.NewExample().Sugar()),
+		context.Background(),
 		noop.Span{},
 	)
 	userCtx := ctx.WithUserID(traceCtx, userID)

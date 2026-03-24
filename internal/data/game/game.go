@@ -8,22 +8,19 @@ import (
 	poolfactory "github.com/go-risk-it/go-risk-it/internal/data/pool"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/fx"
-	"go.uber.org/zap"
 )
 
 func executeMigrations(
-	log *zap.SugaredLogger,
 	config config.DatabaseConfig,
 ) error {
-	return migration.Execute(log, config, "game")
+	return migration.Execute(config, "game")
 }
 
 func NewConnectionPool(
 	lifecycle fx.Lifecycle,
-	log *zap.SugaredLogger,
 	cfg config.DatabaseConfig,
 ) (*pgxpool.Pool, error) {
-	return poolfactory.NewConnectionPool(lifecycle, log, cfg, "game")
+	return poolfactory.NewConnectionPool(lifecycle, cfg, "game")
 }
 
 var Module = fx.Options(

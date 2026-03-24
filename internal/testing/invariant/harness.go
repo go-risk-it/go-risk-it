@@ -36,7 +36,6 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/fx"
-	"go.uber.org/zap"
 )
 
 // GameHandle holds references for a created game.
@@ -63,27 +62,23 @@ type Harness struct {
 	BoardService          board.Service
 	Querier               gamedb.Querier
 
-	logger *zap.SugaredLogger
-	pool   *pgxpool.Pool
+	pool *pgxpool.Pool
 }
 
 // NewHarness creates a Harness backed by a testcontainer Postgres.
 // It runs migrations, builds the fx app, and populates all
 // service references.
 func NewHarness() *Harness {
-	logger := zap.Must(zap.NewDevelopment()).Sugar()
-
-	dbPool, err := setupDatabase(logger)
+	dbPool, err := setupDatabase()
 	if err != nil {
 		panic(fmt.Sprintf("failed to setup database: %v", err))
 	}
 
 	harness := &Harness{
-		logger: logger,
-		pool:   dbPool,
+		pool: dbPool,
 	}
 
-	buildFxApp(harness, dbPool, logger)
+	buildFxApp(harness, dbPool)
 
 	return harness
 }
@@ -91,7 +86,6 @@ func NewHarness() *Harness {
 func buildFxApp(
 	harness *Harness,
 	dbPool *pgxpool.Pool,
-	logger *zap.SugaredLogger,
 ) {
 	reader := metric.NewManualReader()
 	provider := metric.NewMeterProvider(metric.WithReader(reader))
@@ -118,7 +112,6 @@ func buildFxApp(
 		),
 		fx.Supply(config.HistoryConfig{Size: 50}),
 		rand.Module,
-		fx.Supply(logger),
 		fx.Supply(testMetrics),
 		fx.Populate(
 			&harness.CreationService,
@@ -180,9 +173,8 @@ func (h *Harness) GameCtx(
 	gameID int64,
 	userID string,
 ) ctx.GameContext {
-	logCtx := ctx.WithLog(context.Background(), h.logger)
 	span := noop.Span{}
-	traceCtx := ctx.WithSpan(logCtx, span)
+	traceCtx := ctx.WithSpan(context.Background(), span)
 	userCtx := ctx.WithUserID(traceCtx, userID)
 
 	return ctx.WithGameID(userCtx, gameID)
@@ -193,21 +185,18 @@ func (h *Harness) Close() {
 	h.pool.Close()
 }
 
-func (h *Harness) logCtx() ctx.LogContext {
-	return ctx.WithLog(context.Background(), h.logger)
+func (h *Harness) logCtx() context.Context {
+	return context.Background()
 }
 
 func (h *Harness) userCtx(userID string) ctx.UserContext {
-	logCtx := ctx.WithLog(context.Background(), h.logger)
 	span := noop.Span{}
-	traceCtx := ctx.WithSpan(logCtx, span)
+	traceCtx := ctx.WithSpan(context.Background(), span)
 
 	return ctx.WithUserID(traceCtx, userID)
 }
 
-func setupDatabase(
-	logger *zap.SugaredLogger,
-) (*pgxpool.Pool, error) {
+func setupDatabase() (*pgxpool.Pool, error) {
 	bgCtx := context.Background()
 
 	connStr, err := startPostgres(bgCtx)
@@ -218,8 +207,6 @@ func setupDatabase(
 	if err := runMigrations(connStr); err != nil {
 		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
-
-	logger.Infow("migrations complete, creating pool")
 
 	pool, err := pgxpool.New(bgCtx, connStr)
 	if err != nil {

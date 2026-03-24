@@ -1,17 +1,18 @@
 package testonly
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/jackc/pgx/v5"
 )
 
 type Service interface {
-	TruncateTables(ctx ctx.LogContext) error
-	SetupNearWin(ctx ctx.LogContext, gameID int64) error
+	TruncateTables(ctx context.Context) error
+	SetupNearWin(ctx context.Context, gameID int64) error
 }
 
 type ServiceImpl struct {
@@ -44,11 +45,11 @@ func NewService(pool db.DB, dbConfig config.DatabaseConfig) *ServiceImpl {
 	return &ServiceImpl{pool: pool, dbConfig: dbConfig, tables: tables}
 }
 
-func (s *ServiceImpl) TruncateTables(ctx ctx.LogContext) error {
-	ctx.Log().Infow("Truncating tables", "tables", s.tables)
+func (s *ServiceImpl) TruncateTables(ctx context.Context) error {
+	slog.InfoContext(ctx, "Truncating tables", "tables", s.tables)
 
 	for _, table := range s.tables {
-		ctx.Log().Infow("Truncating table", "table", table)
+		slog.InfoContext(ctx, "Truncating table", "table", table)
 
 		_, err := s.pool.Exec(ctx, fmt.Sprintf("TRUNCATE %s CASCADE", table))
 		if err != nil {
@@ -56,13 +57,13 @@ func (s *ServiceImpl) TruncateTables(ctx ctx.LogContext) error {
 		}
 	}
 
-	ctx.Log().Infow("Truncated tables", "tables", s.tables)
+	slog.InfoContext(ctx, "Truncated tables", "tables", s.tables)
 
 	return nil
 }
 
-func (s *ServiceImpl) SetupNearWin(ctx ctx.LogContext, gameID int64) error {
-	ctx.Log().Infow("Setting up near-win state", "gameID", gameID)
+func (s *ServiceImpl) SetupNearWin(ctx context.Context, gameID int64) error {
+	slog.InfoContext(ctx, "Setting up near-win state", "gameID", gameID)
 
 	transaction, err := s.pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
@@ -105,12 +106,12 @@ func (s *ServiceImpl) SetupNearWin(ctx ctx.LogContext, gameID int64) error {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
-	ctx.Log().Infow("Near-win state set up successfully", "gameID", gameID)
+	slog.InfoContext(ctx, "Near-win state set up successfully", "gameID", gameID)
 
 	return nil
 }
 
-func getPlayerIDs(ctx ctx.LogContext, transaction pgx.Tx, gameID int64) ([]int64, error) {
+func getPlayerIDs(ctx context.Context, transaction pgx.Tx, gameID int64) ([]int64, error) {
 	rows, err := transaction.Query(ctx,
 		`SELECT id FROM game.player WHERE game_id = $1 ORDER BY turn_index`, gameID)
 	if err != nil {
@@ -134,7 +135,7 @@ func getPlayerIDs(ctx ctx.LogContext, transaction pgx.Tx, gameID int64) ([]int64
 }
 
 func setupMissions(
-	ctx ctx.LogContext,
+	ctx context.Context,
 	transaction pgx.Tx,
 	gameID int64,
 	winner int64,
@@ -183,7 +184,7 @@ func setupMissions(
 }
 
 func setupRegions(
-	ctx ctx.LogContext,
+	ctx context.Context,
 	transaction pgx.Tx,
 	gameID int64,
 	winner int64,
@@ -211,7 +212,7 @@ func setupRegions(
 	return nil
 }
 
-func resetCardsAndPhases(ctx ctx.LogContext, transaction pgx.Tx, gameID int64) error {
+func resetCardsAndPhases(ctx context.Context, transaction pgx.Tx, gameID int64) error {
 	_, err := transaction.Exec(ctx,
 		`UPDATE game.card SET owner_id = NULL WHERE game_id = $1`, gameID)
 	if err != nil {
@@ -250,7 +251,7 @@ func resetCardsAndPhases(ctx ctx.LogContext, transaction pgx.Tx, gameID int64) e
 	return nil
 }
 
-func createDeployPhase(ctx ctx.LogContext, transaction pgx.Tx, gameID int64) error {
+func createDeployPhase(ctx context.Context, transaction pgx.Tx, gameID int64) error {
 	var phaseID int64
 
 	err := transaction.QueryRow(ctx,

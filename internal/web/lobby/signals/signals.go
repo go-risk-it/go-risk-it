@@ -2,12 +2,12 @@ package signals
 
 import (
 	"encoding/json"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby/fetcher"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby/ws"
 	"go.uber.org/fx"
-	"go.uber.org/zap"
 )
 
 var Module = fx.Options(
@@ -21,7 +21,6 @@ type HandlerParams[T any] struct {
 	fx.In
 
 	LobbyStateFetcher fetcher.LobbyStateFetcher
-	Log               *zap.SugaredLogger
 	Signal            T
 	ConnectionManager ws.Manager
 }
@@ -38,6 +37,6 @@ func fetchStateAndPublish(
 	case msg := <-channel:
 		publisher(ctx, msg)
 	case <-ctx.Done():
-		ctx.Log().Errorf("timeout while fetching state: %v", ctx.Err())
+		slog.ErrorContext(ctx, "timeout while fetching state", "error", ctx.Err())
 	}
 }

@@ -5,7 +5,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/web/middleware"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
@@ -13,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
-	"go.uber.org/zap"
 )
 
 func setupOTelTest(t *testing.T) (*metrics.Metrics, *sdkmetric.ManualReader) {
@@ -79,7 +77,7 @@ func TestOTelMiddleware_ErrorMetrics_400_ValidationError(t *testing.T) {
 
 	wrapped := otelMiddleware.Wrap(inner)
 
-	logCtx := ctx.WithLog(t.Context(), zap.NewNop().Sugar())
+	logCtx := t.Context()
 	req := httptest.NewRequestWithContext(logCtx, http.MethodPost, "/test", nil)
 	rec := httptest.NewRecorder()
 
@@ -106,7 +104,7 @@ func TestOTelMiddleware_ErrorMetrics_500_InternalError(t *testing.T) {
 
 	wrapped := otelMiddleware.Wrap(inner)
 
-	logCtx := ctx.WithLog(t.Context(), zap.NewNop().Sugar())
+	logCtx := t.Context()
 	req := httptest.NewRequestWithContext(logCtx, http.MethodPost, "/test", nil)
 	rec := httptest.NewRecorder()
 
@@ -133,7 +131,7 @@ func TestOTelMiddleware_ErrorMetrics_200_NoErrorCounted(t *testing.T) {
 
 	wrapped := otelMiddleware.Wrap(inner)
 
-	logCtx := ctx.WithLog(t.Context(), zap.NewNop().Sugar())
+	logCtx := t.Context()
 	req := httptest.NewRequestWithContext(logCtx, http.MethodPost, "/test", nil)
 	rec := httptest.NewRecorder()
 
@@ -174,7 +172,7 @@ func TestOTelMiddleware_ErrorMetrics_AllCategories(t *testing.T) {
 
 			wrapped := otelMiddleware.Wrap(inner)
 
-			logCtx := ctx.WithLog(t.Context(), zap.NewNop().Sugar())
+			logCtx := t.Context()
 			req := httptest.NewRequestWithContext(
 				logCtx,
 				http.MethodPost,

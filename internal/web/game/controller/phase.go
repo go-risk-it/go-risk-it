@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game"
 	"github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
@@ -30,7 +31,7 @@ func (c *PhaseController) GetDeployPhaseState(
 	ctx ctx.GameContext,
 	gameState *state.Game,
 ) (messaging.GameState[messaging.DeployPhaseState], error) {
-	ctx.Log().Infow("fetching deploy phase state")
+	slog.InfoContext(ctx, "fetching deploy phase state")
 
 	deployableTroops, err := c.deployService.GetDeployableTroops(ctx)
 	if err != nil {
@@ -57,7 +58,7 @@ func (c *PhaseController) GetAttackPhaseState(
 	ctx ctx.GameContext,
 	gameState *state.Game,
 ) (messaging.GameState[messaging.EmptyState], error) {
-	ctx.Log().Infow("fetching attack phase state")
+	slog.InfoContext(ctx, "fetching attack phase state")
 
 	return c.getEmptyPhaseState(ctx, gameState, game.Attack), nil
 }
@@ -66,7 +67,7 @@ func (c *PhaseController) GetConquerPhaseState(
 	ctx ctx.GameContext,
 	gameState *state.Game,
 ) (messaging.GameState[messaging.ConquerPhaseState], error) {
-	ctx.Log().Infow("fetching conquer phase phaseState")
+	slog.InfoContext(ctx, "fetching conquer phase state")
 
 	conquerPhase, err := c.conquerService.GetPhaseState(ctx)
 	if err != nil {
@@ -95,7 +96,7 @@ func (c *PhaseController) GetReinforcePhaseState(
 	ctx ctx.GameContext,
 	gameState *state.Game,
 ) (messaging.GameState[messaging.EmptyState], error) {
-	ctx.Log().Infow("fetching reinforce phase state")
+	slog.InfoContext(ctx, "fetching reinforce phase state")
 
 	return c.getEmptyPhaseState(ctx, gameState, game.Reinforce), nil
 }
@@ -104,7 +105,7 @@ func (c *PhaseController) GetCardsPhaseState(
 	ctx ctx.GameContext,
 	gameState *state.Game,
 ) (messaging.GameState[messaging.EmptyState], error) {
-	ctx.Log().Infow("fetching cards phase state")
+	slog.InfoContext(ctx, "fetching cards phase state")
 
 	return c.getEmptyPhaseState(ctx, gameState, game.Cards), nil
 }
@@ -114,7 +115,7 @@ func (c *PhaseController) getEmptyPhaseState(
 	game *state.Game,
 	phaseType game.PhaseType,
 ) messaging.GameState[messaging.EmptyState] {
-	ctx.Log().Infow("fetching empty phase state")
+	slog.InfoContext(ctx, "fetching empty phase state")
 
 	return messaging.GameState[messaging.EmptyState]{
 		ID:   game.ID,

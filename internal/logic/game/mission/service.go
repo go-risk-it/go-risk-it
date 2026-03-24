@@ -3,6 +3,7 @@ package mission
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
@@ -117,7 +118,7 @@ func (s *ServiceImpl) CreateMissionsQ(
 	querier db.Querier,
 	players []sqlc.GamePlayer,
 ) error {
-	ctx.Log().Infow("creating missions")
+	slog.InfoContext(ctx, "creating missions")
 
 	missions := s.GetAvailableMissions(players)
 	s.rng.Shuffle(len(missions), func(i, j int) {
@@ -132,7 +133,7 @@ func (s *ServiceImpl) CreateMissionsQ(
 			return fmt.Errorf("failed to pick mission: %w", err)
 		}
 
-		ctx.Log().Debugw("picked mission", "mission", mission)
+		slog.DebugContext(ctx, "picked mission", "mission", mission)
 
 		missionID, err := querier.InsertMission(ctx, sqlc.InsertMissionParams{
 			PlayerID: players[index].ID,
@@ -147,7 +148,7 @@ func (s *ServiceImpl) CreateMissionsQ(
 		}
 	}
 
-	ctx.Log().Infow("created missions")
+	slog.InfoContext(ctx, "created missions")
 
 	return nil
 }
@@ -218,7 +219,7 @@ func (s *ServiceImpl) IsMissionAccomplishedQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) (bool, error) {
-	ctx.Log().Debugw("checking if mission is accomplished")
+	slog.DebugContext(ctx, "checking if mission is accomplished")
 
 	baseMission, err := querier.GetMission(ctx, sqlc.GetMissionParams{
 		GameID: ctx.GameID(),
@@ -234,7 +235,7 @@ func (s *ServiceImpl) IsMissionAccomplishedQ(
 	}
 
 	if isMissionAccomplished {
-		ctx.Log().Infow("mission is accomplished, assigning winner")
+		slog.InfoContext(ctx, "mission is accomplished, assigning winner")
 
 		if err := querier.AssignGameWinner(ctx, sqlc.AssignGameWinnerParams{
 			WinnerPlayerID: pgtype.Int8{
@@ -282,7 +283,7 @@ func (s *ServiceImpl) ReassignMissionsQ(
 		return fmt.Errorf("failed to delete spurious missions: %w", err)
 	}
 
-	ctx.Log().Infow("reassigned missions")
+	slog.InfoContext(ctx, "reassigned missions")
 
 	return nil
 }

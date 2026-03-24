@@ -3,6 +3,8 @@
 package region
 
 import (
+	context "context"
+
 	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
 	db "github.com/go-risk-it/go-risk-it/internal/data/game/db"
 
@@ -25,7 +27,7 @@ func (_m *Service) EXPECT() *Service_Expecter {
 }
 
 // CreateRegionsQ provides a mock function with given fields: _a0, querier, players, regions
-func (_m *Service) CreateRegionsQ(_a0 ctx.LogContext, querier db.Querier, players []sqlc.GamePlayer, regions []string) error {
+func (_m *Service) CreateRegionsQ(_a0 context.Context, querier db.Querier, players []sqlc.GamePlayer, regions []string) error {
 	ret := _m.Called(_a0, querier, players, regions)
 
 	if len(ret) == 0 {
@@ -33,7 +35,7 @@ func (_m *Service) CreateRegionsQ(_a0 ctx.LogContext, querier db.Querier, player
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(ctx.LogContext, db.Querier, []sqlc.GamePlayer, []string) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, db.Querier, []sqlc.GamePlayer, []string) error); ok {
 		r0 = rf(_a0, querier, players, regions)
 	} else {
 		r0 = ret.Error(0)
@@ -48,7 +50,7 @@ type Service_CreateRegionsQ_Call struct {
 }
 
 // CreateRegionsQ is a helper method to define mock.On call
-//   - _a0 ctx.LogContext
+//   - _a0 context.Context
 //   - querier db.Querier
 //   - players []sqlc.GamePlayer
 //   - regions []string
@@ -56,9 +58,9 @@ func (_e *Service_Expecter) CreateRegionsQ(_a0 interface{}, querier interface{},
 	return &Service_CreateRegionsQ_Call{Call: _e.mock.On("CreateRegionsQ", _a0, querier, players, regions)}
 }
 
-func (_c *Service_CreateRegionsQ_Call) Run(run func(_a0 ctx.LogContext, querier db.Querier, players []sqlc.GamePlayer, regions []string)) *Service_CreateRegionsQ_Call {
+func (_c *Service_CreateRegionsQ_Call) Run(run func(_a0 context.Context, querier db.Querier, players []sqlc.GamePlayer, regions []string)) *Service_CreateRegionsQ_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.LogContext), args[1].(db.Querier), args[2].([]sqlc.GamePlayer), args[3].([]string))
+		run(args[0].(context.Context), args[1].(db.Querier), args[2].([]sqlc.GamePlayer), args[3].([]string))
 	})
 	return _c
 }
@@ -68,7 +70,7 @@ func (_c *Service_CreateRegionsQ_Call) Return(_a0 error) *Service_CreateRegionsQ
 	return _c
 }
 
-func (_c *Service_CreateRegionsQ_Call) RunAndReturn(run func(ctx.LogContext, db.Querier, []sqlc.GamePlayer, []string) error) *Service_CreateRegionsQ_Call {
+func (_c *Service_CreateRegionsQ_Call) RunAndReturn(run func(context.Context, db.Querier, []sqlc.GamePlayer, []string) error) *Service_CreateRegionsQ_Call {
 	_c.Call.Return(run)
 	return _c
 }

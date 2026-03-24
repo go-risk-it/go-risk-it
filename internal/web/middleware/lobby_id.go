@@ -5,15 +5,12 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
-	"go.uber.org/zap"
 )
 
-type LobbyMiddleware struct {
-	log *zap.SugaredLogger
-}
+type LobbyMiddleware struct{}
 
-func NewLobbyMiddleware(log *zap.SugaredLogger) *LobbyMiddleware {
-	return &LobbyMiddleware{log: log}
+func NewLobbyMiddleware() *LobbyMiddleware {
+	return &LobbyMiddleware{}
 }
 
 func (g *LobbyMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
@@ -25,7 +22,6 @@ func (g *LobbyMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
 		routeToWrap.Pattern(),
 		routeToWrap.RequiresAuth(),
 		buildDomainContext[ctx.LobbyContext](
-			g.log,
 			routeToWrap,
 			"lobby",
 			ctx.WithLobbyID,

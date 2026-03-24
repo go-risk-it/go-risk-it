@@ -18,8 +18,6 @@ func (c *userContext) UserID() string {
 }
 
 func WithUserID(ctx TraceContext, userID string) UserContext {
-	ctx.SetLog(ctx.Log().With("userID", userID))
-
 	return &userContext{
 		TraceContext: ctx,
 		userID:       userID,

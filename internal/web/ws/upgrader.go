@@ -1,12 +1,12 @@
 package ws
 
 import (
+	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
 	"github.com/lesismal/nbio/nbhttp/websocket"
-	"go.uber.org/zap"
 )
 
 const (
@@ -29,7 +29,7 @@ type UpgraderImpl struct {
 	*websocket.Upgrader
 }
 
-func New(log *zap.SugaredLogger, serverConfig config.ServerConfig, _ ...any) *UpgraderImpl {
+func New(serverConfig config.ServerConfig, _ ...any) *UpgraderImpl {
 	//exhaustruct:ignore
 	upgrader := UpgraderImpl{
 		Upgrader: websocket.NewUpgrader(),
@@ -51,7 +51,7 @@ func New(log *zap.SugaredLogger, serverConfig config.ServerConfig, _ ...any) *Up
 	}
 
 	upgrader.OnOpen(func(connection *websocket.Conn) {
-		log.Infow("Connection opened", "remoteAddress", connection.RemoteAddr().String())
+		slog.Info("Connection opened", "remoteAddress", connection.RemoteAddr().String())
 		connection.Keepalive(pingInterval)
 	})
 
@@ -63,9 +63,9 @@ func New(log *zap.SugaredLogger, serverConfig config.ServerConfig, _ ...any) *Up
 
 	upgrader.OnClose(func(connection *websocket.Conn, err error) {
 		if err != nil {
-			log.Infow("Connection closed with error", "error", err)
+			slog.Info("Connection closed with error", "error", err)
 		} else {
-			log.Infow("Connection closed", "remoteAddress", connection.RemoteAddr().String())
+			slog.Info("Connection closed", "remoteAddress", connection.RemoteAddr().String())
 		}
 	})
 

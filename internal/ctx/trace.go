@@ -1,14 +1,18 @@
 package ctx
 
-import "go.opentelemetry.io/otel/trace"
+import (
+	"context"
+
+	"go.opentelemetry.io/otel/trace"
+)
 
 type TraceContext interface {
-	LogContext
+	context.Context
 	Span() trace.Span
 }
 
 type traceContext struct {
-	LogContext
+	context.Context //nolint:containedctx // deliberate context enrichment chain
 
 	span trace.Span
 }
@@ -19,11 +23,9 @@ func (c *traceContext) Span() trace.Span {
 	return c.span
 }
 
-func WithSpan(ctx LogContext, span trace.Span) TraceContext {
-	ctx.SetLog(ctx.Log().With("traceID", span.SpanContext().TraceID()))
-
+func WithSpan(ctx context.Context, span trace.Span) TraceContext {
 	return &traceContext{
-		LogContext: ctx,
-		span:       span,
+		Context: ctx,
+		span:    span,
 	}
 }

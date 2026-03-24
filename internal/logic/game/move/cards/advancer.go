@@ -2,6 +2,7 @@ package cards
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
@@ -36,7 +37,7 @@ func (s *ServiceImpl) AdvanceQ(
 		return fmt.Errorf("failed to create deploy phase: %w", err)
 	}
 
-	ctx.Log().Infow("created deploy phase")
+	slog.InfoContext(ctx, "created deploy phase")
 
 	return nil
 }
@@ -72,7 +73,7 @@ func (s *ServiceImpl) getDeployableTroops(
 		return -1, fmt.Errorf("failed to get continent reward: %w", err)
 	}
 
-	ctx.Log().Debugw("awarding deployable troops",
+	slog.DebugContext(ctx, "awarding deployable troops",
 		"region",
 		regionReward,
 		"continent",

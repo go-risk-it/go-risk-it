@@ -2,6 +2,7 @@ package state
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
@@ -42,7 +43,7 @@ func (s *ServiceImpl) GetGameState(ctx ctx.GameContext) (*Game, error) {
 func (s *ServiceImpl) GetGameStateQ(ctx ctx.GameContext, querier db.Querier) (*Game, error) {
 	game, err := querier.GetGame(ctx, ctx.GameID())
 	if err != nil {
-		ctx.Log().Warnw("failed to get game", "err", err)
+		slog.WarnContext(ctx, "failed to get game", "error", err)
 
 		return nil, fmt.Errorf("failed to get game: %w", err)
 	}
@@ -61,14 +62,14 @@ func (s *ServiceImpl) GetGameStateQ(ctx ctx.GameContext, querier db.Querier) (*G
 }
 
 func (s *ServiceImpl) GetUserGames(ctx ctx.UserContext) ([]int64, error) {
-	ctx.Log().Infow("getting user games")
+	slog.InfoContext(ctx, "getting user games")
 
 	userGames, err := s.querier.GetUserGames(ctx, ctx.UserID())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get joined games: %w", err)
 	}
 
-	ctx.Log().Infow("got user games", "games", userGames)
+	slog.InfoContext(ctx, "got user games", "games", userGames)
 
 	return userGames, nil
 }

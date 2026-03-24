@@ -2,6 +2,7 @@ package fetcher
 
 import (
 	"encoding/json"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
@@ -47,11 +48,11 @@ func NewMissionFetcher(
 }
 
 func (f *MissionFetcherImpl) FetchState(ctx ctx.GameContext, stateChannel chan json.RawMessage) {
-	ctx.Log().Debugw("fetching mission state")
+	slog.DebugContext(ctx, "fetching mission state")
 
 	baseMission, err := f.missionService.GetBaseMission(ctx)
 	if err != nil {
-		ctx.Log().Errorw("failed to get base mission", "error", err)
+		slog.ErrorContext(ctx, "failed to get base mission", "error", err)
 
 		return
 	}
@@ -92,7 +93,7 @@ func (f *MissionFetcherImpl) FetchState(ctx ctx.GameContext, stateChannel chan j
 			getFetcherFunc(f.missionController.GetTwentyFourTerritoriesMission, baseMission.ID),
 			stateChannel)
 	default:
-		ctx.Log().Errorf("unknown mission type: %v", baseMission.Type)
+		slog.ErrorContext(ctx, "unknown mission type", "type", baseMission.Type)
 	}
 }
 

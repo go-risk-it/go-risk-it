@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
@@ -15,13 +16,11 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 	"go.uber.org/fx"
-	"go.uber.org/zap"
 )
 
 type MovePerformedHandlerParams struct {
 	fx.In
 
-	Log               *zap.SugaredLogger
 	Signal            signals.MovePerformedSignal
 	MoveLogController *controller.MoveLogController
 	MoveLogFetcher    fetcher.MoveLogFetcher
@@ -34,12 +33,14 @@ func HandleMovePerformed(
 	params.Signal.AddListener(func(context context.Context, data signals.MovePerformedData) {
 		gameContext, ok := context.(ctx.GameContext)
 		if !ok {
-			params.Log.Errorw("context is not game context", "context", context)
+			slog.ErrorContext(context, "context is not game context")
 
 			return
 		}
 
-		gameContext.Log().Infow("handling move performed. fetching move logs and publishing")
+		slog.InfoContext( //nolint:contextcheck
+			gameContext, "handling move performed",
+		)
 
 		//nolint:contextcheck // deliberate context detach
 		fetchStateAndPublish(

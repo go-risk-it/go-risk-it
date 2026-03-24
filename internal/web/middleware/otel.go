@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -9,7 +8,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
-	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	otelmetric "go.opentelemetry.io/otel/metric"
@@ -56,17 +54,7 @@ func (m *OTelMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
 			)
 			defer span.End()
 
-			logContext, ok := request.Context().(ctx.LogContext)
-			if !ok {
-				_ = restutils.WriteError(
-					writer,
-					errors.New("invalid log context"),
-				)
-
-				return
-			}
-
-			traceContext := ctx.WithSpan(logContext, span)
+			traceContext := ctx.WithSpan(request.Context(), span)
 
 			// WebSocket routes need the raw response writer for nbio's upgrade.
 			// Skip status recording and HTTP metrics for WS connections.

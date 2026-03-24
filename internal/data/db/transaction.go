@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -34,7 +34,7 @@ const (
 // Pass nil for txMetrics if metrics are not available.
 func InTransaction[Q Transactable[Q], T any](
 	querier Q,
-	ctx ctx.LogContext,
+	ctx context.Context,
 	txMetrics *metrics.Metrics,
 	txFunc func(Q) (T, error),
 ) (T, error) {
@@ -47,7 +47,7 @@ func InTransaction[Q Transactable[Q], T any](
 // Pass nil for txMetrics if metrics are not available.
 func InTransactionWithIsolation[Q Transactable[Q], T any](
 	querier Q,
-	ctx ctx.LogContext,
+	ctx context.Context,
 	txMetrics *metrics.Metrics,
 	isolationLevel pgx.TxIsoLevel,
 	txFunc func(Q) (T, error),
@@ -56,7 +56,7 @@ func InTransactionWithIsolation[Q Transactable[Q], T any](
 
 	for attempt := range maxRetries {
 		if attempt > 0 {
-			ctx.Log().Warnw("retrying transaction",
+			slog.WarnContext(ctx, "retrying transaction",
 				"attempt", attempt+1,
 				"maxRetries", maxRetries,
 				"lastError", lastErr,
@@ -69,7 +69,7 @@ func InTransactionWithIsolation[Q Transactable[Q], T any](
 			time.Sleep(retryBackoffBase * time.Duration(1<<attempt))
 		}
 
-		ctx.Log().Infow("starting transaction",
+		slog.InfoContext(ctx, "starting transaction",
 			"isolation", isolationLevel,
 			"attempt", attempt+1,
 		)
@@ -110,7 +110,7 @@ func isRetryable(err error) bool {
 //nolint:nonamedreturns // named returns needed for defer-based commit/rollback
 func executeTransaction[Q Transactable[Q], T any](
 	querier Q,
-	ctx ctx.LogContext,
+	ctx context.Context,
 	txMetrics *metrics.Metrics,
 	isolationLevel pgx.TxIsoLevel,
 	txFunc func(Q) (T, error),
@@ -124,26 +124,26 @@ func executeTransaction[Q Transactable[Q], T any](
 	)
 	defer span.End()
 
-	ctx.Log().Infow("started transaction")
+	slog.InfoContext(ctx, "started transaction")
 
 	txStart := time.Now()
 	isoAttr := metric.WithAttributes(attribute.String("isolation", string(isolationLevel)))
 
 	defer func() {
 		if panicking := recover(); panicking != nil {
-			ctx.Log().Errorw("panic in transaction, rolling back", "panic", panicking)
+			slog.ErrorContext(ctx, "panic in transaction, rolling back", "panic", panicking)
 			rollback(transaction, ctx, txMetrics)
 
 			panic(panicking) // re-throw panic after Rollback
 		} else if err != nil {
-			ctx.Log().Errorw("error in transaction, rolling back", "err", err)
+			slog.ErrorContext(ctx, "error in transaction, rolling back", "error", err)
 			rollback(transaction, ctx, txMetrics)
 		} else {
 			err = transaction.Commit(ctx) // err is nil; if Commit returns error update err
 			if err != nil {
-				ctx.Log().Errorw("failed to commit transaction", "err", err)
+				slog.ErrorContext(ctx, "failed to commit transaction", "error", err)
 			} else {
-				ctx.Log().Infow("committed transaction")
+				slog.InfoContext(ctx, "committed transaction")
 			}
 		}
 
@@ -161,10 +161,10 @@ func executeTransaction[Q Transactable[Q], T any](
 
 func rollback(
 	transaction pgx.Tx,
-	ctx ctx.LogContext,
+	ctx context.Context,
 	txMetrics *metrics.Metrics,
 ) {
-	ctx.Log().Infow("rolling back transaction")
+	slog.InfoContext(ctx, "rolling back transaction")
 
 	if txMetrics != nil {
 		txMetrics.TransactionRollbacks.Add(ctx, 1)
@@ -172,8 +172,8 @@ func rollback(
 
 	err := transaction.Rollback(ctx)
 	if err != nil {
-		ctx.Log().Errorf("failed to rollback transaction: %v", err)
+		slog.ErrorContext(ctx, "failed to rollback transaction", "error", err)
 	}
 
-	ctx.Log().Infow("rolled back transaction")
+	slog.InfoContext(ctx, "rolled back transaction")
 }
