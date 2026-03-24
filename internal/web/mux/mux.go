@@ -14,11 +14,8 @@ func NewServeMux(
 	routes []*route.Route,
 	authMiddleware *middleware.AuthMiddleware,
 	corsMiddleware *middleware.CorsMiddleware,
-	gameMiddleware *middleware.GameMiddleware,
-	lobbyMiddleware *middleware.LobbyMiddleware,
 	logMiddleware *middleware.LogMiddleware,
 	otelMiddleware *middleware.OTelMiddleware,
-	websocketAuthMiddleware *middleware.WebsocketHeaderConversionMiddleware,
 ) http.Handler {
 	mux := http.NewServeMux()
 	routeNames := make([]string, 0, len(routes))
@@ -29,14 +26,8 @@ func NewServeMux(
 			logMiddleware.Wrap(
 				otelMiddleware.Wrap(
 					corsMiddleware.Wrap(
-						websocketAuthMiddleware.Wrap(
-							authMiddleware.Wrap(
-								lobbyMiddleware.Wrap(
-									gameMiddleware.Wrap(
-										route,
-									),
-								),
-							),
+						authMiddleware.Wrap(
+							route,
 						),
 					),
 				),
