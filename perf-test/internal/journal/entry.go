@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/baseline"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/health"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/resources"
 )
 
@@ -20,18 +21,20 @@ type StaircaseParams struct {
 
 // StepResult holds metrics and SLO evaluation for a single staircase step.
 type StepResult struct {
-	TargetGames     int                       `json:"target_games"`
-	Metrics         baseline.MetricsSnapshot  `json:"metrics"`
-	SLOEval         baseline.EvalResult       `json:"slo_eval"`
-	ServerResources resources.ServerResources `json:"server_resources"`
-	DurationSec     float64                   `json:"duration_sec"`
+	TargetGames        int                       `json:"target_games"`
+	Metrics            baseline.MetricsSnapshot  `json:"metrics"`
+	SLOEval            baseline.EvalResult       `json:"slo_eval"`
+	ServerResources    resources.ServerResources `json:"server_resources"`
+	DurationSec        float64                   `json:"duration_sec"`
+	HealthDistribution *health.Distribution      `json:"health_distribution,omitempty"`
 }
 
 // SLOCeiling is the headline metric: max concurrent games where all SLOs hold.
 type SLOCeiling struct {
-	Games          int     `json:"games"`
-	ThroughputMPS  float64 `json:"throughput_mps"`
-	CompletionRate float64 `json:"completion_rate"`
+	Games                int     `json:"games"`
+	ThroughputMPS        float64 `json:"throughput_mps"`
+	CompletionRate       float64 `json:"completion_rate"`
+	EffectiveConcurrency int     `json:"effective_concurrency,omitempty"`
 }
 
 // Entry is a complete performance journal entry.

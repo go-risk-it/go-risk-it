@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/annotations"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/baseline"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/health"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/resources"
 )
@@ -37,10 +38,11 @@ func (c StaircaseConfig) cooldown() time.Duration {
 
 // StepOutput holds raw data from a single staircase step.
 type StepOutput struct {
-	TargetGames     int
-	Snapshot        *metrics.Snapshot
-	Duration        time.Duration
-	ServerResources resources.ServerResources
+	TargetGames        int
+	Snapshot           *metrics.Snapshot
+	Duration           time.Duration
+	ServerResources    resources.ServerResources
+	HealthDistribution *health.Distribution
 }
 
 // StaircaseDeps holds injected dependencies for testability.

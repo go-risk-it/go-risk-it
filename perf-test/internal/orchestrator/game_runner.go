@@ -57,6 +57,7 @@ type GameRunner struct {
 	thinkTime     time.Duration
 	timeouts      Timeouts
 	chaosInjector *chaos.Injector
+	observer      GameObserver
 }
 
 func NewGameRunner(
@@ -78,7 +79,13 @@ func NewGameRunner(
 		thinkTime:     thinkTime,
 		timeouts:      timeouts,
 		chaosInjector: chaosInjector,
+		observer:      NopObserver{},
 	}
+}
+
+// SetObserver sets the game lifecycle observer. Must be called before Run.
+func (gr *GameRunner) SetObserver(obs GameObserver) {
+	gr.observer = obs
 }
 
 // GameResult holds stats from a completed game.
@@ -98,6 +105,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 	result := GameResult{GameIndex: gameIndex}
 
 	gr.collector.RecordGameStarted()
+	gr.observer.OnGameStarted(gameIndex)
 
 	// Shared transport for connection pooling across all players in this game.
 	transport := &http.Transport{
@@ -230,6 +238,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 			result.Winner = refSnap.GameState.WinnerUserID
 			result.Duration = time.Since(start)
 			gr.collector.RecordGameComplete(result.Duration, result.Moves)
+			gr.observer.OnGameComplete(gameIndex)
 
 			log.Printf("[game %d] finished in %v (%d moves, %d errors, winner: %s)",
 				gameIndex, result.Duration, result.Moves, result.Errors, abbreviate(result.Winner))
@@ -257,6 +266,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 		currentPhase := strings.ToLower(string(snap.CurrentPhase()))
 		if currentPhase != lastPhase {
 			gr.collector.RecordPhaseEntry(currentPhase)
+			gr.observer.OnPhaseChange(gameIndex, currentPhase)
 			lastPhase = currentPhase
 		}
 
@@ -444,6 +454,7 @@ func (gr *GameRunner) Run(ctx context.Context, gameIndex, numPlayers int) GameRe
 		gr.collector.RecordPhaseLatency(currentPhase, t3.Sub(t1))
 		gr.collector.RecordPhaseMove(currentPhase)
 		gr.collector.RecordTimedMove()
+		gr.observer.OnMove(gameIndex, currentPhase)
 
 		result.Moves++
 		consecutiveErrors = 0
