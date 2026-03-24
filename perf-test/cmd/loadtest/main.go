@@ -17,6 +17,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/baseline"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/chaos"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/journal"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/journal/session"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/mapgraph"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/orchestrator"
@@ -129,6 +130,11 @@ func main() {
 		"warmup-duration",
 		0,
 		"Seconds to wait before recording histograms per step (0 = disabled)",
+	)
+	hypothesis := flag.String(
+		"hypothesis",
+		"",
+		"Hypothesis for this optimization run (annotates session)",
 	)
 
 	flag.Parse()
@@ -352,6 +358,7 @@ func main() {
 			*compareJournal,
 			*warmupCompletions,
 			*warmupDuration,
+			*hypothesis,
 		)
 
 		return
@@ -551,6 +558,7 @@ func runStaircase(
 	compareJournalFile string,
 	warmupCompletions int,
 	warmupDuration int,
+	hypothesis string,
 ) {
 	// Build staircase config from flags if not set by preset.
 	if staircaseCfg == nil {
@@ -662,7 +670,7 @@ func runStaircase(
 		insights = baseline.Analyze(stepResults[lastIdx].Metrics)
 	}
 
-	// Build commit SHA.
+	// Build commit SHA and branch.
 	commitSHA := "unknown"
 
 	out, err := exec.Command("git", "rev-parse", "--short", "HEAD").Output()
@@ -670,10 +678,18 @@ func runStaircase(
 		commitSHA = strings.TrimSpace(string(out))
 	}
 
+	branch := ""
+
+	branchOut, err := exec.Command("git", "branch", "--show-current").Output()
+	if err == nil {
+		branch = strings.TrimSpace(string(branchOut))
+	}
+
 	// Build journal entry.
 	entry := journal.Entry{
 		CommitSHA: commitSHA,
 		Timestamp: time.Now(),
+		Branch:    branch,
 		Config: journal.StaircaseParams{
 			Steps:             staircaseCfg.Steps,
 			HoldDurationSec:   staircaseCfg.HoldDuration.Seconds(),
@@ -715,6 +731,11 @@ func runStaircase(
 			log.Printf("failed to save journal entry: %v", err)
 		} else {
 			log.Printf("journal entry saved: %s", path)
+
+			// Session integration: auto-create/update session for non-main branches.
+			if branch != "" && branch != "main" && branch != "master" {
+				handleSession(branch, commitSHA, path, ceiling.Games, hypothesis)
+			}
 		}
 	}
 
@@ -726,6 +747,48 @@ func runStaircase(
 		}
 
 		journal.PrintCeilingComparison(os.Stdout, prevEntry, entry)
+	}
+}
+
+func handleSession(branch, commitSHA, entryPath string, ceilingGames int, hypothesis string) {
+	store := session.NewStore("perf-journal/sessions")
+
+	sess, err := store.GetOrCreate(branch, "perf-journal/entries")
+	if err != nil {
+		log.Printf("[session] failed to create/load session: %v", err)
+
+		return
+	}
+
+	// Compute delta vs session baseline ceiling.
+	baselineCeiling := 0
+	if len(sess.Runs) > 0 {
+		baselineCeiling = sess.Runs[0].CeilingGames
+	}
+
+	ref := session.RunRef{
+		EntryPath:    entryPath,
+		CommitSHA:    commitSHA,
+		CeilingGames: ceilingGames,
+		CeilingDelta: ceilingGames - baselineCeiling,
+		Hypothesis:   hypothesis,
+		Timestamp:    time.Now(),
+	}
+
+	if err := store.AddRun(branch, ref); err != nil {
+		log.Printf("[session] failed to add run: %v", err)
+
+		return
+	}
+
+	runNum := len(sess.Runs) + 1
+	log.Printf(
+		"[session] %s: run #%d, ceiling=%d (delta=%+d from session start)",
+		branch, runNum, ceilingGames, ref.CeilingDelta,
+	)
+
+	if hypothesis != "" {
+		log.Printf("[session] hypothesis: %s", hypothesis)
 	}
 }
 

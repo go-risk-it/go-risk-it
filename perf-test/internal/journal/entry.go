@@ -41,6 +41,8 @@ type SLOCeiling struct {
 type Entry struct {
 	CommitSHA      string                   `json:"commit_sha"`
 	Timestamp      time.Time                `json:"timestamp"`
+	Branch         string                   `json:"branch,omitempty"`
+	SessionID      string                   `json:"session_id,omitempty"`
 	Config         StaircaseParams          `json:"config"`
 	SLOCeiling     SLOCeiling               `json:"slo_ceiling"`
 	Steps          []StepResult             `json:"steps"`
