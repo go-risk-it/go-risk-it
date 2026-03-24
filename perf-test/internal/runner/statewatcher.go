@@ -1,0 +1,119 @@
+package runner
+
+import (
+	"context"
+	"time"
+
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/gamestate"
+)
+
+// StateWatcherHandler waits for fresh game state via WebSocket after moves.
+type StateWatcherHandler struct {
+	gameCtx  *GameContext
+	timeouts Timeouts
+	ctx      context.Context
+}
+
+// Register subscribes to EventMoveSucceeded, EventMoveConflict, EventTurnSkipped.
+func (h *StateWatcherHandler) Register(bus *Bus) {
+	bus.On(EventMoveSucceeded, h.handleWaitAndEmit)
+	bus.On(EventTurnSkipped, h.handleWaitAndEmit)
+	bus.On(EventMoveConflict, h.handleConflict)
+}
+
+func (h *StateWatcherHandler) handleWaitAndEmit(bus *Bus, _ Event) {
+	if h.ctx.Err() != nil {
+		return
+	}
+
+	waitForAnyUpdate(h.gameCtx.Players, h.timeouts.UpdateWait, h.ctx)
+	time.Sleep(h.timeouts.PostMoveSettle)
+
+	if h.ctx.Err() != nil {
+		return
+	}
+
+	snap := h.gameCtx.Players[0].WS.View().Snapshot()
+	bus.Emit(StateReceivedEvent{
+		Snapshot:  snap,
+		Timestamp: time.Now(),
+	})
+}
+
+func (h *StateWatcherHandler) handleConflict(bus *Bus, _ Event) {
+	if h.ctx.Err() != nil {
+		return
+	}
+
+	// Wait for phase to change (indicates server moved past the conflict).
+	activeView := h.gameCtx.Players[0].WS.View()
+	oldPhase := activeView.Snapshot().CurrentPhase()
+	waitForPhaseChange(activeView, oldPhase, h.timeouts.PhaseChangeWait, h.ctx)
+
+	if h.ctx.Err() != nil {
+		return
+	}
+
+	snap := activeView.Snapshot()
+	bus.Emit(StateReceivedEvent{
+		Snapshot:  snap,
+		Timestamp: time.Now(),
+	})
+}
+
+// waitForAnyUpdate waits for a state update from any player's WS connection.
+func waitForAnyUpdate(players []*PlayerInfo, timeout time.Duration, ctx context.Context) {
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+
+	done := make(chan struct{})
+	defer close(done)
+
+	signal := make(chan struct{}, 1)
+	for _, p := range players {
+		go func(updated <-chan struct{}, wsDone <-chan struct{}) {
+			select {
+			case <-updated:
+				select {
+				case signal <- struct{}{}:
+				default:
+				}
+			case <-wsDone:
+				select {
+				case signal <- struct{}{}:
+				default:
+				}
+			case <-done:
+			}
+		}(p.WS.View().Updated(), p.WS.Done())
+	}
+
+	select {
+	case <-signal:
+	case <-timer.C:
+	case <-ctx.Done():
+	}
+}
+
+// waitForPhaseChange waits until the view shows a different phase than oldPhase.
+func waitForPhaseChange(
+	v *gamestate.View,
+	oldPhase gamestate.PhaseType,
+	timeout time.Duration,
+	ctx context.Context,
+) {
+	deadline := time.After(timeout)
+
+	for {
+		select {
+		case <-deadline:
+			return
+		case <-v.Updated():
+			if v.Snapshot().CurrentPhase() != oldPhase {
+				return
+			}
+		case <-ctx.Done():
+			return
+		}
+	}
+}
