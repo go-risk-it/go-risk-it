@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/data/game/pool"
+	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -15,14 +15,14 @@ type Service interface {
 }
 
 type ServiceImpl struct {
-	pool     pool.DB
+	pool     db.DB
 	dbConfig config.DatabaseConfig
 	tables   []string
 }
 
 var _ Service = (*ServiceImpl)(nil)
 
-func NewService(pool pool.DB, dbConfig config.DatabaseConfig) *ServiceImpl {
+func NewService(pool db.DB, dbConfig config.DatabaseConfig) *ServiceImpl {
 	tables := []string{
 		"game.card",
 		"game.conquer_phase",

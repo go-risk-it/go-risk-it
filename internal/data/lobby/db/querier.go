@@ -1,11 +1,21 @@
 package db
 
 import (
+	"context"
+
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
-	"github.com/go-risk-it/go-risk-it/internal/data/lobby/pool"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/sqlc"
 	"github.com/jackc/pgx/v5"
 )
+
+type Transaction interface {
+	pgx.Tx
+}
+
+type DB interface {
+	sqlc.DBTX
+	BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error)
+}
 
 type Querier interface {
 	sqlc.Querier
@@ -22,7 +32,7 @@ type Queries struct {
 	db.TxSupport
 }
 
-func New(d pool.DB) Querier {
+func New(d DB) Querier {
 	return &Queries{
 		Queries:   sqlc.New(d),
 		TxSupport: db.TxSupport{DB: d},
