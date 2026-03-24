@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -316,9 +317,22 @@ func ParseFlags() *Config {
 
 // resolve computes derived fields after flag parsing.
 func (c *Config) resolve() {
-	// Build WS URL from HTTP URL.
-	c.Server.WSURL = strings.Replace(c.Server.URL, "http://", "ws://", 1)
-	c.Server.WSURL = strings.Replace(c.Server.WSURL, "https://", "wss://", 1)
+	// Build WS URL from HTTP URL using url.Parse for idempotent conversion.
+	parsed, err := url.Parse(c.Server.URL)
+	if err == nil {
+		switch parsed.Scheme {
+		case "https":
+			parsed.Scheme = "wss"
+		default:
+			parsed.Scheme = "ws"
+		}
+
+		c.Server.WSURL = parsed.String()
+	} else {
+		// Fallback: simple string replacement.
+		c.Server.WSURL = strings.Replace(c.Server.URL, "http://", "ws://", 1)
+		c.Server.WSURL = strings.Replace(c.Server.WSURL, "https://", "wss://", 1)
+	}
 
 	// Read anon key from env if not set via flag.
 	if c.Server.AnonKey == "" {

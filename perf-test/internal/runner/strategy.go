@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/gamestate"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/player"
 )
 
@@ -86,7 +87,7 @@ func (h *StrategyHandler) handle(bus *Bus, e Event) {
 		bus.Emit(MoveFailedEvent{
 			Err:     err,
 			Fatal:   false,
-			ErrType: "strategy",
+			ErrType: metrics.ErrorTypeStrategy,
 		})
 
 		return
@@ -100,7 +101,7 @@ func (h *StrategyHandler) handle(bus *Bus, e Event) {
 	bus.Emit(MoveDecidedEvent{
 		Action: action,
 		UserID: activeUserID,
-		Phase:  currentPhase,
+		Phase:  metrics.Phase(currentPhase),
 	})
 }
 

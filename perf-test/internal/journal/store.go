@@ -11,6 +11,14 @@ import (
 	"strings"
 )
 
+// Pre-compiled regexes for file operations.
+var (
+	reEntryFile    = regexp.MustCompile(`^\d{3}-.*\.json$`)
+	reSequenceNum  = regexp.MustCompile(`^(\d{3})-`)
+	reNonAlphaNum  = regexp.MustCompile(`[^a-z0-9-]`)
+	reMultiHyphens = regexp.MustCompile(`-+`)
+)
+
 // SaveEntry writes entry as JSON to dir/NNN-slug-commit.json with
 // auto-incrementing sequence. Returns the path of the written file.
 func SaveEntry(dir, slug string, entry Entry) (string, error) {
@@ -66,8 +74,6 @@ func ListEntries(dir string) ([]string, error) {
 		return nil, fmt.Errorf("read dir: %w", err)
 	}
 
-	re := regexp.MustCompile(`^\d{3}-.*\.json$`)
-
 	var paths []string
 
 	for _, e := range entries {
@@ -75,7 +81,7 @@ func ListEntries(dir string) ([]string, error) {
 			continue
 		}
 
-		if re.MatchString(e.Name()) {
+		if reEntryFile.MatchString(e.Name()) {
 			paths = append(paths, filepath.Join(dir, e.Name()))
 		}
 	}
@@ -104,12 +110,8 @@ func LatestEntry(dir string) (Entry, error) {
 func sanitizeSlug(s string) string {
 	s = strings.ToLower(s)
 	s = strings.ReplaceAll(s, " ", "-")
-
-	re := regexp.MustCompile(`[^a-z0-9-]`)
-	s = re.ReplaceAllString(s, "")
-
-	re = regexp.MustCompile(`-+`)
-	s = re.ReplaceAllString(s, "-")
+	s = reNonAlphaNum.ReplaceAllString(s, "")
+	s = reMultiHyphens.ReplaceAllString(s, "-")
 
 	return strings.Trim(s, "-")
 }
@@ -123,14 +125,13 @@ func nextSequenceNumber(dir string) (int, error) {
 	}
 
 	highest := -1
-	re := regexp.MustCompile(`^(\d{3})-`)
 
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
 		}
 
-		matches := re.FindStringSubmatch(entry.Name())
+		matches := reSequenceNum.FindStringSubmatch(entry.Name())
 		if matches == nil {
 			continue
 		}

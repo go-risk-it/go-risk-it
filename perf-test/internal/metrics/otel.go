@@ -48,9 +48,10 @@ type OTelExporter struct {
 	gamesActive metric.Int64UpDownCounter
 
 	// Histograms.
-	restDuration metric.Float64Histogram
-	e2eDuration  metric.Float64Histogram
-	wsDuration   metric.Float64Histogram
+	restDuration  metric.Float64Histogram
+	e2eDuration   metric.Float64Histogram
+	wsDuration    metric.Float64Histogram
+	phaseDuration metric.Float64Histogram
 
 	// Game-level histograms.
 	gameDuration metric.Float64Histogram
@@ -177,6 +178,14 @@ func (o *OTelExporter) initInstruments(meter metric.Meter) error {
 
 	if o.wsDuration, err = meter.Float64Histogram("perftest.ws.delivery.duration",
 		metric.WithDescription("WebSocket delivery latency"),
+		metric.WithUnit("s"),
+		metric.WithExplicitBucketBoundaries(latencyBuckets...),
+	); err != nil {
+		return err
+	}
+
+	if o.phaseDuration, err = meter.Float64Histogram("perftest.phase.duration",
+		metric.WithDescription("Per-phase E2E latency"),
 		metric.WithUnit("s"),
 		metric.WithExplicitBucketBoundaries(latencyBuckets...),
 	); err != nil {

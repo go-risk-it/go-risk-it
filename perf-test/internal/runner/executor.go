@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/client"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/player"
 )
 
@@ -28,7 +29,7 @@ func (h *ExecutorHandler) handle(bus *Bus, e Event) {
 			Action:  evt.Action,
 			Err:     fmt.Errorf("user %s not found in game context", evt.UserID),
 			Fatal:   true,
-			ErrType: "execution",
+			ErrType: metrics.ErrorTypeExecution,
 		})
 
 		return
@@ -63,7 +64,7 @@ func (h *ExecutorHandler) handle(bus *Bus, e Event) {
 		bus.Emit(MoveFailedEvent{
 			Action:  evt.Action,
 			Err:     err,
-			ErrType: "stale_state",
+			ErrType: metrics.ErrorTypeStaleState,
 		})
 
 		return
@@ -74,7 +75,7 @@ func (h *ExecutorHandler) handle(bus *Bus, e Event) {
 		bus.Emit(MoveFailedEvent{
 			Action:  evt.Action,
 			Err:     err,
-			ErrType: "transient",
+			ErrType: metrics.ErrorTypeTransient,
 		})
 
 		return
@@ -83,7 +84,7 @@ func (h *ExecutorHandler) handle(bus *Bus, e Event) {
 	bus.Emit(MoveFailedEvent{
 		Action:  evt.Action,
 		Err:     err,
-		ErrType: "execution",
+		ErrType: metrics.ErrorTypeExecution,
 	})
 }
 

@@ -7,6 +7,32 @@ import (
 	"text/tabwriter"
 )
 
+// Insight detection thresholds.
+const (
+	// ThresholdTimeoutRate is the minimum timeout rate to flag as a warning.
+	ThresholdTimeoutRate = 0.10
+	// ThresholdTailLatencyRatio is the p99/p95 ratio above which tail blow-up is flagged.
+	ThresholdTailLatencyRatio = 3.0
+	// ThresholdRetryRate is the retry/move ratio above which a warning is emitted.
+	ThresholdRetryRate = 0.05
+	// ThresholdConflictRate is the conflict/move ratio above which a warning is emitted.
+	ThresholdConflictRate = 0.03
+	// ThresholdContentionCritical is the contention rate for a critical alert.
+	ThresholdContentionCritical = 0.25
+	// ThresholdContentionWarning is the contention rate for a warning.
+	ThresholdContentionWarning = 0.10
+	// ThresholdErrorDominance is the ratio above which a single error type dominates.
+	ThresholdErrorDominance = 0.70
+	// ThresholdThroughputPlateau is the peak/avg ratio for throughput plateau detection.
+	ThresholdThroughputPlateau = 3.0
+	// ThresholdSlowPhase is the multiplier of overall E2E p95 for flagging slow phases.
+	ThresholdSlowPhase = 2.0
+	// ThresholdRESTHotspot is the multiplier of median action p95 for flagging hotspots.
+	ThresholdRESTHotspot = 3.0
+	// ThresholdFlowImbalance is the deploy/attack entry ratio below which imbalance is flagged.
+	ThresholdFlowImbalance = 0.5
+)
+
 // Insight describes a detected pattern from a load test run.
 type Insight struct {
 	Category string `json:"category"` // "bottleneck", "anomaly", "health"
@@ -74,7 +100,7 @@ func detectGameTimeouts(snap MetricsSnapshot) []Insight {
 	}
 
 	rate := float64(snap.GamesTimedOut) / float64(total)
-	if rate <= 0.10 {
+	if rate <= ThresholdTimeoutRate {
 		return nil
 	}
 
@@ -94,7 +120,7 @@ func detectTailLatencyBlowup(snap MetricsSnapshot) []Insight {
 
 	if snap.E2E.P95 > 0 {
 		ratio := snap.E2E.P99 / snap.E2E.P95
-		if ratio > 3.0 {
+		if ratio > ThresholdTailLatencyRatio {
 			insights = append(insights, Insight{
 				Category: "anomaly",
 				Severity: "warning",
@@ -109,7 +135,7 @@ func detectTailLatencyBlowup(snap MetricsSnapshot) []Insight {
 
 	if snap.WSDelivery.P95 > 0 {
 		ratio := snap.WSDelivery.P99 / snap.WSDelivery.P95
-		if ratio > 3.0 {
+		if ratio > ThresholdTailLatencyRatio {
 			insights = append(insights, Insight{
 				Category: "anomaly",
 				Severity: "warning",
@@ -131,7 +157,7 @@ func detectHighRetryRate(snap MetricsSnapshot) []Insight {
 	}
 
 	rate := float64(snap.TotalRetries) / float64(snap.TotalMoves)
-	if rate <= 0.05 {
+	if rate <= ThresholdRetryRate {
 		return nil
 	}
 
@@ -152,7 +178,7 @@ func detectConflictStorm(snap MetricsSnapshot) []Insight {
 	}
 
 	rate := float64(snap.TotalConflicts) / float64(snap.TotalMoves)
-	if rate <= 0.03 {
+	if rate <= ThresholdConflictRate {
 		return nil
 	}
 
@@ -189,34 +215,30 @@ func detectHighContentionRate(snap MetricsSnapshot) []Insight {
 
 	rate := float64(contentionTotal) / float64(totalAttempts)
 
-	if rate > 0.25 {
-		return []Insight{{
-			Category: "bottleneck",
-			Severity: "critical",
-			Title:    "High contention rate",
-			Detail: fmt.Sprintf(
-				"%.0f%% of move attempts are contention (conflicts=%d, stale_state=%d, total_attempts=%d)",
-				rate*100,
-				conflicts,
-				staleState,
-				totalAttempts,
-			),
-		}}
+	// Check thresholds from highest to lowest severity.
+	type level struct {
+		threshold float64
+		severity  string
 	}
 
-	if rate > 0.10 {
-		return []Insight{{
-			Category: "bottleneck",
-			Severity: "warning",
-			Title:    "High contention rate",
-			Detail: fmt.Sprintf(
-				"%.0f%% of move attempts are contention (conflicts=%d, stale_state=%d, total_attempts=%d)",
-				rate*100,
-				conflicts,
-				staleState,
-				totalAttempts,
-			),
-		}}
+	for _, l := range []level{
+		{ThresholdContentionCritical, "critical"},
+		{ThresholdContentionWarning, "warning"},
+	} {
+		if rate > l.threshold {
+			return []Insight{{
+				Category: "bottleneck",
+				Severity: l.severity,
+				Title:    "High contention rate",
+				Detail: fmt.Sprintf(
+					"%.0f%% of move attempts are contention (conflicts=%d, stale_state=%d, total_attempts=%d)",
+					rate*100,
+					conflicts,
+					staleState,
+					totalAttempts,
+				),
+			}}
+		}
 	}
 
 	return nil
@@ -238,7 +260,7 @@ func detectErrorDominance(snap MetricsSnapshot) []Insight {
 
 	for cat, count := range snap.ErrorBreakdown {
 		ratio := float64(count) / float64(total)
-		if ratio > 0.70 {
+		if ratio > ThresholdErrorDominance {
 			return []Insight{{
 				Category: "anomaly",
 				Severity: "warning",
@@ -260,7 +282,7 @@ func detectThroughputPlateau(snap MetricsSnapshot) []Insight {
 	}
 
 	ratio := snap.ThroughputPeakMPS / snap.ThroughputMPS
-	if ratio <= 3.0 {
+	if ratio <= ThresholdThroughputPlateau {
 		return nil
 	}
 
@@ -280,7 +302,7 @@ func detectSlowPhase(snap MetricsSnapshot) []Insight {
 		return nil
 	}
 
-	threshold := snap.E2E.P95 * 2.0
+	threshold := snap.E2E.P95 * ThresholdSlowPhase
 	var insights []Insight
 
 	for phase, profile := range snap.PhaseLatency {
@@ -318,7 +340,7 @@ func detectRESTHotspot(snap MetricsSnapshot) []Insight {
 		return nil
 	}
 
-	threshold := median * 3.0
+	threshold := median * ThresholdRESTHotspot
 	var insights []Insight
 
 	for action, profile := range snap.RESTLatency {
@@ -352,7 +374,7 @@ func detectPhaseFlowImbalance(snap MetricsSnapshot) []Insight {
 
 	// If deploy entries are less than half of attack entries, games are getting stuck.
 	ratio := float64(deployEntries) / float64(attackEntries)
-	if ratio >= 0.5 {
+	if ratio >= ThresholdFlowImbalance {
 		return nil
 	}
 

@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/orchestrator"
 )
 
@@ -8,7 +9,7 @@ import (
 type HealthHandler struct {
 	observer  orchestrator.GameObserver
 	gameCtx   *GameContext
-	lastPhase string
+	lastPhase metrics.Phase
 }
 
 // NewHealthHandler creates a HealthHandler. Nil observer uses NopObserver.
@@ -37,7 +38,7 @@ func (h *HealthHandler) handleMoveDecided(_ *Bus, e Event) {
 	evt := e.(MoveDecidedEvent)
 
 	if evt.Phase != h.lastPhase {
-		h.observer.OnPhaseChange(h.gameCtx.GameIndex, evt.Phase)
+		h.observer.OnPhaseChange(h.gameCtx.GameIndex, string(evt.Phase))
 		h.lastPhase = evt.Phase
 	}
 }

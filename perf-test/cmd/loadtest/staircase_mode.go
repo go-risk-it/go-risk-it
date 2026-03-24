@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/baseline"
-	"github.com/go-risk-it/go-risk-it/perf-test/internal/chaos"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/journal"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/orchestrator"
@@ -21,9 +21,13 @@ func (a *App) runStaircase(ctx context.Context) error {
 
 	// Build staircase config from flags if not set by preset.
 	if staircaseCfg == nil {
-		steps := parseSteps(a.cfg.Run.Staircase.Steps)
+		steps, err := parseSteps(a.cfg.Run.Staircase.Steps)
+		if err != nil {
+			return fmt.Errorf("parse steps: %w", err)
+		}
+
 		if len(steps) == 0 {
-			log.Fatal("staircase mode requires --preset or --steps flag")
+			return fmt.Errorf("staircase mode requires --preset or --steps flag")
 		}
 
 		staircaseCfg = &orchestrator.StaircaseConfig{
@@ -122,21 +126,13 @@ func (a *App) runStaircase(ctx context.Context) error {
 func (a *App) buildStepExecutorDeps(gameTimeout time.Duration) orchestrator.StepExecutorDeps {
 	return orchestrator.StepExecutorDeps{
 		RunnerFactory: func(c *metrics.Collector, obs orchestrator.GameObserver) orchestrator.RunFunc {
-			strat := a.strategy
-			if a.cfg.Chaos.Enabled() {
-				strat = chaos.WrapStrategy(strat, a.cfg.Chaos, c)
-			}
-
-			var injector *chaos.Injector
-			if a.cfg.Chaos.DisconnectRate > 0 {
-				injector = chaos.NewInjector(a.cfg.Chaos, c)
-			}
+			strategy, injector := a.setupChaos(c)
 
 			return runner.New(runner.Config{
 				BaseURL:       a.cfg.Server.URL,
 				WSURL:         a.cfg.Server.WSURL,
 				AnonKey:       a.cfg.Server.AnonKey,
-				Strategy:      strat,
+				Strategy:      strategy,
 				Timeout:       gameTimeout,
 				Collector:     c,
 				ThinkTime:     a.cfg.Game.ThinkTime,
@@ -171,6 +167,8 @@ func (a *App) handleJournalSaveAndCompare(entry journal.Entry, branch, commitSHA
 	}
 
 	if a.cfg.Report.Journal.Compare != "" {
-		compareJournalEntries(a.cfg.Report.Journal.Compare, entry)
+		if err := compareJournalEntries(a.cfg.Report.Journal.Compare, entry); err != nil {
+			log.Printf("journal compare: %v", err)
+		}
 	}
 }

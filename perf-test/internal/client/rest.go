@@ -13,12 +13,23 @@ import (
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
 )
 
-const (
-	maxRetries    = 5
-	baseBackoff   = 200 * time.Millisecond
-	backoffFactor = 2
-	clientTimeout = 30 * time.Second
-)
+// RetryConfig controls the REST client's retry and timeout behavior.
+type RetryConfig struct {
+	MaxRetries    int
+	BaseBackoff   time.Duration
+	BackoffFactor int
+	ClientTimeout time.Duration
+}
+
+// DefaultRetryConfig returns the default retry configuration.
+func DefaultRetryConfig() RetryConfig {
+	return RetryConfig{
+		MaxRetries:    5,
+		BaseBackoff:   200 * time.Millisecond,
+		BackoffFactor: 2,
+		ClientTimeout: 30 * time.Second,
+	}
+}
 
 // ConflictError is returned on HTTP 409 (stale state).
 type ConflictError struct {
@@ -35,6 +46,7 @@ type REST struct {
 	token     string
 	client    *http.Client
 	collector *metrics.Collector
+	retry     RetryConfig
 }
 
 // NewREST creates a REST client. If transport is non-nil it is used for
@@ -43,12 +55,13 @@ func NewREST(
 	baseURL, token string,
 	transport *http.Transport,
 	collector *metrics.Collector,
+	retryCfg RetryConfig,
 ) *REST {
 	var httpClient *http.Client
 	if transport != nil {
-		httpClient = &http.Client{Timeout: clientTimeout, Transport: transport}
+		httpClient = &http.Client{Timeout: retryCfg.ClientTimeout, Transport: transport}
 	} else {
-		httpClient = &http.Client{Timeout: clientTimeout}
+		httpClient = &http.Client{Timeout: retryCfg.ClientTimeout}
 	}
 
 	return &REST{
@@ -56,6 +69,7 @@ func NewREST(
 		token:     token,
 		client:    httpClient,
 		collector: collector,
+		retry:     retryCfg,
 	}
 }
 
@@ -72,9 +86,9 @@ func (r *REST) do(method, path string, body any) (*http.Response, error) {
 		bodyBytes = data
 	}
 
-	backoff := baseBackoff
+	backoff := r.retry.BaseBackoff
 
-	for attempt := range maxRetries {
+	for attempt := range r.retry.MaxRetries {
 		var bodyReader io.Reader
 		if bodyBytes != nil {
 			bodyReader = bytes.NewReader(bodyBytes)
@@ -90,16 +104,17 @@ func (r *REST) do(method, path string, body any) (*http.Response, error) {
 
 		resp, err := r.client.Do(req)
 		if err != nil {
-			if classified := classifyNetError(err); classified != nil && attempt < maxRetries-1 {
+			if classified := classifyNetError(err); classified != nil &&
+				attempt < r.retry.MaxRetries-1 {
 				log.Printf("retrying %s %s (attempt %d/%d): %v",
-					method, path, attempt+2, maxRetries, err)
+					method, path, attempt+2, r.retry.MaxRetries, err)
 
 				if r.collector != nil {
 					r.collector.RecordRetry()
 				}
 
 				time.Sleep(backoff)
-				backoff *= backoffFactor
+				backoff *= time.Duration(r.retry.BackoffFactor)
 
 				continue
 			}
@@ -113,19 +128,19 @@ func (r *REST) do(method, path string, body any) (*http.Response, error) {
 		}
 
 		// Check for retryable HTTP status.
-		if attempt < maxRetries-1 {
+		if attempt < r.retry.MaxRetries-1 {
 			if transient := classifyHTTPStatus(resp.StatusCode, nil); transient != nil {
 				body, _ := io.ReadAll(resp.Body)
 				resp.Body.Close()
 				log.Printf("retrying %s %s (attempt %d/%d): HTTP %d: %s",
-					method, path, attempt+2, maxRetries, resp.StatusCode, body)
+					method, path, attempt+2, r.retry.MaxRetries, resp.StatusCode, body)
 
 				if r.collector != nil {
 					r.collector.RecordRetry()
 				}
 
 				time.Sleep(backoff)
-				backoff *= backoffFactor
+				backoff *= time.Duration(r.retry.BackoffFactor)
 
 				continue
 			}

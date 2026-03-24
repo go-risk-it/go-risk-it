@@ -10,7 +10,7 @@ import (
 type MetricsHandler struct {
 	collector       *metrics.Collector
 	lastRESTEndTime time.Time
-	lastPhase       string
+	lastPhase       metrics.Phase
 	moveStartTime   time.Time
 }
 

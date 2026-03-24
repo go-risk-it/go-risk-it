@@ -8,15 +8,11 @@ import (
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/baseline"
-	"github.com/go-risk-it/go-risk-it/perf-test/internal/chaos"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/orchestrator"
-	"github.com/go-risk-it/go-risk-it/perf-test/internal/runner"
 )
 
 func (a *App) runBatch(ctx context.Context) error {
-	_ = ctx // batch mode doesn't use context cancellation yet
-
 	batchCfg := orchestrator.Config{
 		NumGames:    a.cfg.Run.Batch.NumGames,
 		NumPlayers:  a.cfg.Game.NumPlayers,
@@ -24,45 +20,17 @@ func (a *App) runBatch(ctx context.Context) error {
 		GameTimeout: a.cfg.Game.GameTimeout,
 	}
 
-	maxDuration := a.cfg.Game.GameTimeout
-	collector := metrics.NewCollector(maxDuration)
-
-	if a.otel != nil {
-		collector.SetOTelExporter(a.otel)
-	}
-
-	strategy := a.strategy
-	if a.cfg.Chaos.Enabled() {
-		strategy = chaos.WrapStrategy(strategy, a.cfg.Chaos, collector)
-	}
-
-	var injector *chaos.Injector
-	if a.cfg.Chaos.DisconnectRate > 0 {
-		injector = chaos.NewInjector(a.cfg.Chaos, collector)
-	}
-
-	runGame := runner.New(runner.Config{
-		BaseURL:       a.cfg.Server.URL,
-		WSURL:         a.cfg.Server.WSURL,
-		AnonKey:       a.cfg.Server.AnonKey,
-		Strategy:      strategy,
-		Timeout:       a.cfg.Game.GameTimeout,
-		Collector:     collector,
-		ThinkTime:     a.cfg.Game.ThinkTime,
-		Timeouts:      runner.DefaultTimeouts(),
-		ChaosInjector: injector,
-	}).ToRunFunc()
+	collector := a.newCollector(a.cfg.Game.GameTimeout)
+	runGame := a.newRunFunc(collector, a.cfg.Game.GameTimeout)
 
 	start := time.Now()
-	results := orchestrator.Run(batchCfg, runGame, collector, a.annotator)
+	results := orchestrator.Run(ctx, batchCfg, runGame, collector, a.annotator)
 	totalDuration := time.Since(start)
 
 	return a.printBatchReport(collector, results, totalDuration)
 }
 
 func (a *App) runRamp(ctx context.Context) error {
-	_ = ctx // ramp mode doesn't use context cancellation yet
-
 	rampCfg := a.cfg.Run.rampCfg
 	if rampCfg == nil {
 		rampCfg = &orchestrator.RampConfig{
@@ -77,36 +45,11 @@ func (a *App) runRamp(ctx context.Context) error {
 
 	estimated := estimateRampDuration(rampCfg)
 	maxDuration := estimated + rampCfg.GameTimeout
-	collector := metrics.NewCollector(maxDuration)
-
-	if a.otel != nil {
-		collector.SetOTelExporter(a.otel)
-	}
-
-	strategy := a.strategy
-	if a.cfg.Chaos.Enabled() {
-		strategy = chaos.WrapStrategy(strategy, a.cfg.Chaos, collector)
-	}
-
-	var injector *chaos.Injector
-	if a.cfg.Chaos.DisconnectRate > 0 {
-		injector = chaos.NewInjector(a.cfg.Chaos, collector)
-	}
-
-	runGame := runner.New(runner.Config{
-		BaseURL:       a.cfg.Server.URL,
-		WSURL:         a.cfg.Server.WSURL,
-		AnonKey:       a.cfg.Server.AnonKey,
-		Strategy:      strategy,
-		Timeout:       rampCfg.GameTimeout,
-		Collector:     collector,
-		ThinkTime:     a.cfg.Game.ThinkTime,
-		Timeouts:      runner.DefaultTimeouts(),
-		ChaosInjector: injector,
-	}).ToRunFunc()
+	collector := a.newCollector(maxDuration)
+	runGame := a.newRunFunc(collector, rampCfg.GameTimeout)
 
 	start := time.Now()
-	results := orchestrator.RunContinuousRamp(*rampCfg, runGame, collector, a.annotator)
+	results := orchestrator.RunContinuousRamp(ctx, *rampCfg, runGame, collector, a.annotator)
 	totalDuration := time.Since(start)
 
 	return a.printBatchReport(collector, results, totalDuration)
@@ -142,19 +85,21 @@ func (a *App) printBatchReport(
 	switch a.cfg.Report.Output.Format {
 	case "json":
 		if err := metrics.PrintJSON(os.Stdout, snap, totalDuration, fatalErrors, reportResults); err != nil {
-			log.Fatalf("json report: %v", err)
+			return fmt.Errorf("json report: %w", err)
 		}
 	case "text":
 		metrics.PrintReport(os.Stdout, snap, totalDuration, fatalErrors, reportResults)
 	default:
-		log.Fatalf("unknown output format: %q", a.cfg.Report.Output.Format)
+		return fmt.Errorf("unknown output format: %q", a.cfg.Report.Output.Format)
 	}
 
 	metricsSnap := baseline.SnapshotToMetrics(snap, totalDuration.Seconds())
 	insights := baseline.Analyze(metricsSnap)
 	baseline.PrintInsights(os.Stdout, insights)
 
-	handleBaseline(a.cfg, metricsSnap, insights)
+	if err := handleBaseline(a.cfg, metricsSnap, insights); err != nil {
+		log.Printf("baseline: %v", err)
+	}
 
 	if fatalErrors > 0 {
 		return fmt.Errorf("%d game(s) had fatal errors", fatalErrors)

@@ -37,12 +37,13 @@ func (c RampConfig) stepInterval() time.Duration {
 // RunContinuousRamp spawns games at a steady rate, stopping when MaxGames is reached
 // or error rate exceeds ErrorThreshold.
 func RunContinuousRamp(
+	ctx context.Context,
 	cfg RampConfig,
 	runGame RunFunc,
 	collector *metrics.Collector,
 	annotator *annotations.Annotator,
 ) []GameResult {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	sigCh := make(chan os.Signal, 1)

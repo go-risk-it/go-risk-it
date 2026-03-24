@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
-	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 )
 
 type CorsMiddleware struct {
@@ -25,31 +24,32 @@ func NewCorsMiddleware(serverConfig config.ServerConfig) *CorsMiddleware {
 	}
 }
 
-func (m *CorsMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
-	return routeToWrap.Wrap(http.HandlerFunc(
-		func(writer http.ResponseWriter, request *http.Request) {
-			origin := request.Header.Get("Origin")
-			if origin != "" && m.allowedOrigins[origin] {
-				writer.Header().Set("Access-Control-Allow-Origin", origin)
-				writer.Header().Set("Vary", "Origin")
-			}
+// WrapHandler wraps an http.Handler with CORS headers and OPTIONS preflight
+// handling. This must be applied at the mux level (not per-route) because Go's
+// ServeMux rejects OPTIONS requests with 405 before per-route handlers run.
+func (m *CorsMiddleware) WrapHandler(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		origin := request.Header.Get("Origin")
+		if origin != "" && m.allowedOrigins[origin] {
+			writer.Header().Set("Access-Control-Allow-Origin", origin)
+			writer.Header().Set("Vary", "Origin")
+		}
 
-			writer.Header().Set(
-				"Access-Control-Allow-Methods",
-				"GET, POST, PUT, DELETE, OPTIONS",
-			)
-			writer.Header().Set(
-				"Access-Control-Allow-Headers",
-				"Content-Type, Authorization",
-			)
+		writer.Header().Set(
+			"Access-Control-Allow-Methods",
+			"GET, POST, PUT, DELETE, OPTIONS",
+		)
+		writer.Header().Set(
+			"Access-Control-Allow-Headers",
+			"Content-Type, Authorization",
+		)
 
-			if request.Method == http.MethodOptions {
-				writer.WriteHeader(http.StatusOK)
+		if request.Method == http.MethodOptions {
+			writer.WriteHeader(http.StatusOK)
 
-				return
-			}
+			return
+		}
 
-			routeToWrap.ServeHTTP(writer, request)
-		},
-	))
+		next.ServeHTTP(writer, request)
+	})
 }

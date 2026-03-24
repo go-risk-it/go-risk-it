@@ -19,21 +19,21 @@ func TestNewCollector(t *testing.T) {
 
 	// Pre-initialized phase maps should exist with zero values.
 	for _, phase := range knownPhases {
-		if _, ok := snap.PhaseEntries[phase]; !ok {
+		if _, ok := snap.PhaseEntries[string(phase)]; !ok {
 			t.Errorf("missing phase entry for %q", phase)
 		}
 
-		if _, ok := snap.PhaseMoves[phase]; !ok {
+		if _, ok := snap.PhaseMoves[string(phase)]; !ok {
 			t.Errorf("missing phase move for %q", phase)
 		}
 	}
 
 	// Pre-initialized error categories should exist.
-	for _, cat := range []string{
+	for _, cat := range []ErrorType{
 		ErrorTypeStrategy, ErrorTypeExecution, ErrorTypeTransient, ErrorTypeTimeout,
 		ErrorTypeStaleState, ErrorTypeConflict,
 	} {
-		if _, ok := snap.ErrorBreakdown[cat]; !ok {
+		if _, ok := snap.ErrorBreakdown[string(cat)]; !ok {
 			t.Errorf("missing error category %q", cat)
 		}
 	}
@@ -141,20 +141,32 @@ func TestRecordErrorType(t *testing.T) {
 
 	snap := c.Snapshot()
 
-	if snap.ErrorBreakdown[ErrorTypeStrategy] != 2 {
-		t.Errorf("expected 2 strategy errors, got %d", snap.ErrorBreakdown[ErrorTypeStrategy])
+	if snap.ErrorBreakdown[string(ErrorTypeStrategy)] != 2 {
+		t.Errorf(
+			"expected 2 strategy errors, got %d",
+			snap.ErrorBreakdown[string(ErrorTypeStrategy)],
+		)
 	}
 
-	if snap.ErrorBreakdown[ErrorTypeExecution] != 1 {
-		t.Errorf("expected 1 execution error, got %d", snap.ErrorBreakdown[ErrorTypeExecution])
+	if snap.ErrorBreakdown[string(ErrorTypeExecution)] != 1 {
+		t.Errorf(
+			"expected 1 execution error, got %d",
+			snap.ErrorBreakdown[string(ErrorTypeExecution)],
+		)
 	}
 
-	if snap.ErrorBreakdown[ErrorTypeTransient] != 1 {
-		t.Errorf("expected 1 transient error, got %d", snap.ErrorBreakdown[ErrorTypeTransient])
+	if snap.ErrorBreakdown[string(ErrorTypeTransient)] != 1 {
+		t.Errorf(
+			"expected 1 transient error, got %d",
+			snap.ErrorBreakdown[string(ErrorTypeTransient)],
+		)
 	}
 
-	if snap.ErrorBreakdown[ErrorTypeTimeout] != 0 {
-		t.Errorf("expected 0 timeout errors, got %d", snap.ErrorBreakdown[ErrorTypeTimeout])
+	if snap.ErrorBreakdown[string(ErrorTypeTimeout)] != 0 {
+		t.Errorf(
+			"expected 0 timeout errors, got %d",
+			snap.ErrorBreakdown[string(ErrorTypeTimeout)],
+		)
 	}
 }
 
@@ -162,7 +174,7 @@ func TestRecordErrorType_UnknownIgnored(t *testing.T) {
 	c := NewCollector(1 * time.Minute)
 
 	// Should not panic or create an entry.
-	c.RecordErrorType("unknown_category")
+	c.RecordErrorType(ErrorType("unknown_category"))
 
 	snap := c.Snapshot()
 	if _, ok := snap.ErrorBreakdown["unknown_category"]; ok {
@@ -263,8 +275,11 @@ func TestRecordErrorType_StaleState(t *testing.T) {
 
 	snap := c.Snapshot()
 
-	if snap.ErrorBreakdown[ErrorTypeStaleState] != 3 {
-		t.Errorf("expected 3 stale_state errors, got %d", snap.ErrorBreakdown[ErrorTypeStaleState])
+	if snap.ErrorBreakdown[string(ErrorTypeStaleState)] != 3 {
+		t.Errorf(
+			"expected 3 stale_state errors, got %d",
+			snap.ErrorBreakdown[string(ErrorTypeStaleState)],
+		)
 	}
 }
 
@@ -281,10 +296,10 @@ func TestRecordConflict_AppearsInBreakdown(t *testing.T) {
 		t.Errorf("expected 2 total conflicts, got %d", snap.TotalConflicts)
 	}
 
-	if snap.ErrorBreakdown[ErrorTypeConflict] != 2 {
+	if snap.ErrorBreakdown[string(ErrorTypeConflict)] != 2 {
 		t.Errorf(
 			"expected 2 conflict errors in breakdown, got %d",
-			snap.ErrorBreakdown[ErrorTypeConflict],
+			snap.ErrorBreakdown[string(ErrorTypeConflict)],
 		)
 	}
 }

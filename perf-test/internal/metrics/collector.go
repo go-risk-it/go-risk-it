@@ -18,25 +18,40 @@ const maxLatencyMs = 30_000
 // throughputBucketSize is the fixed time window for throughput measurement.
 const throughputBucketSize = 5 * time.Second
 
-// knownPhases are the 5 game phases, pre-initialized to avoid map contention.
-var knownPhases = []string{"cards", "deploy", "attack", "conquer", "reinforce"}
+// Phase represents a game phase for metrics recording.
+type Phase string
 
-// Error type constants used for RecordErrorType.
 const (
-	ErrorTypeStrategy   = "strategy"
-	ErrorTypeExecution  = "execution"
-	ErrorTypeTransient  = "transient"
-	ErrorTypeTimeout    = "timeout"
-	ErrorTypeStaleState = "stale_state"
-	ErrorTypeConflict   = "conflict"
+	PhaseCards     Phase = "cards"
+	PhaseDeploy    Phase = "deploy"
+	PhaseAttack    Phase = "attack"
+	PhaseConquer   Phase = "conquer"
+	PhaseReinforce Phase = "reinforce"
 )
 
-// Chaos event type constants used for RecordChaosEvent.
+// knownPhases are the 5 game phases, pre-initialized to avoid map contention.
+var knownPhases = []Phase{PhaseCards, PhaseDeploy, PhaseAttack, PhaseConquer, PhaseReinforce}
+
+// ErrorType represents a categorized error for metrics recording.
+type ErrorType string
+
 const (
-	ChaosEventDisconnect = "disconnect"
-	ChaosEventReconnect  = "reconnect"
-	ChaosEventSlowMove   = "slow_move"
-	ChaosEventErrorMove  = "error_move"
+	ErrorTypeStrategy   ErrorType = "strategy"
+	ErrorTypeExecution  ErrorType = "execution"
+	ErrorTypeTransient  ErrorType = "transient"
+	ErrorTypeTimeout    ErrorType = "timeout"
+	ErrorTypeStaleState ErrorType = "stale_state"
+	ErrorTypeConflict   ErrorType = "conflict"
+)
+
+// ChaosEvent represents a chaos engineering event type.
+type ChaosEvent string
+
+const (
+	ChaosEventDisconnect ChaosEvent = "disconnect"
+	ChaosEventReconnect  ChaosEvent = "reconnect"
+	ChaosEventSlowMove   ChaosEvent = "slow_move"
+	ChaosEventErrorMove  ChaosEvent = "error_move"
 )
 
 // Collector aggregates latency histograms and counters across concurrent games.
@@ -76,14 +91,14 @@ type Collector struct {
 	totalReconnectFailures atomic.Int64
 
 	// Phase transition counters (pre-initialized for all 5 phases).
-	phaseEntries map[string]*atomic.Int64
-	phaseMoves   map[string]*atomic.Int64
+	phaseEntries map[Phase]*atomic.Int64
+	phaseMoves   map[Phase]*atomic.Int64
 
 	// Error breakdown by category (pre-initialized).
-	errorCounts map[string]*atomic.Int64
+	errorCounts map[ErrorType]*atomic.Int64
 
 	// Chaos event counters (pre-initialized).
-	chaosEvents map[string]*atomic.Int64
+	chaosEvents map[ChaosEvent]*atomic.Int64
 
 	// Throughput time-series buckets.
 	startTime   time.Time
@@ -101,15 +116,15 @@ type Collector struct {
 func NewCollector(maxDuration time.Duration) *Collector {
 	numBuckets := int(maxDuration/throughputBucketSize) + 1
 
-	phaseEntries := make(map[string]*atomic.Int64, len(knownPhases))
-	phaseMoves := make(map[string]*atomic.Int64, len(knownPhases))
+	phaseEntries := make(map[Phase]*atomic.Int64, len(knownPhases))
+	phaseMoves := make(map[Phase]*atomic.Int64, len(knownPhases))
 
 	for _, p := range knownPhases {
 		phaseEntries[p] = &atomic.Int64{}
 		phaseMoves[p] = &atomic.Int64{}
 	}
 
-	errorCounts := map[string]*atomic.Int64{
+	errorCounts := map[ErrorType]*atomic.Int64{
 		ErrorTypeStrategy:   {},
 		ErrorTypeExecution:  {},
 		ErrorTypeTransient:  {},
@@ -118,7 +133,7 @@ func NewCollector(maxDuration time.Duration) *Collector {
 		ErrorTypeConflict:   {},
 	}
 
-	chaosEvents := map[string]*atomic.Int64{
+	chaosEvents := map[ChaosEvent]*atomic.Int64{
 		ChaosEventDisconnect: {},
 		ChaosEventReconnect:  {},
 		ChaosEventSlowMove:   {},
@@ -181,6 +196,18 @@ func clampMs(d time.Duration) int64 {
 	return ms
 }
 
+// recordToHist records d to h, gated by warm-up status.
+// Must NOT be called while c.mu is held (acquires c.mu internally).
+func (c *Collector) recordToHist(h *hdrhistogram.Histogram, d time.Duration) {
+	if !c.isWarmUpDone() {
+		return
+	}
+
+	c.mu.Lock()
+	_ = h.RecordValue(clampMs(d))
+	c.mu.Unlock()
+}
+
 // RecordREST records a REST API call latency for the given action type.
 func (c *Collector) RecordREST(actionType string, d time.Duration) {
 	if c.isWarmUpDone() {
@@ -197,11 +224,7 @@ func (c *Collector) RecordREST(actionType string, d time.Duration) {
 
 // RecordWSDelivery records the latency from REST response to WS state update arriving.
 func (c *Collector) RecordWSDelivery(d time.Duration) {
-	if c.isWarmUpDone() {
-		c.mu.Lock()
-		_ = c.wsDelivery.RecordValue(clampMs(d))
-		c.mu.Unlock()
-	}
+	c.recordToHist(c.wsDelivery, d)
 
 	if c.otel != nil {
 		c.otel.wsDuration.Record(context.Background(), d.Seconds())
@@ -210,11 +233,7 @@ func (c *Collector) RecordWSDelivery(d time.Duration) {
 
 // RecordE2E records end-to-end move latency (from before action to after WS update).
 func (c *Collector) RecordE2E(d time.Duration) {
-	if c.isWarmUpDone() {
-		c.mu.Lock()
-		_ = c.e2eMove.RecordValue(clampMs(d))
-		c.mu.Unlock()
-	}
+	c.recordToHist(c.e2eMove, d)
 
 	if c.otel != nil {
 		c.otel.e2eDuration.Record(context.Background(), d.Seconds())
@@ -223,24 +242,30 @@ func (c *Collector) RecordE2E(d time.Duration) {
 
 // RecordPhaseLatency records E2E latency tagged by game phase.
 func (c *Collector) RecordPhaseLatency(phase string, d time.Duration) {
-	if !c.isWarmUpDone() {
-		return
+	if c.isWarmUpDone() {
+		c.mu.Lock()
+		_ = c.getOrCreatePhaseHist(phase).RecordValue(clampMs(d))
+		c.mu.Unlock()
 	}
 
-	c.mu.Lock()
-	_ = c.getOrCreatePhaseHist(phase).RecordValue(clampMs(d))
-	c.mu.Unlock()
+	if c.otel != nil {
+		c.otel.phaseDuration.Record(
+			context.Background(),
+			d.Seconds(),
+			metric.WithAttributes(attribute.String("phase", phase)),
+		)
+	}
 }
 
 // RecordPhaseEntry increments the phase entry count.
-func (c *Collector) RecordPhaseEntry(phase string) {
+func (c *Collector) RecordPhaseEntry(phase Phase) {
 	if counter, ok := c.phaseEntries[phase]; ok {
 		counter.Add(1)
 	}
 }
 
 // RecordPhaseMove increments the phase move count.
-func (c *Collector) RecordPhaseMove(phase string) {
+func (c *Collector) RecordPhaseMove(phase Phase) {
 	if counter, ok := c.phaseMoves[phase]; ok {
 		counter.Add(1)
 	}
@@ -260,14 +285,14 @@ func (c *Collector) RecordHTTPStatus(statusCode int) {
 }
 
 // RecordErrorType increments the specific error category counter.
-func (c *Collector) RecordErrorType(errorType string) {
+func (c *Collector) RecordErrorType(errorType ErrorType) {
 	if counter, ok := c.errorCounts[errorType]; ok {
 		counter.Add(1)
 	}
 
 	if c.otel != nil {
 		c.otel.errorsTotal.Add(context.Background(), 1,
-			metric.WithAttributes(attribute.String("type", errorType)))
+			metric.WithAttributes(attribute.String("type", string(errorType))))
 	}
 }
 
@@ -378,7 +403,7 @@ func (c *Collector) RecordReconnectFailure() {
 }
 
 // RecordChaosEvent increments the counter for the given chaos event type.
-func (c *Collector) RecordChaosEvent(eventType string) {
+func (c *Collector) RecordChaosEvent(eventType ChaosEvent) {
 	if counter, ok := c.chaosEvents[eventType]; ok {
 		counter.Add(1)
 	}
@@ -407,12 +432,12 @@ func (c *Collector) Snapshot() *Snapshot {
 
 	phaseEntries := make(map[string]int64, len(c.phaseEntries))
 	for name, counter := range c.phaseEntries {
-		phaseEntries[name] = counter.Load()
+		phaseEntries[string(name)] = counter.Load()
 	}
 
 	phaseMoves := make(map[string]int64, len(c.phaseMoves))
 	for name, counter := range c.phaseMoves {
-		phaseMoves[name] = counter.Load()
+		phaseMoves[string(name)] = counter.Load()
 	}
 
 	httpStatusCounts := make(map[int]int64, len(c.httpStatusCounts))
@@ -422,14 +447,14 @@ func (c *Collector) Snapshot() *Snapshot {
 
 	errorBreakdown := make(map[string]int64, len(c.errorCounts))
 	for name, counter := range c.errorCounts {
-		errorBreakdown[name] = counter.Load()
+		errorBreakdown[string(name)] = counter.Load()
 	}
 
 	chaosEvents := make(map[string]int64, len(c.chaosEvents))
 	for name, counter := range c.chaosEvents {
 		v := counter.Load()
 		if v > 0 {
-			chaosEvents[name] = v
+			chaosEvents[string(name)] = v
 		}
 	}
 

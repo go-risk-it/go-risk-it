@@ -105,10 +105,10 @@ func TestCollector_WarmUp_CountersAlwaysRecorded(t *testing.T) {
 		t.Errorf("HTTPStatusCounts[200]: expected 1, got %d", snap.HTTPStatusCounts[200])
 	}
 
-	if snap.ErrorBreakdown[ErrorTypeTransient] != 1 {
+	if snap.ErrorBreakdown[string(ErrorTypeTransient)] != 1 {
 		t.Errorf(
 			"ErrorBreakdown[transient]: expected 1, got %d",
-			snap.ErrorBreakdown[ErrorTypeTransient],
+			snap.ErrorBreakdown[string(ErrorTypeTransient)],
 		)
 	}
 
@@ -128,10 +128,10 @@ func TestCollector_WarmUp_CountersAlwaysRecorded(t *testing.T) {
 		t.Errorf("TotalReconnectFailures: expected 1, got %d", snap.TotalReconnectFailures)
 	}
 
-	if snap.ChaosEvents[ChaosEventDisconnect] != 1 {
+	if snap.ChaosEvents[string(ChaosEventDisconnect)] != 1 {
 		t.Errorf(
 			"ChaosEvents[disconnect]: expected 1, got %d",
-			snap.ChaosEvents[ChaosEventDisconnect],
+			snap.ChaosEvents[string(ChaosEventDisconnect)],
 		)
 	}
 }

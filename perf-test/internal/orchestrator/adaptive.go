@@ -52,20 +52,20 @@ func RunAdaptive(
 	executor StepExecutor,
 ) AdaptiveResult {
 	if cfg.AdditiveIncrease <= 0 {
-		cfg.AdditiveIncrease = 5
+		cfg.AdditiveIncrease = DefaultAdaptiveIncrease
 	}
 
 	if cfg.MaxSteps <= 0 {
-		cfg.MaxSteps = 20
+		cfg.MaxSteps = DefaultAdaptiveMaxSteps
 	}
 
 	if cfg.MaxGames <= 0 {
-		cfg.MaxGames = 500
+		cfg.MaxGames = DefaultAdaptiveMaxGames
 	}
 
 	initial := cfg.InitialCeiling
 	if initial <= 0 {
-		initial = 10
+		initial = DefaultAdaptiveInitialProbe
 	}
 
 	var result AdaptiveResult
