@@ -74,19 +74,7 @@ func (m *OTelMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
 		m.recordHTTPMetrics(request, routeToWrap.Pattern(), recorder.statusCode, duration)
 	})
 
-	if isWebSocket {
-		return route.NewWebSocket(
-			routeToWrap.Pattern(),
-			routeToWrap.RequiresAuth(),
-			handler,
-		)
-	}
-
-	return route.New(
-		routeToWrap.Pattern(),
-		routeToWrap.RequiresAuth(),
-		handler,
-	)
+	return routeToWrap.Wrap(handler)
 }
 
 func (m *OTelMiddleware) recordHTTPMetrics(

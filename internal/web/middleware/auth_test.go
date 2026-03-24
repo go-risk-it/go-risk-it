@@ -38,7 +38,7 @@ func TestAuthMiddleware_Wrap_WSSubprotocolToken(t *testing.T) {
 	validToken := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjQxMDI0NDQ4MDAsImlhdCI6MTUxNjIzOTAyMiwibmFtZSI6IkpvaG4gRG9lIiwic3ViIjoiMTIzNDU2Nzg5MCJ9.AEzCmT-_46lhDrK0X-eUkUO8SDuxBvVcoR8STh9NvaE"
 
 	wrappedHandler := authMiddleware.Wrap(
-		route.New(
+		route.NewForTest(
 			"/",
 			true,
 			http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
@@ -119,7 +119,7 @@ func TestAuthMiddleware_Wrap(t *testing.T) {
 			authMiddleware, responseWriter := setup(t)
 
 			wrappedHandler := authMiddleware.Wrap(
-				route.New(
+				route.NewForTest(
 					"/",
 					true,
 					http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
