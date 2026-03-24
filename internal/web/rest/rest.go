@@ -8,10 +8,9 @@ import (
 var Module = fx.Options(
 	health.Module,
 	fx.Provide(
-		fx.Annotate(NewWebSocketHandler, fx.ResultTags(`name:"wsRoute"`)),
 		fx.Annotate(
 			ProvideRoutes,
-			fx.ParamTags(`name:"healthRoute"`, `name:"wsRoute"`),
+			fx.ParamTags(`name:"healthRoute"`),
 			fx.ResultTags(`group:"routes,flatten"`),
 		),
 	),

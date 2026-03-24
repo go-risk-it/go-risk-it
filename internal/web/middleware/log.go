@@ -14,15 +14,24 @@ func NewLogMiddleware() *LogMiddleware {
 }
 
 func (m *LogMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
-	return routeToWrap.Wrap(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		slog.DebugContext(request.Context(), "applying log middleware")
+	return routeToWrap.Wrap(http.HandlerFunc(
+		func(writer http.ResponseWriter, request *http.Request) {
+			slog.DebugContext(
+				request.Context(),
+				"applying log middleware",
+			)
 
-		slog.InfoContext(request.Context(), "incoming HTTP request",
-			"method", request.Method, "url", request.URL)
+			slog.InfoContext(
+				request.Context(),
+				"incoming HTTP request",
+				"method", request.Method,
+				"url", request.URL,
+			)
 
-		routeToWrap.ServeHTTP(
-			writer,
-			request,
-		)
-	}))
+			routeToWrap.ServeHTTP(
+				writer,
+				request,
+			)
+		},
+	))
 }

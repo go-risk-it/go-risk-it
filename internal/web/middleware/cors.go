@@ -26,23 +26,30 @@ func NewCorsMiddleware(serverConfig config.ServerConfig) *CorsMiddleware {
 }
 
 func (m *CorsMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
-	return routeToWrap.Wrap(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		origin := request.Header.Get("Origin")
-		if origin != "" && m.allowedOrigins[origin] {
-			writer.Header().Set("Access-Control-Allow-Origin", origin)
-			writer.Header().Set("Vary", "Origin")
-		}
+	return routeToWrap.Wrap(http.HandlerFunc(
+		func(writer http.ResponseWriter, request *http.Request) {
+			origin := request.Header.Get("Origin")
+			if origin != "" && m.allowedOrigins[origin] {
+				writer.Header().Set("Access-Control-Allow-Origin", origin)
+				writer.Header().Set("Vary", "Origin")
+			}
 
-		writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		writer.Header().
-			Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+			writer.Header().Set(
+				"Access-Control-Allow-Methods",
+				"GET, POST, PUT, DELETE, OPTIONS",
+			)
+			writer.Header().Set(
+				"Access-Control-Allow-Headers",
+				"Content-Type, Authorization",
+			)
 
-		if request.Method == http.MethodOptions {
-			writer.WriteHeader(http.StatusOK)
+			if request.Method == http.MethodOptions {
+				writer.WriteHeader(http.StatusOK)
 
-			return
-		}
+				return
+			}
 
-		routeToWrap.ServeHTTP(writer, request)
-	}))
+			routeToWrap.ServeHTTP(writer, request)
+		},
+	))
 }

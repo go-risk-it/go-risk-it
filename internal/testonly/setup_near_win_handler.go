@@ -14,18 +14,21 @@ type SetupNearWinRequest struct {
 func NewSetupNearWinHandler(
 	testOnlyController Controller,
 ) *route.Route {
-	return route.Authed("POST /api/v1/setup-near-win", func(w http.ResponseWriter, r *http.Request) error {
-		body, err := restutils.DecodeRequest[SetupNearWinRequest](w, r)
-		if err != nil {
-			return err
-		}
+	return route.Authed(
+		"POST /api/v1/setup-near-win",
+		func(writer http.ResponseWriter, request *http.Request) error {
+			body, err := restutils.DecodeRequest[SetupNearWinRequest](writer, request)
+			if err != nil {
+				return err
+			}
 
-		if err := testOnlyController.SetupNearWin(r.Context(), body.GameID); err != nil {
-			return err
-		}
+			if err := testOnlyController.SetupNearWin(request.Context(), body.GameID); err != nil {
+				return err
+			}
 
-		restutils.WriteResponse(w, []byte{}, http.StatusNoContent)
+			restutils.WriteResponse(writer, []byte{}, http.StatusNoContent)
 
-		return nil
-	})
+			return nil
+		},
+	)
 }

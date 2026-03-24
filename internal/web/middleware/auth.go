@@ -28,37 +28,45 @@ func (m *AuthMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
 		return routeToWrap
 	}
 
-	return routeToWrap.Wrap(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		route.ExtractWSToken(request)
+	return routeToWrap.Wrap(http.HandlerFunc(
+		func(writer http.ResponseWriter, request *http.Request) {
+			route.ExtractWSToken(request)
 
-		traceContext, ok := request.Context().(ctx.TraceContext)
-		if !ok {
-			_ = restutils.WriteError(writer, errors.New("invalid trace context"))
+			traceContext, ok := request.Context().(ctx.TraceContext)
+			if !ok {
+				_ = restutils.WriteError(
+					writer,
+					errors.New("invalid trace context"),
+				)
 
-			return
-		}
+				return
+			}
 
-		slog.DebugContext(traceContext, "applying auth middleware")
+			slog.DebugContext(traceContext, "applying auth middleware")
 
-		subject, err := m.verifyJWT(request)
-		if err != nil {
-			_ = restutils.WriteError(
+			subject, err := m.verifyJWT(request)
+			if err != nil {
+				_ = restutils.WriteError(
+					writer,
+					domainerrors.WrapUnauthorizedError(
+						err,
+						"authentication failed",
+					),
+				)
+
+				return
+			}
+
+			slog.DebugContext(traceContext, "Auth token is valid")
+
+			userContext := ctx.WithUserID(traceContext, subject)
+
+			routeToWrap.ServeHTTP(
 				writer,
-				domainerrors.WrapUnauthorizedError(err, "authentication failed"),
+				request.WithContext(userContext),
 			)
-
-			return
-		}
-
-		slog.DebugContext(traceContext, "Auth token is valid")
-
-		userContext := ctx.WithUserID(traceContext, subject)
-
-		routeToWrap.ServeHTTP(
-			writer,
-			request.WithContext(userContext),
-		)
-	}))
+		},
+	))
 }
 
 func (m *AuthMiddleware) verifyJWT(request *http.Request) (string, error) {

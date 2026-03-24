@@ -6,10 +6,8 @@ import (
 
 func ProvideRoutes(
 	healthRoute *route.Route,
-	wsRoute *route.Route,
 ) []*route.Route {
 	return []*route.Route{
 		healthRoute,
-		wsRoute,
 	}
 }
