@@ -2,8 +2,6 @@ package route
 
 import (
 	"net/http"
-
-	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 )
 
 // Public creates an unauthenticated route with error handling.
@@ -56,48 +54,36 @@ func Lobby(pattern string, handler LobbyHandler) *Route {
 	}
 }
 
-// GameWS creates an authenticated WebSocket route with WS header conversion and GameContext.
+// GameWS creates an authenticated WebSocket route with GameContext.
 func GameWS(pattern string, handler GameHandler) *Route {
 	return &Route{
 		pattern:      pattern,
 		requiresAuth: true,
 		isWebSocket:  true,
-		handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-			ExtractWSToken(request)
-
+		handler: WrapErrors(func(writer http.ResponseWriter, request *http.Request) error {
 			gameCtx, err := BuildGameContext(request)
 			if err != nil {
-				_ = restutils.WriteError(writer, err)
-
-				return
+				return err
 			}
 
-			if handlerErr := handler(writer, request, gameCtx); handlerErr != nil {
-				_ = restutils.WriteError(writer, handlerErr)
-			}
+			return handler(writer, request, gameCtx)
 		}),
 	}
 }
 
-// LobbyWS creates an authenticated WebSocket route with WS header conversion and LobbyContext.
+// LobbyWS creates an authenticated WebSocket route with LobbyContext.
 func LobbyWS(pattern string, handler LobbyHandler) *Route {
 	return &Route{
 		pattern:      pattern,
 		requiresAuth: true,
 		isWebSocket:  true,
-		handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-			ExtractWSToken(request)
-
+		handler: WrapErrors(func(writer http.ResponseWriter, request *http.Request) error {
 			lobbyCtx, err := BuildLobbyContext(request)
 			if err != nil {
-				_ = restutils.WriteError(writer, err)
-
-				return
+				return err
 			}
 
-			if handlerErr := handler(writer, request, lobbyCtx); handlerErr != nil {
-				_ = restutils.WriteError(writer, handlerErr)
-			}
+			return handler(writer, request, lobbyCtx)
 		}),
 	}
 }

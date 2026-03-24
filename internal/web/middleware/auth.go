@@ -32,6 +32,8 @@ func (m *AuthMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
 		routeToWrap.Pattern(),
 		routeToWrap.RequiresAuth(),
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+			route.ExtractWSToken(request)
+
 			traceContext, ok := request.Context().(ctx.TraceContext)
 			if !ok {
 				_ = restutils.WriteError(writer, errors.New("invalid trace context"))
