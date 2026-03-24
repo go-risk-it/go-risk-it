@@ -51,7 +51,7 @@ services:
         condition: service_started
 
   lgtm:
-    image: grafana/otel-lgtm:latest
+    image: grafana/otel-lgtm:latest@sha256:6903a4545a4005a5cada9d44055e96d612d465f7e6d942c272ecb20e6902dec0
     ports:
       - "3000:3000"
       - "4317:4317"
@@ -63,7 +63,7 @@ services:
       - ./grafana/otelcol-extra.yaml:/otel-lgtm/otelcol-config.yaml
 
   postgres-exporter:
-    image: quay.io/prometheuscommunity/postgres-exporter:latest
+    image: quay.io/prometheuscommunity/postgres-exporter:latest@sha256:e96064f876226d94bb6ce48a4c4b3dd76edba91168ec1ab024e5c4b959310b0f
     environment:
       DATA_SOURCE_NAME: "postgresql://postgres:${DATABASE_PASSWORD}@db:5432/postgres?sslmode=disable"
     depends_on:
