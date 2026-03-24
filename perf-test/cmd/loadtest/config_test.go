@@ -28,31 +28,31 @@ func TestConfig_Defaults(t *testing.T) {
 	assert.Equal(t, "heuristic", cfg.Game.Strategy)
 
 	// Mode defaults.
-	assert.Equal(t, "batch", cfg.Mode)
-	assert.Equal(t, "", cfg.Preset)
-	assert.Equal(t, 1, cfg.NumGames)
-	assert.Equal(t, time.Duration(0), cfg.RampUp)
+	assert.Equal(t, "batch", cfg.Run.Mode)
+	assert.Equal(t, "", cfg.Run.Preset)
+	assert.Equal(t, 1, cfg.Run.Batch.NumGames)
+	assert.Equal(t, time.Duration(0), cfg.Run.Batch.RampUp)
 
 	// Output defaults.
-	assert.Equal(t, "text", cfg.Output.Format)
-	assert.False(t, cfg.Output.SaveBaseline)
+	assert.Equal(t, "text", cfg.Report.Output.Format)
+	assert.False(t, cfg.Report.Output.SaveBaseline)
 
 	// Staircase defaults.
-	assert.Equal(t, 60*time.Second, cfg.Staircase.HoldDuration)
-	assert.True(t, cfg.Staircase.StopOnBreach)
-	assert.Equal(t, 0, cfg.Staircase.WarmupCompletions)
-	assert.Equal(t, 0, cfg.Staircase.WarmupDuration)
+	assert.Equal(t, 60*time.Second, cfg.Run.Staircase.HoldDuration)
+	assert.True(t, cfg.Run.Staircase.StopOnBreach)
+	assert.Equal(t, 0, cfg.Run.Staircase.WarmupCompletions)
+	assert.Equal(t, 0, cfg.Run.Staircase.WarmupDuration)
 
 	// Adaptive defaults.
-	assert.Equal(t, 5, cfg.Adaptive.Increase)
-	assert.Equal(t, 20, cfg.Adaptive.MaxSteps)
-	assert.Equal(t, 500, cfg.Adaptive.MaxGames)
+	assert.Equal(t, 5, cfg.Run.Adaptive.Increase)
+	assert.Equal(t, 20, cfg.Run.Adaptive.MaxSteps)
+	assert.Equal(t, 500, cfg.Run.Adaptive.MaxGames)
 
 	// Ramp defaults.
-	assert.Equal(t, 10, cfg.Ramp.Rate)
-	assert.Equal(t, 100, cfg.Ramp.MaxGames)
-	assert.InDelta(t, 0.10, cfg.Ramp.ErrorThreshold, 0.001)
-	assert.InDelta(t, 0.0, cfg.Ramp.Multiplier, 0.001)
+	assert.Equal(t, 10, cfg.Run.Ramp.Rate)
+	assert.Equal(t, 100, cfg.Run.Ramp.MaxGames)
+	assert.InDelta(t, 0.10, cfg.Run.Ramp.ErrorThreshold, 0.001)
+	assert.InDelta(t, 0.0, cfg.Run.Ramp.Multiplier, 0.001)
 
 	// Chaos defaults (all zero).
 	assert.InDelta(t, 0.0, cfg.Chaos.DisconnectRate, 0.001)
@@ -66,8 +66,8 @@ func TestConfig_ApplyPreset_Staircase(t *testing.T) {
 	cfg := parseTestFlags(t, "--preset", "staircase-light")
 	require.NoError(t, cfg.ApplyPreset())
 
-	assert.Equal(t, "staircase", cfg.Mode)
-	assert.Equal(t, []int{5, 10, 20, 40}, cfg.staircaseCfg.Steps)
+	assert.Equal(t, "staircase", cfg.Run.Mode)
+	assert.Equal(t, []int{5, 10, 20, 40}, cfg.Run.staircaseCfg.Steps)
 }
 
 func TestConfig_ApplyPreset_Ramp(t *testing.T) {
@@ -76,9 +76,9 @@ func TestConfig_ApplyPreset_Ramp(t *testing.T) {
 	cfg := parseTestFlags(t, "--preset", "ramp-slow")
 	require.NoError(t, cfg.ApplyPreset())
 
-	assert.Equal(t, "ramp", cfg.Mode)
-	assert.Equal(t, 5, cfg.rampCfg.GamesPerMinute)
-	assert.Equal(t, 100, cfg.rampCfg.MaxGames)
+	assert.Equal(t, "ramp", cfg.Run.Mode)
+	assert.Equal(t, 5, cfg.Run.rampCfg.GamesPerMinute)
+	assert.Equal(t, 100, cfg.Run.rampCfg.MaxGames)
 }
 
 func TestConfig_ApplyPreset_Batch(t *testing.T) {
@@ -87,8 +87,8 @@ func TestConfig_ApplyPreset_Batch(t *testing.T) {
 	cfg := parseTestFlags(t, "--preset", "smoke")
 	require.NoError(t, cfg.ApplyPreset())
 
-	assert.Equal(t, "batch", cfg.Mode) // batch presets don't force mode
-	assert.Equal(t, 1, cfg.NumGames)
+	assert.Equal(t, "batch", cfg.Run.Mode) // batch presets don't force mode
+	assert.Equal(t, 1, cfg.Run.Batch.NumGames)
 	assert.Equal(t, 3, cfg.Game.NumPlayers)
 }
 
@@ -107,7 +107,7 @@ func TestConfig_ApplyPreset_Unknown(t *testing.T) {
 	t.Parallel()
 
 	cfg := parseTestFlags(t)
-	cfg.Preset = "nonexistent"
+	cfg.Run.Preset = "nonexistent"
 
 	err := cfg.ApplyPreset()
 	assert.Error(t, err)

@@ -18,9 +18,9 @@ func (a *App) runBatch(ctx context.Context) error {
 	_ = ctx // batch mode doesn't use context cancellation yet
 
 	batchCfg := orchestrator.Config{
-		NumGames:    a.cfg.NumGames,
+		NumGames:    a.cfg.Run.Batch.NumGames,
 		NumPlayers:  a.cfg.Game.NumPlayers,
-		RampUp:      a.cfg.RampUp,
+		RampUp:      a.cfg.Run.Batch.RampUp,
 		GameTimeout: a.cfg.Game.GameTimeout,
 	}
 
@@ -63,15 +63,15 @@ func (a *App) runBatch(ctx context.Context) error {
 func (a *App) runRamp(ctx context.Context) error {
 	_ = ctx // ramp mode doesn't use context cancellation yet
 
-	rampCfg := a.cfg.rampCfg
+	rampCfg := a.cfg.Run.rampCfg
 	if rampCfg == nil {
 		rampCfg = &orchestrator.RampConfig{
-			GamesPerMinute: a.cfg.Ramp.Rate,
-			MaxGames:       a.cfg.Ramp.MaxGames,
-			ErrorThreshold: a.cfg.Ramp.ErrorThreshold,
+			GamesPerMinute: a.cfg.Run.Ramp.Rate,
+			MaxGames:       a.cfg.Run.Ramp.MaxGames,
+			ErrorThreshold: a.cfg.Run.Ramp.ErrorThreshold,
 			GameTimeout:    a.cfg.Game.GameTimeout,
 			NumPlayers:     a.cfg.Game.NumPlayers,
-			Multiplier:     a.cfg.Ramp.Multiplier,
+			Multiplier:     a.cfg.Run.Ramp.Multiplier,
 		}
 	}
 
@@ -139,7 +139,7 @@ func (a *App) printBatchReport(
 
 	snap := collector.Snapshot()
 
-	switch a.cfg.Output.Format {
+	switch a.cfg.Report.Output.Format {
 	case "json":
 		if err := metrics.PrintJSON(os.Stdout, snap, totalDuration, fatalErrors, reportResults); err != nil {
 			log.Fatalf("json report: %v", err)
@@ -147,7 +147,7 @@ func (a *App) printBatchReport(
 	case "text":
 		metrics.PrintReport(os.Stdout, snap, totalDuration, fatalErrors, reportResults)
 	default:
-		log.Fatalf("unknown output format: %q", a.cfg.Output.Format)
+		log.Fatalf("unknown output format: %q", a.cfg.Report.Output.Format)
 	}
 
 	metricsSnap := baseline.SnapshotToMetrics(snap, totalDuration.Seconds())

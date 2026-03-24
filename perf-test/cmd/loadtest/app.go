@@ -94,7 +94,7 @@ func (a *App) Close() {
 
 // Run dispatches to the appropriate mode handler.
 func (a *App) Run(ctx context.Context) error {
-	switch a.cfg.Mode {
+	switch a.cfg.Run.Mode {
 	case "batch":
 		return a.runBatch(ctx)
 	case "ramp":
@@ -106,7 +106,7 @@ func (a *App) Run(ctx context.Context) error {
 	default:
 		return fmt.Errorf(
 			"unknown mode: %q (valid: batch, ramp, staircase, adaptive)",
-			a.cfg.Mode,
+			a.cfg.Run.Mode,
 		)
 	}
 }

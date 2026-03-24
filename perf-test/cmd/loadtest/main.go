@@ -47,21 +47,22 @@ func main() {
 }
 
 func logPresetInfo(cfg *Config) {
-	if cfg.staircaseCfg != nil {
+	if cfg.Run.staircaseCfg != nil {
 		log.Printf(
 			"using staircase preset %q: steps=%v, hold=%v",
-			cfg.Preset, cfg.staircaseCfg.Steps, cfg.staircaseCfg.HoldDuration,
+			cfg.Run.Preset, cfg.Run.staircaseCfg.Steps, cfg.Run.staircaseCfg.HoldDuration,
 		)
-	} else if cfg.rampCfg != nil {
+	} else if cfg.Run.rampCfg != nil {
 		log.Printf(
 			"using ramp preset %q: %d games/min, max %d, threshold %.0f%%",
-			cfg.Preset, cfg.rampCfg.GamesPerMinute, cfg.rampCfg.MaxGames,
-			cfg.rampCfg.ErrorThreshold*100,
+			cfg.Run.Preset, cfg.Run.rampCfg.GamesPerMinute, cfg.Run.rampCfg.MaxGames,
+			cfg.Run.rampCfg.ErrorThreshold*100,
 		)
-	} else if cfg.Preset != "" {
+	} else if cfg.Run.Preset != "" {
 		log.Printf(
 			"using preset %q: %d games, %d players, timeout=%v, ramp=%v",
-			cfg.Preset, cfg.NumGames, cfg.Game.NumPlayers, cfg.Game.GameTimeout, cfg.RampUp,
+			cfg.Run.Preset, cfg.Run.Batch.NumGames, cfg.Game.NumPlayers,
+			cfg.Game.GameTimeout, cfg.Run.Batch.RampUp,
 		)
 	}
 }

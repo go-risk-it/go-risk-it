@@ -17,35 +17,35 @@ import (
 
 //nolint:funlen // orchestration function with sequential setup steps
 func (a *App) runStaircase(ctx context.Context) error {
-	staircaseCfg := a.cfg.staircaseCfg
+	staircaseCfg := a.cfg.Run.staircaseCfg
 
 	// Build staircase config from flags if not set by preset.
 	if staircaseCfg == nil {
-		steps := parseSteps(a.cfg.Staircase.Steps)
+		steps := parseSteps(a.cfg.Run.Staircase.Steps)
 		if len(steps) == 0 {
 			log.Fatal("staircase mode requires --preset or --steps flag")
 		}
 
 		staircaseCfg = &orchestrator.StaircaseConfig{
 			Steps:             steps,
-			HoldDuration:      a.cfg.Staircase.HoldDuration,
+			HoldDuration:      a.cfg.Run.Staircase.HoldDuration,
 			NumPlayers:        orchestrator.DefaultNumPlayers,
 			GameTimeout:       orchestrator.DefaultGameTimeout,
-			StopOnBreach:      a.cfg.Staircase.StopOnBreach,
+			StopOnBreach:      a.cfg.Run.Staircase.StopOnBreach,
 			StaggerDelay:      orchestrator.DefaultStaggerDelay,
 			SLOs:              baseline.DefaultSLOs(),
-			WarmUpCompletions: a.cfg.Staircase.WarmupCompletions,
-			WarmUpDurationSec: a.cfg.Staircase.WarmupDuration,
+			WarmUpCompletions: a.cfg.Run.Staircase.WarmupCompletions,
+			WarmUpDurationSec: a.cfg.Run.Staircase.WarmupDuration,
 		}
 	}
 
 	// CLI warm-up flags override preset values.
-	if a.cfg.Staircase.WarmupCompletions > 0 {
-		staircaseCfg.WarmUpCompletions = a.cfg.Staircase.WarmupCompletions
+	if a.cfg.Run.Staircase.WarmupCompletions > 0 {
+		staircaseCfg.WarmUpCompletions = a.cfg.Run.Staircase.WarmupCompletions
 	}
 
-	if a.cfg.Staircase.WarmupDuration > 0 {
-		staircaseCfg.WarmUpDurationSec = a.cfg.Staircase.WarmupDuration
+	if a.cfg.Run.Staircase.WarmupDuration > 0 {
+		staircaseCfg.WarmUpDurationSec = a.cfg.Run.Staircase.WarmupDuration
 	}
 
 	// Build step executor.
@@ -157,20 +157,20 @@ func (a *App) buildStepExecutorDeps(gameTimeout time.Duration) orchestrator.Step
 
 // handleJournalSaveAndCompare saves and compares journal entries based on config.
 func (a *App) handleJournalSaveAndCompare(entry journal.Entry, branch, commitSHA string) {
-	if a.cfg.Journal.Save {
-		slug := a.cfg.Journal.Name
+	if a.cfg.Report.Journal.Save {
+		slug := a.cfg.Report.Journal.Name
 		if slug == "" {
-			slug = a.cfg.Preset
+			slug = a.cfg.Run.Preset
 		}
 
 		if slug == "" {
-			slug = a.cfg.Mode
+			slug = a.cfg.Run.Mode
 		}
 
-		saveJournalEntry(entry, slug, branch, commitSHA, a.cfg.Journal.Hypothesis)
+		saveJournalEntry(entry, slug, branch, commitSHA, a.cfg.Report.Journal.Hypothesis)
 	}
 
-	if a.cfg.Journal.Compare != "" {
-		compareJournalEntries(a.cfg.Journal.Compare, entry)
+	if a.cfg.Report.Journal.Compare != "" {
+		compareJournalEntries(a.cfg.Report.Journal.Compare, entry)
 	}
 }

@@ -14,23 +14,38 @@ import (
 
 // Config holds all parsed CLI flags and derived values.
 type Config struct {
-	Server    ServerConfig
-	Game      GameConfig
-	Chaos     chaos.Config
-	Obs       ObservabilityConfig
-	Output    OutputConfig
-	Staircase StaircaseFlags
-	Adaptive  AdaptiveFlags
-	Journal   JournalFlags
-	Ramp      RampFlags
+	Server ServerConfig
+	Game   GameConfig
+	Chaos  chaos.Config
+	Obs    ObservabilityConfig
+	Report ReportConfig
+	Run    RunConfig
+}
+
+// ReportConfig holds output format and result-tracking settings.
+type ReportConfig struct {
+	Output  OutputConfig
+	Journal JournalFlags
+}
+
+// RunConfig holds mode dispatch and per-mode flags.
+type RunConfig struct {
 	Mode      string
 	Preset    string
-	NumGames  int           // batch only
-	RampUp    time.Duration // batch only
+	Batch     BatchFlags
+	Staircase StaircaseFlags
+	Adaptive  AdaptiveFlags
+	Ramp      RampFlags
 
 	// Internal: populated by ApplyPreset for staircase/ramp modes.
 	staircaseCfg *orchestrator.StaircaseConfig
 	rampCfg      *orchestrator.RampConfig
+}
+
+// BatchFlags holds batch-mode CLI flags.
+type BatchFlags struct {
+	NumGames int
+	RampUp   time.Duration
 }
 
 // ServerConfig holds server connection settings.
@@ -129,32 +144,32 @@ func registerFlags(fs *flag.FlagSet) *Config {
 	)
 
 	// Mode flags.
-	fs.StringVar(&cfg.Mode, "mode", "batch", "Run mode: batch, ramp, staircase, or adaptive")
+	fs.StringVar(&cfg.Run.Mode, "mode", "batch", "Run mode: batch, ramp, staircase, or adaptive")
 	fs.StringVar(
-		&cfg.Preset,
+		&cfg.Run.Preset,
 		"preset",
 		"",
 		"Named scenario preset (overrides games/players/timeout/ramp)",
 	)
-	fs.IntVar(&cfg.NumGames, "games", 1, "Number of concurrent games")
-	fs.DurationVar(&cfg.RampUp, "ramp", 0, "Ramp-up period for starting games")
+	fs.IntVar(&cfg.Run.Batch.NumGames, "games", 1, "Number of concurrent games")
+	fs.DurationVar(&cfg.Run.Batch.RampUp, "ramp", 0, "Ramp-up period for starting games")
 
 	// Output flags.
-	fs.StringVar(&cfg.Output.Format, "output", "text", "Output format: text or json")
+	fs.StringVar(&cfg.Report.Output.Format, "output", "text", "Output format: text or json")
 	fs.BoolVar(
-		&cfg.Output.SaveBaseline,
+		&cfg.Report.Output.SaveBaseline,
 		"save-baseline",
 		false,
 		"Save performance baseline after test completes",
 	)
 	fs.StringVar(
-		&cfg.Output.CompareFile,
+		&cfg.Report.Output.CompareFile,
 		"compare",
 		"",
 		"Path to previous baseline file for delta comparison",
 	)
 	fs.StringVar(
-		&cfg.Output.BaselineName,
+		&cfg.Report.Output.BaselineName,
 		"baseline-name",
 		"",
 		"Named baseline for perf-journal (saves to perf-journal/baselines/ with sequence number)",
@@ -204,31 +219,31 @@ func registerFlags(fs *flag.FlagSet) *Config {
 
 	// Staircase flags.
 	fs.StringVar(
-		&cfg.Staircase.Steps,
+		&cfg.Run.Staircase.Steps,
 		"steps",
 		"",
 		"Comma-separated staircase step counts (e.g., 5,10,20,40)",
 	)
 	fs.DurationVar(
-		&cfg.Staircase.HoldDuration,
+		&cfg.Run.Staircase.HoldDuration,
 		"hold-duration",
 		60*time.Second,
 		"Hold duration per staircase step",
 	)
 	fs.BoolVar(
-		&cfg.Staircase.StopOnBreach,
+		&cfg.Run.Staircase.StopOnBreach,
 		"stop-on-breach",
 		true,
 		"Stop staircase on first SLO breach",
 	)
 	fs.IntVar(
-		&cfg.Staircase.WarmupCompletions,
+		&cfg.Run.Staircase.WarmupCompletions,
 		"warmup-completions",
 		0,
 		"Games to complete before recording histograms per step (0 = disabled)",
 	)
 	fs.IntVar(
-		&cfg.Staircase.WarmupDuration,
+		&cfg.Run.Staircase.WarmupDuration,
 		"warmup-duration",
 		0,
 		"Seconds to wait before recording histograms per step (0 = disabled)",
@@ -236,51 +251,51 @@ func registerFlags(fs *flag.FlagSet) *Config {
 
 	// Adaptive flags.
 	fs.IntVar(
-		&cfg.Adaptive.Increase,
+		&cfg.Run.Adaptive.Increase,
 		"adaptive-increase",
 		5,
 		"Games to add per successful step in adaptive mode",
 	)
 	fs.IntVar(
-		&cfg.Adaptive.MaxSteps,
+		&cfg.Run.Adaptive.MaxSteps,
 		"adaptive-max-steps",
 		20,
 		"Maximum number of steps in adaptive mode",
 	)
 	fs.IntVar(
-		&cfg.Adaptive.MaxGames,
+		&cfg.Run.Adaptive.MaxGames,
 		"adaptive-max-games",
 		500,
 		"Hard ceiling on concurrent games in adaptive mode",
 	)
 
 	// Journal flags.
-	fs.BoolVar(&cfg.Journal.Save, "save-journal", false, "Save staircase journal entry")
-	fs.StringVar(&cfg.Journal.Name, "journal-name", "", "Name for journal entry file")
+	fs.BoolVar(&cfg.Report.Journal.Save, "save-journal", false, "Save staircase journal entry")
+	fs.StringVar(&cfg.Report.Journal.Name, "journal-name", "", "Name for journal entry file")
 	fs.StringVar(
-		&cfg.Journal.Compare,
+		&cfg.Report.Journal.Compare,
 		"compare-journal",
 		"",
 		"Path to previous journal entry for comparison",
 	)
 	fs.StringVar(
-		&cfg.Journal.Hypothesis,
+		&cfg.Report.Journal.Hypothesis,
 		"hypothesis",
 		"",
 		"Hypothesis for this optimization run (annotates session)",
 	)
 
 	// Ramp flags.
-	fs.IntVar(&cfg.Ramp.Rate, "ramp-rate", 10, "Games per minute (ramp mode only)")
-	fs.IntVar(&cfg.Ramp.MaxGames, "max-games", 100, "Maximum total games (ramp mode only)")
+	fs.IntVar(&cfg.Run.Ramp.Rate, "ramp-rate", 10, "Games per minute (ramp mode only)")
+	fs.IntVar(&cfg.Run.Ramp.MaxGames, "max-games", 100, "Maximum total games (ramp mode only)")
 	fs.Float64Var(
-		&cfg.Ramp.ErrorThreshold,
+		&cfg.Run.Ramp.ErrorThreshold,
 		"error-threshold",
 		0.10,
 		"Error rate threshold to stop (ramp mode only)",
 	)
 	fs.Float64Var(
-		&cfg.Ramp.Multiplier,
+		&cfg.Run.Ramp.Multiplier,
 		"ramp-multiplier",
 		0,
 		"Rate multiplier per minute for exponential ramp (e.g., 2.0 = double each minute). 0 = constant.",
@@ -314,28 +329,28 @@ func (c *Config) resolve() {
 // ApplyPreset loads a named preset and overrides config fields.
 // Must be called after ParseFlags(). No-op if Preset is empty.
 func (c *Config) ApplyPreset() error {
-	if c.Preset == "" {
+	if c.Run.Preset == "" {
 		return nil
 	}
 
-	s, err := scenario.Get(c.Preset)
+	s, err := scenario.Get(c.Run.Preset)
 	if err != nil {
 		return fmt.Errorf("preset: %w", err)
 	}
 
 	if s.StaircaseConfig != nil {
-		c.Mode = "staircase"
-		c.staircaseCfg = s.StaircaseConfig
+		c.Run.Mode = "staircase"
+		c.Run.staircaseCfg = s.StaircaseConfig
 	} else if s.RampConfig != nil {
-		c.Mode = "ramp"
-		c.rampCfg = s.RampConfig
+		c.Run.Mode = "ramp"
+		c.Run.rampCfg = s.RampConfig
 		c.Game.GameTimeout = s.RampConfig.GameTimeout
 	} else {
 		// Batch preset.
-		c.NumGames = s.Config.NumGames
+		c.Run.Batch.NumGames = s.Config.NumGames
 		c.Game.NumPlayers = s.Config.NumPlayers
 		c.Game.GameTimeout = s.Config.GameTimeout
-		c.RampUp = s.Config.RampUp
+		c.Run.Batch.RampUp = s.Config.RampUp
 	}
 
 	// Preset chaos config is used unless CLI flags override.
@@ -359,7 +374,7 @@ func (c *Config) Validate() error {
 		)
 	}
 
-	if c.Mode == "staircase" && c.staircaseCfg == nil && c.Staircase.Steps == "" {
+	if c.Run.Mode == "staircase" && c.Run.staircaseCfg == nil && c.Run.Staircase.Steps == "" {
 		return fmt.Errorf("staircase mode requires --preset or --steps flag")
 	}
 

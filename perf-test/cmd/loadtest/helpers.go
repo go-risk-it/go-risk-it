@@ -214,20 +214,20 @@ func handleBaseline(
 	metricsSnap baseline.MetricsSnapshot,
 	insights []baseline.Insight,
 ) {
-	if !cfg.Output.SaveBaseline && cfg.Output.CompareFile == "" {
+	if !cfg.Report.Output.SaveBaseline && cfg.Report.Output.CompareFile == "" {
 		return
 	}
 
 	currentBaseline := buildCurrentBaseline(cfg, metricsSnap, insights)
 
-	if cfg.Output.SaveBaseline {
+	if cfg.Report.Output.SaveBaseline {
 		var path string
 		var err error
 
-		if cfg.Output.BaselineName != "" {
+		if cfg.Report.Output.BaselineName != "" {
 			path, err = baseline.SaveNumbered(
 				"perf-journal/baselines",
-				cfg.Output.BaselineName,
+				cfg.Report.Output.BaselineName,
 				currentBaseline,
 			)
 		} else {
@@ -241,8 +241,8 @@ func handleBaseline(
 		}
 	}
 
-	if cfg.Output.CompareFile != "" {
-		referenceBaseline, err := baseline.Load(cfg.Output.CompareFile)
+	if cfg.Report.Output.CompareFile != "" {
+		referenceBaseline, err := baseline.Load(cfg.Report.Output.CompareFile)
 		if err != nil {
 			log.Fatalf("failed to load baseline: %v", err)
 		}
@@ -269,10 +269,10 @@ func buildCurrentBaseline(
 		CommitSHA: commitSHA,
 		Timestamp: time.Now(),
 		TestParams: baseline.TestParams{
-			Preset:  cfg.Preset,
+			Preset:  cfg.Run.Preset,
 			Players: cfg.Game.NumPlayers,
-			Games:   cfg.NumGames,
-			Mode:    cfg.Mode,
+			Games:   cfg.Run.Batch.NumGames,
+			Mode:    cfg.Run.Mode,
 		},
 		Metrics:     metricsSnap,
 		Environment: baseline.CaptureEnvironment(),

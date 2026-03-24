@@ -31,16 +31,16 @@ func (a *App) runAdaptive(ctx context.Context) error {
 	// Build adaptive config.
 	adaptiveCfg := orchestrator.AdaptiveConfig{
 		InitialCeiling:    initialCeiling,
-		AdditiveIncrease:  a.cfg.Adaptive.Increase,
-		HoldDuration:      a.cfg.Staircase.HoldDuration,
+		AdditiveIncrease:  a.cfg.Run.Adaptive.Increase,
+		HoldDuration:      a.cfg.Run.Staircase.HoldDuration,
 		NumPlayers:        orchestrator.DefaultNumPlayers,
 		GameTimeout:       orchestrator.DefaultGameTimeout,
 		StaggerDelay:      orchestrator.DefaultStaggerDelay,
 		SLOs:              baseline.DefaultSLOs(),
-		MaxSteps:          a.cfg.Adaptive.MaxSteps,
-		MaxGames:          a.cfg.Adaptive.MaxGames,
-		WarmUpCompletions: a.cfg.Staircase.WarmupCompletions,
-		WarmUpDurationSec: a.cfg.Staircase.WarmupDuration,
+		MaxSteps:          a.cfg.Run.Adaptive.MaxSteps,
+		MaxGames:          a.cfg.Run.Adaptive.MaxGames,
+		WarmUpCompletions: a.cfg.Run.Staircase.WarmupCompletions,
+		WarmUpDurationSec: a.cfg.Run.Staircase.WarmupDuration,
 	}
 
 	// Build step executor.
@@ -85,11 +85,11 @@ func (a *App) runAdaptive(ctx context.Context) error {
 		Config: journal.StaircaseParams{
 			Mode:              "adaptive",
 			Steps:             configSteps,
-			HoldDurationSec:   a.cfg.Staircase.HoldDuration.Seconds(),
+			HoldDurationSec:   a.cfg.Run.Staircase.HoldDuration.Seconds(),
 			NumPlayers:        adaptiveCfg.NumPlayers,
 			GameTimeoutSec:    adaptiveCfg.GameTimeout.Seconds(),
-			WarmUpCompletions: a.cfg.Staircase.WarmupCompletions,
-			WarmUpDurationSec: a.cfg.Staircase.WarmupDuration,
+			WarmUpCompletions: a.cfg.Run.Staircase.WarmupCompletions,
+			WarmUpDurationSec: a.cfg.Run.Staircase.WarmupDuration,
 		},
 		SLOCeiling:  ceiling,
 		Steps:       stepResults,
