@@ -1,0 +1,195 @@
+package orchestrator
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"time"
+
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/annotations"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/dbstats"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/health"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/resources"
+)
+
+// StepExecutorConfig holds parameters for each step execution.
+type StepExecutorConfig struct {
+	NumPlayers        int
+	GameTimeout       time.Duration
+	StaggerDelay      time.Duration
+	HoldDuration      time.Duration
+	WarmUpCompletions int
+	WarmUpDurationSec int
+}
+
+// StepExecutorDeps holds injected dependencies for testability.
+type StepExecutorDeps struct {
+	RunnerFactory    func(collector *metrics.Collector, observer GameObserver) RunFunc
+	NewCollector     func(maxDuration time.Duration) *metrics.Collector
+	CollectResources func() resources.ServerResources
+	Annotator        *annotations.Annotator
+	OTelExporter     *metrics.OTelExporter
+	DBStats          *dbstats.Collector
+}
+
+// DefaultStepExecutor implements StepExecutor by creating a fresh pool per step,
+// holding for the configured duration, then snapshotting metrics.
+type DefaultStepExecutor struct {
+	cfg        StepExecutorConfig
+	deps       StepExecutorDeps
+	totalSteps int
+	stepCount  int
+}
+
+// NewStepExecutor creates a DefaultStepExecutor.
+func NewStepExecutor(
+	cfg StepExecutorConfig,
+	deps StepExecutorDeps,
+	totalSteps int,
+) *DefaultStepExecutor {
+	return &DefaultStepExecutor{
+		cfg:        cfg,
+		deps:       deps,
+		totalSteps: totalSteps,
+	}
+}
+
+// Execute runs a single staircase step at the given concurrency level.
+func (e *DefaultStepExecutor) Execute(
+	ctx context.Context,
+	targetGames, indexOffset int,
+) (*StepOutput, error) {
+	e.stepCount++
+	stepIndex := e.stepCount
+
+	// Fresh collector per step for clean per-step percentiles.
+	collector := e.deps.NewCollector(e.cfg.HoldDuration)
+	e.configureWarmUp(collector, targetGames)
+
+	if e.deps.OTelExporter != nil {
+		collector.SetOTelExporter(e.deps.OTelExporter)
+	}
+
+	tracker := health.NewTracker(health.DefaultThresholds())
+	observer := health.NewTrackerObserver(tracker)
+	runFunc := e.deps.RunnerFactory(collector, observer)
+
+	output := e.runStep(ctx, targetGames, indexOffset, stepIndex, runFunc, collector, tracker)
+
+	return &output, nil
+}
+
+// configureWarmUp sets up time-based warm-up filtering on the collector.
+func (e *DefaultStepExecutor) configureWarmUp(collector *metrics.Collector, targetGames int) {
+	if e.cfg.WarmUpCompletions <= 0 && e.cfg.WarmUpDurationSec <= 0 {
+		return
+	}
+
+	minDuration := time.Duration(targetGames) * e.cfg.StaggerDelay
+	if cfgDur := time.Duration(e.cfg.WarmUpDurationSec) * time.Second; cfgDur > minDuration {
+		minDuration = cfgDur
+	}
+
+	collector.ConfigureWarmUp(metrics.WarmUpConfig{
+		MinCompletions: 0,
+		MinDuration:    minDuration,
+	})
+}
+
+// runStep executes a single step: pool up, hold, snapshot, drain.
+func (e *DefaultStepExecutor) runStep(
+	ctx context.Context,
+	targetGames int,
+	indexOffset int,
+	stepIndex int,
+	runFunc RunFunc,
+	collector *metrics.Collector,
+	tracker *health.Tracker,
+) StepOutput {
+	stepCtx, stepCancel := context.WithCancel(ctx)
+	defer stepCancel()
+
+	pool := NewPool(
+		PoolConfig{
+			TargetGames:  targetGames,
+			NumPlayers:   e.cfg.NumPlayers,
+			StaggerDelay: e.cfg.StaggerDelay,
+			IndexOffset:  indexOffset,
+		},
+		runFunc,
+	)
+
+	go pool.Run(stepCtx)
+
+	// Wait for pool to reach target concurrency.
+	select {
+	case <-pool.Ready():
+		log.Printf(
+			"[step %d/%d] pool ready (%d games active)",
+			stepIndex, e.totalSteps, targetGames,
+		)
+	case <-ctx.Done():
+		stepCancel()
+		pool.WaitDrain()
+
+		return StepOutput{TargetGames: targetGames}
+	}
+
+	// Reset DB stats counters after pool reaches steady state.
+	if e.deps.DBStats != nil {
+		if err := e.deps.DBStats.Reset(ctx); err != nil {
+			log.Printf("[step %d/%d] db stats reset: %v", stepIndex, e.totalSteps, err)
+		}
+	}
+
+	e.deps.Annotator.Annotate(
+		fmt.Sprintf("step %d/%d — %d games", stepIndex, e.totalSteps, targetGames),
+		"perf-test",
+		"step",
+	)
+
+	// Hold for the configured duration.
+	holdStart := time.Now()
+
+	select {
+	case <-time.After(e.cfg.HoldDuration):
+	case <-ctx.Done():
+	}
+
+	holdDuration := time.Since(holdStart)
+
+	// Collect server resources before draining.
+	serverResources := e.deps.CollectResources()
+
+	// Snapshot metrics while games are still running.
+	snap := collector.Snapshot()
+
+	// Snapshot health distribution before draining.
+	healthDist := tracker.Snapshot()
+
+	// Snapshot DB stats before draining.
+	var stepDBStats *dbstats.StepDBStats
+
+	if e.deps.DBStats != nil {
+		stats, err := e.deps.DBStats.Snapshot(ctx, 10)
+		if err != nil {
+			log.Printf("[step %d/%d] db stats snapshot: %v", stepIndex, e.totalSteps, err)
+		} else {
+			stepDBStats = &stats
+		}
+	}
+
+	// Drain the pool.
+	stepCancel()
+	pool.WaitDrain()
+
+	return StepOutput{
+		TargetGames:        targetGames,
+		Snapshot:           snap,
+		Duration:           holdDuration,
+		ServerResources:    serverResources,
+		HealthDistribution: &healthDist,
+		DBStats:            stepDBStats,
+	}
+}
