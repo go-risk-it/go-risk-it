@@ -10,6 +10,7 @@ import (
 
 // StaircaseParams records the staircase configuration used for a run.
 type StaircaseParams struct {
+	Mode              string  `json:"mode,omitempty"` // "staircase" or "adaptive"
 	Steps             []int   `json:"steps"`
 	HoldDurationSec   float64 `json:"hold_duration_sec"`
 	NumPlayers        int     `json:"num_players"`

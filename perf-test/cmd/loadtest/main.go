@@ -48,7 +48,7 @@ func main() {
 		"heuristic",
 		"Bot strategy: heuristic, beginner, normal, or expert",
 	)
-	mode := flag.String("mode", "batch", "Run mode: batch or ramp")
+	mode := flag.String("mode", "batch", "Run mode: batch, ramp, staircase, or adaptive")
 	rampRate := flag.Int("ramp-rate", 10, "Games per minute (ramp mode only)")
 	maxGames := flag.Int("max-games", 100, "Maximum total games (ramp mode only)")
 	errorThreshold := flag.Float64(
@@ -135,6 +135,21 @@ func main() {
 		"hypothesis",
 		"",
 		"Hypothesis for this optimization run (annotates session)",
+	)
+	adaptiveIncrease := flag.Int(
+		"adaptive-increase",
+		5,
+		"Games to add per successful step in adaptive mode",
+	)
+	adaptiveMaxSteps := flag.Int(
+		"adaptive-max-steps",
+		20,
+		"Maximum number of steps in adaptive mode",
+	)
+	adaptiveMaxGames := flag.Int(
+		"adaptive-max-games",
+		500,
+		"Hard ceiling on concurrent games in adaptive mode",
 	)
 
 	flag.Parse()
@@ -244,6 +259,8 @@ func main() {
 		maxDuration = estimated + rampCfg.GameTimeout
 	} else if *mode == "staircase" && staircaseCfg != nil {
 		maxDuration = staircaseCfg.HoldDuration
+	} else if *mode == "adaptive" {
+		maxDuration = *holdDuration
 	}
 
 	collector := metrics.NewCollector(maxDuration)
@@ -362,8 +379,31 @@ func main() {
 		)
 
 		return
+	case "adaptive":
+		runAdaptiveMode(
+			*url,
+			wsURL,
+			*anonKey,
+			strategy,
+			*thinkTime,
+			injector,
+			otelExporter,
+			annotator,
+			*holdDuration,
+			*adaptiveIncrease,
+			*adaptiveMaxSteps,
+			*adaptiveMaxGames,
+			*warmupCompletions,
+			*warmupDuration,
+			*saveJournal,
+			*journalName,
+			*compareJournal,
+			*hypothesis,
+		)
+
+		return
 	default:
-		log.Fatalf("unknown mode: %q (valid: batch, ramp, staircase)", *mode)
+		log.Fatalf("unknown mode: %q (valid: batch, ramp, staircase, adaptive)", *mode)
 	}
 
 	totalDuration := time.Since(start)
@@ -789,6 +829,222 @@ func handleSession(branch, commitSHA, entryPath string, ceilingGames int, hypoth
 
 	if hypothesis != "" {
 		log.Printf("[session] hypothesis: %s", hypothesis)
+	}
+}
+
+//nolint:funlen,cyclop
+func runAdaptiveMode(
+	baseURL, wsURL, anonKey string,
+	strategy player.Strategy,
+	thinkTime time.Duration,
+	injector *chaos.Injector,
+	otelExporter *metrics.OTelExporter,
+	annotator *annotations.Annotator,
+	holdDuration time.Duration,
+	adaptiveIncrease int,
+	adaptiveMaxSteps int,
+	adaptiveMaxGames int,
+	warmupCompletions int,
+	warmupDuration int,
+	saveJournal bool,
+	journalName string,
+	compareJournalFile string,
+	hypothesis string,
+) {
+	// Set up context with signal handling.
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-sigCh
+		log.Println("[adaptive] shutdown signal received, stopping...")
+		cancel()
+	}()
+
+	// Detect branch and read session's last ceiling.
+	branch := ""
+
+	branchOut, err := exec.Command("git", "branch", "--show-current").Output()
+	if err == nil {
+		branch = strings.TrimSpace(string(branchOut))
+	}
+
+	initialCeiling := 0
+	if branch != "" && branch != "main" && branch != "master" {
+		store := session.NewStore("perf-journal/sessions")
+
+		sess, err := store.Load(branch)
+		if err == nil && sess.LastCeiling() > 0 {
+			initialCeiling = sess.LastCeiling()
+			log.Printf("[adaptive] using session ceiling %d as starting point", initialCeiling)
+		}
+	}
+
+	// Build adaptive config.
+	cfg := orchestrator.AdaptiveConfig{
+		InitialCeiling:    initialCeiling,
+		AdditiveIncrease:  adaptiveIncrease,
+		HoldDuration:      holdDuration,
+		NumPlayers:        4,
+		GameTimeout:       10 * time.Minute,
+		StaggerDelay:      100 * time.Millisecond,
+		SLOs:              baseline.DefaultSLOs(),
+		MaxSteps:          adaptiveMaxSteps,
+		MaxGames:          adaptiveMaxGames,
+		WarmUpCompletions: warmupCompletions,
+		WarmUpDurationSec: warmupDuration,
+	}
+
+	// Build dependencies (same as staircase).
+	deps := orchestrator.StaircaseDeps{
+		RunnerFactory: func(c *metrics.Collector, obs orchestrator.GameObserver) orchestrator.RunFunc {
+			r := orchestrator.NewGameRunner(
+				baseURL, wsURL, anonKey, strategy,
+				cfg.GameTimeout, c, thinkTime,
+				orchestrator.DefaultTimeouts(), injector,
+			)
+			r.SetObserver(obs)
+
+			return r.Run
+		},
+		NewCollector:     metrics.NewCollector,
+		CollectResources: func() resources.ServerResources { return resources.CollectServerResources(resources.DefaultStatsFunc) },
+		Annotator:        annotator,
+		OTelExporter:     otelExporter,
+	}
+
+	// Run adaptive staircase.
+	start := time.Now()
+	result := orchestrator.RunAdaptive(ctx, cfg, deps)
+	totalDuration := time.Since(start)
+
+	// Convert StepOutputs to journal StepResults.
+	slos := cfg.SLOs
+	stepResults := make([]journal.StepResult, len(result.Steps))
+
+	for i, so := range result.Steps {
+		metricsSnap := baseline.SnapshotToMetrics(so.Snapshot, so.Duration.Seconds())
+		evalResult := slos.Evaluate(metricsSnap)
+
+		stepResults[i] = journal.StepResult{
+			TargetGames:        so.TargetGames,
+			Metrics:            metricsSnap,
+			SLOEval:            evalResult,
+			ServerResources:    so.ServerResources,
+			DurationSec:        so.Duration.Seconds(),
+			HealthDistribution: so.HealthDistribution,
+		}
+	}
+
+	// Compute SLO ceiling and breaking points.
+	ceiling := journal.FindSLOCeiling(stepResults)
+
+	// Override ceiling games from the adaptive result (it knows the converged value).
+	if result.Ceiling > 0 && ceiling.Games == 0 {
+		ceiling.Games = result.Ceiling
+	}
+
+	// Get insights from the ceiling step (or last step).
+	var insights []baseline.Insight
+	if len(stepResults) > 0 {
+		lastIdx := len(stepResults) - 1
+		if ceiling.Games > 0 {
+			for i, sr := range stepResults {
+				if sr.TargetGames == ceiling.Games {
+					lastIdx = i
+
+					break
+				}
+			}
+		}
+
+		insights = baseline.Analyze(stepResults[lastIdx].Metrics)
+	}
+
+	// Collect steps list for config.
+	configSteps := make([]int, len(result.Steps))
+	for i, so := range result.Steps {
+		configSteps[i] = so.TargetGames
+	}
+
+	// Build commit SHA.
+	commitSHA := "unknown"
+
+	out, err := exec.Command("git", "rev-parse", "--short", "HEAD").Output()
+	if err == nil {
+		commitSHA = strings.TrimSpace(string(out))
+	}
+
+	// Build journal entry.
+	entry := journal.Entry{
+		CommitSHA: commitSHA,
+		Timestamp: time.Now(),
+		Branch:    branch,
+		Config: journal.StaircaseParams{
+			Mode:              "adaptive",
+			Steps:             configSteps,
+			HoldDurationSec:   holdDuration.Seconds(),
+			NumPlayers:        cfg.NumPlayers,
+			GameTimeoutSec:    cfg.GameTimeout.Seconds(),
+			WarmUpCompletions: warmupCompletions,
+			WarmUpDurationSec: warmupDuration,
+		},
+		SLOCeiling:  ceiling,
+		Steps:       stepResults,
+		Environment: baseline.CaptureEnvironment(),
+		Insights:    insights,
+	}
+
+	// Print report.
+	journal.PrintStaircaseReport(os.Stdout, entry)
+
+	if len(insights) > 0 {
+		baseline.PrintInsights(os.Stdout, insights)
+	}
+
+	convergedStr := ""
+	if result.Converged {
+		convergedStr = " (converged)"
+	}
+
+	log.Printf(
+		"[adaptive] complete in %v: ceiling=%d games%s",
+		totalDuration,
+		ceiling.Games,
+		convergedStr,
+	)
+
+	// Save journal entry.
+	if saveJournal {
+		slug := journalName
+		if slug == "" {
+			slug = "adaptive"
+		}
+
+		path, err := journal.SaveEntry("perf-journal/entries", slug, entry)
+		if err != nil {
+			log.Printf("failed to save journal entry: %v", err)
+		} else {
+			log.Printf("journal entry saved: %s", path)
+
+			// Session integration: auto-create/update session for non-main branches.
+			if branch != "" && branch != "main" && branch != "master" {
+				handleSession(branch, commitSHA, path, ceiling.Games, hypothesis)
+			}
+		}
+	}
+
+	// Comparison.
+	if compareJournalFile != "" {
+		prevEntry, err := journal.LoadEntry(compareJournalFile)
+		if err != nil {
+			log.Fatalf("failed to load journal entry: %v", err)
+		}
+
+		journal.PrintCeilingComparison(os.Stdout, prevEntry, entry)
 	}
 }
 
