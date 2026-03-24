@@ -16,7 +16,7 @@ var Module = fx.Options(
 		NewBoardFetcher,
 		NewPlayerFetcher,
 		NewCardFetcher,
-		NewMoveLogFetcher,
+		fx.Annotate(NewMoveLogFetcher, fx.As(new(MoveLogFetcher))),
 		NewMissionFetcher,
 		NewGameFetcher,
 	),

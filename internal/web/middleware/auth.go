@@ -24,7 +24,7 @@ type AuthMiddlewareImpl struct {
 
 var _ AuthMiddleware = (*AuthMiddlewareImpl)(nil)
 
-func NewAuthMiddleware(jwtConfig config.JwtConfig) AuthMiddleware {
+func NewAuthMiddleware(jwtConfig config.JwtConfig) *AuthMiddlewareImpl {
 	return &AuthMiddlewareImpl{jwtConfig: jwtConfig}
 }
 

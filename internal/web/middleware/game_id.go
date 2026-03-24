@@ -18,7 +18,7 @@ type GameMiddlewareImpl struct {
 
 var _ GameMiddleware = (*GameMiddlewareImpl)(nil)
 
-func NewGameMiddleware(log *zap.SugaredLogger) GameMiddleware {
+func NewGameMiddleware(log *zap.SugaredLogger) *GameMiddlewareImpl {
 	return &GameMiddlewareImpl{log: log}
 }
 

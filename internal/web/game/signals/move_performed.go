@@ -41,6 +41,7 @@ func HandleMovePerformed(
 
 		gameContext.Log().Infow("handling move performed. fetching move logs and publishing")
 
+		//nolint:contextcheck // deliberate context detach
 		fetchStateAndPublish(
 			gameContext,
 			func(gameCtx ctx.GameContext, stateChannel chan json.RawMessage) {

@@ -24,7 +24,7 @@ var _ MoveLogFetcher = (*MoveLogFetcherImpl)(nil)
 func NewMoveLogFetcher(
 	historyConfig config.HistoryConfig,
 	moveLogController controller.MoveLogController,
-) MoveLogFetcher {
+) *MoveLogFetcherImpl {
 	return &MoveLogFetcherImpl{
 		historyConfig:     historyConfig,
 		moveLogController: moveLogController,

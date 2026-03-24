@@ -27,7 +27,7 @@ type OTelMiddlewareImpl struct {
 
 var _ OTelMiddleware = (*OTelMiddlewareImpl)(nil)
 
-func NewOTelMiddleware(metrics *metrics.Metrics) OTelMiddleware {
+func NewOTelMiddleware(metrics *metrics.Metrics) *OTelMiddlewareImpl {
 	return &OTelMiddlewareImpl{
 		tracer:  otel.GetTracerProvider().Tracer("go-risk-it-http"),
 		metrics: metrics,

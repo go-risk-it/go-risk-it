@@ -320,4 +320,7 @@ pyrightconfig.json
 .DS_Store
 
 # Claude Code
-CLAUDE.mdperf-test/vendor/
+CLAUDE.md
+.claude/worktrees/
+perf-test/vendor/
+perf-test/loadtest

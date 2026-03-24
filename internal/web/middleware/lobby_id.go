@@ -18,7 +18,7 @@ type LobbyMiddlewareImpl struct {
 
 var _ LobbyMiddleware = (*LobbyMiddlewareImpl)(nil)
 
-func NewLobbyMiddleware(log *zap.SugaredLogger) LobbyMiddleware {
+func NewLobbyMiddleware(log *zap.SugaredLogger) *LobbyMiddlewareImpl {
 	return &LobbyMiddlewareImpl{log: log}
 }
 

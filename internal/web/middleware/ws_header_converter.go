@@ -19,7 +19,7 @@ type WebsocketHeaderConversionMiddlewareImpl struct {
 
 var _ WebsocketHeaderConversionMiddleware = (*WebsocketHeaderConversionMiddlewareImpl)(nil)
 
-func NewWebsocketAuthMiddleware(log *zap.SugaredLogger) WebsocketHeaderConversionMiddleware {
+func NewWebsocketAuthMiddleware(log *zap.SugaredLogger) *WebsocketHeaderConversionMiddlewareImpl {
 	return &WebsocketHeaderConversionMiddlewareImpl{
 		log: log,
 	}
