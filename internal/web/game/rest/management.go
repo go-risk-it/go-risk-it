@@ -13,33 +13,21 @@ import (
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 )
 
-type ManagementHandlerImpl struct {
+func NewManagementHandler(
+	gameController *controller.GameController,
+) *route.Route {
+	h := &managementHandler{
+		gameController: gameController,
+	}
+
+	return route.New("/api/v1/games/summary", true, middleware.HandleErrors(h.handle))
+}
+
+type managementHandler struct {
 	gameController *controller.GameController
 }
 
-var _ route.Route = (*ManagementHandlerImpl)(nil)
-
-func NewManagementHandler(
-	gameController *controller.GameController,
-) *ManagementHandlerImpl {
-	return &ManagementHandlerImpl{
-		gameController: gameController,
-	}
-}
-
-func (h *ManagementHandlerImpl) Pattern() string {
-	return "/api/v1/games/summary"
-}
-
-func (h *ManagementHandlerImpl) RequiresAuth() bool {
-	return true
-}
-
-func (h *ManagementHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	middleware.HandleErrors(h.handle).ServeHTTP(writer, req)
-}
-
-func (h *ManagementHandlerImpl) handle(writer http.ResponseWriter, req *http.Request) error {
+func (h *managementHandler) handle(writer http.ResponseWriter, req *http.Request) error {
 	userContext, ok := req.Context().(ctx.UserContext)
 	if !ok {
 		return errors.New("invalid user context")

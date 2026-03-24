@@ -13,33 +13,21 @@ import (
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 )
 
-type LobbiesHandlerImpl struct {
+func NewLobbiesHandler(
+	managementController *controller.ManagementController,
+) *route.Route {
+	h := &lobbiesHandler{
+		managementController: managementController,
+	}
+
+	return route.New("/api/v1/lobbies/summary", true, middleware.HandleErrors(h.handle))
+}
+
+type lobbiesHandler struct {
 	managementController *controller.ManagementController
 }
 
-var _ route.Route = (*LobbiesHandlerImpl)(nil)
-
-func NewLobbiesHandler(
-	managementController *controller.ManagementController,
-) *LobbiesHandlerImpl {
-	return &LobbiesHandlerImpl{
-		managementController: managementController,
-	}
-}
-
-func (h *LobbiesHandlerImpl) Pattern() string {
-	return "/api/v1/lobbies/summary"
-}
-
-func (h *LobbiesHandlerImpl) RequiresAuth() bool {
-	return true
-}
-
-func (h *LobbiesHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	middleware.HandleErrors(h.handle).ServeHTTP(writer, req)
-}
-
-func (h *LobbiesHandlerImpl) handle(writer http.ResponseWriter, req *http.Request) error {
+func (h *lobbiesHandler) handle(writer http.ResponseWriter, req *http.Request) error {
 	userContext, ok := req.Context().(ctx.UserContext)
 	if !ok {
 		return errors.New("invalid user context")

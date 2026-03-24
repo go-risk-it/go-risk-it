@@ -15,7 +15,7 @@ import (
 
 func buildDomainContext[T ctx.UserContext](
 	log *zap.SugaredLogger,
-	routeToWrap route.Route,
+	routeToWrap *route.Route,
 	domain string,
 	contextFunc func(ctx ctx.UserContext, ID int64) T,
 ) http.HandlerFunc {

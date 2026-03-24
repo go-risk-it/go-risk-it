@@ -72,7 +72,7 @@ func TestOTelMiddleware_ErrorMetrics_400_ValidationError(t *testing.T) {
 	m, reader := setupOTelTest(t)
 	otelMiddleware := middleware.NewOTelMiddleware(m)
 
-	inner := route.NewRoute("/test", false, http.HandlerFunc(
+	inner := route.New("/test", false, http.HandlerFunc(
 		func(writer http.ResponseWriter, _ *http.Request) {
 			writer.WriteHeader(http.StatusBadRequest)
 		}))
@@ -99,7 +99,7 @@ func TestOTelMiddleware_ErrorMetrics_500_InternalError(t *testing.T) {
 	m, reader := setupOTelTest(t)
 	otelMiddleware := middleware.NewOTelMiddleware(m)
 
-	inner := route.NewRoute("/test", false, http.HandlerFunc(
+	inner := route.New("/test", false, http.HandlerFunc(
 		func(writer http.ResponseWriter, _ *http.Request) {
 			writer.WriteHeader(http.StatusInternalServerError)
 		}))
@@ -126,7 +126,7 @@ func TestOTelMiddleware_ErrorMetrics_200_NoErrorCounted(t *testing.T) {
 	m, reader := setupOTelTest(t)
 	otelMiddleware := middleware.NewOTelMiddleware(m)
 
-	inner := route.NewRoute("/test", false, http.HandlerFunc(
+	inner := route.New("/test", false, http.HandlerFunc(
 		func(writer http.ResponseWriter, _ *http.Request) {
 			writer.WriteHeader(http.StatusOK)
 		}))
@@ -167,7 +167,7 @@ func TestOTelMiddleware_ErrorMetrics_AllCategories(t *testing.T) {
 			m, reader := setupOTelTest(t)
 			otelMiddleware := middleware.NewOTelMiddleware(m)
 
-			inner := route.NewRoute("/games", false, http.HandlerFunc(
+			inner := route.New("/games", false, http.HandlerFunc(
 				func(writer http.ResponseWriter, _ *http.Request) {
 					writer.WriteHeader(test.status)
 				}))

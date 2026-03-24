@@ -18,8 +18,8 @@ func NewLogMiddleware(log *zap.SugaredLogger) *LogMiddleware {
 	}
 }
 
-func (m *LogMiddleware) Wrap(routeToWrap route.Route) route.Route {
-	return route.NewRoute(
+func (m *LogMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
+	return route.New(
 		routeToWrap.Pattern(),
 		routeToWrap.RequiresAuth(),
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {

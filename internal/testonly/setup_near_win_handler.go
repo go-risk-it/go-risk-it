@@ -13,36 +13,24 @@ type SetupNearWinRequest struct {
 	GameID int64 `json:"gameId"`
 }
 
-type SetupNearWinHandler interface {
-	route.Route
+func NewSetupNearWinHandler(
+	log *zap.SugaredLogger,
+	testOnlyController Controller,
+) *route.Route {
+	h := &setupNearWinHandler{
+		log:                log,
+		testOnlyController: testOnlyController,
+	}
+
+	return route.New("/api/v1/setup-near-win", true, h)
 }
 
-type SetupNearWinHandlerImpl struct {
+type setupNearWinHandler struct {
 	log                *zap.SugaredLogger
 	testOnlyController Controller
 }
 
-var _ SetupNearWinHandler = (*SetupNearWinHandlerImpl)(nil)
-
-func NewSetupNearWinHandler(
-	log *zap.SugaredLogger,
-	testOnlyController Controller,
-) *SetupNearWinHandlerImpl {
-	return &SetupNearWinHandlerImpl{
-		log:                log,
-		testOnlyController: testOnlyController,
-	}
-}
-
-func (h *SetupNearWinHandlerImpl) Pattern() string {
-	return "/api/v1/setup-near-win"
-}
-
-func (h *SetupNearWinHandlerImpl) RequiresAuth() bool {
-	return true
-}
-
-func (h *SetupNearWinHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
+func (h *setupNearWinHandler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	body, err := restutils.DecodeRequest[SetupNearWinRequest](writer, req)
 	if err != nil {
 		_ = restutils.WriteError(writer, err)

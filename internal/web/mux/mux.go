@@ -11,7 +11,7 @@ import (
 )
 
 func NewServeMux(
-	routes []route.Route,
+	routes []*route.Route,
 	authMiddleware *middleware.AuthMiddleware,
 	corsMiddleware *middleware.CorsMiddleware,
 	gameMiddleware *middleware.GameMiddleware,

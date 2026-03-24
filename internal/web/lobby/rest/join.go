@@ -12,33 +12,21 @@ import (
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 )
 
-type JoinHandlerImpl struct {
+func NewJoinHandler(
+	managementController *controller.ManagementController,
+) *route.Route {
+	h := &joinHandler{
+		managementController: managementController,
+	}
+
+	return route.New("/api/v1/lobbies/{id}/join", true, middleware.HandleErrors(h.handle))
+}
+
+type joinHandler struct {
 	managementController *controller.ManagementController
 }
 
-var _ route.Route = (*JoinHandlerImpl)(nil)
-
-func NewJoinHandler(
-	managementController *controller.ManagementController,
-) *JoinHandlerImpl {
-	return &JoinHandlerImpl{
-		managementController: managementController,
-	}
-}
-
-func (h *JoinHandlerImpl) Pattern() string {
-	return "/api/v1/lobbies/{id}/join"
-}
-
-func (h *JoinHandlerImpl) RequiresAuth() bool {
-	return true
-}
-
-func (h *JoinHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	middleware.HandleErrors(h.handle).ServeHTTP(writer, req)
-}
-
-func (h *JoinHandlerImpl) handle(writer http.ResponseWriter, req *http.Request) error {
+func (h *joinHandler) handle(writer http.ResponseWriter, req *http.Request) error {
 	joinLobbyRequest, err := restutils.DecodeRequest[request.JoinLobby](writer, req)
 	if err != nil {
 		return err

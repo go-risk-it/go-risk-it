@@ -16,12 +16,12 @@ func NewGameMiddleware(log *zap.SugaredLogger) *GameMiddleware {
 	return &GameMiddleware{log: log}
 }
 
-func (g *GameMiddleware) Wrap(routeToWrap route.Route) route.Route {
+func (g *GameMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
 	if !strings.HasPrefix(routeToWrap.Pattern(), "/api/v1/games/{id}") {
 		return routeToWrap
 	}
 
-	return route.NewRoute(
+	return route.New(
 		routeToWrap.Pattern(),
 		routeToWrap.RequiresAuth(),
 		buildDomainContext[ctx.GameContext](

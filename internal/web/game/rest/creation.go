@@ -15,31 +15,19 @@ import (
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 )
 
-type HandlerImpl struct {
+func NewCreationHandler(gameController *controller.GameController) *route.Route {
+	h := &creationHandler{
+		gameController: gameController,
+	}
+
+	return route.New("/api/v1/games", true, middleware.HandleErrors(h.handle))
+}
+
+type creationHandler struct {
 	gameController *controller.GameController
 }
 
-var _ route.Route = (*HandlerImpl)(nil)
-
-func NewCreationHandler(gameController *controller.GameController) *HandlerImpl {
-	return &HandlerImpl{
-		gameController: gameController,
-	}
-}
-
-func (h *HandlerImpl) Pattern() string {
-	return "/api/v1/games"
-}
-
-func (h *HandlerImpl) RequiresAuth() bool {
-	return true
-}
-
-func (h *HandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	middleware.HandleErrors(h.handle).ServeHTTP(writer, req)
-}
-
-func (h *HandlerImpl) handle(writer http.ResponseWriter, req *http.Request) error {
+func (h *creationHandler) handle(writer http.ResponseWriter, req *http.Request) error {
 	createGameRequest, err := restutils.DecodeRequest[request.CreateGame](writer, req)
 	if err != nil {
 		return err

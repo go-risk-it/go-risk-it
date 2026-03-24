@@ -12,33 +12,23 @@ import (
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 )
 
-type AdvancementHandlerImpl struct {
+func NewAdvancementHandler(
+	advancementController *controller.AdvancementController,
+) *route.Route {
+	h := &advancementHandler{
+		advancementController: advancementController,
+	}
+
+	return route.New(
+		"/api/v1/games/{id}/advancements", true, middleware.HandleErrors(h.handle),
+	)
+}
+
+type advancementHandler struct {
 	advancementController *controller.AdvancementController
 }
 
-var _ route.Route = (*AdvancementHandlerImpl)(nil)
-
-func NewAdvancementHandler(
-	advancementController *controller.AdvancementController,
-) *AdvancementHandlerImpl {
-	return &AdvancementHandlerImpl{
-		advancementController: advancementController,
-	}
-}
-
-func (h *AdvancementHandlerImpl) Pattern() string {
-	return "/api/v1/games/{id}/advancements"
-}
-
-func (h *AdvancementHandlerImpl) RequiresAuth() bool {
-	return true
-}
-
-func (h *AdvancementHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	middleware.HandleErrors(h.handle).ServeHTTP(writer, req)
-}
-
-func (h *AdvancementHandlerImpl) handle(
+func (h *advancementHandler) handle(
 	writer http.ResponseWriter,
 	req *http.Request,
 ) error {

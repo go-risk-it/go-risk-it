@@ -16,12 +16,12 @@ func NewLobbyMiddleware(log *zap.SugaredLogger) *LobbyMiddleware {
 	return &LobbyMiddleware{log: log}
 }
 
-func (g *LobbyMiddleware) Wrap(routeToWrap route.Route) route.Route {
+func (g *LobbyMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
 	if !strings.HasPrefix(routeToWrap.Pattern(), "/api/v1/lobbies/{id}") {
 		return routeToWrap
 	}
 
-	return route.NewRoute(
+	return route.New(
 		routeToWrap.Pattern(),
 		routeToWrap.RequiresAuth(),
 		buildDomainContext[ctx.LobbyContext](

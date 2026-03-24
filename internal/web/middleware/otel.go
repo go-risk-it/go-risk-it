@@ -39,10 +39,10 @@ func (r *statusRecorder) WriteHeader(code int) {
 	r.ResponseWriter.WriteHeader(code)
 }
 
-func (m *OTelMiddleware) Wrap(routeToWrap route.Route) route.Route {
+func (m *OTelMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
 	isWebSocket := routeToWrap.Pattern() == "/ws"
 
-	return route.NewRoute(
+	return route.New(
 		routeToWrap.Pattern(),
 		routeToWrap.RequiresAuth(),
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {

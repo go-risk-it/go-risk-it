@@ -9,36 +9,24 @@ import (
 	"go.uber.org/zap"
 )
 
-type ResetHandler interface {
-	route.Route
+func NewResetHandler(
+	log *zap.SugaredLogger,
+	testOnlyController Controller,
+) *route.Route {
+	h := &resetHandler{
+		log:                log,
+		testOnlyController: testOnlyController,
+	}
+
+	return route.New("/api/v1/reset", true, h)
 }
 
-type ResetHandlerImpl struct {
+type resetHandler struct {
 	log                *zap.SugaredLogger
 	testOnlyController Controller
 }
 
-var _ ResetHandler = (*ResetHandlerImpl)(nil)
-
-func NewResetHandler(
-	log *zap.SugaredLogger,
-	testOnlyController Controller,
-) *ResetHandlerImpl {
-	return &ResetHandlerImpl{
-		log:                log,
-		testOnlyController: testOnlyController,
-	}
-}
-
-func (h *ResetHandlerImpl) Pattern() string {
-	return "/api/v1/reset"
-}
-
-func (h *ResetHandlerImpl) RequiresAuth() bool {
-	return true
-}
-
-func (h *ResetHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
+func (h *resetHandler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	err := h.testOnlyController.ResetState(ctx.WithLog(req.Context(), h.log))
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)

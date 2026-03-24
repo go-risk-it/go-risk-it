@@ -15,33 +15,21 @@ import (
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 )
 
-type CreationHandlerImpl struct {
+func NewCreationHandler(
+	creationController *controller.CreationController,
+) *route.Route {
+	h := &creationHandler{
+		creationController: creationController,
+	}
+
+	return route.New("/api/v1/lobbies", true, middleware.HandleErrors(h.handle))
+}
+
+type creationHandler struct {
 	creationController *controller.CreationController
 }
 
-var _ route.Route = (*CreationHandlerImpl)(nil)
-
-func NewCreationHandler(
-	creationController *controller.CreationController,
-) *CreationHandlerImpl {
-	return &CreationHandlerImpl{
-		creationController: creationController,
-	}
-}
-
-func (h *CreationHandlerImpl) Pattern() string {
-	return "/api/v1/lobbies"
-}
-
-func (h *CreationHandlerImpl) RequiresAuth() bool {
-	return true
-}
-
-func (h *CreationHandlerImpl) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	middleware.HandleErrors(h.handle).ServeHTTP(writer, req)
-}
-
-func (h *CreationHandlerImpl) handle(writer http.ResponseWriter, req *http.Request) error {
+func (h *creationHandler) handle(writer http.ResponseWriter, req *http.Request) error {
 	createLobbyRequest, err := restutils.DecodeRequest[request.CreateLobby](writer, req)
 	if err != nil {
 		return err

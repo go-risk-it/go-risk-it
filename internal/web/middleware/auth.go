@@ -22,12 +22,12 @@ func NewAuthMiddleware(jwtConfig config.JwtConfig) *AuthMiddleware {
 	return &AuthMiddleware{jwtConfig: jwtConfig}
 }
 
-func (m *AuthMiddleware) Wrap(routeToWrap route.Route) route.Route {
+func (m *AuthMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
 	if !routeToWrap.RequiresAuth() {
 		return routeToWrap
 	}
 
-	return route.NewRoute(
+	return route.New(
 		routeToWrap.Pattern(),
 		routeToWrap.RequiresAuth(),
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
