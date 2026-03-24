@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -77,6 +78,35 @@ type fakeWSForProtocol struct {
 
 func newFakeWS() *fakeWSForProtocol {
 	v := gamestate.NewView()
+
+	return &fakeWSForProtocol{view: v, done: make(chan struct{})}
+}
+
+// newFakeWSWithState creates a fakeWS pre-populated with game state.
+func newFakeWSWithState(snap gamestate.ViewSnapshot) *fakeWSForProtocol {
+	v := gamestate.NewView()
+	// Apply state by populating the view fields directly via Apply.
+	// We use a simpler approach: create a view that has the state already set.
+	// Since View is mutex-protected, we apply messages to set state.
+	if snap.GameState != nil {
+		data, _ := json.Marshal(snap.GameState)
+		_ = v.Apply(gamestate.WSMessage{Type: "gameState", Payload: data})
+	}
+
+	if snap.PlayersState != nil {
+		data, _ := json.Marshal(snap.PlayersState)
+		_ = v.Apply(gamestate.WSMessage{Type: "playerState", Payload: data})
+	}
+
+	if snap.BoardState != nil {
+		data, _ := json.Marshal(snap.BoardState)
+		_ = v.Apply(gamestate.WSMessage{Type: "boardState", Payload: data})
+	}
+
+	if snap.CardState != nil {
+		data, _ := json.Marshal(snap.CardState)
+		_ = v.Apply(gamestate.WSMessage{Type: "cardState", Payload: data})
+	}
 
 	return &fakeWSForProtocol{view: v, done: make(chan struct{})}
 }
