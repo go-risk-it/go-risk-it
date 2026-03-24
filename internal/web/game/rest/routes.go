@@ -37,7 +37,7 @@ func ProvideRoutes(
 			moveHandler[gameRequest.AttackMove](moveCtrl.PerformAttackMove),
 		),
 		route.Game(
-			"POST /api/v1/games/{id}/moves/conquests",
+			"POST /api/v1/games/{id}/moves/conquers",
 			moveHandler[gameRequest.ConquerMove](moveCtrl.PerformConquerMove),
 		),
 		route.Game(
