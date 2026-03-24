@@ -35,6 +35,13 @@ PR convention: `hardening(X.Y): description`
 - [x] **3.4** Game loop simulation + TestGameToCompletion
 - [x] **3.5** CI workflow
 
+## Phase 4: Linter Ratchet
+
+- [x] **4.0** Fix Makefile golangci-lint version (v1 → v2)
+- [x] **4.1** Enable containedctx + contextcheck
+- [x] **4.2** Enable ireturn (allow list config)
+- [x] **4.3** Enable wrapcheck (ignore config)
+
 ---
 
 ## ADR Log
