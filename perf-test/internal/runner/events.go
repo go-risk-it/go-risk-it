@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/gamestate"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/player"
 )
 
@@ -39,7 +40,7 @@ func (StateReceivedEvent) Type() EventType { return EventStateReceived }
 type MoveDecidedEvent struct {
 	Action *player.Action
 	UserID string
-	Phase  string
+	Phase  metrics.Phase
 }
 
 func (MoveDecidedEvent) Type() EventType { return EventMoveDecided }
@@ -72,7 +73,7 @@ type MoveFailedEvent struct {
 	Action  *player.Action
 	Err     error
 	Fatal   bool
-	ErrType string
+	ErrType metrics.ErrorType
 }
 
 func (MoveFailedEvent) Type() EventType { return EventMoveFailed }

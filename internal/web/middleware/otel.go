@@ -38,45 +38,43 @@ func (r *statusRecorder) WriteHeader(code int) {
 }
 
 func (m *OTelMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
-	isWebSocket := routeToWrap.Pattern() == "/ws"
+	isWebSocket := routeToWrap.IsWebSocket()
 
-	return route.New(
-		routeToWrap.Pattern(),
-		routeToWrap.RequiresAuth(),
-		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-			spanName := fmt.Sprintf("%s %s", request.Method, routeToWrap.Pattern())
+	handler := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		spanName := fmt.Sprintf("%s %s", request.Method, routeToWrap.Pattern())
 
-			_, span := m.tracer.Start(request.Context(), spanName,
-				trace.WithAttributes(
-					attribute.String("http.method", request.Method),
-					attribute.String("http.route", routeToWrap.Pattern()),
-				),
-			)
-			defer span.End()
+		_, span := m.tracer.Start(request.Context(), spanName,
+			trace.WithAttributes(
+				attribute.String("http.method", request.Method),
+				attribute.String("http.route", routeToWrap.Pattern()),
+			),
+		)
+		defer span.End()
 
-			traceContext := ctx.WithSpan(request.Context(), span)
+		traceContext := ctx.WithSpan(request.Context(), span)
 
-			// WebSocket routes need the raw response writer for nbio's upgrade.
-			// Skip status recording and HTTP metrics for WS connections.
-			if isWebSocket {
-				routeToWrap.ServeHTTP(writer, request.WithContext(traceContext))
+		// WebSocket routes need the raw response writer for nbio's upgrade.
+		// Skip status recording and HTTP metrics for WS connections.
+		if isWebSocket {
+			routeToWrap.ServeHTTP(writer, request.WithContext(traceContext))
 
-				return
-			}
+			return
+		}
 
-			recorder := &statusRecorder{ResponseWriter: writer, statusCode: http.StatusOK}
-			start := time.Now()
+		recorder := &statusRecorder{ResponseWriter: writer, statusCode: http.StatusOK}
+		start := time.Now()
 
-			routeToWrap.ServeHTTP(
-				recorder,
-				request.WithContext(traceContext),
-			)
+		routeToWrap.ServeHTTP(
+			recorder,
+			request.WithContext(traceContext),
+		)
 
-			duration := time.Since(start).Seconds()
+		duration := time.Since(start).Seconds()
 
-			m.recordHTTPMetrics(request, routeToWrap.Pattern(), recorder.statusCode, duration)
-		}),
-	)
+		m.recordHTTPMetrics(request, routeToWrap.Pattern(), recorder.statusCode, duration)
+	})
+
+	return routeToWrap.Wrap(handler)
 }
 
 func (m *OTelMiddleware) recordHTTPMetrics(

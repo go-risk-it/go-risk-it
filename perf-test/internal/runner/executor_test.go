@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/client"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/player"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -91,7 +92,7 @@ func TestExecutor_Success_EmitsMoveSucceeded(t *testing.T) {
 			Deploy: &player.DeployAction{RegionID: "r1", CurrentTroops: 1, DesiredTroops: 3},
 		},
 		UserID: "u0",
-		Phase:  "deploy",
+		Phase:  metrics.PhaseDeploy,
 	})
 
 	succeeded := bus.EmittedOfType(EventMoveSucceeded)
@@ -114,7 +115,7 @@ func TestExecutor_Conflict_EmitsMoveConflict(t *testing.T) {
 	bus.Emit(MoveDecidedEvent{
 		Action: &player.Action{Type: player.ActionDeploy, Deploy: &player.DeployAction{}},
 		UserID: "u0",
-		Phase:  "deploy",
+		Phase:  metrics.PhaseDeploy,
 	})
 
 	conflicts := bus.EmittedOfType(EventMoveConflict)
@@ -133,12 +134,12 @@ func TestExecutor_StaleState_EmitsMoveFailed(t *testing.T) {
 	bus.Emit(MoveDecidedEvent{
 		Action: &player.Action{Type: player.ActionDeploy, Deploy: &player.DeployAction{}},
 		UserID: "u0",
-		Phase:  "deploy",
+		Phase:  metrics.PhaseDeploy,
 	})
 
 	failures := bus.EmittedOfType(EventMoveFailed)
 	require.Len(t, failures, 1)
-	assert.Equal(t, "stale_state", failures[0].(MoveFailedEvent).ErrType)
+	assert.Equal(t, metrics.ErrorTypeStaleState, failures[0].(MoveFailedEvent).ErrType)
 }
 
 func TestExecutor_Transient_EmitsMoveFailed(t *testing.T) {
@@ -154,12 +155,12 @@ func TestExecutor_Transient_EmitsMoveFailed(t *testing.T) {
 	bus.Emit(MoveDecidedEvent{
 		Action: &player.Action{Type: player.ActionDeploy, Deploy: &player.DeployAction{}},
 		UserID: "u0",
-		Phase:  "deploy",
+		Phase:  metrics.PhaseDeploy,
 	})
 
 	failures := bus.EmittedOfType(EventMoveFailed)
 	require.Len(t, failures, 1)
-	assert.Equal(t, "transient", failures[0].(MoveFailedEvent).ErrType)
+	assert.Equal(t, metrics.ErrorTypeTransient, failures[0].(MoveFailedEvent).ErrType)
 }
 
 func TestExecutor_GenericError_EmitsMoveFailed(t *testing.T) {
@@ -173,12 +174,12 @@ func TestExecutor_GenericError_EmitsMoveFailed(t *testing.T) {
 	bus.Emit(MoveDecidedEvent{
 		Action: &player.Action{Type: player.ActionDeploy, Deploy: &player.DeployAction{}},
 		UserID: "u0",
-		Phase:  "deploy",
+		Phase:  metrics.PhaseDeploy,
 	})
 
 	failures := bus.EmittedOfType(EventMoveFailed)
 	require.Len(t, failures, 1)
-	assert.Equal(t, "execution", failures[0].(MoveFailedEvent).ErrType)
+	assert.Equal(t, metrics.ErrorTypeExecution, failures[0].(MoveFailedEvent).ErrType)
 }
 
 func TestExecutor_AllActionTypes(t *testing.T) {
@@ -233,7 +234,7 @@ func TestExecutor_AllActionTypes(t *testing.T) {
 			bus := NewTestBus()
 			h.Register(bus)
 
-			bus.Emit(MoveDecidedEvent{Action: tc.action, UserID: "u0", Phase: "deploy"})
+			bus.Emit(MoveDecidedEvent{Action: tc.action, UserID: "u0", Phase: metrics.PhaseDeploy})
 
 			assert.Equal(t, tc.want, rest.calledMethod)
 			assert.Equal(t, int64(42), rest.calledGameID)

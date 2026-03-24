@@ -203,7 +203,13 @@ func (r *Runner) buildProtocolHandler(gameCtx *GameContext) *ProtocolHandler {
 				}).DialContext,
 			}
 
-			return client.NewREST(baseURL, token, transport, collector)
+			return client.NewREST(
+				baseURL,
+				token,
+				transport,
+				collector,
+				client.DefaultRetryConfig(),
+			)
 		},
 		newWS: func(
 			wsURL string, gameID int64, token string, collector *metrics.Collector,

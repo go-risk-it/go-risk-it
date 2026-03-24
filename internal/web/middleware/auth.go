@@ -28,13 +28,16 @@ func (m *AuthMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
 		return routeToWrap
 	}
 
-	return route.New(
-		routeToWrap.Pattern(),
-		routeToWrap.RequiresAuth(),
-		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+	return routeToWrap.Wrap(http.HandlerFunc(
+		func(writer http.ResponseWriter, request *http.Request) {
+			route.ExtractWSToken(request)
+
 			traceContext, ok := request.Context().(ctx.TraceContext)
 			if !ok {
-				_ = restutils.WriteError(writer, errors.New("invalid trace context"))
+				_ = restutils.WriteError(
+					writer,
+					errors.New("invalid trace context"),
+				)
 
 				return
 			}
@@ -45,7 +48,10 @@ func (m *AuthMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
 			if err != nil {
 				_ = restutils.WriteError(
 					writer,
-					domainerrors.WrapUnauthorizedError(err, "authentication failed"),
+					domainerrors.WrapUnauthorizedError(
+						err,
+						"authentication failed",
+					),
 				)
 
 				return
@@ -59,7 +65,8 @@ func (m *AuthMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
 				writer,
 				request.WithContext(userContext),
 			)
-		}))
+		},
+	))
 }
 
 func (m *AuthMiddleware) verifyJWT(request *http.Request) (string, error) {

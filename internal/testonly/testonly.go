@@ -15,7 +15,16 @@ var Module = fx.Options(
 			NewService,
 			fx.As(new(Service)),
 		),
-		route.AsRoute(NewResetHandler),
-		route.AsRoute(NewSetupNearWinHandler),
+		fx.Annotate(
+			ProvideRoutes,
+			fx.ResultTags(`group:"routes,flatten"`),
+		),
 	),
 )
+
+func ProvideRoutes(ctrl Controller) []*route.Route {
+	return []*route.Route{
+		NewResetHandler(ctrl),
+		NewSetupNearWinHandler(ctrl),
+	}
+}

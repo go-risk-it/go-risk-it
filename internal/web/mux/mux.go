@@ -14,11 +14,8 @@ func NewServeMux(
 	routes []*route.Route,
 	authMiddleware *middleware.AuthMiddleware,
 	corsMiddleware *middleware.CorsMiddleware,
-	gameMiddleware *middleware.GameMiddleware,
-	lobbyMiddleware *middleware.LobbyMiddleware,
 	logMiddleware *middleware.LogMiddleware,
 	otelMiddleware *middleware.OTelMiddleware,
-	websocketAuthMiddleware *middleware.WebsocketHeaderConversionMiddleware,
 ) http.Handler {
 	mux := http.NewServeMux()
 	routeNames := make([]string, 0, len(routes))
@@ -28,16 +25,8 @@ func NewServeMux(
 			route.Pattern(),
 			logMiddleware.Wrap(
 				otelMiddleware.Wrap(
-					corsMiddleware.Wrap(
-						websocketAuthMiddleware.Wrap(
-							authMiddleware.Wrap(
-								lobbyMiddleware.Wrap(
-									gameMiddleware.Wrap(
-										route,
-									),
-								),
-							),
-						),
+					authMiddleware.Wrap(
+						route,
 					),
 				),
 			),
@@ -48,7 +37,9 @@ func NewServeMux(
 
 	slog.Info("Registered routes", "routes", routeNames)
 
-	return otelhttp.NewHandler(mux, "/")
+	// CORS wraps the entire mux so OPTIONS preflight requests are handled
+	// before Go's ServeMux does method matching (which would return 405).
+	return corsMiddleware.WrapHandler(otelhttp.NewHandler(mux, "/"))
 }
 
 var Module = fx.Options(

@@ -19,4 +19,16 @@ const (
 	// IndexOffsetMultiplier determines the offset between game indices across steps.
 	// Multiplied by targetGames to leave room for replacement games within a step.
 	IndexOffsetMultiplier = 10
+
+	// DefaultAdaptiveIncrease is the default games to add per successful step.
+	DefaultAdaptiveIncrease = 5
+
+	// DefaultAdaptiveMaxSteps is the default upper bound on adaptive steps.
+	DefaultAdaptiveMaxSteps = 20
+
+	// DefaultAdaptiveMaxGames is the default hard ceiling on concurrent games.
+	DefaultAdaptiveMaxGames = 500
+
+	// DefaultAdaptiveInitialProbe is the starting concurrency when no session ceiling exists.
+	DefaultAdaptiveInitialProbe = 10
 )

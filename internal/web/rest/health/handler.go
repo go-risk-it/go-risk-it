@@ -2,6 +2,7 @@ package health
 
 import (
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
@@ -32,5 +33,9 @@ func New(databaseConfig config.DatabaseConfig) (*route.Route, error) {
 		return nil, fmt.Errorf("failed to create health handler: %w", err)
 	}
 
-	return route.New("/status", false, healthCheck.Handler()), nil
+	return route.Public("GET /status", func(w http.ResponseWriter, r *http.Request) error {
+		healthCheck.Handler().ServeHTTP(w, r)
+
+		return nil
+	}), nil
 }

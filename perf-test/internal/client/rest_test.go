@@ -14,7 +14,7 @@ import (
 )
 
 func newTestREST(baseURL string, collector *metrics.Collector) *REST {
-	return NewREST(baseURL, "test-token", nil, collector)
+	return NewREST(baseURL, "test-token", nil, collector, DefaultRetryConfig())
 }
 
 func TestDo_Success(t *testing.T) {
@@ -106,8 +106,8 @@ func TestDo_RetryExhaustion(t *testing.T) {
 		t.Fatalf("expected 503, got %d", resp.StatusCode)
 	}
 
-	if got := calls.Load(); got != int64(maxRetries) {
-		t.Fatalf("expected %d calls, got %d", maxRetries, got)
+	if got := calls.Load(); got != int64(DefaultRetryConfig().MaxRetries) {
+		t.Fatalf("expected %d calls, got %d", DefaultRetryConfig().MaxRetries, got)
 	}
 }
 

@@ -24,12 +24,13 @@ type Config struct {
 // Run executes NumGames concurrently with ramp-up, collecting metrics.
 // It returns results for all games and handles graceful shutdown on SIGINT/SIGTERM.
 func Run(
+	ctx context.Context,
 	cfg Config,
 	runGame RunFunc,
 	collector *metrics.Collector,
 	annotator *annotations.Annotator,
 ) []GameResult {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	// Graceful shutdown on signal.

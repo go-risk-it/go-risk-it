@@ -26,6 +26,7 @@ type Tracker struct {
 	mu         sync.RWMutex
 	thresholds Thresholds
 	games      map[int]*gameState
+	now        func() time.Time // clock function for testing
 
 	// Running stats for mean move interval computation.
 	totalMoveInterval time.Duration
@@ -40,6 +41,7 @@ func NewTracker(thresholds Thresholds) *Tracker {
 	return &Tracker{
 		thresholds: thresholds,
 		games:      make(map[int]*gameState),
+		now:        time.Now,
 	}
 }
 
@@ -48,7 +50,7 @@ func (t *Tracker) RegisterGame(gameIndex int) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	now := time.Now()
+	now := t.now()
 	t.games[gameIndex] = &gameState{
 		startedAt:  now,
 		lastMoveAt: now,
@@ -65,7 +67,7 @@ func (t *Tracker) RecordMove(gameIndex int, phase string) {
 		return
 	}
 
-	now := time.Now()
+	now := t.now()
 	interval := now.Sub(gs.lastMoveAt)
 	gs.lastMoveAt = now
 	gs.moveCount++
@@ -95,7 +97,7 @@ func (t *Tracker) CompleteGame(gameIndex int) {
 		return
 	}
 
-	duration := time.Since(gs.startedAt)
+	duration := t.now().Sub(gs.startedAt)
 	t.completedDurations = append(t.completedDurations, duration)
 	delete(t.games, gameIndex)
 }
@@ -105,7 +107,7 @@ func (t *Tracker) Snapshot() Distribution {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	now := time.Now()
+	now := t.now()
 
 	meanInterval := t.meanMoveInterval()
 	zombieAge := t.zombieThreshold()

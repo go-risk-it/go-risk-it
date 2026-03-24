@@ -29,6 +29,40 @@ func setup(t *testing.T) (*middleware.AuthMiddleware, *httptest.ResponseRecorder
 	return middleware, responseWriter
 }
 
+func TestAuthMiddleware_Wrap_WSSubprotocolToken(t *testing.T) {
+	t.Parallel()
+
+	authMiddleware, responseWriter := setup(t)
+
+	// Valid token (same as "Should succeed when token is valid" case)
+	validToken := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjQxMDI0NDQ4MDAsImlhdCI6MTUxNjIzOTAyMiwibmFtZSI6IkpvaG4gRG9lIiwic3ViIjoiMTIzNDU2Nzg5MCJ9.AEzCmT-_46lhDrK0X-eUkUO8SDuxBvVcoR8STh9NvaE"
+
+	wrappedHandler := authMiddleware.Wrap(
+		route.NewForTest(
+			"/",
+			true,
+			http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+				writer.WriteHeader(http.StatusOK)
+			})))
+
+	request, _ := http.NewRequestWithContext(
+		ctx.WithSpan(t.Context(), noop.Span{}),
+		http.MethodGet,
+		"/",
+		nil,
+	)
+
+	// Send token via WebSocket subprotocol header (NOT Authorization header)
+	request.Header.Set(
+		"Sec-WebSocket-Protocol",
+		"risk-it.websocket.auth.token, "+validToken,
+	)
+
+	wrappedHandler.ServeHTTP(responseWriter, request)
+
+	require.Equal(t, http.StatusOK, responseWriter.Code)
+}
+
 func TestAuthMiddleware_Wrap(t *testing.T) {
 	t.Parallel()
 
@@ -85,7 +119,7 @@ func TestAuthMiddleware_Wrap(t *testing.T) {
 			authMiddleware, responseWriter := setup(t)
 
 			wrappedHandler := authMiddleware.Wrap(
-				route.New(
+				route.NewForTest(
 					"/",
 					true,
 					http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {

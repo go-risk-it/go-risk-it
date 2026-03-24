@@ -53,19 +53,7 @@ func SnapshotToMetrics(snap *metrics.Snapshot, totalDurationSec float64) Metrics
 	}
 
 	// Copy error breakdown, omitting zero entries.
-	var errorBreakdown map[string]int64
-	if len(snap.ErrorBreakdown) > 0 {
-		errorBreakdown = make(map[string]int64, len(snap.ErrorBreakdown))
-		for cat, count := range snap.ErrorBreakdown {
-			if count > 0 {
-				errorBreakdown[cat] = count
-			}
-		}
-
-		if len(errorBreakdown) == 0 {
-			errorBreakdown = nil
-		}
-	}
+	errorBreakdown := copyNonZeroMap(snap.ErrorBreakdown)
 
 	// Copy phase flow, omitting zero entries.
 	phaseEntries := copyNonZeroMap(snap.PhaseEntries)

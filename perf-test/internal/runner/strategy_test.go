@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/gamestate"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/player"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -158,7 +159,7 @@ func TestStrategy_DecideMove_EmitsMoveDecided(t *testing.T) {
 	md := moves[0].(MoveDecidedEvent)
 	assert.Equal(t, action, md.Action)
 	assert.Equal(t, "u0", md.UserID)
-	assert.Equal(t, "deploy", md.Phase)
+	assert.Equal(t, metrics.Phase("deploy"), md.Phase)
 }
 
 func TestStrategy_DecideError_EmitsMoveFailed(t *testing.T) {
@@ -177,7 +178,7 @@ func TestStrategy_DecideError_EmitsMoveFailed(t *testing.T) {
 
 	mf := failures[0].(MoveFailedEvent)
 	assert.False(t, mf.Fatal)
-	assert.Equal(t, "strategy", mf.ErrType)
+	assert.Equal(t, metrics.ErrorTypeStrategy, mf.ErrType)
 }
 
 func TestStrategy_ContextCancelled_EmitsGameComplete(t *testing.T) {

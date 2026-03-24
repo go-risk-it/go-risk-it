@@ -49,7 +49,7 @@ func ConnectWS(
 	token string,
 	collector *metrics.Collector,
 ) (*WS, error) {
-	wsURL := fmt.Sprintf("%s/ws?gameID=%d", baseURL, gameID)
+	wsURL := fmt.Sprintf("%s/api/v1/games/%d/ws", baseURL, gameID)
 
 	header := http.Header{}
 	header.Set("Authorization", "Bearer "+token)

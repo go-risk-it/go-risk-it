@@ -1,4 +1,4 @@
-package middleware
+package route
 
 import (
 	"errors"
@@ -11,15 +11,10 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// ErrorHandlerFunc is an HTTP handler that returns an error instead of writing it directly.
-// When wrapped with HandleErrors, the error is mapped to an appropriate HTTP response.
-type ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request) error
-
-// HandleErrors wraps an ErrorHandlerFunc into a standard http.HandlerFunc.
+// WrapErrors wraps a PlainHandler into a standard http.HandlerFunc.
 // On error it: extracts the trace ID from the span context, records the error on the span,
 // sets the span status, and writes a JSON error response with the trace ID.
-// On nil error it is a no-op (the handler already wrote the response).
-func HandleErrors(handler ErrorHandlerFunc) http.HandlerFunc {
+func WrapErrors(handler PlainHandler) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		err := handler(writer, request)
 		if err == nil {
