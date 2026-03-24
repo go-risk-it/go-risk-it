@@ -12,7 +12,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region/assignment"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
-	"go.uber.org/zap"
 )
 
 func TestServiceImpl_CreateRegions(t *testing.T) {
@@ -27,7 +26,7 @@ func TestServiceImpl_CreateRegions(t *testing.T) {
 
 	// Set up test data
 	ctx := ctx2.WithUserID(
-		ctx2.WithSpan(ctx2.WithLog(t.Context(), zap.NewExample().Sugar()), noop.Span{}),
+		ctx2.WithSpan(t.Context(), noop.Span{}),
 		"francesco",
 	)
 
@@ -86,7 +85,7 @@ func TestServiceImpl_CreateRegions_NoPlayers(t *testing.T) {
 
 	// Set up test data
 	ctx := ctx2.WithUserID(
-		ctx2.WithSpan(ctx2.WithLog(t.Context(), zap.NewExample().Sugar()), noop.Span{}),
+		ctx2.WithSpan(t.Context(), noop.Span{}),
 		"francesco",
 	)
 
@@ -117,7 +116,7 @@ func TestServiceImpl_CreateRegions_PlayersNotInSameGame(t *testing.T) {
 
 	// Set up test data
 	ctx := ctx2.WithUserID(
-		ctx2.WithSpan(ctx2.WithLog(t.Context(), zap.NewExample().Sugar()), noop.Span{}),
+		ctx2.WithSpan(t.Context(), noop.Span{}),
 		"francesco",
 	)
 	players := []sqlc.GamePlayer{
@@ -150,7 +149,7 @@ func TestServiceImpl_CreateRegions_InsertRegionsError(t *testing.T) {
 
 	// Set up test data
 	ctx := ctx2.WithUserID(
-		ctx2.WithSpan(ctx2.WithLog(t.Context(), zap.NewExample().Sugar()), noop.Span{}),
+		ctx2.WithSpan(t.Context(), noop.Span{}),
 		"francesco",
 	)
 	players := []sqlc.GamePlayer{

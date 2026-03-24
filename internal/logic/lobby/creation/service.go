@@ -2,6 +2,7 @@ package creation
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	dbutil "github.com/go-risk-it/go-risk-it/internal/data/db"
@@ -50,14 +51,14 @@ func (s *ServiceImpl) CreateLobbyQ(
 	querier db.Querier,
 	ownerName string,
 ) (int64, error) {
-	ctx.Log().Infow("creating lobby")
+	slog.InfoContext(ctx, "creating lobby")
 
 	lobbyID, err := querier.CreateLobby(ctx)
 	if err != nil {
 		return -1, fmt.Errorf("failed to create lobby: %w", err)
 	}
 
-	ctx.Log().Infow("lobby created", "lobbyID", lobbyID)
+	slog.InfoContext(ctx, "lobby created", "lobbyID", lobbyID)
 
 	participantID, err := querier.InsertParticipant(ctx, sqlc.InsertParticipantParams{
 		LobbyID: lobbyID,
@@ -68,7 +69,7 @@ func (s *ServiceImpl) CreateLobbyQ(
 		return -1, fmt.Errorf("failed to insert participant: %w", err)
 	}
 
-	ctx.Log().Infow("participant inserted", "participantID", participantID)
+	slog.InfoContext(ctx, "participant inserted", "participantID", participantID)
 
 	if err := querier.UpdateLobbyOwner(ctx, sqlc.UpdateLobbyOwnerParams{
 		OwnerID: pgtype.Int8{
@@ -80,7 +81,7 @@ func (s *ServiceImpl) CreateLobbyQ(
 		return -1, fmt.Errorf("failed to update lobby owner: %w", err)
 	}
 
-	ctx.Log().Infow("lobby owner updated")
+	slog.InfoContext(ctx, "lobby owner updated")
 
 	return lobbyID, nil
 }

@@ -2,6 +2,7 @@ package cards
 
 import (
 	"fmt"
+	"log/slog"
 	"slices"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
@@ -15,7 +16,7 @@ func (s *ServiceImpl) PerformQ(
 	querier db.Querier,
 	move Move,
 ) (any, error) {
-	ctx.Log().Infow("performing cards move", "move", move)
+	slog.InfoContext(ctx, "performing cards move", "move", move)
 
 	cardIndex, err := s.buildCardIndex(ctx, querier)
 	if err != nil {
@@ -96,7 +97,7 @@ func (s *ServiceImpl) processCombinations(
 		playedCards = append(playedCards, combination.CardIDs...)
 	}
 
-	ctx.Log().Infow("processed combinations", "extraTroops", extraDeployableTroops)
+	slog.InfoContext(ctx, "processed combinations", "extraTroops", extraDeployableTroops)
 
 	return extraDeployableTroops, playedCards, nil
 }
@@ -118,7 +119,7 @@ func (s *ServiceImpl) grantRegionTroops(
 	}
 
 	if len(grants) == 0 {
-		ctx.Log().Infow("no region troop grants")
+		slog.InfoContext(ctx, "no region troop grants")
 
 		return nil, nil
 	}
@@ -135,7 +136,7 @@ func (s *ServiceImpl) grantRegionTroops(
 		return nil, fmt.Errorf("failed to grant region troops: %w", err)
 	}
 
-	ctx.Log().Infof("granted bonus troops to %d regions", len(grantedRegionIds))
+	slog.InfoContext(ctx, "granted bonus troops to regions", "count", len(grantedRegionIds))
 
 	return grants, nil
 }

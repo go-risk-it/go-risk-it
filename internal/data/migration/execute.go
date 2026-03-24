@@ -5,24 +5,23 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/jackc/pgx/v5"
-	"go.uber.org/zap"
 )
 
 func Execute(
-	log *zap.SugaredLogger,
 	config config.DatabaseConfig,
 	schema string,
 ) error {
-	log.Infow("preparing to execute migrations", "schema", schema)
+	slog.Info("preparing to execute migrations", "schema", schema)
 
 	connStr := config.BuildConnectionString()
 
-	if err := createSchema(log, connStr, schema); err != nil {
+	if err := createSchema(connStr, schema); err != nil {
 		return fmt.Errorf("failed to create schema: %w", err)
 	}
 
@@ -41,24 +40,24 @@ func Execute(
 		return fmt.Errorf("error creating migrate instance: %w", err)
 	}
 
-	log.Infow("executing migrations", "schema", schema)
+	slog.Info("executing migrations", "schema", schema)
 
 	if err := migr.Up(); err != nil {
 		if errors.Is(err, migrate.ErrNoChange) {
 			return nil
 		}
 
-		log.Warnw("failed to run migrations", "error", err, "schema", schema)
+		slog.Warn("failed to run migrations", "error", err, "schema", schema)
 
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 
-	log.Infow("successfully ran migrations", "schema", schema)
+	slog.Info("successfully ran migrations", "schema", schema)
 
 	return nil
 }
 
-func createSchema(log *zap.SugaredLogger, connStr, schema string) error {
+func createSchema(connStr, schema string) error {
 	ctx := context.Background()
 
 	conn, err := pgx.Connect(ctx, connStr)
@@ -68,7 +67,7 @@ func createSchema(log *zap.SugaredLogger, connStr, schema string) error {
 
 	defer func(conn *pgx.Conn, ctx context.Context) {
 		if err := conn.Close(ctx); err != nil {
-			log.Errorw("failed to close connection", "error", err)
+			slog.Error("failed to close connection", "error", err)
 		}
 	}(conn, ctx)
 

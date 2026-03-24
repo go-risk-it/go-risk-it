@@ -2,6 +2,7 @@ package player
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
@@ -51,14 +52,14 @@ func (s *ServiceImpl) GetPlayersStateQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) ([]sqlc.GetPlayersStateRow, error) {
-	ctx.Log().Infow("fetching player state")
+	slog.InfoContext(ctx, "fetching player state")
 
 	result, err := querier.GetPlayersState(ctx, ctx.GameID())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get players: %w", err)
 	}
 
-	ctx.Log().Infow("got player state")
+	slog.InfoContext(ctx, "got player state")
 
 	return result, nil
 }
@@ -72,7 +73,7 @@ func (s *ServiceImpl) GetPlayersQ(
 		return result, fmt.Errorf("failed to get players: %w", err)
 	}
 
-	ctx.Log().Infow("got players")
+	slog.InfoContext(ctx, "got players")
 
 	return result, nil
 }
@@ -86,7 +87,7 @@ func (s *ServiceImpl) GetCurrentPlayerQ(
 		return sqlc.GamePlayer{}, fmt.Errorf("failed to get current player: %w", err)
 	}
 
-	ctx.Log().Infow("got current player", "player", nil)
+	slog.InfoContext(ctx, "got current player", "player", nil)
 
 	return result, nil
 }
@@ -108,7 +109,7 @@ func (s *ServiceImpl) GetNextPlayerQ(
 		return sqlc.GamePlayer{}, fmt.Errorf("failed to get next player: %w", err)
 	}
 
-	ctx.Log().Infow("got next player", "player", result)
+	slog.InfoContext(ctx, "got next player", "player", result)
 
 	return result, nil
 }
@@ -145,7 +146,7 @@ func (s *ServiceImpl) CreatePlayersQ(
 	gameID int64,
 	players []Player,
 ) ([]sqlc.GamePlayer, error) {
-	ctx.Log().Infow("creating players", "players", players)
+	slog.InfoContext(ctx, "creating players", "players", players)
 
 	turnIndex := int64(0)
 	playersParams := make([]sqlc.InsertPlayersParams, 0, len(players))
@@ -167,7 +168,7 @@ func (s *ServiceImpl) CreatePlayersQ(
 		return nil, fmt.Errorf("failed to insert players: %w", err)
 	}
 
-	ctx.Log().Infow("created players", "players", players)
+	slog.InfoContext(ctx, "created players", "players", players)
 
 	result, err := querier.GetPlayersByGame(ctx, gameID)
 	if err != nil {

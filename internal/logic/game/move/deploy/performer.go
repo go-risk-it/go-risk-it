@@ -2,6 +2,7 @@ package deploy
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
@@ -14,7 +15,7 @@ func (s *ServiceImpl) PerformQ(
 	querier db.Querier,
 	move Move,
 ) (any, error) {
-	ctx.Log().Infow("performing deploy move", "move", move)
+	slog.InfoContext(ctx, "performing deploy move", "move", move)
 
 	deployableTroops, err := s.GetDeployableTroopsQ(ctx, querier)
 	if err != nil {
@@ -58,7 +59,7 @@ func (s *ServiceImpl) executeDeploy(
 	region *sqlc.GetRegionsByGameRow,
 	troops int64,
 ) error {
-	ctx.Log().Infow(
+	slog.InfoContext(ctx,
 		"executing deploy",
 		"region",
 		region.ExternalReference,
@@ -74,7 +75,7 @@ func (s *ServiceImpl) executeDeploy(
 		return fmt.Errorf("failed to increase region troops: %w", err)
 	}
 
-	ctx.Log().Infow(
+	slog.InfoContext(ctx,
 		"deploy executed successfully",
 		"region",
 		region.ExternalReference,
@@ -90,7 +91,7 @@ func (s *ServiceImpl) decreaseDeployableTroopsQ(
 	querier db.Querier,
 	troops int64,
 ) error {
-	ctx.Log().Infow("decreasing deployable troops", "troops", troops)
+	slog.InfoContext(ctx, "decreasing deployable troops", "troops", troops)
 
 	err := querier.DecreaseDeployableTroops(ctx, sqlc.DecreaseDeployableTroopsParams{
 		ID:               ctx.GameID(),
@@ -100,7 +101,7 @@ func (s *ServiceImpl) decreaseDeployableTroopsQ(
 		return fmt.Errorf("failed to decrease deployable troops: %w", err)
 	}
 
-	ctx.Log().Infow("decreased deployable troops", "troops", troops)
+	slog.InfoContext(ctx, "decreased deployable troops", "troops", troops)
 
 	return nil
 }

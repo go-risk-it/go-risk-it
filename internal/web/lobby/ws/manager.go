@@ -2,6 +2,7 @@ package ws
 
 import (
 	"encoding/json"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/lobby/signals"
@@ -39,7 +40,7 @@ func NewManager(
 }
 
 func (m *ManagerImpl) ConnectPlayer(ctx ctx.LobbyContext, connection *websocket.Conn) {
-	ctx.Log().Info("connecting player to lobby")
+	slog.InfoContext(ctx, "connecting player to lobby")
 
 	m.playerConnections(ctx).ConnectPlayer(ctx, connection)
 

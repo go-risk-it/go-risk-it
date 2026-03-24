@@ -3,8 +3,11 @@
 package board
 
 import (
-	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
+	context "context"
+
 	board "github.com/go-risk-it/go-risk-it/internal/logic/game/board"
+
+	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
 
 	db "github.com/go-risk-it/go-risk-it/internal/data/game/db"
 
@@ -25,7 +28,7 @@ func (_m *Service) EXPECT() *Service_Expecter {
 }
 
 // AreNeighbours provides a mock function with given fields: _a0, source, target
-func (_m *Service) AreNeighbours(_a0 ctx.LogContext, source string, target string) (bool, error) {
+func (_m *Service) AreNeighbours(_a0 context.Context, source string, target string) (bool, error) {
 	ret := _m.Called(_a0, source, target)
 
 	if len(ret) == 0 {
@@ -34,16 +37,16 @@ func (_m *Service) AreNeighbours(_a0 ctx.LogContext, source string, target strin
 
 	var r0 bool
 	var r1 error
-	if rf, ok := ret.Get(0).(func(ctx.LogContext, string, string) (bool, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (bool, error)); ok {
 		return rf(_a0, source, target)
 	}
-	if rf, ok := ret.Get(0).(func(ctx.LogContext, string, string) bool); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
 		r0 = rf(_a0, source, target)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	if rf, ok := ret.Get(1).(func(ctx.LogContext, string, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(_a0, source, target)
 	} else {
 		r1 = ret.Error(1)
@@ -58,16 +61,16 @@ type Service_AreNeighbours_Call struct {
 }
 
 // AreNeighbours is a helper method to define mock.On call
-//   - _a0 ctx.LogContext
+//   - _a0 context.Context
 //   - source string
 //   - target string
 func (_e *Service_Expecter) AreNeighbours(_a0 interface{}, source interface{}, target interface{}) *Service_AreNeighbours_Call {
 	return &Service_AreNeighbours_Call{Call: _e.mock.On("AreNeighbours", _a0, source, target)}
 }
 
-func (_c *Service_AreNeighbours_Call) Run(run func(_a0 ctx.LogContext, source string, target string)) *Service_AreNeighbours_Call {
+func (_c *Service_AreNeighbours_Call) Run(run func(_a0 context.Context, source string, target string)) *Service_AreNeighbours_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.LogContext), args[1].(string), args[2].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
 	})
 	return _c
 }
@@ -77,7 +80,7 @@ func (_c *Service_AreNeighbours_Call) Return(_a0 bool, _a1 error) *Service_AreNe
 	return _c
 }
 
-func (_c *Service_AreNeighbours_Call) RunAndReturn(run func(ctx.LogContext, string, string) (bool, error)) *Service_AreNeighbours_Call {
+func (_c *Service_AreNeighbours_Call) RunAndReturn(run func(context.Context, string, string) (bool, error)) *Service_AreNeighbours_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -142,7 +145,7 @@ func (_c *Service_CanPlayerReachQ_Call) RunAndReturn(run func(ctx.GameContext, d
 }
 
 // GetBoardRegions provides a mock function with given fields: _a0
-func (_m *Service) GetBoardRegions(_a0 ctx.LogContext) ([]string, error) {
+func (_m *Service) GetBoardRegions(_a0 context.Context) ([]string, error) {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
@@ -151,10 +154,10 @@ func (_m *Service) GetBoardRegions(_a0 ctx.LogContext) ([]string, error) {
 
 	var r0 []string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(ctx.LogContext) ([]string, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) ([]string, error)); ok {
 		return rf(_a0)
 	}
-	if rf, ok := ret.Get(0).(func(ctx.LogContext) []string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) []string); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
@@ -162,7 +165,7 @@ func (_m *Service) GetBoardRegions(_a0 ctx.LogContext) ([]string, error) {
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(ctx.LogContext) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
@@ -177,14 +180,14 @@ type Service_GetBoardRegions_Call struct {
 }
 
 // GetBoardRegions is a helper method to define mock.On call
-//   - _a0 ctx.LogContext
+//   - _a0 context.Context
 func (_e *Service_Expecter) GetBoardRegions(_a0 interface{}) *Service_GetBoardRegions_Call {
 	return &Service_GetBoardRegions_Call{Call: _e.mock.On("GetBoardRegions", _a0)}
 }
 
-func (_c *Service_GetBoardRegions_Call) Run(run func(_a0 ctx.LogContext)) *Service_GetBoardRegions_Call {
+func (_c *Service_GetBoardRegions_Call) Run(run func(_a0 context.Context)) *Service_GetBoardRegions_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.LogContext))
+		run(args[0].(context.Context))
 	})
 	return _c
 }
@@ -194,7 +197,7 @@ func (_c *Service_GetBoardRegions_Call) Return(_a0 []string, _a1 error) *Service
 	return _c
 }
 
-func (_c *Service_GetBoardRegions_Call) RunAndReturn(run func(ctx.LogContext) ([]string, error)) *Service_GetBoardRegions_Call {
+func (_c *Service_GetBoardRegions_Call) RunAndReturn(run func(context.Context) ([]string, error)) *Service_GetBoardRegions_Call {
 	_c.Call.Return(run)
 	return _c
 }

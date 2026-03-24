@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"log/slog"
+
 	"github.com/go-risk-it/go-risk-it/internal/api/lobby/messaging"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/lobby/state"
@@ -21,7 +23,7 @@ func NewStateController(
 func (s *StateController) GetLobbyState(ctx ctx.LobbyContext) (messaging.LobbyState, error) {
 	lobby, err := s.stateService.GetLobbyState(ctx)
 	if err != nil {
-		ctx.Log().Warnw("failed to get lobby state", "err", err)
+		slog.WarnContext(ctx, "failed to get lobby state", "error", err)
 	}
 
 	return messaging.LobbyState{

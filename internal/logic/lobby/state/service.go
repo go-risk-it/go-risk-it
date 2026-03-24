@@ -3,6 +3,7 @@ package state
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/db"
@@ -43,7 +44,7 @@ func (s *ServiceImpl) GetLobbyState(ctx ctx.LobbyContext) (*Lobby, error) {
 func (s *ServiceImpl) GetLobbyStateQ(ctx ctx.LobbyContext, querier db.Querier) (*Lobby, error) {
 	lobby, err := querier.GetLobby(ctx, ctx.LobbyID())
 	if err != nil {
-		ctx.Log().Warnw("failed to get lobby", "err", err)
+		slog.WarnContext(ctx, "failed to get lobby", "error", err)
 
 		return nil, fmt.Errorf("failed to get lobby: %w", err)
 	}

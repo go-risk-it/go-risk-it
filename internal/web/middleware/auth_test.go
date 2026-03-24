@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
-	"go.uber.org/zap"
 )
 
 func setup(t *testing.T) (*middleware.AuthMiddleware, *httptest.ResponseRecorder) {
@@ -94,7 +93,7 @@ func TestAuthMiddleware_Wrap(t *testing.T) {
 					})))
 
 			request, _ := http.NewRequestWithContext(
-				ctx.WithSpan(ctx.WithLog(t.Context(), zap.NewNop().Sugar()), noop.Span{}),
+				ctx.WithSpan(t.Context(), noop.Span{}),
 				http.MethodGet,
 				"/",
 				nil,

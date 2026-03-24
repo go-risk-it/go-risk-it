@@ -3,7 +3,8 @@
 package board
 
 import (
-	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
+	context "context"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -67,17 +68,17 @@ func (_c *Graph_AreNeighbours_Call) RunAndReturn(run func(string, string) bool) 
 	return _c
 }
 
-// CanReach provides a mock function with given fields: context, source, target, usableRegions
-func (_m *Graph) CanReach(context ctx.LogContext, source string, target string, usableRegions map[string]struct{}) bool {
-	ret := _m.Called(context, source, target, usableRegions)
+// CanReach provides a mock function with given fields: ctx, source, target, usableRegions
+func (_m *Graph) CanReach(ctx context.Context, source string, target string, usableRegions map[string]struct{}) bool {
+	ret := _m.Called(ctx, source, target, usableRegions)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CanReach")
 	}
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(ctx.LogContext, string, string, map[string]struct{}) bool); ok {
-		r0 = rf(context, source, target, usableRegions)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, map[string]struct{}) bool); ok {
+		r0 = rf(ctx, source, target, usableRegions)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
@@ -91,17 +92,17 @@ type Graph_CanReach_Call struct {
 }
 
 // CanReach is a helper method to define mock.On call
-//   - context ctx.LogContext
+//   - ctx context.Context
 //   - source string
 //   - target string
 //   - usableRegions map[string]struct{}
-func (_e *Graph_Expecter) CanReach(context interface{}, source interface{}, target interface{}, usableRegions interface{}) *Graph_CanReach_Call {
-	return &Graph_CanReach_Call{Call: _e.mock.On("CanReach", context, source, target, usableRegions)}
+func (_e *Graph_Expecter) CanReach(ctx interface{}, source interface{}, target interface{}, usableRegions interface{}) *Graph_CanReach_Call {
+	return &Graph_CanReach_Call{Call: _e.mock.On("CanReach", ctx, source, target, usableRegions)}
 }
 
-func (_c *Graph_CanReach_Call) Run(run func(context ctx.LogContext, source string, target string, usableRegions map[string]struct{})) *Graph_CanReach_Call {
+func (_c *Graph_CanReach_Call) Run(run func(ctx context.Context, source string, target string, usableRegions map[string]struct{})) *Graph_CanReach_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.LogContext), args[1].(string), args[2].(string), args[3].(map[string]struct{}))
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(map[string]struct{}))
 	})
 	return _c
 }
@@ -111,7 +112,7 @@ func (_c *Graph_CanReach_Call) Return(_a0 bool) *Graph_CanReach_Call {
 	return _c
 }
 
-func (_c *Graph_CanReach_Call) RunAndReturn(run func(ctx.LogContext, string, string, map[string]struct{}) bool) *Graph_CanReach_Call {
+func (_c *Graph_CanReach_Call) RunAndReturn(run func(context.Context, string, string, map[string]struct{}) bool) *Graph_CanReach_Call {
 	_c.Call.Return(run)
 	return _c
 }

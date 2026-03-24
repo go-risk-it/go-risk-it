@@ -17,7 +17,6 @@ import (
 	mockstate "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/state"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
-	"go.uber.org/zap"
 )
 
 // Using a concrete type for the generic Service: string for move type T.
@@ -55,7 +54,7 @@ func gameContext() ctx.GameContext {
 	gameID := int64(1)
 
 	userContext := ctx.WithUserID(
-		ctx.WithSpan(ctx.WithLog(context.Background(), zap.NewExample().Sugar()), noop.Span{}),
+		ctx.WithSpan(context.Background(), noop.Span{}),
 		userID,
 	)
 

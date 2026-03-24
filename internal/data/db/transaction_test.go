@@ -5,13 +5,11 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 // mockTx implements pgx.Tx for testing. Only Commit/Rollback are exercised.
@@ -105,7 +103,7 @@ var _ db.Transactable[*mockQuerier] = (*mockQuerier)(nil)
 func TestInTransaction_ShouldRollbackIfPanic(t *testing.T) {
 	t.Parallel()
 
-	logContext := ctx.WithLog(t.Context(), zap.NewNop().Sugar())
+	logContext := t.Context()
 	querier := &mockQuerier{}
 	transaction := &mockTx{}
 
@@ -136,7 +134,7 @@ func TestInTransaction_ShouldRollbackIfPanic(t *testing.T) {
 func TestInTransaction_ShouldRollbackIfErr(t *testing.T) {
 	t.Parallel()
 
-	logContext := ctx.WithLog(t.Context(), zap.NewNop().Sugar())
+	logContext := t.Context()
 	querier := &mockQuerier{}
 	transaction := &mockTx{}
 
@@ -156,7 +154,7 @@ func TestInTransaction_ShouldRollbackIfErr(t *testing.T) {
 func TestInTransaction_ShouldCommitIfNoErr(t *testing.T) {
 	t.Parallel()
 
-	logContext := ctx.WithLog(t.Context(), zap.NewNop().Sugar())
+	logContext := t.Context()
 	querier := &mockQuerier{}
 	transaction := &mockTx{}
 

@@ -5,15 +5,12 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
-	"go.uber.org/zap"
 )
 
-type GameMiddleware struct {
-	log *zap.SugaredLogger
-}
+type GameMiddleware struct{}
 
-func NewGameMiddleware(log *zap.SugaredLogger) *GameMiddleware {
-	return &GameMiddleware{log: log}
+func NewGameMiddleware() *GameMiddleware {
+	return &GameMiddleware{}
 }
 
 func (g *GameMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
@@ -25,7 +22,6 @@ func (g *GameMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
 		routeToWrap.Pattern(),
 		routeToWrap.RequiresAuth(),
 		buildDomainContext[ctx.GameContext](
-			g.log,
 			routeToWrap,
 			"game",
 			ctx.WithGameID,

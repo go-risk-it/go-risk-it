@@ -10,7 +10,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
-	"go.uber.org/zap"
 )
 
 func TestServiceImpl_GetGameState(t *testing.T) {
@@ -26,7 +25,7 @@ func TestServiceImpl_GetGameState(t *testing.T) {
 	gameID := int64(1)
 	ctx := ctx.WithGameID(
 		ctx.WithUserID(
-			ctx.WithSpan(ctx.WithLog(t.Context(), zap.NewExample().Sugar()), noop.Span{}),
+			ctx.WithSpan(t.Context(), noop.Span{}),
 			"francesco",
 		),
 		gameID,

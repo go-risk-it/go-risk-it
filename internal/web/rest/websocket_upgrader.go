@@ -3,6 +3,7 @@ package rest
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -13,20 +14,17 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws"
-	"go.uber.org/zap"
 )
 
 func NewWebSocketHandler(
 	gameConnectionManager gameWs.Manager,
 	lobbyConnectionManager lobbyWs.Manager,
 	upgrader ws.Upgrader,
-	log *zap.SugaredLogger,
 ) *route.Route {
 	handler := &webSocketHandler{
 		gameConnectionManager:  gameConnectionManager,
 		lobbyConnectionManager: lobbyConnectionManager,
 		upgrader:               upgrader,
-		log:                    log,
 	}
 
 	return route.New("/ws", true, handler)
@@ -36,14 +34,13 @@ type webSocketHandler struct {
 	gameConnectionManager  gameWs.Manager
 	lobbyConnectionManager lobbyWs.Manager
 	upgrader               ws.Upgrader
-	log                    *zap.SugaredLogger
 }
 
 func (h *webSocketHandler) ServeHTTP(
 	writer http.ResponseWriter,
 	request *http.Request,
 ) {
-	h.log.Infow("Received request")
+	slog.InfoContext(request.Context(), "Received request")
 
 	userContext, ok := request.Context().(ctx.UserContext)
 	if !ok {
@@ -81,7 +78,7 @@ func (h *webSocketHandler) ServeHTTP(
 		h.lobbyConnectionManager.ConnectPlayer(ctx.WithLobbyID(userContext, lobbyID), conn)
 	}
 
-	h.log.Infow("Upgraded:", "remoteAddress", conn.RemoteAddr().String())
+	slog.InfoContext(request.Context(), "Upgraded", "remoteAddress", conn.RemoteAddr().String())
 }
 
 func extractConnectionParams(r *http.Request) (int64, int64, error) {

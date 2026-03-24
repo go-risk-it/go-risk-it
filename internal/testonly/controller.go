@@ -1,14 +1,13 @@
 package testonly
 
 import (
+	"context"
 	"fmt"
-
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
 )
 
 type Controller interface {
-	ResetState(ctx ctx.LogContext) error
-	SetupNearWin(ctx ctx.LogContext, gameID int64) error
+	ResetState(ctx context.Context) error
+	SetupNearWin(ctx context.Context, gameID int64) error
 }
 
 type ControllerImpl struct {
@@ -23,7 +22,7 @@ func NewController(testOnlyService Service) *ControllerImpl {
 	}
 }
 
-func (c *ControllerImpl) ResetState(ctx ctx.LogContext) error {
+func (c *ControllerImpl) ResetState(ctx context.Context) error {
 	err := c.testOnlyService.TruncateTables(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to truncate tables: %w", err)
@@ -32,7 +31,7 @@ func (c *ControllerImpl) ResetState(ctx ctx.LogContext) error {
 	return nil
 }
 
-func (c *ControllerImpl) SetupNearWin(ctx ctx.LogContext, gameID int64) error {
+func (c *ControllerImpl) SetupNearWin(ctx context.Context, gameID int64) error {
 	err := c.testOnlyService.SetupNearWin(ctx, gameID)
 	if err != nil {
 		return fmt.Errorf("failed to setup near win: %w", err)

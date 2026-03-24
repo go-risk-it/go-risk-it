@@ -3,6 +3,7 @@ package controller
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
@@ -53,7 +54,7 @@ func (c *StartController) StartGame(ctx ctx.LobbyContext) error {
 		return fmt.Errorf("failed to mark lobby as started: %w", err)
 	}
 
-	ctx.Log().Infow("lobby started", "game_id", gameID)
+	slog.InfoContext(ctx, "lobby started", "game_id", gameID)
 
 	return nil
 }

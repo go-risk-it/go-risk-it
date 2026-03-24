@@ -3,6 +3,7 @@ package ws
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net"
 	"time"
 
@@ -39,12 +40,12 @@ func (p *PlayerConnections) Broadcast(ctx ctx.UserContext, message json.RawMessa
 	defer p.mu.UpgradableRUnlock()
 
 	if len(p.playerConnections) == 0 {
-		ctx.Log().Warnw("no connections for given game")
+		slog.WarnContext(ctx, "no connections for given game")
 
 		return
 	}
 
-	ctx.Log().Infof("broadcasting message to %d players", len(p.playerConnections))
+	slog.InfoContext(ctx, "broadcasting message", "playerCount", len(p.playerConnections))
 
 	toCleanup := make([]string, 0)
 	sent := 0
@@ -52,7 +53,7 @@ func (p *PlayerConnections) Broadcast(ctx ctx.UserContext, message json.RawMessa
 	for player, connection := range p.playerConnections {
 		err := connection.WriteMessage(websocket.TextMessage, message)
 		if err != nil && errors.Is(err, net.ErrClosed) {
-			ctx.Log().Debugw("unable to write message because connection is closed")
+			slog.DebugContext(ctx, "unable to write message because connection is closed")
 
 			toCleanup = append(toCleanup, player)
 			p.metrics.BroadcastErrors.Add(ctx, 1)
@@ -73,23 +74,23 @@ func (p *PlayerConnections) Write(ctx ctx.UserContext, message json.RawMessage) 
 	defer p.mu.UpgradableRUnlock()
 
 	if len(p.playerConnections) == 0 {
-		ctx.Log().Warnw("no connections for given game")
+		slog.WarnContext(ctx, "no connections for given game")
 
 		return
 	}
 
 	connection, ok := p.playerConnections[ctx.UserID()]
 	if !ok {
-		ctx.Log().Warnw("no connection for given player")
+		slog.WarnContext(ctx, "no connection for given player")
 
 		return
 	}
 
-	ctx.Log().Info("writing message to player", "message", string(message))
+	slog.InfoContext(ctx, "writing message to player", "message", string(message))
 
 	err := connection.WriteMessage(websocket.TextMessage, message)
 	if err != nil && errors.Is(err, net.ErrClosed) {
-		ctx.Log().Debugw("unable to write message because connection is closed")
+		slog.DebugContext(ctx, "unable to write message because connection is closed")
 
 		p.cleanUpConnections(ctx, []string{ctx.UserID()})
 	}
@@ -100,7 +101,7 @@ func (p *PlayerConnections) cleanUpConnections(ctx ctx.UserContext, toCleanup []
 		return
 	}
 
-	ctx.Log().Debugw("cleaning up connections", "users", toCleanup)
+	slog.DebugContext(ctx, "cleaning up connections", "users", toCleanup)
 
 	p.mu.UpgradeWLock()
 
@@ -110,29 +111,28 @@ func (p *PlayerConnections) cleanUpConnections(ctx ctx.UserContext, toCleanup []
 
 	p.metrics.ActiveConnections.Add(ctx, -int64(len(toCleanup)))
 
-	ctx.Log().Debugw("cleaned up connections", "users", toCleanup)
+	slog.DebugContext(ctx, "cleaned up connections", "users", toCleanup)
 }
 
 func (p *PlayerConnections) ConnectPlayer(ctx ctx.UserContext, connection *websocket.Conn) {
-	ctx.Log().Infow(
-		"Connecting player",
+	slog.InfoContext(ctx, "Connecting player",
 		"remoteAddress", connection.RemoteAddr().String())
 
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	if existing := p.playerConnections[ctx.UserID()]; existing != nil {
-		ctx.Log().Warnw("player already connected, closing old connection")
+		slog.WarnContext(ctx, "player already connected, closing old connection")
 
 		if err := existing.Close(); err != nil {
-			ctx.Log().Debugw("failed to close old connection", "error", err)
+			slog.DebugContext(ctx, "failed to close old connection", "error", err)
 		}
 	} else {
 		p.metrics.ActiveConnections.Add(ctx, 1)
 	}
 
 	p.playerConnections[ctx.UserID()] = connection
-	ctx.Log().Infow("Connected player", "currentConnections", len(p.playerConnections))
+	slog.InfoContext(ctx, "Connected player", "currentConnections", len(p.playerConnections))
 }
 
 func (p *PlayerConnections) GetConnectedPlayers(ctx ctx.UserContext) []string {
@@ -144,7 +144,7 @@ func (p *PlayerConnections) GetConnectedPlayers(ctx ctx.UserContext) []string {
 		result = append(result, player)
 	}
 
-	ctx.Log().Debugw("found connected players", "players", result, "count", len(result))
+	slog.DebugContext(ctx, "found connected players", "players", result, "count", len(result))
 
 	return result
 }

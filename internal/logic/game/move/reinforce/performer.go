@@ -2,6 +2,7 @@ package reinforce
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
@@ -15,7 +16,7 @@ func (s *ServiceImpl) PerformQ(
 	querier db.Querier,
 	move Move,
 ) (any, error) {
-	ctx.Log().Infow("performing reinforce move", "move", move)
+	slog.InfoContext(ctx, "performing reinforce move", "move", move)
 
 	sourceRegion, err := s.regionService.GetRegionQ(ctx, querier, move.SourceRegionID)
 	if err != nil {
@@ -28,7 +29,7 @@ func (s *ServiceImpl) PerformQ(
 	}
 
 	if err := s.validate(ctx, querier, sourceRegion, targetRegion, move); err != nil {
-		ctx.Log().Infow("validation failed", "error", err)
+		slog.InfoContext(ctx, "validation failed", "error", err)
 
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
@@ -47,7 +48,7 @@ func (s *ServiceImpl) perform(
 	targetRegion *sqlc.GetRegionsByGameRow,
 	movingTroops int64,
 ) error {
-	ctx.Log().Infow("updating region troops")
+	slog.InfoContext(ctx, "updating region troops")
 
 	if err := s.regionService.UpdateTroopsInRegionQ(
 		ctx,
@@ -77,7 +78,7 @@ func (s *ServiceImpl) validate(
 	targetRegion *sqlc.GetRegionsByGameRow,
 	move Move,
 ) error {
-	ctx.Log().Infow("validating reinforce move")
+	slog.InfoContext(ctx, "validating reinforce move")
 
 	if err := checkRegionOwnership(ctx, sourceRegion, targetRegion); err != nil {
 		return fmt.Errorf("region ownership check failed: %w", err)
@@ -101,7 +102,7 @@ func (s *ServiceImpl) validate(
 		return domainerrors.NewValidationError("player cannot reach target region")
 	}
 
-	ctx.Log().Infow("reinforce move validation passed")
+	slog.InfoContext(ctx, "reinforce move validation passed")
 
 	return nil
 }
@@ -111,7 +112,7 @@ func checkRegionOwnership(
 	sourceRegion *sqlc.GetRegionsByGameRow,
 	targetRegion *sqlc.GetRegionsByGameRow,
 ) error {
-	ctx.Log().Infow("checking region ownership")
+	slog.InfoContext(ctx, "checking region ownership")
 
 	if sourceRegion.UserID != ctx.UserID() {
 		return domainerrors.NewValidationError("source region is not owned by player")
@@ -121,7 +122,7 @@ func checkRegionOwnership(
 		return domainerrors.NewValidationError("target region is not owned by player")
 	}
 
-	ctx.Log().Infow("region ownership check passed")
+	slog.InfoContext(ctx, "region ownership check passed")
 
 	return nil
 }
@@ -132,7 +133,7 @@ func checkTroops(
 	targetRegion *sqlc.GetRegionsByGameRow,
 	move Move,
 ) error {
-	ctx.Log().Infow("checking troops")
+	slog.InfoContext(ctx, "checking troops")
 
 	if move.MovingTroops < 1 {
 		return domainerrors.NewValidationError("at least one troop is required to reinforce")
@@ -152,7 +153,7 @@ func checkTroops(
 		return fmt.Errorf("declared values are invalid: %w", err)
 	}
 
-	ctx.Log().Infow("troops check passed")
+	slog.InfoContext(ctx, "troops check passed")
 
 	return nil
 }

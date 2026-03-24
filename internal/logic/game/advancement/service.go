@@ -2,6 +2,7 @@ package advancement
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	dbutil "github.com/go-risk-it/go-risk-it/internal/data/db"
@@ -78,7 +79,7 @@ func (s *ServiceImpl[T]) AdvanceQ(
 ) (sqlc.GamePhaseType, error) {
 	currentPhase := s.moveService.PhaseType()
 
-	ctx.Log().Infow("processing request to advance phase", "currentPhase", currentPhase)
+	slog.InfoContext(ctx, "processing request to advance phase", "currentPhase", currentPhase)
 
 	game, err := s.gameState.GetGameStateQ(ctx, querier)
 	if err != nil {
@@ -86,12 +87,12 @@ func (s *ServiceImpl[T]) AdvanceQ(
 	}
 
 	if err := s.validationService.ValidateQ(ctx, querier, game); err != nil {
-		ctx.Log().Errorw("validation failed", "error", err)
+		slog.ErrorContext(ctx, "validation failed", "error", err)
 
 		return "", fmt.Errorf("validation failed: %w", err)
 	}
 
-	ctx.Log().Infof("game is in phase %s", game.Phase)
+	slog.InfoContext(ctx, "game is in phase", "phase", game.Phase)
 
 	if game.Phase != currentPhase {
 		return "", domainerrors.NewConflictErrorf(
@@ -116,7 +117,7 @@ func (s *ServiceImpl[T]) AdvanceQ(
 		return "", fmt.Errorf("unable to perform move: %w", err)
 	}
 
-	ctx.Log().Infow("phase advanced successfully", "from", currentPhase)
+	slog.InfoContext(ctx, "phase advanced successfully", "from", currentPhase)
 
 	return targetPhase, nil
 }

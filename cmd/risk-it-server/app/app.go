@@ -3,10 +3,10 @@ package app
 import (
 	"github.com/go-risk-it/go-risk-it/internal/config"
 	"github.com/go-risk-it/go-risk-it/internal/data"
-	"github.com/go-risk-it/go-risk-it/internal/loggerfx"
 	"github.com/go-risk-it/go-risk-it/internal/logic"
 	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/rand"
+	riskslog "github.com/go-risk-it/go-risk-it/internal/slog"
 	"github.com/go-risk-it/go-risk-it/internal/web"
 	"github.com/lesismal/nbio/nbhttp"
 	"go.uber.org/fx"
@@ -14,7 +14,7 @@ import (
 
 var Module = fx.Options(
 	config.Module,
-	loggerfx.Module,
+	riskslog.Module,
 	metrics.Module,
 	logic.Module,
 	data.Module,

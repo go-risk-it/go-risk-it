@@ -2,6 +2,7 @@ package start
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/db"
@@ -28,7 +29,7 @@ func NewService(querier db.Querier) *ServiceImpl {
 }
 
 func (s *ServiceImpl) CanStartLobby(ctx ctx.LobbyContext) (bool, error) {
-	ctx.Log().Infow("checking if lobby can be started")
+	slog.InfoContext(ctx, "checking if lobby can be started")
 
 	canStartLobby, err := s.querier.CanLobbyBeStarted(ctx, sqlc.CanLobbyBeStartedParams{
 		LobbyID:             ctx.LobbyID(),
@@ -43,7 +44,7 @@ func (s *ServiceImpl) CanStartLobby(ctx ctx.LobbyContext) (bool, error) {
 }
 
 func (s *ServiceImpl) GetLobbyPlayers(ctx ctx.LobbyContext) ([]sqlc.GetLobbyPlayersRow, error) {
-	ctx.Log().Debugw("getting lobby players")
+	slog.DebugContext(ctx, "getting lobby players")
 
 	lobbyPlayers, err := s.querier.GetLobbyPlayers(ctx, ctx.LobbyID())
 	if err != nil {
@@ -54,7 +55,7 @@ func (s *ServiceImpl) GetLobbyPlayers(ctx ctx.LobbyContext) ([]sqlc.GetLobbyPlay
 }
 
 func (s *ServiceImpl) MarkLobbyAsStarted(ctx ctx.LobbyContext, gameID int64) error {
-	ctx.Log().Debugw("marking lobby as started")
+	slog.DebugContext(ctx, "marking lobby as started")
 
 	if err := s.querier.MarkLobbyAsStarted(ctx, sqlc.MarkLobbyAsStartedParams{
 		LobbyID: ctx.LobbyID(),

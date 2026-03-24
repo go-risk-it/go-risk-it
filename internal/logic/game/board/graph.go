@@ -1,19 +1,19 @@
 package board
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"maps"
 	"slices"
-
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
 )
 
 type Graph interface {
 	GetRegions() []string
 	AreNeighbours(source string, target string) bool
 	CanReach(
-		context ctx.LogContext,
+		ctx context.Context,
 		source string,
 		target string,
 		usableRegions map[string]struct{},
@@ -111,7 +111,7 @@ func (g *GraphImpl) AreNeighbours(source string, target string) bool {
 }
 
 func (g *GraphImpl) CanReach(
-	context ctx.LogContext,
+	ctx context.Context,
 	source string,
 	target string,
 	usableRegions map[string]struct{},
@@ -126,18 +126,18 @@ func (g *GraphImpl) CanReach(
 
 	visited := make(map[string]struct{})
 
-	return g.canReachRecursive(context, source, target, usableRegions, visited)
+	return g.canReachRecursive(ctx, source, target, usableRegions, visited)
 }
 
 func (g *GraphImpl) canReachRecursive(
-	context ctx.LogContext,
+	ctx context.Context,
 	source string,
 	target string,
 	usableRegions map[string]struct{},
 	visited map[string]struct{},
 ) bool {
 	if source == target {
-		context.Log().Debugw("region is reachable", "source", source, "target", target)
+		slog.DebugContext(ctx, "region is reachable", "source", source, "target", target)
 
 		return true
 	}
@@ -153,7 +153,7 @@ func (g *GraphImpl) canReachRecursive(
 			continue
 		}
 
-		if g.canReachRecursive(context, neighbour, target, usableRegions, visited) {
+		if g.canReachRecursive(ctx, neighbour, target, usableRegions, visited) {
 			return true
 		}
 	}

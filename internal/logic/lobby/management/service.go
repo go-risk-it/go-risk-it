@@ -2,6 +2,7 @@ package management
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	dbutil "github.com/go-risk-it/go-risk-it/internal/data/db"
@@ -63,7 +64,7 @@ func (s *ServiceImpl) JoinLobbyQ(
 	querier db.Querier,
 	name string,
 ) error {
-	ctx.Log().Infow("joining lobby")
+	slog.InfoContext(ctx, "joining lobby")
 
 	participantID, err := querier.InsertParticipant(ctx, sqlc.InsertParticipantParams{
 		LobbyID: ctx.LobbyID(),
@@ -74,7 +75,7 @@ func (s *ServiceImpl) JoinLobbyQ(
 		return fmt.Errorf("failed to insert participant: %w", err)
 	}
 
-	ctx.Log().Infow("participant joined", "participant_id", participantID)
+	slog.InfoContext(ctx, "participant joined", "participant_id", participantID)
 
 	return nil
 }
@@ -89,28 +90,28 @@ func (s *ServiceImpl) GetUserLobbiesQ(
 	ctx ctx.UserContext,
 	querier db.Querier,
 ) (*UserLobbies, error) {
-	ctx.Log().Infow("getting user lobbies")
+	slog.InfoContext(ctx, "getting user lobbies")
 
 	ownedLobbies, err := querier.GetOwnedLobbies(ctx, ctx.UserID())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get owned lobbies: %w", err)
 	}
 
-	ctx.Log().Infow("got owned lobbies", "lobbies", ownedLobbies)
+	slog.InfoContext(ctx, "got owned lobbies", "lobbies", ownedLobbies)
 
 	joinedLobbies, err := querier.GetJoinedLobbies(ctx, ctx.UserID())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get joined lobbies: %w", err)
 	}
 
-	ctx.Log().Infow("got joined lobbies", "lobbies", joinedLobbies)
+	slog.InfoContext(ctx, "got joined lobbies", "lobbies", joinedLobbies)
 
 	joinableLobbies, err := querier.GetJoinableLobbies(ctx, ctx.UserID())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get joinable lobbies: %w", err)
 	}
 
-	ctx.Log().Infow("got joinable lobbies", "lobbies", joinableLobbies)
+	slog.InfoContext(ctx, "got joinable lobbies", "lobbies", joinableLobbies)
 
 	userLobbies := &UserLobbies{
 		Owned:    ownedLobbies,
@@ -118,7 +119,7 @@ func (s *ServiceImpl) GetUserLobbiesQ(
 		Joinable: joinableLobbies,
 	}
 
-	ctx.Log().Infow("got user lobbies", "lobbies", userLobbies)
+	slog.InfoContext(ctx, "got user lobbies", "lobbies", userLobbies)
 
 	return userLobbies, nil
 }

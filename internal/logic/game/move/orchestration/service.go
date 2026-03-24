@@ -2,6 +2,7 @@ package orchestration
 
 import (
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
@@ -82,7 +83,6 @@ func (s *OrchestratorImpl[T]) OrchestrateMove(ctx ctx.GameContext, move T) error
 		pgx.RepeatableRead,
 		func(querier db.Querier) (sqlc.GamePhaseType, error) {
 			phase := s.service.PhaseType()
-			ctx.SetLog(ctx.Log().With("phase", phase))
 
 			gameState, err := s.gameService.GetGameStateQ(ctx, querier)
 			if err != nil {
@@ -127,7 +127,7 @@ func (s *OrchestratorImpl[T]) OrchestrateMoveQ(
 	move T,
 	gameState *state.Game,
 ) (sqlc.GamePhaseType, error) {
-	ctx.Log().Infow("orchestrating move", "move", move)
+	slog.InfoContext(ctx, "orchestrating move", "move", move)
 
 	if err := s.validationService.ValidateQ(ctx, querier, gameState); err != nil {
 		return "", fmt.Errorf("invalid move: %w", err)
@@ -148,7 +148,7 @@ func (s *OrchestratorImpl[T]) OrchestrateMoveQ(
 	}
 
 	if isMissionAccomplished {
-		ctx.Log().Infow("game is over")
+		slog.InfoContext(ctx, "game is over")
 		s.recordGameFinished(ctx)
 
 		return s.service.PhaseType(), nil
@@ -160,18 +160,18 @@ func (s *OrchestratorImpl[T]) OrchestrateMoveQ(
 	}
 
 	if targetPhase == s.service.PhaseType() {
-		ctx.Log().Infow("no need to advance")
+		slog.InfoContext(ctx, "no need to advance")
 
 		return targetPhase, nil
 	}
 
-	ctx.Log().Infow("advancing phase", "target", targetPhase)
+	slog.InfoContext(ctx, "advancing phase", "target", targetPhase)
 
 	if err := s.service.AdvanceQ(ctx, querier, targetPhase, performResult); err != nil {
 		return "", fmt.Errorf("unable to advance move: %w", err)
 	}
 
-	ctx.Log().Infow("successfully advanced phase", "target", targetPhase)
+	slog.InfoContext(ctx, "successfully advanced phase", "target", targetPhase)
 
 	return targetPhase, nil
 }

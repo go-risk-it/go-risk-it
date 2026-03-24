@@ -18,8 +18,6 @@ func (c *lobbyContext) LobbyID() int64 {
 }
 
 func WithLobbyID(ctx UserContext, lobbyID int64) LobbyContext {
-	ctx.SetLog(ctx.Log().With("lobbyID", lobbyID))
-
 	return &lobbyContext{
 		UserContext: ctx,
 		lobbyID:     lobbyID,

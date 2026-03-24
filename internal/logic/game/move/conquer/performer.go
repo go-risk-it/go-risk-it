@@ -2,6 +2,7 @@ package conquer
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
@@ -14,7 +15,7 @@ func (s *ServiceImpl) PerformQ(
 	querier db.Querier,
 	move Move,
 ) (any, error) {
-	ctx.Log().Infow("performing conquer move", "move", move)
+	slog.InfoContext(ctx, "performing conquer move", "move", move)
 
 	phaseState, err := s.GetPhaseStateQ(ctx, querier)
 	if err != nil {
@@ -62,7 +63,7 @@ func (s *ServiceImpl) PerformQ(
 		}
 	}
 
-	ctx.Log().Infow("conquer executed successfully")
+	slog.InfoContext(ctx, "conquer executed successfully")
 
 	return nil, nil //nolint:nilnil // no result needed for conquer
 }
@@ -92,7 +93,7 @@ func (s *ServiceImpl) updateRegionTroops(
 		return 0, fmt.Errorf("failed to increase troops in target region: %w", err)
 	}
 
-	ctx.Log().Infow("troops updated successfully")
+	slog.InfoContext(ctx, "troops updated successfully")
 
 	defeatedPlayerID, err := s.regionService.UpdateRegionOwnerQ(
 		ctx,
@@ -128,7 +129,7 @@ func (s *ServiceImpl) handlePlayerEliminated(
 	querier db.Querier,
 	eliminatedPlayerID int64,
 ) error {
-	ctx.Log().Infow("defending player has been eliminated", "defender", eliminatedPlayerID)
+	slog.InfoContext(ctx, "defending player has been eliminated", "defender", eliminatedPlayerID)
 
 	if err := s.cardService.TransferCardsOwnershipQ(ctx, querier, eliminatedPlayerID); err != nil {
 		return fmt.Errorf("unable to advance phase: %w", err)

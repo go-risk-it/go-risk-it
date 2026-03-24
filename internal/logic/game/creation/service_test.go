@@ -19,7 +19,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/metric/noop"
 	tracenoop "go.opentelemetry.io/otel/trace/noop"
-	"go.uber.org/zap"
 )
 
 var (
@@ -47,7 +46,7 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "Gabriele"},
 	}
 	context := ctx.WithUserID(
-		ctx.WithSpan(ctx.WithLog(t.Context(), zap.NewExample().Sugar()), tracenoop.Span{}),
+		ctx.WithSpan(t.Context(), tracenoop.Span{}),
 		"dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
 	)
 
@@ -154,7 +153,7 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 
 	// Set up test data
 	ctx := ctx.WithUserID(
-		ctx.WithSpan(ctx.WithLog(t.Context(), zap.NewExample().Sugar()), tracenoop.Span{}),
+		ctx.WithSpan(t.Context(), tracenoop.Span{}),
 		"dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
 	)
 	users := []player.Player{
@@ -203,7 +202,7 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 
 	// Set up test data
 	context := ctx.WithUserID(
-		ctx.WithSpan(ctx.WithLog(t.Context(), zap.NewExample().Sugar()), tracenoop.Span{}),
+		ctx.WithSpan(t.Context(), tracenoop.Span{}),
 		"dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
 	)
 	users := []player.Player{

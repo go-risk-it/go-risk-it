@@ -3,6 +3,8 @@ package ctx
 import (
 	"context"
 	"time"
+
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 type GameContext interface {
@@ -23,8 +25,6 @@ func (c *gameContext) GameID() int64 {
 }
 
 func WithGameID(ctx UserContext, gameID int64) GameContext {
-	ctx.SetLog(ctx.Log().With("gameID", gameID))
-
 	return &gameContext{
 		UserContext: ctx,
 		gameID:      gameID,
@@ -32,7 +32,7 @@ func WithGameID(ctx UserContext, gameID int64) GameContext {
 }
 
 // DetachGameContext creates a new GameContext rooted at context.Background(),
-// preserving the logger, user ID, and game ID from the original context.
+// preserving the user ID and game ID from the original context.
 // This is useful for fire-and-forget goroutines that should not be cancelled
 // when the originating HTTP request completes.
 func DetachGameContext(original GameContext) GameContext {
@@ -53,13 +53,10 @@ func DetachGameContextWithTimeout(
 }
 
 func detachGameContext(original GameContext, parent context.Context) GameContext {
-	logCtx := WithLog(parent, original.Log())
+	traceCtx := WithSpan(parent, noop.Span{})
 	userCtx := &userContext{
-		TraceContext: &traceContext{
-			LogContext: logCtx,
-			span:       original.Span(),
-		},
-		userID: original.UserID(),
+		TraceContext: traceCtx,
+		userID:       original.UserID(),
 	}
 
 	return &gameContext{

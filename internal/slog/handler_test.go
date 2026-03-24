@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
-	"go.uber.org/zap"
 )
 
 // parsed holds the JSON fields from a single slog log line.
@@ -52,10 +51,6 @@ func newTestSpan(t *testing.T) (context.Context, sdktrace.ReadWriteSpan) {
 	return spanCtx, rwSpan
 }
 
-func newLogContext() ctx.LogContext {
-	return ctx.WithLog(context.Background(), zap.NewNop().Sugar())
-}
-
 func TestPlainContext(t *testing.T) {
 	t.Parallel()
 
@@ -82,8 +77,7 @@ func TestTraceContext(t *testing.T) {
 	logger := newTestLogger(&buf)
 
 	_, rwSpan := newTestSpan(t)
-	logCtx := newLogContext()
-	traceCtx := ctx.WithSpan(logCtx, rwSpan)
+	traceCtx := ctx.WithSpan(context.Background(), rwSpan)
 
 	logger.InfoContext(traceCtx, "trace message")
 
@@ -103,8 +97,7 @@ func TestUserContext(t *testing.T) {
 	logger := newTestLogger(&buf)
 
 	_, rwSpan := newTestSpan(t)
-	logCtx := newLogContext()
-	traceCtx := ctx.WithSpan(logCtx, rwSpan)
+	traceCtx := ctx.WithSpan(context.Background(), rwSpan)
 	userCtx := ctx.WithUserID(traceCtx, "user-123")
 
 	logger.InfoContext(userCtx, "user message")
@@ -125,8 +118,7 @@ func TestGameContext(t *testing.T) {
 	logger := newTestLogger(&buf)
 
 	_, rwSpan := newTestSpan(t)
-	logCtx := newLogContext()
-	traceCtx := ctx.WithSpan(logCtx, rwSpan)
+	traceCtx := ctx.WithSpan(context.Background(), rwSpan)
 	userCtx := ctx.WithUserID(traceCtx, "user-456")
 	gameCtx := ctx.WithGameID(userCtx, 42)
 
@@ -148,8 +140,7 @@ func TestLobbyContext(t *testing.T) {
 	logger := newTestLogger(&buf)
 
 	_, rwSpan := newTestSpan(t)
-	logCtx := newLogContext()
-	traceCtx := ctx.WithSpan(logCtx, rwSpan)
+	traceCtx := ctx.WithSpan(context.Background(), rwSpan)
 	userCtx := ctx.WithUserID(traceCtx, "user-789")
 	lobbyCtx := ctx.WithLobbyID(userCtx, 99)
 
@@ -179,8 +170,7 @@ func TestWithAttrsPreserved(t *testing.T) {
 	logger := stdslog.New(enriched)
 
 	_, rwSpan := newTestSpan(t)
-	logCtx := newLogContext()
-	traceCtx := ctx.WithSpan(logCtx, rwSpan)
+	traceCtx := ctx.WithSpan(context.Background(), rwSpan)
 	userCtx := ctx.WithUserID(traceCtx, "user-attrs")
 
 	logger.InfoContext(userCtx, "attrs message")
@@ -209,8 +199,7 @@ func TestWithGroupPreserved(t *testing.T) {
 	logger := stdslog.New(grouped)
 
 	_, rwSpan := newTestSpan(t)
-	logCtx := newLogContext()
-	traceCtx := ctx.WithSpan(logCtx, rwSpan)
+	traceCtx := ctx.WithSpan(context.Background(), rwSpan)
 
 	logger.InfoContext(traceCtx, "grouped message")
 

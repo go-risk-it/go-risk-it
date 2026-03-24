@@ -2,6 +2,7 @@ package signals
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
@@ -13,17 +14,21 @@ func HandleGameStateChanged(
 	params.Signal.AddListener(func(context context.Context, data signals.GameStateChangedData) {
 		gameContext, ok := context.(ctx.GameContext)
 		if !ok {
-			params.Log.Errorw("context is not game context", "context", context)
+			slog.ErrorContext(context, "context is not game context")
 
 			return
 		}
 
-		gameContext.Log().Infow(
+		slog.InfoContext( //nolint:contextcheck
+			gameContext,
 			"handling game state changed",
 			"fromPhase", data.FromPhase,
 			"toPhase", data.ToPhase,
 		)
 
-		fetchAllStatesAndPublish(gameContext, params, params.ConnectionManager.Broadcast)
+		fetchAllStatesAndPublish(
+			gameContext, params,
+			params.ConnectionManager.Broadcast,
+		)
 	})
 }

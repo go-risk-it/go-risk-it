@@ -3,6 +3,7 @@ package cards
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
@@ -67,7 +68,7 @@ func (s *ServiceImpl) PhaseType() sqlc.GamePhaseType {
 }
 
 func (s *ServiceImpl) Draw(ctx ctx.GameContext, querier db.Querier) error {
-	ctx.Log().Infow("drawing card")
+	slog.InfoContext(ctx, "drawing card")
 
 	cards, err := querier.GetAvailableCards(ctx, ctx.GameID())
 	if err != nil {
@@ -87,7 +88,7 @@ func (s *ServiceImpl) Draw(ctx ctx.GameContext, querier db.Querier) error {
 		return fmt.Errorf("failed to draw card: %w", err)
 	}
 
-	ctx.Log().Infow("card drawn", "card", card.ID)
+	slog.InfoContext(ctx, "card drawn", "card", card.ID)
 
 	return nil
 }
@@ -96,7 +97,7 @@ func (s *ServiceImpl) NextPlayerHasValidCombinationQ(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) (bool, error) {
-	ctx.Log().Infow("checking if the player has a valid card combination")
+	slog.InfoContext(ctx, "checking if the player has a valid card combination")
 
 	nextPlayer, err := s.playerService.GetNextPlayerQ(ctx, querier)
 	if err != nil {
@@ -111,7 +112,8 @@ func (s *ServiceImpl) NextPlayerHasValidCombinationQ(
 		return false, fmt.Errorf("unable to get cards for player: %w", err)
 	}
 
-	ctx.Log().Debugf("player has %d cards: %v", len(nextPlayerCards), nextPlayerCards)
+	slog.DebugContext(ctx, "player has cards",
+		"count", len(nextPlayerCards), "cards", nextPlayerCards)
 
 	if len(nextPlayerCards) < 3 {
 		return false, nil
@@ -134,10 +136,11 @@ func (s *ServiceImpl) NextPlayerHasValidCombinationQ(
 					},
 				}
 
-				ctx.Log().Debugw("checking combination", "combination", combination)
+				slog.DebugContext(ctx, "checking combination", "combination", combination)
 
 				if _, err := identifyCombination(combination, cardIndex); err == nil {
-					ctx.Log().Infow("player has a valid combination", "combination", combination)
+					slog.InfoContext(ctx, "player has a valid combination",
+						"combination", combination)
 
 					return true, nil
 				}
@@ -145,7 +148,7 @@ func (s *ServiceImpl) NextPlayerHasValidCombinationQ(
 		}
 	}
 
-	ctx.Log().Infow("player has no valid combination")
+	slog.InfoContext(ctx, "player has no valid combination")
 
 	return false, nil
 }

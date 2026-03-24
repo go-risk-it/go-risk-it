@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
@@ -18,7 +19,7 @@ func NewBoardController(regionService region.Service) *BoardController {
 }
 
 func (c *BoardController) GetBoardState(ctx ctx.GameContext) (messaging.BoardState, error) {
-	ctx.Log().Infow("getting board state")
+	slog.InfoContext(ctx, "getting board state")
 
 	regions, err := c.regionService.GetRegions(ctx)
 	if err != nil {

@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 	metricnoop "go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/trace/noop"
-	"go.uber.org/zap"
 )
 
 func testMetrics(t *testing.T) *metrics.Metrics {
@@ -27,7 +26,7 @@ func testMetrics(t *testing.T) *metrics.Metrics {
 func lobbyContext(lobbyID int64) ctx.LobbyContext {
 	userContext := ctx.WithUserID(
 		ctx.WithSpan(
-			ctx.WithLog(context.Background(), zap.NewNop().Sugar()),
+			context.Background(),
 			noop.Span{},
 		),
 		"test-user",

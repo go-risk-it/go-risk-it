@@ -3,6 +3,7 @@ package middleware
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -10,17 +11,15 @@ import (
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
-	"go.uber.org/zap"
 )
 
 func buildDomainContext[T ctx.UserContext](
-	log *zap.SugaredLogger,
 	routeToWrap *route.Route,
 	domain string,
 	contextFunc func(ctx ctx.UserContext, ID int64) T,
 ) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		log.Debugf("applying %s middleware", domain)
+		slog.DebugContext(request.Context(), "applying middleware", "domain", domain)
 
 		result, err := buildContext[T](request, contextFunc)
 		if err != nil {

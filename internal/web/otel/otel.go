@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
@@ -16,7 +17,6 @@ import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/fx"
-	"go.uber.org/zap"
 )
 
 var Module = fx.Options(
@@ -25,19 +25,20 @@ var Module = fx.Options(
 
 func SetupOTelSDK(
 	lifecycle fx.Lifecycle,
-	log *zap.SugaredLogger,
 	otelConfig config.OtelConfig,
 ) {
 	// Set up OpenTelemetry.
 	otelShutdown, err := setupOTelSDK(otelConfig)
 	if err != nil {
-		log.Fatalw("could not set up OpenTelemetry", "error", err)
+		slog.Error("could not set up OpenTelemetry", "error", err)
+		panic("could not set up OpenTelemetry: " + err.Error())
 	}
 
 	lifecycle.Append(fx.Hook{
 		OnStop: func(ctx context.Context) error {
 			if err := otelShutdown(ctx); err != nil {
-				log.Fatalw("failed to shutdown OTel providers", "error", err)
+				slog.Error("failed to shutdown OTel providers", "error", err)
+				panic("failed to shutdown OTel providers: " + err.Error())
 			}
 
 			return nil

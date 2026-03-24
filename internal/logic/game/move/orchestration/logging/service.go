@@ -3,6 +3,7 @@ package logging
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
@@ -36,7 +37,7 @@ func (s *ServiceImpl) GetMoveLogs(
 	ctx ctx.GameContext,
 	limit int64,
 ) ([]sqlc.GetMoveLogsRow, error) {
-	ctx.Log().Infow("getting move logs", "limit", limit)
+	slog.InfoContext(ctx, "getting move logs", "limit", limit)
 
 	moveLogs, err := s.querier.GetMoveLogs(ctx, sqlc.GetMoveLogsParams{
 		GameID:  ctx.GameID(),

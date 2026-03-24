@@ -2,6 +2,7 @@ package fetcher
 
 import (
 	"encoding/json"
+	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
@@ -49,7 +50,7 @@ func NewGameFetcher(
 func (g *GameFetcherImpl) FetchState(ctx ctx.GameContext, stateChannel chan json.RawMessage) {
 	gameState, err := g.gameService.GetGameState(ctx)
 	if err != nil {
-		ctx.Log().Errorf("failed to get game state: %v", err)
+		slog.ErrorContext(ctx, "failed to get game state", "error", err)
 
 		return
 	}
@@ -86,7 +87,7 @@ func (g *GameFetcherImpl) FetchState(ctx ctx.GameContext, stateChannel chan json
 			getGameFetcherFunc(gameState, g.phaseController.GetCardsPhaseState),
 			stateChannel)
 	default:
-		ctx.Log().Errorf("unknown phase type: %v", gameState.Phase)
+		slog.ErrorContext(ctx, "unknown phase type", "phase", gameState.Phase)
 
 		return
 	}
