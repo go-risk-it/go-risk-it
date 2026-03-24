@@ -28,6 +28,16 @@ func TestPublic_NoAuth(t *testing.T) {
 	assert.False(t, publicRoute.RequiresAuth())
 }
 
+func TestPublic_IsNotWebSocket(t *testing.T) {
+	t.Parallel()
+
+	publicRoute := route.Public("GET /status", func(_ http.ResponseWriter, _ *http.Request) error {
+		return nil
+	})
+
+	assert.False(t, publicRoute.IsWebSocket())
+}
+
 func TestPublic_SuccessPassesThrough(t *testing.T) {
 	t.Parallel()
 
@@ -276,4 +286,36 @@ func TestLobby_InvalidID_ReturnsValidationError(t *testing.T) {
 	var resp restutils.ErrorResponse
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
 	assert.Equal(t, "VALIDATION_ERROR", resp.Code)
+}
+
+// --- GameWS ---
+
+func TestGameWS_IsWebSocket(t *testing.T) {
+	t.Parallel()
+
+	wsRoute := route.GameWS(
+		"GET /api/v1/games/{id}/ws",
+		func(_ http.ResponseWriter, _ *http.Request, _ ctx.GameContext) error {
+			return nil
+		},
+	)
+
+	assert.True(t, wsRoute.IsWebSocket())
+	assert.True(t, wsRoute.RequiresAuth())
+}
+
+// --- LobbyWS ---
+
+func TestLobbyWS_IsWebSocket(t *testing.T) {
+	t.Parallel()
+
+	wsRoute := route.LobbyWS(
+		"GET /api/v1/lobbies/{id}/ws",
+		func(_ http.ResponseWriter, _ *http.Request, _ ctx.LobbyContext) error {
+			return nil
+		},
+	)
+
+	assert.True(t, wsRoute.IsWebSocket())
+	assert.True(t, wsRoute.RequiresAuth())
 }

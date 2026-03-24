@@ -27,7 +27,7 @@ func NewWebSocketHandler(
 		upgrader:               upgrader,
 	}
 
-	return route.New("/ws", true, handler)
+	return route.NewWebSocket("/ws", true, handler)
 }
 
 type webSocketHandler struct {

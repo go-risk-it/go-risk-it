@@ -204,6 +204,51 @@ func TestOTelMiddleware_ErrorMetrics_AllCategories(t *testing.T) {
 	}
 }
 
+func TestOTelMiddleware_WebSocket_SkipsStatusRecording(t *testing.T) {
+	t.Parallel()
+
+	m, reader := setupOTelTest(t)
+	otelMiddleware := middleware.NewOTelMiddleware(m)
+
+	inner := route.NewWebSocket("GET /api/v1/games/{id}/ws", true, http.HandlerFunc(
+		func(writer http.ResponseWriter, _ *http.Request) {
+			writer.WriteHeader(http.StatusOK)
+		}))
+
+	wrapped := otelMiddleware.Wrap(inner)
+
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/v1/games/1/ws", nil)
+	rec := httptest.NewRecorder()
+
+	wrapped.ServeHTTP(rec, req)
+
+	// WebSocket routes should not record HTTP error metrics
+	points := collectErrorsTotal(t, reader)
+	assert.Empty(t, points, "WebSocket route should not record HTTP metrics")
+}
+
+func TestOTelMiddleware_NonWebSocket_RecordsMetrics(t *testing.T) {
+	t.Parallel()
+
+	m, reader := setupOTelTest(t)
+	otelMiddleware := middleware.NewOTelMiddleware(m)
+
+	inner := route.New("/api/v1/games", false, http.HandlerFunc(
+		func(writer http.ResponseWriter, _ *http.Request) {
+			writer.WriteHeader(http.StatusBadRequest)
+		}))
+
+	wrapped := otelMiddleware.Wrap(inner)
+
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/api/v1/games", nil)
+	rec := httptest.NewRecorder()
+
+	wrapped.ServeHTTP(rec, req)
+
+	points := collectErrorsTotal(t, reader)
+	require.NotEmpty(t, points, "non-WebSocket route should record HTTP metrics")
+}
+
 func TestStatusToCategory(t *testing.T) {
 	t.Parallel()
 

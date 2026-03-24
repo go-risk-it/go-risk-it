@@ -61,6 +61,7 @@ func GameWS(pattern string, handler GameHandler) *Route {
 	return &Route{
 		pattern:      pattern,
 		requiresAuth: true,
+		isWebSocket:  true,
 		handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			ExtractWSToken(request)
 
@@ -83,6 +84,7 @@ func LobbyWS(pattern string, handler LobbyHandler) *Route {
 	return &Route{
 		pattern:      pattern,
 		requiresAuth: true,
+		isWebSocket:  true,
 		handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			ExtractWSToken(request)
 
