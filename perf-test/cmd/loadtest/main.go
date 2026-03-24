@@ -16,6 +16,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/annotations"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/baseline"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/chaos"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/dbstats"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/journal"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/journal/session"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/mapgraph"
@@ -150,6 +151,11 @@ func main() {
 		"adaptive-max-games",
 		500,
 		"Hard ceiling on concurrent games in adaptive mode",
+	)
+	dbDSN := flag.String(
+		"db-dsn",
+		"",
+		"Postgres DSN for pg_stat_statements collection (e.g., postgres://user:pass@host:5432/db?sslmode=disable). Empty disables.",
 	)
 
 	flag.Parse()
@@ -321,6 +327,21 @@ func main() {
 		injector = chaos.NewInjector(chaosCfg, collector)
 	}
 
+	// Initialize DB stats collector if DSN is provided.
+	var dbStatsCollector *dbstats.Collector
+
+	if *dbDSN != "" {
+		var err error
+
+		dbStatsCollector, err = dbstats.NewCollector(*dbDSN)
+		if err != nil {
+			log.Printf("warning: db stats disabled: %v", err)
+		} else {
+			defer dbStatsCollector.Close()
+			log.Printf("DB stats collection enabled")
+		}
+	}
+
 	runner := orchestrator.NewGameRunner(
 		*url,
 		wsURL,
@@ -369,6 +390,7 @@ func main() {
 			injector,
 			otelExporter,
 			annotator,
+			dbStatsCollector,
 			*saveJournal,
 			*journalName,
 			*preset,
@@ -389,6 +411,7 @@ func main() {
 			injector,
 			otelExporter,
 			annotator,
+			dbStatsCollector,
 			*holdDuration,
 			*adaptiveIncrease,
 			*adaptiveMaxSteps,
@@ -592,6 +615,7 @@ func runStaircase(
 	injector *chaos.Injector,
 	otelExporter *metrics.OTelExporter,
 	annotator *annotations.Annotator,
+	dbStatsCollector *dbstats.Collector,
 	saveJournal bool,
 	journalName string,
 	presetName string,
@@ -658,6 +682,7 @@ func runStaircase(
 		CollectResources: func() resources.ServerResources { return resources.CollectServerResources(resources.DefaultStatsFunc) },
 		Annotator:        annotator,
 		OTelExporter:     otelExporter,
+		DBStats:          dbStatsCollector,
 	}
 
 	// Run staircase.
@@ -681,6 +706,7 @@ func runStaircase(
 			ServerResources:    so.ServerResources,
 			DurationSec:        so.Duration.Seconds(),
 			HealthDistribution: so.HealthDistribution,
+			DBStats:            so.DBStats,
 		}
 
 		levelResults[i] = baseline.LevelResult{
@@ -840,6 +866,7 @@ func runAdaptiveMode(
 	injector *chaos.Injector,
 	otelExporter *metrics.OTelExporter,
 	annotator *annotations.Annotator,
+	dbStatsCollector *dbstats.Collector,
 	holdDuration time.Duration,
 	adaptiveIncrease int,
 	adaptiveMaxSteps int,
@@ -914,6 +941,7 @@ func runAdaptiveMode(
 		CollectResources: func() resources.ServerResources { return resources.CollectServerResources(resources.DefaultStatsFunc) },
 		Annotator:        annotator,
 		OTelExporter:     otelExporter,
+		DBStats:          dbStatsCollector,
 	}
 
 	// Run adaptive staircase.
@@ -936,6 +964,7 @@ func runAdaptiveMode(
 			ServerResources:    so.ServerResources,
 			DurationSec:        so.Duration.Seconds(),
 			HealthDistribution: so.HealthDistribution,
+			DBStats:            so.DBStats,
 		}
 	}
 

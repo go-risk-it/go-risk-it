@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/baseline"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/dbstats"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/health"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/resources"
 )
@@ -28,6 +29,7 @@ type StepResult struct {
 	ServerResources    resources.ServerResources `json:"server_resources"`
 	DurationSec        float64                   `json:"duration_sec"`
 	HealthDistribution *health.Distribution      `json:"health_distribution,omitempty"`
+	DBStats            *dbstats.StepDBStats      `json:"db_stats,omitempty"`
 }
 
 // SLOCeiling is the headline metric: max concurrent games where all SLOs hold.

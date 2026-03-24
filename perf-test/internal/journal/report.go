@@ -117,6 +117,57 @@ func PrintStaircaseReport(w io.Writer, entry Entry) {
 			)
 		}
 	}
+
+	// Print top DB queries if available.
+	hasDBStats := false
+
+	for _, step := range entry.Steps {
+		if step.DBStats != nil && len(step.DBStats.TopQueries) > 0 {
+			hasDBStats = true
+
+			break
+		}
+	}
+
+	if hasDBStats {
+		fmt.Fprintln(w, "\nTop DB Queries (by total time):")
+
+		for _, step := range entry.Steps {
+			if step.DBStats == nil || len(step.DBStats.TopQueries) == 0 {
+				continue
+			}
+
+			fmt.Fprintf(
+				w,
+				"\n  Step %d games (total: %.1fms, conns: %d):\n",
+				step.TargetGames,
+				step.DBStats.TotalQueryTimeMs,
+				step.DBStats.ActiveConnections,
+			)
+
+			dw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+			fmt.Fprintln(dw, "    CALLS\tTOTAL ms\tMEAN ms\tMAX ms\tQUERY")
+
+			for _, q := range step.DBStats.TopQueries {
+				query := q.Query
+				if len(query) > 60 {
+					query = query[:57] + "..."
+				}
+
+				fmt.Fprintf(
+					dw,
+					"    %d\t%.1f\t%.2f\t%.1f\t%s\n",
+					q.Calls,
+					q.TotalTimeMs,
+					q.MeanTimeMs,
+					q.MaxTimeMs,
+					query,
+				)
+			}
+
+			dw.Flush()
+		}
+	}
 }
 
 // PrintCeilingComparison writes a delta report comparing two entries.

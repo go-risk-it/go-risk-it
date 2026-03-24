@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/annotations"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/baseline"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/dbstats"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/health"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/resources"
@@ -43,6 +44,7 @@ type StepOutput struct {
 	Duration           time.Duration
 	ServerResources    resources.ServerResources
 	HealthDistribution *health.Distribution
+	DBStats            *dbstats.StepDBStats
 }
 
 // StaircaseDeps holds injected dependencies for testability.
@@ -52,6 +54,7 @@ type StaircaseDeps struct {
 	CollectResources func() resources.ServerResources
 	Annotator        *annotations.Annotator
 	OTelExporter     *metrics.OTelExporter // shared across all steps, may be nil
+	DBStats          *dbstats.Collector    // optional — nil disables DB stats collection
 }
 
 // RunStaircase executes the staircase: for each step, creates a pool at target
@@ -193,6 +196,13 @@ func runStep(
 		return StepOutput{TargetGames: targetGames}
 	}
 
+	// Reset DB stats counters after pool reaches steady state (best-effort).
+	if deps.DBStats != nil {
+		if err := deps.DBStats.Reset(ctx); err != nil {
+			log.Printf("[staircase] step %d: db stats reset: %v", stepIndex+1, err)
+		}
+	}
+
 	deps.Annotator.Annotate(
 		fmt.Sprintf("staircase: step %d/%d — %d games", stepIndex+1, len(cfg.Steps), targetGames),
 		"perf-test",
@@ -218,6 +228,18 @@ func runStep(
 	// Snapshot health distribution before draining.
 	healthDist := tracker.Snapshot()
 
+	// Snapshot DB stats before draining (best-effort).
+	var stepDBStats *dbstats.StepDBStats
+
+	if deps.DBStats != nil {
+		stats, err := deps.DBStats.Snapshot(ctx, 10)
+		if err != nil {
+			log.Printf("[staircase] step %d: db stats snapshot: %v", stepIndex+1, err)
+		} else {
+			stepDBStats = &stats
+		}
+	}
+
 	// Drain the pool.
 	stepCancel()
 	pool.WaitDrain()
@@ -228,5 +250,6 @@ func runStep(
 		Duration:           holdDuration,
 		ServerResources:    serverResources,
 		HealthDistribution: &healthDist,
+		DBStats:            stepDBStats,
 	}
 }
