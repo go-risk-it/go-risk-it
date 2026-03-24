@@ -2,9 +2,24 @@ package orchestrator
 
 import (
 	"context"
+	"time"
 
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/baseline"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/dbstats"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/health"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/metrics"
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/resources"
 )
+
+// StepOutput holds raw data from a single staircase step.
+type StepOutput struct {
+	TargetGames        int
+	Snapshot           *metrics.Snapshot
+	Duration           time.Duration
+	ServerResources    resources.ServerResources
+	HealthDistribution *health.Distribution
+	DBStats            *dbstats.StepDBStats
+}
 
 // StepExecutor runs a single staircase step at the given concurrency level.
 type StepExecutor interface {

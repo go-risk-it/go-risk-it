@@ -26,18 +26,17 @@ func TestStaircasePipeline_EndToEnd(t *testing.T) {
 
 	dir := t.TempDir()
 
-	cfg := orchestrator.StaircaseConfig{
-		Steps:        []int{2, 4},
-		HoldDuration: 80 * time.Millisecond,
+	slos := baseline.DefaultSLOs()
+	steps := []int{2, 4}
+
+	execCfg := orchestrator.StepExecutorConfig{
 		NumPlayers:   2,
 		GameTimeout:  time.Second,
-		StopOnBreach: false,
 		StaggerDelay: 5 * time.Millisecond,
-		SLOs:         baseline.DefaultSLOs(),
-		CooldownSec:  1,
+		HoldDuration: 80 * time.Millisecond,
 	}
 
-	deps := orchestrator.StaircaseDeps{
+	execDeps := orchestrator.StepExecutorDeps{
 		RunnerFactory: func(c *metrics.Collector, _ orchestrator.GameObserver) orchestrator.RunFunc {
 			return func(ctx context.Context, idx, players int) orchestrator.GameResult {
 				c.RecordMove()
@@ -61,12 +60,16 @@ func TestStaircasePipeline_EndToEnd(t *testing.T) {
 		Annotator: annotations.NewAnnotator(""),
 	}
 
+	executor := orchestrator.NewStepExecutor(execCfg, execDeps, len(steps))
+
 	// Run staircase.
-	outputs := orchestrator.RunStaircase(context.Background(), cfg, deps)
+	outputs := orchestrator.RunStaircase(
+		context.Background(), steps, 1,
+		executor, &orchestrator.NeverStop{}, annotations.NewAnnotator(""),
+	)
 	require.Len(t, outputs, 2, "expected 2 step outputs")
 
 	// Convert to journal StepResults.
-	slos := cfg.SLOs
 	stepResults := make([]journal.StepResult, len(outputs))
 
 	for i, so := range outputs {
@@ -93,11 +96,10 @@ func TestStaircasePipeline_EndToEnd(t *testing.T) {
 		SLOCeiling: ceiling,
 		Steps:      stepResults,
 		Config: journal.StaircaseParams{
-			Steps:           cfg.Steps,
-			HoldDurationSec: cfg.HoldDuration.Seconds(),
-			NumPlayers:      cfg.NumPlayers,
-			GameTimeoutSec:  cfg.GameTimeout.Seconds(),
-			StopOnBreach:    cfg.StopOnBreach,
+			Steps:           steps,
+			HoldDurationSec: execCfg.HoldDuration.Seconds(),
+			NumPlayers:      execCfg.NumPlayers,
+			GameTimeoutSec:  execCfg.GameTimeout.Seconds(),
 		},
 	}
 
@@ -171,27 +173,26 @@ func TestLatestEntry_AfterMultipleSaves(t *testing.T) {
 func TestStaircase_StopOnBreach_ProducesPartialOutput(t *testing.T) {
 	t.Parallel()
 
-	cfg := orchestrator.StaircaseConfig{
-		Steps:        []int{2, 4, 8},
-		HoldDuration: 60 * time.Millisecond,
-		NumPlayers:   2,
-		GameTimeout:  time.Second,
-		StopOnBreach: true,
-		StaggerDelay: 5 * time.Millisecond,
-		SLOs: baseline.SLOSet{
-			UserExperience: []baseline.SLO{
-				{
-					Name:      "impossible",
-					Metric:    "e2e_p95_s",
-					Threshold: 0.000001,
-					Unit:      "s",
-				},
+	steps := []int{2, 4, 8}
+	slos := baseline.SLOSet{
+		UserExperience: []baseline.SLO{
+			{
+				Name:      "impossible",
+				Metric:    "e2e_p95_s",
+				Threshold: 0.000001,
+				Unit:      "s",
 			},
 		},
-		CooldownSec: 1,
 	}
 
-	deps := orchestrator.StaircaseDeps{
+	execCfg := orchestrator.StepExecutorConfig{
+		NumPlayers:   2,
+		GameTimeout:  time.Second,
+		StaggerDelay: 5 * time.Millisecond,
+		HoldDuration: 60 * time.Millisecond,
+	}
+
+	execDeps := orchestrator.StepExecutorDeps{
 		RunnerFactory: func(c *metrics.Collector, _ orchestrator.GameObserver) orchestrator.RunFunc {
 			return func(ctx context.Context, idx, players int) orchestrator.GameResult {
 				c.RecordMove()
@@ -211,7 +212,13 @@ func TestStaircase_StopOnBreach_ProducesPartialOutput(t *testing.T) {
 		Annotator:        annotations.NewAnnotator(""),
 	}
 
-	outputs := orchestrator.RunStaircase(context.Background(), cfg, deps)
+	executor := orchestrator.NewStepExecutor(execCfg, execDeps, len(steps))
+	stopper := &orchestrator.SLOStopCondition{SLOs: slos}
+
+	outputs := orchestrator.RunStaircase(
+		context.Background(), steps, 1,
+		executor, stopper, annotations.NewAnnotator(""),
+	)
 
 	// Should stop at first step (SLO breach), but include that step.
 	require.Len(t, outputs, 1)
@@ -219,7 +226,7 @@ func TestStaircase_StopOnBreach_ProducesPartialOutput(t *testing.T) {
 
 	// Build step results and verify SLO evaluation.
 	snap := baseline.SnapshotToMetrics(outputs[0].Snapshot, outputs[0].Duration.Seconds())
-	eval := cfg.SLOs.Evaluate(snap)
+	eval := slos.Evaluate(snap)
 	assert.False(t, eval.AllPassing())
 
 	// Ceiling should be 0 (no passing steps).

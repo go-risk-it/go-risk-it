@@ -14,18 +14,27 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func makeFakeDeps(
+// makeTestStepExecutor builds a DefaultStepExecutor suitable for staircase tests.
+func makeTestStepExecutor(
 	t *testing.T,
+	totalSteps int,
 	collectorCalls *atomic.Int64,
-) orchestrator.StaircaseDeps {
+) *orchestrator.DefaultStepExecutor {
 	t.Helper()
 
-	return orchestrator.StaircaseDeps{
-		RunnerFactory: func(c *metrics.Collector, _ orchestrator.GameObserver) orchestrator.RunFunc {
-			return func(
-				ctx context.Context,
-				idx, players int,
-			) orchestrator.GameResult {
+	cfg := orchestrator.StepExecutorConfig{
+		NumPlayers:   2,
+		GameTimeout:  time.Second,
+		StaggerDelay: 5 * time.Millisecond,
+		HoldDuration: 100 * time.Millisecond,
+	}
+
+	deps := orchestrator.StepExecutorDeps{
+		RunnerFactory: func(
+			c *metrics.Collector,
+			_ orchestrator.GameObserver,
+		) orchestrator.RunFunc {
+			return func(ctx context.Context, idx, players int) orchestrator.GameResult {
 				select {
 				case <-ctx.Done():
 				case <-time.After(10 * time.Millisecond):
@@ -44,8 +53,10 @@ func makeFakeDeps(
 		CollectResources: func() resources.ServerResources {
 			return resources.ServerResources{}
 		},
-		Annotator: annotations.NewAnnotator(""), // no-op
+		Annotator: annotations.NewAnnotator(""),
 	}
+
+	return orchestrator.NewStepExecutor(cfg, deps, totalSteps)
 }
 
 func TestRunStaircase_AllStepsPassing(t *testing.T) {
@@ -53,19 +64,15 @@ func TestRunStaircase_AllStepsPassing(t *testing.T) {
 
 	var collectorCalls atomic.Int64
 
-	cfg := orchestrator.StaircaseConfig{
-		Steps:        []int{2, 4},
-		HoldDuration: 100 * time.Millisecond,
-		NumPlayers:   2,
-		GameTimeout:  time.Second,
-		StopOnBreach: true,
-		StaggerDelay: 5 * time.Millisecond,
-		SLOs:         baseline.DefaultSLOs(),
-		CooldownSec:  1,
-	}
+	steps := []int{2, 4}
+	executor := makeTestStepExecutor(t, len(steps), &collectorCalls)
+	stopper := &orchestrator.NeverStop{}
+	annotator := annotations.NewAnnotator("")
 
-	deps := makeFakeDeps(t, &collectorCalls)
-	outputs := orchestrator.RunStaircase(context.Background(), cfg, deps)
+	outputs := orchestrator.RunStaircase(
+		context.Background(), steps, 1, executor, stopper, annotator,
+	)
+
 	assert.Len(t, outputs, 2)
 	assert.Equal(t, int64(2), collectorCalls.Load())
 }
@@ -73,39 +80,25 @@ func TestRunStaircase_AllStepsPassing(t *testing.T) {
 func TestRunStaircase_StopOnBreach(t *testing.T) {
 	t.Parallel()
 
-	stepCount := 0
+	steps := []int{2, 4, 8}
 
-	cfg := orchestrator.StaircaseConfig{
-		Steps:        []int{2, 4, 8},
-		HoldDuration: 100 * time.Millisecond,
+	// Build executor that records high latency to trigger SLO breach.
+	cfg := orchestrator.StepExecutorConfig{
 		NumPlayers:   2,
 		GameTimeout:  time.Second,
-		StopOnBreach: true,
 		StaggerDelay: 5 * time.Millisecond,
-		SLOs: baseline.SLOSet{
-			UserExperience: []baseline.SLO{
-				// Impossible threshold: E2E p95 < 0.000001s — will always fail.
-				{
-					Name:      "impossible",
-					Metric:    "e2e_p95_s",
-					Threshold: 0.000001,
-					Unit:      "s",
-				},
-			},
-		},
-		CooldownSec: 1,
+		HoldDuration: 100 * time.Millisecond,
 	}
 
-	deps := orchestrator.StaircaseDeps{
-		RunnerFactory: func(c *metrics.Collector, _ orchestrator.GameObserver) orchestrator.RunFunc {
-			return func(
-				ctx context.Context,
-				idx, players int,
-			) orchestrator.GameResult {
-				// Record a move to produce metrics.
+	deps := orchestrator.StepExecutorDeps{
+		RunnerFactory: func(
+			c *metrics.Collector,
+			_ orchestrator.GameObserver,
+		) orchestrator.RunFunc {
+			return func(ctx context.Context, idx, players int) orchestrator.GameResult {
 				c.RecordMove()
 				c.RecordTimedMove()
-				c.RecordE2E(100 * time.Millisecond) // p95 will be 100ms > 0.000001s threshold
+				c.RecordE2E(100 * time.Millisecond)
 
 				select {
 				case <-ctx.Done():
@@ -115,18 +108,32 @@ func TestRunStaircase_StopOnBreach(t *testing.T) {
 				return orchestrator.GameResult{GameIndex: idx}
 			}
 		},
-		NewCollector: func(d time.Duration) *metrics.Collector {
-			stepCount++
-
-			return metrics.NewCollector(d)
-		},
-		CollectResources: func() resources.ServerResources {
-			return resources.ServerResources{}
-		},
-		Annotator: annotations.NewAnnotator(""),
+		NewCollector:     metrics.NewCollector,
+		CollectResources: func() resources.ServerResources { return resources.ServerResources{} },
+		Annotator:        annotations.NewAnnotator(""),
 	}
 
-	outputs := orchestrator.RunStaircase(context.Background(), cfg, deps)
+	executor := orchestrator.NewStepExecutor(cfg, deps, len(steps))
+
+	// Impossible SLO threshold.
+	stopper := &orchestrator.SLOStopCondition{
+		SLOs: baseline.SLOSet{
+			UserExperience: []baseline.SLO{
+				{
+					Name:      "impossible",
+					Metric:    "e2e_p95_s",
+					Threshold: 0.000001,
+					Unit:      "s",
+				},
+			},
+		},
+	}
+	annotator := annotations.NewAnnotator("")
+
+	outputs := orchestrator.RunStaircase(
+		context.Background(), steps, 1, executor, stopper, annotator,
+	)
+
 	// Should stop at step 1 (first breach), returning 1 output.
 	assert.Equal(t, 1, len(outputs))
 	assert.Equal(t, 2, outputs[0].TargetGames)
@@ -135,43 +142,57 @@ func TestRunStaircase_StopOnBreach(t *testing.T) {
 func TestRunStaircase_ContinueOnBreach(t *testing.T) {
 	t.Parallel()
 
-	cfg := orchestrator.StaircaseConfig{
-		Steps:        []int{2, 4, 8},
-		HoldDuration: 50 * time.Millisecond,
-		NumPlayers:   2,
-		GameTimeout:  time.Second,
-		StopOnBreach: false,
-		StaggerDelay: 5 * time.Millisecond,
-		SLOs:         baseline.DefaultSLOs(),
-		CooldownSec:  1,
-	}
+	steps := []int{2, 4, 8}
+	executor := makeTestStepExecutor(t, len(steps), nil)
 
-	deps := makeFakeDeps(t, nil)
-	outputs := orchestrator.RunStaircase(context.Background(), cfg, deps)
-	assert.Len(t, outputs, 3) // all 3 run regardless of SLOs
+	outputs := orchestrator.RunStaircase(
+		context.Background(), steps, 1,
+		executor, &orchestrator.NeverStop{}, annotations.NewAnnotator(""),
+	)
+
+	assert.Len(t, outputs, 3)
 }
 
 func TestRunStaircase_ContextCancellation(t *testing.T) {
 	t.Parallel()
 
-	cfg := orchestrator.StaircaseConfig{
-		Steps:        []int{2, 4, 8},
-		HoldDuration: 5 * time.Second, // long hold, will be cancelled
+	// Use long hold so cancellation hits during a step.
+	cfg := orchestrator.StepExecutorConfig{
 		NumPlayers:   2,
 		GameTimeout:  time.Second,
-		StopOnBreach: false,
 		StaggerDelay: 5 * time.Millisecond,
-		SLOs:         baseline.DefaultSLOs(),
-		CooldownSec:  1,
+		HoldDuration: 5 * time.Second,
 	}
 
-	deps := makeFakeDeps(t, nil)
+	deps := orchestrator.StepExecutorDeps{
+		RunnerFactory: func(
+			c *metrics.Collector,
+			_ orchestrator.GameObserver,
+		) orchestrator.RunFunc {
+			return func(ctx context.Context, idx, players int) orchestrator.GameResult {
+				select {
+				case <-ctx.Done():
+				case <-time.After(10 * time.Millisecond):
+				}
+
+				return orchestrator.GameResult{GameIndex: idx}
+			}
+		},
+		NewCollector:     metrics.NewCollector,
+		CollectResources: func() resources.ServerResources { return resources.ServerResources{} },
+		Annotator:        annotations.NewAnnotator(""),
+	}
+
+	steps := []int{2, 4, 8}
+	executor := orchestrator.NewStepExecutor(cfg, deps, len(steps))
 
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
 
-	outputs := orchestrator.RunStaircase(ctx, cfg, deps)
-	// Should get at most 1 step (cancelled during hold).
+	outputs := orchestrator.RunStaircase(
+		ctx, steps, 1, executor, &orchestrator.NeverStop{}, annotations.NewAnnotator(""),
+	)
+
 	assert.LessOrEqual(t, len(outputs), 1)
 }
 
@@ -180,19 +201,45 @@ func TestRunStaircase_FreshCollectorPerStep(t *testing.T) {
 
 	var collectorCalls atomic.Int64
 
-	cfg := orchestrator.StaircaseConfig{
-		Steps:        []int{2, 4, 8},
-		HoldDuration: 50 * time.Millisecond,
+	steps := []int{2, 4, 8}
+
+	cfg := orchestrator.StepExecutorConfig{
 		NumPlayers:   2,
 		GameTimeout:  time.Second,
-		StopOnBreach: false,
 		StaggerDelay: 5 * time.Millisecond,
-		SLOs:         baseline.DefaultSLOs(),
-		CooldownSec:  1,
+		HoldDuration: 50 * time.Millisecond,
 	}
 
-	deps := makeFakeDeps(t, &collectorCalls)
-	outputs := orchestrator.RunStaircase(context.Background(), cfg, deps)
+	deps := orchestrator.StepExecutorDeps{
+		RunnerFactory: func(
+			c *metrics.Collector,
+			_ orchestrator.GameObserver,
+		) orchestrator.RunFunc {
+			return func(ctx context.Context, idx, players int) orchestrator.GameResult {
+				select {
+				case <-ctx.Done():
+				case <-time.After(10 * time.Millisecond):
+				}
+
+				return orchestrator.GameResult{GameIndex: idx}
+			}
+		},
+		NewCollector: func(d time.Duration) *metrics.Collector {
+			collectorCalls.Add(1)
+
+			return metrics.NewCollector(d)
+		},
+		CollectResources: func() resources.ServerResources { return resources.ServerResources{} },
+		Annotator:        annotations.NewAnnotator(""),
+	}
+
+	executor := orchestrator.NewStepExecutor(cfg, deps, len(steps))
+
+	outputs := orchestrator.RunStaircase(
+		context.Background(), steps, 1,
+		executor, &orchestrator.NeverStop{}, annotations.NewAnnotator(""),
+	)
+
 	assert.Len(t, outputs, 3)
 	assert.Equal(t, int64(3), collectorCalls.Load())
 }
@@ -200,24 +247,44 @@ func TestRunStaircase_FreshCollectorPerStep(t *testing.T) {
 func TestRunStaircase_ResourcesCollected(t *testing.T) {
 	t.Parallel()
 
-	cfg := orchestrator.StaircaseConfig{
-		Steps:        []int{2},
-		HoldDuration: 50 * time.Millisecond,
+	cfg := orchestrator.StepExecutorConfig{
 		NumPlayers:   2,
 		GameTimeout:  time.Second,
-		StopOnBreach: false,
 		StaggerDelay: 5 * time.Millisecond,
-		SLOs:         baseline.DefaultSLOs(),
+		HoldDuration: 50 * time.Millisecond,
 	}
 
-	deps := makeFakeDeps(t, nil)
-	deps.CollectResources = func() resources.ServerResources {
-		return resources.ServerResources{
-			RiskIt: resources.ContainerStats{CPUPercent: 42.0, MemoryMB: 256},
-		}
+	deps := orchestrator.StepExecutorDeps{
+		RunnerFactory: func(
+			c *metrics.Collector,
+			_ orchestrator.GameObserver,
+		) orchestrator.RunFunc {
+			return func(ctx context.Context, idx, players int) orchestrator.GameResult {
+				select {
+				case <-ctx.Done():
+				case <-time.After(10 * time.Millisecond):
+				}
+
+				return orchestrator.GameResult{GameIndex: idx}
+			}
+		},
+		NewCollector: metrics.NewCollector,
+		CollectResources: func() resources.ServerResources {
+			return resources.ServerResources{
+				RiskIt: resources.ContainerStats{CPUPercent: 42.0, MemoryMB: 256},
+			}
+		},
+		Annotator: annotations.NewAnnotator(""),
 	}
 
-	outputs := orchestrator.RunStaircase(context.Background(), cfg, deps)
+	steps := []int{2}
+	executor := orchestrator.NewStepExecutor(cfg, deps, len(steps))
+
+	outputs := orchestrator.RunStaircase(
+		context.Background(), steps, 0,
+		executor, &orchestrator.NeverStop{}, annotations.NewAnnotator(""),
+	)
+
 	assert.Len(t, outputs, 1)
 	assert.InDelta(t, 42.0, outputs[0].ServerResources.RiskIt.CPUPercent, 0.01)
 }

@@ -48,11 +48,32 @@ func (a *App) runStaircase(ctx context.Context) error {
 		staircaseCfg.WarmUpDurationSec = a.cfg.Staircase.WarmupDuration
 	}
 
-	// Build dependencies.
-	deps := a.buildStaircaseDeps(staircaseCfg.GameTimeout)
+	// Build step executor.
+	execCfg := orchestrator.StepExecutorConfig{
+		NumPlayers:        staircaseCfg.NumPlayers,
+		GameTimeout:       staircaseCfg.GameTimeout,
+		StaggerDelay:      staircaseCfg.StaggerDelay,
+		HoldDuration:      staircaseCfg.HoldDuration,
+		WarmUpCompletions: staircaseCfg.WarmUpCompletions,
+		WarmUpDurationSec: staircaseCfg.WarmUpDurationSec,
+	}
+
+	execDeps := a.buildStepExecutorDeps(staircaseCfg.GameTimeout)
+	executor := orchestrator.NewStepExecutor(execCfg, execDeps, len(staircaseCfg.Steps))
+
+	// Build stop condition.
+	var stopper orchestrator.StopCondition
+	if staircaseCfg.StopOnBreach {
+		stopper = &orchestrator.SLOStopCondition{SLOs: staircaseCfg.SLOs}
+	} else {
+		stopper = &orchestrator.NeverStop{}
+	}
 
 	// Run staircase.
-	stepOutputs := orchestrator.RunStaircase(ctx, *staircaseCfg, deps)
+	stepOutputs := orchestrator.RunStaircase(
+		ctx, staircaseCfg.Steps, staircaseCfg.CooldownSec,
+		executor, stopper, a.annotator,
+	)
 
 	// Convert and analyze results.
 	stepResults, levelResults := convertStepResults(stepOutputs, staircaseCfg.SLOs)
@@ -97,10 +118,9 @@ func (a *App) runStaircase(ctx context.Context) error {
 	return nil
 }
 
-// buildStaircaseDeps creates the orchestrator dependencies shared by staircase
-// and adaptive modes.
-func (a *App) buildStaircaseDeps(gameTimeout time.Duration) orchestrator.StaircaseDeps {
-	return orchestrator.StaircaseDeps{
+// buildStepExecutorDeps creates the step executor dependencies.
+func (a *App) buildStepExecutorDeps(gameTimeout time.Duration) orchestrator.StepExecutorDeps {
+	return orchestrator.StepExecutorDeps{
 		RunnerFactory: func(c *metrics.Collector, obs orchestrator.GameObserver) orchestrator.RunFunc {
 			strat := a.strategy
 			if a.cfg.Chaos.Enabled() {
@@ -132,6 +152,21 @@ func (a *App) buildStaircaseDeps(gameTimeout time.Duration) orchestrator.Stairca
 		Annotator:    a.annotator,
 		OTelExporter: a.otel,
 		DBStats:      a.dbStats,
+	}
+}
+
+// buildStaircaseDeps creates StaircaseDeps for adaptive mode.
+// Deprecated: use buildStepExecutorDeps + DefaultStepExecutor instead.
+func (a *App) buildStaircaseDeps(gameTimeout time.Duration) orchestrator.StaircaseDeps {
+	ed := a.buildStepExecutorDeps(gameTimeout)
+
+	return orchestrator.StaircaseDeps{
+		RunnerFactory:    ed.RunnerFactory,
+		NewCollector:     ed.NewCollector,
+		CollectResources: ed.CollectResources,
+		Annotator:        ed.Annotator,
+		OTelExporter:     ed.OTelExporter,
+		DBStats:          ed.DBStats,
 	}
 }
 
