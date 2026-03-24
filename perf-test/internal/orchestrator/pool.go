@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// RunFunc matches GameRunner.Run signature for dependency injection.
+// RunFunc is the signature for running a single game.
 type RunFunc func(ctx context.Context, gameIndex, numPlayers int) GameResult
 
 // PoolConfig configures the game pool.
