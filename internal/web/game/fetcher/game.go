@@ -19,7 +19,7 @@ type GameFetcher interface {
 
 type GameFetcherImpl struct {
 	gameService     state.Service
-	phaseController controller.PhaseController
+	phaseController *controller.PhaseController
 }
 
 var _ GameFetcher = (*GameFetcherImpl)(nil)
@@ -33,7 +33,7 @@ type GameFetcherResult struct {
 
 func NewGameFetcher(
 	gameService state.Service,
-	phaseController controller.PhaseController,
+	phaseController *controller.PhaseController,
 ) GameFetcherResult {
 	res := &GameFetcherImpl{
 		gameService:     gameService,

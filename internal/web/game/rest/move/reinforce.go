@@ -8,17 +8,13 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 )
 
-type ReinforceHandler interface {
-	route.Route
-}
-
 type ReinforceHandlerImpl struct {
-	moveController controller.MoveController
+	moveController *controller.MoveController
 }
 
-var _ ReinforceHandler = (*ReinforceHandlerImpl)(nil)
+var _ route.Route = (*ReinforceHandlerImpl)(nil)
 
-func NewReinforceHandler(moveController controller.MoveController) *ReinforceHandlerImpl {
+func NewReinforceHandler(moveController *controller.MoveController) *ReinforceHandlerImpl {
 	return &ReinforceHandlerImpl{
 		moveController: moveController,
 	}

@@ -9,21 +9,15 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
 )
 
-type BoardController interface {
-	GetBoardState(ctx ctx.GameContext) (messaging.BoardState, error)
-}
-
-type BoardControllerImpl struct {
+type BoardController struct {
 	regionService region.Service
 }
 
-var _ BoardController = (*BoardControllerImpl)(nil)
-
-func NewBoardController(regionService region.Service) *BoardControllerImpl {
-	return &BoardControllerImpl{regionService: regionService}
+func NewBoardController(regionService region.Service) *BoardController {
+	return &BoardController{regionService: regionService}
 }
 
-func (c *BoardControllerImpl) GetBoardState(ctx ctx.GameContext) (messaging.BoardState, error) {
+func (c *BoardController) GetBoardState(ctx ctx.GameContext) (messaging.BoardState, error) {
 	ctx.Log().Infow("getting board state")
 
 	regions, err := c.regionService.GetRegions(ctx)

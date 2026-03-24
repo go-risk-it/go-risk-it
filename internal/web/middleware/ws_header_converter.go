@@ -9,18 +9,12 @@ import (
 	"go.uber.org/zap"
 )
 
-type WebsocketHeaderConversionMiddleware interface {
-	Middleware
-}
-
-type WebsocketHeaderConversionMiddlewareImpl struct {
+type WebsocketHeaderConversionMiddleware struct {
 	log *zap.SugaredLogger
 }
 
-var _ WebsocketHeaderConversionMiddleware = (*WebsocketHeaderConversionMiddlewareImpl)(nil)
-
-func NewWebsocketAuthMiddleware(log *zap.SugaredLogger) *WebsocketHeaderConversionMiddlewareImpl {
-	return &WebsocketHeaderConversionMiddlewareImpl{
+func NewWebsocketAuthMiddleware(log *zap.SugaredLogger) *WebsocketHeaderConversionMiddleware {
+	return &WebsocketHeaderConversionMiddleware{
 		log: log,
 	}
 }
@@ -33,7 +27,7 @@ func NewWebsocketAuthMiddleware(log *zap.SugaredLogger) *WebsocketHeaderConversi
 //	"risk-it.websocket.auth.token, <token>" in the Sec-WebSocket-Protocol header.
 //
 // See: https://stackoverflow.com/questions/4361173/http-headers-in-websockets-client-api/77060459
-func (m *WebsocketHeaderConversionMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
+func (m *WebsocketHeaderConversionMiddleware) Wrap(routeToWrap route.Route) route.Route {
 	return route.NewRoute(
 		routeToWrap.Pattern(),
 		routeToWrap.RequiresAuth(),

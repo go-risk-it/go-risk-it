@@ -23,7 +23,7 @@ type MovePerformedHandlerParams struct {
 
 	Log               *zap.SugaredLogger
 	Signal            signals.MovePerformedSignal
-	MoveLogController controller.MoveLogController
+	MoveLogController *controller.MoveLogController
 	MoveLogFetcher    fetcher.MoveLogFetcher
 	ConnectionManager ws.Manager
 }

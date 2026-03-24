@@ -12,18 +12,14 @@ import (
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 )
 
-type AdvancementHandler interface {
-	route.Route
-}
-
 type AdvancementHandlerImpl struct {
-	advancementController controller.AdvancementController
+	advancementController *controller.AdvancementController
 }
 
-var _ AdvancementHandler = (*AdvancementHandlerImpl)(nil)
+var _ route.Route = (*AdvancementHandlerImpl)(nil)
 
 func NewAdvancementHandler(
-	advancementController controller.AdvancementController,
+	advancementController *controller.AdvancementController,
 ) *AdvancementHandlerImpl {
 	return &AdvancementHandlerImpl{
 		advancementController: advancementController,

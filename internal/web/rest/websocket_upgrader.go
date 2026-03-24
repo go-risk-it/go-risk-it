@@ -16,10 +16,6 @@ import (
 	"go.uber.org/zap"
 )
 
-type WebSocketUpgraderHandler interface {
-	route.Route
-}
-
 type WebSocketUpgraderHandlerImpl struct {
 	gameConnectionManager  gameWs.Manager
 	lobbyConnectionManager lobbyWs.Manager
@@ -27,7 +23,7 @@ type WebSocketUpgraderHandlerImpl struct {
 	log                    *zap.SugaredLogger
 }
 
-var _ WebSocketUpgraderHandler = (*WebSocketUpgraderHandlerImpl)(nil)
+var _ route.Route = (*WebSocketUpgraderHandlerImpl)(nil)
 
 func NewWebSocketHandler(
 	gameConnectionManager gameWs.Manager,

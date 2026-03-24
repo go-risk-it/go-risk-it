@@ -8,17 +8,13 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 )
 
-type CardsHandler interface {
-	route.Route
-}
-
 type CardsHandlerImpl struct {
-	moveController controller.MoveController
+	moveController *controller.MoveController
 }
 
-var _ CardsHandler = (*CardsHandlerImpl)(nil)
+var _ route.Route = (*CardsHandlerImpl)(nil)
 
-func NewCardsHandler(moveController controller.MoveController) *CardsHandlerImpl {
+func NewCardsHandler(moveController *controller.MoveController) *CardsHandlerImpl {
 	return &CardsHandlerImpl{
 		moveController: moveController,
 	}

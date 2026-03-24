@@ -19,7 +19,7 @@ type MissionFetcher interface {
 
 type MissionFetcherImpl struct {
 	missionService    mission.Service
-	missionController controller.MissionController
+	missionController *controller.MissionController
 }
 
 var _ MissionFetcher = (*MissionFetcherImpl)(nil)
@@ -33,7 +33,7 @@ type MissionFetcherResult struct {
 
 func NewMissionFetcher(
 	missionService mission.Service,
-	missionController controller.MissionController,
+	missionController *controller.MissionController,
 ) MissionFetcherResult {
 	res := &MissionFetcherImpl{
 		missionService:    missionService,

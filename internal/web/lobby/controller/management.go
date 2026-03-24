@@ -10,33 +10,26 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/lobby/management"
 )
 
-type ManagementController interface {
-	JoinLobby(ctx ctx.LobbyContext, request request.JoinLobby) error
-	GetUserLobbies(ctx ctx.UserContext) (response.Lobbies, error)
-}
-
-type ManagementControllerImpl struct {
+type ManagementController struct {
 	managementService management.Service
 }
 
-var _ ManagementController = (*ManagementControllerImpl)(nil)
-
 func NewManagementController(
 	managementService management.Service,
-) *ManagementControllerImpl {
-	return &ManagementControllerImpl{
+) *ManagementController {
+	return &ManagementController{
 		managementService: managementService,
 	}
 }
 
-func (c *ManagementControllerImpl) JoinLobby(
+func (c *ManagementController) JoinLobby(
 	ctx ctx.LobbyContext,
 	request request.JoinLobby,
 ) error {
 	return c.managementService.JoinLobby(ctx, request.ParticipantName)
 }
 
-func (c *ManagementControllerImpl) GetUserLobbies(ctx ctx.UserContext) (response.Lobbies, error) {
+func (c *ManagementController) GetUserLobbies(ctx ctx.UserContext) (response.Lobbies, error) {
 	userLobbies, err := c.managementService.GetUserLobbies(ctx)
 	if err != nil {
 		return response.Lobbies{}, fmt.Errorf("failed to get available lobbies: %w", err)

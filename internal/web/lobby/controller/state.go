@@ -6,25 +6,19 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/lobby/state"
 )
 
-type StateController interface {
-	GetLobbyState(ctx ctx.LobbyContext) (messaging.LobbyState, error)
-}
-
-type StateControllerImpl struct {
+type StateController struct {
 	stateService state.Service
 }
 
-var _ StateController = (*StateControllerImpl)(nil)
-
 func NewStateController(
 	stateService state.Service,
-) *StateControllerImpl {
-	return &StateControllerImpl{
+) *StateController {
+	return &StateController{
 		stateService: stateService,
 	}
 }
 
-func (s *StateControllerImpl) GetLobbyState(ctx ctx.LobbyContext) (messaging.LobbyState, error) {
+func (s *StateController) GetLobbyState(ctx ctx.LobbyContext) (messaging.LobbyState, error) {
 	lobby, err := s.stateService.GetLobbyState(ctx)
 	if err != nil {
 		ctx.Log().Warnw("failed to get lobby state", "err", err)

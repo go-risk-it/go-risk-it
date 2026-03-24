@@ -8,17 +8,13 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 )
 
-type ConquerHandler interface {
-	route.Route
-}
-
 type ConquerHandlerImpl struct {
-	moveController controller.MoveController
+	moveController *controller.MoveController
 }
 
-var _ ConquerHandler = (*ConquerHandlerImpl)(nil)
+var _ route.Route = (*ConquerHandlerImpl)(nil)
 
-func NewConquerHandler(moveController controller.MoveController) *ConquerHandlerImpl {
+func NewConquerHandler(moveController *controller.MoveController) *ConquerHandlerImpl {
 	return &ConquerHandlerImpl{
 		moveController: moveController,
 	}

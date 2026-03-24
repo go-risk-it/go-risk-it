@@ -12,13 +12,13 @@ import (
 
 func NewServeMux(
 	routes []route.Route,
-	authMiddleware middleware.AuthMiddleware,
-	corsMiddleware middleware.CorsMiddleware,
-	gameMiddleware middleware.GameMiddleware,
-	lobbyMiddleware middleware.LobbyMiddleware,
-	logMiddleware middleware.LogMiddleware,
-	otelMiddleware middleware.OTelMiddleware,
-	websocketAuthMiddleware middleware.WebsocketHeaderConversionMiddleware,
+	authMiddleware *middleware.AuthMiddleware,
+	corsMiddleware *middleware.CorsMiddleware,
+	gameMiddleware *middleware.GameMiddleware,
+	lobbyMiddleware *middleware.LobbyMiddleware,
+	logMiddleware *middleware.LogMiddleware,
+	otelMiddleware *middleware.OTelMiddleware,
+	websocketAuthMiddleware *middleware.WebsocketHeaderConversionMiddleware,
 	log *zap.SugaredLogger,
 ) http.Handler {
 	mux := http.NewServeMux()

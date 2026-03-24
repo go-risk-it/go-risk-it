@@ -15,17 +15,13 @@ import (
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 )
 
-type Handler interface {
-	route.Route
-}
-
 type HandlerImpl struct {
-	gameController controller.GameController
+	gameController *controller.GameController
 }
 
-var _ Handler = (*HandlerImpl)(nil)
+var _ route.Route = (*HandlerImpl)(nil)
 
-func NewCreationHandler(gameController controller.GameController) *HandlerImpl {
+func NewCreationHandler(gameController *controller.GameController) *HandlerImpl {
 	return &HandlerImpl{
 		gameController: gameController,
 	}

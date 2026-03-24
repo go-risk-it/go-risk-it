@@ -11,15 +11,11 @@ import (
 	"github.com/hellofresh/health-go/v5/checks/postgres"
 )
 
-type Handler interface {
-	route.Route
-}
-
 type HandlerImpl struct {
 	*health.Health
 }
 
-var _ Handler = (*HandlerImpl)(nil)
+var _ route.Route = (*HandlerImpl)(nil)
 
 func New(databaseConfig config.DatabaseConfig) (*HandlerImpl, error) {
 	health, err := health.New(

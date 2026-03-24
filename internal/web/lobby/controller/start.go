@@ -14,28 +14,22 @@ type GameCreator interface {
 	CreateGame(ctx ctx.UserContext, request request.CreateGame) (int64, error)
 }
 
-type StartController interface {
-	StartGame(ctx ctx.LobbyContext) error
-}
-
-type StartControllerImpl struct {
+type StartController struct {
 	gameCreator  GameCreator
 	startService start.Service
 }
 
-var _ StartController = (*StartControllerImpl)(nil)
-
 func NewStartController(
 	gameCreator GameCreator,
 	startService start.Service,
-) *StartControllerImpl {
-	return &StartControllerImpl{
+) *StartController {
+	return &StartController{
 		gameCreator:  gameCreator,
 		startService: startService,
 	}
 }
 
-func (c *StartControllerImpl) StartGame(ctx ctx.LobbyContext) error {
+func (c *StartController) StartGame(ctx ctx.LobbyContext) error {
 	canStartLobby, err := c.startService.CanStartLobby(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to check if lobby can be started: %w", err)

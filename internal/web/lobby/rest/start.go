@@ -10,18 +10,14 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 )
 
-type StartHandler interface {
-	route.Route
-}
-
 type StartHandlerImpl struct {
-	startController controller.StartController
+	startController *controller.StartController
 }
 
-var _ StartHandler = (*StartHandlerImpl)(nil)
+var _ route.Route = (*StartHandlerImpl)(nil)
 
 func NewStartHandler(
-	startController controller.StartController,
+	startController *controller.StartController,
 ) *StartHandlerImpl {
 	return &StartHandlerImpl{
 		startController: startController,

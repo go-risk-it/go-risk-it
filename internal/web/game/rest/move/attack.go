@@ -8,17 +8,13 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 )
 
-type AttackHandler interface {
-	route.Route
-}
-
 type AttackHandlerImpl struct {
-	moveController controller.MoveController
+	moveController *controller.MoveController
 }
 
-var _ AttackHandler = (*AttackHandlerImpl)(nil)
+var _ route.Route = (*AttackHandlerImpl)(nil)
 
-func NewAttackHandler(moveController controller.MoveController) *AttackHandlerImpl {
+func NewAttackHandler(moveController *controller.MoveController) *AttackHandlerImpl {
 	return &AttackHandlerImpl{
 		moveController: moveController,
 	}

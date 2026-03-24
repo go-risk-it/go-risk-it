@@ -12,32 +12,25 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 )
 
-type GameController interface {
-	CreateGame(ctx ctx.UserContext, request request.CreateGame) (int64, error)
-	GetUserGames(ctx ctx.UserContext) (response.Games, error)
-}
-
-type GameControllerImpl struct {
+type GameController struct {
 	boardService    board.Service
 	creationService creation.Service
 	gameService     state.Service
 }
 
-var _ GameController = (*GameControllerImpl)(nil)
-
 func NewGameController(
 	boardService board.Service,
 	creationService creation.Service,
 	gameService state.Service,
-) *GameControllerImpl {
-	return &GameControllerImpl{
+) *GameController {
+	return &GameController{
 		boardService:    boardService,
 		creationService: creationService,
 		gameService:     gameService,
 	}
 }
 
-func (c *GameControllerImpl) CreateGame(
+func (c *GameController) CreateGame(
 	ctx ctx.UserContext, req request.CreateGame,
 ) (int64, error) {
 	regions, err := c.boardService.GetBoardRegions(ctx)
@@ -61,7 +54,7 @@ func (c *GameControllerImpl) CreateGame(
 	return gameID, nil
 }
 
-func (c *GameControllerImpl) GetUserGames(ctx ctx.UserContext) (response.Games, error) {
+func (c *GameController) GetUserGames(ctx ctx.UserContext) (response.Games, error) {
 	userGames, err := c.gameService.GetUserGames(ctx)
 	if err != nil {
 		return response.Games{}, fmt.Errorf("failed to get user games: %w", err)

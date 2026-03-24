@@ -9,17 +9,13 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 )
 
-type DeployHandler interface {
-	route.Route
-}
-
 type DeployHandlerImpl struct {
-	moveController controller.MoveController
+	moveController *controller.MoveController
 }
 
-var _ DeployHandler = (*DeployHandlerImpl)(nil)
+var _ route.Route = (*DeployHandlerImpl)(nil)
 
-func NewDeployHandler(moveController controller.MoveController) *DeployHandlerImpl {
+func NewDeployHandler(moveController *controller.MoveController) *DeployHandlerImpl {
 	return &DeployHandlerImpl{
 		moveController: moveController,
 	}

@@ -14,12 +14,12 @@ type LobbyStateFetcher interface {
 }
 
 type LobbyStateFetcherImpl struct {
-	stateController controller.StateController
+	stateController *controller.StateController
 }
 
 var _ LobbyStateFetcher = (*LobbyStateFetcherImpl)(nil)
 
-func NewLobbyStateFetcher(stateController controller.StateController) *LobbyStateFetcherImpl {
+func NewLobbyStateFetcher(stateController *controller.StateController) *LobbyStateFetcherImpl {
 	return &LobbyStateFetcherImpl{
 		stateController: stateController,
 	}

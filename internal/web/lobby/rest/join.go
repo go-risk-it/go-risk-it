@@ -12,18 +12,14 @@ import (
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 )
 
-type JoinHandler interface {
-	route.Route
-}
-
 type JoinHandlerImpl struct {
-	managementController controller.ManagementController
+	managementController *controller.ManagementController
 }
 
-var _ JoinHandler = (*JoinHandlerImpl)(nil)
+var _ route.Route = (*JoinHandlerImpl)(nil)
 
 func NewJoinHandler(
-	managementController controller.ManagementController,
+	managementController *controller.ManagementController,
 ) *JoinHandlerImpl {
 	return &JoinHandlerImpl{
 		managementController: managementController,

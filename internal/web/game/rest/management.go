@@ -13,18 +13,14 @@ import (
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 )
 
-type ManagementHandler interface {
-	route.Route
-}
-
 type ManagementHandlerImpl struct {
-	gameController controller.GameController
+	gameController *controller.GameController
 }
 
-var _ ManagementHandler = (*ManagementHandlerImpl)(nil)
+var _ route.Route = (*ManagementHandlerImpl)(nil)
 
 func NewManagementHandler(
-	gameController controller.GameController,
+	gameController *controller.GameController,
 ) *ManagementHandlerImpl {
 	return &ManagementHandlerImpl{
 		gameController: gameController,

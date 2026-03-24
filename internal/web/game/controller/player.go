@@ -11,28 +11,22 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 )
 
-type PlayerController interface {
-	GetPlayerState(ctx ctx.GameContext) (messaging.PlayersState, error)
-}
-
-type PlayerControllerImpl struct {
+type PlayerController struct {
 	connectionManager ws.Manager
 	playerService     player.Service
 }
 
-var _ PlayerController = (*PlayerControllerImpl)(nil)
-
 func NewPlayerController(
 	connectionManager ws.Manager,
 	playerService player.Service,
-) *PlayerControllerImpl {
-	return &PlayerControllerImpl{
+) *PlayerController {
+	return &PlayerController{
 		connectionManager: connectionManager,
 		playerService:     playerService,
 	}
 }
 
-func (c *PlayerControllerImpl) GetPlayerState(
+func (c *PlayerController) GetPlayerState(
 	ctx ctx.GameContext,
 ) (messaging.PlayersState, error) {
 	playersState, err := c.playerService.GetPlayersState(ctx)

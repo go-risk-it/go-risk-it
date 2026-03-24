@@ -8,21 +8,15 @@ import (
 	"go.uber.org/zap"
 )
 
-type GameMiddleware interface {
-	Middleware
-}
-
-type GameMiddlewareImpl struct {
+type GameMiddleware struct {
 	log *zap.SugaredLogger
 }
 
-var _ GameMiddleware = (*GameMiddlewareImpl)(nil)
-
-func NewGameMiddleware(log *zap.SugaredLogger) *GameMiddlewareImpl {
-	return &GameMiddlewareImpl{log: log}
+func NewGameMiddleware(log *zap.SugaredLogger) *GameMiddleware {
+	return &GameMiddleware{log: log}
 }
 
-func (g *GameMiddlewareImpl) Wrap(routeToWrap route.Route) route.Route {
+func (g *GameMiddleware) Wrap(routeToWrap route.Route) route.Route {
 	if !strings.HasPrefix(routeToWrap.Pattern(), "/api/v1/games/{id}") {
 		return routeToWrap
 	}

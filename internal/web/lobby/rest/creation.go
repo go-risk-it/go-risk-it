@@ -15,18 +15,14 @@ import (
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 )
 
-type CreationHandler interface {
-	route.Route
-}
-
 type CreationHandlerImpl struct {
-	creationController controller.CreationController
+	creationController *controller.CreationController
 }
 
-var _ CreationHandler = (*CreationHandlerImpl)(nil)
+var _ route.Route = (*CreationHandlerImpl)(nil)
 
 func NewCreationHandler(
-	creationController controller.CreationController,
+	creationController *controller.CreationController,
 ) *CreationHandlerImpl {
 	return &CreationHandlerImpl{
 		creationController: creationController,

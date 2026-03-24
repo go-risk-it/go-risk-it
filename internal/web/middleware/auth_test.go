@@ -17,7 +17,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func setup(t *testing.T) (middleware.AuthMiddleware, *httptest.ResponseRecorder) {
+func setup(t *testing.T) (*middleware.AuthMiddleware, *httptest.ResponseRecorder) {
 	t.Helper()
 
 	jwtConfig := config.JwtConfig{

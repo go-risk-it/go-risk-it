@@ -15,7 +15,7 @@ type CardFetcher interface {
 }
 
 type CardFetcherImpl struct {
-	cardController controller.CardController
+	cardController *controller.CardController
 }
 
 var _ CardFetcher = (*CardFetcherImpl)(nil)
@@ -28,7 +28,7 @@ type CardFetcherResult struct {
 }
 
 func NewCardFetcher(
-	cardController controller.CardController,
+	cardController *controller.CardController,
 ) CardFetcherResult {
 	res := &CardFetcherImpl{
 		cardController: cardController,

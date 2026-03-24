@@ -13,15 +13,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/reinforce"
 )
 
-type MoveController interface {
-	PerformDeployMove(ctx ctx.GameContext, deployMove request.DeployMove) error
-	PerformAttackMove(ctx ctx.GameContext, attackMove request.AttackMove) error
-	PerformConquerMove(ctx ctx.GameContext, conquerMove request.ConquerMove) error
-	PerformReinforceMove(ctx ctx.GameContext, reinforceMove request.ReinforceMove) error
-	PerformCardsMove(ctx ctx.GameContext, cardsMove request.CardsMove) error
-}
-
-type MoveControllerImpl struct {
+type MoveController struct {
 	deployOrchestrator    orchestration.DeployOrchestrator
 	attackOrchestrator    orchestration.AttackOrchestrator
 	conquerOrchestrator   orchestration.ConquerOrchestrator
@@ -29,16 +21,14 @@ type MoveControllerImpl struct {
 	cardsOrchestrator     orchestration.CardsOrchestrator
 }
 
-var _ MoveController = (*MoveControllerImpl)(nil)
-
 func NewMoveController(
 	deployOrchestrator orchestration.DeployOrchestrator,
 	attackOrchestrator orchestration.AttackOrchestrator,
 	conquerOrchestrator orchestration.ConquerOrchestrator,
 	reinforceOrchestrator orchestration.ReinforceOrchestrator,
 	cardsOrchestrator orchestration.CardsOrchestrator,
-) *MoveControllerImpl {
-	return &MoveControllerImpl{
+) *MoveController {
+	return &MoveController{
 		deployOrchestrator:    deployOrchestrator,
 		attackOrchestrator:    attackOrchestrator,
 		conquerOrchestrator:   conquerOrchestrator,
@@ -59,35 +49,35 @@ func performMove[Move any](
 	return nil
 }
 
-func (c *MoveControllerImpl) PerformDeployMove(
+func (c *MoveController) PerformDeployMove(
 	ctx ctx.GameContext,
 	deployMove request.DeployMove,
 ) error {
 	return performMove(ctx, mapDeployMove(deployMove), c.deployOrchestrator)
 }
 
-func (c *MoveControllerImpl) PerformAttackMove(
+func (c *MoveController) PerformAttackMove(
 	ctx ctx.GameContext,
 	attackMove request.AttackMove,
 ) error {
 	return performMove(ctx, mapAttackMove(attackMove), c.attackOrchestrator)
 }
 
-func (c *MoveControllerImpl) PerformConquerMove(
+func (c *MoveController) PerformConquerMove(
 	ctx ctx.GameContext,
 	conquerMove request.ConquerMove,
 ) error {
 	return performMove(ctx, mapConquerMove(conquerMove), c.conquerOrchestrator)
 }
 
-func (c *MoveControllerImpl) PerformReinforceMove(
+func (c *MoveController) PerformReinforceMove(
 	ctx ctx.GameContext,
 	reinforceMove request.ReinforceMove,
 ) error {
 	return performMove(ctx, mapReinforceMove(reinforceMove), c.reinforceOrchestrator)
 }
 
-func (c *MoveControllerImpl) PerformCardsMove(
+func (c *MoveController) PerformCardsMove(
 	ctx ctx.GameContext,
 	cardsMove request.CardsMove,
 ) error {

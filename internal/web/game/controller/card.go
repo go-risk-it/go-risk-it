@@ -9,23 +9,17 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/card"
 )
 
-type CardController interface {
-	GetCardState(ctx ctx.GameContext) (messaging.CardState, error)
-}
-
-type CardControllerImpl struct {
+type CardController struct {
 	cardService card.Service
 }
 
-var _ CardController = (*CardControllerImpl)(nil)
-
-func NewCardController(cardService card.Service) *CardControllerImpl {
-	return &CardControllerImpl{
+func NewCardController(cardService card.Service) *CardController {
+	return &CardController{
 		cardService: cardService,
 	}
 }
 
-func (c *CardControllerImpl) GetCardState(
+func (c *CardController) GetCardState(
 	ctx ctx.GameContext,
 ) (messaging.CardState, error) {
 	cards, err := c.cardService.GetCardsForPlayer(ctx)
