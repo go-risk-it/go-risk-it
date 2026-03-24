@@ -13,13 +13,20 @@ func PrintStaircaseReport(w io.Writer, entry Entry) {
 	if entry.SLOCeiling.Games == 0 {
 		fmt.Fprintln(w, "No SLO ceiling found — first step already failed")
 	} else {
-		fmt.Fprintf(
-			w,
-			"Ceiling: %d games | %.1f moves/s | %.1f%% completion\n",
+		ceilingLine := fmt.Sprintf(
+			"Ceiling: %d games | %.1f moves/s | %.1f%% completion",
 			entry.SLOCeiling.Games,
 			entry.SLOCeiling.ThroughputMPS,
 			entry.SLOCeiling.CompletionRate*100,
 		)
+		if entry.SLOCeiling.EffectiveConcurrency > 0 {
+			ceilingLine += fmt.Sprintf(
+				" | effective: %d",
+				entry.SLOCeiling.EffectiveConcurrency,
+			)
+		}
+
+		fmt.Fprintln(w, ceilingLine)
 	}
 
 	fmt.Fprintln(w, "\nSteps:")
@@ -56,6 +63,45 @@ func PrintStaircaseReport(w io.Writer, entry Entry) {
 	}
 
 	tw.Flush()
+
+	// Print health distribution if available.
+	hasHealth := false
+
+	for _, step := range entry.Steps {
+		if step.HealthDistribution != nil {
+			hasHealth = true
+
+			break
+		}
+	}
+
+	if hasHealth {
+		fmt.Fprintln(w, "\nHealth Distribution:")
+
+		hw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+		fmt.Fprintln(hw, "GAMES\tHEALTHY\tSLOW\tSTALLED\tZOMBIE\tEFFECTIVE")
+		fmt.Fprintln(hw, "-----\t-------\t----\t-------\t------\t---------")
+
+		for _, step := range entry.Steps {
+			if step.HealthDistribution == nil {
+				continue
+			}
+
+			d := step.HealthDistribution
+			fmt.Fprintf(
+				hw,
+				"%d\t%d\t%d\t%d\t%d\t%d\n",
+				step.TargetGames,
+				d.Healthy,
+				d.Slow,
+				d.Stalled,
+				d.Zombie,
+				d.EffectiveConcurrency(),
+			)
+		}
+
+		hw.Flush()
+	}
 
 	if len(entry.BreakingPoints) > 0 {
 		fmt.Fprintln(w, "\nBreaking points:")

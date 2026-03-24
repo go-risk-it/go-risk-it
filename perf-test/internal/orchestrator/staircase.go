@@ -47,7 +47,7 @@ type StepOutput struct {
 
 // StaircaseDeps holds injected dependencies for testability.
 type StaircaseDeps struct {
-	RunnerFactory    func(collector *metrics.Collector) RunFunc
+	RunnerFactory    func(collector *metrics.Collector, observer GameObserver) RunFunc
 	NewCollector     func(maxDuration time.Duration) *metrics.Collector
 	CollectResources func() resources.ServerResources
 	Annotator        *annotations.Annotator
@@ -100,9 +100,13 @@ func RunStaircase(
 			collector.SetOTelExporter(deps.OTelExporter)
 		}
 
-		runFunc := deps.RunnerFactory(collector)
+		// Create health tracker for this step.
+		tracker := health.NewTracker(health.DefaultThresholds())
+		observer := health.NewTrackerObserver(tracker)
 
-		output := runStep(ctx, cfg, deps, targetGames, indexOffset, i, runFunc, collector)
+		runFunc := deps.RunnerFactory(collector, observer)
+
+		output := runStep(ctx, cfg, deps, targetGames, indexOffset, i, runFunc, collector, tracker)
 		outputs = append(outputs, output)
 
 		indexOffset += targetGames * 10 // generous offset for replacement games
@@ -157,6 +161,7 @@ func runStep(
 	stepIndex int,
 	runFunc RunFunc,
 	collector *metrics.Collector,
+	tracker *health.Tracker,
 ) StepOutput {
 	stepCtx, stepCancel := context.WithCancel(ctx)
 	defer stepCancel()
@@ -210,14 +215,18 @@ func runStep(
 	// Snapshot metrics while games are still running.
 	snap := collector.Snapshot()
 
+	// Snapshot health distribution before draining.
+	healthDist := tracker.Snapshot()
+
 	// Drain the pool.
 	stepCancel()
 	pool.WaitDrain()
 
 	return StepOutput{
-		TargetGames:     targetGames,
-		Snapshot:        snap,
-		Duration:        holdDuration,
-		ServerResources: serverResources,
+		TargetGames:        targetGames,
+		Snapshot:           snap,
+		Duration:           holdDuration,
+		ServerResources:    serverResources,
+		HealthDistribution: &healthDist,
 	}
 }

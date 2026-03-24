@@ -38,7 +38,7 @@ func TestStaircasePipeline_EndToEnd(t *testing.T) {
 	}
 
 	deps := orchestrator.StaircaseDeps{
-		RunnerFactory: func(c *metrics.Collector) orchestrator.RunFunc {
+		RunnerFactory: func(c *metrics.Collector, _ orchestrator.GameObserver) orchestrator.RunFunc {
 			return func(ctx context.Context, idx, players int) orchestrator.GameResult {
 				c.RecordMove()
 				c.RecordTimedMove()
@@ -192,7 +192,7 @@ func TestStaircase_StopOnBreach_ProducesPartialOutput(t *testing.T) {
 	}
 
 	deps := orchestrator.StaircaseDeps{
-		RunnerFactory: func(c *metrics.Collector) orchestrator.RunFunc {
+		RunnerFactory: func(c *metrics.Collector, _ orchestrator.GameObserver) orchestrator.RunFunc {
 			return func(ctx context.Context, idx, players int) orchestrator.GameResult {
 				c.RecordMove()
 				c.RecordTimedMove()

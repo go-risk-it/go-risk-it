@@ -596,12 +596,13 @@ func runStaircase(
 
 	// Build dependencies.
 	deps := orchestrator.StaircaseDeps{
-		RunnerFactory: func(c *metrics.Collector) orchestrator.RunFunc {
+		RunnerFactory: func(c *metrics.Collector, obs orchestrator.GameObserver) orchestrator.RunFunc {
 			r := orchestrator.NewGameRunner(
 				baseURL, wsURL, anonKey, strategy,
 				staircaseCfg.GameTimeout, c, thinkTime,
 				orchestrator.DefaultTimeouts(), injector,
 			)
+			r.SetObserver(obs)
 
 			return r.Run
 		},
@@ -626,11 +627,12 @@ func runStaircase(
 		evalResult := slos.Evaluate(metricsSnap)
 
 		stepResults[i] = journal.StepResult{
-			TargetGames:     so.TargetGames,
-			Metrics:         metricsSnap,
-			SLOEval:         evalResult,
-			ServerResources: so.ServerResources,
-			DurationSec:     so.Duration.Seconds(),
+			TargetGames:        so.TargetGames,
+			Metrics:            metricsSnap,
+			SLOEval:            evalResult,
+			ServerResources:    so.ServerResources,
+			DurationSec:        so.Duration.Seconds(),
+			HealthDistribution: so.HealthDistribution,
 		}
 
 		levelResults[i] = baseline.LevelResult{

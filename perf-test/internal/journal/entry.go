@@ -71,6 +71,10 @@ func FindSLOCeiling(steps []StepResult) SLOCeiling {
 			ThroughputMPS:  step.Metrics.ThroughputMPS,
 			CompletionRate: completionRate,
 		}
+
+		if step.HealthDistribution != nil {
+			ceiling.EffectiveConcurrency = step.HealthDistribution.EffectiveConcurrency()
+		}
 	}
 
 	return ceiling

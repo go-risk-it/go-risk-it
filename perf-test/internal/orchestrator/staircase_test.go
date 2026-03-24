@@ -21,7 +21,7 @@ func makeFakeDeps(
 	t.Helper()
 
 	return orchestrator.StaircaseDeps{
-		RunnerFactory: func(c *metrics.Collector) orchestrator.RunFunc {
+		RunnerFactory: func(c *metrics.Collector, _ orchestrator.GameObserver) orchestrator.RunFunc {
 			return func(
 				ctx context.Context,
 				idx, players int,
@@ -97,7 +97,7 @@ func TestRunStaircase_StopOnBreach(t *testing.T) {
 	}
 
 	deps := orchestrator.StaircaseDeps{
-		RunnerFactory: func(c *metrics.Collector) orchestrator.RunFunc {
+		RunnerFactory: func(c *metrics.Collector, _ orchestrator.GameObserver) orchestrator.RunFunc {
 			return func(
 				ctx context.Context,
 				idx, players int,
