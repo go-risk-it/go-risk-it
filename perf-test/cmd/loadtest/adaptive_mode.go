@@ -12,7 +12,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/orchestrator"
 )
 
-//nolint:funlen,cyclop
+//nolint:cyclop // orchestration function with sequential branches
 func (a *App) runAdaptive(ctx context.Context) error {
 	// Detect branch and read session's last ceiling.
 	_, branch := getGitInfo()

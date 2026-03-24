@@ -15,7 +15,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/runner"
 )
 
-//nolint:funlen,cyclop
+//nolint:funlen // orchestration function with sequential setup steps
 func (a *App) runStaircase(ctx context.Context) error {
 	staircaseCfg := a.cfg.staircaseCfg
 

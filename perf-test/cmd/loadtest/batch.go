@@ -14,7 +14,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/runner"
 )
 
-//nolint:funlen
 func (a *App) runBatch(ctx context.Context) error {
 	_ = ctx // batch mode doesn't use context cancellation yet
 
@@ -61,7 +60,6 @@ func (a *App) runBatch(ctx context.Context) error {
 	return a.printBatchReport(collector, results, totalDuration)
 }
 
-//nolint:funlen
 func (a *App) runRamp(ctx context.Context) error {
 	_ = ctx // ramp mode doesn't use context cancellation yet
 

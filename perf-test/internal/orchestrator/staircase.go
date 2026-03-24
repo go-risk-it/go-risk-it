@@ -11,6 +11,8 @@ import (
 )
 
 // StaircaseConfig defines the staircase run parameters.
+// RunStaircase uses Steps and CooldownSec. The remaining fields are consumed
+// by StepExecutorConfig and SLOStopCondition at construction time in the CLI.
 type StaircaseConfig struct {
 	Steps             []int         // target concurrent games per step
 	HoldDuration      time.Duration // how long to hold each step
@@ -21,18 +23,7 @@ type StaircaseConfig struct {
 	CooldownSec       int           // seconds between steps (default 5)
 	WarmUpCompletions int           // games to complete before recording histograms (0 = disabled)
 	WarmUpDurationSec int           // seconds to wait before recording histograms (0 = disabled)
-	// SLOs is deprecated in RunStaircase (use SLOStopCondition instead) but
-	// still consumed by adaptive.go until Task 9 refactors it.
-	SLOs baseline.SLOSet
-}
-
-// cooldown returns the effective cooldown duration.
-func (c StaircaseConfig) cooldown() time.Duration {
-	if c.CooldownSec > 0 {
-		return time.Duration(c.CooldownSec) * time.Second
-	}
-
-	return DefaultCooldownSec * time.Second
+	SLOs              baseline.SLOSet
 }
 
 // RunStaircase executes the staircase: for each step, the executor runs games

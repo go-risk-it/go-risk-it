@@ -86,7 +86,9 @@ func (a *App) Close() {
 	}
 
 	if a.dbStats != nil {
-		a.dbStats.Close()
+		if err := a.dbStats.Close(); err != nil {
+			log.Printf("dbstats close: %v", err)
+		}
 	}
 }
 
