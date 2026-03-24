@@ -1,0 +1,5 @@
+{
+  "maxExportsPerPackage": 45,
+  "maxFanOut": 25,
+  "maxFilesPerPackage": 12
+}

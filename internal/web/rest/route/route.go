@@ -11,23 +11,6 @@ type Route struct {
 	isWebSocket  bool
 }
 
-func newRoute(pattern string, requiresAuth bool, handler http.Handler) *Route {
-	return &Route{
-		pattern:      pattern,
-		handler:      handler,
-		requiresAuth: requiresAuth,
-	}
-}
-
-func newWebSocketRoute(pattern string, requiresAuth bool, handler http.Handler) *Route {
-	return &Route{
-		pattern:      pattern,
-		handler:      handler,
-		requiresAuth: requiresAuth,
-		isWebSocket:  true,
-	}
-}
-
 // Wrap creates a new Route with the same metadata but a different handler.
 func (r *Route) Wrap(handler http.Handler) *Route {
 	return &Route{

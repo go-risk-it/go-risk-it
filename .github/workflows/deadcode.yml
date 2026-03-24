@@ -1,0 +1,31 @@
+name: deadcode
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  merge_group:
+
+jobs:
+  deadcode:
+    runs-on: ubuntu-latest
+    # Advisory for now — graduate to blocking once allowlist stabilizes
+    continue-on-error: true
+    steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+    - name: Set up Go
+      uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6
+      with:
+        go-version-file: 'go.mod'
+    - name: Install deadcode
+      run: go install golang.org/x/tools/cmd/deadcode@latest
+    - name: Run deadcode
+      run: |
+        deadcode -filter=github.com/go-risk-it/go-risk-it/internal ./... 2>&1 | \
+          grep -v "NewForTest\|NewWebSocketForTest\|NewNotFoundError\|NewUnauthorizedError" | \
+          tee /tmp/deadcode-output.txt
+        if [ -s /tmp/deadcode-output.txt ]; then
+          echo "::warning::Dead code found (see output above)"
+          exit 1
+        fi

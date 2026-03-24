@@ -69,14 +69,6 @@ func WrapValidationError(cause error, msg string) *DomainError {
 	return &DomainError{Msg: msg, Cause: cause, category: CategoryValidation}
 }
 
-func WrapValidationErrorf(cause error, format string, args ...any) *DomainError {
-	return &DomainError{
-		Msg:      fmt.Sprintf(format, args...),
-		Cause:    cause,
-		category: CategoryValidation,
-	}
-}
-
 // --- Conflict (409) ---
 
 func NewConflictError(msg string) *DomainError {
@@ -87,48 +79,16 @@ func NewConflictErrorf(format string, args ...any) *DomainError {
 	return &DomainError{Msg: fmt.Sprintf(format, args...), category: CategoryConflict}
 }
 
-func WrapConflictError(cause error, msg string) *DomainError {
-	return &DomainError{Msg: msg, Cause: cause, category: CategoryConflict}
-}
-
-func WrapConflictErrorf(cause error, format string, args ...any) *DomainError {
-	return &DomainError{
-		Msg:      fmt.Sprintf(format, args...),
-		Cause:    cause,
-		category: CategoryConflict,
-	}
-}
-
 // --- Forbidden (403) ---
 
 func NewForbiddenError(msg string) *DomainError {
 	return &DomainError{Msg: msg, category: CategoryForbidden}
 }
 
-func WrapForbiddenError(cause error, msg string) *DomainError {
-	return &DomainError{Msg: msg, Cause: cause, category: CategoryForbidden}
-}
-
-func WrapForbiddenErrorf(cause error, format string, args ...any) *DomainError {
-	return &DomainError{
-		Msg:      fmt.Sprintf(format, args...),
-		Cause:    cause,
-		category: CategoryForbidden,
-	}
-}
-
 // --- NotFound (404) ---
 
 func NewNotFoundError(msg string) *DomainError {
 	return &DomainError{Msg: msg, category: CategoryNotFound}
-}
-
-func NewNotFoundErrorf(format string, args ...any) *DomainError {
-	return &DomainError{Msg: fmt.Sprintf(format, args...), category: CategoryNotFound}
-}
-
-func WrapNotFoundError(cause error, msg string) *DomainError {
-	return &DomainError{Msg: msg, Cause: cause, category: CategoryNotFound}
 }
 
 // --- Unauthorized (401) ---

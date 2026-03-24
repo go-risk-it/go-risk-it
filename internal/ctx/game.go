@@ -31,14 +31,6 @@ func WithGameID(ctx UserContext, gameID int64) GameContext {
 	}
 }
 
-// DetachGameContext creates a new GameContext rooted at context.Background(),
-// preserving the user ID and game ID from the original context.
-// This is useful for fire-and-forget goroutines that should not be cancelled
-// when the originating HTTP request completes.
-func DetachGameContext(original GameContext) GameContext {
-	return detachGameContext(original, context.Background())
-}
-
 // DetachGameContextWithTimeout creates a detached GameContext with a timeout.
 // The returned cancel function must be called to release resources.
 // This is useful for fire-and-forget goroutines that should be cancelled

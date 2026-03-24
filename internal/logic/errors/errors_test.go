@@ -54,12 +54,12 @@ func TestValidationError_ErrorsAs(t *testing.T) {
 	assert.Equal(t, domainerrors.CategoryValidation, domainErr.Category())
 }
 
-func TestValidationErrorf_Wrap(t *testing.T) {
+func TestValidationErrorf(t *testing.T) {
 	t.Parallel()
 
-	err := domainerrors.WrapValidationErrorf(errSentinel, "field %s invalid", "name")
-	assert.Equal(t, "field name invalid: underlying cause", err.Error())
-	assert.ErrorIs(t, err, errSentinel)
+	err := domainerrors.NewValidationErrorf("field %s invalid", "name")
+	assert.Equal(t, "field name invalid", err.Error())
+	assert.Equal(t, domainerrors.CategoryValidation, err.Category())
 }
 
 func TestConflictError_Error_WithoutCause(t *testing.T) {
@@ -69,31 +69,12 @@ func TestConflictError_Error_WithoutCause(t *testing.T) {
 	assert.Equal(t, "wrong phase", err.Error())
 }
 
-func TestConflictError_Error_WithCause(t *testing.T) {
+func TestConflictError_Errorf(t *testing.T) {
 	t.Parallel()
 
-	err := domainerrors.WrapConflictError(errSentinel, "wrong phase")
-	assert.Equal(t, "wrong phase: underlying cause", err.Error())
-}
-
-func TestConflictError_Unwrap_PreservesCause(t *testing.T) {
-	t.Parallel()
-
-	err := domainerrors.WrapConflictError(errSentinel, "wrong phase")
-	assert.ErrorIs(t, err, errSentinel)
-}
-
-func TestConflictError_ErrorsAs(t *testing.T) {
-	t.Parallel()
-
-	wrapped := domainerrors.WrapConflictErrorf(errSentinel, "phase %s", "deploy")
-	outerErr := errors.Join(errors.New("context"), wrapped)
-
-	var domainErr *domainerrors.DomainError
-
-	require.ErrorAs(t, outerErr, &domainErr)
-	assert.Equal(t, "phase deploy: underlying cause", domainErr.Error())
-	assert.Equal(t, domainerrors.CategoryConflict, domainErr.Category())
+	err := domainerrors.NewConflictErrorf("phase %s", "deploy")
+	assert.Equal(t, "phase deploy", err.Error())
+	assert.Equal(t, domainerrors.CategoryConflict, err.Category())
 }
 
 func TestForbiddenError_Error_WithoutCause(t *testing.T) {
@@ -101,33 +82,6 @@ func TestForbiddenError_Error_WithoutCause(t *testing.T) {
 
 	err := domainerrors.NewForbiddenError("not your turn")
 	assert.Equal(t, "not your turn", err.Error())
-}
-
-func TestForbiddenError_Error_WithCause(t *testing.T) {
-	t.Parallel()
-
-	err := domainerrors.WrapForbiddenError(errSentinel, "not your turn")
-	assert.Equal(t, "not your turn: underlying cause", err.Error())
-}
-
-func TestForbiddenError_Unwrap_PreservesCause(t *testing.T) {
-	t.Parallel()
-
-	err := domainerrors.WrapForbiddenError(errSentinel, "not your turn")
-	assert.ErrorIs(t, err, errSentinel)
-}
-
-func TestForbiddenError_ErrorsAs(t *testing.T) {
-	t.Parallel()
-
-	wrapped := domainerrors.WrapForbiddenErrorf(errSentinel, "player %s", "alice")
-	outerErr := errors.Join(errors.New("context"), wrapped)
-
-	var domainErr *domainerrors.DomainError
-
-	require.ErrorAs(t, outerErr, &domainErr)
-	assert.Equal(t, "player alice: underlying cause", domainErr.Error())
-	assert.Equal(t, domainerrors.CategoryForbidden, domainErr.Category())
 }
 
 // --- Category tests ---
@@ -164,40 +118,11 @@ func TestNotFoundError_Category(t *testing.T) {
 	assert.Equal(t, "NOT_FOUND", err.Category().String())
 }
 
-// --- NotFoundError tests ---
-
 func TestNotFoundError_Error_WithoutCause(t *testing.T) {
 	t.Parallel()
 
 	err := domainerrors.NewNotFoundError("game not found")
 	assert.Equal(t, "game not found", err.Error())
-}
-
-func TestNotFoundError_Error_WithCause(t *testing.T) {
-	t.Parallel()
-
-	err := domainerrors.WrapNotFoundError(errSentinel, "game not found")
-	assert.Equal(t, "game not found: underlying cause", err.Error())
-}
-
-func TestNotFoundError_Unwrap_PreservesCause(t *testing.T) {
-	t.Parallel()
-
-	err := domainerrors.WrapNotFoundError(errSentinel, "game not found")
-	assert.ErrorIs(t, err, errSentinel)
-}
-
-func TestNotFoundError_ErrorsAs(t *testing.T) {
-	t.Parallel()
-
-	wrapped := domainerrors.NewNotFoundErrorf("game %d", 42)
-	outerErr := errors.Join(errors.New("context"), wrapped)
-
-	var domainErr *domainerrors.DomainError
-
-	require.ErrorAs(t, outerErr, &domainErr)
-	assert.Equal(t, "game 42", domainErr.Error())
-	assert.Equal(t, domainerrors.CategoryNotFound, domainErr.Category())
 }
 
 // --- UnauthorizedError tests ---

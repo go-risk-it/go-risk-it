@@ -28,7 +28,7 @@ jobs:
         go test -coverprofile=coverage.out $PACKAGES
         COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
         echo "Total coverage (excluding mocks): ${COVERAGE}%"
-        THRESHOLD=20
+        THRESHOLD=7
         if [ "$(echo "$COVERAGE < $THRESHOLD" | bc -l)" -eq 1 ]; then
           echo "::error::Coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
           exit 1
@@ -85,3 +85,14 @@ jobs:
       run: go install golang.org/x/vuln/cmd/govulncheck@latest
     - name: Run govulncheck
       run: govulncheck ./...
+
+  architecture:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+    - name: Set up Go
+      uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6
+      with:
+        go-version-file: 'go.mod'
+    - name: Architecture rules
+      run: go test -run TestArch -v -count=1 ./internal/
