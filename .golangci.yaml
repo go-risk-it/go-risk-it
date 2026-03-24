@@ -12,7 +12,6 @@ linters:
     - mnd
     - funcorder
     - noinlineerr
-    - wrapcheck
     - wsl
     - wsl_v5
   settings:
@@ -57,6 +56,15 @@ linters:
       rules:
         - name: blank-imports
           disabled: true
+    wrapcheck:
+      ignore-sigs:
+        - ".Errorf("
+        - "errors.New("
+        - "errors.Join("
+        - ".Wrap("
+        - ".Wrapf("
+      ignore-package-globs:
+        - github.com/go-risk-it/go-risk-it/*
   exclusions:
     generated: lax
     presets:
@@ -71,6 +79,7 @@ linters:
           - funlen
           - ireturn
           - lll
+          - wrapcheck
         path: _test.go
     paths:
       - internal/upgradablerw_mutex

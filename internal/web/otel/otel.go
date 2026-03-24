@@ -105,7 +105,7 @@ func newPropagator() propagation.TextMapPropagator {
 func newTraceProvider(otelConfig config.OtelConfig) (*trace.TracerProvider, error) {
 	exporter, err := otlptracehttp.New(context.Background())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create trace exporter: %w", err)
 	}
 
 	if otelConfig.Enabled {
