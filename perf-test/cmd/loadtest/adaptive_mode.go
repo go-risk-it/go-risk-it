@@ -43,11 +43,21 @@ func (a *App) runAdaptive(ctx context.Context) error {
 		WarmUpDurationSec: a.cfg.Staircase.WarmupDuration,
 	}
 
-	// Build dependencies (same as staircase).
-	deps := a.buildStaircaseDeps(adaptiveCfg.GameTimeout)
+	// Build step executor.
+	execCfg := orchestrator.StepExecutorConfig{
+		NumPlayers:        adaptiveCfg.NumPlayers,
+		GameTimeout:       adaptiveCfg.GameTimeout,
+		StaggerDelay:      adaptiveCfg.StaggerDelay,
+		HoldDuration:      adaptiveCfg.HoldDuration,
+		WarmUpCompletions: adaptiveCfg.WarmUpCompletions,
+		WarmUpDurationSec: adaptiveCfg.WarmUpDurationSec,
+	}
+
+	execDeps := a.buildStepExecutorDeps(adaptiveCfg.GameTimeout)
+	executor := orchestrator.NewStepExecutor(execCfg, execDeps, adaptiveCfg.MaxSteps)
 
 	// Run adaptive staircase.
-	result := orchestrator.RunAdaptive(ctx, adaptiveCfg, deps)
+	result := orchestrator.RunAdaptive(ctx, adaptiveCfg, executor)
 
 	// Convert and analyze results.
 	stepResults, _ := convertStepResults(result.Steps, adaptiveCfg.SLOs)

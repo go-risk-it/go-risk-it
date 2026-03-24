@@ -155,21 +155,6 @@ func (a *App) buildStepExecutorDeps(gameTimeout time.Duration) orchestrator.Step
 	}
 }
 
-// buildStaircaseDeps creates StaircaseDeps for adaptive mode.
-// Deprecated: use buildStepExecutorDeps + DefaultStepExecutor instead.
-func (a *App) buildStaircaseDeps(gameTimeout time.Duration) orchestrator.StaircaseDeps {
-	ed := a.buildStepExecutorDeps(gameTimeout)
-
-	return orchestrator.StaircaseDeps{
-		RunnerFactory:    ed.RunnerFactory,
-		NewCollector:     ed.NewCollector,
-		CollectResources: ed.CollectResources,
-		Annotator:        ed.Annotator,
-		OTelExporter:     ed.OTelExporter,
-		DBStats:          ed.DBStats,
-	}
-}
-
 // handleJournalSaveAndCompare saves and compares journal entries based on config.
 func (a *App) handleJournalSaveAndCompare(entry journal.Entry, branch, commitSHA string) {
 	if a.cfg.Journal.Save {
