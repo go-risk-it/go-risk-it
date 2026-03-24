@@ -19,11 +19,11 @@ func HandleLobbyStateChanged(
 			return
 		}
 
-		slog.InfoContext( //nolint:contextcheck
+		slog.InfoContext(
 			lobbyContext, "handling lobby state changed",
 		)
 
-		fetchStateAndPublish( //nolint:contextcheck // inherited via type assertion
+		fetchStateAndPublish(
 			lobbyContext,
 			params.LobbyStateFetcher.FetchState,
 			params.ConnectionManager.Broadcast,

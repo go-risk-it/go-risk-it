@@ -36,13 +36,15 @@ type Categorizable interface {
 	Category() ErrorCategory
 }
 
-// ValidationError indicates the client sent invalid input (HTTP 400).
-type ValidationError struct {
-	Msg   string
-	Cause error
+// DomainError is the single error type for all domain errors.
+// The category field determines the HTTP status mapping.
+type DomainError struct {
+	Msg      string
+	Cause    error
+	category ErrorCategory
 }
 
-func (e *ValidationError) Error() string {
+func (e *DomainError) Error() string {
 	if e.Cause != nil {
 		return e.Msg + ": " + e.Cause.Error()
 	}
@@ -50,137 +52,91 @@ func (e *ValidationError) Error() string {
 	return e.Msg
 }
 
-func (e *ValidationError) Unwrap() error           { return e.Cause }
-func (e *ValidationError) Category() ErrorCategory { return CategoryValidation }
+func (e *DomainError) Unwrap() error           { return e.Cause }
+func (e *DomainError) Category() ErrorCategory { return e.category }
 
-func NewValidationError(msg string) *ValidationError {
-	return &ValidationError{Msg: msg}
+// --- Validation (400) ---
+
+func NewValidationError(msg string) *DomainError {
+	return &DomainError{Msg: msg, category: CategoryValidation}
 }
 
-func NewValidationErrorf(format string, args ...any) *ValidationError {
-	return &ValidationError{Msg: fmt.Sprintf(format, args...)}
+func NewValidationErrorf(format string, args ...any) *DomainError {
+	return &DomainError{Msg: fmt.Sprintf(format, args...), category: CategoryValidation}
 }
 
-func WrapValidationError(cause error, msg string) *ValidationError {
-	return &ValidationError{Msg: msg, Cause: cause}
+func WrapValidationError(cause error, msg string) *DomainError {
+	return &DomainError{Msg: msg, Cause: cause, category: CategoryValidation}
 }
 
-func WrapValidationErrorf(cause error, format string, args ...any) *ValidationError {
-	return &ValidationError{Msg: fmt.Sprintf(format, args...), Cause: cause}
-}
-
-// ConflictError indicates a state conflict, e.g. wrong phase or turn (HTTP 409).
-type ConflictError struct {
-	Msg   string
-	Cause error
-}
-
-func (e *ConflictError) Error() string {
-	if e.Cause != nil {
-		return e.Msg + ": " + e.Cause.Error()
+func WrapValidationErrorf(cause error, format string, args ...any) *DomainError {
+	return &DomainError{
+		Msg:      fmt.Sprintf(format, args...),
+		Cause:    cause,
+		category: CategoryValidation,
 	}
-
-	return e.Msg
 }
 
-func (e *ConflictError) Unwrap() error           { return e.Cause }
-func (e *ConflictError) Category() ErrorCategory { return CategoryConflict }
+// --- Conflict (409) ---
 
-func NewConflictError(msg string) *ConflictError {
-	return &ConflictError{Msg: msg}
+func NewConflictError(msg string) *DomainError {
+	return &DomainError{Msg: msg, category: CategoryConflict}
 }
 
-func NewConflictErrorf(format string, args ...any) *ConflictError {
-	return &ConflictError{Msg: fmt.Sprintf(format, args...)}
+func NewConflictErrorf(format string, args ...any) *DomainError {
+	return &DomainError{Msg: fmt.Sprintf(format, args...), category: CategoryConflict}
 }
 
-func WrapConflictError(cause error, msg string) *ConflictError {
-	return &ConflictError{Msg: msg, Cause: cause}
+func WrapConflictError(cause error, msg string) *DomainError {
+	return &DomainError{Msg: msg, Cause: cause, category: CategoryConflict}
 }
 
-func WrapConflictErrorf(cause error, format string, args ...any) *ConflictError {
-	return &ConflictError{Msg: fmt.Sprintf(format, args...), Cause: cause}
-}
-
-// ForbiddenError indicates the player is not authorized for this action (HTTP 403).
-type ForbiddenError struct {
-	Msg   string
-	Cause error
-}
-
-func (e *ForbiddenError) Error() string {
-	if e.Cause != nil {
-		return e.Msg + ": " + e.Cause.Error()
+func WrapConflictErrorf(cause error, format string, args ...any) *DomainError {
+	return &DomainError{
+		Msg:      fmt.Sprintf(format, args...),
+		Cause:    cause,
+		category: CategoryConflict,
 	}
-
-	return e.Msg
 }
 
-func (e *ForbiddenError) Unwrap() error           { return e.Cause }
-func (e *ForbiddenError) Category() ErrorCategory { return CategoryForbidden }
+// --- Forbidden (403) ---
 
-func NewForbiddenError(msg string) *ForbiddenError {
-	return &ForbiddenError{Msg: msg}
+func NewForbiddenError(msg string) *DomainError {
+	return &DomainError{Msg: msg, category: CategoryForbidden}
 }
 
-func WrapForbiddenError(cause error, msg string) *ForbiddenError {
-	return &ForbiddenError{Msg: msg, Cause: cause}
+func WrapForbiddenError(cause error, msg string) *DomainError {
+	return &DomainError{Msg: msg, Cause: cause, category: CategoryForbidden}
 }
 
-func WrapForbiddenErrorf(cause error, format string, args ...any) *ForbiddenError {
-	return &ForbiddenError{Msg: fmt.Sprintf(format, args...), Cause: cause}
-}
-
-// NotFoundError indicates the requested resource does not exist (HTTP 404).
-type NotFoundError struct {
-	Msg   string
-	Cause error
-}
-
-func (e *NotFoundError) Error() string {
-	if e.Cause != nil {
-		return e.Msg + ": " + e.Cause.Error()
+func WrapForbiddenErrorf(cause error, format string, args ...any) *DomainError {
+	return &DomainError{
+		Msg:      fmt.Sprintf(format, args...),
+		Cause:    cause,
+		category: CategoryForbidden,
 	}
-
-	return e.Msg
 }
 
-func (e *NotFoundError) Unwrap() error           { return e.Cause }
-func (e *NotFoundError) Category() ErrorCategory { return CategoryNotFound }
+// --- NotFound (404) ---
 
-func NewNotFoundError(msg string) *NotFoundError {
-	return &NotFoundError{Msg: msg}
+func NewNotFoundError(msg string) *DomainError {
+	return &DomainError{Msg: msg, category: CategoryNotFound}
 }
 
-func NewNotFoundErrorf(format string, args ...any) *NotFoundError {
-	return &NotFoundError{Msg: fmt.Sprintf(format, args...)}
+func NewNotFoundErrorf(format string, args ...any) *DomainError {
+	return &DomainError{Msg: fmt.Sprintf(format, args...), category: CategoryNotFound}
 }
 
-func WrapNotFoundError(cause error, msg string) *NotFoundError {
-	return &NotFoundError{Msg: msg, Cause: cause}
+func WrapNotFoundError(cause error, msg string) *DomainError {
+	return &DomainError{Msg: msg, Cause: cause, category: CategoryNotFound}
 }
 
-// UnauthorizedError indicates missing or invalid credentials (HTTP 401).
-type UnauthorizedError struct {
-	Msg   string
-	Cause error
+// --- Unauthorized (401) ---
+
+func NewUnauthorizedError(msg string) *DomainError {
+	return &DomainError{Msg: msg, category: CategoryUnauthorized}
 }
 
-func (e *UnauthorizedError) Error() string {
-	if e.Cause != nil {
-		return e.Msg + ": " + e.Cause.Error()
-	}
-
-	return e.Msg
-}
-
-func (e *UnauthorizedError) Unwrap() error           { return e.Cause }
-func (e *UnauthorizedError) Category() ErrorCategory { return CategoryUnauthorized }
-
-func NewUnauthorizedError(msg string) *UnauthorizedError {
-	return &UnauthorizedError{Msg: msg}
-}
-
-func WrapUnauthorizedError(cause error, msg string) *UnauthorizedError {
-	return &UnauthorizedError{Msg: msg, Cause: cause}
+func WrapUnauthorizedError(cause error, msg string) *DomainError {
+	return &DomainError{Msg: msg, Cause: cause, category: CategoryUnauthorized}
 }

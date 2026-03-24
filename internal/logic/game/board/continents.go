@@ -12,15 +12,9 @@ type Continent struct {
 	regions           []string
 }
 
-type Continents interface {
-	GetContinentsControlledBy(regions []string) []*Continent
-}
-
 type ContinentsImpl struct {
 	continents []*Continent
 }
-
-var _ Continents = (*ContinentsImpl)(nil)
 
 func (c *ContinentsImpl) GetContinentsControlledBy(regions []string) []*Continent {
 	result := make([]*Continent, 0)

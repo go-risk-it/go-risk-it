@@ -38,11 +38,10 @@ func HandleMovePerformed(
 			return
 		}
 
-		slog.InfoContext( //nolint:contextcheck
+		slog.InfoContext(
 			gameContext, "handling move performed",
 		)
 
-		//nolint:contextcheck // deliberate context detach
 		fetchStateAndPublish(
 			gameContext,
 			func(gameCtx ctx.GameContext, stateChannel chan json.RawMessage) {

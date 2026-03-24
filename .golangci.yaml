@@ -73,6 +73,9 @@ linters:
       - std-error-handling
     rules:
       - linters:
+          - contextcheck
+        path: internal/web/(game|lobby)/signals/
+      - linters:
           - dogsled
           - dupl
           - funlen

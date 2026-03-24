@@ -88,44 +88,46 @@ func (s *ServiceImpl) CreateGameWithTx(
 }
 
 func (s *ServiceImpl) CreateGameQ(
-	cont ctx.UserContext,
+	userCtx ctx.UserContext,
 	querier db.Querier,
 	regions []string,
 	players []player.Player,
 ) (int64, error) {
-	slog.InfoContext(cont, "creating game", "regions", len(regions), "players", len(players))
+	slog.InfoContext(userCtx, "creating game", "regions", len(regions), "players", len(players))
 
-	game, err := querier.InsertGame(cont)
+	game, err := querier.InsertGame(userCtx)
 	if err != nil {
 		return -1, fmt.Errorf("failed to insert game: %w", err)
 	}
 
-	ctx := ctx.WithGameID(cont, game.ID)
+	gameCtx := ctx.WithGameID(userCtx, game.ID)
 
-	createdPlayers, err := s.playerService.CreatePlayersQ(ctx, querier, game.ID, players)
+	createdPlayers, err := s.playerService.CreatePlayersQ(gameCtx, querier, game.ID, players)
 	if err != nil {
 		return -1, fmt.Errorf("failed to create players: %w", err)
 	}
 
-	if err = s.missionService.CreateMissionsQ(ctx, querier, createdPlayers); err != nil {
+	if err = s.missionService.CreateMissionsQ(gameCtx, querier, createdPlayers); err != nil {
 		return -1, fmt.Errorf("failed to create missions: %w", err)
 	}
 
-	if err = s.regionService.CreateRegionsQ(ctx, querier, createdPlayers, regions); err != nil {
+	if err = s.regionService.CreateRegionsQ(
+		gameCtx, querier, createdPlayers, regions,
+	); err != nil {
 		return -1, fmt.Errorf("failed to create regions: %w", err)
 	}
 
-	if err = s.cardService.CreateCardsQ(ctx, querier); err != nil {
+	if err = s.cardService.CreateCardsQ(gameCtx, querier); err != nil {
 		return -1, fmt.Errorf("failed to create cards: %w", err)
 	}
 
-	slog.DebugContext(ctx, "creating initial phase", "gameID", game.ID)
+	slog.DebugContext(gameCtx, "creating initial phase", "gameID", game.ID)
 
-	if err := s.createPhase(ctx, querier, game); err != nil {
+	if err := s.createPhase(gameCtx, querier, game); err != nil {
 		return -1, fmt.Errorf("failed to create phase: %w", err)
 	}
 
-	slog.InfoContext(ctx, "successfully created game",
+	slog.InfoContext(gameCtx, "successfully created game",
 		"regions", len(regions), "players", len(players))
 
 	return game.ID, nil
@@ -151,8 +153,6 @@ func (s *ServiceImpl) createPhase(
 		ID:             game.ID,
 		CurrentPhaseID: pgtype.Int8{Int64: phase.ID, Valid: true},
 	}); err != nil {
-		slog.WarnContext(ctx, "failed to update game phase", "error", err)
-
 		return fmt.Errorf("failed to update game phase: %w", err)
 	}
 
