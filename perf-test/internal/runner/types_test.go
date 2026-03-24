@@ -2,9 +2,9 @@ package runner
 
 import (
 	"testing"
+	"time"
 
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/client"
-	"github.com/go-risk-it/go-risk-it/perf-test/internal/orchestrator"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,11 +19,10 @@ func TestDefaultTimeouts(t *testing.T) {
 	t.Parallel()
 
 	got := DefaultTimeouts()
-	want := orchestrator.DefaultTimeouts()
 
-	assert.Equal(t, want.InitialStateWait, got.InitialStateWait)
-	assert.Equal(t, want.UpdateWait, got.UpdateWait)
-	assert.Equal(t, want.PhaseChangeWait, got.PhaseChangeWait)
-	assert.Equal(t, want.PostMoveSettle, got.PostMoveSettle)
-	assert.Equal(t, want.MaxConsecutiveErr, got.MaxConsecutiveErr)
+	assert.Equal(t, 1*time.Second, got.InitialStateWait)
+	assert.Equal(t, 3*time.Second, got.UpdateWait)
+	assert.Equal(t, 3*time.Second, got.PhaseChangeWait)
+	assert.Equal(t, 50*time.Millisecond, got.PostMoveSettle)
+	assert.Equal(t, 20, got.MaxConsecutiveErr)
 }
