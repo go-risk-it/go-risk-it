@@ -38,7 +38,7 @@ Generated code (sqlc, mocks) is excluded from export and file counts.
 | Check | Workflow | Status |
 |-------|----------|--------|
 | Architecture rules | go.yml `architecture` job | Blocking |
-| Dead code detection | deadcode.yml | Advisory (continue-on-error) |
+| Dead code detection | deadcode.yml | Blocking (allowlisted false positives) |
 | Coverage threshold | go.yml `build` job | Blocking (7% floor) |
 | Security vulns | go.yml `security` job | Advisory |
 | Linting | golangci-lint.yml | Blocking |

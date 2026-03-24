@@ -10,8 +10,7 @@ on:
 jobs:
   deadcode:
     runs-on: ubuntu-latest
-    # Advisory for now — graduate to blocking once allowlist stabilizes
-    continue-on-error: true
+    # Blocking — allowlist covers known false positives (fx constructors, test helpers)
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
     - name: Set up Go
