@@ -24,6 +24,7 @@ func HandlePlayerConnected(
 
 		gameContext.Log().Infow("fetching move logs and publishing")
 
+		//nolint:contextcheck // deliberate context detach
 		go fetchStateAndPublish(
 			gameContext,
 			params.MoveLogFetcher.FetchState,

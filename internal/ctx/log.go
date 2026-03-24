@@ -13,7 +13,7 @@ type LogContext interface {
 }
 
 type logContext struct {
-	context.Context
+	context.Context //nolint:containedctx // deliberate context enrichment chain
 
 	log *zap.SugaredLogger
 }

@@ -4,8 +4,6 @@ run:
 linters:
   default: all
   disable:
-    - containedctx
-    - contextcheck
     - depguard
     - err113
     - exhaustruct
