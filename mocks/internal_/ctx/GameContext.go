@@ -3,9 +3,12 @@
 package ctx
 
 import (
-	time "time"
+	context "context"
 
+	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
 	mock "github.com/stretchr/testify/mock"
+
+	time "time"
 
 	trace "go.opentelemetry.io/otel/trace"
 )
@@ -351,6 +354,54 @@ func (_c *GameContext_Value_Call) Return(_a0 any) *GameContext_Value_Call {
 }
 
 func (_c *GameContext_Value_Call) RunAndReturn(run func(any) any) *GameContext_Value_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithBase provides a mock function with given fields: base
+func (_m *GameContext) WithBase(base context.Context) ctx.GameContext {
+	ret := _m.Called(base)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithBase")
+	}
+
+	var r0 ctx.GameContext
+	if rf, ok := ret.Get(0).(func(context.Context) ctx.GameContext); ok {
+		r0 = rf(base)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(ctx.GameContext)
+		}
+	}
+
+	return r0
+}
+
+// GameContext_WithBase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithBase'
+type GameContext_WithBase_Call struct {
+	*mock.Call
+}
+
+// WithBase is a helper method to define mock.On call
+//   - base context.Context
+func (_e *GameContext_Expecter) WithBase(base interface{}) *GameContext_WithBase_Call {
+	return &GameContext_WithBase_Call{Call: _e.mock.On("WithBase", base)}
+}
+
+func (_c *GameContext_WithBase_Call) Run(run func(base context.Context)) *GameContext_WithBase_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *GameContext_WithBase_Call) Return(_a0 ctx.GameContext) *GameContext_WithBase_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *GameContext_WithBase_Call) RunAndReturn(run func(context.Context) ctx.GameContext) *GameContext_WithBase_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -10,6 +10,7 @@ import (
 type GameContext interface {
 	UserContext
 	GameID() int64
+	WithBase(base context.Context) GameContext
 }
 
 type gameContext struct {
@@ -22,6 +23,19 @@ var _ GameContext = (*gameContext)(nil)
 
 func (c *gameContext) GameID() int64 {
 	return c.gameID
+}
+
+func (c *gameContext) WithBase(base context.Context) GameContext {
+	return &gameContext{
+		UserContext: &userContext{
+			TraceContext: &traceContext{
+				Context: base,
+				span:    c.Span(),
+			},
+			userID: c.UserID(),
+		},
+		gameID: c.gameID,
+	}
 }
 
 func WithGameID(ctx UserContext, gameID int64) GameContext {

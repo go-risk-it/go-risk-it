@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	gamectx "github.com/go-risk-it/go-risk-it/internal/ctx"
 	dbutil "github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
@@ -14,12 +14,18 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/internal/metrics"
+	"github.com/go-risk-it/go-risk-it/internal/tracing"
 	"github.com/jackc/pgx/v5"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 )
 
 type Service[T any] interface {
-	Advance(ctx ctx.GameContext) error
-	AdvanceWithQuerier(ctx ctx.GameContext, querier db.Querier) (sqlc.GamePhaseType, error)
+	Advance(ctx gamectx.GameContext) error
+	AdvanceWithQuerier(
+		ctx gamectx.GameContext,
+		querier db.Querier,
+	) (sqlc.GamePhaseType, error)
 }
 
 type service[T any] struct {
@@ -49,8 +55,13 @@ func NewService[T any](
 	}
 }
 
-func (s *service[T]) Advance(ctx ctx.GameContext) error {
+func (s *service[T]) Advance(ctx gamectx.GameContext) error {
 	currentPhase := s.moveService.PhaseType()
+
+	ctx, span := tracing.StartGameSpan(ctx, "game.advance",
+		attribute.String("phase", string(currentPhase)),
+	)
+	defer span.End()
 
 	targetPhase, err := dbutil.InTransactionWithIsolation(
 		s.querier,
@@ -62,6 +73,9 @@ func (s *service[T]) Advance(ctx ctx.GameContext) error {
 		},
 	)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+
 		return fmt.Errorf("unable to perform move: %w", err)
 	}
 
@@ -74,25 +88,20 @@ func (s *service[T]) Advance(ctx ctx.GameContext) error {
 }
 
 func (s *service[T]) AdvanceWithQuerier(
-	ctx ctx.GameContext,
+	ctx gamectx.GameContext,
 	querier db.Querier,
 ) (sqlc.GamePhaseType, error) {
 	currentPhase := s.moveService.PhaseType()
+	phase := string(currentPhase)
 
-	slog.InfoContext(ctx, "processing request to advance phase", "currentPhase", currentPhase)
+	slog.InfoContext(ctx, "processing request to advance phase",
+		"currentPhase", currentPhase,
+	)
 
-	game, err := s.gameState.GetGameStateWithQuerier(ctx, querier)
+	game, err := s.getAndValidateState(ctx, querier, phase)
 	if err != nil {
-		return "", fmt.Errorf("unable to get game state: %w", err)
+		return "", err
 	}
-
-	if err := s.validationService.Validate(ctx, querier, game); err != nil {
-		slog.ErrorContext(ctx, "validation failed", "error", err)
-
-		return "", fmt.Errorf("validation failed: %w", err)
-	}
-
-	slog.InfoContext(ctx, "game is in phase", "phase", game.Phase)
 
 	if game.Phase != currentPhase {
 		return "", domainerrors.NewConflictErrorf(
@@ -102,22 +111,84 @@ func (s *service[T]) AdvanceWithQuerier(
 		)
 	}
 
-	targetPhase, err := s.moveService.Walk(ctx, querier, true)
-	if err != nil {
+	return s.walkAndAdvance(ctx, querier, phase, currentPhase)
+}
+
+func (s *service[T]) getAndValidateState(
+	ctx gamectx.GameContext,
+	querier db.Querier,
+	phase string,
+) (*state.Game, error) {
+	var game *state.Game
+
+	if err := tracing.SpanStep(
+		ctx, "game.advance.get_state", phase,
+		func(spanCtx gamectx.GameContext) error {
+			var getErr error
+			game, getErr = s.gameState.GetGameStateWithQuerier(
+				spanCtx, querier,
+			)
+
+			return getErr
+		},
+	); err != nil {
+		return nil, fmt.Errorf("unable to get game state: %w", err)
+	}
+
+	if err := tracing.SpanStep(
+		ctx, "game.advance.validate", phase,
+		func(spanCtx gamectx.GameContext) error {
+			return s.validationService.Validate(
+				spanCtx, querier, game,
+			)
+		},
+	); err != nil {
+		slog.ErrorContext(ctx, "validation failed", "error", err)
+
+		return nil, fmt.Errorf("validation failed: %w", err)
+	}
+
+	slog.InfoContext(ctx, "game is in phase", "phase", game.Phase)
+
+	return game, nil
+}
+
+func (s *service[T]) walkAndAdvance(
+	ctx gamectx.GameContext,
+	querier db.Querier,
+	phase string,
+	currentPhase sqlc.GamePhaseType,
+) (sqlc.GamePhaseType, error) {
+	var targetPhase sqlc.GamePhaseType
+
+	if err := tracing.SpanStep(
+		ctx, "game.advance.walk", phase,
+		func(spanCtx gamectx.GameContext) error {
+			var walkErr error
+			targetPhase, walkErr = s.moveService.Walk(
+				spanCtx, querier, true,
+			)
+
+			return walkErr
+		},
+	); err != nil {
 		return "", fmt.Errorf("unable to walk to target phase: %w", err)
 	}
 
-	err = s.moveService.Advance(
-		ctx,
-		querier,
-		targetPhase,
-		nil,
-	)
-	if err != nil {
+	if err := tracing.SpanStep(
+		ctx, "game.advance.advance", phase,
+		func(spanCtx gamectx.GameContext) error {
+			return s.moveService.Advance(
+				spanCtx, querier, targetPhase, nil,
+			)
+		},
+	); err != nil {
 		return "", fmt.Errorf("unable to perform move: %w", err)
 	}
 
-	slog.InfoContext(ctx, "phase advanced successfully", "from", currentPhase)
+	slog.InfoContext(ctx, "phase advanced successfully",
+		"from", currentPhase,
+	)
 
 	return targetPhase, nil
 }

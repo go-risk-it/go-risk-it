@@ -15,6 +15,7 @@ import (
 	mockmoveservice "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/move/service"
 	mocksignals "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/signals"
 	mockstate "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/state"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
@@ -61,6 +62,16 @@ func gameContext() ctx.GameContext {
 	return ctx.WithGameID(userContext, gameID)
 }
 
+// matchGameCtx returns a mock.MatchedBy matcher that validates a GameContext
+// carries the expected gameID and userID. SpanStep wraps contexts via WithBase,
+// so we can't match on exact instance identity.
+func matchGameCtx(expected ctx.GameContext) any {
+	return mock.MatchedBy(func(actual ctx.GameContext) bool {
+		return actual.GameID() == expected.GameID() &&
+			actual.UserID() == expected.UserID()
+	})
+}
+
 func TestAdvanceWithQuerier_HappyPath(t *testing.T) {
 	t.Parallel()
 
@@ -74,11 +85,13 @@ func TestAdvanceWithQuerier_HappyPath(t *testing.T) {
 	}
 
 	moveService.EXPECT().PhaseType().Return(sqlc.GamePhaseTypeATTACK)
-	gameState.EXPECT().GetGameStateWithQuerier(gameCtx, querier).Return(game, nil)
-	validationService.EXPECT().Validate(gameCtx, querier, game).Return(nil)
-	moveService.EXPECT().Walk(gameCtx, querier, true).Return(sqlc.GamePhaseTypeREINFORCE, nil)
+	gameState.EXPECT().GetGameStateWithQuerier(matchGameCtx(gameCtx), querier).Return(game, nil)
+	validationService.EXPECT().Validate(matchGameCtx(gameCtx), querier, game).Return(nil)
 	moveService.EXPECT().
-		Advance(gameCtx, querier, sqlc.GamePhaseTypeREINFORCE, nil).
+		Walk(matchGameCtx(gameCtx), querier, true).
+		Return(sqlc.GamePhaseTypeREINFORCE, nil)
+	moveService.EXPECT().
+		Advance(matchGameCtx(gameCtx), querier, sqlc.GamePhaseTypeREINFORCE, nil).
 		Return(nil)
 
 	targetPhase, err := service.AdvanceWithQuerier(gameCtx, querier)
@@ -95,7 +108,7 @@ func TestAdvanceWithQuerier_GetGameStateFails(t *testing.T) {
 
 	moveService.EXPECT().PhaseType().Return(sqlc.GamePhaseTypeATTACK)
 	gameState.EXPECT().
-		GetGameStateWithQuerier(gameCtx, querier).
+		GetGameStateWithQuerier(matchGameCtx(gameCtx), querier).
 		Return(nil, errors.New("db connection lost"))
 
 	targetPhase, err := service.AdvanceWithQuerier(gameCtx, querier)
@@ -119,9 +132,9 @@ func TestAdvanceWithQuerier_ValidationFails(t *testing.T) {
 	}
 
 	moveService.EXPECT().PhaseType().Return(sqlc.GamePhaseTypeATTACK)
-	gameState.EXPECT().GetGameStateWithQuerier(gameCtx, querier).Return(game, nil)
+	gameState.EXPECT().GetGameStateWithQuerier(matchGameCtx(gameCtx), querier).Return(game, nil)
 	validationService.EXPECT().
-		Validate(gameCtx, querier, game).
+		Validate(matchGameCtx(gameCtx), querier, game).
 		Return(domainerrors.NewConflictError("it is not the player's turn"))
 
 	targetPhase, err := service.AdvanceWithQuerier(gameCtx, querier)
@@ -148,8 +161,8 @@ func TestAdvanceWithQuerier_PhaseMismatchReturnsConflictError(t *testing.T) {
 
 	// Service expects ATTACK phase but game is in DEPLOY
 	moveService.EXPECT().PhaseType().Return(sqlc.GamePhaseTypeATTACK)
-	gameState.EXPECT().GetGameStateWithQuerier(gameCtx, querier).Return(game, nil)
-	validationService.EXPECT().Validate(gameCtx, querier, game).Return(nil)
+	gameState.EXPECT().GetGameStateWithQuerier(matchGameCtx(gameCtx), querier).Return(game, nil)
+	validationService.EXPECT().Validate(matchGameCtx(gameCtx), querier, game).Return(nil)
 
 	targetPhase, err := service.AdvanceWithQuerier(gameCtx, querier)
 
@@ -175,10 +188,10 @@ func TestAdvanceWithQuerier_WalkFails(t *testing.T) {
 	}
 
 	moveService.EXPECT().PhaseType().Return(sqlc.GamePhaseTypeATTACK)
-	gameState.EXPECT().GetGameStateWithQuerier(gameCtx, querier).Return(game, nil)
-	validationService.EXPECT().Validate(gameCtx, querier, game).Return(nil)
+	gameState.EXPECT().GetGameStateWithQuerier(matchGameCtx(gameCtx), querier).Return(game, nil)
+	validationService.EXPECT().Validate(matchGameCtx(gameCtx), querier, game).Return(nil)
 	moveService.EXPECT().
-		Walk(gameCtx, querier, true).
+		Walk(matchGameCtx(gameCtx), querier, true).
 		Return(sqlc.GamePhaseType(""), errors.New("walk computation failed"))
 
 	targetPhase, err := service.AdvanceWithQuerier(gameCtx, querier)
@@ -202,11 +215,13 @@ func TestAdvanceWithQuerier_AdvanceFails(t *testing.T) {
 	}
 
 	moveService.EXPECT().PhaseType().Return(sqlc.GamePhaseTypeATTACK)
-	gameState.EXPECT().GetGameStateWithQuerier(gameCtx, querier).Return(game, nil)
-	validationService.EXPECT().Validate(gameCtx, querier, game).Return(nil)
-	moveService.EXPECT().Walk(gameCtx, querier, true).Return(sqlc.GamePhaseTypeREINFORCE, nil)
+	gameState.EXPECT().GetGameStateWithQuerier(matchGameCtx(gameCtx), querier).Return(game, nil)
+	validationService.EXPECT().Validate(matchGameCtx(gameCtx), querier, game).Return(nil)
 	moveService.EXPECT().
-		Advance(gameCtx, querier, sqlc.GamePhaseTypeREINFORCE, nil).
+		Walk(matchGameCtx(gameCtx), querier, true).
+		Return(sqlc.GamePhaseTypeREINFORCE, nil)
+	moveService.EXPECT().
+		Advance(matchGameCtx(gameCtx), querier, sqlc.GamePhaseTypeREINFORCE, nil).
 		Return(errors.New("advance db write failed"))
 
 	targetPhase, err := service.AdvanceWithQuerier(gameCtx, querier)
@@ -261,11 +276,15 @@ func TestAdvanceWithQuerier_DifferentPhaseTransitions(t *testing.T) {
 			}
 
 			moveService.EXPECT().PhaseType().Return(testCase.fromPhase)
-			gameState.EXPECT().GetGameStateWithQuerier(gameCtx, querier).Return(game, nil)
-			validationService.EXPECT().Validate(gameCtx, querier, game).Return(nil)
-			moveService.EXPECT().Walk(gameCtx, querier, true).Return(testCase.targetPhase, nil)
+			gameState.EXPECT().
+				GetGameStateWithQuerier(matchGameCtx(gameCtx), querier).
+				Return(game, nil)
+			validationService.EXPECT().Validate(matchGameCtx(gameCtx), querier, game).Return(nil)
 			moveService.EXPECT().
-				Advance(gameCtx, querier, testCase.targetPhase, nil).
+				Walk(matchGameCtx(gameCtx), querier, true).
+				Return(testCase.targetPhase, nil)
+			moveService.EXPECT().
+				Advance(matchGameCtx(gameCtx), querier, testCase.targetPhase, nil).
 				Return(nil)
 
 			resultPhase, err := service.AdvanceWithQuerier(gameCtx, querier)
@@ -289,9 +308,9 @@ func TestAdvanceWithQuerier_ForbiddenErrorPropagated(t *testing.T) {
 	}
 
 	moveService.EXPECT().PhaseType().Return(sqlc.GamePhaseTypeATTACK)
-	gameState.EXPECT().GetGameStateWithQuerier(gameCtx, querier).Return(game, nil)
+	gameState.EXPECT().GetGameStateWithQuerier(matchGameCtx(gameCtx), querier).Return(game, nil)
 	validationService.EXPECT().
-		Validate(gameCtx, querier, game).
+		Validate(matchGameCtx(gameCtx), querier, game).
 		Return(domainerrors.NewForbiddenError("player is not in game"))
 
 	targetPhase, err := service.AdvanceWithQuerier(gameCtx, querier)
