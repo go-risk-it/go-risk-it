@@ -131,12 +131,12 @@ func (_c *Service_GetPhaseState_Call) RunAndReturn(run func(ctx.GameContext) (sq
 	return _c
 }
 
-// GetPhaseStateQ provides a mock function with given fields: _a0, querier
-func (_m *Service) GetPhaseStateQ(_a0 ctx.GameContext, querier db.Querier) (sqlc.GetConquerPhaseStateRow, error) {
+// GetPhaseStateWithQuerier provides a mock function with given fields: _a0, querier
+func (_m *Service) GetPhaseStateWithQuerier(_a0 ctx.GameContext, querier db.Querier) (sqlc.GetConquerPhaseStateRow, error) {
 	ret := _m.Called(_a0, querier)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetPhaseStateQ")
+		panic("no return value specified for GetPhaseStateWithQuerier")
 	}
 
 	var r0 sqlc.GetConquerPhaseStateRow
@@ -159,31 +159,31 @@ func (_m *Service) GetPhaseStateQ(_a0 ctx.GameContext, querier db.Querier) (sqlc
 	return r0, r1
 }
 
-// Service_GetPhaseStateQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetPhaseStateQ'
-type Service_GetPhaseStateQ_Call struct {
+// Service_GetPhaseStateWithQuerier_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetPhaseStateWithQuerier'
+type Service_GetPhaseStateWithQuerier_Call struct {
 	*mock.Call
 }
 
-// GetPhaseStateQ is a helper method to define mock.On call
+// GetPhaseStateWithQuerier is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
-func (_e *Service_Expecter) GetPhaseStateQ(_a0 interface{}, querier interface{}) *Service_GetPhaseStateQ_Call {
-	return &Service_GetPhaseStateQ_Call{Call: _e.mock.On("GetPhaseStateQ", _a0, querier)}
+func (_e *Service_Expecter) GetPhaseStateWithQuerier(_a0 interface{}, querier interface{}) *Service_GetPhaseStateWithQuerier_Call {
+	return &Service_GetPhaseStateWithQuerier_Call{Call: _e.mock.On("GetPhaseStateWithQuerier", _a0, querier)}
 }
 
-func (_c *Service_GetPhaseStateQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier)) *Service_GetPhaseStateQ_Call {
+func (_c *Service_GetPhaseStateWithQuerier_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier)) *Service_GetPhaseStateWithQuerier_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.GameContext), args[1].(db.Querier))
 	})
 	return _c
 }
 
-func (_c *Service_GetPhaseStateQ_Call) Return(_a0 sqlc.GetConquerPhaseStateRow, _a1 error) *Service_GetPhaseStateQ_Call {
+func (_c *Service_GetPhaseStateWithQuerier_Call) Return(_a0 sqlc.GetConquerPhaseStateRow, _a1 error) *Service_GetPhaseStateWithQuerier_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_GetPhaseStateQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier) (sqlc.GetConquerPhaseStateRow, error)) *Service_GetPhaseStateQ_Call {
+func (_c *Service_GetPhaseStateWithQuerier_Call) RunAndReturn(run func(ctx.GameContext, db.Querier) (sqlc.GetConquerPhaseStateRow, error)) *Service_GetPhaseStateWithQuerier_Call {
 	_c.Call.Return(run)
 	return _c
 }

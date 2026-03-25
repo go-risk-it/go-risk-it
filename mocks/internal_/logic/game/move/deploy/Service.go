@@ -131,12 +131,12 @@ func (_c *Service_GetDeployableTroops_Call) RunAndReturn(run func(ctx.GameContex
 	return _c
 }
 
-// GetDeployableTroopsQ provides a mock function with given fields: _a0, querier
-func (_m *Service) GetDeployableTroopsQ(_a0 ctx.GameContext, querier db.Querier) (int64, error) {
+// GetDeployableTroopsWithQuerier provides a mock function with given fields: _a0, querier
+func (_m *Service) GetDeployableTroopsWithQuerier(_a0 ctx.GameContext, querier db.Querier) (int64, error) {
 	ret := _m.Called(_a0, querier)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetDeployableTroopsQ")
+		panic("no return value specified for GetDeployableTroopsWithQuerier")
 	}
 
 	var r0 int64
@@ -159,31 +159,31 @@ func (_m *Service) GetDeployableTroopsQ(_a0 ctx.GameContext, querier db.Querier)
 	return r0, r1
 }
 
-// Service_GetDeployableTroopsQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetDeployableTroopsQ'
-type Service_GetDeployableTroopsQ_Call struct {
+// Service_GetDeployableTroopsWithQuerier_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetDeployableTroopsWithQuerier'
+type Service_GetDeployableTroopsWithQuerier_Call struct {
 	*mock.Call
 }
 
-// GetDeployableTroopsQ is a helper method to define mock.On call
+// GetDeployableTroopsWithQuerier is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
-func (_e *Service_Expecter) GetDeployableTroopsQ(_a0 interface{}, querier interface{}) *Service_GetDeployableTroopsQ_Call {
-	return &Service_GetDeployableTroopsQ_Call{Call: _e.mock.On("GetDeployableTroopsQ", _a0, querier)}
+func (_e *Service_Expecter) GetDeployableTroopsWithQuerier(_a0 interface{}, querier interface{}) *Service_GetDeployableTroopsWithQuerier_Call {
+	return &Service_GetDeployableTroopsWithQuerier_Call{Call: _e.mock.On("GetDeployableTroopsWithQuerier", _a0, querier)}
 }
 
-func (_c *Service_GetDeployableTroopsQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier)) *Service_GetDeployableTroopsQ_Call {
+func (_c *Service_GetDeployableTroopsWithQuerier_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier)) *Service_GetDeployableTroopsWithQuerier_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.GameContext), args[1].(db.Querier))
 	})
 	return _c
 }
 
-func (_c *Service_GetDeployableTroopsQ_Call) Return(_a0 int64, _a1 error) *Service_GetDeployableTroopsQ_Call {
+func (_c *Service_GetDeployableTroopsWithQuerier_Call) Return(_a0 int64, _a1 error) *Service_GetDeployableTroopsWithQuerier_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_GetDeployableTroopsQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier) (int64, error)) *Service_GetDeployableTroopsQ_Call {
+func (_c *Service_GetDeployableTroopsWithQuerier_Call) RunAndReturn(run func(ctx.GameContext, db.Querier) (int64, error)) *Service_GetDeployableTroopsWithQuerier_Call {
 	_c.Call.Return(run)
 	return _c
 }

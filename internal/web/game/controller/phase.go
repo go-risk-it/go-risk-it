@@ -58,8 +58,6 @@ func (c *PhaseController) GetAttackPhaseState(
 	ctx ctx.GameContext,
 	gameState *state.Game,
 ) (messaging.GameState[messaging.EmptyState], error) {
-	slog.InfoContext(ctx, "fetching attack phase state")
-
 	return c.getEmptyPhaseState(ctx, gameState, game.Attack), nil
 }
 
@@ -96,8 +94,6 @@ func (c *PhaseController) GetReinforcePhaseState(
 	ctx ctx.GameContext,
 	gameState *state.Game,
 ) (messaging.GameState[messaging.EmptyState], error) {
-	slog.InfoContext(ctx, "fetching reinforce phase state")
-
 	return c.getEmptyPhaseState(ctx, gameState, game.Reinforce), nil
 }
 
@@ -105,8 +101,6 @@ func (c *PhaseController) GetCardsPhaseState(
 	ctx ctx.GameContext,
 	gameState *state.Game,
 ) (messaging.GameState[messaging.EmptyState], error) {
-	slog.InfoContext(ctx, "fetching cards phase state")
-
 	return c.getEmptyPhaseState(ctx, gameState, game.Cards), nil
 }
 
@@ -115,7 +109,7 @@ func (c *PhaseController) getEmptyPhaseState(
 	game *state.Game,
 	phaseType game.PhaseType,
 ) messaging.GameState[messaging.EmptyState] {
-	slog.InfoContext(ctx, "fetching empty phase state")
+	slog.InfoContext(ctx, "fetching phase state", "phaseType", phaseType)
 
 	return messaging.GameState[messaging.EmptyState]{
 		ID:   game.ID,

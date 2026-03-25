@@ -16,75 +16,98 @@ func NewMissionController(missionService mission.Service) *MissionController {
 	}
 }
 
-func (m *MissionController) GetTwoContinentsMission(
-	ctx ctx.GameContext,
+// getMissionState is the shared generic helper for all mission state methods.
+// It constructs a MissionState[T] by calling fetchDetails to obtain the details,
+// then wrapping them with the given mission type.
+// For static missions, fetchDetails ignores its arguments and returns a zero-value T.
+func getMissionState[T messaging.MissionDetails](
+	gameCtx ctx.GameContext,
 	missionID int64,
-) (messaging.MissionState[messaging.TwoContinentsMission], error) {
-	missionDetails, err := m.missionService.GetTwoContinentsMission(ctx, missionID)
+	missionType messaging.MissionType,
+	fetchDetails func(ctx.GameContext, int64) (T, error),
+) (messaging.MissionState[T], error) {
+	details, err := fetchDetails(gameCtx, missionID)
 	if err != nil {
-		return messaging.MissionState[messaging.TwoContinentsMission]{}, err
+		return messaging.MissionState[T]{}, err
 	}
 
-	return messaging.MissionState[messaging.TwoContinentsMission]{
-		Type: messaging.TwoContinents,
-		Details: messaging.TwoContinentsMission{
-			Continent1: missionDetails.Continent1,
-			Continent2: missionDetails.Continent2,
-		},
+	return messaging.MissionState[T]{
+		Type:    missionType,
+		Details: details,
 	}, nil
+}
+
+func (m *MissionController) GetTwoContinentsMission(
+	gameCtx ctx.GameContext,
+	missionID int64,
+) (messaging.MissionState[messaging.TwoContinentsMission], error) {
+	return getMissionState(gameCtx, missionID, messaging.TwoContinents,
+		func(c ctx.GameContext, id int64) (messaging.TwoContinentsMission, error) {
+			result, err := m.missionService.GetTwoContinentsMission(c, id)
+			if err != nil {
+				return messaging.TwoContinentsMission{}, err
+			}
+
+			return messaging.TwoContinentsMission{
+				Continent1: result.Continent1,
+				Continent2: result.Continent2,
+			}, nil
+		})
 }
 
 func (m *MissionController) GetTwoContinentsPlusOneMission(
-	ctx ctx.GameContext,
+	gameCtx ctx.GameContext,
 	missionID int64,
 ) (messaging.MissionState[messaging.TwoContinentsPlusOneMission], error) {
-	missionDetails, err := m.missionService.GetTwoContinentsPlusOneMission(ctx, missionID)
-	if err != nil {
-		return messaging.MissionState[messaging.TwoContinentsPlusOneMission]{}, err
-	}
+	return getMissionState(gameCtx, missionID, messaging.TwoContinentsPlusOne,
+		func(c ctx.GameContext, id int64) (messaging.TwoContinentsPlusOneMission, error) {
+			result, err := m.missionService.GetTwoContinentsPlusOneMission(c, id)
+			if err != nil {
+				return messaging.TwoContinentsPlusOneMission{}, err
+			}
 
-	return messaging.MissionState[messaging.TwoContinentsPlusOneMission]{
-		Type: messaging.TwoContinentsPlusOne,
-		Details: messaging.TwoContinentsPlusOneMission{
-			Continent1: missionDetails.Continent1,
-			Continent2: missionDetails.Continent2,
-		},
-	}, nil
+			return messaging.TwoContinentsPlusOneMission{
+				Continent1: result.Continent1,
+				Continent2: result.Continent2,
+			}, nil
+		})
 }
 
 func (m *MissionController) GetEliminatePlayerMission(
-	ctx ctx.GameContext,
+	gameCtx ctx.GameContext,
 	missionID int64,
 ) (messaging.MissionState[messaging.EliminatePlayerMission], error) {
-	targetUser, err := m.missionService.GetEliminatePlayerMission(ctx, missionID)
-	if err != nil {
-		return messaging.MissionState[messaging.EliminatePlayerMission]{}, err
-	}
+	return getMissionState(gameCtx, missionID, messaging.EliminatePlayer,
+		func(c ctx.GameContext, id int64) (messaging.EliminatePlayerMission, error) {
+			targetUser, err := m.missionService.GetEliminatePlayerMission(c, id)
+			if err != nil {
+				return messaging.EliminatePlayerMission{}, err
+			}
 
-	return messaging.MissionState[messaging.EliminatePlayerMission]{
-		Type: messaging.EliminatePlayer,
-		Details: messaging.EliminatePlayerMission{
-			TargetUserID: targetUser,
-		},
-	}, nil
+			return messaging.EliminatePlayerMission{
+				TargetUserID: targetUser,
+			}, nil
+		})
 }
 
 func (m *MissionController) GetEighteenTerritoriesTwoTroopsMission(
 	_ ctx.GameContext,
 	_ int64,
 ) (messaging.MissionState[messaging.EighteenTerritoriesTwoTroopsMission], error) {
-	return messaging.MissionState[messaging.EighteenTerritoriesTwoTroopsMission]{
-		Type:    messaging.EighteenTerritoriesTwoTroops,
-		Details: messaging.EighteenTerritoriesTwoTroopsMission{},
-	}, nil
+	return getMissionState[messaging.EighteenTerritoriesTwoTroopsMission](
+		nil, 0, messaging.EighteenTerritoriesTwoTroops,
+		func(_ ctx.GameContext, _ int64) (messaging.EighteenTerritoriesTwoTroopsMission, error) {
+			return messaging.EighteenTerritoriesTwoTroopsMission{}, nil
+		})
 }
 
 func (m *MissionController) GetTwentyFourTerritoriesMission(
 	_ ctx.GameContext,
 	_ int64,
 ) (messaging.MissionState[messaging.TwentyFourTerritoriesMission], error) {
-	return messaging.MissionState[messaging.TwentyFourTerritoriesMission]{
-		Type:    messaging.TwentyFourTerritories,
-		Details: messaging.TwentyFourTerritoriesMission{},
-	}, nil
+	return getMissionState[messaging.TwentyFourTerritoriesMission](
+		nil, 0, messaging.TwentyFourTerritories,
+		func(_ ctx.GameContext, _ int64) (messaging.TwentyFourTerritoriesMission, error) {
+			return messaging.TwentyFourTerritoriesMission{}, nil
+		})
 }
