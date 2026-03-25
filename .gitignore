@@ -324,3 +324,7 @@ CLAUDE.md
 .claude/worktrees/
 perf-test/vendor/
 perf-test/loadtest
+
+# Grafana/Jsonnet
+grafana/vendor/
+!grafana/lib/

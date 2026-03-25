@@ -10,8 +10,10 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 func setupOTelTest(t *testing.T) (*metrics.Metrics, *sdkmetric.ManualReader) {
@@ -247,6 +249,76 @@ func TestOTelMiddleware_NonWebSocket_RecordsMetrics(t *testing.T) {
 
 	points := collectErrorsTotal(t, reader)
 	require.NotEmpty(t, points, "non-WebSocket route should record HTTP metrics")
+}
+
+func TestOTelMiddleware_ExemplarHasTraceContext(t *testing.T) {
+	t.Parallel()
+
+	// Set up a real TracerProvider with AlwaysSample so spans are sampled.
+	tracerProvider := sdktrace.NewTracerProvider(
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+	)
+	t.Cleanup(func() { _ = tracerProvider.Shutdown(t.Context()) })
+
+	// Set as global so NewOTelMiddleware picks it up.
+	previous := otel.GetTracerProvider()
+	otel.SetTracerProvider(tracerProvider)
+	t.Cleanup(func() { otel.SetTracerProvider(previous) })
+
+	// MeterProvider with default exemplar filter (TraceBasedFilter).
+	reader := sdkmetric.NewManualReader()
+	meterProvider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
+	meter := meterProvider.Meter("test")
+
+	m, err := metrics.NewMetrics(meter)
+	require.NoError(t, err)
+
+	otelMiddleware := middleware.NewOTelMiddleware(m)
+
+	inner := route.NewForTest("/api/v1/games", false, http.HandlerFunc(
+		func(writer http.ResponseWriter, _ *http.Request) {
+			writer.WriteHeader(http.StatusOK)
+		}))
+
+	wrapped := otelMiddleware.Wrap(inner)
+
+	req := httptest.NewRequestWithContext(
+		t.Context(),
+		http.MethodPost,
+		"/api/v1/games",
+		nil,
+	)
+	rec := httptest.NewRecorder()
+
+	wrapped.ServeHTTP(rec, req)
+
+	// Collect metrics and find the duration histogram.
+	var resourceMetrics metricdata.ResourceMetrics
+
+	require.NoError(t, reader.Collect(t.Context(), &resourceMetrics))
+
+	var durationPoints []metricdata.HistogramDataPoint[float64]
+
+	for _, sm := range resourceMetrics.ScopeMetrics {
+		for _, metric := range sm.Metrics {
+			if metric.Name == "http.server.request.duration" {
+				//nolint:forcetypeassert // test, we know the type
+				durationPoints = metric.Data.(metricdata.Histogram[float64]).DataPoints
+			}
+		}
+	}
+
+	require.NotEmpty(t, durationPoints, "expected duration histogram data points")
+
+	// The histogram data point must have an exemplar with a non-empty TraceID,
+	// proving that recordHTTPMetrics received a context with the sampled span.
+	dp := durationPoints[0]
+	require.NotEmpty(t, dp.Exemplars, "expected exemplars on duration histogram — "+
+		"Record() context must contain a sampled span for TraceBasedFilter to attach exemplars")
+
+	exemplar := dp.Exemplars[0]
+	assert.NotEmpty(t, exemplar.TraceID, "exemplar must carry the trace ID from the active span")
+	assert.NotEmpty(t, exemplar.SpanID, "exemplar must carry the span ID from the active span")
 }
 
 func TestStatusToCategory(t *testing.T) {

@@ -1,453 +1,573 @@
 {
-  "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
-  },
-  "editable": true,
-  "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
-  "id": null,
-  "links": [],
-  "panels": [
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 50 },
-              { "color": "red", "value": 100 }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
-      "id": 1,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "title": "Active Games",
-      "type": "stat",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "game_active{service_name=\"risk-it\"}",
-          "legendFormat": "Active Games",
-          "refId": "A"
-        }
-      ]
+    "annotations": {
+        "list": []
     },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": { "group": "A", "mode": "none" },
-            "thresholdsStyle": { "mode": "off" }
-          },
-          "unit": "ops"
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
-      "id": 2,
-      "options": {
-        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" },
-        "tooltip": { "mode": "single", "sort": "none" }
-      },
-      "title": "Games Created/Finished Rate",
-      "type": "timeseries",
-      "targets": [
+    "editable": true,
+    "panels": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "rate(game_created_total{service_name=\"risk-it\"}[1m])",
-          "legendFormat": "Created",
-          "refId": "A"
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 0
+            },
+            "id": 100,
+            "title": "Observe \u2014 Am I OK?",
+            "type": "row"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "rate(game_finished_total{service_name=\"risk-it\"}[1m])",
-          "legendFormat": "Finished",
-          "refId": "B"
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 50
+                            },
+                            {
+                                "color": "red",
+                                "value": 100
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 1
+            },
+            "id": 1,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "game_active{service_name=\"risk-it\"}",
+                    "legendFormat": "Active Games",
+                    "refId": "A"
+                }
+            ],
+            "title": "Active Games",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#56A64B",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "ops"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 1
+            },
+            "id": 2,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "rate(game_created_total{service_name=\"risk-it\"}[1m])",
+                    "legendFormat": "Created",
+                    "refId": "A"
+                },
+                {
+                    "expr": "rate(game_finished_total{service_name=\"risk-it\"}[1m])",
+                    "legendFormat": "Finished",
+                    "refId": "B"
+                }
+            ],
+            "title": "Games Created/Finished Rate",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 9
+            },
+            "id": 200,
+            "title": "Orient \u2014 What\u2019s the shape?",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "scheme",
+                        "schemeName": "Oranges"
+                    },
+                    "custom": {
+                        "fillOpacity": 80,
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "scaleDistribution": {
+                            "type": "linear"
+                        }
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 10
+            },
+            "id": 5,
+            "options": {
+                "calculate": false,
+                "cellGap": 1,
+                "color": {
+                    "exponent": 0.5,
+                    "fill": "dark-orange",
+                    "mode": "scheme",
+                    "reverse": false,
+                    "scale": "exponential",
+                    "scheme": "Oranges",
+                    "steps": 64
+                },
+                "exemplars": {
+                    "color": "rgba(255,0,255,0.7)"
+                },
+                "filterValues": {
+                    "le": 1e-09
+                },
+                "legend": {
+                    "show": true
+                },
+                "rowsFrame": {
+                    "layout": "auto"
+                },
+                "tooltip": {
+                    "mode": "single",
+                    "showColorScale": false,
+                    "yHistogram": false
+                },
+                "yAxis": {
+                    "axisPlacement": "left",
+                    "reverse": false,
+                    "unit": "s"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le)",
+                    "format": "heatmap",
+                    "legendFormat": "{{le}}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Phase Duration Heatmap",
+            "type": "heatmap"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "scheme",
+                        "schemeName": "Blues"
+                    },
+                    "custom": {
+                        "fillOpacity": 80,
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "scaleDistribution": {
+                            "type": "linear"
+                        }
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 10
+            },
+            "id": 8,
+            "options": {
+                "calculate": false,
+                "cellGap": 1,
+                "color": {
+                    "exponent": 0.5,
+                    "fill": "dark-blue",
+                    "mode": "scheme",
+                    "reverse": false,
+                    "scale": "exponential",
+                    "scheme": "Blues",
+                    "steps": 64
+                },
+                "exemplars": {
+                    "color": "rgba(255,0,255,0.7)"
+                },
+                "filterValues": {
+                    "le": 1e-09
+                },
+                "legend": {
+                    "show": true
+                },
+                "rowsFrame": {
+                    "layout": "auto"
+                },
+                "tooltip": {
+                    "mode": "single",
+                    "showColorScale": false,
+                    "yHistogram": false
+                },
+                "yAxis": {
+                    "axisPlacement": "left",
+                    "reverse": false,
+                    "unit": "s"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "sum(rate(game_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le)",
+                    "format": "heatmap",
+                    "legendFormat": "{{le}}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Game Duration Heatmap",
+            "type": "heatmap"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 18
+            },
+            "id": 4,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.5, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le, phase))",
+                    "legendFormat": "{{phase}} P50",
+                    "refId": "A"
+                },
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le, phase))",
+                    "legendFormat": "{{phase}} P95",
+                    "refId": "B"
+                }
+            ],
+            "title": "Phase Duration P50/P95",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 26
+            },
+            "id": 300,
+            "title": "Decide \u2014 Where\u2019s the bottleneck?",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "ops"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 27
+            },
+            "id": 3,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "sum(rate(game_moves_total{service_name=\"risk-it\"}[1m])) by (phase)",
+                    "legendFormat": "{{phase}}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Moves per Second by Phase",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#56A64B",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 27
+            },
+            "id": 7,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.5, sum(rate(game_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                    "legendFormat": "P50",
+                    "refId": "A"
+                },
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(game_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                    "legendFormat": "P95",
+                    "refId": "B"
+                }
+            ],
+            "title": "Game Duration P50/P95",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 35
+            },
+            "id": 400,
+            "title": "Act \u2014 What\u2019s the evidence?",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 36
+            },
+            "id": 6,
+            "options": {
+                "displayMode": "gradient",
+                "maxVizHeight": 300,
+                "minVizHeight": 16,
+                "minVizWidth": 8,
+                "namePlacement": "auto",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showUnfilled": true,
+                "sizing": "auto",
+                "valueMode": "color"
+            },
+            "targets": [
+                {
+                    "expr": "sum(game_moves_total{service_name=\"risk-it\"}) by (phase)",
+                    "legendFormat": "{{phase}}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Total Moves by Phase",
+            "type": "bargauge"
         }
-      ]
+    ],
+    "refresh": "10s",
+    "schemaVersion": 39,
+    "templating": {
+        "list": []
     },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": { "group": "A", "mode": "none" },
-            "thresholdsStyle": { "mode": "off" }
-          },
-          "unit": "ops"
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
-      "id": 3,
-      "options": {
-        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" },
-        "tooltip": { "mode": "single", "sort": "none" }
-      },
-      "title": "Moves per Second by Phase",
-      "type": "timeseries",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum(rate(game_moves_total{service_name=\"risk-it\"}[1m])) by (phase)",
-          "legendFormat": "{{phase}}",
-          "refId": "A"
-        }
-      ]
+    "time": {
+        "from": "now-15m",
+        "to": "now"
     },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": { "group": "A", "mode": "none" },
-            "thresholdsStyle": { "mode": "off" }
-          },
-          "unit": "s"
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
-      "id": 4,
-      "options": {
-        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" },
-        "tooltip": { "mode": "single", "sort": "none" }
-      },
-      "title": "Phase Duration P50/P95",
-      "type": "timeseries",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "histogram_quantile(0.5, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le, phase))",
-          "legendFormat": "{{phase}} P50",
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "histogram_quantile(0.95, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le, phase))",
-          "legendFormat": "{{phase}} P95",
-          "refId": "B"
-        }
-      ]
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "scheme",
-            "schemeName": "Oranges"
-          },
-          "custom": {
-            "fillOpacity": 80,
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
-            "scaleDistribution": { "type": "linear" }
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
-      "id": 5,
-      "options": {
-        "calculate": false,
-        "cellGap": 1,
-        "color": {
-          "exponent": 0.5,
-          "fill": "dark-orange",
-          "mode": "scheme",
-          "reverse": false,
-          "scale": "exponential",
-          "scheme": "Oranges",
-          "steps": 64
-        },
-        "exemplars": { "color": "rgba(255,0,255,0.7)" },
-        "filterValues": { "le": 1e-9 },
-        "legend": { "show": true },
-        "rowsFrame": { "layout": "auto" },
-        "tooltip": { "mode": "single", "showColorScale": false, "yHistogram": false },
-        "yAxis": {
-          "axisPlacement": "left",
-          "reverse": false,
-          "unit": "s"
-        }
-      },
-      "title": "Phase Duration Heatmap",
-      "type": "heatmap",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le)",
-          "format": "heatmap",
-          "legendFormat": "{{le}}",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
-      "id": 6,
-      "options": {
-        "displayMode": "gradient",
-        "maxVizHeight": 300,
-        "minVizHeight": 16,
-        "minVizWidth": 8,
-        "namePlacement": "auto",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        },
-        "showUnfilled": true,
-        "sizing": "auto",
-        "valueMode": "color"
-      },
-      "title": "Total Moves by Phase",
-      "type": "bargauge",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum(game_moves_total{service_name=\"risk-it\"}) by (phase)",
-          "legendFormat": "{{phase}}",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "drawStyle": "line", "fillOpacity": 10, "lineInterpolation": "linear",
-            "lineWidth": 1, "pointSize": 5, "showPoints": "auto",
-            "spanNulls": false, "stacking": { "group": "A", "mode": "none" }
-          },
-          "unit": "s"
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
-      "id": 7,
-      "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      },
-      "title": "Game Duration P50/P95",
-      "type": "timeseries",
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.5, sum(rate(game_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
-          "legendFormat": "P50",
-          "refId": "A"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.95, sum(rate(game_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
-          "legendFormat": "P95",
-          "refId": "B"
-        }
-      ]
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "scheme", "schemeName": "Blues" },
-          "custom": {
-            "fillOpacity": 80,
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
-            "scaleDistribution": { "type": "linear" }
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
-      "id": 8,
-      "options": {
-        "calculate": false,
-        "cellGap": 1,
-        "color": {
-          "exponent": 0.5, "fill": "dark-blue", "mode": "scheme", "reverse": false,
-          "scale": "exponential", "scheme": "Blues", "steps": 64
-        },
-        "exemplars": { "color": "rgba(255,0,255,0.7)" },
-        "filterValues": { "le": 1e-9 },
-        "legend": { "show": true },
-        "rowsFrame": { "layout": "auto" },
-        "tooltip": { "mode": "single", "showColorScale": false, "yHistogram": false },
-        "yAxis": { "axisPlacement": "left", "reverse": false, "unit": "s" }
-      },
-      "title": "Game Duration Heatmap",
-      "type": "heatmap",
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(rate(game_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le)",
-          "format": "heatmap",
-          "legendFormat": "{{le}}",
-          "refId": "A"
-        }
-      ]
-    }
-  ],
-  "refresh": "10s",
-  "schemaVersion": 39,
-  "tags": ["game-engine", "risk-it"],
-  "templating": { "list": [] },
-  "time": { "from": "now-15m", "to": "now" },
-  "timepicker": {},
-  "timezone": "",
-  "title": "Game Engine",
-  "uid": "game-engine",
-  "version": 0,
-  "weekStart": ""
+    "timezone": "browser",
+    "title": "Game Engine",
+    "uid": "game-engine",
+    "version": 1
 }

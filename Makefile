@@ -44,3 +44,27 @@ run: destroy ## Run the application
 cp: ## Run component tests
 	@echo "Running component tests..."
 	@cd component-test; poetry run behave
+
+# Grafana dashboard generation (requires: brew install go-jsonnet jsonnet-bundler)
+dashboards: ## Generate Grafana dashboard JSON from Jsonnet sources
+	@echo "Generating dashboards..."
+	@for f in grafana/dashboards/*.jsonnet; do \
+		out="$${f%.jsonnet}.json"; \
+		jsonnet -J grafana/vendor -J grafana/lib "$$f" | python3 -m json.tool > "$$out"; \
+		echo "  $$f -> $$out"; \
+	done
+
+dashboards-check: ## Verify generated dashboard JSON matches committed files
+	@echo "Checking dashboards are up to date..."
+	@tmpdir=$$(mktemp -d); \
+	for f in grafana/dashboards/*.jsonnet; do \
+		out="$${f%.jsonnet}.json"; \
+		jsonnet -J grafana/vendor -J grafana/lib "$$f" | python3 -m json.tool > "$$tmpdir/$$(basename $$out)"; \
+		if ! diff -q "$$out" "$$tmpdir/$$(basename $$out)" > /dev/null 2>&1; then \
+			echo "FAIL: $$out is out of date. Run 'make dashboards' to regenerate."; \
+			rm -rf "$$tmpdir"; \
+			exit 1; \
+		fi; \
+	done; \
+	rm -rf "$$tmpdir"; \
+	echo "OK: all dashboards are up to date."

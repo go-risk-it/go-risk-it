@@ -1,250 +1,398 @@
 {
-  "uid": "websocket",
-  "title": "WebSocket",
-  "schemaVersion": 39,
-  "version": 1,
-  "timezone": "browser",
-  "editable": true,
-  "time": {
-    "from": "now-15m",
-    "to": "now"
-  },
-  "refresh": "10s",
-  "panels": [
-    {
-      "id": 1,
-      "title": "Active Connections",
-      "type": "stat",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 0
-      },
-      "targets": [
-        {
-          "expr": "ws_connections_active{service_name=\"risk-it\"}",
-          "legendFormat": "{{instance}}",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 100 },
-              { "color": "red", "value": 500 }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "textMode": "auto",
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        }
-      }
+    "annotations": {
+        "list": []
     },
-    {
-      "id": 2,
-      "title": "Messages Sent Rate",
-      "type": "timeseries",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 0
-      },
-      "targets": [
+    "editable": true,
+    "panels": [
         {
-          "expr": "rate(ws_messages_sent_total{service_name=\"risk-it\"}[1m])",
-          "legendFormat": "{{instance}}",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 10,
-            "pointSize": 5,
-            "showPoints": "auto"
-          },
-          "unit": "ops"
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 0
+            },
+            "id": 100,
+            "title": "Observe \u2014 Am I OK?",
+            "type": "row"
         },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 100
+                            },
+                            {
+                                "color": "red",
+                                "value": 500
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 1
+            },
+            "id": 1,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "ws_connections_active{service_name=\"risk-it\"}",
+                    "legendFormat": "{{instance}}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Active Connections",
+            "type": "stat"
         },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 9
+            },
+            "id": 200,
+            "title": "Orient \u2014 What\u2019s the shape?",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#8F3BB8",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "line+area"
+                        }
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 0.2
+                            },
+                            {
+                                "color": "red",
+                                "value": 0.5
+                            }
+                        ]
+                    },
+                    "unit": "s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 10
+            },
+            "id": 3,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.5, sum(rate(ws_broadcast_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                    "legendFormat": "P50",
+                    "refId": "A"
+                },
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(ws_broadcast_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                    "legendFormat": "P95",
+                    "refId": "B"
+                },
+                {
+                    "expr": "histogram_quantile(0.99, sum(rate(ws_broadcast_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                    "legendFormat": "P99",
+                    "refId": "C"
+                }
+            ],
+            "title": "Broadcast Latency P50/P95/P99",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 18
+            },
+            "id": 300,
+            "title": "Decide \u2014 Where\u2019s the bottleneck?",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#8F3BB8",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "ops"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 19
+            },
+            "id": 2,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "rate(ws_messages_sent_total{service_name=\"risk-it\"}[1m])",
+                    "legendFormat": "{{instance}}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Messages Sent Rate",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Number of connections per broadcast \u2014 distinguishes 'each write is slow' from 'too many connections'",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#8F3BB8",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 19
+            },
+            "id": 5,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.5, sum(rate(ws_broadcast_fanout_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                    "legendFormat": "P50",
+                    "refId": "A"
+                },
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(ws_broadcast_fanout_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                    "legendFormat": "P95",
+                    "refId": "B"
+                }
+            ],
+            "title": "Broadcast Fan-Out",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 27
+            },
+            "id": 400,
+            "title": "Act \u2014 What\u2019s the evidence?",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#E02F44",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "ops"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 28
+            },
+            "id": 4,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "rate(ws_broadcast_errors_total{service_name=\"risk-it\"}[1m])",
+                    "legendFormat": "{{instance}}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Broadcast Errors Rate",
+            "type": "timeseries"
         }
-      }
+    ],
+    "refresh": "10s",
+    "schemaVersion": 39,
+    "templating": {
+        "list": []
     },
-    {
-      "id": 3,
-      "title": "Broadcast Latency P50/P95/P99",
-      "type": "timeseries",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 8
-      },
-      "targets": [
-        {
-          "expr": "histogram_quantile(0.5, sum(rate(ws_broadcast_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
-          "legendFormat": "P50",
-          "refId": "A"
-        },
-        {
-          "expr": "histogram_quantile(0.95, sum(rate(ws_broadcast_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
-          "legendFormat": "P95",
-          "refId": "B"
-        },
-        {
-          "expr": "histogram_quantile(0.99, sum(rate(ws_broadcast_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
-          "legendFormat": "P99",
-          "refId": "C"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 10,
-            "pointSize": 5,
-            "showPoints": "auto"
-          },
-          "unit": "s"
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      }
+    "time": {
+        "from": "now-15m",
+        "to": "now"
     },
-    {
-      "id": 4,
-      "title": "Broadcast Errors Rate",
-      "type": "timeseries",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 8
-      },
-      "targets": [
-        {
-          "expr": "rate(ws_broadcast_errors_total{service_name=\"risk-it\"}[1m])",
-          "legendFormat": "{{instance}}",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 10,
-            "pointSize": 5,
-            "showPoints": "auto"
-          },
-          "unit": "ops",
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "red"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      }
-    },
-    {
-      "id": 5,
-      "title": "Broadcast Fan-Out",
-      "description": "Number of connections per broadcast — distinguishes 'each write is slow' from 'too many connections'",
-      "type": "timeseries",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
-      "targets": [
-        {
-          "expr": "histogram_quantile(0.5, sum(rate(ws_broadcast_fanout_bucket{service_name=\"risk-it\"}[1m])) by (le))",
-          "legendFormat": "P50",
-          "refId": "A"
-        },
-        {
-          "expr": "histogram_quantile(0.95, sum(rate(ws_broadcast_fanout_bucket{service_name=\"risk-it\"}[1m])) by (le))",
-          "legendFormat": "P95",
-          "refId": "B"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": {
-            "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10,
-            "pointSize": 5, "showPoints": "auto"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "displayMode": "list", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      }
-    }
-  ],
-  "templating": {
-    "list": []
-  },
-  "annotations": {
-    "list": []
-  }
+    "timezone": "browser",
+    "title": "WebSocket",
+    "uid": "websocket",
+    "version": 1
 }

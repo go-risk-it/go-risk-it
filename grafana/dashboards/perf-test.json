@@ -1,474 +1,1051 @@
 {
-  "uid": "perf-test",
-  "title": "Perf Test (Client-Side)",
-  "description": "Load test client metrics from the perf-test harness",
-  "schemaVersion": 39,
-  "version": 1,
-  "editable": true,
-  "graphTooltip": 1,
-  "time": { "from": "now-15m", "to": "now" },
-  "refresh": "5s",
-  "templating": { "list": [] },
-  "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
-        "enable": true,
-        "hide": false,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Perf Test Phases",
-        "type": "dashboard",
-        "target": { "matchAny": true, "tags": ["perf-test"], "type": "tags" }
-      }
-    ]
-  },
-  "tags": ["perf-test", "risk-it", "load-test"],
-  "panels": [
-    {
-      "id": 1,
-      "title": "Active Games",
-      "type": "stat",
-      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "perftest_games_active{service_name=\"perftest\"}",
-          "legendFormat": "active"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 50 },
-              { "color": "red", "value": 200 }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "textMode": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
-      }
-    },
-    {
-      "id": 2,
-      "title": "Moves/sec",
-      "type": "timeseries",
-      "gridPos": { "h": 6, "w": 9, "x": 6, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "rate(perftest_moves_total{service_name=\"perftest\"}[30s])",
-          "legendFormat": "moves/s"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ops",
-          "custom": {
-            "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 15,
-            "lineWidth": 2, "pointSize": 5, "showPoints": "never",
-            "spanNulls": false, "stacking": { "group": "A", "mode": "none" }
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      }
-    },
-    {
-      "id": 3,
-      "title": "Game Completion",
-      "type": "timeseries",
-      "gridPos": { "h": 6, "w": 9, "x": 15, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "perftest_games_completed_total{service_name=\"perftest\"}",
-          "legendFormat": "completed"
-        },
-        {
-          "refId": "B",
-          "expr": "perftest_games_timed_out_total{service_name=\"perftest\"}",
-          "legendFormat": "timed out"
-        },
-        {
-          "refId": "C",
-          "expr": "perftest_games_fatal_total{service_name=\"perftest\"}",
-          "legendFormat": "fatal"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10,
-            "lineWidth": 2, "pointSize": 5, "showPoints": "never",
-            "spanNulls": false, "stacking": { "group": "A", "mode": "none" }
-          }
-        },
-        "overrides": [
-          {
-            "matcher": { "id": "byName", "options": "fatal" },
-            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }]
-          },
-          {
-            "matcher": { "id": "byName", "options": "timed out" },
-            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }]
-          }
+    "annotations": {
+        "list": [
+            {
+                "builtIn": 1,
+                "datasource": {
+                    "type": "grafana",
+                    "uid": "-- Grafana --"
+                },
+                "enable": true,
+                "hide": false,
+                "iconColor": "rgba(0, 211, 255, 1)",
+                "name": "Perf Test Phases",
+                "target": {
+                    "matchAny": true,
+                    "tags": [
+                        "perf-test"
+                    ],
+                    "type": "tags"
+                },
+                "type": "dashboard"
+            }
         ]
-      },
-      "options": {
-        "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      }
     },
-    {
-      "id": 4,
-      "title": "REST Latency by Action (P50/P95/P99)",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
+    "description": "Load test client metrics from the perf-test harness",
+    "editable": true,
+    "graphTooltip": 1,
+    "panels": [
         {
-          "refId": "A",
-          "expr": "histogram_quantile(0.5, sum(rate(perftest_rest_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le, action))",
-          "legendFormat": "{{action}} p50"
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 0
+            },
+            "id": 100,
+            "title": "Observe \u2014 Am I OK?",
+            "type": "row"
         },
         {
-          "refId": "B",
-          "expr": "histogram_quantile(0.95, sum(rate(perftest_rest_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le, action))",
-          "legendFormat": "{{action}} p95"
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 50
+                            },
+                            {
+                                "color": "red",
+                                "value": 200
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 6,
+                "x": 0,
+                "y": 1
+            },
+            "id": 1,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "perftest_games_active{service_name=\"perftest\"}",
+                    "legendFormat": "active",
+                    "refId": "A"
+                }
+            ],
+            "title": "Active Games",
+            "type": "stat"
         },
         {
-          "refId": "C",
-          "expr": "histogram_quantile(0.99, sum(rate(perftest_rest_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le, action))",
-          "legendFormat": "{{action}} p99"
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#73BF69",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 15,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "ops"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 9,
+                "x": 6,
+                "y": 1
+            },
+            "id": 2,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "rate(perftest_moves_total{service_name=\"perftest\"}[30s])",
+                    "legendFormat": "moves/s",
+                    "refId": "A"
+                }
+            ],
+            "title": "Moves/sec",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "short"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "fatal"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#E02F44",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "timed out"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#FF9830",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 9,
+                "x": 15,
+                "y": 1
+            },
+            "id": 3,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "perftest_games_completed_total{service_name=\"perftest\"}",
+                    "legendFormat": "completed",
+                    "refId": "A"
+                },
+                {
+                    "expr": "perftest_games_timed_out_total{service_name=\"perftest\"}",
+                    "legendFormat": "timed out",
+                    "refId": "B"
+                },
+                {
+                    "expr": "perftest_games_fatal_total{service_name=\"perftest\"}",
+                    "legendFormat": "fatal",
+                    "refId": "C"
+                }
+            ],
+            "title": "Game Completion",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 7
+            },
+            "id": 200,
+            "title": "Orient \u2014 What\u2019s the shape?",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "scheme",
+                        "schemeName": "YlOrRd"
+                    },
+                    "custom": {
+                        "fillOpacity": 80,
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "scaleDistribution": {
+                            "type": "linear"
+                        }
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 8
+            },
+            "id": 13,
+            "options": {
+                "calculate": false,
+                "cellGap": 1,
+                "color": {
+                    "exponent": 0.5,
+                    "fill": "dark-red",
+                    "mode": "scheme",
+                    "reverse": false,
+                    "scale": "exponential",
+                    "scheme": "YlOrRd",
+                    "steps": 64
+                },
+                "exemplars": {
+                    "color": "rgba(255,0,255,0.7)"
+                },
+                "filterValues": {
+                    "le": 1e-09
+                },
+                "legend": {
+                    "show": true
+                },
+                "rowsFrame": {
+                    "layout": "auto"
+                },
+                "tooltip": {
+                    "mode": "single",
+                    "showColorScale": false,
+                    "yHistogram": false
+                },
+                "yAxis": {
+                    "axisPlacement": "left",
+                    "reverse": false,
+                    "unit": "s"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[$__rate_interval])) by (le)",
+                    "format": "heatmap",
+                    "legendFormat": "{{le}}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Client E2E Latency Distribution",
+            "type": "heatmap"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#73BF69",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "line+area"
+                        }
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 0.5
+                            },
+                            {
+                                "color": "red",
+                                "value": 1
+                            }
+                        ]
+                    },
+                    "unit": "s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 16
+            },
+            "id": 5,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.5, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p50",
+                    "refId": "A"
+                },
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p95",
+                    "refId": "B"
+                },
+                {
+                    "expr": "histogram_quantile(0.99, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p99",
+                    "refId": "C"
+                }
+            ],
+            "title": "E2E Move Latency (P50/P95/P99)",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#8F3BB8",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "line+area"
+                        }
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 0.2
+                            },
+                            {
+                                "color": "red",
+                                "value": 0.5
+                            }
+                        ]
+                    },
+                    "unit": "s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 16
+            },
+            "id": 6,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.5, sum(rate(perftest_ws_delivery_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p50",
+                    "refId": "A"
+                },
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(perftest_ws_delivery_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p95",
+                    "refId": "B"
+                },
+                {
+                    "expr": "histogram_quantile(0.99, sum(rate(perftest_ws_delivery_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p99",
+                    "refId": "C"
+                }
+            ],
+            "title": "WS Delivery Latency (P50/P95/P99)",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 24
+            },
+            "id": 300,
+            "title": "Decide \u2014 Where\u2019s the bottleneck?",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 25
+            },
+            "id": 4,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.5, sum(rate(perftest_rest_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le, action))",
+                    "legendFormat": "{{action}} p50",
+                    "refId": "A"
+                },
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(perftest_rest_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le, action))",
+                    "legendFormat": "{{action}} p95",
+                    "refId": "B"
+                },
+                {
+                    "expr": "histogram_quantile(0.99, sum(rate(perftest_rest_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le, action))",
+                    "legendFormat": "{{action}} p99",
+                    "refId": "C"
+                }
+            ],
+            "title": "REST Latency by Action (P50/P95/P99)",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#FF9830",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 15,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "ops"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 25
+            },
+            "id": 8,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "rate(perftest_conflicts_total{service_name=\"perftest\"}[30s])",
+                    "legendFormat": "conflicts/s",
+                    "refId": "A"
+                }
+            ],
+            "title": "Conflicts/sec",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Shows the performance curve: at what concurrency does latency degrade?",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "s"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "active games"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.axisPlacement",
+                                "value": "right"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "short"
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 5
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#FF9830",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 33
+            },
+            "id": 9,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "E2E p95",
+                    "refId": "A"
+                },
+                {
+                    "expr": "perftest_games_active{service_name=\"perftest\"}",
+                    "legendFormat": "active games",
+                    "refId": "B"
+                }
+            ],
+            "title": "E2E Latency vs Concurrency",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Server-side HTTP P95 overlaid with active game count",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "s"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "active games"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.axisPlacement",
+                                "value": "right"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "short"
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 5
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#FF9830",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 33
+            },
+            "id": 10,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                    "legendFormat": "HTTP p95",
+                    "refId": "A"
+                },
+                {
+                    "expr": "perftest_games_active{service_name=\"perftest\"}",
+                    "legendFormat": "active games",
+                    "refId": "B"
+                }
+            ],
+            "title": "Server Latency vs Concurrency",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 41
+            },
+            "id": 400,
+            "title": "Act \u2014 What\u2019s the evidence?",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "normal"
+                        }
+                    },
+                    "unit": "ops"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 0,
+                "y": 42
+            },
+            "id": 7,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "sum(rate(perftest_errors_total{service_name=\"perftest\"}[1m])) by (type)",
+                    "legendFormat": "{{type}}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Error Rate by Type",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#56A64B",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 8,
+                "y": 42
+            },
+            "id": 11,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.5, sum(rate(perftest_game_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p50",
+                    "refId": "A"
+                },
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(perftest_game_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p95",
+                    "refId": "B"
+                }
+            ],
+            "title": "Game Duration (P50/P95)",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#73BF69",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 16,
+                "y": 42
+            },
+            "id": 12,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.5, sum(rate(perftest_game_moves_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p50",
+                    "refId": "A"
+                },
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(perftest_game_moves_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p95",
+                    "refId": "B"
+                }
+            ],
+            "title": "Moves per Game (P50/P95)",
+            "type": "timeseries"
         }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "custom": {
-            "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10,
-            "lineWidth": 2, "pointSize": 5, "showPoints": "never",
-            "spanNulls": false, "stacking": { "group": "A", "mode": "none" }
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      }
+    ],
+    "refresh": "5s",
+    "schemaVersion": 39,
+    "tags": [
+        "perf-test",
+        "risk-it",
+        "load-test"
+    ],
+    "templating": {
+        "list": []
     },
-    {
-      "id": 5,
-      "title": "E2E Move Latency (P50/P95/P99)",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "histogram_quantile(0.5, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
-          "legendFormat": "p50"
-        },
-        {
-          "refId": "B",
-          "expr": "histogram_quantile(0.95, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
-          "legendFormat": "p95"
-        },
-        {
-          "refId": "C",
-          "expr": "histogram_quantile(0.99, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
-          "legendFormat": "p99"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "custom": {
-            "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10,
-            "lineWidth": 2, "pointSize": 5, "showPoints": "never",
-            "spanNulls": false, "stacking": { "group": "A", "mode": "none" }
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      }
+    "time": {
+        "from": "now-15m",
+        "to": "now"
     },
-    {
-      "id": 6,
-      "title": "WS Delivery Latency (P50/P95/P99)",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "histogram_quantile(0.5, sum(rate(perftest_ws_delivery_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
-          "legendFormat": "p50"
-        },
-        {
-          "refId": "B",
-          "expr": "histogram_quantile(0.95, sum(rate(perftest_ws_delivery_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
-          "legendFormat": "p95"
-        },
-        {
-          "refId": "C",
-          "expr": "histogram_quantile(0.99, sum(rate(perftest_ws_delivery_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
-          "legendFormat": "p99"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "custom": {
-            "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10,
-            "lineWidth": 2, "pointSize": 5, "showPoints": "never",
-            "spanNulls": false, "stacking": { "group": "A", "mode": "none" }
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      }
-    },
-    {
-      "id": 7,
-      "title": "Error Rate by Type",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 14 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum(rate(perftest_errors_total{service_name=\"perftest\"}[1m])) by (type)",
-          "legendFormat": "{{type}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ops",
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10,
-            "lineWidth": 2, "pointSize": 5, "showPoints": "never",
-            "spanNulls": false, "stacking": { "group": "A", "mode": "normal" }
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      }
-    },
-    {
-      "id": 8,
-      "title": "Conflicts/sec",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 14 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "rate(perftest_conflicts_total{service_name=\"perftest\"}[30s])",
-          "legendFormat": "conflicts/s"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ops",
-          "color": { "mode": "fixed", "fixedColor": "orange" },
-          "custom": {
-            "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 15,
-            "lineWidth": 2, "pointSize": 5, "showPoints": "never",
-            "spanNulls": false, "stacking": { "group": "A", "mode": "none" }
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      }
-    },
-    {
-      "id": 9,
-      "title": "E2E Latency vs Concurrency",
-      "description": "Shows the performance curve: at what concurrency does latency degrade?",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 22 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "histogram_quantile(0.95, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
-          "legendFormat": "E2E p95"
-        },
-        {
-          "refId": "B",
-          "expr": "perftest_games_active{service_name=\"perftest\"}",
-          "legendFormat": "active games"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "custom": {
-            "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10,
-            "lineWidth": 2, "pointSize": 5, "showPoints": "never",
-            "spanNulls": false, "stacking": { "group": "A", "mode": "none" }
-          }
-        },
-        "overrides": [
-          {
-            "matcher": { "id": "byName", "options": "active games" },
-            "properties": [
-              { "id": "custom.axisPlacement", "value": "right" },
-              { "id": "unit", "value": "short" },
-              { "id": "custom.fillOpacity", "value": 5 },
-              { "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      }
-    },
-    {
-      "id": 10,
-      "title": "Server Latency vs Concurrency",
-      "description": "Server-side HTTP P95 overlaid with active game count",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 22 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
-          "legendFormat": "HTTP p95"
-        },
-        {
-          "refId": "B",
-          "expr": "perftest_games_active{service_name=\"perftest\"}",
-          "legendFormat": "active games"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "custom": {
-            "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10,
-            "lineWidth": 2, "pointSize": 5, "showPoints": "never",
-            "spanNulls": false, "stacking": { "group": "A", "mode": "none" }
-          }
-        },
-        "overrides": [
-          {
-            "matcher": { "id": "byName", "options": "active games" },
-            "properties": [
-              { "id": "custom.axisPlacement", "value": "right" },
-              { "id": "unit", "value": "short" },
-              { "id": "custom.fillOpacity", "value": 5 },
-              { "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      }
-    },
-    {
-      "id": 11,
-      "title": "Game Duration (P50/P95)",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 30 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "histogram_quantile(0.5, sum(rate(perftest_game_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
-          "legendFormat": "p50"
-        },
-        {
-          "refId": "B",
-          "expr": "histogram_quantile(0.95, sum(rate(perftest_game_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
-          "legendFormat": "p95"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "custom": {
-            "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10,
-            "lineWidth": 2, "pointSize": 5, "showPoints": "never",
-            "spanNulls": false, "stacking": { "group": "A", "mode": "none" }
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      }
-    },
-    {
-      "id": 12,
-      "title": "Moves per Game (P50/P95)",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 30 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "histogram_quantile(0.5, sum(rate(perftest_game_moves_bucket{service_name=\"perftest\"}[1m])) by (le))",
-          "legendFormat": "p50"
-        },
-        {
-          "refId": "B",
-          "expr": "histogram_quantile(0.95, sum(rate(perftest_game_moves_bucket{service_name=\"perftest\"}[1m])) by (le))",
-          "legendFormat": "p95"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": {
-            "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10,
-            "lineWidth": 2, "pointSize": 5, "showPoints": "never",
-            "spanNulls": false, "stacking": { "group": "A", "mode": "none" }
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      }
-    }
-  ]
+    "timezone": "browser",
+    "title": "Perf Test (Client-Side)",
+    "uid": "perf-test",
+    "version": 1
 }

@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -43,7 +44,7 @@ func (m *OTelMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
 	handler := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		spanName := fmt.Sprintf("%s %s", request.Method, routeToWrap.Pattern())
 
-		_, span := m.tracer.Start(request.Context(), spanName,
+		tracedCtx, span := m.tracer.Start(request.Context(), spanName,
 			trace.WithAttributes(
 				attribute.String("http.method", request.Method),
 				attribute.String("http.route", routeToWrap.Pattern()),
@@ -51,7 +52,7 @@ func (m *OTelMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
 		)
 		defer span.End()
 
-		traceContext := ctx.WithSpan(request.Context(), span)
+		traceContext := ctx.WithSpan(tracedCtx, span)
 
 		// WebSocket routes need the raw response writer for nbio's upgrade.
 		// Skip status recording and HTTP metrics for WS connections.
@@ -71,34 +72,41 @@ func (m *OTelMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
 
 		duration := time.Since(start).Seconds()
 
-		m.recordHTTPMetrics(request, routeToWrap.Pattern(), recorder.statusCode, duration)
+		m.recordHTTPMetrics(
+			tracedCtx,
+			request.Method,
+			routeToWrap.Pattern(),
+			recorder.statusCode,
+			duration,
+		)
 	})
 
 	return routeToWrap.Wrap(handler)
 }
 
 func (m *OTelMiddleware) recordHTTPMetrics(
-	request *http.Request,
+	ctx context.Context,
+	method string,
 	pattern string,
 	statusCode int,
 	duration float64,
 ) {
 	attrs := otelmetric.WithAttributes(
-		attribute.String("http.method", request.Method),
+		attribute.String("http.method", method),
 		attribute.String("http.route", pattern),
 		attribute.Int("http.status_code", statusCode),
 	)
 
-	m.metrics.HTTPRequestDuration.Record(request.Context(), duration, attrs)
-	m.metrics.HTTPRequestsTotal.Add(request.Context(), 1, attrs)
+	m.metrics.HTTPRequestDuration.Record(ctx, duration, attrs)
+	m.metrics.HTTPRequestsTotal.Add(ctx, 1, attrs)
 
 	if statusCode >= http.StatusBadRequest {
 		errorAttrs := otelmetric.WithAttributes(
-			attribute.String("http.method", request.Method),
+			attribute.String("http.method", method),
 			attribute.String("http.route", pattern),
 			attribute.String("error.category", StatusToCategory(statusCode)),
 		)
-		m.metrics.HTTPErrorsTotal.Add(request.Context(), 1, errorAttrs)
+		m.metrics.HTTPErrorsTotal.Add(ctx, 1, errorAttrs)
 	}
 }
 

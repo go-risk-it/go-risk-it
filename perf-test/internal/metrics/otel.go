@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/perf-test/internal/health"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
@@ -29,6 +30,22 @@ var gameDurationBuckets = []float64{ //nolint:gochecknoglobals
 	1, 5, 10, 30, 60, 120, 300, 600, 1800, 3600,
 }
 
+// healthCounter abstracts UpDownCounter for testability.
+// Production code uses otelUpDownCounter (wraps metric.Int64UpDownCounter).
+// Tests inject fakes via the interface.
+type healthCounter interface {
+	Add(delta int64)
+}
+
+// otelUpDownCounter adapts metric.Int64UpDownCounter to healthCounter.
+type otelUpDownCounter struct {
+	counter metric.Int64UpDownCounter
+}
+
+func (c *otelUpDownCounter) Add(delta int64) {
+	c.counter.Add(context.Background(), delta)
+}
+
 // OTelExporter wraps OTel instruments that mirror the HDR histogram collector.
 // Each Record*() call on the Collector also records to these instruments for live export.
 type OTelExporter struct {
@@ -46,6 +63,13 @@ type OTelExporter struct {
 
 	// UpDown counters.
 	gamesActive metric.Int64UpDownCounter
+
+	// Health classification gauges.
+	healthHealthy healthCounter
+	healthSlow    healthCounter
+	healthStalled healthCounter
+	healthZombie  healthCounter
+	prevHealth    health.Distribution
 
 	// Histograms.
 	restDuration  metric.Float64Histogram
@@ -160,6 +184,42 @@ func (o *OTelExporter) initInstruments(meter metric.Meter) error {
 		return err
 	}
 
+	healthHealthy, err := meter.Int64UpDownCounter("perftest.health.healthy",
+		metric.WithDescription("Games classified as healthy"),
+	)
+	if err != nil {
+		return err
+	}
+
+	o.healthHealthy = &otelUpDownCounter{counter: healthHealthy}
+
+	healthSlow, err := meter.Int64UpDownCounter("perftest.health.slow",
+		metric.WithDescription("Games classified as slow"),
+	)
+	if err != nil {
+		return err
+	}
+
+	o.healthSlow = &otelUpDownCounter{counter: healthSlow}
+
+	healthStalled, err := meter.Int64UpDownCounter("perftest.health.stalled",
+		metric.WithDescription("Games classified as stalled"),
+	)
+	if err != nil {
+		return err
+	}
+
+	o.healthStalled = &otelUpDownCounter{counter: healthStalled}
+
+	healthZombie, err := meter.Int64UpDownCounter("perftest.health.zombie",
+		metric.WithDescription("Games classified as zombie"),
+	)
+	if err != nil {
+		return err
+	}
+
+	o.healthZombie = &otelUpDownCounter{counter: healthZombie}
+
 	if o.restDuration, err = meter.Float64Histogram("perftest.rest.duration",
 		metric.WithDescription("REST API call duration"),
 		metric.WithUnit("s"),
@@ -208,6 +268,29 @@ func (o *OTelExporter) initInstruments(meter metric.Meter) error {
 	}
 
 	return nil
+}
+
+// RecordHealthDistribution reports health classification changes to OTel.
+// It computes deltas from the previous snapshot and applies them as UpDownCounter
+// additions. Not concurrent-safe — intended for use from the single-threaded hold loop.
+func (o *OTelExporter) RecordHealthDistribution(dist health.Distribution) {
+	o.healthHealthy.Add(int64(dist.Healthy - o.prevHealth.Healthy))
+	o.healthSlow.Add(int64(dist.Slow - o.prevHealth.Slow))
+	o.healthStalled.Add(int64(dist.Stalled - o.prevHealth.Stalled))
+	o.healthZombie.Add(int64(dist.Zombie - o.prevHealth.Zombie))
+
+	o.prevHealth = dist
+}
+
+// ResetHealthCounters zeroes the health counters by emitting negative deltas,
+// then clears prevHealth. Call between staircase steps so counters start fresh.
+func (o *OTelExporter) ResetHealthCounters() {
+	o.healthHealthy.Add(int64(-o.prevHealth.Healthy))
+	o.healthSlow.Add(int64(-o.prevHealth.Slow))
+	o.healthStalled.Add(int64(-o.prevHealth.Stalled))
+	o.healthZombie.Add(int64(-o.prevHealth.Zombie))
+
+	o.prevHealth = health.Distribution{}
 }
 
 // Shutdown flushes and stops the OTel provider.

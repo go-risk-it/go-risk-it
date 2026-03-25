@@ -126,9 +126,17 @@ func newMeterProvider(otelConfig config.OtelConfig) (*sdkmetric.MeterProvider, e
 		return nil, fmt.Errorf("failed to create metric exporter: %w", err)
 	}
 
+	// runtime.NewProducer provides precomputed histogram metrics (go.schedule.duration)
+	// that runtime.Start() alone does not emit.
+	producer := runtime.NewProducer()
+
 	return sdkmetric.NewMeterProvider(
 		sdkmetric.WithReader(
-			sdkmetric.NewPeriodicReader(exporter, sdkmetric.WithInterval(10*time.Second)),
+			sdkmetric.NewPeriodicReader(
+				exporter,
+				sdkmetric.WithInterval(10*time.Second),
+				sdkmetric.WithProducer(producer),
+			),
 		),
 	), nil
 }

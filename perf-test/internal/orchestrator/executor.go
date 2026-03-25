@@ -13,14 +13,17 @@ import (
 	"github.com/go-risk-it/go-risk-it/perf-test/internal/resources"
 )
 
+const defaultHealthPollInterval = 5 * time.Second
+
 // StepExecutorConfig holds parameters for each step execution.
 type StepExecutorConfig struct {
-	NumPlayers        int
-	GameTimeout       time.Duration
-	StaggerDelay      time.Duration
-	HoldDuration      time.Duration
-	WarmUpCompletions int
-	WarmUpDurationSec int
+	NumPlayers         int
+	GameTimeout        time.Duration
+	StaggerDelay       time.Duration
+	HoldDuration       time.Duration
+	WarmUpCompletions  int
+	WarmUpDurationSec  int
+	HealthPollInterval time.Duration // 0 = defaultHealthPollInterval (5s)
 }
 
 // StepExecutorDeps holds injected dependencies for testability.
@@ -62,6 +65,11 @@ func (e *DefaultStepExecutor) Execute(
 ) (*StepOutput, error) {
 	e.stepCount++
 	stepIndex := e.stepCount
+
+	// Reset health counters so each step starts from zero.
+	if e.deps.OTelExporter != nil {
+		e.deps.OTelExporter.ResetHealthCounters()
+	}
 
 	// Fresh collector per step for clean per-step percentiles.
 	collector := e.deps.NewCollector(e.cfg.HoldDuration)
@@ -149,12 +157,37 @@ func (e *DefaultStepExecutor) runStep(
 		"step",
 	)
 
-	// Hold for the configured duration.
+	// Hold for the configured duration, periodically reporting health to OTel.
 	holdStart := time.Now()
 
-	select {
-	case <-time.After(e.cfg.HoldDuration):
-	case <-ctx.Done():
+	pollInterval := e.cfg.HealthPollInterval
+	if pollInterval <= 0 {
+		pollInterval = defaultHealthPollInterval
+	}
+
+	holdTimer := time.NewTimer(e.cfg.HoldDuration)
+	defer holdTimer.Stop()
+
+	healthTicker := time.NewTicker(pollInterval)
+	defer healthTicker.Stop()
+
+holdLoop:
+	for {
+		select {
+		case <-holdTimer.C:
+			break holdLoop
+		case <-healthTicker.C:
+			if e.deps.OTelExporter != nil {
+				e.deps.OTelExporter.RecordHealthDistribution(tracker.Snapshot())
+			}
+		case <-ctx.Done():
+			break holdLoop
+		}
+	}
+
+	// Emit final health distribution after the hold completes.
+	if e.deps.OTelExporter != nil {
+		e.deps.OTelExporter.RecordHealthDistribution(tracker.Snapshot())
 	}
 
 	holdDuration := time.Since(holdStart)

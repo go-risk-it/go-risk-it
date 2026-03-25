@@ -42,7 +42,10 @@ func (m *AuthMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
 				return
 			}
 
-			slog.DebugContext(traceContext, "applying auth middleware")
+			slog.DebugContext(
+				traceContext,
+				"applying auth middleware",
+			)
 
 			subject, err := m.verifyJWT(request)
 			if err != nil {
@@ -57,13 +60,18 @@ func (m *AuthMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
 				return
 			}
 
-			slog.DebugContext(traceContext, "Auth token is valid")
+			slog.DebugContext(
+				traceContext,
+				"Auth token is valid",
+			)
 
 			userContext := ctx.WithUserID(traceContext, subject)
 
 			routeToWrap.ServeHTTP(
 				writer,
-				request.WithContext(userContext),
+				request.WithContext(
+					userContext,
+				),
 			)
 		},
 	))

@@ -71,7 +71,7 @@ linters:
     rules:
       - linters:
           - contextcheck
-        path: internal/web/(game|lobby)/signals/
+        path: internal/web/(game|lobby)/signals/|internal/web/middleware/
       - linters:
           - dogsled
           - dupl

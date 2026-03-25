@@ -1,768 +1,1387 @@
 {
-  "uid": "perf-test-command-center",
-  "title": "Perf Test Command Center",
-  "description": "Unified perf test dashboard: SLO status, latency attribution, saturation, leak detection, and test status",
-  "schemaVersion": 39,
-  "version": 1,
-  "editable": true,
-  "fiscalYearStartMonth": 0,
-  "graphTooltip": 1,
-  "links": [],
-  "tags": ["perf-test", "command-center", "risk-it"],
-  "time": { "from": "now-15m", "to": "now" },
-  "refresh": "5s",
-  "templating": {
-    "list": [
-      {
-        "name": "players_per_game",
-        "type": "custom",
-        "label": "Players per Game",
-        "current": { "text": "4", "value": "4" },
-        "options": [
-          { "text": "2", "value": "2", "selected": false },
-          { "text": "3", "value": "3", "selected": false },
-          { "text": "4", "value": "4", "selected": true },
-          { "text": "5", "value": "5", "selected": false },
-          { "text": "6", "value": "6", "selected": false }
-        ],
-        "query": "2,3,4,5,6"
-      }
-    ]
-  },
-  "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
-        "enable": true,
-        "hide": false,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Perf Test Phases",
-        "type": "dashboard",
-        "target": { "matchAny": true, "tags": ["perf-test"], "type": "tags" }
-      }
-    ]
-  },
-  "panels": [
-    {
-      "id": 100,
-      "title": "SLO Status",
-      "type": "row",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
-      "collapsed": false
-    },
-    {
-      "id": 1,
-      "title": "E2E p95",
-      "description": "End-to-end move latency p95. SLO: < 500ms",
-      "type": "stat",
-      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "histogram_quantile(0.95, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
-          "legendFormat": "E2E p95",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 0.5 },
-              { "color": "red", "value": 1 }
-            ]
-          },
-          "color": { "mode": "thresholds" }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "textMode": "auto"
-      }
-    },
-    {
-      "id": 2,
-      "title": "WS Delivery p95",
-      "description": "WebSocket delivery latency p95. SLO: < 200ms",
-      "type": "stat",
-      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "histogram_quantile(0.95, sum(rate(perftest_ws_delivery_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
-          "legendFormat": "WS Delivery p95",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 0.2 },
-              { "color": "red", "value": 0.5 }
-            ]
-          },
-          "color": { "mode": "thresholds" }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "textMode": "auto"
-      }
-    },
-    {
-      "id": 3,
-      "title": "DB Txn p95",
-      "description": "Database transaction latency p95. SLO: < 50ms",
-      "type": "stat",
-      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "histogram_quantile(0.95, sum(rate(db_transaction_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
-          "legendFormat": "DB Txn p95",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 0.05 },
-              { "color": "red", "value": 0.1 }
-            ]
-          },
-          "color": { "mode": "thresholds" }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "textMode": "auto"
-      }
-    },
-    {
-      "id": 4,
-      "title": "HTTP Error Rate",
-      "description": "5xx error rate. SLO: < 1%",
-      "type": "stat",
-      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "(sum(rate(http_server_requests_total{service_name=\"risk-it\",http_status_code=~\"5..\"}[1m])) or vector(0)) / sum(rate(http_server_requests_total{service_name=\"risk-it\"}[1m]))",
-          "legendFormat": "Error Rate",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percentunit",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 0.01 },
-              { "color": "red", "value": 0.05 }
-            ]
-          },
-          "color": { "mode": "thresholds" }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "textMode": "auto"
-      }
-    },
-    {
-      "id": 200,
-      "title": "Latency Attribution",
-      "type": "row",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
-      "collapsed": false
-    },
-    {
-      "id": 5,
-      "title": "Latency Attribution (p95)",
-      "description": "Per-boundary p95 latency overlaid on HTTP total. Shows where time is spent.",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 6 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
-          "legendFormat": "HTTP Total",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        },
-        {
-          "refId": "B",
-          "expr": "histogram_quantile(0.95, sum(rate(db_transaction_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
-          "legendFormat": "DB Transaction",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        },
-        {
-          "refId": "C",
-          "expr": "histogram_quantile(0.95, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
-          "legendFormat": "Game Logic",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        },
-        {
-          "refId": "D",
-          "expr": "histogram_quantile(0.95, sum(rate(ws_broadcast_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
-          "legendFormat": "WS Broadcast",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text",
-            "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0,
-            "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
-            "insertNulls": false, "lineInterpolation": "smooth", "lineWidth": 1,
-            "pointSize": 5, "scaleDistribution": { "type": "linear" },
-            "showPoints": "never", "spanNulls": false,
-            "stacking": { "group": "A", "mode": "none" },
-            "thresholdsStyle": { "mode": "off" }
-          },
-          "unit": "s"
-        },
-        "overrides": [
-          {
-            "matcher": { "id": "byName", "options": "HTTP Total" },
-            "properties": [
-              { "id": "custom.lineWidth", "value": 3 }
-            ]
-          }
+    "annotations": {
+        "list": [
+            {
+                "builtIn": 1,
+                "datasource": {
+                    "type": "grafana",
+                    "uid": "-- Grafana --"
+                },
+                "enable": true,
+                "hide": false,
+                "iconColor": "rgba(0, 211, 255, 1)",
+                "name": "Perf Test Phases",
+                "target": {
+                    "matchAny": true,
+                    "tags": [
+                        "perf-test"
+                    ],
+                    "type": "tags"
+                },
+                "type": "dashboard"
+            }
         ]
-      },
-      "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      }
     },
-    {
-      "id": 300,
-      "title": "Boundary Saturation",
-      "type": "row",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
-      "collapsed": false
-    },
-    {
-      "id": 6,
-      "title": "DB Pool Utilization %",
-      "type": "stat",
-      "gridPos": { "h": 6, "w": 4, "x": 0, "y": 15 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
+    "description": "Unified perf test dashboard: SLO status, latency attribution, saturation, leak detection, and test status",
+    "editable": true,
+    "graphTooltip": 1,
+    "panels": [
         {
-          "refId": "A",
-          "expr": "db_pool_active{service_name=\"risk-it\"} / db_pool_total{service_name=\"risk-it\"} * 100",
-          "legendFormat": "Pool %",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 0
+            },
+            "id": 100,
+            "title": "Observe \u2014 Am I OK?",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "End-to-end move latency p95. SLO: < 500ms",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 0.5
+                            },
+                            {
+                                "color": "red",
+                                "value": 1
+                            }
+                        ]
+                    },
+                    "unit": "s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 0,
+                "y": 1
+            },
+            "id": 1,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "E2E p95",
+                    "refId": "A"
+                }
+            ],
+            "title": "E2E p95",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "WebSocket delivery latency p95. SLO: < 200ms",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 0.2
+                            },
+                            {
+                                "color": "red",
+                                "value": 0.5
+                            }
+                        ]
+                    },
+                    "unit": "s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 6,
+                "y": 1
+            },
+            "id": 2,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(perftest_ws_delivery_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "WS Delivery p95",
+                    "refId": "A"
+                }
+            ],
+            "title": "WS Delivery p95",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Database transaction latency p95. SLO: < 50ms",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 0.05
+                            },
+                            {
+                                "color": "red",
+                                "value": 0.1
+                            }
+                        ]
+                    },
+                    "unit": "s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 12,
+                "y": 1
+            },
+            "id": 3,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(db_transaction_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                    "legendFormat": "DB Txn p95",
+                    "refId": "A"
+                }
+            ],
+            "title": "DB Txn p95",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "5xx error rate. SLO: < 1%",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 0.01
+                            },
+                            {
+                                "color": "red",
+                                "value": 0.05
+                            }
+                        ]
+                    },
+                    "unit": "percentunit"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 18,
+                "y": 1
+            },
+            "id": 4,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "(sum(rate(http_server_requests_total{service_name=\"risk-it\",http_status_code=~\"5..\"}[1m])) or vector(0)) / sum(rate(http_server_requests_total{service_name=\"risk-it\"}[1m]))",
+                    "legendFormat": "Error Rate",
+                    "refId": "A"
+                }
+            ],
+            "title": "HTTP Error Rate",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 6,
+                "x": 0,
+                "y": 5
+            },
+            "id": 5,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "perftest_games_active{service_name=\"perftest\"}",
+                    "legendFormat": "Active",
+                    "refId": "A"
+                }
+            ],
+            "title": "Active Games",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "ops"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 6,
+                "x": 6,
+                "y": 5
+            },
+            "id": 6,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "single"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "rate(perftest_moves_total{service_name=\"perftest\"}[30s])",
+                    "legendFormat": "moves/s",
+                    "refId": "A"
+                }
+            ],
+            "title": "Throughput",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 0.8
+                            },
+                            {
+                                "color": "green",
+                                "value": 0.95
+                            }
+                        ]
+                    },
+                    "unit": "percentunit"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 6,
+                "x": 12,
+                "y": 5
+            },
+            "id": 7,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "sum(perftest_games_completed_total{service_name=\"perftest\"}) / (sum(perftest_games_completed_total{service_name=\"perftest\"}) + (sum(perftest_games_timed_out_total{service_name=\"perftest\"}) or vector(0)) + (sum(perftest_games_fatal_total{service_name=\"perftest\"}) or vector(0)))",
+                    "legendFormat": "Completion",
+                    "refId": "A"
+                }
+            ],
+            "title": "Completion Rate",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 30,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "normal"
+                        }
+                    },
+                    "unit": "ops"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 6,
+                "x": 18,
+                "y": 5
+            },
+            "id": 8,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "sum"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "sum(rate(perftest_errors_total{service_name=\"perftest\"}[1m])) by (type)",
+                    "legendFormat": "{{type}}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Error Breakdown",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 13
+            },
+            "id": 200,
+            "title": "Orient \u2014 What\u2019s the shape?",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "E2E move latency distribution with p50/p95/p99 filled bands.",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "s"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "p99"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.fillBelowTo",
+                                "value": "p95"
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 5
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "p95"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.fillBelowTo",
+                                "value": "p50"
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 10
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 14
+            },
+            "id": 9,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.5, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p50",
+                    "refId": "A"
+                },
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p95",
+                    "refId": "B"
+                },
+                {
+                    "expr": "histogram_quantile(0.99, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p99",
+                    "refId": "C"
+                }
+            ],
+            "title": "E2E Latency Percentile Bands",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Per-boundary p95 latency overlaid on HTTP total. Shows where time is spent.",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "s"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "HTTP Total"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#FF9830",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 3
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "DB Transaction"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#3274D9",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Game Logic"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#56A64B",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "WS Broadcast"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#8F3BB8",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 22
+            },
+            "id": 10,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                    "legendFormat": "HTTP Total",
+                    "refId": "A"
+                },
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(db_transaction_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                    "legendFormat": "DB Transaction",
+                    "refId": "B"
+                },
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                    "legendFormat": "Game Logic",
+                    "refId": "C"
+                },
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(ws_broadcast_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                    "legendFormat": "WS Broadcast",
+                    "refId": "D"
+                }
+            ],
+            "title": "Latency Attribution (p95)",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 30
+            },
+            "id": 300,
+            "title": "Decide \u2014 Where\u2019s the bottleneck?",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 70
+                            },
+                            {
+                                "color": "red",
+                                "value": 90
+                            }
+                        ]
+                    },
+                    "unit": "percent"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 0,
+                "y": 31
+            },
+            "id": 11,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "db_pool_active{service_name=\"risk-it\"} / db_pool_total{service_name=\"risk-it\"} * 100",
+                    "legendFormat": "Pool %",
+                    "refId": "A"
+                }
+            ],
+            "title": "DB Pool Utilization %",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 10
+                            },
+                            {
+                                "color": "red",
+                                "value": 100
+                            }
+                        ]
+                    },
+                    "unit": "ops"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 4,
+                "y": 31
+            },
+            "id": 12,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "rate(db_pool_empty_acquires_total{service_name=\"risk-it\"}[1m])",
+                    "legendFormat": "waits/s",
+                    "refId": "A"
+                }
+            ],
+            "title": "DB Pool Wait Rate",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 5000
+                            },
+                            {
+                                "color": "red",
+                                "value": 10000
+                            }
+                        ]
+                    },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 8,
+                "y": 31
+            },
+            "id": 13,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "ws_connections_active{service_name=\"risk-it\"}",
+                    "legendFormat": "connections",
+                    "refId": "A"
+                }
+            ],
+            "title": "WS Active Connections",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 50000
+                            },
+                            {
+                                "color": "red",
+                                "value": 100000
+                            }
+                        ]
+                    },
+                    "unit": "ops"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 12,
+                "y": 31
+            },
+            "id": 14,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "rate(ws_messages_sent_total{service_name=\"risk-it\"}[1m])",
+                    "legendFormat": "msg/s",
+                    "refId": "A"
+                }
+            ],
+            "title": "WS Broadcast Rate",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 5000
+                            },
+                            {
+                                "color": "red",
+                                "value": 10000
+                            }
+                        ]
+                    },
+                    "unit": "ops"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 16,
+                "y": 31
+            },
+            "id": 15,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "sum(rate(game_moves_total{service_name=\"risk-it\"}[1m]))",
+                    "legendFormat": "moves/s",
+                    "refId": "A"
+                }
+            ],
+            "title": "Game Moves/s",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 5000
+                            },
+                            {
+                                "color": "red",
+                                "value": 10000
+                            }
+                        ]
+                    },
+                    "unit": "reqps"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 20,
+                "y": 31
+            },
+            "id": 16,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "sum(rate(http_server_requests_total{service_name=\"risk-it\"}[1m]))",
+                    "legendFormat": "req/s",
+                    "refId": "A"
+                }
+            ],
+            "title": "HTTP Req/s",
+            "type": "stat"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 37
+            },
+            "id": 400,
+            "title": "Act \u2014 What\u2019s the evidence?",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Monotonic increase suggests a goroutine leak",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 0,
+                "y": 38
+            },
+            "id": 17,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "min",
+                        "max",
+                        "last"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "single"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "go_goroutine_count{service_name=\"risk-it\"}",
+                    "legendFormat": "goroutines",
+                    "refId": "A"
+                }
+            ],
+            "title": "Goroutine Count",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Active WS connections vs expected (active games \u00d7 players). Divergence suggests a connection leak.",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 8,
+                "y": 38
+            },
+            "id": 18,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "last"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "ws_connections_active{service_name=\"risk-it\"}",
+                    "legendFormat": "Actual WS",
+                    "refId": "A"
+                },
+                {
+                    "expr": "perftest_games_active{service_name=\"perftest\"} * $players_per_game",
+                    "legendFormat": "Expected WS",
+                    "refId": "B"
+                }
+            ],
+            "title": "WS Connection Drift",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Active connections trending up without idle recovery suggests a connection leak.",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 16,
+                "y": 38
+            },
+            "id": 19,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "min",
+                        "max",
+                        "last"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "db_pool_active{service_name=\"risk-it\"}",
+                    "legendFormat": "Active",
+                    "refId": "A"
+                },
+                {
+                    "expr": "db_pool_idle{service_name=\"risk-it\"}",
+                    "legendFormat": "Idle",
+                    "refId": "B"
+                },
+                {
+                    "expr": "db_pool_total{service_name=\"risk-it\"}",
+                    "legendFormat": "Total",
+                    "refId": "C"
+                }
+            ],
+            "title": "DB Pool Health",
+            "type": "timeseries"
         }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 70 },
-              { "color": "red", "value": 90 }
-            ]
-          },
-          "color": { "mode": "thresholds" }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "textMode": "auto"
-      }
+    ],
+    "refresh": "5s",
+    "schemaVersion": 39,
+    "tags": [
+        "perf-test",
+        "command-center",
+        "risk-it"
+    ],
+    "templating": {
+        "list": [
+            {
+                "current": {
+                    "text": "4",
+                    "value": "4"
+                },
+                "label": "Players per Game",
+                "name": "players_per_game",
+                "options": [
+                    {
+                        "selected": false,
+                        "text": "2",
+                        "value": "2"
+                    },
+                    {
+                        "selected": false,
+                        "text": "3",
+                        "value": "3"
+                    },
+                    {
+                        "selected": true,
+                        "text": "4",
+                        "value": "4"
+                    },
+                    {
+                        "selected": false,
+                        "text": "5",
+                        "value": "5"
+                    },
+                    {
+                        "selected": false,
+                        "text": "6",
+                        "value": "6"
+                    }
+                ],
+                "query": "2,3,4,5,6",
+                "type": "custom"
+            }
+        ]
     },
-    {
-      "id": 7,
-      "title": "DB Pool Wait Rate",
-      "type": "stat",
-      "gridPos": { "h": 6, "w": 4, "x": 4, "y": 15 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "rate(db_pool_empty_acquires_total{service_name=\"risk-it\"}[1m])",
-          "legendFormat": "waits/s",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ops",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 10 },
-              { "color": "red", "value": 100 }
-            ]
-          },
-          "color": { "mode": "thresholds" }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "textMode": "auto"
-      }
+    "time": {
+        "from": "now-15m",
+        "to": "now"
     },
-    {
-      "id": 8,
-      "title": "WS Active Connections",
-      "type": "stat",
-      "gridPos": { "h": 6, "w": 4, "x": 8, "y": 15 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "ws_connections_active{service_name=\"risk-it\"}",
-          "legendFormat": "connections",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 5000 },
-              { "color": "red", "value": 10000 }
-            ]
-          },
-          "color": { "mode": "thresholds" }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "textMode": "auto"
-      }
-    },
-    {
-      "id": 9,
-      "title": "WS Broadcast Rate",
-      "type": "stat",
-      "gridPos": { "h": 6, "w": 4, "x": 12, "y": 15 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "rate(ws_messages_sent_total{service_name=\"risk-it\"}[1m])",
-          "legendFormat": "msg/s",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ops",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 50000 },
-              { "color": "red", "value": 100000 }
-            ]
-          },
-          "color": { "mode": "thresholds" }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "textMode": "auto"
-      }
-    },
-    {
-      "id": 10,
-      "title": "Game Moves/s",
-      "type": "stat",
-      "gridPos": { "h": 6, "w": 4, "x": 16, "y": 15 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum(rate(game_moves_total{service_name=\"risk-it\"}[1m]))",
-          "legendFormat": "moves/s",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ops",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 5000 },
-              { "color": "red", "value": 10000 }
-            ]
-          },
-          "color": { "mode": "thresholds" }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "textMode": "auto"
-      }
-    },
-    {
-      "id": 11,
-      "title": "HTTP Req/s",
-      "type": "stat",
-      "gridPos": { "h": 6, "w": 4, "x": 20, "y": 15 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum(rate(http_server_requests_total{service_name=\"risk-it\"}[1m]))",
-          "legendFormat": "req/s",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "reqps",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 5000 },
-              { "color": "red", "value": 10000 }
-            ]
-          },
-          "color": { "mode": "thresholds" }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "textMode": "auto"
-      }
-    },
-    {
-      "id": 400,
-      "title": "Resource Leak Detection",
-      "type": "row",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 21 },
-      "collapsed": false
-    },
-    {
-      "id": 12,
-      "title": "Goroutine Count",
-      "description": "Monotonic increase suggests a goroutine leak",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 22 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "go_goroutine_count{service_name=\"risk-it\"}",
-          "legendFormat": "goroutines",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2,
-            "lineInterpolation": "smooth", "showPoints": "never", "spanNulls": false,
-            "thresholdsStyle": { "mode": "off" }
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "calcs": ["min", "max", "last"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "single" }
-      }
-    },
-    {
-      "id": 13,
-      "title": "WS Connection Drift",
-      "description": "Active WS connections vs expected (active games × players). Divergence suggests a connection leak.",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 22 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "ws_connections_active{service_name=\"risk-it\"}",
-          "legendFormat": "Actual WS",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        },
-        {
-          "refId": "B",
-          "expr": "perftest_games_active{service_name=\"perftest\"} * $players_per_game",
-          "legendFormat": "Expected WS",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2,
-            "lineInterpolation": "smooth", "showPoints": "never", "spanNulls": false,
-            "thresholdsStyle": { "mode": "off" }
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "calcs": ["last"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      }
-    },
-    {
-      "id": 14,
-      "title": "DB Pool Health",
-      "description": "Active connections trending up without idle recovery suggests a connection leak.",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 22 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "db_pool_active{service_name=\"risk-it\"}",
-          "legendFormat": "Active",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        },
-        {
-          "refId": "B",
-          "expr": "db_pool_idle{service_name=\"risk-it\"}",
-          "legendFormat": "Idle",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        },
-        {
-          "refId": "C",
-          "expr": "db_pool_total{service_name=\"risk-it\"}",
-          "legendFormat": "Total",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2,
-            "lineInterpolation": "smooth", "showPoints": "never", "spanNulls": false,
-            "thresholdsStyle": { "mode": "off" }
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "calcs": ["min", "max", "last"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      }
-    },
-    {
-      "id": 500,
-      "title": "Test Status",
-      "type": "row",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 30 },
-      "collapsed": false
-    },
-    {
-      "id": 15,
-      "title": "Active Games",
-      "type": "stat",
-      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 31 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "perftest_games_active{service_name=\"perftest\"}",
-          "legendFormat": "Active",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "textMode": "auto"
-      }
-    },
-    {
-      "id": 16,
-      "title": "Throughput",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 31 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "rate(perftest_moves_total{service_name=\"perftest\"}[30s])",
-          "legendFormat": "moves/s",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2,
-            "lineInterpolation": "smooth", "showPoints": "never", "spanNulls": false,
-            "thresholdsStyle": { "mode": "off" }
-          },
-          "unit": "ops"
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "single" }
-      }
-    },
-    {
-      "id": 17,
-      "title": "Completion Rate",
-      "type": "stat",
-      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 31 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum(perftest_games_completed_total{service_name=\"perftest\"}) / (sum(perftest_games_completed_total{service_name=\"perftest\"}) + (sum(perftest_games_timed_out_total{service_name=\"perftest\"}) or vector(0)) + (sum(perftest_games_fatal_total{service_name=\"perftest\"}) or vector(0)))",
-          "legendFormat": "Completion",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percentunit",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "red", "value": null },
-              { "color": "yellow", "value": 0.8 },
-              { "color": "green", "value": 0.95 }
-            ]
-          },
-          "color": { "mode": "thresholds" }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "textMode": "auto"
-      }
-    },
-    {
-      "id": 18,
-      "title": "Error Breakdown",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 31 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum(rate(perftest_errors_total{service_name=\"perftest\"}[1m])) by (type)",
-          "legendFormat": "{{type}}",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "drawStyle": "line", "fillOpacity": 30, "lineWidth": 1,
-            "lineInterpolation": "smooth", "showPoints": "never", "spanNulls": false,
-            "stacking": { "group": "A", "mode": "normal" },
-            "thresholdsStyle": { "mode": "off" }
-          },
-          "unit": "ops"
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      }
-    }
-  ]
+    "timezone": "browser",
+    "title": "Perf Test Command Center",
+    "uid": "perf-test-command-center",
+    "version": 1
 }

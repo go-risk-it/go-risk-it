@@ -1,447 +1,907 @@
 {
-  "uid": "database",
-  "title": "Database",
-  "description": "Database connection pool and query metrics",
-  "schemaVersion": 39,
-  "version": 2,
-  "timezone": "browser",
-  "editable": true,
-  "graphTooltip": 1,
-  "time": { "from": "now-15m", "to": "now" },
-  "refresh": "10s",
-  "templating": { "list": [] },
-  "annotations": { "list": [] },
-  "tags": ["database", "risk-it", "pool"],
-  "panels": [
-    {
-      "id": 1,
-      "title": "Connection Pool Usage",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "db_pool_active{service_name=\"risk-it\"}",
-          "legendFormat": "active (in-use)"
-        },
-        {
-          "refId": "B",
-          "expr": "db_pool_idle{service_name=\"risk-it\"}",
-          "legendFormat": "idle"
-        },
-        {
-          "refId": "C",
-          "expr": "db_pool_total{service_name=\"risk-it\"}",
-          "legendFormat": "total"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10,
-            "lineWidth": 2, "pointSize": 5, "showPoints": "never",
-            "spanNulls": false, "stacking": { "group": "A", "mode": "none" }
-          }
-        },
-        "overrides": [
-          {
-            "matcher": { "id": "byName", "options": "total" },
-            "properties": [
-              { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [10, 10] } },
-              { "id": "color", "value": { "mode": "fixed", "fixedColor": "dark-blue" } }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      }
+    "annotations": {
+        "list": []
     },
-    {
-      "id": 2,
-      "title": "Connection Acquire Rate",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
+    "description": "Database connection pool and query metrics",
+    "editable": true,
+    "panels": [
         {
-          "refId": "A",
-          "expr": "rate(db_pool_acquires_total{service_name=\"risk-it\"}[1m])",
-          "legendFormat": "acquires/sec"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ops",
-          "custom": {
-            "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10,
-            "lineWidth": 2, "pointSize": 5, "showPoints": "never",
-            "spanNulls": false, "stacking": { "group": "A", "mode": "none" }
-          }
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 0
+            },
+            "id": 100,
+            "title": "Observe \u2014 Am I OK?",
+            "type": "row"
         },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      }
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "max": 100,
+                    "min": 0,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 60
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    },
+                    "unit": "percent"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 0,
+                "y": 1
+            },
+            "id": 1,
+            "options": {
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showThresholdLabels": false,
+                "showThresholdMarkers": true
+            },
+            "targets": [
+                {
+                    "expr": "db_pool_active{service_name=\"risk-it\"} / db_pool_total{service_name=\"risk-it\"} * 100",
+                    "legendFormat": "utilization",
+                    "refId": "A"
+                }
+            ],
+            "title": "Pool Utilization %",
+            "type": "gauge"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Connection acquires canceled while waiting \u2014 should be 0 under normal operation",
+            "fieldConfig": {
+                "defaults": {
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 0.01
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 8,
+                "y": 1
+            },
+            "id": 2,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "rate(db_pool_canceled_acquires_total{service_name=\"risk-it\"}[1m])",
+                    "legendFormat": "canceled/sec",
+                    "refId": "A"
+                }
+            ],
+            "title": "Canceled Acquires",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "max": 100,
+                    "min": 0,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 90
+                            },
+                            {
+                                "color": "green",
+                                "value": 99
+                            }
+                        ]
+                    },
+                    "unit": "percent"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 16,
+                "y": 1
+            },
+            "id": 3,
+            "options": {
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showThresholdLabels": false,
+                "showThresholdMarkers": true
+            },
+            "targets": [
+                {
+                    "expr": "pg_stat_database_blks_hit_total{datname=~\"postgres\"} / (pg_stat_database_blks_hit_total{datname=~\"postgres\"} + pg_stat_database_blks_read_total{datname=~\"postgres\"}) * 100",
+                    "legendFormat": "cache hit %",
+                    "refId": "A"
+                }
+            ],
+            "title": "Postgres Cache Hit Rate",
+            "type": "gauge"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 9
+            },
+            "id": 200,
+            "title": "Orient \u2014 What\u2019s the shape?",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#3274D9",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "line+area"
+                        }
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 0.05
+                            },
+                            {
+                                "color": "red",
+                                "value": 0.1
+                            }
+                        ]
+                    },
+                    "unit": "s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 10
+            },
+            "id": 4,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.5, sum(rate(db_transaction_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                    "legendFormat": "p50",
+                    "refId": "A"
+                },
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(db_transaction_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                    "legendFormat": "p95",
+                    "refId": "B"
+                },
+                {
+                    "expr": "histogram_quantile(0.99, sum(rate(db_transaction_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                    "legendFormat": "p99",
+                    "refId": "C"
+                }
+            ],
+            "title": "Transaction Duration P50/P95/P99",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#3274D9",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "short"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "total"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.lineStyle",
+                                "value": {
+                                    "dash": [
+                                        10,
+                                        10
+                                    ],
+                                    "fill": "dash"
+                                }
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#3274D9",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 10
+            },
+            "id": 5,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "db_pool_active{service_name=\"risk-it\"}",
+                    "legendFormat": "active (in-use)",
+                    "refId": "A"
+                },
+                {
+                    "expr": "db_pool_idle{service_name=\"risk-it\"}",
+                    "legendFormat": "idle",
+                    "refId": "B"
+                },
+                {
+                    "expr": "db_pool_total{service_name=\"risk-it\"}",
+                    "legendFormat": "total",
+                    "refId": "C"
+                }
+            ],
+            "title": "Connection Pool Usage",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 18
+            },
+            "id": 300,
+            "title": "Decide \u2014 Where\u2019s the bottleneck?",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#3274D9",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "line+area"
+                        }
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 0.01
+                            },
+                            {
+                                "color": "red",
+                                "value": 0.1
+                            }
+                        ]
+                    },
+                    "unit": "s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 0,
+                "y": 19
+            },
+            "id": 6,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "db_pool_acquire_duration_seconds{service_name=\"risk-it\"}",
+                    "legendFormat": "avg acquire time",
+                    "refId": "A"
+                }
+            ],
+            "title": "Avg Connection Acquire Time",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Rate of connection acquires that had to wait because the pool was empty \u2014 leading indicator of saturation",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#3274D9",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "ops"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "pool utilization %"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.axisPlacement",
+                                "value": "right"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "percent"
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#FF9830",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 8,
+                "y": 19
+            },
+            "id": 7,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "rate(db_pool_empty_acquires_total{service_name=\"risk-it\"}[1m])",
+                    "legendFormat": "empty acquires/sec",
+                    "refId": "A"
+                },
+                {
+                    "expr": "db_pool_active{service_name=\"risk-it\"} / db_pool_max_conns{service_name=\"risk-it\"} * 100",
+                    "legendFormat": "pool utilization %",
+                    "refId": "B"
+                }
+            ],
+            "title": "Pool Saturation (Empty Acquires)",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#3274D9",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "ops"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 16,
+                "y": 19
+            },
+            "id": 8,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "rate(db_pool_acquires_total{service_name=\"risk-it\"}[1m])",
+                    "legendFormat": "acquires/sec",
+                    "refId": "A"
+                }
+            ],
+            "title": "Connection Acquire Rate",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 27
+            },
+            "id": 400,
+            "title": "Act \u2014 What\u2019s the evidence?",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#E02F44",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 15,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "ops"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 28
+            },
+            "id": 9,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "rate(db_transaction_rollbacks_total{service_name=\"risk-it\"}[1m])",
+                    "legendFormat": "rollbacks/sec",
+                    "refId": "A"
+                }
+            ],
+            "title": "Transaction Rollbacks/sec",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#3274D9",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 15,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 28
+            },
+            "id": 10,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "pg_stat_database_numbackends{datname=\"postgres\"}",
+                    "legendFormat": "active backends",
+                    "refId": "A"
+                }
+            ],
+            "title": "Postgres Active Connections",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#3274D9",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "ops"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 36
+            },
+            "id": 11,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "rate(pg_stat_database_xact_commit_total{datname=~\"postgres\"}[1m])",
+                    "legendFormat": "commits/sec",
+                    "refId": "A"
+                },
+                {
+                    "expr": "rate(pg_stat_database_xact_rollback_total{datname=~\"postgres\"}[1m])",
+                    "legendFormat": "rollbacks/sec",
+                    "refId": "B"
+                }
+            ],
+            "title": "Postgres Transactions/sec",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#3274D9",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "ops"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 36
+            },
+            "id": 12,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "rate(pg_stat_database_tup_fetched_total{datname=~\"postgres\"}[1m])",
+                    "legendFormat": "rows fetched/sec",
+                    "refId": "A"
+                },
+                {
+                    "expr": "rate(pg_stat_database_tup_inserted_total{datname=~\"postgres\"}[1m])",
+                    "legendFormat": "rows inserted/sec",
+                    "refId": "B"
+                },
+                {
+                    "expr": "rate(pg_stat_database_tup_updated_total{datname=~\"postgres\"}[1m])",
+                    "legendFormat": "rows updated/sec",
+                    "refId": "C"
+                }
+            ],
+            "title": "Postgres Rows Read/Written",
+            "type": "timeseries"
+        }
+    ],
+    "refresh": "10s",
+    "schemaVersion": 39,
+    "tags": [
+        "database",
+        "risk-it",
+        "pool"
+    ],
+    "templating": {
+        "list": []
     },
-    {
-      "id": 3,
-      "title": "Avg Connection Acquire Time",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "db_pool_acquire_duration_seconds{service_name=\"risk-it\"}",
-          "legendFormat": "avg acquire time"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "custom": {
-            "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10,
-            "lineWidth": 2, "pointSize": 5, "showPoints": "never",
-            "spanNulls": false, "stacking": { "group": "A", "mode": "none" }
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 0.01 },
-              { "color": "red", "value": 0.1 }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      }
+    "time": {
+        "from": "now-15m",
+        "to": "now"
     },
-    {
-      "id": 4,
-      "title": "Pool Utilization %",
-      "type": "gauge",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "db_pool_active{service_name=\"risk-it\"} / db_pool_total{service_name=\"risk-it\"} * 100",
-          "legendFormat": "utilization"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 60 },
-              { "color": "red", "value": 80 }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      }
-    },
-    {
-      "id": 5,
-      "title": "Postgres Active Connections",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "pg_stat_database_numbackends{datname=\"postgres\"}",
-          "legendFormat": "active backends"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 15,
-            "lineWidth": 2, "pointSize": 5, "showPoints": "never",
-            "spanNulls": false, "stacking": { "group": "A", "mode": "none" }
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      }
-    },
-    {
-      "id": 6,
-      "title": "Postgres Transactions/sec",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "rate(pg_stat_database_xact_commit_total{datname=~\"postgres\"}[1m])",
-          "legendFormat": "commits/sec"
-        },
-        {
-          "refId": "B",
-          "expr": "rate(pg_stat_database_xact_rollback_total{datname=~\"postgres\"}[1m])",
-          "legendFormat": "rollbacks/sec"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ops",
-          "custom": {
-            "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10,
-            "lineWidth": 2, "pointSize": 5, "showPoints": "never",
-            "spanNulls": false, "stacking": { "group": "A", "mode": "none" }
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      }
-    },
-    {
-      "id": 7,
-      "title": "Postgres Rows Read/Written",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "rate(pg_stat_database_tup_fetched_total{datname=~\"postgres\"}[1m])",
-          "legendFormat": "rows fetched/sec"
-        },
-        {
-          "refId": "B",
-          "expr": "rate(pg_stat_database_tup_inserted_total{datname=~\"postgres\"}[1m])",
-          "legendFormat": "rows inserted/sec"
-        },
-        {
-          "refId": "C",
-          "expr": "rate(pg_stat_database_tup_updated_total{datname=~\"postgres\"}[1m])",
-          "legendFormat": "rows updated/sec"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ops",
-          "custom": {
-            "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10,
-            "lineWidth": 2, "pointSize": 5, "showPoints": "never",
-            "spanNulls": false, "stacking": { "group": "A", "mode": "none" }
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      }
-    },
-    {
-      "id": 8,
-      "title": "Postgres Cache Hit Rate",
-      "type": "gauge",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "pg_stat_database_blks_hit_total{datname=~\"postgres\"} / (pg_stat_database_blks_hit_total{datname=~\"postgres\"} + pg_stat_database_blks_read_total{datname=~\"postgres\"}) * 100",
-          "legendFormat": "cache hit %"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "red", "value": null },
-              { "color": "yellow", "value": 90 },
-              { "color": "green", "value": 99 }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      }
-    },
-    {
-      "id": 9,
-      "title": "Pool Saturation (Empty Acquires)",
-      "description": "Rate of connection acquires that had to wait because the pool was empty — leading indicator of saturation",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "rate(db_pool_empty_acquires_total{service_name=\"risk-it\"}[1m])",
-          "legendFormat": "empty acquires/sec"
-        },
-        {
-          "refId": "B",
-          "expr": "db_pool_active{service_name=\"risk-it\"} / db_pool_max_conns{service_name=\"risk-it\"} * 100",
-          "legendFormat": "pool utilization %"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ops",
-          "custom": {
-            "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10,
-            "lineWidth": 2, "pointSize": 5, "showPoints": "never",
-            "spanNulls": false, "stacking": { "group": "A", "mode": "none" }
-          }
-        },
-        "overrides": [
-          {
-            "matcher": { "id": "byName", "options": "pool utilization %" },
-            "properties": [
-              { "id": "custom.axisPlacement", "value": "right" },
-              { "id": "unit", "value": "percent" },
-              { "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      }
-    },
-    {
-      "id": 10,
-      "title": "Canceled Acquires",
-      "description": "Connection acquires canceled while waiting — should be 0 under normal operation",
-      "type": "stat",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "rate(db_pool_canceled_acquires_total{service_name=\"risk-it\"}[1m])",
-          "legendFormat": "canceled/sec"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "red", "value": 0.01 }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "textMode": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
-      }
-    },
-    {
-      "id": 11,
-      "title": "Transaction Duration P50/P95/P99",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 40 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "histogram_quantile(0.5, sum(rate(db_transaction_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
-          "legendFormat": "p50"
-        },
-        {
-          "refId": "B",
-          "expr": "histogram_quantile(0.95, sum(rate(db_transaction_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
-          "legendFormat": "p95"
-        },
-        {
-          "refId": "C",
-          "expr": "histogram_quantile(0.99, sum(rate(db_transaction_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
-          "legendFormat": "p99"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "custom": {
-            "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10,
-            "lineWidth": 2, "pointSize": 5, "showPoints": "never",
-            "spanNulls": false, "stacking": { "group": "A", "mode": "none" }
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      }
-    },
-    {
-      "id": 12,
-      "title": "Transaction Rollbacks/sec",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 40 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "rate(db_transaction_rollbacks_total{service_name=\"risk-it\"}[1m])",
-          "legendFormat": "rollbacks/sec"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ops",
-          "color": { "mode": "fixed", "fixedColor": "red" },
-          "custom": {
-            "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 15,
-            "lineWidth": 2, "pointSize": 5, "showPoints": "never",
-            "spanNulls": false, "stacking": { "group": "A", "mode": "none" }
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      }
-    }
-  ]
+    "timezone": "browser",
+    "title": "Database",
+    "uid": "database",
+    "version": 1
 }
