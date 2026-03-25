@@ -1133,12 +1133,238 @@
             "type": "stat"
         },
         {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Ratio of WS broadcasts to game moves. Each move triggers a state broadcast to all players in the game, so the baseline ratio equals players_per_game (typically 4).\nNormal: ~4 (one broadcast per player per move). Watch for: > 10 suggests duplicate broadcasts or fan-out bugs.\nDenominator: game_moves_total counts server-side move completions (one per successful move request), not client retries.\n",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#8F3BB8",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 0,
+                "y": 37
+            },
+            "id": 20,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "rate(ws_messages_sent_total{service_name=\"risk-it\"}[1m]) / rate(game_moves_total{service_name=\"risk-it\"}[1m])",
+                    "legendFormat": "WS msgs / move",
+                    "refId": "A"
+                }
+            ],
+            "title": "Fan-out Amplification",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Percentage of HTTP p95 latency spent in DB transactions. Derived from: DB txn p95 / HTTP request p95 \u00d7 100.\nNormal: 30-50%. Watch for: > 70% means DB dominates request latency \u2014 look at pool saturation and query plans.\n",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#3274D9",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "percent"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 8,
+                "y": 37
+            },
+            "id": 21,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(db_transaction_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le)) / histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le)) * 100",
+                    "legendFormat": "DB share %",
+                    "refId": "A"
+                }
+            ],
+            "title": "DB Latency Share",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Effective concurrency (healthy + slow games) vs total active games. The gap represents stalled/zombie games not making progress.\nNormal: effective \u2248 active. Watch for: growing gap means games are getting stuck \u2014 check DB pool and goroutine panels.\n",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "short"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Effective (healthy+slow)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#56A64B",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Active (total)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#73BF69",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.lineStyle",
+                                "value": {
+                                    "dash": [
+                                        10,
+                                        10
+                                    ],
+                                    "fill": "dash"
+                                }
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 0
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 16,
+                "y": 37
+            },
+            "id": 22,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "perftest_health_healthy{service_name=\"perftest\"} + perftest_health_slow{service_name=\"perftest\"}",
+                    "legendFormat": "Effective (healthy+slow)",
+                    "refId": "A"
+                },
+                {
+                    "expr": "perftest_games_active{service_name=\"perftest\"}",
+                    "legendFormat": "Active (total)",
+                    "refId": "B"
+                }
+            ],
+            "title": "Effective Concurrency",
+            "type": "timeseries"
+        },
+        {
             "collapsed": false,
             "gridPos": {
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 37
+                "y": 45
             },
             "id": 400,
             "title": "Act \u2014 What\u2019s the evidence?",
@@ -1173,7 +1399,7 @@
                 "h": 8,
                 "w": 8,
                 "x": 0,
-                "y": 38
+                "y": 46
             },
             "id": 17,
             "options": {
@@ -1229,7 +1455,7 @@
                 "h": 8,
                 "w": 8,
                 "x": 8,
-                "y": 38
+                "y": 46
             },
             "id": 18,
             "options": {
@@ -1289,7 +1515,7 @@
                 "h": 8,
                 "w": 8,
                 "x": 16,
-                "y": 38
+                "y": 46
             },
             "id": 19,
             "options": {

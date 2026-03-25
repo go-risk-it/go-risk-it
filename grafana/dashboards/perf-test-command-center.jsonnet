@@ -380,9 +380,89 @@ local ooda = import 'ooda.libsonnet';
       gridPos: { h: 6, w: 4, x: 20, y: 31 },
     },
 
+    // Panel 20: Fan-out Amplification
+    common.timeseriesPanel(
+      title='Fan-out Amplification',
+      targets=[{
+        refId: 'A',
+        expr: 'rate(ws_messages_sent_total{service_name="risk-it"}[1m]) / rate(game_moves_total{service_name="risk-it"}[1m])',
+        legendFormat: 'WS msgs / move',
+      }],
+      unit='short',
+      color=colors.fixedColor(colors.ws),
+    ) + {
+      id: 20,
+      description: |||
+        Ratio of WS broadcasts to game moves. Each move triggers a state broadcast to all players in the game, so the baseline ratio equals players_per_game (typically 4).
+        Normal: ~4 (one broadcast per player per move). Watch for: > 10 suggests duplicate broadcasts or fan-out bugs.
+        Denominator: game_moves_total counts server-side move completions (one per successful move request), not client retries.
+      |||,
+      gridPos: { h: 8, w: 8, x: 0, y: 37 },
+    },
+
+    // Panel 21: DB Latency Share
+    common.timeseriesPanel(
+      title='DB Latency Share',
+      targets=[{
+        refId: 'A',
+        expr: 'histogram_quantile(0.95, sum(rate(db_transaction_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le)) / histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le)) * 100',
+        legendFormat: 'DB share %',
+      }],
+      unit='percent',
+      color=colors.fixedColor(colors.db),
+    ) + {
+      id: 21,
+      description: |||
+        Percentage of HTTP p95 latency spent in DB transactions. Derived from: DB txn p95 / HTTP request p95 × 100.
+        Normal: 30-50%. Watch for: > 70% means DB dominates request latency — look at pool saturation and query plans.
+      |||,
+      gridPos: { h: 8, w: 8, x: 8, y: 37 },
+    },
+
+    // Panel 22: Effective Concurrency
+    common.timeseriesPanel(
+      title='Effective Concurrency',
+      targets=[
+        {
+          refId: 'A',
+          expr: 'perftest_health_healthy{service_name="perftest"} + perftest_health_slow{service_name="perftest"}',
+          legendFormat: 'Effective (healthy+slow)',
+        },
+        {
+          refId: 'B',
+          expr: 'perftest_games_active{service_name="perftest"}',
+          legendFormat: 'Active (total)',
+        },
+      ],
+      unit='short',
+      overrides=[
+        {
+          matcher: { id: 'byName', options: 'Effective (healthy+slow)' },
+          properties: [
+            { id: 'color', value: colors.fixedColor(colors.gameLogic) },
+          ],
+        },
+        {
+          matcher: { id: 'byName', options: 'Active (total)' },
+          properties: [
+            { id: 'color', value: colors.fixedColor(colors.client) },
+            { id: 'custom.lineStyle', value: { fill: 'dash', dash: [10, 10] } },
+            { id: 'custom.fillOpacity', value: 0 },
+          ],
+        },
+      ],
+    ) + {
+      id: 22,
+      description: |||
+        Effective concurrency (healthy + slow games) vs total active games. The gap represents stalled/zombie games not making progress.
+        Normal: effective ≈ active. Watch for: growing gap means games are getting stuck — check DB pool and goroutine panels.
+      |||,
+      gridPos: { h: 8, w: 8, x: 16, y: 37 },
+    },
+
     // ── Row 400: Act — What's the evidence? ────────────────────────
     // Resource Leak Detection panels
-    ooda.actRow() + { gridPos: { h: 1, w: 24, x: 0, y: 37 } },
+    ooda.actRow() + { gridPos: { h: 1, w: 24, x: 0, y: 45 } },
 
     // Panel 17: Goroutine Count
     common.timeseriesPanel(
@@ -396,7 +476,7 @@ local ooda = import 'ooda.libsonnet';
     ) + {
       id: 17,
       description: 'Monotonic increase suggests a goroutine leak',
-      gridPos: { h: 8, w: 8, x: 0, y: 38 },
+      gridPos: { h: 8, w: 8, x: 0, y: 46 },
       options+: {
         legend+: { calcs: ['min', 'max', 'last'] },
         tooltip: { mode: 'single' },
@@ -422,7 +502,7 @@ local ooda = import 'ooda.libsonnet';
     ) + {
       id: 18,
       description: 'Active WS connections vs expected (active games \u00d7 players). Divergence suggests a connection leak.',
-      gridPos: { h: 8, w: 8, x: 8, y: 38 },
+      gridPos: { h: 8, w: 8, x: 8, y: 46 },
       options+: {
         legend+: { calcs: ['last'] },
       },
@@ -452,7 +532,7 @@ local ooda = import 'ooda.libsonnet';
     ) + {
       id: 19,
       description: 'Active connections trending up without idle recovery suggests a connection leak.',
-      gridPos: { h: 8, w: 8, x: 16, y: 38 },
+      gridPos: { h: 8, w: 8, x: 16, y: 46 },
       options+: {
         legend+: { calcs: ['min', 'max', 'last'] },
       },

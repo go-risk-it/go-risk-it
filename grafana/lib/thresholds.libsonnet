@@ -204,6 +204,28 @@
     ],
   },
 
+  // Fan-out Amplification (WS broadcasts per game move)
+  // Normal: ~4 (one broadcast per player per move). Watch: > 10 suggests broadcast storms.
+  ccFanOut: {
+    mode: 'absolute',
+    steps: [
+      { color: 'green', value: null },
+      { color: 'yellow', value: 10 },
+      { color: 'red', value: 20 },
+    ],
+  },
+
+  // DB Latency Share % (DB p95 as % of HTTP p95)
+  // Normal: 30-50%. Watch: > 70% means DB dominates request time.
+  ccDbLatencyShare: {
+    mode: 'absolute',
+    steps: [
+      { color: 'green', value: null },
+      { color: 'yellow', value: 70 },
+      { color: 'red', value: 90 },
+    ],
+  },
+
   // --- Perf Test (Client-Side) dashboard ---
 
   // Active Games stat panel (perf-test scale, higher red threshold than game-engine)
