@@ -21,7 +21,7 @@ func setup(t *testing.T) (
 	*board.Service,
 	*dice.Service,
 	*region.Service,
-	*attack.ServiceImpl,
+	attack.Service,
 ) {
 	t.Helper()
 	querier := db.NewQuerier(t)
@@ -29,7 +29,7 @@ func setup(t *testing.T) (
 	diceService := dice.NewService(t)
 	phaseService := phase.NewService(t)
 	regionService := region.NewService(t)
-	service := attack.NewService(
+	service, _ := attack.NewService(
 		boardService,
 		diceService,
 		phaseService,
@@ -206,7 +206,7 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 
 			regionService.
 				EXPECT().
-				GetRegionQ(ctx, querier, test.attackingRegion).
+				GetRegion(ctx, querier, test.attackingRegion).
 				Return(&sqlc.GetRegionsByGameRow{
 					ID:                1,
 					ExternalReference: test.attackingRegion,
@@ -215,7 +215,7 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 				}, nil)
 			regionService.
 				EXPECT().
-				GetRegionQ(ctx, querier, test.defendingRegion).
+				GetRegion(ctx, querier, test.defendingRegion).
 				Return(&sqlc.GetRegionsByGameRow{
 					ID:                2,
 					ExternalReference: test.defendingRegion,
@@ -230,7 +230,7 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 					Return(false, nil)
 			}
 
-			_, err := service.PerformQ(ctx, querier, attack.Move{
+			_, err := service.Perform(ctx, querier, attack.Move{
 				AttackingRegionID: test.attackingRegion,
 				DefendingRegionID: test.defendingRegion,
 				TroopsInSource:    test.declaredTroopsInSource,
@@ -364,11 +364,11 @@ func TestServiceImpl_AttackShouldUpdateRegionTroops(t *testing.T) {
 
 			regionService.
 				EXPECT().
-				GetRegionQ(ctx, querier, attackingRegion.ExternalReference).
+				GetRegion(ctx, querier, attackingRegion.ExternalReference).
 				Return(attackingRegion, nil)
 			regionService.
 				EXPECT().
-				GetRegionQ(ctx, querier, defendingRegion.ExternalReference).
+				GetRegion(ctx, querier, defendingRegion.ExternalReference).
 				Return(defendingRegion, nil)
 			boardService.
 				EXPECT().
@@ -386,14 +386,14 @@ func TestServiceImpl_AttackShouldUpdateRegionTroops(t *testing.T) {
 				Once()
 			regionService.
 				EXPECT().
-				UpdateTroopsInRegionQ(ctx, querier, attackingRegion, -test.expectedAttackerCasualties).
+				UpdateTroopsInRegion(ctx, querier, attackingRegion, -test.expectedAttackerCasualties).
 				Return(nil)
 			regionService.
 				EXPECT().
-				UpdateTroopsInRegionQ(ctx, querier, defendingRegion, -test.expectedDefenderCasualties).
+				UpdateTroopsInRegion(ctx, querier, defendingRegion, -test.expectedDefenderCasualties).
 				Return(nil)
 
-			_, err := service.PerformQ(ctx, querier, attack.Move{
+			_, err := service.Perform(ctx, querier, attack.Move{
 				AttackingRegionID: attackingRegion.ExternalReference,
 				DefendingRegionID: defendingRegion.ExternalReference,
 				TroopsInSource:    troopsInAttackingRegion,
@@ -406,7 +406,7 @@ func TestServiceImpl_AttackShouldUpdateRegionTroops(t *testing.T) {
 	}
 }
 
-func TestServiceImpl_HasConqueredQ(t *testing.T) {
+func TestServiceImpl_HasConquered(t *testing.T) {
 	t.Parallel()
 
 	type inputType struct {
@@ -481,10 +481,10 @@ func TestServiceImpl_HasConqueredQ(t *testing.T) {
 
 			regionService.
 				EXPECT().
-				GetRegionsQ(ctx, querier).
+				GetRegionsWithQuerier(ctx, querier).
 				Return(test.regions, nil)
 
-			result, err := service.HasConqueredQ(ctx, querier)
+			result, err := service.HasConquered(ctx, querier)
 
 			require.NoError(t, err)
 			require.Equal(t, test.expected, result)
@@ -492,7 +492,7 @@ func TestServiceImpl_HasConqueredQ(t *testing.T) {
 	}
 }
 
-func TestServiceImpl_CanContinueAttackingQ(t *testing.T) {
+func TestServiceImpl_CanContinueAttacking(t *testing.T) {
 	t.Parallel()
 
 	type inputType struct {
@@ -549,10 +549,10 @@ func TestServiceImpl_CanContinueAttackingQ(t *testing.T) {
 
 			regionService.
 				EXPECT().
-				GetRegionsQ(ctx, querier).
+				GetRegionsWithQuerier(ctx, querier).
 				Return(test.regions, nil)
 
-			result, err := service.CanContinueAttackingQ(ctx, querier)
+			result, err := service.CanContinueAttacking(ctx, querier)
 
 			require.NoError(t, err)
 			require.Equal(t, test.expected, result)

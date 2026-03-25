@@ -27,7 +27,7 @@ func setup(t *testing.T) (
 	*mockstate.Service,
 	*mockmoveservice.Service[testMove],
 	*mockvalidation.Service,
-	*advancement.ServiceImpl[testMove],
+	advancement.Service[testMove],
 ) {
 	t.Helper()
 
@@ -61,7 +61,7 @@ func gameContext() ctx.GameContext {
 	return ctx.WithGameID(userContext, gameID)
 }
 
-func TestAdvanceQ_HappyPath(t *testing.T) {
+func TestAdvanceWithQuerier_HappyPath(t *testing.T) {
 	t.Parallel()
 
 	querier, gameState, moveService, validationService, service := setup(t)
@@ -74,20 +74,20 @@ func TestAdvanceQ_HappyPath(t *testing.T) {
 	}
 
 	moveService.EXPECT().PhaseType().Return(sqlc.GamePhaseTypeATTACK)
-	gameState.EXPECT().GetGameStateQ(gameCtx, querier).Return(game, nil)
-	validationService.EXPECT().ValidateQ(gameCtx, querier, game).Return(nil)
-	moveService.EXPECT().WalkQ(gameCtx, querier, true).Return(sqlc.GamePhaseTypeREINFORCE, nil)
+	gameState.EXPECT().GetGameStateWithQuerier(gameCtx, querier).Return(game, nil)
+	validationService.EXPECT().Validate(gameCtx, querier, game).Return(nil)
+	moveService.EXPECT().Walk(gameCtx, querier, true).Return(sqlc.GamePhaseTypeREINFORCE, nil)
 	moveService.EXPECT().
-		AdvanceQ(gameCtx, querier, sqlc.GamePhaseTypeREINFORCE, nil).
+		Advance(gameCtx, querier, sqlc.GamePhaseTypeREINFORCE, nil).
 		Return(nil)
 
-	targetPhase, err := service.AdvanceQ(gameCtx, querier)
+	targetPhase, err := service.AdvanceWithQuerier(gameCtx, querier)
 
 	require.NoError(t, err)
 	require.Equal(t, sqlc.GamePhaseTypeREINFORCE, targetPhase)
 }
 
-func TestAdvanceQ_GetGameStateFails(t *testing.T) {
+func TestAdvanceWithQuerier_GetGameStateFails(t *testing.T) {
 	t.Parallel()
 
 	querier, gameState, moveService, _, service := setup(t)
@@ -95,10 +95,10 @@ func TestAdvanceQ_GetGameStateFails(t *testing.T) {
 
 	moveService.EXPECT().PhaseType().Return(sqlc.GamePhaseTypeATTACK)
 	gameState.EXPECT().
-		GetGameStateQ(gameCtx, querier).
+		GetGameStateWithQuerier(gameCtx, querier).
 		Return(nil, errors.New("db connection lost"))
 
-	targetPhase, err := service.AdvanceQ(gameCtx, querier)
+	targetPhase, err := service.AdvanceWithQuerier(gameCtx, querier)
 
 	require.Error(t, err)
 	require.Empty(t, targetPhase)
@@ -106,7 +106,7 @@ func TestAdvanceQ_GetGameStateFails(t *testing.T) {
 	require.ErrorContains(t, err, "db connection lost")
 }
 
-func TestAdvanceQ_ValidationFails(t *testing.T) {
+func TestAdvanceWithQuerier_ValidationFails(t *testing.T) {
 	t.Parallel()
 
 	querier, gameState, moveService, validationService, service := setup(t)
@@ -119,12 +119,12 @@ func TestAdvanceQ_ValidationFails(t *testing.T) {
 	}
 
 	moveService.EXPECT().PhaseType().Return(sqlc.GamePhaseTypeATTACK)
-	gameState.EXPECT().GetGameStateQ(gameCtx, querier).Return(game, nil)
+	gameState.EXPECT().GetGameStateWithQuerier(gameCtx, querier).Return(game, nil)
 	validationService.EXPECT().
-		ValidateQ(gameCtx, querier, game).
+		Validate(gameCtx, querier, game).
 		Return(domainerrors.NewConflictError("it is not the player's turn"))
 
-	targetPhase, err := service.AdvanceQ(gameCtx, querier)
+	targetPhase, err := service.AdvanceWithQuerier(gameCtx, querier)
 
 	require.Error(t, err)
 	require.Empty(t, targetPhase)
@@ -134,7 +134,7 @@ func TestAdvanceQ_ValidationFails(t *testing.T) {
 	require.ErrorAs(t, err, &conflictErr)
 }
 
-func TestAdvanceQ_PhaseMismatchReturnsConflictError(t *testing.T) {
+func TestAdvanceWithQuerier_PhaseMismatchReturnsConflictError(t *testing.T) {
 	t.Parallel()
 
 	querier, gameState, moveService, validationService, service := setup(t)
@@ -148,10 +148,10 @@ func TestAdvanceQ_PhaseMismatchReturnsConflictError(t *testing.T) {
 
 	// Service expects ATTACK phase but game is in DEPLOY
 	moveService.EXPECT().PhaseType().Return(sqlc.GamePhaseTypeATTACK)
-	gameState.EXPECT().GetGameStateQ(gameCtx, querier).Return(game, nil)
-	validationService.EXPECT().ValidateQ(gameCtx, querier, game).Return(nil)
+	gameState.EXPECT().GetGameStateWithQuerier(gameCtx, querier).Return(game, nil)
+	validationService.EXPECT().Validate(gameCtx, querier, game).Return(nil)
 
-	targetPhase, err := service.AdvanceQ(gameCtx, querier)
+	targetPhase, err := service.AdvanceWithQuerier(gameCtx, querier)
 
 	require.Error(t, err)
 	require.Empty(t, targetPhase)
@@ -162,7 +162,7 @@ func TestAdvanceQ_PhaseMismatchReturnsConflictError(t *testing.T) {
 	require.Contains(t, conflictErr.Error(), "ATTACK")
 }
 
-func TestAdvanceQ_WalkFails(t *testing.T) {
+func TestAdvanceWithQuerier_WalkFails(t *testing.T) {
 	t.Parallel()
 
 	querier, gameState, moveService, validationService, service := setup(t)
@@ -175,13 +175,13 @@ func TestAdvanceQ_WalkFails(t *testing.T) {
 	}
 
 	moveService.EXPECT().PhaseType().Return(sqlc.GamePhaseTypeATTACK)
-	gameState.EXPECT().GetGameStateQ(gameCtx, querier).Return(game, nil)
-	validationService.EXPECT().ValidateQ(gameCtx, querier, game).Return(nil)
+	gameState.EXPECT().GetGameStateWithQuerier(gameCtx, querier).Return(game, nil)
+	validationService.EXPECT().Validate(gameCtx, querier, game).Return(nil)
 	moveService.EXPECT().
-		WalkQ(gameCtx, querier, true).
+		Walk(gameCtx, querier, true).
 		Return(sqlc.GamePhaseType(""), errors.New("walk computation failed"))
 
-	targetPhase, err := service.AdvanceQ(gameCtx, querier)
+	targetPhase, err := service.AdvanceWithQuerier(gameCtx, querier)
 
 	require.Error(t, err)
 	require.Empty(t, targetPhase)
@@ -189,7 +189,7 @@ func TestAdvanceQ_WalkFails(t *testing.T) {
 	require.ErrorContains(t, err, "walk computation failed")
 }
 
-func TestAdvanceQ_AdvanceFails(t *testing.T) {
+func TestAdvanceWithQuerier_AdvanceFails(t *testing.T) {
 	t.Parallel()
 
 	querier, gameState, moveService, validationService, service := setup(t)
@@ -202,14 +202,14 @@ func TestAdvanceQ_AdvanceFails(t *testing.T) {
 	}
 
 	moveService.EXPECT().PhaseType().Return(sqlc.GamePhaseTypeATTACK)
-	gameState.EXPECT().GetGameStateQ(gameCtx, querier).Return(game, nil)
-	validationService.EXPECT().ValidateQ(gameCtx, querier, game).Return(nil)
-	moveService.EXPECT().WalkQ(gameCtx, querier, true).Return(sqlc.GamePhaseTypeREINFORCE, nil)
+	gameState.EXPECT().GetGameStateWithQuerier(gameCtx, querier).Return(game, nil)
+	validationService.EXPECT().Validate(gameCtx, querier, game).Return(nil)
+	moveService.EXPECT().Walk(gameCtx, querier, true).Return(sqlc.GamePhaseTypeREINFORCE, nil)
 	moveService.EXPECT().
-		AdvanceQ(gameCtx, querier, sqlc.GamePhaseTypeREINFORCE, nil).
+		Advance(gameCtx, querier, sqlc.GamePhaseTypeREINFORCE, nil).
 		Return(errors.New("advance db write failed"))
 
-	targetPhase, err := service.AdvanceQ(gameCtx, querier)
+	targetPhase, err := service.AdvanceWithQuerier(gameCtx, querier)
 
 	require.Error(t, err)
 	require.Empty(t, targetPhase)
@@ -217,7 +217,7 @@ func TestAdvanceQ_AdvanceFails(t *testing.T) {
 	require.ErrorContains(t, err, "advance db write failed")
 }
 
-func TestAdvanceQ_DifferentPhaseTransitions(t *testing.T) {
+func TestAdvanceWithQuerier_DifferentPhaseTransitions(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -261,14 +261,14 @@ func TestAdvanceQ_DifferentPhaseTransitions(t *testing.T) {
 			}
 
 			moveService.EXPECT().PhaseType().Return(testCase.fromPhase)
-			gameState.EXPECT().GetGameStateQ(gameCtx, querier).Return(game, nil)
-			validationService.EXPECT().ValidateQ(gameCtx, querier, game).Return(nil)
-			moveService.EXPECT().WalkQ(gameCtx, querier, true).Return(testCase.targetPhase, nil)
+			gameState.EXPECT().GetGameStateWithQuerier(gameCtx, querier).Return(game, nil)
+			validationService.EXPECT().Validate(gameCtx, querier, game).Return(nil)
+			moveService.EXPECT().Walk(gameCtx, querier, true).Return(testCase.targetPhase, nil)
 			moveService.EXPECT().
-				AdvanceQ(gameCtx, querier, testCase.targetPhase, nil).
+				Advance(gameCtx, querier, testCase.targetPhase, nil).
 				Return(nil)
 
-			resultPhase, err := service.AdvanceQ(gameCtx, querier)
+			resultPhase, err := service.AdvanceWithQuerier(gameCtx, querier)
 
 			require.NoError(t, err)
 			require.Equal(t, testCase.targetPhase, resultPhase)
@@ -276,7 +276,7 @@ func TestAdvanceQ_DifferentPhaseTransitions(t *testing.T) {
 	}
 }
 
-func TestAdvanceQ_ForbiddenErrorPropagated(t *testing.T) {
+func TestAdvanceWithQuerier_ForbiddenErrorPropagated(t *testing.T) {
 	t.Parallel()
 
 	querier, gameState, moveService, validationService, service := setup(t)
@@ -289,12 +289,12 @@ func TestAdvanceQ_ForbiddenErrorPropagated(t *testing.T) {
 	}
 
 	moveService.EXPECT().PhaseType().Return(sqlc.GamePhaseTypeATTACK)
-	gameState.EXPECT().GetGameStateQ(gameCtx, querier).Return(game, nil)
+	gameState.EXPECT().GetGameStateWithQuerier(gameCtx, querier).Return(game, nil)
 	validationService.EXPECT().
-		ValidateQ(gameCtx, querier, game).
+		Validate(gameCtx, querier, game).
 		Return(domainerrors.NewForbiddenError("player is not in game"))
 
-	targetPhase, err := service.AdvanceQ(gameCtx, querier)
+	targetPhase, err := service.AdvanceWithQuerier(gameCtx, querier)
 
 	require.Error(t, err)
 	require.Empty(t, targetPhase)

@@ -9,7 +9,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
+	moveservice "github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
@@ -32,12 +32,12 @@ type MoveResult struct {
 }
 
 type Service interface {
-	service.Service[Move]
+	moveservice.Service[Move]
 	Draw(ctx ctx.GameContext, querier db.Querier) error
-	NextPlayerHasValidCombinationQ(ctx ctx.GameContext, querier db.Querier) (bool, error)
+	NextPlayerHasValidCombination(ctx ctx.GameContext, querier db.Querier) (bool, error)
 }
 
-type ServiceImpl struct {
+type service struct {
 	boardService  board.Service
 	phaseService  phase.Service
 	playerService player.Service
@@ -45,7 +45,7 @@ type ServiceImpl struct {
 	rng           rand.RNG
 }
 
-var _ Service = (*ServiceImpl)(nil)
+var _ Service = (*service)(nil)
 
 func NewService(
 	boardService board.Service,
@@ -53,21 +53,23 @@ func NewService(
 	playerService player.Service,
 	regionService region.Service,
 	rng rand.RNG,
-) *ServiceImpl {
-	return &ServiceImpl{
+) (Service, moveservice.Service[Move]) {
+	svc := &service{
 		boardService:  boardService,
 		phaseService:  phaseService,
 		playerService: playerService,
 		regionService: regionService,
 		rng:           rng,
 	}
+
+	return svc, svc
 }
 
-func (s *ServiceImpl) PhaseType() sqlc.GamePhaseType {
+func (s *service) PhaseType() sqlc.GamePhaseType {
 	return sqlc.GamePhaseTypeCARDS
 }
 
-func (s *ServiceImpl) Draw(ctx ctx.GameContext, querier db.Querier) error {
+func (s *service) Draw(ctx ctx.GameContext, querier db.Querier) error {
 	slog.InfoContext(ctx, "drawing card")
 
 	cards, err := querier.GetAvailableCards(ctx, ctx.GameID())
@@ -93,13 +95,13 @@ func (s *ServiceImpl) Draw(ctx ctx.GameContext, querier db.Querier) error {
 	return nil
 }
 
-func (s *ServiceImpl) NextPlayerHasValidCombinationQ(
+func (s *service) NextPlayerHasValidCombination(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) (bool, error) {
 	slog.InfoContext(ctx, "checking if the player has a valid card combination")
 
-	nextPlayer, err := s.playerService.GetNextPlayerQ(ctx, querier)
+	nextPlayer, err := s.playerService.GetNextPlayer(ctx, querier)
 	if err != nil {
 		return false, fmt.Errorf("failed to get player: %w", err)
 	}

@@ -28,7 +28,7 @@ func (c *EighteenTerritoriesChecker) Check(
 	querier db.Querier,
 	_ sqlc.GameMission,
 ) (bool, error) {
-	regions, err := c.regionService.GetPlayerRegionsQ(ctx, querier)
+	regions, err := c.regionService.GetPlayerRegions(ctx, querier)
 	if err != nil {
 		return false, fmt.Errorf("failed to get player regions: %w", err)
 	}

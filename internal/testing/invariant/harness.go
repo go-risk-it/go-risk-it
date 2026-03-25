@@ -158,7 +158,7 @@ func (h *Harness) CreateGame(
 
 	userCtx := h.userCtx(players[0].UserID)
 
-	gameID, err := h.CreationService.CreateGameWithTx(
+	gameID, err := h.CreationService.CreateGame(
 		userCtx, regions, players,
 	)
 	if err != nil {

@@ -16,19 +16,19 @@ type Service interface {
 	MarkLobbyAsStarted(ctx ctx.LobbyContext, gameID int64) error
 }
 
-type ServiceImpl struct {
+type service struct {
 	querier db.Querier
 }
 
-var _ Service = (*ServiceImpl)(nil)
+var _ Service = (*service)(nil)
 
-func NewService(querier db.Querier) *ServiceImpl {
-	return &ServiceImpl{
+func NewService(querier db.Querier) Service {
+	return &service{
 		querier: querier,
 	}
 }
 
-func (s *ServiceImpl) CanStartLobby(ctx ctx.LobbyContext) (bool, error) {
+func (s *service) CanStartLobby(ctx ctx.LobbyContext) (bool, error) {
 	slog.InfoContext(ctx, "checking if lobby can be started")
 
 	canStartLobby, err := s.querier.CanLobbyBeStarted(ctx, sqlc.CanLobbyBeStartedParams{
@@ -43,7 +43,7 @@ func (s *ServiceImpl) CanStartLobby(ctx ctx.LobbyContext) (bool, error) {
 	return canStartLobby, nil
 }
 
-func (s *ServiceImpl) GetLobbyPlayers(ctx ctx.LobbyContext) ([]sqlc.GetLobbyPlayersRow, error) {
+func (s *service) GetLobbyPlayers(ctx ctx.LobbyContext) ([]sqlc.GetLobbyPlayersRow, error) {
 	slog.DebugContext(ctx, "getting lobby players")
 
 	lobbyPlayers, err := s.querier.GetLobbyPlayers(ctx, ctx.LobbyID())
@@ -54,7 +54,7 @@ func (s *ServiceImpl) GetLobbyPlayers(ctx ctx.LobbyContext) ([]sqlc.GetLobbyPlay
 	return lobbyPlayers, nil
 }
 
-func (s *ServiceImpl) MarkLobbyAsStarted(ctx ctx.LobbyContext, gameID int64) error {
+func (s *service) MarkLobbyAsStarted(ctx ctx.LobbyContext, gameID int64) error {
 	slog.DebugContext(ctx, "marking lobby as started")
 
 	if err := s.querier.MarkLobbyAsStarted(ctx, sqlc.MarkLobbyAsStartedParams{

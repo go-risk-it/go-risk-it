@@ -7,13 +7,7 @@ import (
 
 var Module = fx.Options(
 	fx.Provide(
-		fx.Annotate(
-			NewService,
-			fx.As(new(Service)),
-		),
-		fx.Annotate(
-			assignment.NewAssignmentService,
-			fx.As(new(assignment.Service)),
-		),
+		NewService,
+		assignment.NewAssignmentService,
 	),
 )

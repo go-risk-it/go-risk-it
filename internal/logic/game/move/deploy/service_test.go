@@ -18,13 +18,13 @@ import (
 func setup(t *testing.T) (
 	*db.Querier,
 	*region.Service,
-	*deploy.ServiceImpl,
+	deploy.Service,
 ) {
 	t.Helper()
 	querier := db.NewQuerier(t)
 	phaseService := phase.NewService(t)
 	regionService := region.NewService(t)
-	service := deploy.NewService(querier, phaseService, regionService)
+	service, _ := deploy.NewService(querier, phaseService, regionService)
 
 	return querier, regionService, service
 }
@@ -49,7 +49,7 @@ func input() (string, int64, int64, ctx.GameContext) {
 		), gameContext
 }
 
-func TestServiceImpl_DeployShouldFailWhenPlayerDoesntHaveEnoughDeployableTroops(t *testing.T) {
+func TestService_DeployShouldFailWhenPlayerDoesntHaveEnoughDeployableTroops(t *testing.T) {
 	t.Parallel()
 
 	querier, _, service := setup(t)
@@ -63,7 +63,7 @@ func TestServiceImpl_DeployShouldFailWhenPlayerDoesntHaveEnoughDeployableTroops(
 
 	querier.EXPECT().GetDeployableTroops(ctx, game.ID).Return(int64(0), nil)
 
-	_, err := service.PerformQ(ctx, querier, deploy.Move{
+	_, err := service.Perform(ctx, querier, deploy.Move{
 		RegionID:      regionReference,
 		CurrentTroops: currentTroops,
 		DesiredTroops: desiredTroops,
@@ -73,7 +73,7 @@ func TestServiceImpl_DeployShouldFailWhenPlayerDoesntHaveEnoughDeployableTroops(
 	require.EqualError(t, err, "not enough deployable troops")
 }
 
-func TestServiceImpl_DeployShouldFail(t *testing.T) {
+func TestService_DeployShouldFail(t *testing.T) {
 	t.Parallel()
 
 	type inputType struct {
@@ -116,7 +116,7 @@ func TestServiceImpl_DeployShouldFail(t *testing.T) {
 
 			regionService.
 				EXPECT().
-				GetRegionQ(ctx, querier, regionReference).
+				GetRegion(ctx, querier, regionReference).
 				Return(&sqlc.GetRegionsByGameRow{
 					ID:                1,
 					ExternalReference: "greenland",
@@ -124,7 +124,7 @@ func TestServiceImpl_DeployShouldFail(t *testing.T) {
 					Troops:            0,
 				}, nil)
 
-			_, err := service.PerformQ(ctx, querier, deploy.Move{
+			_, err := service.Perform(ctx, querier, deploy.Move{
 				RegionID:      regionReference,
 				CurrentTroops: currentTroops,
 				DesiredTroops: desiredTroops,
@@ -136,7 +136,7 @@ func TestServiceImpl_DeployShouldFail(t *testing.T) {
 	}
 }
 
-func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
+func TestService_DeployShouldSucceed(t *testing.T) {
 	t.Parallel()
 
 	type inputType struct {
@@ -181,11 +181,11 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 
 			regionService.
 				EXPECT().
-				GetRegionQ(ctx, querier, regionReference).
+				GetRegion(ctx, querier, regionReference).
 				Return(region, nil)
 			regionService.
 				EXPECT().
-				UpdateTroopsInRegionQ(ctx, querier, region, troops).
+				UpdateTroopsInRegion(ctx, querier, region, troops).
 				Return(nil)
 			querier.
 				EXPECT().
@@ -195,7 +195,7 @@ func TestServiceImpl_DeployShouldSucceed(t *testing.T) {
 				}).
 				Return(nil)
 
-			_, err := service.PerformQ(ctx, querier, deploy.Move{
+			_, err := service.Perform(ctx, querier, deploy.Move{
 				RegionID:      regionReference,
 				CurrentTroops: currentTroops,
 				DesiredTroops: desiredTroops,

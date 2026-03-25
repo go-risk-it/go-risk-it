@@ -11,7 +11,7 @@ import (
 )
 
 type Service interface {
-	CreatePlayersQ(
+	CreatePlayers(
 		ctx ctx.GameContext,
 		querier db.Querier,
 		gameID int64,
@@ -21,34 +21,37 @@ type Service interface {
 		error,
 	)
 	GetPlayersState(ctx ctx.GameContext) ([]sqlc.GetPlayersStateRow, error)
-	GetPlayersStateQ(ctx ctx.GameContext, querier db.Querier) ([]sqlc.GetPlayersStateRow, error)
-	GetPlayersQ(ctx ctx.GameContext, querier db.Querier) ([]sqlc.GamePlayer, error)
-	GetCurrentPlayerQ(ctx ctx.GameContext, querier db.Querier) (sqlc.GamePlayer, error)
-	GetNextPlayerQ(ctx ctx.GameContext, querier db.Querier) (sqlc.GamePlayer, error)
+	GetPlayersStateWithQuerier(
+		ctx ctx.GameContext,
+		querier db.Querier,
+	) ([]sqlc.GetPlayersStateRow, error)
+	GetPlayers(ctx ctx.GameContext, querier db.Querier) ([]sqlc.GamePlayer, error)
+	GetCurrentPlayer(ctx ctx.GameContext, querier db.Querier) (sqlc.GamePlayer, error)
+	GetNextPlayer(ctx ctx.GameContext, querier db.Querier) (sqlc.GamePlayer, error)
 }
 
-type ServiceImpl struct {
+type service struct {
 	querier     db.Querier
 	gameService state.Service
 }
 
-var _ Service = (*ServiceImpl)(nil)
+var _ Service = (*service)(nil)
 
 func NewService(
 	querier db.Querier,
 	gameService state.Service,
-) *ServiceImpl {
-	return &ServiceImpl{
+) Service {
+	return &service{
 		querier:     querier,
 		gameService: gameService,
 	}
 }
 
-func (s *ServiceImpl) GetPlayersState(ctx ctx.GameContext) ([]sqlc.GetPlayersStateRow, error) {
-	return s.GetPlayersStateQ(ctx, s.querier)
+func (s *service) GetPlayersState(ctx ctx.GameContext) ([]sqlc.GetPlayersStateRow, error) {
+	return s.GetPlayersStateWithQuerier(ctx, s.querier)
 }
 
-func (s *ServiceImpl) GetPlayersStateQ(
+func (s *service) GetPlayersStateWithQuerier(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) ([]sqlc.GetPlayersStateRow, error) {
@@ -64,7 +67,7 @@ func (s *ServiceImpl) GetPlayersStateQ(
 	return result, nil
 }
 
-func (s *ServiceImpl) GetPlayersQ(
+func (s *service) GetPlayers(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) ([]sqlc.GamePlayer, error) {
@@ -78,7 +81,7 @@ func (s *ServiceImpl) GetPlayersQ(
 	return result, nil
 }
 
-func (s *ServiceImpl) GetCurrentPlayerQ(
+func (s *service) GetCurrentPlayer(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) (sqlc.GamePlayer, error) {
@@ -92,7 +95,7 @@ func (s *ServiceImpl) GetCurrentPlayerQ(
 	return result, nil
 }
 
-func (s *ServiceImpl) GetNextPlayerQ(
+func (s *service) GetNextPlayer(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) (sqlc.GamePlayer, error) {
@@ -114,18 +117,18 @@ func (s *ServiceImpl) GetNextPlayerQ(
 	return result, nil
 }
 
-func (s *ServiceImpl) getNextTurn(
+func (s *service) getNextTurn(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) (int64, error) {
-	gameState, err := s.gameService.GetGameStateQ(ctx, querier)
+	gameState, err := s.gameService.GetGameStateWithQuerier(ctx, querier)
 	if err != nil {
 		return -1, fmt.Errorf("failed to get game state: %w", err)
 	}
 
 	turn := gameState.Turn
 
-	playersState, err := s.GetPlayersStateQ(ctx, querier)
+	playersState, err := s.GetPlayersStateWithQuerier(ctx, querier)
 	if err != nil {
 		return -1, fmt.Errorf("failed to get players state: %w", err)
 	}
@@ -140,7 +143,7 @@ func (s *ServiceImpl) getNextTurn(
 	return turn, nil
 }
 
-func (s *ServiceImpl) CreatePlayersQ(
+func (s *service) CreatePlayers(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	gameID int64,

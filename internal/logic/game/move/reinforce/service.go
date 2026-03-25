@@ -4,7 +4,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/cards"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
+	moveservice "github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
@@ -19,10 +19,10 @@ type Move struct {
 }
 
 type Service interface {
-	service.Service[Move]
+	moveservice.Service[Move]
 }
 
-type ServiceImpl struct {
+type service struct {
 	boardService  board.Service
 	cardsService  cards.Service
 	gameService   state.Service
@@ -30,7 +30,7 @@ type ServiceImpl struct {
 	regionService region.Service
 }
 
-var _ Service = (*ServiceImpl)(nil)
+var _ Service = (*service)(nil)
 
 func NewService(
 	boardService board.Service,
@@ -38,16 +38,18 @@ func NewService(
 	gameService state.Service,
 	phaseService phase.Service,
 	regionService region.Service,
-) *ServiceImpl {
-	return &ServiceImpl{
+) (Service, moveservice.Service[Move]) {
+	svc := &service{
 		boardService:  boardService,
 		cardsService:  cardsService,
 		gameService:   gameService,
 		phaseService:  phaseService,
 		regionService: regionService,
 	}
+
+	return svc, svc
 }
 
-func (s *ServiceImpl) PhaseType() sqlc.GamePhaseType {
+func (s *service) PhaseType() sqlc.GamePhaseType {
 	return sqlc.GamePhaseTypeREINFORCE
 }

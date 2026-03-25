@@ -13,35 +13,35 @@ import (
 )
 
 type Service interface {
-	InsertPhaseQ(
+	InsertPhase(
 		ctx ctx.GameContext,
 		querier db.Querier,
 		phaseType sqlc.GamePhaseType,
 	) (*sqlc.GamePhase, error)
 }
 
-type ServiceImpl struct {
+type service struct {
 	gameService   state.Service
 	playerService player.Service
 }
 
-var _ Service = &ServiceImpl{}
+var _ Service = (*service)(nil)
 
-func NewService(gameService state.Service, playerService player.Service) *ServiceImpl {
-	return &ServiceImpl{
+func NewService(gameService state.Service, playerService player.Service) Service {
+	return &service{
 		gameService:   gameService,
 		playerService: playerService,
 	}
 }
 
-func (s *ServiceImpl) InsertPhaseQ(
+func (s *service) InsertPhase(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	phaseType sqlc.GamePhaseType,
 ) (*sqlc.GamePhase, error) {
 	slog.InfoContext(ctx, "checking if phase needs to be advanced")
 
-	gameState, err := s.gameService.GetGameStateQ(ctx, querier)
+	gameState, err := s.gameService.GetGameStateWithQuerier(ctx, querier)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get game state: %w", err)
 	}
@@ -66,12 +66,12 @@ func (s *ServiceImpl) InsertPhaseQ(
 		return nil, fmt.Errorf("failed to get next turn: %w", err)
 	}
 
-	phase, err := s.insertPhaseQ(ctx, querier, ctx.GameID(), phaseType, turn)
+	phase, err := s.insertPhase(ctx, querier, ctx.GameID(), phaseType, turn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new phase: %w", err)
 	}
 
-	err = s.setGamePhaseQ(ctx, querier, ctx.GameID(), phase.ID)
+	err = s.setGamePhase(ctx, querier, ctx.GameID(), phase.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to set game phase: %w", err)
 	}
@@ -79,7 +79,7 @@ func (s *ServiceImpl) InsertPhaseQ(
 	return phase, nil
 }
 
-func (s *ServiceImpl) getNextTurn(
+func (s *service) getNextTurn(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	gameState *state.Game,
@@ -88,7 +88,7 @@ func (s *ServiceImpl) getNextTurn(
 	turn := gameState.Turn
 
 	if currentPhase == sqlc.GamePhaseTypeREINFORCE {
-		playersState, err := s.playerService.GetPlayersStateQ(ctx, querier)
+		playersState, err := s.playerService.GetPlayersStateWithQuerier(ctx, querier)
 		if err != nil {
 			return 0, fmt.Errorf("failed to get players state: %w", err)
 		}
@@ -104,7 +104,7 @@ func (s *ServiceImpl) getNextTurn(
 	return turn, nil
 }
 
-func (s *ServiceImpl) insertPhaseQ(
+func (s *service) insertPhase(
 	ctx ctx.UserContext,
 	querier db.Querier,
 	gameID int64,
@@ -127,7 +127,7 @@ func (s *ServiceImpl) insertPhaseQ(
 	return &phase, nil
 }
 
-func (s *ServiceImpl) setGamePhaseQ(
+func (s *service) setGamePhase(
 	ctx ctx.UserContext,
 	querier db.Querier,
 	gameID int64,

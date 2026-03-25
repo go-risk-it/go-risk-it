@@ -18,22 +18,22 @@ type Service interface {
 	AssignRegionsToPlayers(players []sqlc.GamePlayer, regions []string) RegionAssignment
 }
 
-type ServiceImpl struct {
+type service struct {
 	assigner Assigner
 }
 
-var _ Service = (*ServiceImpl)(nil)
+var _ Service = (*service)(nil)
 
 func NewAssignmentService(
 	assignConfig config.RegionassignmentConfig,
 	rng rand.RNG,
-) (*ServiceImpl, error) {
+) (Service, error) {
 	assigner, err := getAssigner(assignConfig, rng)
 	if err != nil {
 		return nil, err
 	}
 
-	return &ServiceImpl{
+	return &service{
 		assigner: assigner,
 	}, nil
 }
@@ -49,7 +49,7 @@ func getAssigner(assignConfig config.RegionassignmentConfig, rng rand.RNG) (Assi
 	}
 }
 
-func (s *ServiceImpl) AssignRegionsToPlayers(
+func (s *service) AssignRegionsToPlayers(
 	players []sqlc.GamePlayer,
 	regions []string,
 ) RegionAssignment {

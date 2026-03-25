@@ -14,7 +14,7 @@ import (
 	"go.opentelemetry.io/otel/trace/noop"
 )
 
-func setup(t *testing.T) (*db.Querier, *creation.ServiceImpl) {
+func setup(t *testing.T) (*db.Querier, creation.Service) {
 	t.Helper()
 
 	querier := db.NewQuerier(t)
@@ -34,7 +34,7 @@ func userContext() ctx.UserContext {
 	return ctx.WithUserID(traceCtx, userID)
 }
 
-func TestServiceImpl_CreateLobbyQ_Success(t *testing.T) {
+func TestServiceImpl_CreateLobbyWithQuerier_Success(t *testing.T) {
 	t.Parallel()
 
 	querier, service := setup(t)
@@ -68,13 +68,13 @@ func TestServiceImpl_CreateLobbyQ_Success(t *testing.T) {
 		}).
 		Return(nil)
 
-	result, err := service.CreateLobbyQ(uctx, querier, "Giovanni")
+	result, err := service.CreateLobbyWithQuerier(uctx, querier, "Giovanni")
 
 	require.NoError(t, err)
 	require.Equal(t, lobbyID, result)
 }
 
-func TestServiceImpl_CreateLobbyQ_Failures(t *testing.T) {
+func TestServiceImpl_CreateLobbyWithQuerier_Failures(t *testing.T) {
 	t.Parallel()
 
 	type testCase struct {
@@ -154,7 +154,7 @@ func TestServiceImpl_CreateLobbyQ_Failures(t *testing.T) {
 
 			test.setupMocks(querier, uctx)
 
-			result, err := service.CreateLobbyQ(uctx, querier, "Giovanni")
+			result, err := service.CreateLobbyWithQuerier(uctx, querier, "Giovanni")
 
 			require.Error(t, err)
 			require.EqualError(t, err, test.expectedError)

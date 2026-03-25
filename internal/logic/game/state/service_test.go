@@ -12,13 +12,13 @@ import (
 	"go.opentelemetry.io/otel/trace/noop"
 )
 
-func TestServiceImpl_GetGameState(t *testing.T) {
+func TestService_GetGameState(t *testing.T) {
 	t.Parallel()
 
 	// Initialize dependencies
 	querier := db.NewQuerier(t)
 
-	// Initialize the state under test
+	// Initialize the service under test
 	service := state.NewService(querier)
 
 	// Set up test data

@@ -7,14 +7,8 @@ import (
 
 var Module = fx.Options(
 	fx.Provide(
-		fx.Annotate(
-			NewController,
-			fx.As(new(Controller)),
-		),
-		fx.Annotate(
-			NewService,
-			fx.As(new(Service)),
-		),
+		NewController,
+		NewService,
 		fx.Annotate(
 			ProvideRoutes,
 			fx.ResultTags(`group:"routes,flatten"`),

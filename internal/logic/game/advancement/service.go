@@ -10,7 +10,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/validation"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
+	moveservice "github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/internal/metrics"
@@ -19,13 +19,13 @@ import (
 
 type Service[T any] interface {
 	Advance(ctx ctx.GameContext) error
-	AdvanceQ(ctx ctx.GameContext, querier db.Querier) (sqlc.GamePhaseType, error)
+	AdvanceWithQuerier(ctx ctx.GameContext, querier db.Querier) (sqlc.GamePhaseType, error)
 }
 
-type ServiceImpl[T any] struct {
+type service[T any] struct {
 	querier                db.Querier
 	gameState              state.Service
-	moveService            service.Service[T]
+	moveService            moveservice.Service[T]
 	validationService      validation.Service
 	gameStateChangedSignal signals.GameStateChangedSignal
 	metrics                *metrics.Metrics
@@ -34,12 +34,12 @@ type ServiceImpl[T any] struct {
 func NewService[T any](
 	gameState state.Service,
 	querier db.Querier,
-	moveService service.Service[T],
+	moveService moveservice.Service[T],
 	validationService validation.Service,
 	gameStateChangedSignal signals.GameStateChangedSignal,
 	metrics *metrics.Metrics,
-) *ServiceImpl[T] {
-	return &ServiceImpl[T]{
+) Service[T] {
+	return &service[T]{
 		gameState:              gameState,
 		querier:                querier,
 		moveService:            moveService,
@@ -49,7 +49,7 @@ func NewService[T any](
 	}
 }
 
-func (s *ServiceImpl[T]) Advance(ctx ctx.GameContext) error {
+func (s *service[T]) Advance(ctx ctx.GameContext) error {
 	currentPhase := s.moveService.PhaseType()
 
 	targetPhase, err := dbutil.InTransactionWithIsolation(
@@ -58,7 +58,7 @@ func (s *ServiceImpl[T]) Advance(ctx ctx.GameContext) error {
 		s.metrics,
 		pgx.RepeatableRead,
 		func(q db.Querier) (sqlc.GamePhaseType, error) {
-			return s.AdvanceQ(ctx, q)
+			return s.AdvanceWithQuerier(ctx, q)
 		},
 	)
 	if err != nil {
@@ -73,7 +73,7 @@ func (s *ServiceImpl[T]) Advance(ctx ctx.GameContext) error {
 	return nil
 }
 
-func (s *ServiceImpl[T]) AdvanceQ(
+func (s *service[T]) AdvanceWithQuerier(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) (sqlc.GamePhaseType, error) {
@@ -81,12 +81,12 @@ func (s *ServiceImpl[T]) AdvanceQ(
 
 	slog.InfoContext(ctx, "processing request to advance phase", "currentPhase", currentPhase)
 
-	game, err := s.gameState.GetGameStateQ(ctx, querier)
+	game, err := s.gameState.GetGameStateWithQuerier(ctx, querier)
 	if err != nil {
 		return "", fmt.Errorf("unable to get game state: %w", err)
 	}
 
-	if err := s.validationService.ValidateQ(ctx, querier, game); err != nil {
+	if err := s.validationService.Validate(ctx, querier, game); err != nil {
 		slog.ErrorContext(ctx, "validation failed", "error", err)
 
 		return "", fmt.Errorf("validation failed: %w", err)
@@ -102,12 +102,12 @@ func (s *ServiceImpl[T]) AdvanceQ(
 		)
 	}
 
-	targetPhase, err := s.moveService.WalkQ(ctx, querier, true)
+	targetPhase, err := s.moveService.Walk(ctx, querier, true)
 	if err != nil {
 		return "", fmt.Errorf("unable to walk to target phase: %w", err)
 	}
 
-	err = s.moveService.AdvanceQ(
+	err = s.moveService.Advance(
 		ctx,
 		querier,
 		targetPhase,

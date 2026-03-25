@@ -10,7 +10,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
 )
 
-func (s *ServiceImpl) AdvanceQ(
+func (s *service) Advance(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	targetPhase sqlc.GamePhaseType,
@@ -20,7 +20,7 @@ func (s *ServiceImpl) AdvanceQ(
 		return fmt.Errorf("invalid phase transition: %w", err)
 	}
 
-	game, err := s.gameService.GetGameStateQ(ctx, querier)
+	game, err := s.gameService.GetGameStateWithQuerier(ctx, querier)
 	if err != nil {
 		return fmt.Errorf("unable to get game state: %w", err)
 	}
@@ -44,14 +44,14 @@ func (s *ServiceImpl) AdvanceQ(
 	}
 
 	if targetPhase == sqlc.GamePhaseTypeDEPLOY {
-		if err := s.cardsService.AdvanceQ(ctx, querier, targetPhase, nil); err != nil {
+		if err := s.cardsService.Advance(ctx, querier, targetPhase, nil); err != nil {
 			return fmt.Errorf("failed to advance cards phase: %w", err)
 		}
 
 		return nil
 	}
 
-	if _, err = s.phaseService.InsertPhaseQ(ctx, querier, sqlc.GamePhaseTypeCARDS); err != nil {
+	if _, err = s.phaseService.InsertPhase(ctx, querier, sqlc.GamePhaseTypeCARDS); err != nil {
 		return fmt.Errorf("failed to create cards phase: %w", err)
 	}
 

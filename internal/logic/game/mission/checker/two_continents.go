@@ -34,7 +34,7 @@ func (c *TwoContinentsChecker) Check(
 		return false, fmt.Errorf("failed to get two continents mission: %w", err)
 	}
 
-	continents, err := c.boardService.GetContinentsControlledByPlayerQ(
+	continents, err := c.boardService.GetContinentsControlledByPlayer(
 		ctx,
 		querier,
 		baseMission.PlayerID,

@@ -1,6 +1,8 @@
 package orchestration
 
 import (
+	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/cards"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/conquer"
@@ -8,65 +10,152 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/logging"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/validation"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/reinforce"
+	moveservice "github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/timing"
+	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"go.uber.org/fx"
 )
 
-type DeployOrchestrator interface {
-	Orchestrator[deploy.Move]
+type DeployOrchestrator = Orchestrator[deploy.Move]
+
+type AttackOrchestrator = Orchestrator[attack.Move]
+
+type ConquerOrchestrator = Orchestrator[conquer.Move]
+
+type ReinforceOrchestrator = Orchestrator[reinforce.Move]
+
+type CardsOrchestrator = Orchestrator[cards.Move]
+
+func NewDeployOrchestrator(
+	querier db.Querier,
+	service moveservice.Service[deploy.Move],
+	gameService state.Service,
+	loggingService logging.Service,
+	missionService mission.Service,
+	validationService validation.Service,
+	gameStateChangedSignal signals.GameStateChangedSignal,
+	metrics *metrics.Metrics,
+	gameTiming *timing.GameTiming,
+) DeployOrchestrator {
+	return NewOrchestrator[deploy.Move](
+		querier,
+		service,
+		gameService,
+		loggingService,
+		missionService,
+		validationService,
+		gameStateChangedSignal,
+		metrics,
+		gameTiming,
+	)
 }
 
-type AttackOrchestrator interface {
-	Orchestrator[attack.Move]
+func NewAttackOrchestrator(
+	querier db.Querier,
+	service moveservice.Service[attack.Move],
+	gameService state.Service,
+	loggingService logging.Service,
+	missionService mission.Service,
+	validationService validation.Service,
+	gameStateChangedSignal signals.GameStateChangedSignal,
+	metrics *metrics.Metrics,
+	gameTiming *timing.GameTiming,
+) AttackOrchestrator {
+	return NewOrchestrator[attack.Move](
+		querier,
+		service,
+		gameService,
+		loggingService,
+		missionService,
+		validationService,
+		gameStateChangedSignal,
+		metrics,
+		gameTiming,
+	)
 }
 
-type ConquerOrchestrator interface {
-	Orchestrator[conquer.Move]
+func NewConquerOrchestrator(
+	querier db.Querier,
+	service moveservice.Service[conquer.Move],
+	gameService state.Service,
+	loggingService logging.Service,
+	missionService mission.Service,
+	validationService validation.Service,
+	gameStateChangedSignal signals.GameStateChangedSignal,
+	metrics *metrics.Metrics,
+	gameTiming *timing.GameTiming,
+) ConquerOrchestrator {
+	return NewOrchestrator[conquer.Move](
+		querier,
+		service,
+		gameService,
+		loggingService,
+		missionService,
+		validationService,
+		gameStateChangedSignal,
+		metrics,
+		gameTiming,
+	)
 }
 
-type ReinforceOrchestrator interface {
-	Orchestrator[reinforce.Move]
+func NewReinforceOrchestrator(
+	querier db.Querier,
+	service moveservice.Service[reinforce.Move],
+	gameService state.Service,
+	loggingService logging.Service,
+	missionService mission.Service,
+	validationService validation.Service,
+	gameStateChangedSignal signals.GameStateChangedSignal,
+	metrics *metrics.Metrics,
+	gameTiming *timing.GameTiming,
+) ReinforceOrchestrator {
+	return NewOrchestrator[reinforce.Move](
+		querier,
+		service,
+		gameService,
+		loggingService,
+		missionService,
+		validationService,
+		gameStateChangedSignal,
+		metrics,
+		gameTiming,
+	)
 }
 
-type CardsOrchestrator interface {
-	Orchestrator[cards.Move]
+func NewCardsOrchestrator(
+	querier db.Querier,
+	service moveservice.Service[cards.Move],
+	gameService state.Service,
+	loggingService logging.Service,
+	missionService mission.Service,
+	validationService validation.Service,
+	gameStateChangedSignal signals.GameStateChangedSignal,
+	metrics *metrics.Metrics,
+	gameTiming *timing.GameTiming,
+) CardsOrchestrator {
+	return NewOrchestrator[cards.Move](
+		querier,
+		service,
+		gameService,
+		loggingService,
+		missionService,
+		validationService,
+		gameStateChangedSignal,
+		metrics,
+		gameTiming,
+	)
 }
-
-var (
-	_ DeployOrchestrator    = (*OrchestratorImpl[deploy.Move])(nil)
-	_ AttackOrchestrator    = (*OrchestratorImpl[attack.Move])(nil)
-	_ ConquerOrchestrator   = (*OrchestratorImpl[conquer.Move])(nil)
-	_ ReinforceOrchestrator = (*OrchestratorImpl[reinforce.Move])(nil)
-)
 
 var Module = fx.Options(
 	fx.Provide(
-		fx.Annotate(
-			NewOrchestrator[deploy.Move],
-			fx.As(new(DeployOrchestrator)),
-		),
-		fx.Annotate(
-			NewOrchestrator[attack.Move],
-			fx.As(new(AttackOrchestrator)),
-		),
-		fx.Annotate(
-			NewOrchestrator[conquer.Move],
-			fx.As(new(ConquerOrchestrator)),
-		),
-		fx.Annotate(
-			NewOrchestrator[reinforce.Move],
-			fx.As(new(ReinforceOrchestrator)),
-		),
-		fx.Annotate(
-			NewOrchestrator[cards.Move],
-			fx.As(new(CardsOrchestrator)),
-		),
-		fx.Annotate(
-			validation.New,
-			fx.As(new(validation.Service)),
-		),
-		fx.Annotate(
-			logging.New,
-			fx.As(new(logging.Service)),
-		),
+		NewDeployOrchestrator,
+		NewAttackOrchestrator,
+		NewConquerOrchestrator,
+		NewReinforceOrchestrator,
+		NewCardsOrchestrator,
+		validation.New,
+		logging.New,
 	),
 )

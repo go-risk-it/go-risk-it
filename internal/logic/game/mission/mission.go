@@ -36,9 +36,6 @@ var Module = fx.Options(
 			checker.NewRegistry,
 			fx.ParamTags(`group:"mission_checkers"`),
 		),
-		fx.Annotate(
-			New,
-			fx.As(new(Service)),
-		),
+		New,
 	),
 )

@@ -23,7 +23,7 @@ func setup(t *testing.T) (
 	*db.Querier,
 	*board.Service,
 	*region.Service,
-	*mission.ServiceImpl,
+	mission.Service,
 ) {
 	t.Helper()
 	querier := db.NewQuerier(t)
@@ -154,7 +154,7 @@ func TestServiceImpl_IsTwoContinentsMissionAccomplished(t *testing.T) {
 
 			boardService.
 				EXPECT().
-				GetContinentsControlledByPlayerQ(ctx, querier, int64(1)).
+				GetContinentsControlledByPlayer(ctx, querier, int64(1)).
 				Return(test.controlledContinents, nil)
 
 			if test.expectedResult {
@@ -170,7 +170,7 @@ func TestServiceImpl_IsTwoContinentsMissionAccomplished(t *testing.T) {
 					Return(nil)
 			}
 
-			result, err := service.IsMissionAccomplishedQ(ctx, querier)
+			result, err := service.IsMissionAccomplished(ctx, querier)
 
 			require.NoError(t, err)
 			require.Equal(t, test.expectedResult, result)
@@ -295,7 +295,7 @@ func TestServiceImpl_IsTwoContinentsPlusOneMissionAccomplished(t *testing.T) {
 
 			boardService.
 				EXPECT().
-				GetContinentsControlledByPlayerQ(ctx, querier, int64(1)).
+				GetContinentsControlledByPlayer(ctx, querier, int64(1)).
 				Return(test.controlledContinents, nil)
 
 			if test.expectedResult {
@@ -311,7 +311,7 @@ func TestServiceImpl_IsTwoContinentsPlusOneMissionAccomplished(t *testing.T) {
 					Return(nil)
 			}
 
-			result, err := service.IsMissionAccomplishedQ(ctx, querier)
+			result, err := service.IsMissionAccomplished(ctx, querier)
 
 			require.NoError(t, err)
 			require.Equal(t, test.expectedResult, result)
@@ -422,7 +422,7 @@ func TestServiceImpl_IsEighteenTerritoriesTwoTroopsMissionAccomplished(t *testin
 
 			regionService.
 				EXPECT().
-				GetPlayerRegionsQ(ctx, querier).
+				GetPlayerRegions(ctx, querier).
 				Return(test.playerRegions, nil)
 
 			if test.expectedResult {
@@ -438,7 +438,7 @@ func TestServiceImpl_IsEighteenTerritoriesTwoTroopsMissionAccomplished(t *testin
 					Return(nil)
 			}
 
-			result, err := service.IsMissionAccomplishedQ(ctx, querier)
+			result, err := service.IsMissionAccomplished(ctx, querier)
 
 			require.NoError(t, err)
 			require.Equal(t, test.expectedResult, result)
@@ -513,7 +513,7 @@ func TestServiceImpl_IsTwentyFourTerritoriesMissionAccomplished(t *testing.T) {
 
 			regionService.
 				EXPECT().
-				GetPlayerRegionsQ(ctx, querier).
+				GetPlayerRegions(ctx, querier).
 				Return(test.playerRegions, nil)
 
 			if test.expectedResult {
@@ -529,7 +529,7 @@ func TestServiceImpl_IsTwentyFourTerritoriesMissionAccomplished(t *testing.T) {
 					Return(nil)
 			}
 
-			result, err := service.IsMissionAccomplishedQ(ctx, querier)
+			result, err := service.IsMissionAccomplished(ctx, querier)
 
 			require.NoError(t, err)
 			require.Equal(t, test.expectedResult, result)
@@ -609,7 +609,7 @@ func TestServiceImpl_IsEliminatePlayerMissionAccomplished(t *testing.T) {
 
 			regionService.
 				EXPECT().
-				GetRegionsControlledByPlayerQ(ctx, querier, int64(2)).
+				GetRegionsControlledByPlayer(ctx, querier, int64(2)).
 				Return(test.regionsControlledByTarget, nil)
 
 			if test.expectedResult {
@@ -625,7 +625,7 @@ func TestServiceImpl_IsEliminatePlayerMissionAccomplished(t *testing.T) {
 					Return(nil)
 			}
 
-			result, err := service.IsMissionAccomplishedQ(ctx, querier)
+			result, err := service.IsMissionAccomplished(ctx, querier)
 
 			require.NoError(t, err)
 			require.Equal(t, test.expectedResult, result)

@@ -24,12 +24,12 @@ func (_m *Advancer) EXPECT() *Advancer_Expecter {
 	return &Advancer_Expecter{mock: &_m.Mock}
 }
 
-// AdvanceQ provides a mock function with given fields: _a0, querier, targetPhase, performResult
-func (_m *Advancer) AdvanceQ(_a0 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType, performResult any) error {
+// Advance provides a mock function with given fields: _a0, querier, targetPhase, performResult
+func (_m *Advancer) Advance(_a0 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType, performResult any) error {
 	ret := _m.Called(_a0, querier, targetPhase, performResult)
 
 	if len(ret) == 0 {
-		panic("no return value specified for AdvanceQ")
+		panic("no return value specified for Advance")
 	}
 
 	var r0 error
@@ -42,33 +42,33 @@ func (_m *Advancer) AdvanceQ(_a0 ctx.GameContext, querier db.Querier, targetPhas
 	return r0
 }
 
-// Advancer_AdvanceQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AdvanceQ'
-type Advancer_AdvanceQ_Call struct {
+// Advancer_Advance_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Advance'
+type Advancer_Advance_Call struct {
 	*mock.Call
 }
 
-// AdvanceQ is a helper method to define mock.On call
+// Advance is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
 //   - targetPhase sqlc.GamePhaseType
 //   - performResult any
-func (_e *Advancer_Expecter) AdvanceQ(_a0 interface{}, querier interface{}, targetPhase interface{}, performResult interface{}) *Advancer_AdvanceQ_Call {
-	return &Advancer_AdvanceQ_Call{Call: _e.mock.On("AdvanceQ", _a0, querier, targetPhase, performResult)}
+func (_e *Advancer_Expecter) Advance(_a0 interface{}, querier interface{}, targetPhase interface{}, performResult interface{}) *Advancer_Advance_Call {
+	return &Advancer_Advance_Call{Call: _e.mock.On("Advance", _a0, querier, targetPhase, performResult)}
 }
 
-func (_c *Advancer_AdvanceQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType, performResult any)) *Advancer_AdvanceQ_Call {
+func (_c *Advancer_Advance_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType, performResult any)) *Advancer_Advance_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(sqlc.GamePhaseType), args[3].(any))
 	})
 	return _c
 }
 
-func (_c *Advancer_AdvanceQ_Call) Return(_a0 error) *Advancer_AdvanceQ_Call {
+func (_c *Advancer_Advance_Call) Return(_a0 error) *Advancer_Advance_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Advancer_AdvanceQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, sqlc.GamePhaseType, any) error) *Advancer_AdvanceQ_Call {
+func (_c *Advancer_Advance_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, sqlc.GamePhaseType, any) error) *Advancer_Advance_Call {
 	_c.Call.Return(run)
 	return _c
 }

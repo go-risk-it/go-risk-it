@@ -10,14 +10,14 @@ import (
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 )
 
-func (s *ServiceImpl) PerformQ(
+func (s *service) Perform(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	move Move,
 ) (any, error) {
 	slog.InfoContext(ctx, "performing deploy move", "move", move)
 
-	deployableTroops, err := s.GetDeployableTroopsQ(ctx, querier)
+	deployableTroops, err := s.GetDeployableTroopsWithQuerier(ctx, querier)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get deployable troops: %w", err)
 	}
@@ -27,7 +27,7 @@ func (s *ServiceImpl) PerformQ(
 		return nil, domainerrors.NewValidationError("not enough deployable troops")
 	}
 
-	thisRegion, err := s.regionService.GetRegionQ(ctx, querier, move.RegionID)
+	thisRegion, err := s.regionService.GetRegion(ctx, querier, move.RegionID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get region: %w", err)
 	}
@@ -53,7 +53,7 @@ func (s *ServiceImpl) PerformQ(
 	return nil, nil //nolint:nilnil // no result needed for deploy
 }
 
-func (s *ServiceImpl) executeDeploy(
+func (s *service) executeDeploy(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	region *sqlc.GetRegionsByGameRow,
@@ -67,11 +67,11 @@ func (s *ServiceImpl) executeDeploy(
 		troops,
 	)
 
-	if err := s.decreaseDeployableTroopsQ(ctx, querier, troops); err != nil {
+	if err := s.decreaseDeployableTroops(ctx, querier, troops); err != nil {
 		return fmt.Errorf("failed to decrease deployable troops: %w", err)
 	}
 
-	if err := s.regionService.UpdateTroopsInRegionQ(ctx, querier, region, troops); err != nil {
+	if err := s.regionService.UpdateTroopsInRegion(ctx, querier, region, troops); err != nil {
 		return fmt.Errorf("failed to increase region troops: %w", err)
 	}
 
@@ -86,7 +86,7 @@ func (s *ServiceImpl) executeDeploy(
 	return nil
 }
 
-func (s *ServiceImpl) decreaseDeployableTroopsQ(
+func (s *service) decreaseDeployableTroops(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	troops int64,

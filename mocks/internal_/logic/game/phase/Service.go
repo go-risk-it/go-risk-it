@@ -24,12 +24,12 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
-// InsertPhaseQ provides a mock function with given fields: _a0, querier, phaseType
-func (_m *Service) InsertPhaseQ(_a0 ctx.GameContext, querier db.Querier, phaseType sqlc.GamePhaseType) (*sqlc.GamePhase, error) {
+// InsertPhase provides a mock function with given fields: _a0, querier, phaseType
+func (_m *Service) InsertPhase(_a0 ctx.GameContext, querier db.Querier, phaseType sqlc.GamePhaseType) (*sqlc.GamePhase, error) {
 	ret := _m.Called(_a0, querier, phaseType)
 
 	if len(ret) == 0 {
-		panic("no return value specified for InsertPhaseQ")
+		panic("no return value specified for InsertPhase")
 	}
 
 	var r0 *sqlc.GamePhase
@@ -54,32 +54,32 @@ func (_m *Service) InsertPhaseQ(_a0 ctx.GameContext, querier db.Querier, phaseTy
 	return r0, r1
 }
 
-// Service_InsertPhaseQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertPhaseQ'
-type Service_InsertPhaseQ_Call struct {
+// Service_InsertPhase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertPhase'
+type Service_InsertPhase_Call struct {
 	*mock.Call
 }
 
-// InsertPhaseQ is a helper method to define mock.On call
+// InsertPhase is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
 //   - phaseType sqlc.GamePhaseType
-func (_e *Service_Expecter) InsertPhaseQ(_a0 interface{}, querier interface{}, phaseType interface{}) *Service_InsertPhaseQ_Call {
-	return &Service_InsertPhaseQ_Call{Call: _e.mock.On("InsertPhaseQ", _a0, querier, phaseType)}
+func (_e *Service_Expecter) InsertPhase(_a0 interface{}, querier interface{}, phaseType interface{}) *Service_InsertPhase_Call {
+	return &Service_InsertPhase_Call{Call: _e.mock.On("InsertPhase", _a0, querier, phaseType)}
 }
 
-func (_c *Service_InsertPhaseQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, phaseType sqlc.GamePhaseType)) *Service_InsertPhaseQ_Call {
+func (_c *Service_InsertPhase_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, phaseType sqlc.GamePhaseType)) *Service_InsertPhase_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(sqlc.GamePhaseType))
 	})
 	return _c
 }
 
-func (_c *Service_InsertPhaseQ_Call) Return(_a0 *sqlc.GamePhase, _a1 error) *Service_InsertPhaseQ_Call {
+func (_c *Service_InsertPhase_Call) Return(_a0 *sqlc.GamePhase, _a1 error) *Service_InsertPhase_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_InsertPhaseQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, sqlc.GamePhaseType) (*sqlc.GamePhase, error)) *Service_InsertPhaseQ_Call {
+func (_c *Service_InsertPhase_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, sqlc.GamePhaseType) (*sqlc.GamePhase, error)) *Service_InsertPhase_Call {
 	_c.Call.Return(run)
 	return _c
 }

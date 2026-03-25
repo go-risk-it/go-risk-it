@@ -12,19 +12,19 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/validation"
 )
 
-func (s *ServiceImpl) PerformQ(
+func (s *service) Perform(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	move Move,
 ) (any, error) {
 	slog.InfoContext(ctx, "performing attack move", "move", move)
 
-	attackingRegion, err := s.regionService.GetRegionQ(ctx, querier, move.AttackingRegionID)
+	attackingRegion, err := s.regionService.GetRegion(ctx, querier, move.AttackingRegionID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get attacking region: %w", err)
 	}
 
-	defendingRegion, err := s.regionService.GetRegionQ(ctx, querier, move.DefendingRegionID)
+	defendingRegion, err := s.regionService.GetRegion(ctx, querier, move.DefendingRegionID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get defending region: %w", err)
 	}
@@ -49,7 +49,7 @@ func (s *ServiceImpl) PerformQ(
 	return result, nil
 }
 
-func (s *ServiceImpl) perform(
+func (s *service) perform(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	attackingRegion *sqlc.GetRegionsByGameRow,
@@ -65,7 +65,7 @@ func (s *ServiceImpl) perform(
 
 	slog.InfoContext(ctx, "updating region troops")
 
-	if err := s.regionService.UpdateTroopsInRegionQ(
+	if err := s.regionService.UpdateTroopsInRegion(
 		ctx,
 		querier,
 		attackingRegion,
@@ -74,7 +74,7 @@ func (s *ServiceImpl) perform(
 		return nil, fmt.Errorf("failed to decrease troops in attacking region: %w", err)
 	}
 
-	if err := s.regionService.UpdateTroopsInRegionQ(
+	if err := s.regionService.UpdateTroopsInRegion(
 		ctx,
 		querier,
 		defendingRegion,
@@ -120,7 +120,7 @@ func descending(a, b int) int {
 	return b - a
 }
 
-func (s *ServiceImpl) validate(
+func (s *service) validate(
 	ctx ctx.GameContext,
 	attackingRegion *sqlc.GetRegionsByGameRow,
 	defendingRegion *sqlc.GetRegionsByGameRow,

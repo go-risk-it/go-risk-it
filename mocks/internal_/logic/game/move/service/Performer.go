@@ -22,12 +22,12 @@ func (_m *Performer[T]) EXPECT() *Performer_Expecter[T] {
 	return &Performer_Expecter[T]{mock: &_m.Mock}
 }
 
-// PerformQ provides a mock function with given fields: _a0, querier, move
-func (_m *Performer[T]) PerformQ(_a0 ctx.GameContext, querier db.Querier, move T) (any, error) {
+// Perform provides a mock function with given fields: _a0, querier, move
+func (_m *Performer[T]) Perform(_a0 ctx.GameContext, querier db.Querier, move T) (any, error) {
 	ret := _m.Called(_a0, querier, move)
 
 	if len(ret) == 0 {
-		panic("no return value specified for PerformQ")
+		panic("no return value specified for Perform")
 	}
 
 	var r0 any
@@ -52,32 +52,32 @@ func (_m *Performer[T]) PerformQ(_a0 ctx.GameContext, querier db.Querier, move T
 	return r0, r1
 }
 
-// Performer_PerformQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PerformQ'
-type Performer_PerformQ_Call[T any] struct {
+// Performer_Perform_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Perform'
+type Performer_Perform_Call[T any] struct {
 	*mock.Call
 }
 
-// PerformQ is a helper method to define mock.On call
+// Perform is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
 //   - move T
-func (_e *Performer_Expecter[T]) PerformQ(_a0 interface{}, querier interface{}, move interface{}) *Performer_PerformQ_Call[T] {
-	return &Performer_PerformQ_Call[T]{Call: _e.mock.On("PerformQ", _a0, querier, move)}
+func (_e *Performer_Expecter[T]) Perform(_a0 interface{}, querier interface{}, move interface{}) *Performer_Perform_Call[T] {
+	return &Performer_Perform_Call[T]{Call: _e.mock.On("Perform", _a0, querier, move)}
 }
 
-func (_c *Performer_PerformQ_Call[T]) Run(run func(_a0 ctx.GameContext, querier db.Querier, move T)) *Performer_PerformQ_Call[T] {
+func (_c *Performer_Perform_Call[T]) Run(run func(_a0 ctx.GameContext, querier db.Querier, move T)) *Performer_Perform_Call[T] {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(T))
 	})
 	return _c
 }
 
-func (_c *Performer_PerformQ_Call[T]) Return(_a0 any, _a1 error) *Performer_PerformQ_Call[T] {
+func (_c *Performer_Perform_Call[T]) Return(_a0 any, _a1 error) *Performer_Perform_Call[T] {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Performer_PerformQ_Call[T]) RunAndReturn(run func(ctx.GameContext, db.Querier, T) (any, error)) *Performer_PerformQ_Call[T] {
+func (_c *Performer_Perform_Call[T]) RunAndReturn(run func(ctx.GameContext, db.Querier, T) (any, error)) *Performer_Perform_Call[T] {
 	_c.Call.Return(run)
 	return _c
 }

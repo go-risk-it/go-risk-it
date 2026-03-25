@@ -46,7 +46,7 @@ func (c *GameController) CreateGame(
 		}
 	}
 
-	gameID, err := c.creationService.CreateGameWithTx(ctx, regions, players)
+	gameID, err := c.creationService.CreateGame(ctx, regions, players)
 	if err != nil {
 		return -1, fmt.Errorf("failed to create game: %w", err)
 	}

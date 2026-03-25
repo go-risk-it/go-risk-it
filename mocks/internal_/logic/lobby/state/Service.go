@@ -82,12 +82,12 @@ func (_c *Service_GetLobbyState_Call) RunAndReturn(run func(ctx.LobbyContext) (*
 	return _c
 }
 
-// GetLobbyStateQ provides a mock function with given fields: _a0, querier
-func (_m *Service) GetLobbyStateQ(_a0 ctx.LobbyContext, querier db.Querier) (*state.Lobby, error) {
+// GetLobbyStateWithQuerier provides a mock function with given fields: _a0, querier
+func (_m *Service) GetLobbyStateWithQuerier(_a0 ctx.LobbyContext, querier db.Querier) (*state.Lobby, error) {
 	ret := _m.Called(_a0, querier)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetLobbyStateQ")
+		panic("no return value specified for GetLobbyStateWithQuerier")
 	}
 
 	var r0 *state.Lobby
@@ -112,31 +112,31 @@ func (_m *Service) GetLobbyStateQ(_a0 ctx.LobbyContext, querier db.Querier) (*st
 	return r0, r1
 }
 
-// Service_GetLobbyStateQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLobbyStateQ'
-type Service_GetLobbyStateQ_Call struct {
+// Service_GetLobbyStateWithQuerier_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLobbyStateWithQuerier'
+type Service_GetLobbyStateWithQuerier_Call struct {
 	*mock.Call
 }
 
-// GetLobbyStateQ is a helper method to define mock.On call
+// GetLobbyStateWithQuerier is a helper method to define mock.On call
 //   - _a0 ctx.LobbyContext
 //   - querier db.Querier
-func (_e *Service_Expecter) GetLobbyStateQ(_a0 interface{}, querier interface{}) *Service_GetLobbyStateQ_Call {
-	return &Service_GetLobbyStateQ_Call{Call: _e.mock.On("GetLobbyStateQ", _a0, querier)}
+func (_e *Service_Expecter) GetLobbyStateWithQuerier(_a0 interface{}, querier interface{}) *Service_GetLobbyStateWithQuerier_Call {
+	return &Service_GetLobbyStateWithQuerier_Call{Call: _e.mock.On("GetLobbyStateWithQuerier", _a0, querier)}
 }
 
-func (_c *Service_GetLobbyStateQ_Call) Run(run func(_a0 ctx.LobbyContext, querier db.Querier)) *Service_GetLobbyStateQ_Call {
+func (_c *Service_GetLobbyStateWithQuerier_Call) Run(run func(_a0 ctx.LobbyContext, querier db.Querier)) *Service_GetLobbyStateWithQuerier_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.LobbyContext), args[1].(db.Querier))
 	})
 	return _c
 }
 
-func (_c *Service_GetLobbyStateQ_Call) Return(_a0 *state.Lobby, _a1 error) *Service_GetLobbyStateQ_Call {
+func (_c *Service_GetLobbyStateWithQuerier_Call) Return(_a0 *state.Lobby, _a1 error) *Service_GetLobbyStateWithQuerier_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_GetLobbyStateQ_Call) RunAndReturn(run func(ctx.LobbyContext, db.Querier) (*state.Lobby, error)) *Service_GetLobbyStateQ_Call {
+func (_c *Service_GetLobbyStateWithQuerier_Call) RunAndReturn(run func(ctx.LobbyContext, db.Querier) (*state.Lobby, error)) *Service_GetLobbyStateWithQuerier_Call {
 	_c.Call.Return(run)
 	return _c
 }

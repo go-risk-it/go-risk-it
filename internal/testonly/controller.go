@@ -10,19 +10,19 @@ type Controller interface {
 	SetupNearWin(ctx context.Context, gameID int64) error
 }
 
-type ControllerImpl struct {
+type controller struct {
 	testOnlyService Service
 }
 
-var _ Controller = (*ControllerImpl)(nil)
+var _ Controller = (*controller)(nil)
 
-func NewController(testOnlyService Service) *ControllerImpl {
-	return &ControllerImpl{
+func NewController(testOnlyService Service) Controller {
+	return &controller{
 		testOnlyService: testOnlyService,
 	}
 }
 
-func (c *ControllerImpl) ResetState(ctx context.Context) error {
+func (c *controller) ResetState(ctx context.Context) error {
 	err := c.testOnlyService.TruncateTables(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to truncate tables: %w", err)
@@ -31,7 +31,7 @@ func (c *ControllerImpl) ResetState(ctx context.Context) error {
 	return nil
 }
 
-func (c *ControllerImpl) SetupNearWin(ctx context.Context, gameID int64) error {
+func (c *controller) SetupNearWin(ctx context.Context, gameID int64) error {
 	err := c.testOnlyService.SetupNearWin(ctx, gameID)
 	if err != nil {
 		return fmt.Errorf("failed to setup near win: %w", err)

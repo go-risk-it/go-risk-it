@@ -10,14 +10,14 @@ import (
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 )
 
-func (s *ServiceImpl) PerformQ(
+func (s *service) Perform(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	move Move,
 ) (any, error) {
 	slog.InfoContext(ctx, "performing conquer move", "move", move)
 
-	phaseState, err := s.GetPhaseStateQ(ctx, querier)
+	phaseState, err := s.GetPhaseStateWithQuerier(ctx, querier)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get phase state: %w", err)
 	}
@@ -29,12 +29,12 @@ func (s *ServiceImpl) PerformQ(
 		)
 	}
 
-	sourceRegion, err := s.regionService.GetRegionQ(ctx, querier, phaseState.SourceRegion)
+	sourceRegion, err := s.regionService.GetRegion(ctx, querier, phaseState.SourceRegion)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get attacking region: %w", err)
 	}
 
-	targetRegion, err := s.regionService.GetRegionQ(ctx, querier, phaseState.TargetRegion)
+	targetRegion, err := s.regionService.GetRegion(ctx, querier, phaseState.TargetRegion)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get defending region: %w", err)
 	}
@@ -68,14 +68,14 @@ func (s *ServiceImpl) PerformQ(
 	return nil, nil //nolint:nilnil // no result needed for conquer
 }
 
-func (s *ServiceImpl) updateRegionTroops(
+func (s *service) updateRegionTroops(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	move Move,
 	sourceRegion *sqlc.GetRegionsByGameRow,
 	targetRegion *sqlc.GetRegionsByGameRow,
 ) (int64, error) {
-	if err := s.regionService.UpdateTroopsInRegionQ(
+	if err := s.regionService.UpdateTroopsInRegion(
 		ctx,
 		querier,
 		sourceRegion,
@@ -84,7 +84,7 @@ func (s *ServiceImpl) updateRegionTroops(
 		return 0, fmt.Errorf("failed to decrease troops in source region: %w", err)
 	}
 
-	if err := s.regionService.UpdateTroopsInRegionQ(
+	if err := s.regionService.UpdateTroopsInRegion(
 		ctx,
 		querier,
 		targetRegion,
@@ -95,7 +95,7 @@ func (s *ServiceImpl) updateRegionTroops(
 
 	slog.InfoContext(ctx, "troops updated successfully")
 
-	defeatedPlayerID, err := s.regionService.UpdateRegionOwnerQ(
+	defeatedPlayerID, err := s.regionService.UpdateRegionOwner(
 		ctx,
 		querier,
 		targetRegion,
@@ -107,12 +107,12 @@ func (s *ServiceImpl) updateRegionTroops(
 	return defeatedPlayerID, nil
 }
 
-func (s *ServiceImpl) isDefenderEliminated(
+func (s *service) isDefenderEliminated(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	defeatedPlayerID int64,
 ) (bool, error) {
-	defeatedPlayerRegions, err := s.regionService.GetRegionsControlledByPlayerQ(
+	defeatedPlayerRegions, err := s.regionService.GetRegionsControlledByPlayer(
 		ctx,
 		querier,
 		defeatedPlayerID,
@@ -124,18 +124,18 @@ func (s *ServiceImpl) isDefenderEliminated(
 	return len(defeatedPlayerRegions) == 0, nil
 }
 
-func (s *ServiceImpl) handlePlayerEliminated(
+func (s *service) handlePlayerEliminated(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	eliminatedPlayerID int64,
 ) error {
 	slog.InfoContext(ctx, "defending player has been eliminated", "defender", eliminatedPlayerID)
 
-	if err := s.cardService.TransferCardsOwnershipQ(ctx, querier, eliminatedPlayerID); err != nil {
+	if err := s.cardService.TransferCardsOwnership(ctx, querier, eliminatedPlayerID); err != nil {
 		return fmt.Errorf("unable to advance phase: %w", err)
 	}
 
-	if err := s.missionService.ReassignMissionsQ(
+	if err := s.missionService.ReassignMissions(
 		ctx,
 		querier,
 		eliminatedPlayerID,

@@ -4,7 +4,10 @@ package management
 
 import (
 	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
+	db "github.com/go-risk-it/go-risk-it/internal/data/lobby/db"
+
 	management "github.com/go-risk-it/go-risk-it/internal/logic/lobby/management"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -79,6 +82,65 @@ func (_c *Service_GetUserLobbies_Call) RunAndReturn(run func(ctx.UserContext) (*
 	return _c
 }
 
+// GetUserLobbiesWithQuerier provides a mock function with given fields: _a0, querier
+func (_m *Service) GetUserLobbiesWithQuerier(_a0 ctx.UserContext, querier db.Querier) (*management.UserLobbies, error) {
+	ret := _m.Called(_a0, querier)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetUserLobbiesWithQuerier")
+	}
+
+	var r0 *management.UserLobbies
+	var r1 error
+	if rf, ok := ret.Get(0).(func(ctx.UserContext, db.Querier) (*management.UserLobbies, error)); ok {
+		return rf(_a0, querier)
+	}
+	if rf, ok := ret.Get(0).(func(ctx.UserContext, db.Querier) *management.UserLobbies); ok {
+		r0 = rf(_a0, querier)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*management.UserLobbies)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(ctx.UserContext, db.Querier) error); ok {
+		r1 = rf(_a0, querier)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Service_GetUserLobbiesWithQuerier_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetUserLobbiesWithQuerier'
+type Service_GetUserLobbiesWithQuerier_Call struct {
+	*mock.Call
+}
+
+// GetUserLobbiesWithQuerier is a helper method to define mock.On call
+//   - _a0 ctx.UserContext
+//   - querier db.Querier
+func (_e *Service_Expecter) GetUserLobbiesWithQuerier(_a0 interface{}, querier interface{}) *Service_GetUserLobbiesWithQuerier_Call {
+	return &Service_GetUserLobbiesWithQuerier_Call{Call: _e.mock.On("GetUserLobbiesWithQuerier", _a0, querier)}
+}
+
+func (_c *Service_GetUserLobbiesWithQuerier_Call) Run(run func(_a0 ctx.UserContext, querier db.Querier)) *Service_GetUserLobbiesWithQuerier_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.UserContext), args[1].(db.Querier))
+	})
+	return _c
+}
+
+func (_c *Service_GetUserLobbiesWithQuerier_Call) Return(_a0 *management.UserLobbies, _a1 error) *Service_GetUserLobbiesWithQuerier_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Service_GetUserLobbiesWithQuerier_Call) RunAndReturn(run func(ctx.UserContext, db.Querier) (*management.UserLobbies, error)) *Service_GetUserLobbiesWithQuerier_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // JoinLobby provides a mock function with given fields: _a0, name
 func (_m *Service) JoinLobby(_a0 ctx.LobbyContext, name string) error {
 	ret := _m.Called(_a0, name)
@@ -122,6 +184,54 @@ func (_c *Service_JoinLobby_Call) Return(_a0 error) *Service_JoinLobby_Call {
 }
 
 func (_c *Service_JoinLobby_Call) RunAndReturn(run func(ctx.LobbyContext, string) error) *Service_JoinLobby_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// JoinLobbyWithQuerier provides a mock function with given fields: _a0, querier, name
+func (_m *Service) JoinLobbyWithQuerier(_a0 ctx.LobbyContext, querier db.Querier, name string) error {
+	ret := _m.Called(_a0, querier, name)
+
+	if len(ret) == 0 {
+		panic("no return value specified for JoinLobbyWithQuerier")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(ctx.LobbyContext, db.Querier, string) error); ok {
+		r0 = rf(_a0, querier, name)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Service_JoinLobbyWithQuerier_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'JoinLobbyWithQuerier'
+type Service_JoinLobbyWithQuerier_Call struct {
+	*mock.Call
+}
+
+// JoinLobbyWithQuerier is a helper method to define mock.On call
+//   - _a0 ctx.LobbyContext
+//   - querier db.Querier
+//   - name string
+func (_e *Service_Expecter) JoinLobbyWithQuerier(_a0 interface{}, querier interface{}, name interface{}) *Service_JoinLobbyWithQuerier_Call {
+	return &Service_JoinLobbyWithQuerier_Call{Call: _e.mock.On("JoinLobbyWithQuerier", _a0, querier, name)}
+}
+
+func (_c *Service_JoinLobbyWithQuerier_Call) Run(run func(_a0 ctx.LobbyContext, querier db.Querier, name string)) *Service_JoinLobbyWithQuerier_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.LobbyContext), args[1].(db.Querier), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *Service_JoinLobbyWithQuerier_Call) Return(_a0 error) *Service_JoinLobbyWithQuerier_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Service_JoinLobbyWithQuerier_Call) RunAndReturn(run func(ctx.LobbyContext, db.Querier, string) error) *Service_JoinLobbyWithQuerier_Call {
 	_c.Call.Return(run)
 	return _c
 }

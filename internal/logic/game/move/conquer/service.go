@@ -10,7 +10,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/card"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
+	moveservice "github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
 )
@@ -20,12 +20,15 @@ type Move struct {
 }
 
 type Service interface {
-	service.Service[Move]
+	moveservice.Service[Move]
 	GetPhaseState(ctx ctx.GameContext) (sqlc.GetConquerPhaseStateRow, error)
-	GetPhaseStateQ(ctx ctx.GameContext, querier db.Querier) (sqlc.GetConquerPhaseStateRow, error)
+	GetPhaseStateWithQuerier(
+		ctx ctx.GameContext,
+		querier db.Querier,
+	) (sqlc.GetConquerPhaseStateRow, error)
 }
 
-type ServiceImpl struct {
+type service struct {
 	querier        db.Querier
 	attackService  attack.Service
 	cardService    card.Service
@@ -41,8 +44,8 @@ func NewService(
 	missionService mission.Service,
 	phaseService phase.Service,
 	regionService region.Service,
-) *ServiceImpl {
-	return &ServiceImpl{
+) (Service, moveservice.Service[Move]) {
+	svc := &service{
 		querier:        querier,
 		attackService:  attackService,
 		cardService:    cardService,
@@ -50,15 +53,17 @@ func NewService(
 		phaseService:   phaseService,
 		regionService:  regionService,
 	}
+
+	return svc, svc
 }
 
-var _ Service = (*ServiceImpl)(nil)
+var _ Service = (*service)(nil)
 
-func (s *ServiceImpl) GetPhaseState(ctx ctx.GameContext) (sqlc.GetConquerPhaseStateRow, error) {
-	return s.GetPhaseStateQ(ctx, s.querier)
+func (s *service) GetPhaseState(ctx ctx.GameContext) (sqlc.GetConquerPhaseStateRow, error) {
+	return s.GetPhaseStateWithQuerier(ctx, s.querier)
 }
 
-func (s *ServiceImpl) GetPhaseStateQ(
+func (s *service) GetPhaseStateWithQuerier(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) (sqlc.GetConquerPhaseStateRow, error) {
@@ -77,6 +82,6 @@ func (s *ServiceImpl) GetPhaseStateQ(
 	return conquerPhase, nil
 }
 
-func (s *ServiceImpl) PhaseType() sqlc.GamePhaseType {
+func (s *service) PhaseType() sqlc.GamePhaseType {
 	return sqlc.GamePhaseTypeCONQUER
 }

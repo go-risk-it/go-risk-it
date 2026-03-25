@@ -16,10 +16,5 @@ func NewRNG() RNG {
 }
 
 var Module = fx.Options(
-	fx.Provide(
-		fx.Annotate(
-			NewRNG,
-			fx.As(new(RNG)),
-		),
-	),
+	fx.Provide(NewRNG),
 )

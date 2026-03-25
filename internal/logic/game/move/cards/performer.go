@@ -11,7 +11,7 @@ import (
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 )
 
-func (s *ServiceImpl) PerformQ(
+func (s *service) Perform(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	move Move,
@@ -46,7 +46,7 @@ func (s *ServiceImpl) PerformQ(
 	return result, nil
 }
 
-func (s *ServiceImpl) buildCardIndex(
+func (s *service) buildCardIndex(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) (map[int64]sqlc.GetCardsForPlayerRow, error) {
@@ -66,7 +66,7 @@ func (s *ServiceImpl) buildCardIndex(
 	return cardIndex, nil
 }
 
-func (s *ServiceImpl) processCombinations(
+func (s *service) processCombinations(
 	ctx ctx.GameContext,
 	move Move,
 	cardIndex map[int64]sqlc.GetCardsForPlayerRow,
@@ -107,7 +107,7 @@ type RegionTroopGrant struct {
 	RegionExternalReference string `json:"regionExternalReference"`
 }
 
-func (s *ServiceImpl) grantRegionTroops(
+func (s *service) grantRegionTroops(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	cardIndex map[int64]sqlc.GetCardsForPlayerRow,
@@ -228,7 +228,7 @@ func getCardValue(cardType sqlc.GameCardType) int64 {
 	}
 }
 
-func (s *ServiceImpl) getRegionTroopGrants(
+func (s *service) getRegionTroopGrants(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	cardIndex map[int64]sqlc.GetCardsForPlayerRow,
@@ -236,7 +236,7 @@ func (s *ServiceImpl) getRegionTroopGrants(
 ) ([]RegionTroopGrant, error) {
 	result := make([]RegionTroopGrant, 0)
 
-	regions, err := s.regionService.GetRegionsQ(ctx, querier)
+	regions, err := s.regionService.GetRegionsWithQuerier(ctx, querier)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get regions: %w", err)
 	}

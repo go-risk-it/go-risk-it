@@ -7,7 +7,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
+	moveservice "github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
 )
@@ -19,36 +19,38 @@ type Move struct {
 }
 
 type Service interface {
-	service.Service[Move]
+	moveservice.Service[Move]
 	GetDeployableTroops(ctx ctx.GameContext) (int64, error)
-	GetDeployableTroopsQ(ctx ctx.GameContext, querier db.Querier) (int64, error)
+	GetDeployableTroopsWithQuerier(ctx ctx.GameContext, querier db.Querier) (int64, error)
 }
 
-type ServiceImpl struct {
+type service struct {
 	querier       db.Querier
 	phaseService  phase.Service
 	regionService region.Service
 }
 
-var _ Service = (*ServiceImpl)(nil)
+var _ Service = (*service)(nil)
 
 func NewService(
 	querier db.Querier,
 	phaseService phase.Service,
 	regionService region.Service,
-) *ServiceImpl {
-	return &ServiceImpl{
+) (Service, moveservice.Service[Move]) {
+	svc := &service{
 		querier:       querier,
 		phaseService:  phaseService,
 		regionService: regionService,
 	}
+
+	return svc, svc
 }
 
-func (s *ServiceImpl) GetDeployableTroops(ctx ctx.GameContext) (int64, error) {
-	return s.GetDeployableTroopsQ(ctx, s.querier)
+func (s *service) GetDeployableTroops(ctx ctx.GameContext) (int64, error) {
+	return s.GetDeployableTroopsWithQuerier(ctx, s.querier)
 }
 
-func (s *ServiceImpl) GetDeployableTroopsQ(
+func (s *service) GetDeployableTroopsWithQuerier(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) (int64, error) {
@@ -64,6 +66,6 @@ func (s *ServiceImpl) GetDeployableTroopsQ(
 	return deployableTroops, nil
 }
 
-func (s *ServiceImpl) PhaseType() sqlc.GamePhaseType {
+func (s *service) PhaseType() sqlc.GamePhaseType {
 	return sqlc.GamePhaseTypeDEPLOY
 }

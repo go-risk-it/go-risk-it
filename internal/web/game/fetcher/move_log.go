@@ -15,24 +15,25 @@ import (
 type MoveLogFetcher interface {
 	Fetcher
 }
-type MoveLogFetcherImpl struct {
+
+type moveLogFetcher struct {
 	historyConfig     config.HistoryConfig
 	moveLogController *controller.MoveLogController
 }
 
-var _ MoveLogFetcher = (*MoveLogFetcherImpl)(nil)
+var _ MoveLogFetcher = (*moveLogFetcher)(nil)
 
 func NewMoveLogFetcher(
 	historyConfig config.HistoryConfig,
 	moveLogController *controller.MoveLogController,
-) *MoveLogFetcherImpl {
-	return &MoveLogFetcherImpl{
+) MoveLogFetcher {
+	return &moveLogFetcher{
 		historyConfig:     historyConfig,
 		moveLogController: moveLogController,
 	}
 }
 
-func (f *MoveLogFetcherImpl) FetchState(
+func (f *moveLogFetcher) FetchState(
 	context ctx.GameContext,
 	stateChannel chan json.RawMessage,
 ) {

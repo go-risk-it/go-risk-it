@@ -8,7 +8,7 @@ import (
 
 type BaseMission interface {
 	Type() sqlc.GameMissionType
-	PersistQ(ctx ctx.GameContext, querier db.Querier, missionID int64) error
+	Persist(ctx ctx.GameContext, querier db.Querier, missionID int64) error
 }
 
 type TwoContinentsMission struct {
@@ -49,7 +49,7 @@ func (m *EliminatePlayerMission) Type() sqlc.GameMissionType {
 	return sqlc.GameMissionTypeELIMINATEPLAYER
 }
 
-func (m *TwoContinentsMission) PersistQ(
+func (m *TwoContinentsMission) Persist(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	missionID int64,
@@ -63,7 +63,7 @@ func (m *TwoContinentsMission) PersistQ(
 		})
 }
 
-func (m *TwoContinentsPlusOneMission) PersistQ(
+func (m *TwoContinentsPlusOneMission) Persist(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	missionID int64,
@@ -77,7 +77,7 @@ func (m *TwoContinentsPlusOneMission) PersistQ(
 		})
 }
 
-func (m *EliminatePlayerMission) PersistQ(
+func (m *EliminatePlayerMission) Persist(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	missionID int64,
@@ -90,7 +90,7 @@ func (m *EliminatePlayerMission) PersistQ(
 		})
 }
 
-func (m *EighteenTerritoriesTwoTroopsMission) PersistQ(
+func (m *EighteenTerritoriesTwoTroopsMission) Persist(
 	_ ctx.GameContext,
 	_ db.Querier,
 	_ int64,
@@ -98,7 +98,7 @@ func (m *EighteenTerritoriesTwoTroopsMission) PersistQ(
 	return nil
 }
 
-func (m *TwentyFourTerritoriesMission) PersistQ(
+func (m *TwentyFourTerritoriesMission) Persist(
 	_ ctx.GameContext,
 	_ db.Querier,
 	_ int64,

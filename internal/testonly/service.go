@@ -15,15 +15,15 @@ type Service interface {
 	SetupNearWin(ctx context.Context, gameID int64) error
 }
 
-type ServiceImpl struct {
+type service struct {
 	pool     db.DB
 	dbConfig config.DatabaseConfig
 	tables   []string
 }
 
-var _ Service = (*ServiceImpl)(nil)
+var _ Service = (*service)(nil)
 
-func NewService(pool db.DB, dbConfig config.DatabaseConfig) *ServiceImpl {
+func NewService(pool db.DB, dbConfig config.DatabaseConfig) Service {
 	tables := []string{
 		"game.card",
 		"game.conquer_phase",
@@ -42,10 +42,10 @@ func NewService(pool db.DB, dbConfig config.DatabaseConfig) *ServiceImpl {
 		"lobby.participant",
 	}
 
-	return &ServiceImpl{pool: pool, dbConfig: dbConfig, tables: tables}
+	return &service{pool: pool, dbConfig: dbConfig, tables: tables}
 }
 
-func (s *ServiceImpl) TruncateTables(ctx context.Context) error {
+func (s *service) TruncateTables(ctx context.Context) error {
 	slog.InfoContext(ctx, "Truncating tables", "tables", s.tables)
 
 	for _, table := range s.tables {
@@ -62,7 +62,7 @@ func (s *ServiceImpl) TruncateTables(ctx context.Context) error {
 	return nil
 }
 
-func (s *ServiceImpl) SetupNearWin(ctx context.Context, gameID int64) error {
+func (s *service) SetupNearWin(ctx context.Context, gameID int64) error {
 	slog.InfoContext(ctx, "Setting up near-win state", "gameID", gameID)
 
 	transaction, err := s.pool.BeginTx(ctx, pgx.TxOptions{})

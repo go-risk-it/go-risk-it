@@ -33,7 +33,7 @@ func (c *EliminatePlayerChecker) Check(
 		return false, fmt.Errorf("failed to get eliminate player mission: %w", err)
 	}
 
-	targetPlayerRegions, err := c.regionService.GetRegionsControlledByPlayerQ(
+	targetPlayerRegions, err := c.regionService.GetRegionsControlledByPlayer(
 		ctx,
 		querier,
 		mission.TargetPlayerID,

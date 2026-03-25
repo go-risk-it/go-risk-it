@@ -30,7 +30,7 @@ func setup(t *testing.T) (
 	playerService := player.NewService(t)
 	regionService := region.NewService(t)
 	rng := rand.NewRNG(t)
-	service := cards.NewService(boardService, phaseService, playerService, regionService, rng)
+	service, _ := cards.NewService(boardService, phaseService, playerService, regionService, rng)
 
 	return querier, service, regionService
 }
@@ -217,7 +217,7 @@ func TestServiceImpl_InvalidCombinations(t *testing.T) {
 					card(11, sqlc.GameCardTypeJOLLY),
 				}, nil)
 
-			_, err := service.PerformQ(ctx, querier, cards.Move{
+			_, err := service.Perform(ctx, querier, cards.Move{
 				Combinations: test.combinations,
 			})
 
@@ -322,10 +322,10 @@ func TestServiceImpl_ValidCombinations(t *testing.T) {
 				Return(nil)
 			regionService.
 				EXPECT().
-				GetRegionsQ(ctx, querier).
+				GetRegionsWithQuerier(ctx, querier).
 				Return(regions, nil)
 
-			result, err := service.PerformQ(ctx, querier, cards.Move{
+			result, err := service.Perform(ctx, querier, cards.Move{
 				Combinations: test.combinations,
 			})
 

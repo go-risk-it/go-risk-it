@@ -13,19 +13,19 @@ type LobbyStateFetcher interface {
 	Fetcher
 }
 
-type LobbyStateFetcherImpl struct {
+type lobbyStateFetcher struct {
 	stateController *controller.StateController
 }
 
-var _ LobbyStateFetcher = (*LobbyStateFetcherImpl)(nil)
+var _ LobbyStateFetcher = (*lobbyStateFetcher)(nil)
 
-func NewLobbyStateFetcher(stateController *controller.StateController) *LobbyStateFetcherImpl {
-	return &LobbyStateFetcherImpl{
+func NewLobbyStateFetcher(stateController *controller.StateController) LobbyStateFetcher {
+	return &lobbyStateFetcher{
 		stateController: stateController,
 	}
 }
 
-func (f *LobbyStateFetcherImpl) FetchState(
+func (f *lobbyStateFetcher) FetchState(
 	context ctx.LobbyContext,
 	stateChannel chan json.RawMessage,
 ) {

@@ -24,71 +24,12 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
-// CreateGameQ provides a mock function with given fields: _a0, querier, regions, players
-func (_m *Service) CreateGameQ(_a0 ctx.UserContext, querier db.Querier, regions []string, players []player.Player) (int64, error) {
-	ret := _m.Called(_a0, querier, regions, players)
-
-	if len(ret) == 0 {
-		panic("no return value specified for CreateGameQ")
-	}
-
-	var r0 int64
-	var r1 error
-	if rf, ok := ret.Get(0).(func(ctx.UserContext, db.Querier, []string, []player.Player) (int64, error)); ok {
-		return rf(_a0, querier, regions, players)
-	}
-	if rf, ok := ret.Get(0).(func(ctx.UserContext, db.Querier, []string, []player.Player) int64); ok {
-		r0 = rf(_a0, querier, regions, players)
-	} else {
-		r0 = ret.Get(0).(int64)
-	}
-
-	if rf, ok := ret.Get(1).(func(ctx.UserContext, db.Querier, []string, []player.Player) error); ok {
-		r1 = rf(_a0, querier, regions, players)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// Service_CreateGameQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateGameQ'
-type Service_CreateGameQ_Call struct {
-	*mock.Call
-}
-
-// CreateGameQ is a helper method to define mock.On call
-//   - _a0 ctx.UserContext
-//   - querier db.Querier
-//   - regions []string
-//   - players []player.Player
-func (_e *Service_Expecter) CreateGameQ(_a0 interface{}, querier interface{}, regions interface{}, players interface{}) *Service_CreateGameQ_Call {
-	return &Service_CreateGameQ_Call{Call: _e.mock.On("CreateGameQ", _a0, querier, regions, players)}
-}
-
-func (_c *Service_CreateGameQ_Call) Run(run func(_a0 ctx.UserContext, querier db.Querier, regions []string, players []player.Player)) *Service_CreateGameQ_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(ctx.UserContext), args[1].(db.Querier), args[2].([]string), args[3].([]player.Player))
-	})
-	return _c
-}
-
-func (_c *Service_CreateGameQ_Call) Return(_a0 int64, _a1 error) *Service_CreateGameQ_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *Service_CreateGameQ_Call) RunAndReturn(run func(ctx.UserContext, db.Querier, []string, []player.Player) (int64, error)) *Service_CreateGameQ_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// CreateGameWithTx provides a mock function with given fields: _a0, regions, players
-func (_m *Service) CreateGameWithTx(_a0 ctx.UserContext, regions []string, players []player.Player) (int64, error) {
+// CreateGame provides a mock function with given fields: _a0, regions, players
+func (_m *Service) CreateGame(_a0 ctx.UserContext, regions []string, players []player.Player) (int64, error) {
 	ret := _m.Called(_a0, regions, players)
 
 	if len(ret) == 0 {
-		panic("no return value specified for CreateGameWithTx")
+		panic("no return value specified for CreateGame")
 	}
 
 	var r0 int64
@@ -111,32 +52,91 @@ func (_m *Service) CreateGameWithTx(_a0 ctx.UserContext, regions []string, playe
 	return r0, r1
 }
 
-// Service_CreateGameWithTx_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateGameWithTx'
-type Service_CreateGameWithTx_Call struct {
+// Service_CreateGame_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateGame'
+type Service_CreateGame_Call struct {
 	*mock.Call
 }
 
-// CreateGameWithTx is a helper method to define mock.On call
+// CreateGame is a helper method to define mock.On call
 //   - _a0 ctx.UserContext
 //   - regions []string
 //   - players []player.Player
-func (_e *Service_Expecter) CreateGameWithTx(_a0 interface{}, regions interface{}, players interface{}) *Service_CreateGameWithTx_Call {
-	return &Service_CreateGameWithTx_Call{Call: _e.mock.On("CreateGameWithTx", _a0, regions, players)}
+func (_e *Service_Expecter) CreateGame(_a0 interface{}, regions interface{}, players interface{}) *Service_CreateGame_Call {
+	return &Service_CreateGame_Call{Call: _e.mock.On("CreateGame", _a0, regions, players)}
 }
 
-func (_c *Service_CreateGameWithTx_Call) Run(run func(_a0 ctx.UserContext, regions []string, players []player.Player)) *Service_CreateGameWithTx_Call {
+func (_c *Service_CreateGame_Call) Run(run func(_a0 ctx.UserContext, regions []string, players []player.Player)) *Service_CreateGame_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.UserContext), args[1].([]string), args[2].([]player.Player))
 	})
 	return _c
 }
 
-func (_c *Service_CreateGameWithTx_Call) Return(_a0 int64, _a1 error) *Service_CreateGameWithTx_Call {
+func (_c *Service_CreateGame_Call) Return(_a0 int64, _a1 error) *Service_CreateGame_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_CreateGameWithTx_Call) RunAndReturn(run func(ctx.UserContext, []string, []player.Player) (int64, error)) *Service_CreateGameWithTx_Call {
+func (_c *Service_CreateGame_Call) RunAndReturn(run func(ctx.UserContext, []string, []player.Player) (int64, error)) *Service_CreateGame_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// CreateGameWithQuerier provides a mock function with given fields: _a0, querier, regions, players
+func (_m *Service) CreateGameWithQuerier(_a0 ctx.UserContext, querier db.Querier, regions []string, players []player.Player) (int64, error) {
+	ret := _m.Called(_a0, querier, regions, players)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateGameWithQuerier")
+	}
+
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(ctx.UserContext, db.Querier, []string, []player.Player) (int64, error)); ok {
+		return rf(_a0, querier, regions, players)
+	}
+	if rf, ok := ret.Get(0).(func(ctx.UserContext, db.Querier, []string, []player.Player) int64); ok {
+		r0 = rf(_a0, querier, regions, players)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	if rf, ok := ret.Get(1).(func(ctx.UserContext, db.Querier, []string, []player.Player) error); ok {
+		r1 = rf(_a0, querier, regions, players)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Service_CreateGameWithQuerier_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateGameWithQuerier'
+type Service_CreateGameWithQuerier_Call struct {
+	*mock.Call
+}
+
+// CreateGameWithQuerier is a helper method to define mock.On call
+//   - _a0 ctx.UserContext
+//   - querier db.Querier
+//   - regions []string
+//   - players []player.Player
+func (_e *Service_Expecter) CreateGameWithQuerier(_a0 interface{}, querier interface{}, regions interface{}, players interface{}) *Service_CreateGameWithQuerier_Call {
+	return &Service_CreateGameWithQuerier_Call{Call: _e.mock.On("CreateGameWithQuerier", _a0, querier, regions, players)}
+}
+
+func (_c *Service_CreateGameWithQuerier_Call) Run(run func(_a0 ctx.UserContext, querier db.Querier, regions []string, players []player.Player)) *Service_CreateGameWithQuerier_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.UserContext), args[1].(db.Querier), args[2].([]string), args[3].([]player.Player))
+	})
+	return _c
+}
+
+func (_c *Service_CreateGameWithQuerier_Call) Return(_a0 int64, _a1 error) *Service_CreateGameWithQuerier_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Service_CreateGameWithQuerier_Call) RunAndReturn(run func(ctx.UserContext, db.Querier, []string, []player.Player) (int64, error)) *Service_CreateGameWithQuerier_Call {
 	_c.Call.Return(run)
 	return _c
 }

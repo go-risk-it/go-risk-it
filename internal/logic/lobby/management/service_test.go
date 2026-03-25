@@ -17,7 +17,7 @@ import (
 
 func setup(t *testing.T) (
 	*db.Querier,
-	*management.ServiceImpl,
+	management.Service,
 ) {
 	t.Helper()
 
@@ -43,7 +43,7 @@ func lobbyContext() ctx.LobbyContext {
 	return ctx.WithLobbyID(userContext(), int64(42))
 }
 
-func TestServiceImpl_JoinLobbyQ_Success(t *testing.T) {
+func TestServiceImpl_JoinLobbyWithQuerier_Success(t *testing.T) {
 	t.Parallel()
 
 	querier, service := setup(t)
@@ -58,12 +58,12 @@ func TestServiceImpl_JoinLobbyQ_Success(t *testing.T) {
 		}).
 		Return(int64(7), nil)
 
-	err := service.JoinLobbyQ(lctx, querier, "Giovanni")
+	err := service.JoinLobbyWithQuerier(lctx, querier, "Giovanni")
 
 	require.NoError(t, err)
 }
 
-func TestServiceImpl_JoinLobbyQ_InsertFails(t *testing.T) {
+func TestServiceImpl_JoinLobbyWithQuerier_InsertFails(t *testing.T) {
 	t.Parallel()
 
 	querier, service := setup(t)
@@ -78,13 +78,13 @@ func TestServiceImpl_JoinLobbyQ_InsertFails(t *testing.T) {
 		}).
 		Return(int64(0), errors.New("duplicate participant"))
 
-	err := service.JoinLobbyQ(lctx, querier, "Giovanni")
+	err := service.JoinLobbyWithQuerier(lctx, querier, "Giovanni")
 
 	require.Error(t, err)
 	require.EqualError(t, err, "failed to insert participant: duplicate participant")
 }
 
-func TestServiceImpl_GetUserLobbiesQ_Success(t *testing.T) {
+func TestServiceImpl_GetUserLobbiesWithQuerier_Success(t *testing.T) {
 	t.Parallel()
 
 	querier, service := setup(t)
@@ -113,7 +113,7 @@ func TestServiceImpl_GetUserLobbiesQ_Success(t *testing.T) {
 		GetJoinableLobbies(uctx, "giovanni").
 		Return(joinableLobbies, nil)
 
-	result, err := service.GetUserLobbiesQ(uctx, querier)
+	result, err := service.GetUserLobbiesWithQuerier(uctx, querier)
 
 	require.NoError(t, err)
 	require.Equal(t, ownedLobbies, result.Owned)
@@ -121,7 +121,7 @@ func TestServiceImpl_GetUserLobbiesQ_Success(t *testing.T) {
 	require.Equal(t, joinableLobbies, result.Joinable)
 }
 
-func TestServiceImpl_GetUserLobbiesQ_Failures(t *testing.T) {
+func TestServiceImpl_GetUserLobbiesWithQuerier_Failures(t *testing.T) {
 	t.Parallel()
 
 	type testCase struct {
@@ -184,7 +184,7 @@ func TestServiceImpl_GetUserLobbiesQ_Failures(t *testing.T) {
 
 			test.setupMocks(querier, uctx)
 
-			result, err := service.GetUserLobbiesQ(uctx, querier)
+			result, err := service.GetUserLobbiesWithQuerier(uctx, querier)
 
 			require.Error(t, err)
 			require.EqualError(t, err, test.expectedError)

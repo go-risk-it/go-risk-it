@@ -18,29 +18,29 @@ type Game struct {
 
 type Service interface {
 	GetGameState(ctx ctx.GameContext) (*Game, error)
-	GetGameStateQ(ctx ctx.GameContext, querier db.Querier) (*Game, error)
+	GetGameStateWithQuerier(ctx ctx.GameContext, querier db.Querier) (*Game, error)
 	GetUserGames(ctx ctx.UserContext) ([]int64, error)
 }
 
-type ServiceImpl struct {
+type service struct {
 	querier db.Querier
 }
 
-var _ Service = (*ServiceImpl)(nil)
+var _ Service = (*service)(nil)
 
 func NewService(
 	querier db.Querier,
-) *ServiceImpl {
-	return &ServiceImpl{
+) Service {
+	return &service{
 		querier: querier,
 	}
 }
 
-func (s *ServiceImpl) GetGameState(ctx ctx.GameContext) (*Game, error) {
-	return s.GetGameStateQ(ctx, s.querier)
+func (s *service) GetGameState(ctx ctx.GameContext) (*Game, error) {
+	return s.GetGameStateWithQuerier(ctx, s.querier)
 }
 
-func (s *ServiceImpl) GetGameStateQ(ctx ctx.GameContext, querier db.Querier) (*Game, error) {
+func (s *service) GetGameStateWithQuerier(ctx ctx.GameContext, querier db.Querier) (*Game, error) {
 	game, err := querier.GetGame(ctx, ctx.GameID())
 	if err != nil {
 		slog.WarnContext(ctx, "failed to get game", "error", err)
@@ -61,7 +61,7 @@ func (s *ServiceImpl) GetGameStateQ(ctx ctx.GameContext, querier db.Querier) (*G
 	}, nil
 }
 
-func (s *ServiceImpl) GetUserGames(ctx ctx.UserContext) ([]int64, error) {
+func (s *service) GetUserGames(ctx ctx.UserContext) ([]int64, error) {
 	slog.InfoContext(ctx, "getting user games")
 
 	userGames, err := s.querier.GetUserGames(ctx, ctx.UserID())

@@ -91,25 +91,25 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 	playerServiceMock := playermock.NewService(t)
 	playerServiceMock.
 		EXPECT().
-		CreatePlayersQ(gameContext, mockQuerier, gameID, users).
+		CreatePlayers(gameContext, mockQuerier, gameID, users).
 		Return(players, nil)
 
 	missionServiceMock := mission.NewService(t)
 	missionServiceMock.
 		EXPECT().
-		CreateMissionsQ(gameContext, mockQuerier, players).
+		CreateMissions(gameContext, mockQuerier, players).
 		Return(nil)
 
 	regionServiceMock := region.NewService(t)
 	regionServiceMock.
 		EXPECT().
-		CreateRegionsQ(gameContext, mockQuerier, players, regions).
+		CreateRegions(gameContext, mockQuerier, players, regions).
 		Return(nil)
 
 	cardServiceMock := card.NewService(t)
 	cardServiceMock.
 		EXPECT().
-		CreateCardsQ(gameContext, mockQuerier).
+		CreateCards(gameContext, mockQuerier).
 		Return(nil)
 
 	// Initialize the state
@@ -123,7 +123,7 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 		timing.NewGameTiming(),
 	)
 
-	gameID, err := service.CreateGameQ(context, mockQuerier, regions, users)
+	gameID, err := service.CreateGameWithQuerier(context, mockQuerier, regions, users)
 
 	require.NoError(t, err)
 	require.Equal(t, int64(1), gameID)
@@ -167,7 +167,7 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 		InsertGame(ctx).Return(sqlc.GameGame{}, errInsertGame)
 
 	// Call the method under test
-	gameID, err := service.CreateGameQ(ctx, querier, []string{}, users)
+	gameID, err := service.CreateGameWithQuerier(ctx, querier, []string{}, users)
 
 	// Assert the result
 	require.Error(t, err)
@@ -178,7 +178,7 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 	querier.AssertExpectations(t)
 }
 
-// returns error if CreatePlayersQ method returns an error.
+// returns error if CreatePlayers method returns an error.
 func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 	t.Parallel()
 
@@ -221,14 +221,14 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 
 	gameContext := ctx.WithGameID(context, gameID)
 
-	// Set up expectations for CreatePlayersQ method
+	// Set up expectations for CreatePlayers method
 	playerService.
 		EXPECT().
-		CreatePlayersQ(gameContext, querier, int64(1), users).
+		CreatePlayers(gameContext, querier, int64(1), users).
 		Return(nil, errCreatePlayers)
 
 	// Call the method under test
-	gameID, err := service.CreateGameQ(context, querier, []string{}, users)
+	gameID, err := service.CreateGameWithQuerier(context, querier, []string{}, users)
 
 	// Assert the result
 	require.Error(t, err)

@@ -14,13 +14,13 @@ import (
 )
 
 type Service interface {
-	CreateMissionsQ(
+	CreateMissions(
 		ctx ctx.GameContext,
 		querier db.Querier,
 		players []sqlc.GamePlayer,
 	) error
-	IsMissionAccomplishedQ(ctx ctx.GameContext, querier db.Querier) (bool, error)
-	ReassignMissionsQ(ctx ctx.GameContext, querier db.Querier, eliminatedPlayerID int64) error
+	IsMissionAccomplished(ctx ctx.GameContext, querier db.Querier) (bool, error)
+	ReassignMissions(ctx ctx.GameContext, querier db.Querier, eliminatedPlayerID int64) error
 
 	GetBaseMission(ctx ctx.GameContext) (sqlc.GameMission, error)
 	GetTwoContinentsMission(
@@ -36,27 +36,28 @@ type Service interface {
 		missionID int64,
 	) (string, error)
 }
-type ServiceImpl struct {
+
+type service struct {
 	rng             rand.RNG
 	querier         db.Querier
 	checkerRegistry *checker.Registry
 }
 
-var _ Service = (*ServiceImpl)(nil)
+var _ Service = (*service)(nil)
 
 func New(
 	rng rand.RNG,
 	querier db.Querier,
 	checkerRegistry *checker.Registry,
-) *ServiceImpl {
-	return &ServiceImpl{
+) Service {
+	return &service{
 		rng:             rng,
 		querier:         querier,
 		checkerRegistry: checkerRegistry,
 	}
 }
 
-func (s *ServiceImpl) GetBaseMission(ctx ctx.GameContext) (sqlc.GameMission, error) {
+func (s *service) GetBaseMission(ctx ctx.GameContext) (sqlc.GameMission, error) {
 	baseMission, err := s.querier.GetMission(ctx, sqlc.GetMissionParams{
 		GameID: ctx.GameID(),
 		UserID: ctx.UserID(),
@@ -68,7 +69,7 @@ func (s *ServiceImpl) GetBaseMission(ctx ctx.GameContext) (sqlc.GameMission, err
 	return baseMission, nil
 }
 
-func (s *ServiceImpl) GetTwoContinentsMission(
+func (s *service) GetTwoContinentsMission(
 	ctx ctx.GameContext,
 	missionID int64,
 ) (TwoContinentsMission, error) {
@@ -83,7 +84,7 @@ func (s *ServiceImpl) GetTwoContinentsMission(
 	}, nil
 }
 
-func (s *ServiceImpl) GetTwoContinentsPlusOneMission(
+func (s *service) GetTwoContinentsPlusOneMission(
 	ctx ctx.GameContext,
 	missionID int64,
 ) (TwoContinentsPlusOneMission, error) {
@@ -101,7 +102,7 @@ func (s *ServiceImpl) GetTwoContinentsPlusOneMission(
 	}, nil
 }
 
-func (s *ServiceImpl) GetEliminatePlayerMission(
+func (s *service) GetEliminatePlayerMission(
 	ctx ctx.GameContext,
 	missionID int64,
 ) (string, error) {
@@ -113,7 +114,7 @@ func (s *ServiceImpl) GetEliminatePlayerMission(
 	return targetUser, nil
 }
 
-func (s *ServiceImpl) CreateMissionsQ(
+func (s *service) CreateMissions(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	players []sqlc.GamePlayer,
@@ -143,7 +144,7 @@ func (s *ServiceImpl) CreateMissionsQ(
 			return fmt.Errorf("failed to insert missions: %w", err)
 		}
 
-		if err := mission.PersistQ(ctx, querier, missionID); err != nil {
+		if err := mission.Persist(ctx, querier, missionID); err != nil {
 			return fmt.Errorf("failed to persist mission specifics: %w", err)
 		}
 	}
@@ -153,7 +154,7 @@ func (s *ServiceImpl) CreateMissionsQ(
 	return nil
 }
 
-func (s *ServiceImpl) pickMission(
+func (s *service) pickMission(
 	player sqlc.GamePlayer,
 	missions []BaseMission,
 	usedMissions []bool,
@@ -172,7 +173,7 @@ func (s *ServiceImpl) pickMission(
 	return nil, errors.New("no missions left")
 }
 
-func (s *ServiceImpl) GetAvailableMissions(players []sqlc.GamePlayer) []BaseMission {
+func (s *service) GetAvailableMissions(players []sqlc.GamePlayer) []BaseMission {
 	missions := make([]BaseMission, 0, 8+len(players))
 	missions = append(missions, []BaseMission{
 		&EighteenTerritoriesTwoTroopsMission{},
@@ -215,7 +216,7 @@ func (s *ServiceImpl) GetAvailableMissions(players []sqlc.GamePlayer) []BaseMiss
 	return missions
 }
 
-func (s *ServiceImpl) IsMissionAccomplishedQ(
+func (s *service) IsMissionAccomplished(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) (bool, error) {
@@ -253,7 +254,7 @@ func (s *ServiceImpl) IsMissionAccomplishedQ(
 	return false, nil
 }
 
-func (s *ServiceImpl) isMissionAccomplished(
+func (s *service) isMissionAccomplished(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	baseMission sqlc.GameMission,
@@ -266,7 +267,7 @@ func (s *ServiceImpl) isMissionAccomplished(
 	return c.Check(ctx, querier, baseMission)
 }
 
-func (s *ServiceImpl) ReassignMissionsQ(
+func (s *service) ReassignMissions(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	eliminatedPlayerID int64,

@@ -9,12 +9,12 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 )
 
-func (s *ServiceImpl) WalkQ(
+func (s *service) Walk(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	voluntaryAdvancement bool,
 ) (sqlc.GamePhaseType, error) {
-	hasConquered, err := s.HasConqueredQ(ctx, querier)
+	hasConquered, err := s.HasConquered(ctx, querier)
 	if err != nil {
 		return sqlc.GamePhaseTypeATTACK, fmt.Errorf(
 			"failed to check if attack has conquered: %w",
@@ -28,7 +28,7 @@ func (s *ServiceImpl) WalkQ(
 		return sqlc.GamePhaseTypeCONQUER, nil
 	}
 
-	canContinueAttacking, err := s.CanContinueAttackingQ(ctx, querier)
+	canContinueAttacking, err := s.CanContinueAttacking(ctx, querier)
 	if err != nil {
 		return sqlc.GamePhaseTypeATTACK, fmt.Errorf(
 			"failed to check if attack can continue: %w",
@@ -45,11 +45,11 @@ func (s *ServiceImpl) WalkQ(
 	return sqlc.GamePhaseTypeATTACK, nil
 }
 
-// HasConqueredQ returns true if the player has conquered any region.
+// HasConquered returns true if the player has conquered any region.
 // This is detected by checking that there is exactly one region
 // (non owned by the player) that has 0 troops.
-func (s *ServiceImpl) HasConqueredQ(ctx ctx.GameContext, querier db.Querier) (bool, error) {
-	regions, err := s.regionService.GetRegionsQ(ctx, querier)
+func (s *service) HasConquered(ctx ctx.GameContext, querier db.Querier) (bool, error) {
+	regions, err := s.regionService.GetRegionsWithQuerier(ctx, querier)
 	if err != nil {
 		return false, fmt.Errorf("failed to get regions: %w", err)
 	}
@@ -70,13 +70,13 @@ func (s *ServiceImpl) HasConqueredQ(ctx ctx.GameContext, querier db.Querier) (bo
 	return false, nil
 }
 
-// CanContinueAttackingQ returns true if the player does not have any attack move available.
+// CanContinueAttacking returns true if the player does not have any attack move available.
 // This is detected by checking that all of the regions owned by the player have exactly 1 troop.
-func (s *ServiceImpl) CanContinueAttackingQ(
+func (s *service) CanContinueAttacking(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) (bool, error) {
-	regions, err := s.regionService.GetRegionsQ(ctx, querier)
+	regions, err := s.regionService.GetRegionsWithQuerier(ctx, querier)
 	if err != nil {
 		return false, fmt.Errorf("failed to get regions: %w", err)
 	}

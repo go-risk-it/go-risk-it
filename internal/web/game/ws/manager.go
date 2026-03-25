@@ -24,7 +24,7 @@ type Manager interface {
 	WriteMessage(ctx ctx.GameContext, message json.RawMessage)
 }
 
-type ManagerImpl struct {
+type manager struct {
 	mu upgradablerwmutex.UpgradableRWMutex
 
 	gameStateService      state.Service
@@ -34,19 +34,19 @@ type ManagerImpl struct {
 	metrics               *metrics.Metrics
 }
 
-func (m *ManagerImpl) GetConnectedPlayers(ctx ctx.GameContext) []string {
+func (m *manager) GetConnectedPlayers(ctx ctx.GameContext) []string {
 	return m.playerConnections(ctx).GetConnectedPlayers(ctx)
 }
 
-var _ Manager = (*ManagerImpl)(nil)
+var _ Manager = (*manager)(nil)
 
 func NewManager(
 	gameStateService state.Service,
 	playerService player.Service,
 	playerConnectedSignal signals.PlayerConnectedSignal,
 	metrics *metrics.Metrics,
-) *ManagerImpl {
-	return &ManagerImpl{
+) Manager {
+	return &manager{
 		gameStateService:      gameStateService,
 		playerService:         playerService,
 		gameConnections:       make(map[int64]*ws.PlayerConnections),
@@ -55,11 +55,11 @@ func NewManager(
 	}
 }
 
-func (m *ManagerImpl) Broadcast(ctx ctx.GameContext, message json.RawMessage) {
+func (m *manager) Broadcast(ctx ctx.GameContext, message json.RawMessage) {
 	m.playerConnections(ctx).Broadcast(ctx, message)
 }
 
-func (m *ManagerImpl) ConnectPlayer(ctx ctx.GameContext, connection *websocket.Conn) {
+func (m *manager) ConnectPlayer(ctx ctx.GameContext, connection *websocket.Conn) {
 	slog.InfoContext(ctx, "connecting player to game")
 
 	if err := m.validateConnectionAttempt(ctx); err != nil {
@@ -80,7 +80,7 @@ func (m *ManagerImpl) ConnectPlayer(ctx ctx.GameContext, connection *websocket.C
 	m.playerConnectedSignal.Emit(ctx, signals.PlayerConnectedData{})
 }
 
-func (m *ManagerImpl) validateConnectionAttempt(ctx ctx.GameContext) error {
+func (m *manager) validateConnectionAttempt(ctx ctx.GameContext) error {
 	gameState, err := m.gameStateService.GetGameState(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get game state: %w", err)
@@ -110,11 +110,11 @@ func userIsParticipatingInGame(ctx ctx.GameContext, players []sqlc.GetPlayersSta
 	return false
 }
 
-func (m *ManagerImpl) WriteMessage(ctx ctx.GameContext, message json.RawMessage) {
+func (m *manager) WriteMessage(ctx ctx.GameContext, message json.RawMessage) {
 	m.playerConnections(ctx).Write(ctx, message)
 }
 
-func (m *ManagerImpl) playerConnections(ctx ctx.GameContext) *ws.PlayerConnections {
+func (m *manager) playerConnections(ctx ctx.GameContext) *ws.PlayerConnections {
 	m.mu.UpgradableRLock()
 	defer m.mu.UpgradableRUnlock()
 

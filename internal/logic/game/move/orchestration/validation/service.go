@@ -13,27 +13,27 @@ import (
 )
 
 type Service interface {
-	ValidateQ(ctx ctx.GameContext, querier db.Querier, game *state.Game) error
+	Validate(ctx ctx.GameContext, querier db.Querier, game *state.Game) error
 }
 
-type ServiceImpl struct {
+type service struct {
 	playerService player.Service
 }
 
-var _ Service = (*ServiceImpl)(nil)
+var _ Service = (*service)(nil)
 
-func New(playerService player.Service) *ServiceImpl {
-	return &ServiceImpl{playerService: playerService}
+func New(playerService player.Service) Service {
+	return &service{playerService: playerService}
 }
 
-func (s *ServiceImpl) ValidateQ(ctx ctx.GameContext, querier db.Querier, game *state.Game) error {
+func (s *service) Validate(ctx ctx.GameContext, querier db.Querier, game *state.Game) error {
 	slog.InfoContext(ctx, "performing generic move validation")
 
 	if game.WinnerUserID != "" {
 		return domainerrors.NewConflictError("game is already over")
 	}
 
-	players, err := s.playerService.GetPlayersQ(ctx, querier)
+	players, err := s.playerService.GetPlayers(ctx, querier)
 	if err != nil {
 		return fmt.Errorf("failed to get players: %w", err)
 	}
@@ -52,7 +52,7 @@ func (s *ServiceImpl) ValidateQ(ctx ctx.GameContext, querier db.Querier, game *s
 	return nil
 }
 
-func (s *ServiceImpl) checkTurn(
+func (s *service) checkTurn(
 	game *state.Game,
 	playersInGame int64,
 	playerTurn int64,

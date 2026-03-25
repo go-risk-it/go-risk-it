@@ -167,8 +167,9 @@ func containsFile(pkg goPackage, name string) bool {
 	return slices.Contains(pkg.GoFiles, name)
 }
 
-// exportedInterfacePattern matches "type <Exported> interface" declarations.
-var exportedInterfacePattern = regexp.MustCompile(`type\s+[A-Z]\w*\s+interface\b`)
+// exportedInterfacePattern matches "type <Exported> interface" declarations,
+// including generic interfaces like "type Service[T any] interface".
+var exportedInterfacePattern = regexp.MustCompile(`type\s+[A-Z]\w*(?:\[.*?\])?\s+interface\b`)
 
 // assertHasExportedInterface verifies that at least one Go source file in the package
 // contains an exported interface declaration.

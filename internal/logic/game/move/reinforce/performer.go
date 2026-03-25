@@ -11,19 +11,19 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/validation"
 )
 
-func (s *ServiceImpl) PerformQ(
+func (s *service) Perform(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	move Move,
 ) (any, error) {
 	slog.InfoContext(ctx, "performing reinforce move", "move", move)
 
-	sourceRegion, err := s.regionService.GetRegionQ(ctx, querier, move.SourceRegionID)
+	sourceRegion, err := s.regionService.GetRegion(ctx, querier, move.SourceRegionID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get source region: %w", err)
 	}
 
-	targetRegion, err := s.regionService.GetRegionQ(ctx, querier, move.TargetRegionID)
+	targetRegion, err := s.regionService.GetRegion(ctx, querier, move.TargetRegionID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get target region: %w", err)
 	}
@@ -41,7 +41,7 @@ func (s *ServiceImpl) PerformQ(
 	return nil, nil //nolint:nilnil // no result needed for reinforce
 }
 
-func (s *ServiceImpl) perform(
+func (s *service) perform(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	sourceRegion *sqlc.GetRegionsByGameRow,
@@ -50,7 +50,7 @@ func (s *ServiceImpl) perform(
 ) error {
 	slog.InfoContext(ctx, "updating region troops")
 
-	if err := s.regionService.UpdateTroopsInRegionQ(
+	if err := s.regionService.UpdateTroopsInRegion(
 		ctx,
 		querier,
 		sourceRegion,
@@ -59,7 +59,7 @@ func (s *ServiceImpl) perform(
 		return fmt.Errorf("failed to decrease troops in attacking region: %w", err)
 	}
 
-	if err := s.regionService.UpdateTroopsInRegionQ(
+	if err := s.regionService.UpdateTroopsInRegion(
 		ctx,
 		querier,
 		targetRegion,
@@ -71,7 +71,7 @@ func (s *ServiceImpl) perform(
 	return nil
 }
 
-func (s *ServiceImpl) validate(
+func (s *service) validate(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	sourceRegion *sqlc.GetRegionsByGameRow,
@@ -88,7 +88,7 @@ func (s *ServiceImpl) validate(
 		return fmt.Errorf("troops check failed: %w", err)
 	}
 
-	canReach, err := s.boardService.CanPlayerReachQ(
+	canReach, err := s.boardService.CanPlayerReach(
 		ctx,
 		querier,
 		sourceRegion.ExternalReference,

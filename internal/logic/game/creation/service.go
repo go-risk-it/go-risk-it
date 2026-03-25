@@ -18,12 +18,12 @@ import (
 )
 
 type Service interface {
-	CreateGameWithTx(
+	CreateGame(
 		ctx ctx.UserContext,
 		regions []string,
 		players []player.Player,
 	) (int64, error)
-	CreateGameQ(
+	CreateGameWithQuerier(
 		ctx ctx.UserContext,
 		querier db.Querier,
 		regions []string,
@@ -31,7 +31,7 @@ type Service interface {
 	) (int64, error)
 }
 
-type ServiceImpl struct {
+type service struct {
 	querier        db.Querier
 	cardService    card.Service
 	missionService mission.Service
@@ -41,7 +41,7 @@ type ServiceImpl struct {
 	gameTiming     *timing.GameTiming
 }
 
-var _ Service = (*ServiceImpl)(nil)
+var _ Service = (*service)(nil)
 
 func NewService(
 	querier db.Querier,
@@ -51,8 +51,8 @@ func NewService(
 	regionService region.Service,
 	metrics *metrics.Metrics,
 	gameTiming *timing.GameTiming,
-) *ServiceImpl {
-	return &ServiceImpl{
+) Service {
+	return &service{
 		querier:        querier,
 		playerService:  playerService,
 		missionService: missionService,
@@ -63,7 +63,7 @@ func NewService(
 	}
 }
 
-func (s *ServiceImpl) CreateGameWithTx(
+func (s *service) CreateGame(
 	ctx ctx.UserContext,
 	regions []string,
 	players []player.Player,
@@ -73,7 +73,7 @@ func (s *ServiceImpl) CreateGameWithTx(
 		ctx,
 		s.metrics,
 		func(qtx db.Querier) (int64, error) {
-			return s.CreateGameQ(ctx, qtx, regions, players)
+			return s.CreateGameWithQuerier(ctx, qtx, regions, players)
 		},
 	)
 	if err != nil {
@@ -87,7 +87,7 @@ func (s *ServiceImpl) CreateGameWithTx(
 	return gameID, nil
 }
 
-func (s *ServiceImpl) CreateGameQ(
+func (s *service) CreateGameWithQuerier(
 	userCtx ctx.UserContext,
 	querier db.Querier,
 	regions []string,
@@ -102,22 +102,22 @@ func (s *ServiceImpl) CreateGameQ(
 
 	gameCtx := ctx.WithGameID(userCtx, game.ID)
 
-	createdPlayers, err := s.playerService.CreatePlayersQ(gameCtx, querier, game.ID, players)
+	createdPlayers, err := s.playerService.CreatePlayers(gameCtx, querier, game.ID, players)
 	if err != nil {
 		return -1, fmt.Errorf("failed to create players: %w", err)
 	}
 
-	if err = s.missionService.CreateMissionsQ(gameCtx, querier, createdPlayers); err != nil {
+	if err = s.missionService.CreateMissions(gameCtx, querier, createdPlayers); err != nil {
 		return -1, fmt.Errorf("failed to create missions: %w", err)
 	}
 
-	if err = s.regionService.CreateRegionsQ(
+	if err = s.regionService.CreateRegions(
 		gameCtx, querier, createdPlayers, regions,
 	); err != nil {
 		return -1, fmt.Errorf("failed to create regions: %w", err)
 	}
 
-	if err = s.cardService.CreateCardsQ(gameCtx, querier); err != nil {
+	if err = s.cardService.CreateCards(gameCtx, querier); err != nil {
 		return -1, fmt.Errorf("failed to create cards: %w", err)
 	}
 
@@ -133,7 +133,7 @@ func (s *ServiceImpl) CreateGameQ(
 	return game.ID, nil
 }
 
-func (s *ServiceImpl) createPhase(
+func (s *service) createPhase(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	game sqlc.GameGame,

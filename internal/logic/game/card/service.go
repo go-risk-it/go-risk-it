@@ -13,22 +13,22 @@ import (
 )
 
 type Service interface {
-	CreateCardsQ(ctx ctx.GameContext, querier db.Querier) error
+	CreateCards(ctx ctx.GameContext, querier db.Querier) error
 	GetCardsForPlayer(ctx ctx.GameContext) ([]sqlc.GetCardsForPlayerRow, error)
-	GetCardsForPlayerQ(
+	GetCardsForPlayerWithQuerier(
 		ctx ctx.GameContext,
 		querier db.Querier,
 	) ([]sqlc.GetCardsForPlayerRow, error)
-	TransferCardsOwnershipQ(ctx ctx.GameContext, querier db.Querier, defendingPlayerID int64) error
+	TransferCardsOwnership(ctx ctx.GameContext, querier db.Querier, defendingPlayerID int64) error
 }
 
-type ServiceImpl struct {
+type service struct {
 	querier       db.Querier
 	regionService region.Service
 	rng           rand.RNG
 }
 
-func (s *ServiceImpl) TransferCardsOwnershipQ(
+func (s *service) TransferCardsOwnership(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	defendingPlayerID int64,
@@ -51,21 +51,21 @@ func (s *ServiceImpl) TransferCardsOwnershipQ(
 	return nil
 }
 
-var _ Service = (*ServiceImpl)(nil)
+var _ Service = (*service)(nil)
 
 func New(
 	querier db.Querier,
 	regionService region.Service,
 	rng rand.RNG,
-) *ServiceImpl {
-	return &ServiceImpl{
+) Service {
+	return &service{
 		querier:       querier,
 		regionService: regionService,
 		rng:           rng,
 	}
 }
 
-func (s *ServiceImpl) CreateCardsQ(ctx ctx.GameContext, querier db.Querier) error {
+func (s *service) CreateCards(ctx ctx.GameContext, querier db.Querier) error {
 	slog.InfoContext(ctx, "creating cards")
 
 	cards, err := s.buildCards(ctx, querier)
@@ -83,11 +83,11 @@ func (s *ServiceImpl) CreateCardsQ(ctx ctx.GameContext, querier db.Querier) erro
 	return nil
 }
 
-func (s *ServiceImpl) buildCards(
+func (s *service) buildCards(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) ([]sqlc.InsertCardsParams, error) {
-	regions, err := s.regionService.GetRegionsQ(ctx, querier)
+	regions, err := s.regionService.GetRegionsWithQuerier(ctx, querier)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get regions: %w", err)
 	}
@@ -123,11 +123,11 @@ func (s *ServiceImpl) buildCards(
 	return cards, nil
 }
 
-func (s *ServiceImpl) GetCardsForPlayer(ctx ctx.GameContext) ([]sqlc.GetCardsForPlayerRow, error) {
-	return s.GetCardsForPlayerQ(ctx, s.querier)
+func (s *service) GetCardsForPlayer(ctx ctx.GameContext) ([]sqlc.GetCardsForPlayerRow, error) {
+	return s.GetCardsForPlayerWithQuerier(ctx, s.querier)
 }
 
-func (s *ServiceImpl) GetCardsForPlayerQ(
+func (s *service) GetCardsForPlayerWithQuerier(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) ([]sqlc.GetCardsForPlayerRow, error) {

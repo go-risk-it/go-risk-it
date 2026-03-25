@@ -5,10 +5,5 @@ import (
 )
 
 var Module = fx.Options(
-	fx.Provide(
-		fx.Annotate(
-			NewManager,
-			fx.As(new(Manager)),
-		),
-	),
+	fx.Provide(NewManager),
 )

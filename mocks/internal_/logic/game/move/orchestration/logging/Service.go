@@ -83,12 +83,12 @@ func (_c *Service_GetMoveLogs_Call) RunAndReturn(run func(ctx.GameContext, int64
 	return _c
 }
 
-// LogMoveQ provides a mock function with given fields: _a0, querier, move, result
-func (_m *Service) LogMoveQ(_a0 ctx.GameContext, querier db.Querier, move any, result any) error {
+// LogMove provides a mock function with given fields: _a0, querier, move, result
+func (_m *Service) LogMove(_a0 ctx.GameContext, querier db.Querier, move any, result any) error {
 	ret := _m.Called(_a0, querier, move, result)
 
 	if len(ret) == 0 {
-		panic("no return value specified for LogMoveQ")
+		panic("no return value specified for LogMove")
 	}
 
 	var r0 error
@@ -101,33 +101,33 @@ func (_m *Service) LogMoveQ(_a0 ctx.GameContext, querier db.Querier, move any, r
 	return r0
 }
 
-// Service_LogMoveQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LogMoveQ'
-type Service_LogMoveQ_Call struct {
+// Service_LogMove_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LogMove'
+type Service_LogMove_Call struct {
 	*mock.Call
 }
 
-// LogMoveQ is a helper method to define mock.On call
+// LogMove is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
 //   - move any
 //   - result any
-func (_e *Service_Expecter) LogMoveQ(_a0 interface{}, querier interface{}, move interface{}, result interface{}) *Service_LogMoveQ_Call {
-	return &Service_LogMoveQ_Call{Call: _e.mock.On("LogMoveQ", _a0, querier, move, result)}
+func (_e *Service_Expecter) LogMove(_a0 interface{}, querier interface{}, move interface{}, result interface{}) *Service_LogMove_Call {
+	return &Service_LogMove_Call{Call: _e.mock.On("LogMove", _a0, querier, move, result)}
 }
 
-func (_c *Service_LogMoveQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, move any, result any)) *Service_LogMoveQ_Call {
+func (_c *Service_LogMove_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, move any, result any)) *Service_LogMove_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(any), args[3].(any))
 	})
 	return _c
 }
 
-func (_c *Service_LogMoveQ_Call) Return(_a0 error) *Service_LogMoveQ_Call {
+func (_c *Service_LogMove_Call) Return(_a0 error) *Service_LogMove_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Service_LogMoveQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, any, any) error) *Service_LogMoveQ_Call {
+func (_c *Service_LogMove_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, any, any) error) *Service_LogMove_Call {
 	_c.Call.Return(run)
 	return _c
 }

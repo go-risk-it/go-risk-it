@@ -65,7 +65,7 @@ func TestServiceImpl_CreateRegions(t *testing.T) {
 	}).Return(int64(5), nil)
 
 	// Call the method under test
-	err := service.CreateRegionsQ(ctx, querier, players, regions)
+	err := service.CreateRegions(ctx, querier, players, regions)
 
 	// Assert the result
 	require.NoError(t, err)
@@ -95,7 +95,7 @@ func TestServiceImpl_CreateRegions_NoPlayers(t *testing.T) {
 	)
 
 	// Call the method under test
-	err := service.CreateRegionsQ(ctx, querier, players, regions)
+	err := service.CreateRegions(ctx, querier, players, regions)
 
 	// Assert the result
 	require.Error(t, err)
@@ -128,7 +128,7 @@ func TestServiceImpl_CreateRegions_PlayersNotInSameGame(t *testing.T) {
 	var regions []string
 
 	// Call the method under test
-	err := service.CreateRegionsQ(ctx, querier, players, regions)
+	err := service.CreateRegions(ctx, querier, players, regions)
 
 	// Assert the result
 	require.Error(t, err)
@@ -185,7 +185,7 @@ func TestServiceImpl_CreateRegions_InsertRegionsError(t *testing.T) {
 	}).Return(int64(0), errors.New("insert regions error"))
 
 	// Call the method under test
-	err := service.CreateRegionsQ(ctx, querier, players, regions)
+	err := service.CreateRegions(ctx, querier, players, regions)
 
 	// Assert the result
 	require.Error(t, err)

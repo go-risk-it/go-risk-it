@@ -17,7 +17,7 @@ import (
 func setup(t *testing.T) (
 	*db.Querier,
 	*player.Service,
-	*validation.ServiceImpl,
+	validation.Service,
 ) {
 	t.Helper()
 	querier := db.NewQuerier(t)
@@ -57,10 +57,10 @@ func TestServiceImpl_ShouldFailWhenPlayerNotInGame(t *testing.T) {
 
 	playerService.
 		EXPECT().
-		GetPlayersQ(ctx, querier).
+		GetPlayers(ctx, querier).
 		Return(players, nil)
 
-	err := service.ValidateQ(ctx, querier, game)
+	err := service.Validate(ctx, querier, game)
 
 	require.Error(t, err)
 	require.EqualError(t, err, "player is not in game")
@@ -97,7 +97,7 @@ func TestServiceImpl_ShouldFailOnTurnCheck(t *testing.T) {
 			}
 			playerService.
 				EXPECT().
-				GetPlayersQ(ctx, querier).
+				GetPlayers(ctx, querier).
 				Return(players, nil)
 
 			game := &state.Game{
@@ -106,7 +106,7 @@ func TestServiceImpl_ShouldFailOnTurnCheck(t *testing.T) {
 				Turn:  test.turn,
 			}
 
-			err := service.ValidateQ(ctx, querier, game)
+			err := service.Validate(ctx, querier, game)
 
 			require.Error(t, err)
 			require.EqualError(t, err, test.expectedErr)

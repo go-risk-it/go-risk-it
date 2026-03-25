@@ -8,9 +8,7 @@ import (
 )
 
 var Module = fx.Options(
-	fx.Provide(
-		fx.Annotate(NewLobbyStateFetcher, fx.As(new(LobbyStateFetcher))),
-	),
+	fx.Provide(NewLobbyStateFetcher),
 )
 
 type Fetcher interface {

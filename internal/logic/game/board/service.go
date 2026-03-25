@@ -15,32 +15,32 @@ import (
 type Service interface {
 	GetBoardRegions(ctx context.Context) ([]string, error)
 	AreNeighbours(ctx context.Context, source string, target string) (bool, error)
-	CanPlayerReachQ(
+	CanPlayerReach(
 		ctx ctx.GameContext,
 		querier db.Querier,
 		source string,
 		target string,
 	) (bool, error)
-	GetContinentsControlledByPlayerQ(
+	GetContinentsControlledByPlayer(
 		ctx ctx.GameContext,
 		querier db.Querier,
 		playerID int64,
 	) ([]*Continent, error)
 }
 
-type ServiceImpl struct {
+type service struct {
 	continents    *ContinentsImpl
 	graph         Graph
 	regionService region.Service
 }
 
-var _ Service = (*ServiceImpl)(nil)
+var _ Service = (*service)(nil)
 
-func NewService(regionService region.Service) *ServiceImpl {
-	return &ServiceImpl{graph: nil, regionService: regionService}
+func NewService(regionService region.Service) Service {
+	return &service{graph: nil, regionService: regionService}
 }
 
-func (s *ServiceImpl) AreNeighbours(
+func (s *service) AreNeighbours(
 	ctx context.Context,
 	source string,
 	target string,
@@ -53,7 +53,7 @@ func (s *ServiceImpl) AreNeighbours(
 	return graph.AreNeighbours(source, target), nil
 }
 
-func (s *ServiceImpl) CanPlayerReachQ(
+func (s *service) CanPlayerReach(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	source string,
@@ -62,7 +62,7 @@ func (s *ServiceImpl) CanPlayerReachQ(
 	slog.InfoContext(ctx, "checking if player can reach target",
 		"source", source, "target", target)
 
-	regions, err := s.regionService.GetRegionsQ(ctx, querier)
+	regions, err := s.regionService.GetRegionsWithQuerier(ctx, querier)
 	if err != nil {
 		return false, fmt.Errorf("failed to get regions: %w", err)
 	}
@@ -83,7 +83,7 @@ func (s *ServiceImpl) CanPlayerReachQ(
 	return graph.CanReach(ctx, source, target, usableRegions), nil
 }
 
-func (s *ServiceImpl) GetBoardRegions(ctx context.Context) ([]string, error) {
+func (s *service) GetBoardRegions(ctx context.Context) ([]string, error) {
 	slog.InfoContext(ctx, "getting board regions")
 
 	graph, err := s.getGraph(ctx)
@@ -98,7 +98,7 @@ func (s *ServiceImpl) GetBoardRegions(ctx context.Context) ([]string, error) {
 	return result, nil
 }
 
-func (s *ServiceImpl) getGraph(ctx context.Context) (Graph, error) {
+func (s *service) getGraph(ctx context.Context) (Graph, error) {
 	slog.InfoContext(ctx, "getting graph")
 
 	if s.graph != nil {
@@ -124,7 +124,7 @@ func (s *ServiceImpl) getGraph(ctx context.Context) (Graph, error) {
 	return s.graph, nil
 }
 
-func (s *ServiceImpl) getContinents(ctx ctx.GameContext) (*ContinentsImpl, error) {
+func (s *service) getContinents(ctx ctx.GameContext) (*ContinentsImpl, error) {
 	slog.InfoContext(ctx, "getting continents")
 
 	if s.continents != nil {
@@ -150,7 +150,7 @@ func (s *ServiceImpl) getContinents(ctx ctx.GameContext) (*ContinentsImpl, error
 	return s.continents, nil
 }
 
-func (s *ServiceImpl) fetchFromFile(ctx context.Context) (*BoardDto, error) {
+func (s *service) fetchFromFile(ctx context.Context) (*BoardDto, error) {
 	data, err := os.ReadFile("map.json")
 	if err != nil {
 		return nil, fmt.Errorf("error reading file: %w", err)
@@ -168,12 +168,12 @@ func (s *ServiceImpl) fetchFromFile(ctx context.Context) (*BoardDto, error) {
 	return board, nil
 }
 
-func (s *ServiceImpl) GetContinentsControlledByPlayerQ(
+func (s *service) GetContinentsControlledByPlayer(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	playerID int64,
 ) ([]*Continent, error) {
-	playerRegions, err := s.regionService.GetRegionsControlledByPlayerQ(ctx, querier, playerID)
+	playerRegions, err := s.regionService.GetRegionsControlledByPlayer(ctx, querier, playerID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get regions: %w", err)
 	}

@@ -14,7 +14,7 @@ import (
 	"go.opentelemetry.io/otel/trace/noop"
 )
 
-func setup(t *testing.T) (*db.Querier, *start.ServiceImpl) {
+func setup(t *testing.T) (*db.Querier, start.Service) {
 	t.Helper()
 
 	querier := db.NewQuerier(t)

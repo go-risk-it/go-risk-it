@@ -10,7 +10,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
 )
 
-func (s *ServiceImpl) AdvanceQ(
+func (s *service) Advance(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	targetPhase sqlc.GamePhaseType,
@@ -20,7 +20,7 @@ func (s *ServiceImpl) AdvanceQ(
 		return fmt.Errorf("invalid phase transition: %w", err)
 	}
 
-	phase, err := s.phaseService.InsertPhaseQ(ctx, querier, targetPhase)
+	phase, err := s.phaseService.InsertPhase(ctx, querier, targetPhase)
 	if err != nil {
 		return fmt.Errorf("failed to create phase: %w", err)
 	}
@@ -42,12 +42,12 @@ func (s *ServiceImpl) AdvanceQ(
 	return nil
 }
 
-func (s *ServiceImpl) getDeployableTroops(
+func (s *service) getDeployableTroops(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	performResult any,
 ) (int64, error) {
-	currentPlayer, err := s.playerService.GetCurrentPlayerQ(ctx, querier)
+	currentPlayer, err := s.playerService.GetCurrentPlayer(ctx, querier)
 	if err != nil {
 		return -1, fmt.Errorf("failed to get player: %w", err)
 	}
@@ -57,7 +57,7 @@ func (s *ServiceImpl) getDeployableTroops(
 		cardReward = result.ExtraDeployableTroops
 	}
 
-	playerRegions, err := s.regionService.GetRegionsControlledByPlayerQ(
+	playerRegions, err := s.regionService.GetRegionsControlledByPlayer(
 		ctx,
 		querier,
 		currentPlayer.ID,
@@ -84,12 +84,12 @@ func (s *ServiceImpl) getDeployableTroops(
 	return regionReward + continentReward + cardReward, nil
 }
 
-func (s *ServiceImpl) getContinentReward(
+func (s *service) getContinentReward(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	currentPlayer sqlc.GamePlayer,
 ) (int64, error) {
-	continents, err := s.boardService.GetContinentsControlledByPlayerQ(
+	continents, err := s.boardService.GetContinentsControlledByPlayer(
 		ctx,
 		querier,
 		currentPlayer.ID,

@@ -9,7 +9,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
 )
 
-func (s *ServiceImpl) AdvanceQ(
+func (s *service) Advance(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	targetPhase sqlc.GamePhaseType,
@@ -19,7 +19,7 @@ func (s *ServiceImpl) AdvanceQ(
 		return fmt.Errorf("invalid phase transition: %w", err)
 	}
 
-	_, err := s.phaseService.InsertPhaseQ(ctx, querier, targetPhase)
+	_, err := s.phaseService.InsertPhase(ctx, querier, targetPhase)
 	if err != nil {
 		return fmt.Errorf("failed to create phase: %w", err)
 	}

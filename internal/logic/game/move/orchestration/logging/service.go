@@ -13,27 +13,27 @@ import (
 
 type Service interface {
 	GetMoveLogs(ctx ctx.GameContext, limit int64) ([]sqlc.GetMoveLogsRow, error)
-	LogMoveQ(ctx ctx.GameContext, querier db.Querier, move, result any) error
+	LogMove(ctx ctx.GameContext, querier db.Querier, move, result any) error
 }
 
-type ServiceImpl struct {
+type service struct {
 	querier             db.Querier
 	movePerformedSignal signals.MovePerformedSignal
 }
 
-var _ Service = (*ServiceImpl)(nil)
+var _ Service = (*service)(nil)
 
 func New(
 	querier db.Querier,
 	movePerformedSignal signals.MovePerformedSignal,
-) *ServiceImpl {
-	return &ServiceImpl{
+) Service {
+	return &service{
 		querier:             querier,
 		movePerformedSignal: movePerformedSignal,
 	}
 }
 
-func (s *ServiceImpl) GetMoveLogs(
+func (s *service) GetMoveLogs(
 	ctx ctx.GameContext,
 	limit int64,
 ) ([]sqlc.GetMoveLogsRow, error) {
@@ -50,7 +50,7 @@ func (s *ServiceImpl) GetMoveLogs(
 	return moveLogs, nil
 }
 
-func (s *ServiceImpl) LogMoveQ(ctx ctx.GameContext, querier db.Querier, move, result any) error {
+func (s *service) LogMove(ctx ctx.GameContext, querier db.Querier, move, result any) error {
 	moveJSON, err := json.Marshal(move)
 	if err != nil {
 		return fmt.Errorf("failed to marshal move: %w", err)

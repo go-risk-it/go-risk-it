@@ -4,6 +4,8 @@ package creation
 
 import (
 	ctx "github.com/go-risk-it/go-risk-it/internal/ctx"
+	db "github.com/go-risk-it/go-risk-it/internal/data/lobby/db"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -73,6 +75,64 @@ func (_c *Service_CreateLobby_Call) Return(_a0 int64, _a1 error) *Service_Create
 }
 
 func (_c *Service_CreateLobby_Call) RunAndReturn(run func(ctx.UserContext, string) (int64, error)) *Service_CreateLobby_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// CreateLobbyWithQuerier provides a mock function with given fields: _a0, querier, ownerName
+func (_m *Service) CreateLobbyWithQuerier(_a0 ctx.UserContext, querier db.Querier, ownerName string) (int64, error) {
+	ret := _m.Called(_a0, querier, ownerName)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateLobbyWithQuerier")
+	}
+
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(ctx.UserContext, db.Querier, string) (int64, error)); ok {
+		return rf(_a0, querier, ownerName)
+	}
+	if rf, ok := ret.Get(0).(func(ctx.UserContext, db.Querier, string) int64); ok {
+		r0 = rf(_a0, querier, ownerName)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	if rf, ok := ret.Get(1).(func(ctx.UserContext, db.Querier, string) error); ok {
+		r1 = rf(_a0, querier, ownerName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Service_CreateLobbyWithQuerier_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateLobbyWithQuerier'
+type Service_CreateLobbyWithQuerier_Call struct {
+	*mock.Call
+}
+
+// CreateLobbyWithQuerier is a helper method to define mock.On call
+//   - _a0 ctx.UserContext
+//   - querier db.Querier
+//   - ownerName string
+func (_e *Service_Expecter) CreateLobbyWithQuerier(_a0 interface{}, querier interface{}, ownerName interface{}) *Service_CreateLobbyWithQuerier_Call {
+	return &Service_CreateLobbyWithQuerier_Call{Call: _e.mock.On("CreateLobbyWithQuerier", _a0, querier, ownerName)}
+}
+
+func (_c *Service_CreateLobbyWithQuerier_Call) Run(run func(_a0 ctx.UserContext, querier db.Querier, ownerName string)) *Service_CreateLobbyWithQuerier_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ctx.UserContext), args[1].(db.Querier), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *Service_CreateLobbyWithQuerier_Call) Return(_a0 int64, _a1 error) *Service_CreateLobbyWithQuerier_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Service_CreateLobbyWithQuerier_Call) RunAndReturn(run func(ctx.UserContext, db.Querier, string) (int64, error)) *Service_CreateLobbyWithQuerier_Call {
 	_c.Call.Return(run)
 	return _c
 }

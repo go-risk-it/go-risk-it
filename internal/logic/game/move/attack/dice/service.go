@@ -13,18 +13,18 @@ type Service interface {
 	RollDefendingDices(n int) []int
 }
 
-type ServiceImpl struct {
+type service struct {
 	attackingRoller roller.Roller
 	defendingRoller roller.Roller
 }
 
-var _ Service = (*ServiceImpl)(nil)
+var _ Service = (*service)(nil)
 
-func (s *ServiceImpl) RollAttackingDices(dices int) []int {
+func (s *service) RollAttackingDices(dices int) []int {
 	return roll(dices, s.attackingRoller)
 }
 
-func (s *ServiceImpl) RollDefendingDices(n int) []int {
+func (s *service) RollDefendingDices(n int) []int {
 	return roll(n, s.defendingRoller)
 }
 
@@ -38,13 +38,13 @@ func roll(dices int, roller roller.Roller) []int {
 	return result
 }
 
-func New(diceConfig config.DiceConfig, rng rand.RNG) (*ServiceImpl, error) {
+func New(diceConfig config.DiceConfig, rng rand.RNG) (Service, error) {
 	attackingRoller, defendingRoller, err := getDiceRollers(diceConfig, rng)
 	if err != nil {
 		return nil, err
 	}
 
-	return &ServiceImpl{
+	return &service{
 		attackingRoller: attackingRoller,
 		defendingRoller: defendingRoller,
 	}, nil

@@ -7,11 +7,11 @@ import (
 )
 
 type Performer[T any] interface {
-	PerformQ(ctx ctx.GameContext, querier db.Querier, move T) (any, error)
+	Perform(ctx ctx.GameContext, querier db.Querier, move T) (any, error)
 }
 
 type Advancer interface {
-	AdvanceQ(
+	Advance(
 		ctx ctx.GameContext,
 		querier db.Querier,
 		targetPhase sqlc.GamePhaseType,
@@ -20,7 +20,7 @@ type Advancer interface {
 }
 
 type PhaseWalker interface {
-	WalkQ(
+	Walk(
 		ctx ctx.GameContext,
 		querier db.Querier,
 		voluntaryAdvancement bool,

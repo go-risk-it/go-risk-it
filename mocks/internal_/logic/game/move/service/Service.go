@@ -24,12 +24,12 @@ func (_m *Service[T]) EXPECT() *Service_Expecter[T] {
 	return &Service_Expecter[T]{mock: &_m.Mock}
 }
 
-// AdvanceQ provides a mock function with given fields: _a0, querier, targetPhase, performResult
-func (_m *Service[T]) AdvanceQ(_a0 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType, performResult any) error {
+// Advance provides a mock function with given fields: _a0, querier, targetPhase, performResult
+func (_m *Service[T]) Advance(_a0 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType, performResult any) error {
 	ret := _m.Called(_a0, querier, targetPhase, performResult)
 
 	if len(ret) == 0 {
-		panic("no return value specified for AdvanceQ")
+		panic("no return value specified for Advance")
 	}
 
 	var r0 error
@@ -42,43 +42,43 @@ func (_m *Service[T]) AdvanceQ(_a0 ctx.GameContext, querier db.Querier, targetPh
 	return r0
 }
 
-// Service_AdvanceQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AdvanceQ'
-type Service_AdvanceQ_Call[T any] struct {
+// Service_Advance_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Advance'
+type Service_Advance_Call[T any] struct {
 	*mock.Call
 }
 
-// AdvanceQ is a helper method to define mock.On call
+// Advance is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
 //   - targetPhase sqlc.GamePhaseType
 //   - performResult any
-func (_e *Service_Expecter[T]) AdvanceQ(_a0 interface{}, querier interface{}, targetPhase interface{}, performResult interface{}) *Service_AdvanceQ_Call[T] {
-	return &Service_AdvanceQ_Call[T]{Call: _e.mock.On("AdvanceQ", _a0, querier, targetPhase, performResult)}
+func (_e *Service_Expecter[T]) Advance(_a0 interface{}, querier interface{}, targetPhase interface{}, performResult interface{}) *Service_Advance_Call[T] {
+	return &Service_Advance_Call[T]{Call: _e.mock.On("Advance", _a0, querier, targetPhase, performResult)}
 }
 
-func (_c *Service_AdvanceQ_Call[T]) Run(run func(_a0 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType, performResult any)) *Service_AdvanceQ_Call[T] {
+func (_c *Service_Advance_Call[T]) Run(run func(_a0 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType, performResult any)) *Service_Advance_Call[T] {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(sqlc.GamePhaseType), args[3].(any))
 	})
 	return _c
 }
 
-func (_c *Service_AdvanceQ_Call[T]) Return(_a0 error) *Service_AdvanceQ_Call[T] {
+func (_c *Service_Advance_Call[T]) Return(_a0 error) *Service_Advance_Call[T] {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Service_AdvanceQ_Call[T]) RunAndReturn(run func(ctx.GameContext, db.Querier, sqlc.GamePhaseType, any) error) *Service_AdvanceQ_Call[T] {
+func (_c *Service_Advance_Call[T]) RunAndReturn(run func(ctx.GameContext, db.Querier, sqlc.GamePhaseType, any) error) *Service_Advance_Call[T] {
 	_c.Call.Return(run)
 	return _c
 }
 
-// PerformQ provides a mock function with given fields: _a0, querier, move
-func (_m *Service[T]) PerformQ(_a0 ctx.GameContext, querier db.Querier, move T) (any, error) {
+// Perform provides a mock function with given fields: _a0, querier, move
+func (_m *Service[T]) Perform(_a0 ctx.GameContext, querier db.Querier, move T) (any, error) {
 	ret := _m.Called(_a0, querier, move)
 
 	if len(ret) == 0 {
-		panic("no return value specified for PerformQ")
+		panic("no return value specified for Perform")
 	}
 
 	var r0 any
@@ -103,32 +103,32 @@ func (_m *Service[T]) PerformQ(_a0 ctx.GameContext, querier db.Querier, move T) 
 	return r0, r1
 }
 
-// Service_PerformQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PerformQ'
-type Service_PerformQ_Call[T any] struct {
+// Service_Perform_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Perform'
+type Service_Perform_Call[T any] struct {
 	*mock.Call
 }
 
-// PerformQ is a helper method to define mock.On call
+// Perform is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
 //   - move T
-func (_e *Service_Expecter[T]) PerformQ(_a0 interface{}, querier interface{}, move interface{}) *Service_PerformQ_Call[T] {
-	return &Service_PerformQ_Call[T]{Call: _e.mock.On("PerformQ", _a0, querier, move)}
+func (_e *Service_Expecter[T]) Perform(_a0 interface{}, querier interface{}, move interface{}) *Service_Perform_Call[T] {
+	return &Service_Perform_Call[T]{Call: _e.mock.On("Perform", _a0, querier, move)}
 }
 
-func (_c *Service_PerformQ_Call[T]) Run(run func(_a0 ctx.GameContext, querier db.Querier, move T)) *Service_PerformQ_Call[T] {
+func (_c *Service_Perform_Call[T]) Run(run func(_a0 ctx.GameContext, querier db.Querier, move T)) *Service_Perform_Call[T] {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(T))
 	})
 	return _c
 }
 
-func (_c *Service_PerformQ_Call[T]) Return(_a0 any, _a1 error) *Service_PerformQ_Call[T] {
+func (_c *Service_Perform_Call[T]) Return(_a0 any, _a1 error) *Service_Perform_Call[T] {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_PerformQ_Call[T]) RunAndReturn(run func(ctx.GameContext, db.Querier, T) (any, error)) *Service_PerformQ_Call[T] {
+func (_c *Service_Perform_Call[T]) RunAndReturn(run func(ctx.GameContext, db.Querier, T) (any, error)) *Service_Perform_Call[T] {
 	_c.Call.Return(run)
 	return _c
 }
@@ -178,12 +178,12 @@ func (_c *Service_PhaseType_Call[T]) RunAndReturn(run func() sqlc.GamePhaseType)
 	return _c
 }
 
-// WalkQ provides a mock function with given fields: _a0, querier, voluntaryAdvancement
-func (_m *Service[T]) WalkQ(_a0 ctx.GameContext, querier db.Querier, voluntaryAdvancement bool) (sqlc.GamePhaseType, error) {
+// Walk provides a mock function with given fields: _a0, querier, voluntaryAdvancement
+func (_m *Service[T]) Walk(_a0 ctx.GameContext, querier db.Querier, voluntaryAdvancement bool) (sqlc.GamePhaseType, error) {
 	ret := _m.Called(_a0, querier, voluntaryAdvancement)
 
 	if len(ret) == 0 {
-		panic("no return value specified for WalkQ")
+		panic("no return value specified for Walk")
 	}
 
 	var r0 sqlc.GamePhaseType
@@ -206,32 +206,32 @@ func (_m *Service[T]) WalkQ(_a0 ctx.GameContext, querier db.Querier, voluntaryAd
 	return r0, r1
 }
 
-// Service_WalkQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WalkQ'
-type Service_WalkQ_Call[T any] struct {
+// Service_Walk_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Walk'
+type Service_Walk_Call[T any] struct {
 	*mock.Call
 }
 
-// WalkQ is a helper method to define mock.On call
+// Walk is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
 //   - voluntaryAdvancement bool
-func (_e *Service_Expecter[T]) WalkQ(_a0 interface{}, querier interface{}, voluntaryAdvancement interface{}) *Service_WalkQ_Call[T] {
-	return &Service_WalkQ_Call[T]{Call: _e.mock.On("WalkQ", _a0, querier, voluntaryAdvancement)}
+func (_e *Service_Expecter[T]) Walk(_a0 interface{}, querier interface{}, voluntaryAdvancement interface{}) *Service_Walk_Call[T] {
+	return &Service_Walk_Call[T]{Call: _e.mock.On("Walk", _a0, querier, voluntaryAdvancement)}
 }
 
-func (_c *Service_WalkQ_Call[T]) Run(run func(_a0 ctx.GameContext, querier db.Querier, voluntaryAdvancement bool)) *Service_WalkQ_Call[T] {
+func (_c *Service_Walk_Call[T]) Run(run func(_a0 ctx.GameContext, querier db.Querier, voluntaryAdvancement bool)) *Service_Walk_Call[T] {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(bool))
 	})
 	return _c
 }
 
-func (_c *Service_WalkQ_Call[T]) Return(_a0 sqlc.GamePhaseType, _a1 error) *Service_WalkQ_Call[T] {
+func (_c *Service_Walk_Call[T]) Return(_a0 sqlc.GamePhaseType, _a1 error) *Service_Walk_Call[T] {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_WalkQ_Call[T]) RunAndReturn(run func(ctx.GameContext, db.Querier, bool) (sqlc.GamePhaseType, error)) *Service_WalkQ_Call[T] {
+func (_c *Service_Walk_Call[T]) RunAndReturn(run func(ctx.GameContext, db.Querier, bool) (sqlc.GamePhaseType, error)) *Service_Walk_Call[T] {
 	_c.Call.Return(run)
 	return _c
 }

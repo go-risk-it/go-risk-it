@@ -20,36 +20,38 @@ type UserLobbies struct {
 
 type Service interface {
 	JoinLobby(ctx ctx.LobbyContext, name string) error
+	JoinLobbyWithQuerier(ctx ctx.LobbyContext, querier db.Querier, name string) error
 	GetUserLobbies(ctx ctx.UserContext) (*UserLobbies, error)
+	GetUserLobbiesWithQuerier(ctx ctx.UserContext, querier db.Querier) (*UserLobbies, error)
 }
 
-type ServiceImpl struct {
+type service struct {
 	querier                 db.Querier
 	lobbyStateChangedSignal signals.LobbyStateChangedSignal
 	metrics                 *metrics.Metrics
 }
 
-var _ Service = (*ServiceImpl)(nil)
+var _ Service = (*service)(nil)
 
 func NewService(
 	querier db.Querier,
 	lobbyStateChangedSignal signals.LobbyStateChangedSignal,
 	m *metrics.Metrics,
-) *ServiceImpl {
-	return &ServiceImpl{
+) Service {
+	return &service{
 		querier:                 querier,
 		lobbyStateChangedSignal: lobbyStateChangedSignal,
 		metrics:                 m,
 	}
 }
 
-func (s *ServiceImpl) JoinLobby(ctx ctx.LobbyContext, name string) error {
+func (s *service) JoinLobby(ctx ctx.LobbyContext, name string) error {
 	if _, err := dbutil.InTransaction(
 		s.querier,
 		ctx,
 		s.metrics,
 		func(qtx db.Querier) (struct{}, error) {
-			return struct{}{}, s.JoinLobbyQ(ctx, qtx, name)
+			return struct{}{}, s.JoinLobbyWithQuerier(ctx, qtx, name)
 		}); err != nil {
 		return fmt.Errorf("failed to join lobby: %w", err)
 	}
@@ -59,7 +61,7 @@ func (s *ServiceImpl) JoinLobby(ctx ctx.LobbyContext, name string) error {
 	return nil
 }
 
-func (s *ServiceImpl) JoinLobbyQ(
+func (s *service) JoinLobbyWithQuerier(
 	ctx ctx.LobbyContext,
 	querier db.Querier,
 	name string,
@@ -80,13 +82,13 @@ func (s *ServiceImpl) JoinLobbyQ(
 	return nil
 }
 
-func (s *ServiceImpl) GetUserLobbies(
+func (s *service) GetUserLobbies(
 	ctx ctx.UserContext,
 ) (*UserLobbies, error) {
-	return s.GetUserLobbiesQ(ctx, s.querier)
+	return s.GetUserLobbiesWithQuerier(ctx, s.querier)
 }
 
-func (s *ServiceImpl) GetUserLobbiesQ(
+func (s *service) GetUserLobbiesWithQuerier(
 	ctx ctx.UserContext,
 	querier db.Querier,
 ) (*UserLobbies, error) {

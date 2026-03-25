@@ -14,29 +14,34 @@ import (
 
 type Service interface {
 	CreateLobby(ctx ctx.UserContext, ownerName string) (int64, error)
+	CreateLobbyWithQuerier(
+		ctx ctx.UserContext,
+		querier db.Querier,
+		ownerName string,
+	) (int64, error)
 }
 
-type ServiceImpl struct {
+type service struct {
 	querier db.Querier
 	metrics *metrics.Metrics
 }
 
-var _ Service = (*ServiceImpl)(nil)
+var _ Service = (*service)(nil)
 
-func NewService(querier db.Querier, m *metrics.Metrics) *ServiceImpl {
-	return &ServiceImpl{
+func NewService(querier db.Querier, m *metrics.Metrics) Service {
+	return &service{
 		querier: querier,
 		metrics: m,
 	}
 }
 
-func (s *ServiceImpl) CreateLobby(ctx ctx.UserContext, ownerName string) (int64, error) {
+func (s *service) CreateLobby(ctx ctx.UserContext, ownerName string) (int64, error) {
 	lobbyID, err := dbutil.InTransaction(
 		s.querier,
 		ctx,
 		s.metrics,
 		func(qtx db.Querier) (int64, error) {
-			return s.CreateLobbyQ(ctx, qtx, ownerName)
+			return s.CreateLobbyWithQuerier(ctx, qtx, ownerName)
 		},
 	)
 	if err != nil {
@@ -46,7 +51,7 @@ func (s *ServiceImpl) CreateLobby(ctx ctx.UserContext, ownerName string) (int64,
 	return lobbyID, nil
 }
 
-func (s *ServiceImpl) CreateLobbyQ(
+func (s *service) CreateLobbyWithQuerier(
 	ctx ctx.UserContext,
 	querier db.Querier,
 	ownerName string,

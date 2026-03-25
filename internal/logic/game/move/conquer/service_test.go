@@ -23,7 +23,7 @@ func setup(t *testing.T) (
 	*card.Service,
 	*mission.Service,
 	*region.Service,
-	*conquer.ServiceImpl,
+	conquer.Service,
 ) {
 	t.Helper()
 
@@ -33,7 +33,7 @@ func setup(t *testing.T) (
 	missionService := mission.NewService(t)
 	phaseService := phase.NewService(t)
 	regionService := region.NewService(t)
-	service := conquer.NewService(
+	service, _ := conquer.NewService(
 		querier,
 		attackService,
 		cardService,
@@ -57,7 +57,7 @@ func input() ctx.GameContext {
 	return ctx.WithGameID(userContext, gameID)
 }
 
-func TestServiceImpl_PerformQ_ShouldFailValidation(t *testing.T) {
+func TestServiceImpl_Perform_ShouldFailValidation(t *testing.T) {
 	t.Parallel()
 
 	type inputType struct {
@@ -104,7 +104,7 @@ func TestServiceImpl_PerformQ_ShouldFailValidation(t *testing.T) {
 			if test.minimumTroops <= test.moveTroops {
 				regionService.
 					EXPECT().
-					GetRegionQ(ctx, querier, "greenland").
+					GetRegion(ctx, querier, "greenland").
 					Return(&sqlc.GetRegionsByGameRow{
 						ID:                1,
 						ExternalReference: "greenland",
@@ -114,7 +114,7 @@ func TestServiceImpl_PerformQ_ShouldFailValidation(t *testing.T) {
 
 				regionService.
 					EXPECT().
-					GetRegionQ(ctx, querier, "iceland").
+					GetRegion(ctx, querier, "iceland").
 					Return(&sqlc.GetRegionsByGameRow{
 						ID:                2,
 						ExternalReference: "iceland",
@@ -123,7 +123,7 @@ func TestServiceImpl_PerformQ_ShouldFailValidation(t *testing.T) {
 					}, nil)
 			}
 
-			_, err := service.PerformQ(ctx, querier, conquer.Move{
+			_, err := service.Perform(ctx, querier, conquer.Move{
 				Troops: test.moveTroops,
 			})
 
@@ -133,7 +133,7 @@ func TestServiceImpl_PerformQ_ShouldFailValidation(t *testing.T) {
 	}
 }
 
-func TestServiceImpl_PerformQ_ShouldTransferTroopsAndOwnership(t *testing.T) {
+func TestServiceImpl_Perform_ShouldTransferTroopsAndOwnership(t *testing.T) {
 	t.Parallel()
 
 	querier, _, _, _, regionService, service := setup(t)
@@ -164,39 +164,39 @@ func TestServiceImpl_PerformQ_ShouldTransferTroopsAndOwnership(t *testing.T) {
 
 	regionService.
 		EXPECT().
-		GetRegionQ(ctx, querier, "greenland").
+		GetRegion(ctx, querier, "greenland").
 		Return(sourceRegion, nil)
 	regionService.
 		EXPECT().
-		GetRegionQ(ctx, querier, "iceland").
+		GetRegion(ctx, querier, "iceland").
 		Return(targetRegion, nil)
 	regionService.
 		EXPECT().
-		UpdateTroopsInRegionQ(ctx, querier, sourceRegion, int64(-3)).
+		UpdateTroopsInRegion(ctx, querier, sourceRegion, int64(-3)).
 		Return(nil)
 	regionService.
 		EXPECT().
-		UpdateTroopsInRegionQ(ctx, querier, targetRegion, int64(3)).
+		UpdateTroopsInRegion(ctx, querier, targetRegion, int64(3)).
 		Return(nil)
 	regionService.
 		EXPECT().
-		UpdateRegionOwnerQ(ctx, querier, targetRegion).
+		UpdateRegionOwner(ctx, querier, targetRegion).
 		Return(defeatedPlayerID, nil)
 	regionService.
 		EXPECT().
-		GetRegionsControlledByPlayerQ(ctx, querier, defeatedPlayerID).
+		GetRegionsControlledByPlayer(ctx, querier, defeatedPlayerID).
 		Return([]sqlc.GameRegion{
 			{ID: 10},
 		}, nil)
 
-	_, err := service.PerformQ(ctx, querier, conquer.Move{
+	_, err := service.Perform(ctx, querier, conquer.Move{
 		Troops: 3,
 	})
 
 	require.NoError(t, err)
 }
 
-func TestServiceImpl_PerformQ_ShouldHandlePlayerElimination(t *testing.T) {
+func TestServiceImpl_Perform_ShouldHandlePlayerElimination(t *testing.T) {
 	t.Parallel()
 
 	querier, _, cardService, missionService, regionService, service := setup(t)
@@ -227,45 +227,45 @@ func TestServiceImpl_PerformQ_ShouldHandlePlayerElimination(t *testing.T) {
 
 	regionService.
 		EXPECT().
-		GetRegionQ(ctx, querier, "greenland").
+		GetRegion(ctx, querier, "greenland").
 		Return(sourceRegion, nil)
 	regionService.
 		EXPECT().
-		GetRegionQ(ctx, querier, "iceland").
+		GetRegion(ctx, querier, "iceland").
 		Return(targetRegion, nil)
 	regionService.
 		EXPECT().
-		UpdateTroopsInRegionQ(ctx, querier, sourceRegion, int64(-3)).
+		UpdateTroopsInRegion(ctx, querier, sourceRegion, int64(-3)).
 		Return(nil)
 	regionService.
 		EXPECT().
-		UpdateTroopsInRegionQ(ctx, querier, targetRegion, int64(3)).
+		UpdateTroopsInRegion(ctx, querier, targetRegion, int64(3)).
 		Return(nil)
 	regionService.
 		EXPECT().
-		UpdateRegionOwnerQ(ctx, querier, targetRegion).
+		UpdateRegionOwner(ctx, querier, targetRegion).
 		Return(defeatedPlayerID, nil)
 	regionService.
 		EXPECT().
-		GetRegionsControlledByPlayerQ(ctx, querier, defeatedPlayerID).
+		GetRegionsControlledByPlayer(ctx, querier, defeatedPlayerID).
 		Return([]sqlc.GameRegion{}, nil)
 	cardService.
 		EXPECT().
-		TransferCardsOwnershipQ(ctx, querier, defeatedPlayerID).
+		TransferCardsOwnership(ctx, querier, defeatedPlayerID).
 		Return(nil)
 	missionService.
 		EXPECT().
-		ReassignMissionsQ(ctx, querier, defeatedPlayerID).
+		ReassignMissions(ctx, querier, defeatedPlayerID).
 		Return(nil)
 
-	_, err := service.PerformQ(ctx, querier, conquer.Move{
+	_, err := service.Perform(ctx, querier, conquer.Move{
 		Troops: 3,
 	})
 
 	require.NoError(t, err)
 }
 
-func TestServiceImpl_WalkQ(t *testing.T) {
+func TestServiceImpl_Walk(t *testing.T) {
 	t.Parallel()
 
 	type inputType struct {
@@ -296,10 +296,10 @@ func TestServiceImpl_WalkQ(t *testing.T) {
 
 			attackService.
 				EXPECT().
-				CanContinueAttackingQ(ctx, querier).
+				CanContinueAttacking(ctx, querier).
 				Return(test.canContinueAttacking, nil)
 
-			nextPhase, err := service.WalkQ(ctx, querier, false)
+			nextPhase, err := service.Walk(ctx, querier, false)
 
 			require.NoError(t, err)
 			require.Equal(t, test.expectedNextPhaseType, nextPhase)
@@ -307,12 +307,12 @@ func TestServiceImpl_WalkQ(t *testing.T) {
 	}
 }
 
-func TestServiceImpl_AdvanceQ_ShouldCreatePhaseForValidTransition(t *testing.T) {
+func TestServiceImpl_Advance_ShouldCreatePhaseForValidTransition(t *testing.T) {
 	t.Parallel()
 
 	querier := db.NewQuerier(t)
 	phaseService := phase.NewService(t)
-	service := conquer.NewService(
+	service, _ := conquer.NewService(
 		querier,
 		attack.NewService(t),
 		card.NewService(t),
@@ -324,27 +324,27 @@ func TestServiceImpl_AdvanceQ_ShouldCreatePhaseForValidTransition(t *testing.T) 
 
 	phaseService.
 		EXPECT().
-		InsertPhaseQ(ctx, querier, sqlc.GamePhaseTypeATTACK).
+		InsertPhase(ctx, querier, sqlc.GamePhaseTypeATTACK).
 		Return(&sqlc.GamePhase{}, nil)
 
-	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeATTACK, nil)
+	err := service.Advance(ctx, querier, sqlc.GamePhaseTypeATTACK, nil)
 
 	require.NoError(t, err)
 }
 
-func TestServiceImpl_AdvanceQ_ShouldFailForInvalidTransition(t *testing.T) {
+func TestServiceImpl_Advance_ShouldFailForInvalidTransition(t *testing.T) {
 	t.Parallel()
 
 	querier, _, _, _, _, service := setup(t)
 	ctx := input()
 
-	err := service.AdvanceQ(ctx, querier, sqlc.GamePhaseTypeDEPLOY, nil)
+	err := service.Advance(ctx, querier, sqlc.GamePhaseTypeDEPLOY, nil)
 
 	require.Error(t, err)
 	require.ErrorContains(t, err, "invalid phase transition")
 }
 
-func TestServiceImpl_GetPhaseStateQ(t *testing.T) {
+func TestServiceImpl_GetPhaseStateWithQuerier(t *testing.T) {
 	t.Parallel()
 
 	querier, _, _, _, _, service := setup(t)
@@ -361,7 +361,7 @@ func TestServiceImpl_GetPhaseStateQ(t *testing.T) {
 		GetConquerPhaseState(ctx, ctx.GameID()).
 		Return(expected, nil)
 
-	result, err := service.GetPhaseStateQ(ctx, querier)
+	result, err := service.GetPhaseStateWithQuerier(ctx, querier)
 
 	require.NoError(t, err)
 	require.Equal(t, expected, result)

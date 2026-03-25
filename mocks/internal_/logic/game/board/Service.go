@@ -85,12 +85,12 @@ func (_c *Service_AreNeighbours_Call) RunAndReturn(run func(context.Context, str
 	return _c
 }
 
-// CanPlayerReachQ provides a mock function with given fields: _a0, querier, source, target
-func (_m *Service) CanPlayerReachQ(_a0 ctx.GameContext, querier db.Querier, source string, target string) (bool, error) {
+// CanPlayerReach provides a mock function with given fields: _a0, querier, source, target
+func (_m *Service) CanPlayerReach(_a0 ctx.GameContext, querier db.Querier, source string, target string) (bool, error) {
 	ret := _m.Called(_a0, querier, source, target)
 
 	if len(ret) == 0 {
-		panic("no return value specified for CanPlayerReachQ")
+		panic("no return value specified for CanPlayerReach")
 	}
 
 	var r0 bool
@@ -113,33 +113,33 @@ func (_m *Service) CanPlayerReachQ(_a0 ctx.GameContext, querier db.Querier, sour
 	return r0, r1
 }
 
-// Service_CanPlayerReachQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CanPlayerReachQ'
-type Service_CanPlayerReachQ_Call struct {
+// Service_CanPlayerReach_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CanPlayerReach'
+type Service_CanPlayerReach_Call struct {
 	*mock.Call
 }
 
-// CanPlayerReachQ is a helper method to define mock.On call
+// CanPlayerReach is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
 //   - source string
 //   - target string
-func (_e *Service_Expecter) CanPlayerReachQ(_a0 interface{}, querier interface{}, source interface{}, target interface{}) *Service_CanPlayerReachQ_Call {
-	return &Service_CanPlayerReachQ_Call{Call: _e.mock.On("CanPlayerReachQ", _a0, querier, source, target)}
+func (_e *Service_Expecter) CanPlayerReach(_a0 interface{}, querier interface{}, source interface{}, target interface{}) *Service_CanPlayerReach_Call {
+	return &Service_CanPlayerReach_Call{Call: _e.mock.On("CanPlayerReach", _a0, querier, source, target)}
 }
 
-func (_c *Service_CanPlayerReachQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, source string, target string)) *Service_CanPlayerReachQ_Call {
+func (_c *Service_CanPlayerReach_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, source string, target string)) *Service_CanPlayerReach_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(string), args[3].(string))
 	})
 	return _c
 }
 
-func (_c *Service_CanPlayerReachQ_Call) Return(_a0 bool, _a1 error) *Service_CanPlayerReachQ_Call {
+func (_c *Service_CanPlayerReach_Call) Return(_a0 bool, _a1 error) *Service_CanPlayerReach_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_CanPlayerReachQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, string, string) (bool, error)) *Service_CanPlayerReachQ_Call {
+func (_c *Service_CanPlayerReach_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, string, string) (bool, error)) *Service_CanPlayerReach_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -202,12 +202,12 @@ func (_c *Service_GetBoardRegions_Call) RunAndReturn(run func(context.Context) (
 	return _c
 }
 
-// GetContinentsControlledByPlayerQ provides a mock function with given fields: _a0, querier, playerID
-func (_m *Service) GetContinentsControlledByPlayerQ(_a0 ctx.GameContext, querier db.Querier, playerID int64) ([]*board.Continent, error) {
+// GetContinentsControlledByPlayer provides a mock function with given fields: _a0, querier, playerID
+func (_m *Service) GetContinentsControlledByPlayer(_a0 ctx.GameContext, querier db.Querier, playerID int64) ([]*board.Continent, error) {
 	ret := _m.Called(_a0, querier, playerID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetContinentsControlledByPlayerQ")
+		panic("no return value specified for GetContinentsControlledByPlayer")
 	}
 
 	var r0 []*board.Continent
@@ -232,32 +232,32 @@ func (_m *Service) GetContinentsControlledByPlayerQ(_a0 ctx.GameContext, querier
 	return r0, r1
 }
 
-// Service_GetContinentsControlledByPlayerQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetContinentsControlledByPlayerQ'
-type Service_GetContinentsControlledByPlayerQ_Call struct {
+// Service_GetContinentsControlledByPlayer_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetContinentsControlledByPlayer'
+type Service_GetContinentsControlledByPlayer_Call struct {
 	*mock.Call
 }
 
-// GetContinentsControlledByPlayerQ is a helper method to define mock.On call
+// GetContinentsControlledByPlayer is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
 //   - playerID int64
-func (_e *Service_Expecter) GetContinentsControlledByPlayerQ(_a0 interface{}, querier interface{}, playerID interface{}) *Service_GetContinentsControlledByPlayerQ_Call {
-	return &Service_GetContinentsControlledByPlayerQ_Call{Call: _e.mock.On("GetContinentsControlledByPlayerQ", _a0, querier, playerID)}
+func (_e *Service_Expecter) GetContinentsControlledByPlayer(_a0 interface{}, querier interface{}, playerID interface{}) *Service_GetContinentsControlledByPlayer_Call {
+	return &Service_GetContinentsControlledByPlayer_Call{Call: _e.mock.On("GetContinentsControlledByPlayer", _a0, querier, playerID)}
 }
 
-func (_c *Service_GetContinentsControlledByPlayerQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, playerID int64)) *Service_GetContinentsControlledByPlayerQ_Call {
+func (_c *Service_GetContinentsControlledByPlayer_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, playerID int64)) *Service_GetContinentsControlledByPlayer_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(int64))
 	})
 	return _c
 }
 
-func (_c *Service_GetContinentsControlledByPlayerQ_Call) Return(_a0 []*board.Continent, _a1 error) *Service_GetContinentsControlledByPlayerQ_Call {
+func (_c *Service_GetContinentsControlledByPlayer_Call) Return(_a0 []*board.Continent, _a1 error) *Service_GetContinentsControlledByPlayer_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_GetContinentsControlledByPlayerQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, int64) ([]*board.Continent, error)) *Service_GetContinentsControlledByPlayerQ_Call {
+func (_c *Service_GetContinentsControlledByPlayer_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, int64) ([]*board.Continent, error)) *Service_GetContinentsControlledByPlayer_Call {
 	_c.Call.Return(run)
 	return _c
 }

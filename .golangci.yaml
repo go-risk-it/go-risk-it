@@ -40,12 +40,9 @@ linters:
         - github\.com/go-risk-it/go-risk-it/internal/data/.*/db\.Querier
         - github\.com/jackc/pgx/v5\..*
         - go\.opentelemetry\.io/otel/.*
-        - github\.com/go-risk-it/go-risk-it/internal/logic/game/signals\..*
-        - github\.com/go-risk-it/go-risk-it/internal/logic/lobby/signals\..*
-        - github\.com/go-risk-it/go-risk-it/internal/logic/game/board\..*
-        - github\.com/go-risk-it/go-risk-it/internal/logic/game/mission.*
-        - github\.com/go-risk-it/go-risk-it/internal/logic/game/move/attack/dice/roller\.Roller
-        - github\.com/go-risk-it/go-risk-it/internal/logic/game/region/assignment\.Assigner
+        - github\.com/go-risk-it/go-risk-it/internal/logic/.*
+        - github\.com/go-risk-it/go-risk-it/internal/testonly\..*
+        - github\.com/go-risk-it/go-risk-it/internal/web/.*
         - github\.com/go-risk-it/go-risk-it/internal/rand\.RNG
         - github\.com/maniartech/signals\.Signal
     lll:

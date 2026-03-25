@@ -18,7 +18,7 @@ type Manager interface {
 	WriteMessage(ctx ctx.LobbyContext, message json.RawMessage)
 }
 
-type ManagerImpl struct {
+type manager struct {
 	mu upgradablerwmutex.UpgradableRWMutex
 
 	lobbyConnections      map[int64]*ws.PlayerConnections
@@ -26,20 +26,20 @@ type ManagerImpl struct {
 	metrics               *metrics.Metrics
 }
 
-var _ Manager = (*ManagerImpl)(nil)
+var _ Manager = (*manager)(nil)
 
 func NewManager(
 	playerConnectedSignal signals.PlayerConnectedSignal,
 	metrics *metrics.Metrics,
-) *ManagerImpl {
-	return &ManagerImpl{
+) Manager {
+	return &manager{
 		lobbyConnections:      make(map[int64]*ws.PlayerConnections),
 		playerConnectedSignal: playerConnectedSignal,
 		metrics:               metrics,
 	}
 }
 
-func (m *ManagerImpl) ConnectPlayer(ctx ctx.LobbyContext, connection *websocket.Conn) {
+func (m *manager) ConnectPlayer(ctx ctx.LobbyContext, connection *websocket.Conn) {
 	slog.InfoContext(ctx, "connecting player to lobby")
 
 	m.playerConnections(ctx).ConnectPlayer(ctx, connection)
@@ -47,15 +47,15 @@ func (m *ManagerImpl) ConnectPlayer(ctx ctx.LobbyContext, connection *websocket.
 	m.playerConnectedSignal.Emit(ctx, signals.PlayerConnectedData{})
 }
 
-func (m *ManagerImpl) Broadcast(ctx ctx.LobbyContext, message json.RawMessage) {
+func (m *manager) Broadcast(ctx ctx.LobbyContext, message json.RawMessage) {
 	m.playerConnections(ctx).Broadcast(ctx, message)
 }
 
-func (m *ManagerImpl) WriteMessage(ctx ctx.LobbyContext, message json.RawMessage) {
+func (m *manager) WriteMessage(ctx ctx.LobbyContext, message json.RawMessage) {
 	m.playerConnections(ctx).Write(ctx, message)
 }
 
-func (m *ManagerImpl) playerConnections(ctx ctx.LobbyContext) *ws.PlayerConnections {
+func (m *manager) playerConnections(ctx ctx.LobbyContext) *ws.PlayerConnections {
 	m.mu.UpgradableRLock()
 	defer m.mu.UpgradableRUnlock()
 

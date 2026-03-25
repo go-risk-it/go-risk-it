@@ -1,37 +1,82 @@
 package advancement
 
 import (
+	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/cards"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/validation"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/reinforce"
+	moveservice "github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
+	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"go.uber.org/fx"
 )
 
-type AttackAdvancer interface {
-	Service[attack.Move]
+type AttackAdvancer = Service[attack.Move]
+
+type CardsAdvancer = Service[cards.Move]
+
+type ReinforceAdvancer = Service[reinforce.Move]
+
+func NewAttackAdvancer(
+	gameState state.Service,
+	querier db.Querier,
+	moveService moveservice.Service[attack.Move],
+	validationService validation.Service,
+	gameStateChangedSignal signals.GameStateChangedSignal,
+	metrics *metrics.Metrics,
+) AttackAdvancer {
+	return NewService[attack.Move](
+		gameState,
+		querier,
+		moveService,
+		validationService,
+		gameStateChangedSignal,
+		metrics,
+	)
 }
 
-type CardsAdvancer interface {
-	Service[cards.Move]
+func NewCardsAdvancer(
+	gameState state.Service,
+	querier db.Querier,
+	moveService moveservice.Service[cards.Move],
+	validationService validation.Service,
+	gameStateChangedSignal signals.GameStateChangedSignal,
+	metrics *metrics.Metrics,
+) CardsAdvancer {
+	return NewService[cards.Move](
+		gameState,
+		querier,
+		moveService,
+		validationService,
+		gameStateChangedSignal,
+		metrics,
+	)
 }
 
-type ReinforceAdvancer interface {
-	Service[reinforce.Move]
+func NewReinforceAdvancer(
+	gameState state.Service,
+	querier db.Querier,
+	moveService moveservice.Service[reinforce.Move],
+	validationService validation.Service,
+	gameStateChangedSignal signals.GameStateChangedSignal,
+	metrics *metrics.Metrics,
+) ReinforceAdvancer {
+	return NewService[reinforce.Move](
+		gameState,
+		querier,
+		moveService,
+		validationService,
+		gameStateChangedSignal,
+		metrics,
+	)
 }
 
 var Module = fx.Options(
 	fx.Provide(
-		fx.Annotate(
-			NewService[attack.Move],
-			fx.As(new(AttackAdvancer)),
-		),
-		fx.Annotate(
-			NewService[cards.Move],
-			fx.As(new(CardsAdvancer)),
-		),
-		fx.Annotate(
-			NewService[reinforce.Move],
-			fx.As(new(ReinforceAdvancer)),
-		),
+		NewAttackAdvancer,
+		NewCardsAdvancer,
+		NewReinforceAdvancer,
 	),
 )

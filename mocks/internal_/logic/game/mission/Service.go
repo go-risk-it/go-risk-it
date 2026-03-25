@@ -26,12 +26,12 @@ func (_m *Service) EXPECT() *Service_Expecter {
 	return &Service_Expecter{mock: &_m.Mock}
 }
 
-// CreateMissionsQ provides a mock function with given fields: _a0, querier, players
-func (_m *Service) CreateMissionsQ(_a0 ctx.GameContext, querier db.Querier, players []sqlc.GamePlayer) error {
+// CreateMissions provides a mock function with given fields: _a0, querier, players
+func (_m *Service) CreateMissions(_a0 ctx.GameContext, querier db.Querier, players []sqlc.GamePlayer) error {
 	ret := _m.Called(_a0, querier, players)
 
 	if len(ret) == 0 {
-		panic("no return value specified for CreateMissionsQ")
+		panic("no return value specified for CreateMissions")
 	}
 
 	var r0 error
@@ -44,32 +44,32 @@ func (_m *Service) CreateMissionsQ(_a0 ctx.GameContext, querier db.Querier, play
 	return r0
 }
 
-// Service_CreateMissionsQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateMissionsQ'
-type Service_CreateMissionsQ_Call struct {
+// Service_CreateMissions_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateMissions'
+type Service_CreateMissions_Call struct {
 	*mock.Call
 }
 
-// CreateMissionsQ is a helper method to define mock.On call
+// CreateMissions is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
 //   - players []sqlc.GamePlayer
-func (_e *Service_Expecter) CreateMissionsQ(_a0 interface{}, querier interface{}, players interface{}) *Service_CreateMissionsQ_Call {
-	return &Service_CreateMissionsQ_Call{Call: _e.mock.On("CreateMissionsQ", _a0, querier, players)}
+func (_e *Service_Expecter) CreateMissions(_a0 interface{}, querier interface{}, players interface{}) *Service_CreateMissions_Call {
+	return &Service_CreateMissions_Call{Call: _e.mock.On("CreateMissions", _a0, querier, players)}
 }
 
-func (_c *Service_CreateMissionsQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, players []sqlc.GamePlayer)) *Service_CreateMissionsQ_Call {
+func (_c *Service_CreateMissions_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, players []sqlc.GamePlayer)) *Service_CreateMissions_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].([]sqlc.GamePlayer))
 	})
 	return _c
 }
 
-func (_c *Service_CreateMissionsQ_Call) Return(_a0 error) *Service_CreateMissionsQ_Call {
+func (_c *Service_CreateMissions_Call) Return(_a0 error) *Service_CreateMissions_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Service_CreateMissionsQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, []sqlc.GamePlayer) error) *Service_CreateMissionsQ_Call {
+func (_c *Service_CreateMissions_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, []sqlc.GamePlayer) error) *Service_CreateMissions_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -301,12 +301,12 @@ func (_c *Service_GetTwoContinentsPlusOneMission_Call) RunAndReturn(run func(ctx
 	return _c
 }
 
-// IsMissionAccomplishedQ provides a mock function with given fields: _a0, querier
-func (_m *Service) IsMissionAccomplishedQ(_a0 ctx.GameContext, querier db.Querier) (bool, error) {
+// IsMissionAccomplished provides a mock function with given fields: _a0, querier
+func (_m *Service) IsMissionAccomplished(_a0 ctx.GameContext, querier db.Querier) (bool, error) {
 	ret := _m.Called(_a0, querier)
 
 	if len(ret) == 0 {
-		panic("no return value specified for IsMissionAccomplishedQ")
+		panic("no return value specified for IsMissionAccomplished")
 	}
 
 	var r0 bool
@@ -329,41 +329,41 @@ func (_m *Service) IsMissionAccomplishedQ(_a0 ctx.GameContext, querier db.Querie
 	return r0, r1
 }
 
-// Service_IsMissionAccomplishedQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsMissionAccomplishedQ'
-type Service_IsMissionAccomplishedQ_Call struct {
+// Service_IsMissionAccomplished_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsMissionAccomplished'
+type Service_IsMissionAccomplished_Call struct {
 	*mock.Call
 }
 
-// IsMissionAccomplishedQ is a helper method to define mock.On call
+// IsMissionAccomplished is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
-func (_e *Service_Expecter) IsMissionAccomplishedQ(_a0 interface{}, querier interface{}) *Service_IsMissionAccomplishedQ_Call {
-	return &Service_IsMissionAccomplishedQ_Call{Call: _e.mock.On("IsMissionAccomplishedQ", _a0, querier)}
+func (_e *Service_Expecter) IsMissionAccomplished(_a0 interface{}, querier interface{}) *Service_IsMissionAccomplished_Call {
+	return &Service_IsMissionAccomplished_Call{Call: _e.mock.On("IsMissionAccomplished", _a0, querier)}
 }
 
-func (_c *Service_IsMissionAccomplishedQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier)) *Service_IsMissionAccomplishedQ_Call {
+func (_c *Service_IsMissionAccomplished_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier)) *Service_IsMissionAccomplished_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.GameContext), args[1].(db.Querier))
 	})
 	return _c
 }
 
-func (_c *Service_IsMissionAccomplishedQ_Call) Return(_a0 bool, _a1 error) *Service_IsMissionAccomplishedQ_Call {
+func (_c *Service_IsMissionAccomplished_Call) Return(_a0 bool, _a1 error) *Service_IsMissionAccomplished_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Service_IsMissionAccomplishedQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier) (bool, error)) *Service_IsMissionAccomplishedQ_Call {
+func (_c *Service_IsMissionAccomplished_Call) RunAndReturn(run func(ctx.GameContext, db.Querier) (bool, error)) *Service_IsMissionAccomplished_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// ReassignMissionsQ provides a mock function with given fields: _a0, querier, eliminatedPlayerID
-func (_m *Service) ReassignMissionsQ(_a0 ctx.GameContext, querier db.Querier, eliminatedPlayerID int64) error {
+// ReassignMissions provides a mock function with given fields: _a0, querier, eliminatedPlayerID
+func (_m *Service) ReassignMissions(_a0 ctx.GameContext, querier db.Querier, eliminatedPlayerID int64) error {
 	ret := _m.Called(_a0, querier, eliminatedPlayerID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for ReassignMissionsQ")
+		panic("no return value specified for ReassignMissions")
 	}
 
 	var r0 error
@@ -376,32 +376,32 @@ func (_m *Service) ReassignMissionsQ(_a0 ctx.GameContext, querier db.Querier, el
 	return r0
 }
 
-// Service_ReassignMissionsQ_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ReassignMissionsQ'
-type Service_ReassignMissionsQ_Call struct {
+// Service_ReassignMissions_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ReassignMissions'
+type Service_ReassignMissions_Call struct {
 	*mock.Call
 }
 
-// ReassignMissionsQ is a helper method to define mock.On call
+// ReassignMissions is a helper method to define mock.On call
 //   - _a0 ctx.GameContext
 //   - querier db.Querier
 //   - eliminatedPlayerID int64
-func (_e *Service_Expecter) ReassignMissionsQ(_a0 interface{}, querier interface{}, eliminatedPlayerID interface{}) *Service_ReassignMissionsQ_Call {
-	return &Service_ReassignMissionsQ_Call{Call: _e.mock.On("ReassignMissionsQ", _a0, querier, eliminatedPlayerID)}
+func (_e *Service_Expecter) ReassignMissions(_a0 interface{}, querier interface{}, eliminatedPlayerID interface{}) *Service_ReassignMissions_Call {
+	return &Service_ReassignMissions_Call{Call: _e.mock.On("ReassignMissions", _a0, querier, eliminatedPlayerID)}
 }
 
-func (_c *Service_ReassignMissionsQ_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, eliminatedPlayerID int64)) *Service_ReassignMissionsQ_Call {
+func (_c *Service_ReassignMissions_Call) Run(run func(_a0 ctx.GameContext, querier db.Querier, eliminatedPlayerID int64)) *Service_ReassignMissions_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(ctx.GameContext), args[1].(db.Querier), args[2].(int64))
 	})
 	return _c
 }
 
-func (_c *Service_ReassignMissionsQ_Call) Return(_a0 error) *Service_ReassignMissionsQ_Call {
+func (_c *Service_ReassignMissions_Call) Return(_a0 error) *Service_ReassignMissions_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Service_ReassignMissionsQ_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, int64) error) *Service_ReassignMissionsQ_Call {
+func (_c *Service_ReassignMissions_Call) RunAndReturn(run func(ctx.GameContext, db.Querier, int64) error) *Service_ReassignMissions_Call {
 	_c.Call.Return(run)
 	return _c
 }
