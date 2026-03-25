@@ -24,14 +24,80 @@ resolve_anon_key() {
     export ANON_KEY
 }
 
-# check_docker_stack verifies the LGTM container is running.
-check_docker_stack() {
-    if ! docker compose --env-file "$ENV_FILE" -f "$PROJECT_ROOT/docker-compose.yml" \
-        ps --format '{{.Name}}' 2>/dev/null | grep -q "lgtm"; then
-        echo "ERROR: LGTM container not running. OTel metrics will not be collected." >&2
-        echo "  Start the stack: cd $PROJECT_ROOT && docker compose --env-file component-test/.env up -d" >&2
-        exit 1
+# ensure_fresh_stack tears down the existing Docker stack, checks out the
+# requested branch (default: main), rebuilds, and starts all containers.
+# Skipped if --skip-rebuild is passed to the parent script.
+# Use --branch <name> to build from a specific branch (default: main).
+ensure_fresh_stack() {
+    local target_branch
+    target_branch=$(extract_flag_value "--branch" "main" "$@")
+
+    if has_flag "--skip-rebuild" "$@"; then
+        echo "[stack] --skip-rebuild: skipping stack rebuild"
+        # Still verify the stack is running.
+        if ! docker compose --env-file "$ENV_FILE" -f "$PROJECT_ROOT/docker-compose.yml" \
+            ps --format '{{.Name}}' 2>/dev/null | grep -q "lgtm"; then
+            echo "ERROR: Docker stack not running. Remove --skip-rebuild or start the stack manually." >&2
+            exit 1
+        fi
+        return 0
     fi
+
+    local current_branch
+    current_branch=$(git -C "$PROJECT_ROOT" branch --show-current)
+
+    echo "[stack] tearing down existing containers..."
+    docker compose --env-file "$ENV_FILE" -f "$PROJECT_ROOT/docker-compose.yml" down 2>&1 | tail -1
+
+    if [[ "$target_branch" != "$current_branch" ]]; then
+        echo "[stack] checking out $target_branch..."
+        git -C "$PROJECT_ROOT" checkout "$target_branch" --quiet
+        git -C "$PROJECT_ROOT" pull --quiet 2>/dev/null || true
+    else
+        echo "[stack] already on $target_branch"
+    fi
+
+    echo "[stack] rebuilding and starting containers from $(git -C "$PROJECT_ROOT" log --oneline -1)..."
+    docker compose --env-file "$ENV_FILE" -f "$PROJECT_ROOT/docker-compose.yml" up -d --build 2>&1 | tail -3
+
+    echo "[stack] waiting for containers to be healthy..."
+    local max_wait=60
+    local waited=0
+    while [[ $waited -lt $max_wait ]]; do
+        local healthy
+        healthy=$(docker compose --env-file "$ENV_FILE" -f "$PROJECT_ROOT/docker-compose.yml" \
+            ps --format '{{.Status}}' 2>/dev/null | grep -c "healthy" || true)
+        if [[ "$healthy" -ge 3 ]]; then
+            echo "[stack] ready ($healthy healthy containers)"
+            return 0
+        fi
+        sleep 2
+        waited=$((waited + 2))
+    done
+
+    echo "WARNING: not all containers healthy after ${max_wait}s, proceeding anyway" >&2
+}
+
+# strip_stack_flags removes --skip-rebuild and --branch <value> from args
+# so they don't get forwarded to the Go binary.
+strip_stack_flags() {
+    local result=()
+    local skip_next=false
+    for arg in "$@"; do
+        if $skip_next; then
+            skip_next=false
+            continue
+        fi
+        if [[ "$arg" == "--skip-rebuild" ]]; then
+            continue
+        fi
+        if [[ "$arg" == "--branch" ]]; then
+            skip_next=true
+            continue
+        fi
+        result+=("$arg")
+    done
+    echo "${result[@]}"
 }
 
 # has_flag checks if any of the passed arguments matches the given flag name.

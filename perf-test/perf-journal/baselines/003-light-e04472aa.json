@@ -1,0 +1,105 @@
+{
+  "commit_sha": "e04472aa",
+  "timestamp": "2026-03-24T21:18:36.321528+01:00",
+  "test_params": {
+    "preset": "light",
+    "players": 4,
+    "games": 10,
+    "mode": "batch"
+  },
+  "metrics": {
+    "e2e": {
+      "p50_s": 0.005,
+      "p95_s": 0.009,
+      "p99_s": 0.013,
+      "max_s": 0.034
+    },
+    "ws_delivery": {
+      "p50_s": 0.05,
+      "p95_s": 0.051,
+      "p99_s": 0.053,
+      "max_s": 3.063
+    },
+    "throughput_moves_per_sec": 70.90919758382601,
+    "throughput_peak_moves_per_sec": 144.6,
+    "http_error_rate": 0,
+    "total_moves": 7956,
+    "total_errors": 0,
+    "games_completed": 0,
+    "games_timed_out": 0,
+    "games_fatal": 0,
+    "total_retries": 0,
+    "total_conflicts": 0,
+    "total_reconnects": 0,
+    "total_reconnect_failures": 0,
+    "rest_latency": {
+      "advance": {
+        "p50_s": 0.004,
+        "p95_s": 0.008,
+        "p99_s": 0.011,
+        "max_s": 0.025
+      },
+      "attack": {
+        "p50_s": 0.005,
+        "p95_s": 0.009,
+        "p99_s": 0.013,
+        "max_s": 0.02
+      },
+      "cards": {
+        "p50_s": 0.005,
+        "p95_s": 0.009,
+        "p99_s": 0.015,
+        "max_s": 0.019
+      },
+      "conquer": {
+        "p50_s": 0.005,
+        "p95_s": 0.01,
+        "p99_s": 0.014,
+        "max_s": 0.022
+      },
+      "deploy": {
+        "p50_s": 0.005,
+        "p95_s": 0.008,
+        "p99_s": 0.012,
+        "max_s": 0.02
+      },
+      "reinforce": {
+        "p50_s": 0.007,
+        "p95_s": 0.012,
+        "p99_s": 0.015,
+        "max_s": 0.034
+      }
+    },
+    "phase_entries": {
+      "attack": 3108,
+      "cards": 304,
+      "conquer": 2070,
+      "deploy": 1048,
+      "reinforce": 1038
+    },
+    "phase_moves": {
+      "attack": 3496,
+      "cards": 304,
+      "conquer": 2070,
+      "deploy": 1048,
+      "reinforce": 1038
+    },
+    "duration_sec": 112.199831208
+  },
+  "environment": {
+    "go_version": "go1.26.1",
+    "goos": "darwin",
+    "goarch": "arm64",
+    "gomaxprocs": 14,
+    "num_cpu": 14,
+    "docker_version": "Docker version 28.3.3, build 980b856"
+  },
+  "insights": [
+    {
+      "category": "anomaly",
+      "severity": "info",
+      "title": "Phase flow imbalance",
+      "detail": "deploy entries (1048) are 34% of attack entries (3108) — games may be getting stuck"
+    }
+  ]
+}

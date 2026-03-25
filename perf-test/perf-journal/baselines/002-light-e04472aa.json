@@ -1,0 +1,86 @@
+{
+  "commit_sha": "e04472aa",
+  "timestamp": "2026-03-24T21:13:59.249816+01:00",
+  "test_params": {
+    "preset": "light",
+    "players": 4,
+    "games": 10,
+    "mode": "batch"
+  },
+  "metrics": {
+    "e2e": {
+      "p50_s": 0.014,
+      "p95_s": 0.016,
+      "p99_s": 0.017,
+      "max_s": 0.017
+    },
+    "ws_delivery": {
+      "p50_s": 27.567,
+      "p95_s": 30.015,
+      "p99_s": 30.015,
+      "max_s": 30.015
+    },
+    "throughput_moves_per_sec": 0.17283343301964454,
+    "throughput_peak_moves_per_sec": 0.8,
+    "http_error_rate": 13.125,
+    "move_failure_rate": 0.9292035398230089,
+    "total_moves": 16,
+    "total_errors": 210,
+    "games_completed": 0,
+    "games_timed_out": 0,
+    "games_fatal": 0,
+    "total_retries": 0,
+    "total_conflicts": 0,
+    "total_reconnects": 0,
+    "total_reconnect_failures": 0,
+    "rest_latency": {
+      "attack": {
+        "p50_s": 0.013,
+        "p95_s": 0.016,
+        "p99_s": 0.016,
+        "max_s": 0.016
+      },
+      "deploy": {
+        "p50_s": 0.014,
+        "p95_s": 0.017,
+        "p99_s": 0.017,
+        "max_s": 0.017
+      }
+    },
+    "error_breakdown": {
+      "execution": 210
+    },
+    "phase_entries": {
+      "attack": 8,
+      "conquer": 8,
+      "deploy": 10
+    },
+    "phase_moves": {
+      "attack": 8,
+      "deploy": 8
+    },
+    "duration_sec": 92.574681417
+  },
+  "environment": {
+    "go_version": "go1.26.1",
+    "goos": "darwin",
+    "goarch": "arm64",
+    "gomaxprocs": 14,
+    "num_cpu": 14,
+    "docker_version": "Docker version 28.3.3, build 980b856"
+  },
+  "insights": [
+    {
+      "category": "anomaly",
+      "severity": "warning",
+      "title": "Error dominance",
+      "detail": "\"execution\" accounts for 100% of non-success outcomes (210/210)"
+    },
+    {
+      "category": "bottleneck",
+      "severity": "info",
+      "title": "Throughput plateau",
+      "detail": "peak/avg ratio = 4.6x (avg=0.2, peak=0.8 moves/s)"
+    }
+  ]
+}

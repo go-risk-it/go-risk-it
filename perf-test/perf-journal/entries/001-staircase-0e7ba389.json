@@ -1,0 +1,543 @@
+{
+  "commit_sha": "0e7ba389",
+  "timestamp": "2026-03-24T23:56:28.933664+01:00",
+  "branch": "main",
+  "config": {
+    "steps": [
+      10,
+      20,
+      40,
+      60,
+      80,
+      100,
+      120
+    ],
+    "hold_duration_sec": 60,
+    "num_players": 4,
+    "game_timeout_sec": 600,
+    "stop_on_breach": true,
+    "warm_up_completions": 10
+  },
+  "slo_ceiling": {
+    "games": 120,
+    "throughput_mps": 1057.1319355758692,
+    "completion_rate": 0
+  },
+  "steps": [
+    {
+      "target_games": 10,
+      "metrics": {
+        "e2e": {
+          "p50_s": 0,
+          "p95_s": 0,
+          "p99_s": 0,
+          "max_s": 0
+        },
+        "ws_delivery": {
+          "p50_s": 0,
+          "p95_s": 0,
+          "p99_s": 0,
+          "max_s": 0
+        },
+        "throughput_moves_per_sec": 129.39786304820754,
+        "throughput_peak_moves_per_sec": 147.6,
+        "http_error_rate": 0,
+        "total_moves": 7764,
+        "total_errors": 0,
+        "games_completed": 0,
+        "games_timed_out": 0,
+        "games_fatal": 0,
+        "total_retries": 0,
+        "total_conflicts": 0,
+        "total_reconnects": 0,
+        "total_reconnect_failures": 0,
+        "phase_entries": {
+          "attack": 3021,
+          "cards": 300,
+          "conquer": 1914,
+          "deploy": 1116,
+          "reinforce": 1102
+        },
+        "phase_moves": {
+          "attack": 3332,
+          "cards": 300,
+          "conquer": 1914,
+          "deploy": 1116,
+          "reinforce": 1102
+        },
+        "duration_sec": 60.000990875
+      },
+      "slo_eval": {
+        "violations": null
+      },
+      "server_resources": {
+        "risk_it": {
+          "cpu_percent": 50.32,
+          "memory_mb": 39.9,
+          "memory_limit_mb": 17459.2
+        },
+        "db": {
+          "cpu_percent": 37.56,
+          "memory_mb": 247.7,
+          "memory_limit_mb": 17459.2
+        }
+      },
+      "duration_sec": 60.000990875,
+      "health_distribution": {
+        "healthy": 0,
+        "slow": 0,
+        "stalled": 0,
+        "zombie": 0,
+        "total": 0
+      }
+    },
+    {
+      "target_games": 20,
+      "metrics": {
+        "e2e": {
+          "p50_s": 0,
+          "p95_s": 0,
+          "p99_s": 0,
+          "max_s": 0
+        },
+        "ws_delivery": {
+          "p50_s": 0,
+          "p95_s": 0,
+          "p99_s": 0,
+          "max_s": 0
+        },
+        "throughput_moves_per_sec": 286.5329699952007,
+        "throughput_peak_moves_per_sec": 303.2,
+        "http_error_rate": 0,
+        "total_moves": 17192,
+        "total_errors": 0,
+        "games_completed": 0,
+        "games_timed_out": 0,
+        "games_fatal": 0,
+        "total_retries": 0,
+        "total_conflicts": 0,
+        "total_reconnects": 0,
+        "total_reconnect_failures": 0,
+        "phase_entries": {
+          "attack": 6720,
+          "cards": 660,
+          "conquer": 4298,
+          "deploy": 2446,
+          "reinforce": 2416
+        },
+        "phase_moves": {
+          "attack": 7372,
+          "cards": 660,
+          "conquer": 4298,
+          "deploy": 2446,
+          "reinforce": 2416
+        },
+        "duration_sec": 60.000076083
+      },
+      "slo_eval": {
+        "violations": null
+      },
+      "server_resources": {
+        "risk_it": {
+          "cpu_percent": 62.61,
+          "memory_mb": 45.09,
+          "memory_limit_mb": 17459.2
+        },
+        "db": {
+          "cpu_percent": 66.62,
+          "memory_mb": 295.5,
+          "memory_limit_mb": 17459.2
+        }
+      },
+      "duration_sec": 60.000076083,
+      "health_distribution": {
+        "healthy": 0,
+        "slow": 0,
+        "stalled": 0,
+        "zombie": 0,
+        "total": 0
+      }
+    },
+    {
+      "target_games": 40,
+      "metrics": {
+        "e2e": {
+          "p50_s": 0,
+          "p95_s": 0,
+          "p99_s": 0,
+          "max_s": 0
+        },
+        "ws_delivery": {
+          "p50_s": 0,
+          "p95_s": 0,
+          "p99_s": 0,
+          "max_s": 0
+        },
+        "throughput_moves_per_sec": 687.7327081613772,
+        "throughput_peak_moves_per_sec": 696.2,
+        "http_error_rate": 0,
+        "move_failure_rate": 0.000024233612019871563,
+        "total_moves": 41264,
+        "total_errors": 0,
+        "games_completed": 0,
+        "games_timed_out": 0,
+        "games_fatal": 0,
+        "total_retries": 0,
+        "total_conflicts": 1,
+        "total_reconnects": 0,
+        "total_reconnect_failures": 0,
+        "error_breakdown": {
+          "conflict": 1
+        },
+        "phase_entries": {
+          "attack": 16058,
+          "cards": 1568,
+          "conquer": 10546,
+          "deploy": 5548,
+          "reinforce": 5496
+        },
+        "phase_moves": {
+          "attack": 18107,
+          "cards": 1568,
+          "conquer": 10546,
+          "deploy": 5547,
+          "reinforce": 5496
+        },
+        "duration_sec": 60.000054542
+      },
+      "slo_eval": {
+        "violations": null
+      },
+      "server_resources": {
+        "risk_it": {
+          "cpu_percent": 158.72,
+          "memory_mb": 53.05,
+          "memory_limit_mb": 17459.2
+        },
+        "db": {
+          "cpu_percent": 109.22,
+          "memory_mb": 466.5,
+          "memory_limit_mb": 17459.2
+        }
+      },
+      "duration_sec": 60.000054542,
+      "health_distribution": {
+        "healthy": 0,
+        "slow": 0,
+        "stalled": 0,
+        "zombie": 0,
+        "total": 0
+      }
+    },
+    {
+      "target_games": 60,
+      "metrics": {
+        "e2e": {
+          "p50_s": 0,
+          "p95_s": 0,
+          "p99_s": 0,
+          "max_s": 0
+        },
+        "ws_delivery": {
+          "p50_s": 0,
+          "p95_s": 0,
+          "p99_s": 0,
+          "max_s": 0
+        },
+        "throughput_moves_per_sec": 890.132335035084,
+        "throughput_peak_moves_per_sec": 876.8,
+        "http_error_rate": 0.00001872378669862193,
+        "move_failure_rate": 0.00003744617112900206,
+        "total_moves": 53408,
+        "total_errors": 1,
+        "games_completed": 0,
+        "games_timed_out": 0,
+        "games_fatal": 0,
+        "total_retries": 0,
+        "total_conflicts": 1,
+        "total_reconnects": 0,
+        "total_reconnect_failures": 0,
+        "error_breakdown": {
+          "conflict": 1,
+          "stale_state": 1
+        },
+        "phase_entries": {
+          "attack": 20806,
+          "cards": 2016,
+          "conquer": 13565,
+          "deploy": 7293,
+          "reinforce": 7221
+        },
+        "phase_moves": {
+          "attack": 23320,
+          "cards": 2016,
+          "conquer": 13562,
+          "deploy": 7292,
+          "reinforce": 7218
+        },
+        "duration_sec": 60.000067291
+      },
+      "slo_eval": {
+        "violations": null
+      },
+      "server_resources": {
+        "risk_it": {
+          "cpu_percent": 217.85,
+          "memory_mb": 56.1,
+          "memory_limit_mb": 17459.2
+        },
+        "db": {
+          "cpu_percent": 262.03,
+          "memory_mb": 612.3,
+          "memory_limit_mb": 17459.2
+        }
+      },
+      "duration_sec": 60.000067291,
+      "health_distribution": {
+        "healthy": 0,
+        "slow": 0,
+        "stalled": 0,
+        "zombie": 0,
+        "total": 0
+      }
+    },
+    {
+      "target_games": 80,
+      "metrics": {
+        "e2e": {
+          "p50_s": 0,
+          "p95_s": 0,
+          "p99_s": 0,
+          "max_s": 0
+        },
+        "ws_delivery": {
+          "p50_s": 0,
+          "p95_s": 0,
+          "p99_s": 0,
+          "max_s": 0
+        },
+        "throughput_moves_per_sec": 968.8645748719018,
+        "throughput_peak_moves_per_sec": 974,
+        "http_error_rate": 0.0000688089176357256,
+        "move_failure_rate": 0.0004298708667916158,
+        "total_moves": 58132,
+        "total_errors": 4,
+        "games_completed": 0,
+        "games_timed_out": 0,
+        "games_fatal": 0,
+        "total_retries": 0,
+        "total_conflicts": 21,
+        "total_reconnects": 0,
+        "total_reconnect_failures": 0,
+        "error_breakdown": {
+          "conflict": 21,
+          "stale_state": 4
+        },
+        "phase_entries": {
+          "attack": 22731,
+          "cards": 2207,
+          "conquer": 14765,
+          "deploy": 8027,
+          "reinforce": 7939
+        },
+        "phase_moves": {
+          "attack": 25207,
+          "cards": 2206,
+          "conquer": 14757,
+          "deploy": 8024,
+          "reinforce": 7938
+        },
+        "duration_sec": 60.000129541
+      },
+      "slo_eval": {
+        "violations": null
+      },
+      "server_resources": {
+        "risk_it": {
+          "cpu_percent": 206.45,
+          "memory_mb": 59.25,
+          "memory_limit_mb": 17459.2
+        },
+        "db": {
+          "cpu_percent": 391.42,
+          "memory_mb": 765.1,
+          "memory_limit_mb": 17459.2
+        }
+      },
+      "duration_sec": 60.000129541,
+      "health_distribution": {
+        "healthy": 0,
+        "slow": 0,
+        "stalled": 0,
+        "zombie": 0,
+        "total": 0
+      }
+    },
+    {
+      "target_games": 100,
+      "metrics": {
+        "e2e": {
+          "p50_s": 0,
+          "p95_s": 0,
+          "p99_s": 0,
+          "max_s": 0
+        },
+        "ws_delivery": {
+          "p50_s": 0,
+          "p95_s": 0,
+          "p99_s": 0,
+          "max_s": 0
+        },
+        "throughput_moves_per_sec": 1052.2276629836804,
+        "throughput_peak_moves_per_sec": 1048.6,
+        "http_error_rate": 0.00004751797763487186,
+        "move_failure_rate": 0.0011391323608518178,
+        "total_moves": 63134,
+        "total_errors": 3,
+        "games_completed": 0,
+        "games_timed_out": 0,
+        "games_fatal": 0,
+        "total_retries": 0,
+        "total_conflicts": 69,
+        "total_reconnects": 0,
+        "total_reconnect_failures": 0,
+        "error_breakdown": {
+          "conflict": 69,
+          "stale_state": 3
+        },
+        "phase_entries": {
+          "attack": 24707,
+          "cards": 2397,
+          "conquer": 15789,
+          "deploy": 8981,
+          "reinforce": 8875
+        },
+        "phase_moves": {
+          "attack": 27100,
+          "cards": 2397,
+          "conquer": 15787,
+          "deploy": 8979,
+          "reinforce": 8871
+        },
+        "duration_sec": 60.000323334
+      },
+      "slo_eval": {
+        "violations": null
+      },
+      "server_resources": {
+        "risk_it": {
+          "cpu_percent": 228.62,
+          "memory_mb": 65.94,
+          "memory_limit_mb": 17459.2
+        },
+        "db": {
+          "cpu_percent": 409.06,
+          "memory_mb": 788.5,
+          "memory_limit_mb": 17459.2
+        }
+      },
+      "duration_sec": 60.000323334,
+      "health_distribution": {
+        "healthy": 0,
+        "slow": 0,
+        "stalled": 0,
+        "zombie": 0,
+        "total": 0
+      }
+    },
+    {
+      "target_games": 120,
+      "metrics": {
+        "e2e": {
+          "p50_s": 0,
+          "p95_s": 0,
+          "p99_s": 0,
+          "max_s": 0
+        },
+        "ws_delivery": {
+          "p50_s": 0,
+          "p95_s": 0,
+          "p99_s": 0,
+          "max_s": 0
+        },
+        "throughput_moves_per_sec": 1057.1319355758692,
+        "throughput_peak_moves_per_sec": 1048,
+        "http_error_rate": 0.0000788295390048559,
+        "move_failure_rate": 0.004676270282145435,
+        "total_moves": 63428,
+        "total_errors": 5,
+        "games_completed": 0,
+        "games_timed_out": 0,
+        "games_fatal": 0,
+        "total_retries": 0,
+        "total_conflicts": 293,
+        "total_reconnects": 0,
+        "total_reconnect_failures": 0,
+        "error_breakdown": {
+          "conflict": 293,
+          "stale_state": 5
+        },
+        "phase_entries": {
+          "attack": 24796,
+          "cards": 2425,
+          "conquer": 15623,
+          "deploy": 9241,
+          "reinforce": 9121
+        },
+        "phase_moves": {
+          "attack": 27038,
+          "cards": 2423,
+          "conquer": 15612,
+          "deploy": 9236,
+          "reinforce": 9119
+        },
+        "duration_sec": 60.000079333
+      },
+      "slo_eval": {
+        "violations": null
+      },
+      "server_resources": {
+        "risk_it": {
+          "cpu_percent": 231.65,
+          "memory_mb": 77.9,
+          "memory_limit_mb": 17459.2
+        },
+        "db": {
+          "cpu_percent": 601.53,
+          "memory_mb": 916,
+          "memory_limit_mb": 17459.2
+        }
+      },
+      "duration_sec": 60.000079333,
+      "health_distribution": {
+        "healthy": 0,
+        "slow": 0,
+        "stalled": 0,
+        "zombie": 0,
+        "total": 0
+      }
+    }
+  ],
+  "environment": {
+    "go_version": "go1.26.1",
+    "goos": "darwin",
+    "goarch": "arm64",
+    "gomaxprocs": 14,
+    "num_cpu": 14,
+    "docker_version": "Docker version 28.3.3, build 980b856"
+  },
+  "insights": [
+    {
+      "category": "anomaly",
+      "severity": "warning",
+      "title": "Error dominance",
+      "detail": "\"conflict\" accounts for 98% of non-success outcomes (293/298)"
+    },
+    {
+      "category": "anomaly",
+      "severity": "info",
+      "title": "Phase flow imbalance",
+      "detail": "deploy entries (9241) are 37% of attack entries (24796) — games may be getting stuck"
+    }
+  ]
+}
