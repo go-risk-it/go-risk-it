@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,6 +29,10 @@ var AllInvariants = []Invariant{
 		checkPlayerRegionConsistency,
 	},
 	{"EliminatedPlayersOwnNoRegions", checkEliminatedPlayers},
+	{"TroopConservation", checkTroopConservation},
+	{"CardDeckConservation", checkCardDeckConservation},
+	{"PhaseTransitionLegality", checkPhaseTransitionLegality},
+	{"TerritoryIntegrity", checkTerritoryIntegrity},
 }
 
 // CheckAll runs every registered invariant against the snapshot.
@@ -202,5 +207,79 @@ func checkEliminatedPlayers(
 				"eliminated player %s still owns %d regions",
 				player.UserID, len(owned))
 		}
+	}
+}
+
+// initialMinTroops is the minimum total troop count at game start.
+// With 42 regions each getting at least 1 troop, the floor is 42.
+const initialMinTroops = 42
+
+func checkTroopConservation(
+	tb testing.TB,
+	snap *GameSnapshot,
+	_ *GameSnapshot,
+) {
+	tb.Helper()
+
+	total := snap.TotalTroops()
+	assert.GreaterOrEqualf(tb, total, int64(initialMinTroops),
+		"total troops %d below initial minimum %d",
+		total, initialMinTroops)
+}
+
+// expectedCardCount is the fixed number of cards in a Risk deck:
+// 42 region cards + 2 jokers.
+const expectedCardCount = 44
+
+func checkCardDeckConservation(
+	tb testing.TB,
+	snap *GameSnapshot,
+	_ *GameSnapshot,
+) {
+	tb.Helper()
+
+	assert.Equalf(tb, int64(expectedCardCount), snap.TotalCardCount,
+		"card deck size changed: expected %d, got %d",
+		expectedCardCount, snap.TotalCardCount)
+}
+
+func checkPhaseTransitionLegality(
+	tb testing.TB,
+	snap *GameSnapshot,
+	prev *GameSnapshot,
+) {
+	tb.Helper()
+
+	if prev == nil || snap.Phase == prev.Phase {
+		return
+	}
+
+	err := phase.ValidateTransition(prev.Phase, snap.Phase)
+	assert.NoErrorf(tb, err,
+		"illegal phase transition: %s -> %s",
+		prev.Phase, snap.Phase)
+}
+
+func checkTerritoryIntegrity(
+	tb testing.TB,
+	snap *GameSnapshot,
+	_ *GameSnapshot,
+) {
+	tb.Helper()
+
+	// 42 regions
+	assert.Lenf(tb, snap.Regions, 42,
+		"expected 42 regions, got %d", len(snap.Regions))
+
+	for _, region := range snap.Regions {
+		// Every region has exactly one owner
+		assert.NotEmptyf(tb, region.UserID,
+			"region %s has no owner",
+			region.ExternalReference)
+
+		// No region has negative troops
+		assert.GreaterOrEqualf(tb, region.Troops, int64(0),
+			"region %s has negative troops: %d",
+			region.ExternalReference, region.Troops)
 	}
 }

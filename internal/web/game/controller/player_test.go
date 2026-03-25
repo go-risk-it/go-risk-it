@@ -66,6 +66,4 @@ func TestControllerImpl_GetPlayerState(t *testing.T) {
 			},
 		},
 	}, playerState)
-
-	playerService.AssertExpectations(t)
 }

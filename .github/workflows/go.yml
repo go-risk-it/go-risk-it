@@ -28,7 +28,7 @@ jobs:
         go test -coverprofile=coverage.out $PACKAGES
         COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
         echo "Total coverage (excluding mocks): ${COVERAGE}%"
-        THRESHOLD=7
+        THRESHOLD=25
         if [ "$(echo "$COVERAGE < $THRESHOLD" | bc -l)" -eq 1 ]; then
           echo "::error::Coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
           exit 1

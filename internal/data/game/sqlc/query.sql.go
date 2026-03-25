@@ -27,6 +27,19 @@ func (q *Queries) AssignGameWinner(ctx context.Context, arg AssignGameWinnerPara
 	return err
 }
 
+const countCardsByGame = `-- name: CountCardsByGame :one
+SELECT COUNT(*)
+FROM game.card
+WHERE game_id = $1
+`
+
+func (q *Queries) CountCardsByGame(ctx context.Context, gameID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countCardsByGame, gameID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createMoveLog = `-- name: CreateMoveLog :one
 INSERT INTO game.move_log (game_id,
                       player_id,

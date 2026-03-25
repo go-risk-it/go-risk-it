@@ -12,6 +12,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/testing/invariant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"pgregory.net/rapid"
 )
 
 var harness *invariant.Harness
@@ -63,7 +64,29 @@ func TestGameToCompletion(t *testing.T) {
 		Seed:       42,
 	})
 
+	require.True(t, result.Completed,
+		"game did not complete within %d moves", 5000)
 	assert.NotEmpty(t, result.Winner)
 	t.Logf("game %d ended after %d moves, winner: %s",
 		result.GameID, result.MoveCount, result.Winner)
+}
+
+// TestPropertyInvariantsHold runs random games via rapid's property-based
+// testing framework. Each iteration draws a unique seed, plays moves up to
+// MaxMoves, and checks all invariants after every move. Games that don't
+// complete within MaxMoves are acceptable — the invariants were still
+// verified on every move.
+//
+// Trial count is controlled by -rapid.checks flag (default 100).
+// CI sets this to INVARIANT_GAME_COUNT (default 200).
+// Extended fuzzing: -rapid.checks=10000.
+func TestPropertyInvariantsHold(t *testing.T) {
+	cfg := invariant.RapidSimulationConfig{
+		NumPlayers: 3,
+		MaxMoves:   200,
+	}
+
+	rapid.Check(t, func(rt *rapid.T) {
+		invariant.RunGameProperty(t, rt, harness, cfg)
+	})
 }

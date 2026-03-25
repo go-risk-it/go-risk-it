@@ -11,12 +11,13 @@ import (
 // GameSnapshot captures the full game state at a point in time.
 // All invariant checkers receive snapshots, not raw DB handles.
 type GameSnapshot struct {
-	GameID  int64
-	Phase   sqlc.GamePhaseType
-	Turn    int64
-	Winner  string
-	Regions []sqlc.GetRegionsByGameRow
-	Players []sqlc.GetPlayersStateRow
+	GameID         int64
+	Phase          sqlc.GamePhaseType
+	Turn           int64
+	Winner         string
+	Regions        []sqlc.GetRegionsByGameRow
+	Players        []sqlc.GetPlayersStateRow
+	TotalCardCount int64
 }
 
 // TakeSnapshot queries the database and builds a GameSnapshot.
@@ -44,13 +45,19 @@ func TakeSnapshot(
 		tb.Fatalf("failed to get players state: %v", err)
 	}
 
+	cardCount, err := harness.Querier.CountCardsByGame(gCtx, gameID)
+	if err != nil {
+		tb.Fatalf("failed to count cards: %v", err)
+	}
+
 	return &GameSnapshot{
-		GameID:  gameID,
-		Phase:   gameState.Phase,
-		Turn:    gameState.Turn,
-		Winner:  gameState.WinnerUserID,
-		Regions: regions,
-		Players: players,
+		GameID:         gameID,
+		Phase:          gameState.Phase,
+		Turn:           gameState.Turn,
+		Winner:         gameState.WinnerUserID,
+		Regions:        regions,
+		Players:        players,
+		TotalCardCount: cardCount,
 	}
 }
 

@@ -173,9 +173,6 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 	require.Error(t, err)
 	require.EqualError(t, err, "failed to insert game: insert logic error")
 	require.Equal(t, int64(-1), gameID)
-
-	// Verify that the expected methods were called
-	querier.AssertExpectations(t)
 }
 
 // returns error if CreatePlayers method returns an error.
@@ -234,8 +231,4 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 	require.Error(t, err)
 	require.EqualError(t, err, "failed to create players: error inserting players")
 	require.Equal(t, int64(-1), gameID)
-
-	// Verify that the expected methods were called
-	querier.AssertExpectations(t)
-	playerService.AssertExpectations(t)
 }

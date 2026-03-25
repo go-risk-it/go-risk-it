@@ -56,7 +56,7 @@ func TestServiceImpl_CreateRegions(t *testing.T) {
 		})
 
 	// Set up expectations for InsertRegions method
-	querier.On("InsertRegions", ctx, []sqlc.InsertRegionsParams{
+	querier.EXPECT().InsertRegions(ctx, []sqlc.InsertRegionsParams{
 		{ExternalReference: "alaska", PlayerID: 1, Troops: 3},
 		{ExternalReference: "northwest_territory", PlayerID: 2, Troops: 3},
 		{ExternalReference: "greenland", PlayerID: 3, Troops: 3},
@@ -69,8 +69,6 @@ func TestServiceImpl_CreateRegions(t *testing.T) {
 
 	// Assert the result
 	require.NoError(t, err)
-	assignmentService.AssertExpectations(t)
-	querier.AssertExpectations(t)
 }
 
 func TestServiceImpl_CreateRegions_NoPlayers(t *testing.T) {
@@ -100,8 +98,6 @@ func TestServiceImpl_CreateRegions_NoPlayers(t *testing.T) {
 	// Assert the result
 	require.Error(t, err)
 	require.Equal(t, region.ErrNoPlayers, err)
-	assignmentService.AssertExpectations(t)
-	querier.AssertExpectations(t)
 }
 
 func TestServiceImpl_CreateRegions_PlayersNotInSameGame(t *testing.T) {
@@ -133,8 +129,6 @@ func TestServiceImpl_CreateRegions_PlayersNotInSameGame(t *testing.T) {
 	// Assert the result
 	require.Error(t, err)
 	require.Equal(t, region.ErrPlayersFromDifferentGames, err)
-	assignmentService.AssertExpectations(t)
-	querier.AssertExpectations(t)
 }
 
 func TestServiceImpl_CreateRegions_InsertRegionsError(t *testing.T) {
@@ -166,7 +160,9 @@ func TestServiceImpl_CreateRegions_InsertRegionsError(t *testing.T) {
 	}
 
 	// Set up expectations for AssignRegionsToPlayers method
-	assignmentService.On("AssignRegionsToPlayers", players, regions).
+	assignmentService.
+		EXPECT().
+		AssignRegionsToPlayers(players, regions).
 		Return(assignment2.RegionAssignment{
 			regions[0]: players[0],
 			regions[1]: players[1],
@@ -176,7 +172,7 @@ func TestServiceImpl_CreateRegions_InsertRegionsError(t *testing.T) {
 		})
 
 	// Set up expectations for InsertRegions method
-	querier.On("InsertRegions", ctx, []sqlc.InsertRegionsParams{
+	querier.EXPECT().InsertRegions(ctx, []sqlc.InsertRegionsParams{
 		{ExternalReference: "alaska", PlayerID: 1, Troops: 3},
 		{ExternalReference: "northwest_territory", PlayerID: 2, Troops: 3},
 		{ExternalReference: "greenland", PlayerID: 3, Troops: 3},
@@ -189,6 +185,4 @@ func TestServiceImpl_CreateRegions_InsertRegionsError(t *testing.T) {
 
 	// Assert the result
 	require.Error(t, err)
-	assignmentService.AssertExpectations(t)
-	querier.AssertExpectations(t)
 }

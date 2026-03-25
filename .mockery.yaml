@@ -1,16 +1,12 @@
-with-expecter: True
-inpackage: False
-dir: mocks/{{ replaceAll .InterfaceDirRelative "internal" "internal_" }}
-issue-845-fix: True
-resolve-type-alias: False
-
-
-
-mockname: "{{.InterfaceName}}"
-outpkg: "{{.PackageName}}"
-filename: "{{.InterfaceName}}.go"
-all: True
+all: true
+dir: mocks/{{ replace "internal" "internal_" -1 .InterfaceDirRelative }}
+filename: '{{.InterfaceName}}.go'
+structname: '{{.InterfaceName}}'
+pkgname: '{{.SrcPackageName}}'
+template: testify
+template-data:
+  unroll-variadic: true
 packages:
   github.com/go-risk-it/go-risk-it/internal:
     config:
-      recursive: True
+      recursive: true

@@ -202,7 +202,6 @@ func TestService_DeployShouldSucceed(t *testing.T) {
 			})
 
 			require.NoError(t, err)
-			regionService.AssertExpectations(t)
 		})
 	}
 }

@@ -43,7 +43,7 @@ func TestServiceImpl_CreatePlayers_WithValidData(t *testing.T) {
 	}
 
 	// Set up expectations for InsertPlayers method
-	querier.On("InsertPlayers", ctx, []sqlc.InsertPlayersParams{
+	querier.EXPECT().InsertPlayers(ctx, []sqlc.InsertPlayersParams{
 		{
 			GameID:    gameID,
 			UserID:    "5a4fde41-4a68-4625-b42b-a9f5f938b394",
@@ -64,7 +64,7 @@ func TestServiceImpl_CreatePlayers_WithValidData(t *testing.T) {
 		},
 	}).Return(int64(2), nil)
 
-	querier.On("GetPlayersByGame", ctx, gameID).Return([]sqlc.GamePlayer{
+	querier.EXPECT().GetPlayersByGame(ctx, gameID).Return([]sqlc.GamePlayer{
 		{
 			ID:        1,
 			GameID:    gameID,
@@ -97,9 +97,6 @@ func TestServiceImpl_CreatePlayers_WithValidData(t *testing.T) {
 	require.Equal(t, "5a4fde41-4a68-4625-b42b-a9f5f938b394", players[0].UserID)
 	require.Equal(t, "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", players[1].UserID)
 	require.Equal(t, "fc497971-de4d-49c2-842a-4af62ec9e858", players[2].UserID)
-
-	// Verify that the expected methods were called
-	querier.AssertExpectations(t)
 }
 
 func TestServiceImpl_CreatePlayers_InsertPlayersError(t *testing.T) {
@@ -127,7 +124,7 @@ func TestServiceImpl_CreatePlayers_InsertPlayersError(t *testing.T) {
 	}
 
 	// Set up expectations for InsertPlayers method
-	querier.On("InsertPlayers", ctx, []sqlc.InsertPlayersParams{
+	querier.EXPECT().InsertPlayers(ctx, []sqlc.InsertPlayersParams{
 		{
 			GameID:    gameID,
 			UserID:    "5a4fde41-4a68-4625-b42b-a9f5f938b394",
@@ -154,9 +151,6 @@ func TestServiceImpl_CreatePlayers_InsertPlayersError(t *testing.T) {
 	// Assert the result
 	require.Error(t, err)
 	require.Nil(t, players)
-
-	// Verify that the expected methods were called
-	querier.AssertExpectations(t)
 }
 
 func TestServiceImpl_CreatePlayers_GetPlayersByGameError(t *testing.T) {
@@ -184,7 +178,7 @@ func TestServiceImpl_CreatePlayers_GetPlayersByGameError(t *testing.T) {
 	}
 
 	// Set up expectations for InsertPlayers method
-	querier.On("InsertPlayers", ctx, []sqlc.InsertPlayersParams{
+	querier.EXPECT().InsertPlayers(ctx, []sqlc.InsertPlayersParams{
 		{
 			GameID:    gameID,
 			UserID:    "5a4fde41-4a68-4625-b42b-a9f5f938b394",
@@ -205,7 +199,7 @@ func TestServiceImpl_CreatePlayers_GetPlayersByGameError(t *testing.T) {
 		},
 	}).Return(int64(2), nil)
 
-	querier.On("GetPlayersByGame", ctx, gameID).Return(nil, errGetPlayersByGame)
+	querier.EXPECT().GetPlayersByGame(ctx, gameID).Return(nil, errGetPlayersByGame)
 
 	// Call the method under test
 	players, err := service.CreatePlayers(ctx, querier, gameID, users)
@@ -213,7 +207,4 @@ func TestServiceImpl_CreatePlayers_GetPlayersByGameError(t *testing.T) {
 	// Assert the result
 	require.Error(t, err)
 	require.Nil(t, players)
-
-	// Verify that the expected methods were called
-	querier.AssertExpectations(t)
 }

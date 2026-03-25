@@ -10,6 +10,7 @@ import (
 
 type Querier interface {
 	AssignGameWinner(ctx context.Context, arg AssignGameWinnerParams) error
+	CountCardsByGame(ctx context.Context, gameID int64) (int64, error)
 	CreateMoveLog(ctx context.Context, arg CreateMoveLogParams) (GameMoveLog, error)
 	DecreaseDeployableTroops(ctx context.Context, arg DecreaseDeployableTroopsParams) error
 	DeleteSpuriousEliminatePlayerMissions(ctx context.Context, gameID int64) error

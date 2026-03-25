@@ -16,11 +16,12 @@ type SimulationConfig struct {
 	Seed       uint64
 }
 
-// SimulationResult holds the outcome of a completed simulation.
+// SimulationResult holds the outcome of a simulation run.
 type SimulationResult struct {
 	GameID    int64
 	Winner    string
 	MoveCount int
+	Completed bool
 	FinalSnap *GameSnapshot
 }
 
@@ -45,6 +46,7 @@ func RunGame(
 				GameID:    handle.GameID,
 				Winner:    snap.Winner,
 				MoveCount: move,
+				Completed: true,
 				FinalSnap: snap,
 			}
 		}
@@ -59,9 +61,14 @@ func RunGame(
 		prev = newSnap
 	}
 
-	tb.Fatalf("game did not end within %d moves", cfg.MaxMoves)
+	finalSnap := TakeSnapshot(tb, harness, handle.GameID)
 
-	return SimulationResult{}
+	return SimulationResult{
+		GameID:    handle.GameID,
+		MoveCount: cfg.MaxMoves,
+		Completed: finalSnap.IsGameOver(),
+		FinalSnap: finalSnap,
+	}
 }
 
 func executeMove(

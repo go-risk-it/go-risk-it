@@ -10,6 +10,10 @@ on:
 jobs:
   invariant:
     runs-on: ubuntu-latest
+    env:
+      # Default 200 games for CI (integration-level tests with real DB).
+      # Set to 1000+ for extended fuzzing with -timeout 1800s.
+      INVARIANT_GAME_COUNT: "200"
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
     - name: Set up Go
@@ -17,4 +21,7 @@ jobs:
       with:
         go-version-file: 'go.mod'
     - name: Run invariant tests
-      run: go test -tags invariant -v -timeout 300s ./internal/testing/invariant/
+      run: >-
+        go test -tags invariant -v -timeout 300s
+        ./internal/testing/invariant/
+        -args -rapid.checks="${INVARIANT_GAME_COUNT}"

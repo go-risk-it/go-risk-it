@@ -15,3 +15,8 @@ WHERE g.id = $1
 UPDATE game.card
 SET owner_id = (SELECT id from game.player WHERE player.user_id = sqlc.arg('to')::text AND player.game_id = $1)
 WHERE owner_id = sqlc.arg('from');
+
+-- name: CountCardsByGame :one
+SELECT COUNT(*)
+FROM game.card
+WHERE game_id = $1;

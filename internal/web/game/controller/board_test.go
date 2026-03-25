@@ -32,7 +32,7 @@ func TestBoardControllerImpl_GetBoardState(t *testing.T) {
 	)
 
 	// Set up expectations for GetRegions method
-	regionService.On("GetRegions", ctx).Return([]sqlc.GetRegionsByGameRow{
+	regionService.EXPECT().GetRegions(ctx).Return([]sqlc.GetRegionsByGameRow{
 		{ExternalReference: "alaska", UserID: "francesco", Troops: 3},
 		{ExternalReference: "northwest_territory", UserID: "gabriele", Troops: 3},
 		{ExternalReference: "greenland", UserID: "giovanni", Troops: 3},
@@ -52,6 +52,4 @@ func TestBoardControllerImpl_GetBoardState(t *testing.T) {
 			{ID: "alberta", OwnerID: "francesco", Troops: 3},
 		},
 	}, boardState)
-
-	regionService.AssertExpectations(t)
 }
