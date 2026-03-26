@@ -148,6 +148,70 @@ func TestMetrics_PhaseEntry_OnChange(t *testing.T) {
 	assert.Equal(t, int64(1), snap.PhaseEntries["attack"])
 }
 
+func TestMetrics_MoveSucceeded_RecordsPhaseLatency(t *testing.T) {
+	t.Parallel()
+
+	c := metrics.NewCollector(0)
+	h := &MetricsHandler{collector: c}
+	bus := NewTestBus()
+	h.Register(bus)
+
+	// Emit MoveDecided to set phase and moveStartTime.
+	bus.Emit(MoveDecidedEvent{
+		Action: &player.Action{Type: player.ActionAttack},
+		UserID: "u0",
+		Phase:  "attack",
+	})
+
+	// Small sleep so E2E duration is > 0.
+	time.Sleep(2 * time.Millisecond)
+
+	bus.Emit(MoveSucceededEvent{
+		Action:      &player.Action{Type: player.ActionAttack},
+		RESTLatency: 5 * time.Millisecond,
+		RESTEndTime: time.Now(),
+	})
+
+	snap := c.Snapshot()
+	require.Contains(t, snap.PhaseLatency, "attack")
+	assert.Greater(t, snap.PhaseLatency["attack"].Count, int64(0),
+		"PhaseLatency should be recorded alongside E2E")
+	assert.Greater(t, snap.E2EMove.Count, int64(0),
+		"E2E should also be recorded")
+}
+
+func TestMetrics_GameComplete_ReceivesEventBeforeBusStop(t *testing.T) {
+	t.Parallel()
+
+	// Regression test: GameComplete must be seen by MetricsHandler BEFORE
+	// the result-capture handler calls Bus.Stop(). This test verifies the
+	// handler registration order established in runner.Run().
+	c := metrics.NewCollector(0)
+	mh := &MetricsHandler{collector: c}
+	bus := NewTestBus()
+
+	// Register MetricsHandler first (as wireHandlers does in production).
+	mh.Register(bus)
+
+	// Register stop handler AFTER (as runner.Run now does).
+	var stopped bool
+	bus.On(EventGameComplete, func(b *Bus, _ Event) {
+		stopped = true
+		b.Stop()
+	})
+
+	bus.Emit(GameCompleteEvent{Result: GameResult{
+		Duration: 5 * time.Second,
+		Moves:    10,
+		Winner:   "u0",
+	}})
+
+	snap := c.Snapshot()
+	assert.True(t, stopped, "stop handler should have fired")
+	assert.Equal(t, int64(1), snap.GamesCompleted,
+		"MetricsHandler must see GameComplete before Stop()")
+}
+
 func TestMetrics_StateReceived_RecordsWSDelivery(t *testing.T) {
 	t.Parallel()
 

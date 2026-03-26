@@ -100,7 +100,7 @@ func (e *DefaultStepExecutor) configureWarmUp(collector *metrics.Collector, targ
 	}
 
 	collector.ConfigureWarmUp(metrics.WarmUpConfig{
-		MinCompletions: 0,
+		MinCompletions: int64(e.cfg.WarmUpCompletions),
 		MinDuration:    minDuration,
 	})
 }

@@ -84,7 +84,23 @@ func (r *Runner) Run(ctx context.Context, gameIndex, numPlayers int) GameResult 
 
 	var captured bool
 
-	// Register result capture — runs on GameComplete to grab the final result.
+	if r.setupOverride != nil {
+		// Test path: skip protocol, inject players directly.
+		r.setupOverride(gameCtx)
+		r.wireHandlers(bus, gameCtx, ctx, result)
+	} else {
+		// Production path: wire side-effect handlers FIRST so HealthHandler
+		// registers the game before ProtocolHandler runs the entire game loop
+		// synchronously (ProtocolHandler.handle emits StateReceived which chains
+		// through the full move cycle until GameComplete + Stop).
+		protocol := r.buildProtocolHandler(gameCtx)
+		r.wireHandlers(bus, gameCtx, ctx, result)
+		protocol.Register(bus)
+	}
+
+	// Register result capture AFTER wireHandlers so MetricsHandler and HealthHandler
+	// see GameComplete before Stop() kills the bus. Handlers fire in registration order,
+	// and Emit checks b.stopped between each — so this MUST be last.
 	bus.On(EventGameComplete, func(b *Bus, e Event) {
 		evt := e.(GameCompleteEvent)
 
@@ -99,18 +115,10 @@ func (r *Runner) Run(ctx context.Context, gameIndex, numPlayers int) GameResult 
 	})
 
 	if r.setupOverride != nil {
-		// Test path: skip protocol, inject players directly.
-		r.setupOverride(gameCtx)
-		r.wireHandlers(bus, gameCtx, ctx, result)
-
 		// Emit initial state from player 0.
 		snap := gameCtx.Players[0].WS.View().Snapshot()
 		bus.Emit(StateReceivedEvent{Snapshot: snap, Timestamp: time.Now()})
 	} else {
-		// Production path: wire protocol handler + all other handlers.
-		protocol := r.buildProtocolHandler(gameCtx)
-		protocol.Register(bus)
-		r.wireHandlers(bus, gameCtx, ctx, result)
 		bus.Emit(GameStartedEvent{GameIndex: gameIndex, NumPlayers: numPlayers})
 	}
 

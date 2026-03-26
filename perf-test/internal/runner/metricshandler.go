@@ -44,7 +44,9 @@ func (h *MetricsHandler) handleMoveSucceeded(_ *Bus, e Event) {
 	h.collector.RecordPhaseMove(h.lastPhase)
 
 	if !h.moveStartTime.IsZero() {
-		h.collector.RecordE2E(time.Since(h.moveStartTime))
+		e2e := time.Since(h.moveStartTime)
+		h.collector.RecordE2E(e2e)
+		h.collector.RecordPhaseLatency(string(h.lastPhase), e2e)
 	}
 
 	h.lastRESTEndTime = evt.RESTEndTime
