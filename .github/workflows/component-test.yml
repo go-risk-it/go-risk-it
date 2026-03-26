@@ -2,49 +2,71 @@ name: Component tests
 
 on:
   push:
-    branches:
-      - main
-    tags:
-      - "*"
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  merge_group:
 
 env:
   DEFAULT_PYTHON_VERSION: "3.11"
   POETRY_VERSION: "1.8.5"
 
 jobs:
-  test:
-    name: Component tests
+  component-test:
+    name: component-test
     runs-on: ubuntu-24.04
 
     steps:
-      - name: Checkout git repository
-        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Start infrastructure services
+        run: >-
+          docker compose --env-file component-test/.env
+          up -d --wait db auth kong
+
+      - name: Build and start risk-it
+        run: >-
+          docker compose --env-file component-test/.env
+          up -d --build --no-deps --wait risk-it
 
       - name: Set up Python ${{ env.DEFAULT_PYTHON_VERSION }}
-        uses: actions/setup-python@28f2168f4d98ee0445e3c6321f6e6616c83dd5ec
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: ${{ env.DEFAULT_PYTHON_VERSION }}
 
-      - name: Install poetry
+      - name: Install Poetry
         uses: Gr1N/setup-poetry@48b0f77c8c1b1b19cb962f0f00dff7b4be8f81ec # v9
         with:
           poetry-version: ${{ env.POETRY_VERSION }}
 
-      - name: Load Poetry Cached Libraries
-        id: cache-poetry
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7
+      - name: Load Poetry cached venv
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: component-test/.venv
-          key: ${{ runner.os }}-poetry-${{ env.POETRY_VERSION }}-${{ env.DEFAULT_PYTHON_VERSION }}-${{ hashFiles('component-test/poetry.lock') }}
+          key: >-
+            ${{ runner.os }}-poetry-${{ env.POETRY_VERSION }}-${{ env.DEFAULT_PYTHON_VERSION }}-${{ hashFiles('component-test/poetry.lock') }}
 
       - name: Configure virtual environment
         run: poetry config virtualenvs.in-project true
         working-directory: component-test
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: poetry install
         working-directory: component-test
 
-      - name: Test Code
+      - name: Run component tests
         run: poetry run behave
         working-directory: component-test
+
+      - name: Collect Docker logs
+        if: failure()
+        run: >-
+          docker compose --env-file component-test/.env
+          logs --no-color --tail=200
+
+      - name: Tear down stack
+        if: always()
+        run: >-
+          docker compose --env-file component-test/.env
+          down -v
