@@ -22,7 +22,7 @@ def step_impl(context: RiskItContext, player: str):
 @when("{player} connects to the lobby")
 def step_impl(context: RiskItContext, player: str):
     conn = connect(
-        f"ws://localhost:8000/ws?lobbyID={context.lobby_id}",
+        f"ws://localhost:8000/api/v1/lobbies/{context.lobby_id}/ws",
         open_timeout=2,
         additional_headers={"Authorization": f"Bearer {context.players[player].user.jwt}"},
     )

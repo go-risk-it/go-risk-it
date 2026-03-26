@@ -19,7 +19,7 @@ LOGGER = logging.getLogger(__name__)
 @when("{player} connects to the game")
 def step_impl(context: RiskItContext, player: str):
     conn = connect(
-        f"ws://localhost:8000/ws?gameID={context.game_id}",
+        f"ws://localhost:8000/api/v1/games/{context.game_id}/ws",
         open_timeout=2,
         additional_headers={"Authorization": f"Bearer {context.players[player].user.jwt}"},
     )

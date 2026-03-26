@@ -95,7 +95,6 @@ services:
         strip_path: false
         paths:
           - /api/v1/
-          - /ws
     plugins:
       - name: cors
 
