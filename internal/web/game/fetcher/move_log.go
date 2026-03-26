@@ -13,7 +13,7 @@ import (
 )
 
 type MoveLogFetcher interface {
-	Fetcher
+	FetchState(ctx ctx.GameContext, stateChannel chan json.RawMessage)
 }
 
 type moveLogFetcher struct {

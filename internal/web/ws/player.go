@@ -148,3 +148,13 @@ func (p *PlayerConnections) GetConnectedPlayers(ctx ctx.UserContext) []string {
 
 	return result
 }
+
+// PlayerCount returns the number of active player connections.
+// Used by Manager.RemoveGame to adjust the ActiveConnections metric
+// without exposing the internal map.
+func (p *PlayerConnections) PlayerCount() int {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	return len(p.playerConnections)
+}

@@ -15,6 +15,12 @@ type Querier interface {
 	DecreaseDeployableTroops(ctx context.Context, arg DecreaseDeployableTroopsParams) error
 	DeleteSpuriousEliminatePlayerMissions(ctx context.Context, gameID int64) error
 	DrawCard(ctx context.Context, arg DrawCardParams) error
+	// Batch fetch all owned cards for a game, returning player_id for per-player partitioning.
+	// Used by SnapshotService.GetPrivateSnapshotsByUser to avoid per-player query amplification.
+	GetAllCardsForGame(ctx context.Context, gameID int64) ([]GetAllCardsForGameRow, error)
+	// Batch fetch all missions for a game, joining through player to filter by game.
+	// Used by SnapshotService.GetPrivateSnapshotsByUser for per-player partitioning.
+	GetAllMissionsForGame(ctx context.Context, gameID int64) ([]GameMission, error)
 	GetAvailableCards(ctx context.Context, id int64) ([]GameCard, error)
 	GetCardsForPlayer(ctx context.Context, arg GetCardsForPlayerParams) ([]GetCardsForPlayerRow, error)
 	GetConquerPhaseState(ctx context.Context, id int64) (GetConquerPhaseStateRow, error)

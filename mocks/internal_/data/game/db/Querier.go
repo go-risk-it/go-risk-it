@@ -468,6 +468,142 @@ func (_c *Querier_DrawCard_Call) RunAndReturn(run func(ctx context.Context, arg 
 	return _c
 }
 
+// GetAllCardsForGame provides a mock function for the type Querier
+func (_mock *Querier) GetAllCardsForGame(ctx context.Context, gameID int64) ([]sqlc.GetAllCardsForGameRow, error) {
+	ret := _mock.Called(ctx, gameID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetAllCardsForGame")
+	}
+
+	var r0 []sqlc.GetAllCardsForGameRow
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) ([]sqlc.GetAllCardsForGameRow, error)); ok {
+		return returnFunc(ctx, gameID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) []sqlc.GetAllCardsForGameRow); ok {
+		r0 = returnFunc(ctx, gameID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]sqlc.GetAllCardsForGameRow)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = returnFunc(ctx, gameID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_GetAllCardsForGame_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAllCardsForGame'
+type Querier_GetAllCardsForGame_Call struct {
+	*mock.Call
+}
+
+// GetAllCardsForGame is a helper method to define mock.On call
+//   - ctx context.Context
+//   - gameID int64
+func (_e *Querier_Expecter) GetAllCardsForGame(ctx interface{}, gameID interface{}) *Querier_GetAllCardsForGame_Call {
+	return &Querier_GetAllCardsForGame_Call{Call: _e.mock.On("GetAllCardsForGame", ctx, gameID)}
+}
+
+func (_c *Querier_GetAllCardsForGame_Call) Run(run func(ctx context.Context, gameID int64)) *Querier_GetAllCardsForGame_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_GetAllCardsForGame_Call) Return(getAllCardsForGameRows []sqlc.GetAllCardsForGameRow, err error) *Querier_GetAllCardsForGame_Call {
+	_c.Call.Return(getAllCardsForGameRows, err)
+	return _c
+}
+
+func (_c *Querier_GetAllCardsForGame_Call) RunAndReturn(run func(ctx context.Context, gameID int64) ([]sqlc.GetAllCardsForGameRow, error)) *Querier_GetAllCardsForGame_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetAllMissionsForGame provides a mock function for the type Querier
+func (_mock *Querier) GetAllMissionsForGame(ctx context.Context, gameID int64) ([]sqlc.GameMission, error) {
+	ret := _mock.Called(ctx, gameID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetAllMissionsForGame")
+	}
+
+	var r0 []sqlc.GameMission
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) ([]sqlc.GameMission, error)); ok {
+		return returnFunc(ctx, gameID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) []sqlc.GameMission); ok {
+		r0 = returnFunc(ctx, gameID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]sqlc.GameMission)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = returnFunc(ctx, gameID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_GetAllMissionsForGame_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAllMissionsForGame'
+type Querier_GetAllMissionsForGame_Call struct {
+	*mock.Call
+}
+
+// GetAllMissionsForGame is a helper method to define mock.On call
+//   - ctx context.Context
+//   - gameID int64
+func (_e *Querier_Expecter) GetAllMissionsForGame(ctx interface{}, gameID interface{}) *Querier_GetAllMissionsForGame_Call {
+	return &Querier_GetAllMissionsForGame_Call{Call: _e.mock.On("GetAllMissionsForGame", ctx, gameID)}
+}
+
+func (_c *Querier_GetAllMissionsForGame_Call) Run(run func(ctx context.Context, gameID int64)) *Querier_GetAllMissionsForGame_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_GetAllMissionsForGame_Call) Return(gameMissions []sqlc.GameMission, err error) *Querier_GetAllMissionsForGame_Call {
+	_c.Call.Return(gameMissions, err)
+	return _c
+}
+
+func (_c *Querier_GetAllMissionsForGame_Call) RunAndReturn(run func(ctx context.Context, gameID int64) ([]sqlc.GameMission, error)) *Querier_GetAllMissionsForGame_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetAvailableCards provides a mock function for the type Querier
 func (_mock *Querier) GetAvailableCards(ctx context.Context, id int64) ([]sqlc.GameCard, error) {
 	ret := _mock.Called(ctx, id)

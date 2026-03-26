@@ -6,8 +6,10 @@ import (
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	logicsignals "github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/safego"
-	"github.com/go-risk-it/go-risk-it/internal/web/game/fetcher"
+	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 	"go.uber.org/fx"
 )
@@ -22,36 +24,16 @@ var Module = fx.Options(
 	),
 )
 
-type HandlerParams[T any] struct {
+// GameStateChangedHandlerParams is the dedicated params struct for
+// HandleGameStateChanged, using the snapshot+converter path instead of
+// scattered fetchers.
+type GameStateChangedHandlerParams struct {
 	fx.In
 
-	PublicFetchers    []fetcher.Fetcher `group:"public_fetchers"`
-	PrivateFetchers   []fetcher.Fetcher `group:"private_fetchers"`
-	Signal            T
-	MoveLogFetcher    fetcher.MoveLogFetcher
+	Signal            logicsignals.GameStateChangedSignal
+	SnapshotService   snapshot.Service
+	MissionController *controller.MissionController
 	ConnectionManager ws.Manager
-}
-
-func fetchAllStatesAndPublish[T any](
-	context ctx.GameContext,
-	params HandlerParams[T],
-	publisher func(ctx.GameContext, json.RawMessage),
-) {
-	for _, f := range params.PublicFetchers {
-		safego.Go(context, func() {
-			fetchStateAndPublish(context, f.FetchState, publisher)
-		})
-	}
-
-	for _, f := range params.PrivateFetchers {
-		safego.Go(context, func() {
-			fetchStateAndPublish(
-				context,
-				f.FetchState,
-				params.ConnectionManager.WriteMessage,
-			)
-		})
-	}
 }
 
 func fetchStateAndPublish(

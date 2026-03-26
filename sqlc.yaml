@@ -15,6 +15,7 @@ sql:
       - "internal/logic/game/phase"
       - "internal/logic/game/player"
       - "internal/logic/game/region"
+      - "internal/logic/game/snapshot"
       - "internal/logic/game/state"
     schema: "internal/data/game/sqlc/migrations"
     gen:
