@@ -10,20 +10,26 @@ import (
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 )
 
+const (
+	// minTroopsToRetain is the minimum troops that must remain in the source
+	// region after conquering.
+	minTroopsToRetain = 1
+)
+
 func (s *service) Perform(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	move Move,
-) (any, error) {
-	slog.InfoContext(ctx, "performing conquer move", "move", move)
+) (struct{}, error) {
+	slog.DebugContext(ctx, "performing conquer move", "move", move)
 
 	phaseState, err := s.GetPhaseStateWithQuerier(ctx, querier)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get phase state: %w", err)
+		return struct{}{}, fmt.Errorf("unable to get phase state: %w", err)
 	}
 
 	if phaseState.MinimumTroops > move.Troops {
-		return nil, domainerrors.NewValidationErrorf(
+		return struct{}{}, domainerrors.NewValidationErrorf(
 			"must move at least %d troops",
 			phaseState.MinimumTroops,
 		)
@@ -31,26 +37,28 @@ func (s *service) Perform(
 
 	sourceRegion, err := s.regionService.GetRegion(ctx, querier, phaseState.SourceRegion)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get attacking region: %w", err)
+		return struct{}{}, fmt.Errorf("unable to get attacking region: %w", err)
 	}
 
 	targetRegion, err := s.regionService.GetRegion(ctx, querier, phaseState.TargetRegion)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get defending region: %w", err)
+		return struct{}{}, fmt.Errorf("unable to get defending region: %w", err)
 	}
 
-	if sourceRegion.Troops-move.Troops < 1 {
-		return nil, domainerrors.NewValidationError("source region does not have enough troops")
+	if sourceRegion.Troops-move.Troops < minTroopsToRetain {
+		return struct{}{}, domainerrors.NewValidationError(
+			"source region does not have enough troops",
+		)
 	}
 
 	defeatedPlayerID, err := s.updateRegionTroops(ctx, querier, move, sourceRegion, targetRegion)
 	if err != nil {
-		return nil, fmt.Errorf("failed to update region troops: %w", err)
+		return struct{}{}, fmt.Errorf("failed to update region troops: %w", err)
 	}
 
 	isDefenderEliminated, err := s.isDefenderEliminated(ctx, querier, defeatedPlayerID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to check if defender is eliminated: %w", err)
+		return struct{}{}, fmt.Errorf("failed to check if defender is eliminated: %w", err)
 	}
 
 	if isDefenderEliminated {
@@ -59,13 +67,13 @@ func (s *service) Perform(
 			querier,
 			defeatedPlayerID,
 		); err != nil {
-			return nil, fmt.Errorf("unable to handle player eliminated: %w", err)
+			return struct{}{}, fmt.Errorf("unable to handle player eliminated: %w", err)
 		}
 	}
 
-	slog.InfoContext(ctx, "conquer executed successfully")
+	slog.DebugContext(ctx, "conquer executed successfully")
 
-	return nil, nil //nolint:nilnil // no result needed for conquer
+	return struct{}{}, nil
 }
 
 func (s *service) updateRegionTroops(
@@ -93,7 +101,7 @@ func (s *service) updateRegionTroops(
 		return 0, fmt.Errorf("failed to increase troops in target region: %w", err)
 	}
 
-	slog.InfoContext(ctx, "troops updated successfully")
+	slog.DebugContext(ctx, "troops updated successfully")
 
 	defeatedPlayerID, err := s.regionService.UpdateRegionOwner(
 		ctx,

@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	realcards "github.com/go-risk-it/go-risk-it/internal/logic/game/move/cards"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/reinforce"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/game/db"
@@ -346,7 +347,7 @@ func TestServiceImpl_Advance_ToCards_WithConquerInTurn(t *testing.T) {
 		InsertPhase(ctx, querier, sqlc.GamePhaseTypeCARDS).
 		Return(&sqlc.GamePhase{}, nil)
 
-	err := service.Advance(ctx, querier, sqlc.GamePhaseTypeCARDS, nil)
+	err := service.Advance(ctx, querier, sqlc.GamePhaseTypeCARDS, struct{}{})
 
 	require.NoError(t, err)
 }
@@ -376,7 +377,7 @@ func TestServiceImpl_Advance_ToCards_WithoutConquerInTurn(t *testing.T) {
 		InsertPhase(ctx, querier, sqlc.GamePhaseTypeCARDS).
 		Return(&sqlc.GamePhase{}, nil)
 
-	err := service.Advance(ctx, querier, sqlc.GamePhaseTypeCARDS, nil)
+	err := service.Advance(ctx, querier, sqlc.GamePhaseTypeCARDS, struct{}{})
 
 	require.NoError(t, err)
 }
@@ -407,10 +408,10 @@ func TestServiceImpl_Advance_ToDeploy_WithConquerInTurn(t *testing.T) {
 		Return(nil)
 	cardsService.
 		EXPECT().
-		Advance(ctx, querier, sqlc.GamePhaseTypeDEPLOY, nil).
+		Advance(ctx, querier, sqlc.GamePhaseTypeDEPLOY, (*realcards.MoveResult)(nil)).
 		Return(nil)
 
-	err := service.Advance(ctx, querier, sqlc.GamePhaseTypeDEPLOY, nil)
+	err := service.Advance(ctx, querier, sqlc.GamePhaseTypeDEPLOY, struct{}{})
 
 	require.NoError(t, err)
 }
@@ -437,10 +438,10 @@ func TestServiceImpl_Advance_ToDeploy_WithoutConquerInTurn(t *testing.T) {
 		Return(false, nil)
 	cardsService.
 		EXPECT().
-		Advance(ctx, querier, sqlc.GamePhaseTypeDEPLOY, nil).
+		Advance(ctx, querier, sqlc.GamePhaseTypeDEPLOY, (*realcards.MoveResult)(nil)).
 		Return(nil)
 
-	err := service.Advance(ctx, querier, sqlc.GamePhaseTypeDEPLOY, nil)
+	err := service.Advance(ctx, querier, sqlc.GamePhaseTypeDEPLOY, struct{}{})
 
 	require.NoError(t, err)
 }
@@ -451,7 +452,7 @@ func TestServiceImpl_Advance_InvalidTransition(t *testing.T) {
 	querier, _, _, _, _, _, service := setup(t)
 	ctx := input()
 
-	err := service.Advance(ctx, querier, sqlc.GamePhaseTypeATTACK, nil)
+	err := service.Advance(ctx, querier, sqlc.GamePhaseTypeATTACK, struct{}{})
 
 	require.Error(t, err)
 	require.ErrorContains(t, err, "invalid phase transition")

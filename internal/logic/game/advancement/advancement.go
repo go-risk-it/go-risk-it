@@ -13,21 +13,21 @@ import (
 	"go.uber.org/fx"
 )
 
-type AttackAdvancer = Service[attack.Move]
+type AttackAdvancer = Service[attack.Move, *attack.MoveResult]
 
-type CardsAdvancer = Service[cards.Move]
+type CardsAdvancer = Service[cards.Move, *cards.MoveResult]
 
-type ReinforceAdvancer = Service[reinforce.Move]
+type ReinforceAdvancer = Service[reinforce.Move, struct{}]
 
 func NewAttackAdvancer(
 	gameState state.Service,
 	querier db.Querier,
-	moveService moveservice.Service[attack.Move],
+	moveService moveservice.Service[attack.Move, *attack.MoveResult],
 	validationService validation.Service,
 	gameStateChangedSignal signals.GameStateChangedSignal,
 	metrics *metrics.Metrics,
 ) AttackAdvancer {
-	return NewService[attack.Move](
+	return NewService[attack.Move, *attack.MoveResult](
 		gameState,
 		querier,
 		moveService,
@@ -40,12 +40,12 @@ func NewAttackAdvancer(
 func NewCardsAdvancer(
 	gameState state.Service,
 	querier db.Querier,
-	moveService moveservice.Service[cards.Move],
+	moveService moveservice.Service[cards.Move, *cards.MoveResult],
 	validationService validation.Service,
 	gameStateChangedSignal signals.GameStateChangedSignal,
 	metrics *metrics.Metrics,
 ) CardsAdvancer {
-	return NewService[cards.Move](
+	return NewService[cards.Move, *cards.MoveResult](
 		gameState,
 		querier,
 		moveService,
@@ -58,12 +58,12 @@ func NewCardsAdvancer(
 func NewReinforceAdvancer(
 	gameState state.Service,
 	querier db.Querier,
-	moveService moveservice.Service[reinforce.Move],
+	moveService moveservice.Service[reinforce.Move, struct{}],
 	validationService validation.Service,
 	gameStateChangedSignal signals.GameStateChangedSignal,
 	metrics *metrics.Metrics,
 ) ReinforceAdvancer {
-	return NewService[reinforce.Move](
+	return NewService[reinforce.Move, struct{}](
 		gameState,
 		querier,
 		moveService,

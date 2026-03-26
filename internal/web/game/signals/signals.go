@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/safego"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/fetcher"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 	"go.uber.org/fx"
@@ -36,16 +37,20 @@ func fetchAllStatesAndPublish[T any](
 	params HandlerParams[T],
 	publisher func(ctx.GameContext, json.RawMessage),
 ) {
-	for _, fetcher := range params.PublicFetchers {
-		go fetchStateAndPublish(context, fetcher.FetchState, publisher)
+	for _, f := range params.PublicFetchers {
+		safego.Go(context, func() {
+			fetchStateAndPublish(context, f.FetchState, publisher)
+		})
 	}
 
-	for _, fetcher := range params.PrivateFetchers {
-		go fetchStateAndPublish(
-			context,
-			fetcher.FetchState,
-			params.ConnectionManager.WriteMessage,
-		)
+	for _, f := range params.PrivateFetchers {
+		safego.Go(context, func() {
+			fetchStateAndPublish(
+				context,
+				f.FetchState,
+				params.ConnectionManager.WriteMessage,
+			)
+		})
 	}
 }
 
@@ -58,7 +63,7 @@ func fetchStateAndPublish(
 	defer cancel()
 
 	channel := make(chan json.RawMessage, 1)
-	go fetcher(detached, channel)
+	safego.Go(detached, func() { fetcher(detached, channel) })
 
 	select {
 	case msg := <-channel:

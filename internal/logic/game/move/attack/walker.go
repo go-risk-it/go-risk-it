@@ -9,6 +9,14 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 )
 
+const (
+	// conqueredRegionTroops is the troop count that indicates a region has been conquered.
+	conqueredRegionTroops = 0
+	// minTroopsToLaunchAttack is the minimum troops a region must exceed to launch an attack.
+	// A region must retain at least one troop, so it needs more than this value.
+	minTroopsToLaunchAttack = 1
+)
+
 func (s *service) Walk(
 	ctx ctx.GameContext,
 	querier db.Querier,
@@ -23,7 +31,7 @@ func (s *service) Walk(
 	}
 
 	if hasConquered {
-		slog.InfoContext(ctx, "must advance phase to CONQUER")
+		slog.DebugContext(ctx, "must advance phase to CONQUER")
 
 		return sqlc.GamePhaseTypeCONQUER, nil
 	}
@@ -37,7 +45,7 @@ func (s *service) Walk(
 	}
 
 	if voluntaryAdvancement || !canContinueAttacking {
-		slog.InfoContext(ctx, "must advance phase to REINFORCE")
+		slog.DebugContext(ctx, "must advance phase to REINFORCE")
 
 		return sqlc.GamePhaseTypeREINFORCE, nil
 	}
@@ -54,18 +62,18 @@ func (s *service) HasConquered(ctx ctx.GameContext, querier db.Querier) (bool, e
 		return false, fmt.Errorf("failed to get regions: %w", err)
 	}
 
-	slog.InfoContext(ctx, "checking if player has conquered any region", "regions", len(regions))
+	slog.DebugContext(ctx, "checking if player has conquered any region", "regions", len(regions))
 
 	for _, region := range regions {
-		if region.UserID != ctx.UserID() && region.Troops == 0 {
-			slog.InfoContext(ctx, "player has conquered a region",
+		if region.UserID != ctx.UserID() && region.Troops == conqueredRegionTroops {
+			slog.DebugContext(ctx, "player has conquered a region",
 				"region", region.ExternalReference)
 
 			return true, nil
 		}
 	}
 
-	slog.InfoContext(ctx, "player has not conquered any region")
+	slog.DebugContext(ctx, "player has not conquered any region")
 
 	return false, nil
 }
@@ -81,17 +89,17 @@ func (s *service) CanContinueAttacking(
 		return false, fmt.Errorf("failed to get regions: %w", err)
 	}
 
-	slog.InfoContext(ctx, "checking if player can continue attacking", "regions", len(regions))
+	slog.DebugContext(ctx, "checking if player can continue attacking", "regions", len(regions))
 
 	for _, region := range regions {
-		if region.UserID == ctx.UserID() && region.Troops > 1 {
-			slog.InfoContext(ctx, "player can continue attacking")
+		if region.UserID == ctx.UserID() && region.Troops > minTroopsToLaunchAttack {
+			slog.DebugContext(ctx, "player can continue attacking")
 
 			return true, nil
 		}
 	}
 
-	slog.InfoContext(ctx, "player can not continue attacking")
+	slog.DebugContext(ctx, "player can not continue attacking")
 
 	return false, nil
 }

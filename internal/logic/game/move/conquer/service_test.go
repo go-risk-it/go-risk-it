@@ -327,7 +327,7 @@ func TestServiceImpl_Advance_ShouldCreatePhaseForValidTransition(t *testing.T) {
 		InsertPhase(ctx, querier, sqlc.GamePhaseTypeATTACK).
 		Return(&sqlc.GamePhase{}, nil)
 
-	err := service.Advance(ctx, querier, sqlc.GamePhaseTypeATTACK, nil)
+	err := service.Advance(ctx, querier, sqlc.GamePhaseTypeATTACK, struct{}{})
 
 	require.NoError(t, err)
 }
@@ -338,7 +338,7 @@ func TestServiceImpl_Advance_ShouldFailForInvalidTransition(t *testing.T) {
 	querier, _, _, _, _, service := setup(t)
 	ctx := input()
 
-	err := service.Advance(ctx, querier, sqlc.GamePhaseTypeDEPLOY, nil)
+	err := service.Advance(ctx, querier, sqlc.GamePhaseTypeDEPLOY, struct{}{})
 
 	require.Error(t, err)
 	require.ErrorContains(t, err, "invalid phase transition")

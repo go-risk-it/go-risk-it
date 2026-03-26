@@ -1,9 +1,10 @@
 package board
 
 import (
-	"errors"
 	"fmt"
 	"slices"
+
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 )
 
 type Continent struct {
@@ -12,11 +13,17 @@ type Continent struct {
 	regions           []string
 }
 
-type ContinentsImpl struct {
+type Continents interface {
+	GetContinentsControlledBy(regions []string) []*Continent
+}
+
+type continentsImpl struct {
 	continents []*Continent
 }
 
-func (c *ContinentsImpl) GetContinentsControlledBy(regions []string) []*Continent {
+var _ Continents = (*continentsImpl)(nil)
+
+func (c *continentsImpl) GetContinentsControlledBy(regions []string) []*Continent {
 	result := make([]*Continent, 0)
 
 	for _, continent := range c.continents {
@@ -40,11 +47,11 @@ func allRegionsContained(continent *Continent, regions []string) bool {
 
 func validateContinents(board *BoardDto) error {
 	if len(board.Regions) == 0 {
-		return errors.New("no regions")
+		return domainerrors.NewValidationError("no regions")
 	}
 
 	if len(board.Continents) == 0 {
-		return errors.New("no continents")
+		return domainerrors.NewValidationError("no continents")
 	}
 
 	continentNames := make(map[string]struct{})
@@ -59,7 +66,7 @@ func validateContinents(board *BoardDto) error {
 	return nil
 }
 
-func NewContinents(board *BoardDto) (*ContinentsImpl, error) {
+func NewContinents(board *BoardDto) (Continents, error) {
 	if err := validateContinents(board); err != nil {
 		return nil, fmt.Errorf("invalid board: %w", err)
 	}
@@ -82,5 +89,5 @@ func NewContinents(board *BoardDto) (*ContinentsImpl, error) {
 		}
 	}
 
-	return &ContinentsImpl{continents: continents}, nil
+	return &continentsImpl{continents: continents}, nil
 }

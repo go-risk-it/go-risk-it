@@ -15,7 +15,7 @@ func CheckDeclaredTroops(
 	declaredSourceTroops int64,
 	declaredTargetTroops int64,
 ) error {
-	slog.InfoContext(ctx, "checking declared values")
+	slog.DebugContext(ctx, "checking declared values")
 
 	if sourceTroops != declaredSourceTroops {
 		return domainerrors.NewValidationError(
@@ -29,7 +29,7 @@ func CheckDeclaredTroops(
 		)
 	}
 
-	slog.InfoContext(ctx, "declared values check passed")
+	slog.DebugContext(ctx, "declared values check passed")
 
 	return nil
 }

@@ -40,7 +40,7 @@ func (_m *Service) EXPECT() *Service_Expecter {
 }
 
 // Advance provides a mock function for the type Service
-func (_mock *Service) Advance(ctx1 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType, performResult any) error {
+func (_mock *Service) Advance(ctx1 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType, performResult struct{}) error {
 	ret := _mock.Called(ctx1, querier, targetPhase, performResult)
 
 	if len(ret) == 0 {
@@ -48,7 +48,7 @@ func (_mock *Service) Advance(ctx1 ctx.GameContext, querier db.Querier, targetPh
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, sqlc.GamePhaseType, any) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, sqlc.GamePhaseType, struct{}) error); ok {
 		r0 = returnFunc(ctx1, querier, targetPhase, performResult)
 	} else {
 		r0 = ret.Error(0)
@@ -65,12 +65,12 @@ type Service_Advance_Call struct {
 //   - ctx1 ctx.GameContext
 //   - querier db.Querier
 //   - targetPhase sqlc.GamePhaseType
-//   - performResult any
+//   - performResult struct{}
 func (_e *Service_Expecter) Advance(ctx1 interface{}, querier interface{}, targetPhase interface{}, performResult interface{}) *Service_Advance_Call {
 	return &Service_Advance_Call{Call: _e.mock.On("Advance", ctx1, querier, targetPhase, performResult)}
 }
 
-func (_c *Service_Advance_Call) Run(run func(ctx1 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType, performResult any)) *Service_Advance_Call {
+func (_c *Service_Advance_Call) Run(run func(ctx1 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType, performResult struct{})) *Service_Advance_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 ctx.GameContext
 		if args[0] != nil {
@@ -84,9 +84,9 @@ func (_c *Service_Advance_Call) Run(run func(ctx1 ctx.GameContext, querier db.Qu
 		if args[2] != nil {
 			arg2 = args[2].(sqlc.GamePhaseType)
 		}
-		var arg3 any
+		var arg3 struct{}
 		if args[3] != nil {
-			arg3 = args[3].(any)
+			arg3 = args[3].(struct{})
 		}
 		run(
 			arg0,
@@ -103,7 +103,7 @@ func (_c *Service_Advance_Call) Return(err error) *Service_Advance_Call {
 	return _c
 }
 
-func (_c *Service_Advance_Call) RunAndReturn(run func(ctx1 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType, performResult any) error) *Service_Advance_Call {
+func (_c *Service_Advance_Call) RunAndReturn(run func(ctx1 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType, performResult struct{}) error) *Service_Advance_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -235,24 +235,22 @@ func (_c *Service_GetDeployableTroopsWithQuerier_Call) RunAndReturn(run func(ctx
 }
 
 // Perform provides a mock function for the type Service
-func (_mock *Service) Perform(ctx1 ctx.GameContext, querier db.Querier, move deploy.Move) (any, error) {
+func (_mock *Service) Perform(ctx1 ctx.GameContext, querier db.Querier, move deploy.Move) (struct{}, error) {
 	ret := _mock.Called(ctx1, querier, move)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Perform")
 	}
 
-	var r0 any
+	var r0 struct{}
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, deploy.Move) (any, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, deploy.Move) (struct{}, error)); ok {
 		return returnFunc(ctx1, querier, move)
 	}
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, deploy.Move) any); ok {
+	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, deploy.Move) struct{}); ok {
 		r0 = returnFunc(ctx1, querier, move)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(any)
-		}
+		r0 = ret.Get(0).(struct{})
 	}
 	if returnFunc, ok := ret.Get(1).(func(ctx.GameContext, db.Querier, deploy.Move) error); ok {
 		r1 = returnFunc(ctx1, querier, move)
@@ -298,12 +296,12 @@ func (_c *Service_Perform_Call) Run(run func(ctx1 ctx.GameContext, querier db.Qu
 	return _c
 }
 
-func (_c *Service_Perform_Call) Return(v any, err error) *Service_Perform_Call {
-	_c.Call.Return(v, err)
+func (_c *Service_Perform_Call) Return(val struct{}, err error) *Service_Perform_Call {
+	_c.Call.Return(val, err)
 	return _c
 }
 
-func (_c *Service_Perform_Call) RunAndReturn(run func(ctx1 ctx.GameContext, querier db.Querier, move deploy.Move) (any, error)) *Service_Perform_Call {
+func (_c *Service_Perform_Call) RunAndReturn(run func(ctx1 ctx.GameContext, querier db.Querier, move deploy.Move) (struct{}, error)) *Service_Perform_Call {
 	_c.Call.Return(run)
 	return _c
 }

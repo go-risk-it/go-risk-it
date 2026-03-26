@@ -10,36 +10,27 @@ import (
 	"go.uber.org/fx"
 )
 
-type PlayerFetcher interface {
-	Fetcher
-}
-type PlayerFetcherImpl struct {
+type playerFetcher struct {
 	playerController *controller.PlayerController
 }
-
-var _ PlayerFetcher = (*PlayerFetcherImpl)(nil)
 
 type PlayerFetcherResult struct {
 	fx.Out
 
-	PlayerFetcher PlayerFetcher
-	Fetcher       Fetcher `group:"public_fetchers"`
+	Fetcher Fetcher `group:"public_fetchers"`
 }
 
 func NewPlayerFetcher(
 	playerController *controller.PlayerController,
 ) PlayerFetcherResult {
-	res := &PlayerFetcherImpl{
-		playerController: playerController,
-	}
-
 	return PlayerFetcherResult{
-		PlayerFetcher: res,
-		Fetcher:       res,
+		Fetcher: &playerFetcher{
+			playerController: playerController,
+		},
 	}
 }
 
-func (f *PlayerFetcherImpl) FetchState(
+func (f *playerFetcher) FetchState(
 	context ctx.GameContext,
 	stateChannel chan json.RawMessage,
 ) {

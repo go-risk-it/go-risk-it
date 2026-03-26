@@ -19,7 +19,7 @@ type Move struct {
 }
 
 type Service interface {
-	moveservice.Service[Move]
+	moveservice.Service[Move, struct{}]
 	GetDeployableTroops(ctx ctx.GameContext) (int64, error)
 	GetDeployableTroopsWithQuerier(ctx ctx.GameContext, querier db.Querier) (int64, error)
 }
@@ -36,7 +36,7 @@ func NewService(
 	querier db.Querier,
 	phaseService phase.Service,
 	regionService region.Service,
-) (Service, moveservice.Service[Move]) {
+) (Service, moveservice.Service[Move, struct{}]) {
 	svc := &service{
 		querier:       querier,
 		phaseService:  phaseService,
@@ -54,14 +54,14 @@ func (s *service) GetDeployableTroopsWithQuerier(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) (int64, error) {
-	slog.InfoContext(ctx, "getting deployable troops")
+	slog.DebugContext(ctx, "getting deployable troops")
 
 	deployableTroops, err := querier.GetDeployableTroops(ctx, ctx.GameID())
 	if err != nil {
 		return 0, fmt.Errorf("failed to get deployable troops: %w", err)
 	}
 
-	slog.InfoContext(ctx, "got deployable troops", "troops", deployableTroops)
+	slog.DebugContext(ctx, "got deployable troops", "troops", deployableTroops)
 
 	return deployableTroops, nil
 }

@@ -29,7 +29,7 @@ type Service interface {
 }
 
 type service struct {
-	continents    *ContinentsImpl
+	continents    Continents
 	graph         Graph
 	regionService region.Service
 }
@@ -59,7 +59,7 @@ func (s *service) CanPlayerReach(
 	source string,
 	target string,
 ) (bool, error) {
-	slog.InfoContext(ctx, "checking if player can reach target",
+	slog.DebugContext(ctx, "checking if player can reach target",
 		"source", source, "target", target)
 
 	regions, err := s.regionService.GetRegionsWithQuerier(ctx, querier)
@@ -84,7 +84,7 @@ func (s *service) CanPlayerReach(
 }
 
 func (s *service) GetBoardRegions(ctx context.Context) ([]string, error) {
-	slog.InfoContext(ctx, "getting board regions")
+	slog.DebugContext(ctx, "getting board regions")
 
 	graph, err := s.getGraph(ctx)
 	if err != nil {
@@ -93,21 +93,21 @@ func (s *service) GetBoardRegions(ctx context.Context) ([]string, error) {
 
 	result := graph.GetRegions()
 
-	slog.InfoContext(ctx, "got board regions", "regions", result)
+	slog.DebugContext(ctx, "got board regions", "regions", result)
 
 	return result, nil
 }
 
 func (s *service) getGraph(ctx context.Context) (Graph, error) {
-	slog.InfoContext(ctx, "getting graph")
+	slog.DebugContext(ctx, "getting graph")
 
 	if s.graph != nil {
-		slog.InfoContext(ctx, "graph cache hit")
+		slog.DebugContext(ctx, "graph cache hit")
 
 		return s.graph, nil
 	}
 
-	slog.InfoContext(ctx, "graph cache miss, fetching board from file")
+	slog.DebugContext(ctx, "graph cache miss, fetching board from file")
 
 	boardDto, err := s.fetchFromFile(ctx)
 	if err != nil {
@@ -119,21 +119,21 @@ func (s *service) getGraph(ctx context.Context) (Graph, error) {
 		return nil, fmt.Errorf("failed to create graph: %w", err)
 	}
 
-	slog.InfoContext(ctx, "graph cache updated")
+	slog.DebugContext(ctx, "graph cache updated")
 
 	return s.graph, nil
 }
 
-func (s *service) getContinents(ctx ctx.GameContext) (*ContinentsImpl, error) {
-	slog.InfoContext(ctx, "getting continents")
+func (s *service) getContinents(ctx ctx.GameContext) (Continents, error) {
+	slog.DebugContext(ctx, "getting continents")
 
 	if s.continents != nil {
-		slog.InfoContext(ctx, "continents cache hit")
+		slog.DebugContext(ctx, "continents cache hit")
 
 		return s.continents, nil
 	}
 
-	slog.InfoContext(ctx, "continents cache miss, fetching board from file")
+	slog.DebugContext(ctx, "continents cache miss, fetching board from file")
 
 	boardDto, err := s.fetchFromFile(ctx)
 	if err != nil {
@@ -145,7 +145,7 @@ func (s *service) getContinents(ctx ctx.GameContext) (*ContinentsImpl, error) {
 		return nil, fmt.Errorf("failed to create continents: %w", err)
 	}
 
-	slog.InfoContext(ctx, "continents cache updated")
+	slog.DebugContext(ctx, "continents cache updated")
 
 	return s.continents, nil
 }

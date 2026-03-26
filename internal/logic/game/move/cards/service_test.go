@@ -330,9 +330,7 @@ func TestServiceImpl_ValidCombinations(t *testing.T) {
 			})
 
 			require.NoError(t, err)
-			extraTroops, ok := result.(*cards.MoveResult)
-			require.True(t, ok)
-			require.Equal(t, test.expectedExtraTroops, extraTroops.ExtraDeployableTroops)
+			require.Equal(t, test.expectedExtraTroops, result.ExtraDeployableTroops)
 		})
 	}
 }

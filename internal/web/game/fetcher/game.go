@@ -14,40 +14,30 @@ import (
 	"go.uber.org/fx"
 )
 
-type GameFetcher interface {
-	Fetcher
-}
-
-type GameFetcherImpl struct {
+type gameFetcher struct {
 	gameService     state.Service
 	phaseController *controller.PhaseController
 }
 
-var _ GameFetcher = (*GameFetcherImpl)(nil)
-
 type GameFetcherResult struct {
 	fx.Out
 
-	GameFetcher GameFetcher
-	Fetcher     Fetcher `group:"public_fetchers"`
+	Fetcher Fetcher `group:"public_fetchers"`
 }
 
 func NewGameFetcher(
 	gameService state.Service,
 	phaseController *controller.PhaseController,
 ) GameFetcherResult {
-	res := &GameFetcherImpl{
-		gameService:     gameService,
-		phaseController: phaseController,
-	}
-
 	return GameFetcherResult{
-		GameFetcher: res,
-		Fetcher:     res,
+		Fetcher: &gameFetcher{
+			gameService:     gameService,
+			phaseController: phaseController,
+		},
 	}
 }
 
-func (g *GameFetcherImpl) FetchState(ctx ctx.GameContext, stateChannel chan json.RawMessage) {
+func (g *gameFetcher) FetchState(ctx ctx.GameContext, stateChannel chan json.RawMessage) {
 	gameState, err := g.gameService.GetGameState(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to get game state", "error", err)

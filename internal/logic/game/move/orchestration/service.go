@@ -25,13 +25,13 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-type Orchestrator[T any] interface {
+type Orchestrator[T, R any] interface {
 	OrchestrateMove(ctx gamectx.GameContext, move T) error
 }
 
-type orchestrator[T any] struct {
+type orchestrator[T, R any] struct {
 	querier                db.Querier
-	service                service.Service[T]
+	service                service.Service[T, R]
 	gameService            state.Service
 	loggingService         logging.Service
 	missionService         mission.Service
@@ -41,11 +41,11 @@ type orchestrator[T any] struct {
 	gameTiming             *timing.GameTiming
 }
 
-var _ Orchestrator[any] = (*orchestrator[any])(nil)
+var _ Orchestrator[any, any] = (*orchestrator[any, any])(nil)
 
-func NewOrchestrator[T any](
+func NewOrchestrator[T, R any](
 	querier db.Querier,
-	service service.Service[T],
+	service service.Service[T, R],
 	gameService state.Service,
 	loggingService logging.Service,
 	missionService mission.Service,
@@ -53,8 +53,8 @@ func NewOrchestrator[T any](
 	gameStateChangedSignal signals.GameStateChangedSignal,
 	metrics *metrics.Metrics,
 	gameTiming *timing.GameTiming,
-) Orchestrator[T] {
-	return &orchestrator[T]{
+) Orchestrator[T, R] {
+	return &orchestrator[T, R]{
 		querier:                querier,
 		service:                service,
 		gameService:            gameService,
@@ -67,7 +67,7 @@ func NewOrchestrator[T any](
 	}
 }
 
-func (s *orchestrator[T]) OrchestrateMove(
+func (s *orchestrator[T, R]) OrchestrateMove(
 	ctx gamectx.GameContext,
 	move T,
 ) error {
@@ -92,7 +92,7 @@ func (s *orchestrator[T]) OrchestrateMove(
 	return nil
 }
 
-func (s *orchestrator[T]) executeTransaction(
+func (s *orchestrator[T, R]) executeTransaction(
 	ctx gamectx.GameContext,
 	move T,
 ) (sqlc.GamePhaseType, error) {
@@ -124,7 +124,7 @@ func (s *orchestrator[T]) executeTransaction(
 	)
 }
 
-func (s *orchestrator[T]) recordMetrics(
+func (s *orchestrator[T, R]) recordMetrics(
 	ctx gamectx.GameContext,
 	start time.Time,
 ) {
@@ -139,7 +139,7 @@ func (s *orchestrator[T]) recordMetrics(
 	)
 }
 
-func (s *orchestrator[T]) emitSignal(
+func (s *orchestrator[T, R]) emitSignal(
 	ctx gamectx.GameContext,
 	targetPhase sqlc.GamePhaseType,
 ) {
@@ -156,7 +156,7 @@ func (s *orchestrator[T]) emitSignal(
 	signalSpan.End()
 }
 
-func (s *orchestrator[T]) orchestrateMoveWithQuerier(
+func (s *orchestrator[T, R]) orchestrateMoveWithQuerier(
 	ctx gamectx.GameContext,
 	querier db.Querier,
 	move T,
@@ -188,13 +188,13 @@ func (s *orchestrator[T]) orchestrateMoveWithQuerier(
 	)
 }
 
-func (s *orchestrator[T]) performAndLog(
+func (s *orchestrator[T, R]) performAndLog(
 	ctx gamectx.GameContext,
 	querier db.Querier,
 	move T,
 	phase string,
-) (any, error) {
-	var performResult any
+) (R, error) {
+	var performResult R
 
 	if err := tracing.SpanStep(
 		ctx, "game.move.perform", phase,
@@ -207,7 +207,9 @@ func (s *orchestrator[T]) performAndLog(
 			return performErr
 		},
 	); err != nil {
-		return nil, fmt.Errorf("unable to perform move: %w", err)
+		var zero R
+
+		return zero, fmt.Errorf("unable to perform move: %w", err)
 	}
 
 	if err := tracing.SpanStep(
@@ -218,17 +220,19 @@ func (s *orchestrator[T]) performAndLog(
 			)
 		},
 	); err != nil {
-		return nil, fmt.Errorf("unable to log move: %w", err)
+		var zero R
+
+		return zero, fmt.Errorf("unable to log move: %w", err)
 	}
 
 	return performResult, nil
 }
 
-func (s *orchestrator[T]) resolveTargetPhase(
+func (s *orchestrator[T, R]) resolveTargetPhase(
 	ctx gamectx.GameContext,
 	querier db.Querier,
 	phase string,
-	performResult any,
+	performResult R,
 ) (sqlc.GamePhaseType, error) {
 	if accomplished, err := s.checkMission(
 		ctx, querier, phase,
@@ -243,7 +247,7 @@ func (s *orchestrator[T]) resolveTargetPhase(
 	)
 }
 
-func (s *orchestrator[T]) checkMission(
+func (s *orchestrator[T, R]) checkMission(
 	ctx gamectx.GameContext,
 	querier db.Querier,
 	phase string,
@@ -274,11 +278,11 @@ func (s *orchestrator[T]) checkMission(
 	return isMissionAccomplished, nil
 }
 
-func (s *orchestrator[T]) walkAndAdvance(
+func (s *orchestrator[T, R]) walkAndAdvance(
 	ctx gamectx.GameContext,
 	querier db.Querier,
 	phase string,
-	performResult any,
+	performResult R,
 ) (sqlc.GamePhaseType, error) {
 	var targetPhase sqlc.GamePhaseType
 
@@ -322,7 +326,7 @@ func (s *orchestrator[T]) walkAndAdvance(
 	return targetPhase, nil
 }
 
-func (s *orchestrator[T]) recordGameFinished(
+func (s *orchestrator[T, R]) recordGameFinished(
 	ctx gamectx.GameContext,
 ) {
 	s.metrics.GamesFinished.Add(ctx, 1)

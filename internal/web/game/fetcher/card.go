@@ -10,36 +10,26 @@ import (
 	"go.uber.org/fx"
 )
 
-type CardFetcher interface {
-	Fetcher
-}
-
-type CardFetcherImpl struct {
+type cardFetcher struct {
 	cardController *controller.CardController
 }
-
-var _ CardFetcher = (*CardFetcherImpl)(nil)
 
 type CardFetcherResult struct {
 	fx.Out
 
-	CardFetcher CardFetcher
-	Fetcher     Fetcher `group:"private_fetchers"`
+	Fetcher Fetcher `group:"private_fetchers"`
 }
 
 func NewCardFetcher(
 	cardController *controller.CardController,
 ) CardFetcherResult {
-	res := &CardFetcherImpl{
-		cardController: cardController,
-	}
-
 	return CardFetcherResult{
-		CardFetcher: res,
-		Fetcher:     res,
+		Fetcher: &cardFetcher{
+			cardController: cardController,
+		},
 	}
 }
 
-func (c CardFetcherImpl) FetchState(ctx ctx.GameContext, stateChannel chan json.RawMessage) {
+func (c *cardFetcher) FetchState(ctx ctx.GameContext, stateChannel chan json.RawMessage) {
 	sharedfetcher.FetchState(ctx, message.CardState, c.cardController.GetCardState, stateChannel)
 }

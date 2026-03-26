@@ -2,19 +2,19 @@ package region
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region/assignment"
 )
 
 var (
-	ErrNoPlayers                 = errors.New("no players provided")
-	ErrPlayersFromDifferentGames = errors.New("players from different games")
+	ErrNoPlayers                 = domainerrors.NewValidationError("no players provided")
+	ErrPlayersFromDifferentGames = domainerrors.NewValidationError("players from different games")
 )
 
 type Service interface {
@@ -122,7 +122,7 @@ func (s *service) GetRegionsWithQuerier(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) ([]sqlc.GetRegionsByGameRow, error) {
-	slog.InfoContext(ctx, "fetching regions")
+	slog.DebugContext(ctx, "fetching regions")
 
 	regions, err := querier.GetRegionsByGame(ctx, ctx.GameID())
 	if err != nil {
@@ -166,7 +166,7 @@ func (s *service) GetRegion(
 	querier db.Querier,
 	region string,
 ) (*sqlc.GetRegionsByGameRow, error) {
-	slog.InfoContext(ctx, "fetching region", "region", region)
+	slog.DebugContext(ctx, "fetching region", "region", region)
 
 	regions, err := s.GetRegionsWithQuerier(ctx, querier)
 	if err != nil {
@@ -175,7 +175,7 @@ func (s *service) GetRegion(
 
 	result := extractRegionFrom(region, regions)
 	if result == nil {
-		return nil, errors.New("region is not in game")
+		return nil, domainerrors.NewNotFoundError("region is not in game")
 	}
 
 	return result, nil
@@ -201,7 +201,7 @@ func (s *service) UpdateTroopsInRegion(
 	troopsToAdd int64,
 ) error {
 	if troopsToAdd == 0 {
-		slog.InfoContext(ctx, "no troops to update")
+		slog.DebugContext(ctx, "no troops to update")
 
 		return nil
 	}
@@ -211,7 +211,7 @@ func (s *service) UpdateTroopsInRegion(
 		action = "decreas"
 	}
 
-	slog.InfoContext(
+	slog.DebugContext(
 		ctx,
 		action+"ing troops in region "+region.ExternalReference,
 		"troopsToAdd", troopsToAdd,
@@ -225,7 +225,7 @@ func (s *service) UpdateTroopsInRegion(
 		return fmt.Errorf("failed to %se region troops: %w", action, err)
 	}
 
-	slog.InfoContext(ctx, action+"ed region troops")
+	slog.DebugContext(ctx, action+"ed region troops")
 
 	return nil
 }
@@ -235,7 +235,7 @@ func (s *service) UpdateRegionOwner(
 	querier db.Querier,
 	region *sqlc.GetRegionsByGameRow,
 ) (int64, error) {
-	slog.InfoContext(ctx, "updating region owner", "region", region.ExternalReference)
+	slog.DebugContext(ctx, "updating region owner", "region", region.ExternalReference)
 
 	oldOwnerPlayerID, err := querier.UpdateRegionOwner(ctx, sqlc.UpdateRegionOwnerParams{
 		NewOwnerUserID:    ctx.UserID(),
@@ -246,7 +246,7 @@ func (s *service) UpdateRegionOwner(
 		return -1, fmt.Errorf("failed to update region owner: %w", err)
 	}
 
-	slog.InfoContext(ctx, "updated region owner", "region", region.ExternalReference)
+	slog.DebugContext(ctx, "updated region owner", "region", region.ExternalReference)
 
 	return oldOwnerPlayerID, nil
 }

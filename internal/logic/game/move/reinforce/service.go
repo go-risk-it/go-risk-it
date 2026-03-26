@@ -19,7 +19,7 @@ type Move struct {
 }
 
 type Service interface {
-	moveservice.Service[Move]
+	moveservice.Service[Move, struct{}]
 }
 
 type service struct {
@@ -38,7 +38,7 @@ func NewService(
 	gameService state.Service,
 	phaseService phase.Service,
 	regionService region.Service,
-) (Service, moveservice.Service[Move]) {
+) (Service, moveservice.Service[Move, struct{}]) {
 	svc := &service{
 		boardService:  boardService,
 		cardsService:  cardsService,

@@ -10,11 +10,18 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
 )
 
+const (
+	// regionDivisor is the divisor applied to a player's region count to compute the base reward.
+	regionDivisor = 3
+	// minRegionReward is the minimum troop reward from region ownership.
+	minRegionReward = 3
+)
+
 func (s *service) Advance(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	targetPhase sqlc.GamePhaseType,
-	performResult any,
+	performResult *MoveResult,
 ) error {
 	if err := phase.ValidateTransition(sqlc.GamePhaseTypeCARDS, targetPhase); err != nil {
 		return fmt.Errorf("invalid phase transition: %w", err)
@@ -45,7 +52,7 @@ func (s *service) Advance(
 func (s *service) getDeployableTroops(
 	ctx ctx.GameContext,
 	querier db.Querier,
-	performResult any,
+	performResult *MoveResult,
 ) (int64, error) {
 	currentPlayer, err := s.playerService.GetCurrentPlayer(ctx, querier)
 	if err != nil {
@@ -53,8 +60,8 @@ func (s *service) getDeployableTroops(
 	}
 
 	cardReward := int64(0)
-	if result, ok := performResult.(*MoveResult); ok && result != nil {
-		cardReward = result.ExtraDeployableTroops
+	if performResult != nil {
+		cardReward = performResult.ExtraDeployableTroops
 	}
 
 	playerRegions, err := s.regionService.GetRegionsControlledByPlayer(
@@ -66,7 +73,7 @@ func (s *service) getDeployableTroops(
 		return -1, fmt.Errorf("failed to get regions: %w", err)
 	}
 
-	regionReward := max(int64(len(playerRegions)/3), 3)
+	regionReward := max(int64(len(playerRegions)/regionDivisor), minRegionReward)
 
 	continentReward, err := s.getContinentReward(ctx, querier, currentPlayer)
 	if err != nil {

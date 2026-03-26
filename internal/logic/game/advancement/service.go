@@ -20,7 +20,7 @@ import (
 	"go.opentelemetry.io/otel/codes"
 )
 
-type Service[T any] interface {
+type Service[T, R any] interface {
 	Advance(ctx gamectx.GameContext) error
 	AdvanceWithQuerier(
 		ctx gamectx.GameContext,
@@ -28,24 +28,24 @@ type Service[T any] interface {
 	) (sqlc.GamePhaseType, error)
 }
 
-type service[T any] struct {
+type service[T, R any] struct {
 	querier                db.Querier
 	gameState              state.Service
-	moveService            moveservice.Service[T]
+	moveService            moveservice.Service[T, R]
 	validationService      validation.Service
 	gameStateChangedSignal signals.GameStateChangedSignal
 	metrics                *metrics.Metrics
 }
 
-func NewService[T any](
+func NewService[T, R any](
 	gameState state.Service,
 	querier db.Querier,
-	moveService moveservice.Service[T],
+	moveService moveservice.Service[T, R],
 	validationService validation.Service,
 	gameStateChangedSignal signals.GameStateChangedSignal,
 	metrics *metrics.Metrics,
-) Service[T] {
-	return &service[T]{
+) Service[T, R] {
+	return &service[T, R]{
 		gameState:              gameState,
 		querier:                querier,
 		moveService:            moveService,
@@ -55,7 +55,7 @@ func NewService[T any](
 	}
 }
 
-func (s *service[T]) Advance(ctx gamectx.GameContext) error {
+func (s *service[T, R]) Advance(ctx gamectx.GameContext) error {
 	currentPhase := s.moveService.PhaseType()
 
 	ctx, span := tracing.StartGameSpan(ctx, "game.advance",
@@ -87,7 +87,7 @@ func (s *service[T]) Advance(ctx gamectx.GameContext) error {
 	return nil
 }
 
-func (s *service[T]) AdvanceWithQuerier(
+func (s *service[T, R]) AdvanceWithQuerier(
 	ctx gamectx.GameContext,
 	querier db.Querier,
 ) (sqlc.GamePhaseType, error) {
@@ -114,7 +114,7 @@ func (s *service[T]) AdvanceWithQuerier(
 	return s.walkAndAdvance(ctx, querier, phase, currentPhase)
 }
 
-func (s *service[T]) getAndValidateState(
+func (s *service[T, R]) getAndValidateState(
 	ctx gamectx.GameContext,
 	querier db.Querier,
 	phase string,
@@ -148,12 +148,12 @@ func (s *service[T]) getAndValidateState(
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	slog.InfoContext(ctx, "game is in phase", "phase", game.Phase)
+	slog.DebugContext(ctx, "game is in phase", "phase", game.Phase)
 
 	return game, nil
 }
 
-func (s *service[T]) walkAndAdvance(
+func (s *service[T, R]) walkAndAdvance(
 	ctx gamectx.GameContext,
 	querier db.Querier,
 	phase string,
@@ -178,8 +178,10 @@ func (s *service[T]) walkAndAdvance(
 	if err := tracing.SpanStep(
 		ctx, "game.advance.advance", phase,
 		func(spanCtx gamectx.GameContext) error {
+			var zero R
+
 			return s.moveService.Advance(
-				spanCtx, querier, targetPhase, nil,
+				spanCtx, querier, targetPhase, zero,
 			)
 		},
 	); err != nil {

@@ -8,49 +8,55 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/validation"
+)
+
+const (
+	// minTroopsToDeploy is the minimum number of troops that must be deployed in a single move.
+	minTroopsToDeploy = 1
 )
 
 func (s *service) Perform(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	move Move,
-) (any, error) {
-	slog.InfoContext(ctx, "performing deploy move", "move", move)
+) (struct{}, error) {
+	slog.DebugContext(ctx, "performing deploy move", "move", move)
 
 	deployableTroops, err := s.GetDeployableTroopsWithQuerier(ctx, querier)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get deployable troops: %w", err)
+		return struct{}{}, fmt.Errorf("failed to get deployable troops: %w", err)
 	}
 
 	troops := move.DesiredTroops - move.CurrentTroops
 	if deployableTroops < troops {
-		return nil, domainerrors.NewValidationError("not enough deployable troops")
+		return struct{}{}, domainerrors.NewValidationError("not enough deployable troops")
 	}
 
 	thisRegion, err := s.regionService.GetRegion(ctx, querier, move.RegionID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get region: %w", err)
+		return struct{}{}, fmt.Errorf("failed to get region: %w", err)
 	}
 
-	if troops < 1 {
-		return nil, domainerrors.NewValidationError("must deploy at least 1 troop")
+	if troops < minTroopsToDeploy {
+		return struct{}{}, domainerrors.NewValidationError("must deploy at least 1 troop")
 	}
 
-	if thisRegion.UserID != ctx.UserID() {
-		return nil, domainerrors.NewValidationError("region is not owned by player")
+	if err := validation.CheckSourceOwnedByPlayer(ctx, thisRegion, "deploy"); err != nil {
+		return struct{}{}, err
 	}
 
 	if thisRegion.Troops != move.CurrentTroops {
-		return nil, domainerrors.NewValidationError(
+		return struct{}{}, domainerrors.NewValidationError(
 			"region has different number of troops than declared",
 		)
 	}
 
 	if err := s.executeDeploy(ctx, querier, thisRegion, troops); err != nil {
-		return nil, fmt.Errorf("failed to execute deploy: %w", err)
+		return struct{}{}, fmt.Errorf("failed to execute deploy: %w", err)
 	}
 
-	return nil, nil //nolint:nilnil // no result needed for deploy
+	return struct{}{}, nil
 }
 
 func (s *service) executeDeploy(
@@ -59,7 +65,7 @@ func (s *service) executeDeploy(
 	region *sqlc.GetRegionsByGameRow,
 	troops int64,
 ) error {
-	slog.InfoContext(ctx,
+	slog.DebugContext(ctx,
 		"executing deploy",
 		"region",
 		region.ExternalReference,
@@ -75,7 +81,7 @@ func (s *service) executeDeploy(
 		return fmt.Errorf("failed to increase region troops: %w", err)
 	}
 
-	slog.InfoContext(ctx,
+	slog.DebugContext(ctx,
 		"deploy executed successfully",
 		"region",
 		region.ExternalReference,
@@ -91,7 +97,7 @@ func (s *service) decreaseDeployableTroops(
 	querier db.Querier,
 	troops int64,
 ) error {
-	slog.InfoContext(ctx, "decreasing deployable troops", "troops", troops)
+	slog.DebugContext(ctx, "decreasing deployable troops", "troops", troops)
 
 	err := querier.DecreaseDeployableTroops(ctx, sqlc.DecreaseDeployableTroopsParams{
 		ID:               ctx.GameID(),
@@ -101,7 +107,7 @@ func (s *service) decreaseDeployableTroops(
 		return fmt.Errorf("failed to decrease deployable troops: %w", err)
 	}
 
-	slog.InfoContext(ctx, "decreased deployable troops", "troops", troops)
+	slog.DebugContext(ctx, "decreased deployable troops", "troops", troops)
 
 	return nil
 }

@@ -14,40 +14,30 @@ import (
 	"go.uber.org/fx"
 )
 
-type MissionFetcher interface {
-	Fetcher
-}
-
-type MissionFetcherImpl struct {
+type missionFetcher struct {
 	missionService    mission.Service
 	missionController *controller.MissionController
 }
 
-var _ MissionFetcher = (*MissionFetcherImpl)(nil)
-
 type MissionFetcherResult struct {
 	fx.Out
 
-	MissionFetcher MissionFetcher
-	Fetcher        Fetcher `group:"private_fetchers"`
+	Fetcher Fetcher `group:"private_fetchers"`
 }
 
 func NewMissionFetcher(
 	missionService mission.Service,
 	missionController *controller.MissionController,
 ) MissionFetcherResult {
-	res := &MissionFetcherImpl{
-		missionService:    missionService,
-		missionController: missionController,
-	}
-
 	return MissionFetcherResult{
-		MissionFetcher: res,
-		Fetcher:        res,
+		Fetcher: &missionFetcher{
+			missionService:    missionService,
+			missionController: missionController,
+		},
 	}
 }
 
-func (f *MissionFetcherImpl) FetchState(ctx ctx.GameContext, stateChannel chan json.RawMessage) {
+func (f *missionFetcher) FetchState(ctx ctx.GameContext, stateChannel chan json.RawMessage) {
 	slog.DebugContext(ctx, "fetching mission state")
 
 	baseMission, err := f.missionService.GetBaseMission(ctx)

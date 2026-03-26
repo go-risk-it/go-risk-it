@@ -18,133 +18,79 @@ import (
 	"go.uber.org/fx"
 )
 
-type DeployOrchestrator = Orchestrator[deploy.Move]
+// OrchestratorDeps contains the non-generic dependencies shared by all orchestrator constructors.
+type OrchestratorDeps struct {
+	fx.In
 
-type AttackOrchestrator = Orchestrator[attack.Move]
+	Querier                db.Querier
+	GameService            state.Service
+	LoggingService         logging.Service
+	MissionService         mission.Service
+	ValidationService      validation.Service
+	GameStateChangedSignal signals.GameStateChangedSignal
+	Metrics                *metrics.Metrics
+	GameTiming             *timing.GameTiming
+}
 
-type ConquerOrchestrator = Orchestrator[conquer.Move]
+type DeployOrchestrator = Orchestrator[deploy.Move, struct{}]
 
-type ReinforceOrchestrator = Orchestrator[reinforce.Move]
+type AttackOrchestrator = Orchestrator[attack.Move, *attack.MoveResult]
 
-type CardsOrchestrator = Orchestrator[cards.Move]
+type ConquerOrchestrator = Orchestrator[conquer.Move, struct{}]
+
+type ReinforceOrchestrator = Orchestrator[reinforce.Move, struct{}]
+
+type CardsOrchestrator = Orchestrator[cards.Move, *cards.MoveResult]
 
 func NewDeployOrchestrator(
-	querier db.Querier,
-	service moveservice.Service[deploy.Move],
-	gameService state.Service,
-	loggingService logging.Service,
-	missionService mission.Service,
-	validationService validation.Service,
-	gameStateChangedSignal signals.GameStateChangedSignal,
-	metrics *metrics.Metrics,
-	gameTiming *timing.GameTiming,
+	deps OrchestratorDeps,
+	service moveservice.Service[deploy.Move, struct{}],
 ) DeployOrchestrator {
-	return NewOrchestrator[deploy.Move](
-		querier,
-		service,
-		gameService,
-		loggingService,
-		missionService,
-		validationService,
-		gameStateChangedSignal,
-		metrics,
-		gameTiming,
-	)
+	return newOrchestratorFromDeps[deploy.Move, struct{}](deps, service)
 }
 
 func NewAttackOrchestrator(
-	querier db.Querier,
-	service moveservice.Service[attack.Move],
-	gameService state.Service,
-	loggingService logging.Service,
-	missionService mission.Service,
-	validationService validation.Service,
-	gameStateChangedSignal signals.GameStateChangedSignal,
-	metrics *metrics.Metrics,
-	gameTiming *timing.GameTiming,
+	deps OrchestratorDeps,
+	service moveservice.Service[attack.Move, *attack.MoveResult],
 ) AttackOrchestrator {
-	return NewOrchestrator[attack.Move](
-		querier,
-		service,
-		gameService,
-		loggingService,
-		missionService,
-		validationService,
-		gameStateChangedSignal,
-		metrics,
-		gameTiming,
-	)
+	return newOrchestratorFromDeps[attack.Move, *attack.MoveResult](deps, service)
 }
 
 func NewConquerOrchestrator(
-	querier db.Querier,
-	service moveservice.Service[conquer.Move],
-	gameService state.Service,
-	loggingService logging.Service,
-	missionService mission.Service,
-	validationService validation.Service,
-	gameStateChangedSignal signals.GameStateChangedSignal,
-	metrics *metrics.Metrics,
-	gameTiming *timing.GameTiming,
+	deps OrchestratorDeps,
+	service moveservice.Service[conquer.Move, struct{}],
 ) ConquerOrchestrator {
-	return NewOrchestrator[conquer.Move](
-		querier,
-		service,
-		gameService,
-		loggingService,
-		missionService,
-		validationService,
-		gameStateChangedSignal,
-		metrics,
-		gameTiming,
-	)
+	return newOrchestratorFromDeps[conquer.Move, struct{}](deps, service)
 }
 
 func NewReinforceOrchestrator(
-	querier db.Querier,
-	service moveservice.Service[reinforce.Move],
-	gameService state.Service,
-	loggingService logging.Service,
-	missionService mission.Service,
-	validationService validation.Service,
-	gameStateChangedSignal signals.GameStateChangedSignal,
-	metrics *metrics.Metrics,
-	gameTiming *timing.GameTiming,
+	deps OrchestratorDeps,
+	service moveservice.Service[reinforce.Move, struct{}],
 ) ReinforceOrchestrator {
-	return NewOrchestrator[reinforce.Move](
-		querier,
-		service,
-		gameService,
-		loggingService,
-		missionService,
-		validationService,
-		gameStateChangedSignal,
-		metrics,
-		gameTiming,
-	)
+	return newOrchestratorFromDeps[reinforce.Move, struct{}](deps, service)
 }
 
 func NewCardsOrchestrator(
-	querier db.Querier,
-	service moveservice.Service[cards.Move],
-	gameService state.Service,
-	loggingService logging.Service,
-	missionService mission.Service,
-	validationService validation.Service,
-	gameStateChangedSignal signals.GameStateChangedSignal,
-	metrics *metrics.Metrics,
-	gameTiming *timing.GameTiming,
+	deps OrchestratorDeps,
+	service moveservice.Service[cards.Move, *cards.MoveResult],
 ) CardsOrchestrator {
-	return NewOrchestrator[cards.Move](
-		querier,
+	return newOrchestratorFromDeps[cards.Move, *cards.MoveResult](deps, service)
+}
+
+func newOrchestratorFromDeps[T, R any](
+	deps OrchestratorDeps,
+	service moveservice.Service[T, R],
+) Orchestrator[T, R] {
+	return NewOrchestrator[T, R](
+		deps.Querier,
 		service,
-		gameService,
-		loggingService,
-		missionService,
-		validationService,
-		gameStateChangedSignal,
-		metrics,
-		gameTiming,
+		deps.GameService,
+		deps.LoggingService,
+		deps.MissionService,
+		deps.ValidationService,
+		deps.GameStateChangedSignal,
+		deps.Metrics,
+		deps.GameTiming,
 	)
 }
 

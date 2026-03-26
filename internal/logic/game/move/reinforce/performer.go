@@ -11,34 +11,39 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/validation"
 )
 
+const (
+	// minTroopsToReinforce is the minimum number of troops that must be moved in a reinforcement.
+	minTroopsToReinforce = 1
+)
+
 func (s *service) Perform(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	move Move,
-) (any, error) {
-	slog.InfoContext(ctx, "performing reinforce move", "move", move)
+) (struct{}, error) {
+	slog.DebugContext(ctx, "performing reinforce move", "move", move)
 
 	sourceRegion, err := s.regionService.GetRegion(ctx, querier, move.SourceRegionID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get source region: %w", err)
+		return struct{}{}, fmt.Errorf("unable to get source region: %w", err)
 	}
 
 	targetRegion, err := s.regionService.GetRegion(ctx, querier, move.TargetRegionID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get target region: %w", err)
+		return struct{}{}, fmt.Errorf("unable to get target region: %w", err)
 	}
 
 	if err := s.validate(ctx, querier, sourceRegion, targetRegion, move); err != nil {
-		slog.InfoContext(ctx, "validation failed", "error", err)
+		slog.DebugContext(ctx, "validation failed", "error", err)
 
-		return nil, fmt.Errorf("validation failed: %w", err)
+		return struct{}{}, fmt.Errorf("validation failed: %w", err)
 	}
 
 	if err := s.perform(ctx, querier, sourceRegion, targetRegion, move.MovingTroops); err != nil {
-		return nil, fmt.Errorf("unable to perform attack move: %w", err)
+		return struct{}{}, fmt.Errorf("unable to perform attack move: %w", err)
 	}
 
-	return nil, nil //nolint:nilnil // no result needed for reinforce
+	return struct{}{}, nil
 }
 
 func (s *service) perform(
@@ -48,7 +53,7 @@ func (s *service) perform(
 	targetRegion *sqlc.GetRegionsByGameRow,
 	movingTroops int64,
 ) error {
-	slog.InfoContext(ctx, "updating region troops")
+	slog.DebugContext(ctx, "updating region troops")
 
 	if err := s.regionService.UpdateTroopsInRegion(
 		ctx,
@@ -78,7 +83,7 @@ func (s *service) validate(
 	targetRegion *sqlc.GetRegionsByGameRow,
 	move Move,
 ) error {
-	slog.InfoContext(ctx, "validating reinforce move")
+	slog.DebugContext(ctx, "validating reinforce move")
 
 	if err := checkRegionOwnership(ctx, sourceRegion, targetRegion); err != nil {
 		return fmt.Errorf("region ownership check failed: %w", err)
@@ -102,7 +107,7 @@ func (s *service) validate(
 		return domainerrors.NewValidationError("player cannot reach target region")
 	}
 
-	slog.InfoContext(ctx, "reinforce move validation passed")
+	slog.DebugContext(ctx, "reinforce move validation passed")
 
 	return nil
 }
@@ -112,17 +117,17 @@ func checkRegionOwnership(
 	sourceRegion *sqlc.GetRegionsByGameRow,
 	targetRegion *sqlc.GetRegionsByGameRow,
 ) error {
-	slog.InfoContext(ctx, "checking region ownership")
+	slog.DebugContext(ctx, "checking region ownership")
 
-	if sourceRegion.UserID != ctx.UserID() {
-		return domainerrors.NewValidationError("source region is not owned by player")
+	if err := validation.CheckSourceOwnedByPlayer(ctx, sourceRegion, "source"); err != nil {
+		return err
 	}
 
-	if targetRegion.UserID != ctx.UserID() {
-		return domainerrors.NewValidationError("target region is not owned by player")
+	if err := validation.CheckTargetOwnedByPlayer(ctx, targetRegion); err != nil {
+		return err
 	}
 
-	slog.InfoContext(ctx, "region ownership check passed")
+	slog.DebugContext(ctx, "region ownership check passed")
 
 	return nil
 }
@@ -133,9 +138,9 @@ func checkTroops(
 	targetRegion *sqlc.GetRegionsByGameRow,
 	move Move,
 ) error {
-	slog.InfoContext(ctx, "checking troops")
+	slog.DebugContext(ctx, "checking troops")
 
-	if move.MovingTroops < 1 {
+	if move.MovingTroops < minTroopsToReinforce {
 		return domainerrors.NewValidationError("at least one troop is required to reinforce")
 	}
 
@@ -153,7 +158,7 @@ func checkTroops(
 		return fmt.Errorf("declared values are invalid: %w", err)
 	}
 
-	slog.InfoContext(ctx, "troops check passed")
+	slog.DebugContext(ctx, "troops check passed")
 
 	return nil
 }

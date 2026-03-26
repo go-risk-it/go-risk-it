@@ -2,11 +2,12 @@ package board
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"maps"
 	"slices"
+
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 )
 
 type Graph interface {
@@ -20,23 +21,23 @@ type Graph interface {
 	) bool
 }
 
-type GraphImpl struct {
+type graphImpl struct {
 	Edges map[string]map[string]struct{}
 }
 
-func (g *GraphImpl) GetRegions() []string {
+var _ Graph = (*graphImpl)(nil)
+
+func (g *graphImpl) GetRegions() []string {
 	return slices.Sorted(maps.Keys(g.Edges))
 }
 
-var _ Graph = (*GraphImpl)(nil)
-
-func NewGraph(board *BoardDto) (*GraphImpl, error) {
+func NewGraph(board *BoardDto) (Graph, error) {
 	err := validateGraph(board)
 	if err != nil {
 		return nil, fmt.Errorf("invalid board: %w", err)
 	}
 
-	topG := &GraphImpl{
+	topG := &graphImpl{
 		Edges: make(map[string]map[string]struct{}),
 	}
 
@@ -54,17 +55,17 @@ func NewGraph(board *BoardDto) (*GraphImpl, error) {
 
 func validateGraph(board *BoardDto) error {
 	if len(board.Regions) == 0 {
-		return errors.New("no regions")
+		return domainerrors.NewValidationError("no regions")
 	}
 
 	if len(board.Borders) == 0 {
-		return errors.New("no borders")
+		return domainerrors.NewValidationError("no borders")
 	}
 
 	regionNames := make(map[string]struct{})
 	for _, region := range board.Regions {
 		if _, ok := regionNames[region.ExternalReference]; ok {
-			return errors.New("duplicate region")
+			return domainerrors.NewValidationError("duplicate region")
 		}
 
 		regionNames[region.ExternalReference] = struct{}{}
@@ -81,36 +82,36 @@ func validateGraph(board *BoardDto) error {
 func validateBorders(board *BoardDto, regionNames map[string]struct{}) error {
 	for _, border := range board.Borders {
 		if border.Source == "" {
-			return errors.New("empty source")
+			return domainerrors.NewValidationError("empty source")
 		}
 
 		if border.Target == "" {
-			return errors.New("empty target")
+			return domainerrors.NewValidationError("empty target")
 		}
 
 		if border.Source == border.Target {
-			return errors.New("self-loop")
+			return domainerrors.NewValidationError("self-loop")
 		}
 
 		if _, ok := regionNames[border.Source]; !ok {
-			return fmt.Errorf("unknown source %v", border.Source)
+			return domainerrors.NewValidationErrorf("unknown source %v", border.Source)
 		}
 
 		if _, ok := regionNames[border.Target]; !ok {
-			return fmt.Errorf("unknown target %v", border.Target)
+			return domainerrors.NewValidationErrorf("unknown target %v", border.Target)
 		}
 	}
 
 	return nil
 }
 
-func (g *GraphImpl) AreNeighbours(source string, target string) bool {
+func (g *graphImpl) AreNeighbours(source string, target string) bool {
 	_, ok := g.Edges[source][target]
 
 	return ok
 }
 
-func (g *GraphImpl) CanReach(
+func (g *graphImpl) CanReach(
 	ctx context.Context,
 	source string,
 	target string,
@@ -129,7 +130,7 @@ func (g *GraphImpl) CanReach(
 	return g.canReachRecursive(ctx, source, target, usableRegions, visited)
 }
 
-func (g *GraphImpl) canReachRecursive(
+func (g *graphImpl) canReachRecursive(
 	ctx context.Context,
 	source string,
 	target string,

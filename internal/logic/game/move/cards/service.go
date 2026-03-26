@@ -18,6 +18,9 @@ import (
 
 const DefaultTroopGrant = 2
 
+// minCardsForCombination is the minimum number of cards a player needs to attempt a combination.
+const minCardsForCombination = 3
+
 type CardCombination struct {
 	CardIDs []int64 `json:"cardIds"`
 }
@@ -32,7 +35,7 @@ type MoveResult struct {
 }
 
 type Service interface {
-	moveservice.Service[Move]
+	moveservice.Service[Move, *MoveResult]
 	Draw(ctx ctx.GameContext, querier db.Querier) error
 	NextPlayerHasValidCombination(ctx ctx.GameContext, querier db.Querier) (bool, error)
 }
@@ -53,7 +56,7 @@ func NewService(
 	playerService player.Service,
 	regionService region.Service,
 	rng rand.RNG,
-) (Service, moveservice.Service[Move]) {
+) (Service, moveservice.Service[Move, *MoveResult]) {
 	svc := &service{
 		boardService:  boardService,
 		phaseService:  phaseService,
@@ -99,7 +102,7 @@ func (s *service) NextPlayerHasValidCombination(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) (bool, error) {
-	slog.InfoContext(ctx, "checking if the player has a valid card combination")
+	slog.DebugContext(ctx, "checking if the player has a valid card combination")
 
 	nextPlayer, err := s.playerService.GetNextPlayer(ctx, querier)
 	if err != nil {
@@ -117,7 +120,7 @@ func (s *service) NextPlayerHasValidCombination(
 	slog.DebugContext(ctx, "player has cards",
 		"count", len(nextPlayerCards), "cards", nextPlayerCards)
 
-	if len(nextPlayerCards) < 3 {
+	if len(nextPlayerCards) < minCardsForCombination {
 		return false, nil
 	}
 
@@ -141,7 +144,7 @@ func (s *service) NextPlayerHasValidCombination(
 				slog.DebugContext(ctx, "checking combination", "combination", combination)
 
 				if _, err := identifyCombination(combination, cardIndex); err == nil {
-					slog.InfoContext(ctx, "player has a valid combination",
+					slog.DebugContext(ctx, "player has a valid combination",
 						"combination", combination)
 
 					return true, nil
@@ -150,7 +153,7 @@ func (s *service) NextPlayerHasValidCombination(
 		}
 	}
 
-	slog.InfoContext(ctx, "player has no valid combination")
+	slog.DebugContext(ctx, "player has no valid combination")
 
 	return false, nil
 }

@@ -3,12 +3,16 @@ package signals
 import (
 	"encoding/json"
 	"log/slog"
+	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/safego"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby/fetcher"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby/ws"
 	"go.uber.org/fx"
 )
+
+const fetchTimeout = 10 * time.Second
 
 var Module = fx.Options(
 	fx.Invoke(
@@ -26,17 +30,20 @@ type HandlerParams[T any] struct {
 }
 
 func fetchStateAndPublish(
-	ctx ctx.LobbyContext,
+	lobbyCtx ctx.LobbyContext,
 	fetcher func(ctx.LobbyContext, chan json.RawMessage),
 	publisher func(ctx.LobbyContext, json.RawMessage),
 ) {
-	channel := make(chan json.RawMessage)
-	go fetcher(ctx, channel)
+	detached, cancel := ctx.DetachLobbyContextWithTimeout(lobbyCtx, fetchTimeout)
+	defer cancel()
+
+	channel := make(chan json.RawMessage, 1)
+	safego.Go(detached, func() { fetcher(detached, channel) })
 
 	select {
 	case msg := <-channel:
-		publisher(ctx, msg)
-	case <-ctx.Done():
-		slog.ErrorContext(ctx, "timeout while fetching state", "error", ctx.Err())
+		publisher(detached, msg)
+	case <-detached.Done():
+		slog.ErrorContext(detached, "timeout while fetching state", "timeout", fetchTimeout)
 	}
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
+	"github.com/go-risk-it/go-risk-it/internal/safego"
 )
 
 func HandlePlayerConnected(
@@ -23,19 +24,23 @@ func HandlePlayerConnected(
 			gameContext, "handling player connected",
 		)
 
-		go fetchAllStatesAndPublish(
-			gameContext, params,
-			params.ConnectionManager.WriteMessage,
-		)
+		safego.Go(gameContext, func() {
+			fetchAllStatesAndPublish(
+				gameContext, params,
+				params.ConnectionManager.WriteMessage,
+			)
+		})
 
 		slog.InfoContext(
 			gameContext, "fetching move logs and publishing",
 		)
 
-		go fetchStateAndPublish(
-			gameContext,
-			params.MoveLogFetcher.FetchState,
-			params.ConnectionManager.WriteMessage,
-		)
+		safego.Go(gameContext, func() {
+			fetchStateAndPublish(
+				gameContext,
+				params.MoveLogFetcher.FetchState,
+				params.ConnectionManager.WriteMessage,
+			)
+		})
 	})
 }

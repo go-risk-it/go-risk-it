@@ -1,12 +1,12 @@
 package state
 
 import (
-	"errors"
 	"fmt"
 	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/db"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 )
 
 type Participant struct {
@@ -53,7 +53,7 @@ func (s *service) GetLobbyStateWithQuerier(
 	}
 
 	if len(lobby) == 0 {
-		return nil, errors.New("no participants in lobby")
+		return nil, domainerrors.NewNotFoundError("no participants in lobby")
 	}
 
 	participants := make([]Participant, 0)

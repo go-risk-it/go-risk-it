@@ -26,7 +26,7 @@ type MoveResult struct {
 }
 
 type Service interface {
-	moveservice.Service[Move]
+	moveservice.Service[Move, *MoveResult]
 
 	HasConquered(ctx ctx.GameContext, querier db.Querier) (bool, error)
 	CanContinueAttacking(ctx ctx.GameContext, querier db.Querier) (bool, error)
@@ -46,7 +46,7 @@ func NewService(
 	diceService dice.Service,
 	phaseService phase.Service,
 	regionService region.Service,
-) (Service, moveservice.Service[Move]) {
+) (Service, moveservice.Service[Move, *MoveResult]) {
 	svc := &service{
 		boardService:  boardService,
 		diceService:   diceService,

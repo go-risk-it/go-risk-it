@@ -15,8 +15,8 @@ func (s *service) Perform(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	move Move,
-) (any, error) {
-	slog.InfoContext(ctx, "performing cards move", "move", move)
+) (*MoveResult, error) {
+	slog.DebugContext(ctx, "performing cards move", "move", move)
 
 	cardIndex, err := s.buildCardIndex(ctx, querier)
 	if err != nil {
@@ -97,7 +97,7 @@ func (s *service) processCombinations(
 		playedCards = append(playedCards, combination.CardIDs...)
 	}
 
-	slog.InfoContext(ctx, "processed combinations", "extraTroops", extraDeployableTroops)
+	slog.DebugContext(ctx, "processed combinations", "extraTroops", extraDeployableTroops)
 
 	return extraDeployableTroops, playedCards, nil
 }
@@ -119,7 +119,7 @@ func (s *service) grantRegionTroops(
 	}
 
 	if len(grants) == 0 {
-		slog.InfoContext(ctx, "no region troop grants")
+		slog.DebugContext(ctx, "no region troop grants")
 
 		return nil, nil
 	}
@@ -136,7 +136,7 @@ func (s *service) grantRegionTroops(
 		return nil, fmt.Errorf("failed to grant region troops: %w", err)
 	}
 
-	slog.InfoContext(ctx, "granted bonus troops to regions", "count", len(grantedRegionIds))
+	slog.DebugContext(ctx, "granted bonus troops to regions", "count", len(grantedRegionIds))
 
 	return grants, nil
 }
@@ -162,13 +162,19 @@ const (
 	INFANTRY  = 10
 	CAVALRY   = 100
 	JOLLY     = 1000
+
+	// cardsPerCombination is the exact number of cards required in each combination.
+	cardsPerCombination = 3
+	// maxJollyPerCombination is the maximum jolly card factor allowed.
+	// A combination value at or above this factor times JOLLY is invalid.
+	maxJollyPerCombination = 2
 )
 
 func validateCombination(
 	combination CardCombination,
 	cardIndex map[int64]sqlc.GetCardsForPlayerRow,
 ) error {
-	if len(combination.CardIDs) != 3 {
+	if len(combination.CardIDs) != cardsPerCombination {
 		return domainerrors.NewValidationError("combination must have exactly 3 cards")
 	}
 
@@ -202,7 +208,7 @@ func identifyCombination(
 		JOLLY + 2*CAVALRY:              12,
 	}
 
-	if combinationValue >= 2*JOLLY {
+	if combinationValue >= maxJollyPerCombination*JOLLY {
 		return 0, domainerrors.NewValidationError(
 			"cannot use more than 2 jolly cards in a combination",
 		)

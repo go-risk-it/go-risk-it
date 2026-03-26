@@ -15,7 +15,7 @@ func (s *service) Advance(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	targetPhase sqlc.GamePhaseType,
-	performResult any,
+	performResult *MoveResult,
 ) error {
 	if err := phase.ValidateTransition(sqlc.GamePhaseTypeATTACK, targetPhase); err != nil {
 		return fmt.Errorf("invalid phase transition: %w", err)
@@ -37,19 +37,18 @@ func (s *service) advanceToConquerPhase(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	phase sqlc.GamePhase,
-	performResult any,
+	performResult *MoveResult,
 ) error {
-	result, ok := performResult.(*MoveResult)
-	if !ok || result == nil {
+	if performResult == nil {
 		return errors.New("no attack result available for conquer phase creation")
 	}
 
 	if _, err := querier.InsertConquerPhase(ctx, sqlc.InsertConquerPhaseParams{
 		PhaseID:             phase.ID,
 		ID:                  ctx.GameID(),
-		ExternalReference:   result.AttackingRegionID,
-		ExternalReference_2: result.DefendingRegionID,
-		MinimumTroops:       result.ConqueringTroops,
+		ExternalReference:   performResult.AttackingRegionID,
+		ExternalReference_2: performResult.DefendingRegionID,
+		MinimumTroops:       performResult.ConqueringTroops,
 	}); err != nil {
 		return fmt.Errorf("failed to create conquer phase: %w", err)
 	}

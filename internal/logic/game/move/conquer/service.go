@@ -20,7 +20,7 @@ type Move struct {
 }
 
 type Service interface {
-	moveservice.Service[Move]
+	moveservice.Service[Move, struct{}]
 	GetPhaseState(ctx ctx.GameContext) (sqlc.GetConquerPhaseStateRow, error)
 	GetPhaseStateWithQuerier(
 		ctx ctx.GameContext,
@@ -44,7 +44,7 @@ func NewService(
 	missionService mission.Service,
 	phaseService phase.Service,
 	regionService region.Service,
-) (Service, moveservice.Service[Move]) {
+) (Service, moveservice.Service[Move, struct{}]) {
 	svc := &service{
 		querier:        querier,
 		attackService:  attackService,
@@ -67,7 +67,7 @@ func (s *service) GetPhaseStateWithQuerier(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) (sqlc.GetConquerPhaseStateRow, error) {
-	slog.InfoContext(ctx, "getting conquer phase state")
+	slog.DebugContext(ctx, "getting conquer phase state")
 
 	conquerPhase, err := querier.GetConquerPhaseState(ctx, ctx.GameID())
 	if err != nil {
@@ -77,7 +77,7 @@ func (s *service) GetPhaseStateWithQuerier(
 		)
 	}
 
-	slog.InfoContext(ctx, "got conquer phase state", "phase", conquerPhase)
+	slog.DebugContext(ctx, "got conquer phase state", "phase", conquerPhase)
 
 	return conquerPhase, nil
 }

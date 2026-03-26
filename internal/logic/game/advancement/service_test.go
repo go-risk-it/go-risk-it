@@ -20,25 +20,28 @@ import (
 	"go.opentelemetry.io/otel/trace/noop"
 )
 
-// Using a concrete type for the generic Service: string for move type T.
-type testMove = string
+// Using concrete types for the generic Service: string for move type T, any for result type R.
+type (
+	testMove   = string
+	testResult = any
+)
 
 func setup(t *testing.T) (
 	*mockdb.Querier,
 	*mockstate.Service,
-	*mockmoveservice.Service[testMove],
+	*mockmoveservice.Service[testMove, testResult],
 	*mockvalidation.Service,
-	advancement.Service[testMove],
+	advancement.Service[testMove, testResult],
 ) {
 	t.Helper()
 
 	querier := mockdb.NewQuerier(t)
 	gameState := mockstate.NewService(t)
-	moveService := mockmoveservice.NewService[testMove](t)
+	moveService := mockmoveservice.NewService[testMove, testResult](t)
 	validationService := mockvalidation.NewService(t)
 	signal := mocksignals.NewGameStateChangedSignal(t)
 
-	service := advancement.NewService[testMove](
+	service := advancement.NewService[testMove, testResult](
 		gameState,
 		querier,
 		moveService,

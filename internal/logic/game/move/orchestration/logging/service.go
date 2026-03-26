@@ -9,6 +9,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
+	"github.com/go-risk-it/go-risk-it/internal/safego"
 )
 
 type Service interface {
@@ -37,7 +38,7 @@ func (s *service) GetMoveLogs(
 	ctx ctx.GameContext,
 	limit int64,
 ) ([]sqlc.GetMoveLogsRow, error) {
-	slog.InfoContext(ctx, "getting move logs", "limit", limit)
+	slog.DebugContext(ctx, "getting move logs", "limit", limit)
 
 	moveLogs, err := s.querier.GetMoveLogs(ctx, sqlc.GetMoveLogsParams{
 		GameID:  ctx.GameID(),
@@ -74,8 +75,10 @@ func (s *service) LogMove(ctx ctx.GameContext, querier db.Querier, move, result 
 		return fmt.Errorf("failed to insert move log: %w", err)
 	}
 
-	go s.movePerformedSignal.Emit(ctx, signals.MovePerformedData{
-		MoveLog: moveLog,
+	safego.Go(ctx, func() {
+		s.movePerformedSignal.Emit(ctx, signals.MovePerformedData{
+			MoveLog: moveLog,
+		})
 	})
 
 	return nil
