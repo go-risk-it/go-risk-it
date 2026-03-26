@@ -43,7 +43,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "End-to-end move latency p95. SLO: < 500ms",
+            "description": "End-to-end move latency P95 measured by the client. SLO: < 500ms. Check next: Perf Test dashboard E2E Move Latency panel for percentile trend over time.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -81,6 +81,13 @@
                 "colorMode": "background",
                 "graphMode": "area",
                 "justifyMode": "auto",
+                "links": [
+                    {
+                        "targetBlank": true,
+                        "title": "Perf Test Detail",
+                        "url": "/d/perf-test?from=${__from}&to=${__to}"
+                    }
+                ],
                 "reduceOptions": {
                     "calcs": [
                         "lastNotNull"
@@ -105,7 +112,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "WebSocket delivery latency p95. SLO: < 200ms",
+            "description": "WebSocket state delivery latency P95. SLO: < 200ms. Check next: WebSocket dashboard for connection lifecycle and broadcast latency breakdown.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -143,6 +150,13 @@
                 "colorMode": "background",
                 "graphMode": "area",
                 "justifyMode": "auto",
+                "links": [
+                    {
+                        "targetBlank": true,
+                        "title": "WebSocket Detail",
+                        "url": "/d/websocket?from=${__from}&to=${__to}"
+                    }
+                ],
                 "reduceOptions": {
                     "calcs": [
                         "lastNotNull"
@@ -167,7 +181,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Database transaction latency p95. SLO: < 50ms",
+            "description": "Database transaction latency P95. SLO: < 50ms. Check next: Database dashboard for pool utilization, query latency, and cache hit rate.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -205,6 +219,13 @@
                 "colorMode": "background",
                 "graphMode": "area",
                 "justifyMode": "auto",
+                "links": [
+                    {
+                        "targetBlank": true,
+                        "title": "Database Detail",
+                        "url": "/d/database?from=${__from}&to=${__to}"
+                    }
+                ],
                 "reduceOptions": {
                     "calcs": [
                         "lastNotNull"
@@ -229,7 +250,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "5xx error rate. SLO: < 1%",
+            "description": "Server-side 5xx error rate as percentage of total requests. SLO: < 1%. Check next: Error Breakdown panel for error type categorization.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -267,6 +288,13 @@
                 "colorMode": "background",
                 "graphMode": "area",
                 "justifyMode": "auto",
+                "links": [
+                    {
+                        "targetBlank": true,
+                        "title": "Server Golden Signals",
+                        "url": "/d/server-golden-signals?from=${__from}&to=${__to}"
+                    }
+                ],
                 "reduceOptions": {
                     "calcs": [
                         "lastNotNull"
@@ -291,6 +319,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Number of games currently in progress. Normal: matches configured concurrency target. Watch for: stuck at 0 or exceeding target (games not draining). Check next: Completion Rate to see if games are finishing successfully.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -343,6 +372,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Client-side move throughput (30s rate). Normal: proportional to active games. Watch for: sudden drops (server overload) or flat at zero (test harness stuck). Check next: Perf Test dashboard Moves/sec for detailed throughput trend.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -397,6 +427,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Ratio of completed games to total outcomes. SLO: > 95% green, > 80% yellow. Normal: > 95%. Watch for: dropping below 80% (too many timeouts or fatals). Check next: Error Breakdown for error types causing failures.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -458,6 +489,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Client-side errors stacked by type (connection, timeout, HTTP 5xx, etc.). Normal: zero or near-zero. Watch for: any sustained error rate or new error types appearing. Check next: Server Golden Signals dashboard for server-side error details.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -524,7 +556,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "E2E move latency distribution with p50/p95/p99 filled bands.",
+            "description": "E2E move latency with filled bands between P50, P95, and P99. Normal: tight bands with P95 < 500ms. Watch for: bands widening (latency variance increasing) or P99 diverging from P95 (tail latency problem). Check next: Latency Attribution to identify which server boundary causes the spread.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -623,7 +655,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Per-boundary p95 latency overlaid on HTTP total. Shows where time is spent.",
+            "description": "P95 latency for each server boundary overlaid: HTTP total, DB transaction, game logic, WS broadcast. Normal: DB + game logic + WS sum to roughly HTTP total. Watch for: one boundary dominating (e.g. DB > 70% of HTTP). Check next: Database dashboard if DB dominates, WebSocket dashboard if WS dominates.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -639,6 +671,18 @@
                             "mode": "none"
                         }
                     },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "Database Detail",
+                            "url": "/d/database?from=${__from}&to=${__to}"
+                        },
+                        {
+                            "targetBlank": true,
+                            "title": "WebSocket Detail",
+                            "url": "/d/websocket?from=${__from}&to=${__to}"
+                        }
+                    ],
                     "unit": "s"
                 },
                 "overrides": [
@@ -731,21 +775,25 @@
             },
             "targets": [
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
                     "legendFormat": "HTTP Total",
                     "refId": "A"
                 },
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.95, sum(rate(db_transaction_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
                     "legendFormat": "DB Transaction",
                     "refId": "B"
                 },
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.95, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
                     "legendFormat": "Game Logic",
                     "refId": "C"
                 },
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.95, sum(rate(ws_broadcast_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
                     "legendFormat": "WS Broadcast",
                     "refId": "D"
@@ -771,6 +819,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Percentage of DB connection pool in use. Normal: < 70%. Watch for: > 90% (pool exhaustion imminent, queries will queue). Check next: DB Pool Wait Rate tile \u2014 non-zero waits confirm saturation.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -832,6 +881,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Rate of connection acquires that had to wait for a free connection. Normal: 0. Watch for: > 10/s (pool too small for concurrency level). Check next: DB Pool Utilization tile to confirm pool is near capacity.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -893,6 +943,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Total active WebSocket connections on the server. Normal: active_games x players_per_game. Watch for: > 5000 (approaching connection limits). Check next: WS Connection Drift panel to detect connection leaks.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -954,6 +1005,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Rate of WebSocket messages broadcast by the server. Normal: proportional to moves/s x players_per_game. Watch for: > 50K/s (fan-out amplification or broadcast storms). Check next: Fan-out Amplification panel for the WS-to-move ratio.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -1015,6 +1067,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Server-side game move processing rate. Normal: proportional to active games. Watch for: > 5K/s (approaching high-throughput territory). Check next: Game Engine dashboard for per-phase move breakdown.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -1076,6 +1129,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Total HTTP request rate hitting the server. Normal: higher than moves/s due to game creation, WS upgrades, and state queries. Watch for: > 5K/s (load test pushing high throughput). Check next: Server Golden Signals dashboard for latency and error rate at this request volume.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -1137,7 +1191,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Ratio of WS broadcasts to game moves. Each move triggers a state broadcast to all players in the game, so the baseline ratio equals players_per_game (typically 4).\nNormal: ~4 (one broadcast per player per move). Watch for: > 10 suggests duplicate broadcasts or fan-out bugs.\nDenominator: game_moves_total counts server-side move completions (one per successful move request), not client retries.\n",
+            "description": "Ratio of WS broadcasts to game moves. Each move triggers a state broadcast to all players in the game, so the baseline ratio equals players_per_game (typically 4).\nNormal: ~4 (one broadcast per player per move). Watch for: > 10 suggests duplicate broadcasts or fan-out bugs. Check next: WebSocket dashboard for broadcast latency and connection counts.\nDenominator: game_moves_total counts server-side move completions (one per successful move request), not client retries.\n",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -1157,6 +1211,13 @@
                             "mode": "none"
                         }
                     },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "WebSocket Detail",
+                            "url": "/d/websocket?from=${__from}&to=${__to}"
+                        }
+                    ],
                     "unit": "short"
                 },
                 "overrides": []
@@ -1197,7 +1258,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Percentage of HTTP p95 latency spent in DB transactions. Derived from: DB txn p95 / HTTP request p95 \u00d7 100.\nNormal: 30-50%. Watch for: > 70% means DB dominates request latency \u2014 look at pool saturation and query plans.\n",
+            "description": "Percentage of HTTP p95 latency spent in DB transactions. Derived from: DB txn p95 / HTTP request p95 x 100.\nNormal: 30-50%. Watch for: > 70% means DB dominates request latency \u2014 look at pool saturation and query plans. Check next: Database dashboard for pool utilization and per-query latency.\n",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -1257,7 +1318,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Effective concurrency (healthy + slow games) vs total active games. The gap represents stalled/zombie games not making progress.\nNormal: effective \u2248 active. Watch for: growing gap means games are getting stuck \u2014 check DB pool and goroutine panels.\n",
+            "description": "Effective concurrency (healthy + slow games) vs total active games. The gap represents stalled/zombie games not making progress.\nNormal: effective \u2248 active. Watch for: growing gap means games are getting stuck \u2014 check DB pool and goroutine panels. Check next: DB Pool Health and Goroutine Count panels for resource leak evidence.\n",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -1375,7 +1436,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Monotonic increase suggests a goroutine leak",
+            "description": "Server goroutine count over time. Normal: stable, proportional to active connections. Watch for: monotonic increase (goroutine leak \u2014 each game/connection spawns goroutines that never exit). Check next: WS Connection Drift to see if leaked goroutines correlate with leaked connections.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -1431,7 +1492,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Active WS connections vs expected (active games \u00d7 players). Divergence suggests a connection leak.",
+            "description": "Actual WS connections vs expected (active_games x players_per_game). Normal: lines track closely. Watch for: actual exceeding expected (connection leak \u2014 connections not closing when games end). Check next: DB Pool Health to check for correlated connection pool leaks.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -1491,7 +1552,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Active connections trending up without idle recovery suggests a connection leak.",
+            "description": "DB connection pool breakdown: active, idle, and total connections. Normal: active rises under load then returns to idle. Watch for: active trending up without idle recovery (connection leak) or total hitting pool max. Check next: Database dashboard for pool acquire latency and canceled acquires.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {

@@ -3,6 +3,7 @@
 // Regenerate: make dashboards
 local common = import 'common.libsonnet';
 local colors = import 'colors.libsonnet';
+local links = import 'links.libsonnet';
 local thresholds = import 'thresholds.libsonnet';
 local ooda = import 'ooda.libsonnet';
 
@@ -71,8 +72,11 @@ local ooda = import 'ooda.libsonnet';
       colorMode='background',
     ) + {
       id: 1,
-      description: 'End-to-end move latency p95. SLO: < 500ms',
+      description: 'End-to-end move latency P95 measured by the client. SLO: < 500ms. Check next: Perf Test dashboard E2E Move Latency panel for percentile trend over time.',
       gridPos: { h: 4, w: 6, x: 0, y: 1 },
+      options+: {
+        links: [links.toDashboard('Perf Test Detail', links.dashboardUids.perfTest)],
+      },
     },
 
     // Panel 2: WS Delivery p95
@@ -88,8 +92,11 @@ local ooda = import 'ooda.libsonnet';
       colorMode='background',
     ) + {
       id: 2,
-      description: 'WebSocket delivery latency p95. SLO: < 200ms',
+      description: 'WebSocket state delivery latency P95. SLO: < 200ms. Check next: WebSocket dashboard for connection lifecycle and broadcast latency breakdown.',
       gridPos: { h: 4, w: 6, x: 6, y: 1 },
+      options+: {
+        links: [links.toDashboard('WebSocket Detail', links.dashboardUids.websocket)],
+      },
     },
 
     // Panel 3: DB Txn p95
@@ -105,8 +112,11 @@ local ooda = import 'ooda.libsonnet';
       colorMode='background',
     ) + {
       id: 3,
-      description: 'Database transaction latency p95. SLO: < 50ms',
+      description: 'Database transaction latency P95. SLO: < 50ms. Check next: Database dashboard for pool utilization, query latency, and cache hit rate.',
       gridPos: { h: 4, w: 6, x: 12, y: 1 },
+      options+: {
+        links: [links.toDashboard('Database Detail', links.dashboardUids.database)],
+      },
     },
 
     // Panel 4: HTTP Error Rate
@@ -122,8 +132,11 @@ local ooda = import 'ooda.libsonnet';
       colorMode='background',
     ) + {
       id: 4,
-      description: '5xx error rate. SLO: < 1%',
+      description: 'Server-side 5xx error rate as percentage of total requests. SLO: < 1%. Check next: Error Breakdown panel for error type categorization.',
       gridPos: { h: 4, w: 6, x: 18, y: 1 },
+      options+: {
+        links: [links.toDashboard('Server Golden Signals', links.dashboardUids.serverGoldenSignals)],
+      },
     },
 
     // Panel 5: Active Games (simple stat, no background, palette-classic)
@@ -137,6 +150,7 @@ local ooda = import 'ooda.libsonnet';
       thresholds={ mode: 'absolute', steps: [{ color: 'green', value: null }] },
     ) + {
       id: 5,
+      description: 'Number of games currently in progress. Normal: matches configured concurrency target. Watch for: stuck at 0 or exceeding target (games not draining). Check next: Completion Rate to see if games are finishing successfully.',
       gridPos: { h: 8, w: 6, x: 0, y: 5 },
       // Override color to palette-classic (not thresholds-driven)
       fieldConfig+: {
@@ -157,6 +171,7 @@ local ooda = import 'ooda.libsonnet';
       unit='ops',
     ) + {
       id: 6,
+      description: 'Client-side move throughput (30s rate). Normal: proportional to active games. Watch for: sudden drops (server overload) or flat at zero (test harness stuck). Check next: Perf Test dashboard Moves/sec for detailed throughput trend.',
       gridPos: { h: 8, w: 6, x: 6, y: 5 },
       options+: {
         tooltip: { mode: 'single' },
@@ -176,6 +191,7 @@ local ooda = import 'ooda.libsonnet';
       colorMode='background',
     ) + {
       id: 7,
+      description: 'Ratio of completed games to total outcomes. SLO: > 95% green, > 80% yellow. Normal: > 95%. Watch for: dropping below 80% (too many timeouts or fatals). Check next: Error Breakdown for error types causing failures.',
       gridPos: { h: 8, w: 6, x: 12, y: 5 },
     },
 
@@ -190,6 +206,7 @@ local ooda = import 'ooda.libsonnet';
       unit='ops',
     ) + {
       id: 8,
+      description: 'Client-side errors stacked by type (connection, timeout, HTTP 5xx, etc.). Normal: zero or near-zero. Watch for: any sustained error rate or new error types appearing. Check next: Server Golden Signals dashboard for server-side error details.',
       gridPos: { h: 8, w: 6, x: 18, y: 5 },
       fieldConfig+: {
         defaults+: {
@@ -217,7 +234,7 @@ local ooda = import 'ooda.libsonnet';
       serviceName='perftest',
     ) + {
       id: 9,
-      description: 'E2E move latency distribution with p50/p95/p99 filled bands.',
+      description: 'E2E move latency with filled bands between P50, P95, and P99. Normal: tight bands with P95 < 500ms. Watch for: bands widening (latency variance increasing) or P99 diverging from P95 (tail latency problem). Check next: Latency Attribution to identify which server boundary causes the spread.',
       gridPos: { h: 8, w: 24, x: 0, y: 14 },
     },
 
@@ -229,21 +246,25 @@ local ooda = import 'ooda.libsonnet';
           refId: 'A',
           expr: 'histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
           legendFormat: 'HTTP Total',
+          exemplar: true,
         },
         {
           refId: 'B',
           expr: 'histogram_quantile(0.95, sum(rate(db_transaction_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
           legendFormat: 'DB Transaction',
+          exemplar: true,
         },
         {
           refId: 'C',
           expr: 'histogram_quantile(0.95, sum(rate(game_phase_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
           legendFormat: 'Game Logic',
+          exemplar: true,
         },
         {
           refId: 'D',
           expr: 'histogram_quantile(0.95, sum(rate(ws_broadcast_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
           legendFormat: 'WS Broadcast',
+          exemplar: true,
         },
       ],
       unit='s',
@@ -276,8 +297,16 @@ local ooda = import 'ooda.libsonnet';
       ],
     ) + {
       id: 10,
-      description: 'Per-boundary p95 latency overlaid on HTTP total. Shows where time is spent.',
+      description: 'P95 latency for each server boundary overlaid: HTTP total, DB transaction, game logic, WS broadcast. Normal: DB + game logic + WS sum to roughly HTTP total. Watch for: one boundary dominating (e.g. DB > 70% of HTTP). Check next: Database dashboard if DB dominates, WebSocket dashboard if WS dominates.',
       gridPos: { h: 8, w: 24, x: 0, y: 22 },
+      fieldConfig+: {
+        defaults+: {
+          links: [
+            links.toDashboard('Database Detail', links.dashboardUids.database),
+            links.toDashboard('WebSocket Detail', links.dashboardUids.websocket),
+          ],
+        },
+      },
     },
 
     // ── Row 300: Decide — Where's the bottleneck? ──────────────────
@@ -297,6 +326,7 @@ local ooda = import 'ooda.libsonnet';
       colorMode='background',
     ) + {
       id: 11,
+      description: 'Percentage of DB connection pool in use. Normal: < 70%. Watch for: > 90% (pool exhaustion imminent, queries will queue). Check next: DB Pool Wait Rate tile — non-zero waits confirm saturation.',
       gridPos: { h: 6, w: 4, x: 0, y: 31 },
     },
 
@@ -313,6 +343,7 @@ local ooda = import 'ooda.libsonnet';
       colorMode='background',
     ) + {
       id: 12,
+      description: 'Rate of connection acquires that had to wait for a free connection. Normal: 0. Watch for: > 10/s (pool too small for concurrency level). Check next: DB Pool Utilization tile to confirm pool is near capacity.',
       gridPos: { h: 6, w: 4, x: 4, y: 31 },
     },
 
@@ -329,6 +360,7 @@ local ooda = import 'ooda.libsonnet';
       colorMode='background',
     ) + {
       id: 13,
+      description: 'Total active WebSocket connections on the server. Normal: active_games x players_per_game. Watch for: > 5000 (approaching connection limits). Check next: WS Connection Drift panel to detect connection leaks.',
       gridPos: { h: 6, w: 4, x: 8, y: 31 },
     },
 
@@ -345,6 +377,7 @@ local ooda = import 'ooda.libsonnet';
       colorMode='background',
     ) + {
       id: 14,
+      description: 'Rate of WebSocket messages broadcast by the server. Normal: proportional to moves/s x players_per_game. Watch for: > 50K/s (fan-out amplification or broadcast storms). Check next: Fan-out Amplification panel for the WS-to-move ratio.',
       gridPos: { h: 6, w: 4, x: 12, y: 31 },
     },
 
@@ -361,6 +394,7 @@ local ooda = import 'ooda.libsonnet';
       colorMode='background',
     ) + {
       id: 15,
+      description: 'Server-side game move processing rate. Normal: proportional to active games. Watch for: > 5K/s (approaching high-throughput territory). Check next: Game Engine dashboard for per-phase move breakdown.',
       gridPos: { h: 6, w: 4, x: 16, y: 31 },
     },
 
@@ -377,6 +411,7 @@ local ooda = import 'ooda.libsonnet';
       colorMode='background',
     ) + {
       id: 16,
+      description: 'Total HTTP request rate hitting the server. Normal: higher than moves/s due to game creation, WS upgrades, and state queries. Watch for: > 5K/s (load test pushing high throughput). Check next: Server Golden Signals dashboard for latency and error rate at this request volume.',
       gridPos: { h: 6, w: 4, x: 20, y: 31 },
     },
 
@@ -394,10 +429,15 @@ local ooda = import 'ooda.libsonnet';
       id: 20,
       description: |||
         Ratio of WS broadcasts to game moves. Each move triggers a state broadcast to all players in the game, so the baseline ratio equals players_per_game (typically 4).
-        Normal: ~4 (one broadcast per player per move). Watch for: > 10 suggests duplicate broadcasts or fan-out bugs.
+        Normal: ~4 (one broadcast per player per move). Watch for: > 10 suggests duplicate broadcasts or fan-out bugs. Check next: WebSocket dashboard for broadcast latency and connection counts.
         Denominator: game_moves_total counts server-side move completions (one per successful move request), not client retries.
       |||,
       gridPos: { h: 8, w: 8, x: 0, y: 37 },
+      fieldConfig+: {
+        defaults+: {
+          links: [links.toDashboard('WebSocket Detail', links.dashboardUids.websocket)],
+        },
+      },
     },
 
     // Panel 21: DB Latency Share
@@ -413,8 +453,8 @@ local ooda = import 'ooda.libsonnet';
     ) + {
       id: 21,
       description: |||
-        Percentage of HTTP p95 latency spent in DB transactions. Derived from: DB txn p95 / HTTP request p95 × 100.
-        Normal: 30-50%. Watch for: > 70% means DB dominates request latency — look at pool saturation and query plans.
+        Percentage of HTTP p95 latency spent in DB transactions. Derived from: DB txn p95 / HTTP request p95 x 100.
+        Normal: 30-50%. Watch for: > 70% means DB dominates request latency — look at pool saturation and query plans. Check next: Database dashboard for pool utilization and per-query latency.
       |||,
       gridPos: { h: 8, w: 8, x: 8, y: 37 },
     },
@@ -455,7 +495,7 @@ local ooda = import 'ooda.libsonnet';
       id: 22,
       description: |||
         Effective concurrency (healthy + slow games) vs total active games. The gap represents stalled/zombie games not making progress.
-        Normal: effective ≈ active. Watch for: growing gap means games are getting stuck — check DB pool and goroutine panels.
+        Normal: effective ≈ active. Watch for: growing gap means games are getting stuck — check DB pool and goroutine panels. Check next: DB Pool Health and Goroutine Count panels for resource leak evidence.
       |||,
       gridPos: { h: 8, w: 8, x: 16, y: 37 },
     },
@@ -475,7 +515,7 @@ local ooda = import 'ooda.libsonnet';
       unit='short',
     ) + {
       id: 17,
-      description: 'Monotonic increase suggests a goroutine leak',
+      description: 'Server goroutine count over time. Normal: stable, proportional to active connections. Watch for: monotonic increase (goroutine leak — each game/connection spawns goroutines that never exit). Check next: WS Connection Drift to see if leaked goroutines correlate with leaked connections.',
       gridPos: { h: 8, w: 8, x: 0, y: 46 },
       options+: {
         legend+: { calcs: ['min', 'max', 'last'] },
@@ -501,7 +541,7 @@ local ooda = import 'ooda.libsonnet';
       unit='short',
     ) + {
       id: 18,
-      description: 'Active WS connections vs expected (active games \u00d7 players). Divergence suggests a connection leak.',
+      description: 'Actual WS connections vs expected (active_games x players_per_game). Normal: lines track closely. Watch for: actual exceeding expected (connection leak — connections not closing when games end). Check next: DB Pool Health to check for correlated connection pool leaks.',
       gridPos: { h: 8, w: 8, x: 8, y: 46 },
       options+: {
         legend+: { calcs: ['last'] },
@@ -531,7 +571,7 @@ local ooda = import 'ooda.libsonnet';
       unit='short',
     ) + {
       id: 19,
-      description: 'Active connections trending up without idle recovery suggests a connection leak.',
+      description: 'DB connection pool breakdown: active, idle, and total connections. Normal: active rises under load then returns to idle. Watch for: active trending up without idle recovery (connection leak) or total hitting pool max. Check next: Database dashboard for pool acquire latency and canceled acquires.',
       gridPos: { h: 8, w: 8, x: 16, y: 46 },
       options+: {
         legend+: { calcs: ['min', 'max', 'last'] },

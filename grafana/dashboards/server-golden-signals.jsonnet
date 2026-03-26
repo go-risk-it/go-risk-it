@@ -3,6 +3,7 @@
 // Regenerate: make dashboards
 local common = import 'common.libsonnet';
 local colors = import 'colors.libsonnet';
+local links = import 'links.libsonnet';
 local thresholds = import 'thresholds.libsonnet';
 local ooda = import 'ooda.libsonnet';
 
@@ -38,7 +39,13 @@ local ooda = import 'ooda.libsonnet';
       color=colors.fixedColor(colors.http),
     ) + {
       id: 1,
+      description: 'Normal: steady rate proportional to active games and players. Watch for: sudden drops (service unreachable) or unexpected spikes (retry storms, bot activity). Check next: HTTP request rate by route to identify which endpoints changed.',
       gridPos: { h: 8, w: 12, x: 0, y: 1 },
+      fieldConfig+: {
+        defaults+: {
+          links: [links.toDashboard('Command Center', links.dashboardUids.perfTestCommandCenter)],
+        },
+      },
     },
 
     // Panel 9: HTTP Error Rate % (fixed red, threshold line+area)
@@ -55,7 +62,7 @@ local ooda = import 'ooda.libsonnet';
       color=colors.fixedColor(colors.errors),
     ) + {
       id: 9,
-      description: 'Percentage of HTTP requests returning 4xx/5xx status codes',
+      description: 'Normal: < 1% error rate (green). Watch for: sustained > 5% (red) indicates systemic failures — distinguish 4xx (client validation) from 5xx (server bugs). Check next: database for connection/transaction errors if 5xx-heavy.',
       gridPos: { h: 8, w: 12, x: 12, y: 1 },
       fieldConfig+: {
         defaults+: {
@@ -65,6 +72,7 @@ local ooda = import 'ooda.libsonnet';
             fillOpacity: 15,
             thresholdsStyle: { mode: 'line+area' },
           },
+          links: [links.toDashboard('Game Engine', links.dashboardUids.gameEngine)],
         },
       },
     },
@@ -83,6 +91,7 @@ local ooda = import 'ooda.libsonnet';
       color=colors.fixedColor(colors.http),
     ) + {
       id: 3,
+      description: 'Normal: p95 < 500ms (green SLO line). Watch for: p95 crossing 500ms or p99 > 1s (red) — latency is user-visible at this point. Check next: database transaction duration to determine if DB is the latency bottleneck.',
       gridPos: { h: 8, w: 12, x: 0, y: 10 },
       fieldConfig+: {
         defaults+: {
@@ -90,6 +99,7 @@ local ooda = import 'ooda.libsonnet';
           custom+: {
             thresholdsStyle: { mode: 'line+area' },
           },
+          links: [links.toDashboard('Database', links.dashboardUids.database)],
         },
       },
     },
@@ -105,7 +115,7 @@ local ooda = import 'ooda.libsonnet';
       color=colors.fixedColor(colors.gameLogic),
     ) + {
       id: 10,
-      description: 'Time goroutines spend waiting in the scheduler run queue',
+      description: 'Normal: p95 < 1ms (goroutines scheduled quickly). Watch for: p95 > 10ms indicates CPU saturation — goroutines are waiting in the run queue. Check next: process CPU usage to confirm CPU is the constraint.',
       gridPos: { h: 8, w: 12, x: 12, y: 10 },
     },
 
@@ -125,6 +135,7 @@ local ooda = import 'ooda.libsonnet';
       unit='reqps',
     ) + {
       id: 2,
+      description: 'Normal: move endpoints dominate traffic; game creation is low-frequency. Watch for: unexpected routes appearing, single route with high error codes, or route disappearing from traffic. Check next: game-engine moves per second for game-level correlation.',
       gridPos: { h: 8, w: 12, x: 0, y: 19 },
     },
 
@@ -141,6 +152,7 @@ local ooda = import 'ooda.libsonnet';
       unit='percentunit',
     ) + {
       id: 7,
+      description: 'Normal: total CPU < 50% of available cores. Watch for: user CPU > 80% (compute-bound) or system CPU rising (excessive syscalls, GC pressure). Check next: scheduler latency — high CPU causes goroutine scheduling delays.',
       gridPos: { h: 8, w: 12, x: 12, y: 19 },
       fieldConfig+: {
         defaults+: {
@@ -170,6 +182,7 @@ local ooda = import 'ooda.libsonnet';
       color=colors.fixedColor(colors.gameLogic),
     ) + {
       id: 4,
+      description: 'Normal: stable count proportional to active games + connections. Watch for: monotonically increasing count (goroutine leak) or sudden spikes (broadcast storms, stuck handlers). Check next: websocket active connections — each connection holds a goroutine.',
       gridPos: { h: 8, w: 12, x: 0, y: 28 },
     },
 
@@ -191,6 +204,7 @@ local ooda = import 'ooda.libsonnet';
       unit='bytes',
     ) + {
       id: 5,
+      description: 'Normal: heap stable with sawtooth GC pattern; stack proportional to goroutine count. Watch for: heap growing without GC reclaiming (memory leak) or stack growing unbounded (goroutine leak). Check next: GC goal panel for allocation pressure.',
       gridPos: { h: 8, w: 12, x: 12, y: 28 },
     },
 
@@ -212,6 +226,7 @@ local ooda = import 'ooda.libsonnet';
       unit='Bps',
     ) + {
       id: 6,
+      description: 'Normal: GC goal stable, allocation rate proportional to throughput. Watch for: GC goal ratcheting up (GOGC struggling to keep up) or allocation rate spiking without traffic increase (inefficient code path). Check next: heap memory for actual memory usage trend.',
       gridPos: { h: 8, w: 12, x: 0, y: 36 },
     },
 
@@ -233,6 +248,7 @@ local ooda = import 'ooda.libsonnet';
       unit='bytes',
     ) + {
       id: 8,
+      description: 'Normal: heap usage stays below GC goal with periodic collections. Watch for: heap consistently at or above GC goal — GC is running frequently and may cause latency spikes. Check next: HTTP latency for GC-induced tail latency.',
       gridPos: { h: 8, w: 12, x: 12, y: 36 },
     },
   ],

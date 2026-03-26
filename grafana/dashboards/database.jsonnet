@@ -3,6 +3,7 @@
 // Regenerate: make dashboards
 local common = import 'common.libsonnet';
 local colors = import 'colors.libsonnet';
+local links = import 'links.libsonnet';
 local thresholds = import 'thresholds.libsonnet';
 local ooda = import 'ooda.libsonnet';
 
@@ -38,7 +39,13 @@ local ooda = import 'ooda.libsonnet';
       unit='percent',
     ) + {
       id: 1,
+      description: 'Normal: < 60% (green). Watch for: sustained > 80% (red) means pool is near exhaustion and requests will start queuing. Check next: pool saturation panel for empty acquire rate.',
       gridPos: { h: 8, w: 8, x: 0, y: 1 },
+      fieldConfig+: {
+        defaults+: {
+          links: [links.toDashboard('Command Center', links.dashboardUids.perfTestCommandCenter)],
+        },
+      },
     },
 
     // Panel 2: Canceled Acquires (stat)
@@ -54,7 +61,7 @@ local ooda = import 'ooda.libsonnet';
       thresholds=thresholds.canceledAcquires,
     ) + {
       id: 2,
-      description: 'Connection acquires canceled while waiting \u2014 should be 0 under normal operation',
+      description: 'Normal: 0 canceled/sec (green). Watch for: any value > 0 (red) means requests are timing out waiting for a connection — pool is fully saturated. Check next: pool utilization gauge and connection pool usage timeseries.',
       gridPos: { h: 8, w: 8, x: 8, y: 1 },
     },
 
@@ -72,6 +79,7 @@ local ooda = import 'ooda.libsonnet';
       unit='percent',
     ) + {
       id: 3,
+      description: 'Normal: > 99% (green). Watch for: drops below 90% (red) indicate working set exceeds shared_buffers or new query patterns causing cold cache reads. Check next: rows read/written panel for query volume changes.',
       gridPos: { h: 8, w: 8, x: 16, y: 1 },
     },
 
@@ -89,6 +97,7 @@ local ooda = import 'ooda.libsonnet';
       color=colors.fixedColor(colors.db),
     ) + {
       id: 4,
+      description: 'Normal: p95 < 50ms (green SLO line). Watch for: p95 crossing 50ms or p99 > 100ms (red) — likely lock contention or complex queries. Check next: server-golden-signals HTTP latency to see if DB slowness is the dominant contributor.',
       gridPos: { h: 8, w: 12, x: 0, y: 10 },
       fieldConfig+: {
         defaults+: {
@@ -96,6 +105,7 @@ local ooda = import 'ooda.libsonnet';
           custom+: {
             thresholdsStyle: { mode: 'line+area' },
           },
+          links: [links.toDashboard('Server Golden Signals', links.dashboardUids.serverGoldenSignals)],
         },
       },
     },
@@ -133,6 +143,7 @@ local ooda = import 'ooda.libsonnet';
       color=colors.fixedColor(colors.db),
     ) + {
       id: 5,
+      description: 'Normal: active well below total (dashed line), healthy idle buffer. Watch for: active approaching total with idle dropping to 0 — pool exhaustion imminent. Check next: pool utilization gauge for the percentage view.',
       gridPos: { h: 8, w: 12, x: 12, y: 10 },
     },
 
@@ -153,6 +164,7 @@ local ooda = import 'ooda.libsonnet';
       color=colors.fixedColor(colors.db),
     ) + {
       id: 6,
+      description: 'Normal: < 10ms (green SLO line). Watch for: spikes above 100ms (red) mean requests are waiting for connections — pool is undersized or transactions are held too long. Check next: pool saturation panel for empty acquire correlation.',
       gridPos: { h: 8, w: 8, x: 0, y: 19 },
       fieldConfig+: {
         defaults+: {
@@ -193,7 +205,7 @@ local ooda = import 'ooda.libsonnet';
       color=colors.fixedColor(colors.db),
     ) + {
       id: 7,
-      description: 'Rate of connection acquires that had to wait because the pool was empty \u2014 leading indicator of saturation',
+      description: 'Normal: 0 empty acquires/sec with utilization < 60%. Watch for: rising empty acquire rate — leading indicator that pool will saturate before canceled acquires appear. Check next: canceled acquires stat for confirmation of full exhaustion.',
       gridPos: { h: 8, w: 8, x: 8, y: 19 },
     },
 
@@ -211,6 +223,7 @@ local ooda = import 'ooda.libsonnet';
       color=colors.fixedColor(colors.db),
     ) + {
       id: 8,
+      description: 'Normal: stable rate proportional to request throughput. Watch for: sudden spikes (retry storms) or drops (upstream failures stopping DB calls). Check next: server-golden-signals HTTP request rate for correlation.',
       gridPos: { h: 8, w: 8, x: 16, y: 19 },
     },
 
@@ -231,6 +244,7 @@ local ooda = import 'ooda.libsonnet';
       color=colors.fixedColor(colors.errors),
     ) + {
       id: 9,
+      description: 'Normal: 0 or near-zero rollbacks/sec. Watch for: sustained rollbacks indicate serialization conflicts, deadlocks, or application errors aborting transactions. Check next: server-golden-signals HTTP error rate for correlated 5xx responses.',
       gridPos: { h: 8, w: 12, x: 0, y: 28 },
       fieldConfig+: {
         defaults+: {
@@ -255,6 +269,7 @@ local ooda = import 'ooda.libsonnet';
       color=colors.fixedColor(colors.db),
     ) + {
       id: 10,
+      description: 'Normal: matches pool active count from application side. Watch for: backends exceeding pool max_conns — indicates leaked connections or external tools connecting directly. Check next: connection pool usage for the application-side view.',
       gridPos: { h: 8, w: 12, x: 12, y: 28 },
       fieldConfig+: {
         defaults+: {
@@ -284,6 +299,7 @@ local ooda = import 'ooda.libsonnet';
       color=colors.fixedColor(colors.db),
     ) + {
       id: 11,
+      description: 'Normal: steady commit rate with rollbacks near zero. Watch for: rollback rate climbing relative to commits — indicates contention or application errors. Check next: transaction rollbacks panel above for the application-level view.',
       gridPos: { h: 8, w: 12, x: 0, y: 36 },
     },
 
@@ -311,6 +327,7 @@ local ooda = import 'ooda.libsonnet';
       color=colors.fixedColor(colors.db),
     ) + {
       id: 12,
+      description: 'Normal: fetched >> inserted/updated (read-heavy game state queries). Watch for: sudden ratio changes or spikes in updates — may indicate inefficient queries or unexpected write patterns. Check next: cache hit rate for I/O impact of changing query patterns.',
       gridPos: { h: 8, w: 12, x: 12, y: 36 },
     },
   ],

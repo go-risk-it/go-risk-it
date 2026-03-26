@@ -43,6 +43,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Number of games currently in progress. Normal: matches configured concurrency. Watch for: stuck at 0 (no games starting) or exceeding target (games not completing). Check next: Game Completion panel for timeout/fatal counts.",
             "fieldConfig": {
                 "defaults": {
                     "thresholds": {
@@ -100,6 +101,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Client-side move throughput (30s rate). Normal: proportional to active games. Watch for: sudden drops (server overload) or flat line at zero (test harness stuck). Check next: E2E Move Latency to see if slowdown explains throughput drop.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -119,6 +121,13 @@
                             "mode": "none"
                         }
                     },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "Game Engine",
+                            "url": "/d/game-engine?from=${__from}&to=${__to}"
+                        }
+                    ],
                     "unit": "ops"
                 },
                 "overrides": []
@@ -159,6 +168,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Cumulative game outcomes: completed, timed out, and fatal. Normal: completed grows steadily, others stay flat. Watch for: timed-out or fatal counts climbing (server cannot finish games in time). Check next: Error Rate by Type for error categorization.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -266,6 +276,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Heatmap of end-to-end move latency bucket distribution over time. Normal: dense band below 500ms. Watch for: color spreading into higher buckets (latency distribution widening under load). Check next: E2E Move Latency percentile lines for exact P50/P95/P99 values.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -282,7 +293,14 @@
                         "scaleDistribution": {
                             "type": "linear"
                         }
-                    }
+                    },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "Command Center",
+                            "url": "/d/perf-test-command-center?from=${__from}&to=${__to}"
+                        }
+                    ]
                 },
                 "overrides": []
             },
@@ -344,6 +362,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "End-to-end move latency percentiles measured by the client. SLO threshold overlay at 500ms. Normal: P95 < 500ms, P99 < 1s. Watch for: P95 crossing the threshold line (SLO breach). Check next: REST Latency by Action to identify which move type is slowest.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -410,16 +429,19 @@
             },
             "targets": [
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.5, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
                     "legendFormat": "p50",
                     "refId": "A"
                 },
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.95, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
                     "legendFormat": "p95",
                     "refId": "B"
                 },
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.99, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
                     "legendFormat": "p99",
                     "refId": "C"
@@ -433,6 +455,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "WebSocket state delivery latency percentiles. SLO threshold overlay at 200ms. Normal: P95 < 200ms. Watch for: P95 crossing the threshold line (WS delivery SLO breach). Check next: WebSocket dashboard for connection and broadcast details.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -455,6 +478,13 @@
                             "mode": "line+area"
                         }
                     },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "WebSocket Detail",
+                            "url": "/d/websocket?from=${__from}&to=${__to}"
+                        }
+                    ],
                     "thresholds": {
                         "mode": "absolute",
                         "steps": [
@@ -499,16 +529,19 @@
             },
             "targets": [
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.5, sum(rate(perftest_ws_delivery_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
                     "legendFormat": "p50",
                     "refId": "A"
                 },
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.95, sum(rate(perftest_ws_delivery_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
                     "legendFormat": "p95",
                     "refId": "B"
                 },
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.99, sum(rate(perftest_ws_delivery_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
                     "legendFormat": "p99",
                     "refId": "C"
@@ -534,6 +567,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "REST API latency broken down by move action (deploy, attack, conquer, reinforce, cards) at P50/P95/P99. Normal: all actions < 200ms at P95. Watch for: single action diverging (e.g. attack P95 spiking while others stay flat). Check next: Database dashboard for query-level latency.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -599,6 +633,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Rate of client-side move conflicts (HTTP 409 \u2014 optimistic lock retry). Normal: low, proportional to concurrency. Watch for: conflicts/s exceeding moves/s (more retries than successes, contention too high). Check next: E2E Latency vs Concurrency to correlate conflict rate with load.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -658,7 +693,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Shows the performance curve: at what concurrency does latency degrade?",
+            "description": "E2E P95 latency overlaid with active game count (right axis). Normal: latency stays flat as concurrency increases. Watch for: inflection point where latency climbs sharply with concurrency (saturation). Check next: Server Latency vs Concurrency to see if server-side shows the same knee.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -747,7 +782,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Server-side HTTP P95 overlaid with active game count",
+            "description": "Server-side HTTP P95 overlaid with active game count (right axis). Normal: HTTP P95 < 100ms regardless of concurrency. Watch for: server latency rising before client E2E does (server is the bottleneck). Check next: Command Center Latency Attribution to identify which server boundary (DB, game logic, WS) dominates.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -818,6 +853,7 @@
             },
             "targets": [
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
                     "legendFormat": "HTTP p95",
                     "refId": "A"
@@ -848,6 +884,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Client-side errors stacked by type (connection, timeout, HTTP 5xx, etc.). Normal: zero or near-zero. Watch for: any sustained error rate, especially new error types appearing. Check next: Game Completion panel to see if errors cause game failures.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -906,6 +943,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Time to complete a full game at P50 and P95. Normal: consistent across the test run. Watch for: game duration growing over time (server slowing down under sustained load). Check next: Moves per Game to check if duration increase is from more moves or slower moves.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -952,11 +990,13 @@
             },
             "targets": [
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.5, sum(rate(perftest_game_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
                     "legendFormat": "p50",
                     "refId": "A"
                 },
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.95, sum(rate(perftest_game_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
                     "legendFormat": "p95",
                     "refId": "B"
@@ -970,6 +1010,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Number of moves per game at P50 and P95. Normal: stable distribution determined by game logic, not server performance. Watch for: sudden changes in move count (game logic bug or strategy change). Check next: Game Duration to correlate move count with total time.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -1016,11 +1057,13 @@
             },
             "targets": [
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.5, sum(rate(perftest_game_moves_bucket{service_name=\"perftest\"}[1m])) by (le))",
                     "legendFormat": "p50",
                     "refId": "A"
                 },
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.95, sum(rate(perftest_game_moves_bucket{service_name=\"perftest\"}[1m])) by (le))",
                     "legendFormat": "p95",
                     "refId": "B"

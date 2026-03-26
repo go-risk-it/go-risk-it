@@ -21,8 +21,16 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: < 100 connections (green). Watch for: sustained > 500 (red) may indicate connection leaks or missing disconnects. Check next: server-golden-signals for overall resource pressure.",
             "fieldConfig": {
                 "defaults": {
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "Command Center",
+                            "url": "/d/perf-test-command-center?from=${__from}&to=${__to}"
+                        }
+                    ],
                     "thresholds": {
                         "mode": "absolute",
                         "steps": [
@@ -90,6 +98,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: p95 < 200ms (green SLO line). Watch for: p95 crossing 200ms or p99 diverging sharply from p95 (tail latency). Check next: fan-out panel below to distinguish slow writes from high connection counts.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -112,6 +121,13 @@
                             "mode": "line+area"
                         }
                     },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "Command Center",
+                            "url": "/d/perf-test-command-center?from=${__from}&to=${__to}"
+                        }
+                    ],
                     "thresholds": {
                         "mode": "absolute",
                         "steps": [
@@ -191,6 +207,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: proportional to active games x players (~4 msgs per move). Watch for: sudden drops (broadcast failures) or spikes without matching game activity. Check next: game-engine for move rate correlation.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -250,7 +267,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Number of connections per broadcast \u2014 distinguishes 'each write is slow' from 'too many connections'",
+            "description": "Normal: ~4 connections per broadcast (one per player). Watch for: P95 diverging from P50 indicates uneven game sizes or stale connections inflating fan-out. Check next: broadcast latency above \u2014 high fan-out with high latency means per-write cost is the bottleneck.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -327,6 +344,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: 0 errors/sec. Watch for: any sustained errors indicate broken connections not being cleaned up. Check next: active connections stat \u2014 errors without connection count dropping suggests a leak.",
             "fieldConfig": {
                 "defaults": {
                     "color": {

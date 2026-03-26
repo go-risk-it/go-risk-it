@@ -22,6 +22,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: steady rate proportional to active games and players. Watch for: sudden drops (service unreachable) or unexpected spikes (retry storms, bot activity). Check next: HTTP request rate by route to identify which endpoints changed.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -41,6 +42,13 @@
                             "mode": "none"
                         }
                     },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "Command Center",
+                            "url": "/d/perf-test-command-center?from=${__from}&to=${__to}"
+                        }
+                    ],
                     "unit": "reqps"
                 },
                 "overrides": []
@@ -81,7 +89,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Percentage of HTTP requests returning 4xx/5xx status codes",
+            "description": "Normal: < 1% error rate (green). Watch for: sustained > 5% (red) indicates systemic failures \u2014 distinguish 4xx (client validation) from 5xx (server bugs). Check next: database for connection/transaction errors if 5xx-heavy.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -104,6 +112,13 @@
                             "mode": "line+area"
                         }
                     },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "Game Engine",
+                            "url": "/d/game-engine?from=${__from}&to=${__to}"
+                        }
+                    ],
                     "min": 0,
                     "thresholds": {
                         "mode": "absolute",
@@ -174,6 +189,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: p95 < 500ms (green SLO line). Watch for: p95 crossing 500ms or p99 > 1s (red) \u2014 latency is user-visible at this point. Check next: database transaction duration to determine if DB is the latency bottleneck.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -196,6 +212,13 @@
                             "mode": "line+area"
                         }
                     },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "Database",
+                            "url": "/d/database?from=${__from}&to=${__to}"
+                        }
+                    ],
                     "thresholds": {
                         "mode": "absolute",
                         "steps": [
@@ -263,7 +286,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Time goroutines spend waiting in the scheduler run queue",
+            "description": "Normal: p95 < 1ms (goroutines scheduled quickly). Watch for: p95 > 10ms indicates CPU saturation \u2014 goroutines are waiting in the run queue. Check next: process CPU usage to confirm CPU is the constraint.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -345,6 +368,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: move endpoints dominate traffic; game creation is low-frequency. Watch for: unexpected routes appearing, single route with high error codes, or route disappearing from traffic. Check next: game-engine moves per second for game-level correlation.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -400,6 +424,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: total CPU < 50% of available cores. Watch for: user CPU > 80% (compute-bound) or system CPU rising (excessive syscalls, GC pressure). Check next: scheduler latency \u2014 high CPU causes goroutine scheduling delays.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -468,6 +493,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: stable count proportional to active games + connections. Watch for: monotonically increasing count (goroutine leak) or sudden spikes (broadcast storms, stuck handlers). Check next: websocket active connections \u2014 each connection holds a goroutine.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -527,6 +553,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: heap stable with sawtooth GC pattern; stack proportional to goroutine count. Watch for: heap growing without GC reclaiming (memory leak) or stack growing unbounded (goroutine leak). Check next: GC goal panel for allocation pressure.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -587,6 +614,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: GC goal stable, allocation rate proportional to throughput. Watch for: GC goal ratcheting up (GOGC struggling to keep up) or allocation rate spiking without traffic increase (inefficient code path). Check next: heap memory for actual memory usage trend.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -647,6 +675,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: heap usage stays below GC goal with periodic collections. Watch for: heap consistently at or above GC goal \u2014 GC is running frequently and may cause latency spikes. Check next: HTTP latency for GC-induced tail latency.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {

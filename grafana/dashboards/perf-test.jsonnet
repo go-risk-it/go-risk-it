@@ -3,22 +3,9 @@
 // Regenerate: make dashboards
 local common = import 'common.libsonnet';
 local colors = import 'colors.libsonnet';
+local links = import 'links.libsonnet';
 local ooda = import 'ooda.libsonnet';
 local thresholds = import 'thresholds.libsonnet';
-
-// Local helper: histogram_quantile targets for perftest client metrics.
-// The shared common.histogramQuantileTargets() hardcodes service_name="risk-it",
-// but perf-test client metrics use service_name="perftest".
-local perfHistTargets(metric, quantiles) =
-  [
-    {
-      expr: 'histogram_quantile(%s, sum(rate(%s{service_name="perftest"}[1m])) by (le))' % [q[0], metric],
-      legendFormat: q[1],
-      refId: std.char(65 + i),
-    }
-    for i in std.range(0, std.length(quantiles) - 1)
-    for q in [quantiles[i]]
-  ];
 
 // Local helper: right-axis override for "active games" series on correlation panels.
 local activeGamesRightAxis = {
@@ -77,6 +64,7 @@ local activeGamesRightAxis = {
       thresholds=thresholds.perfTestActiveGames,
     ) + {
       id: 1,
+      description: 'Number of games currently in progress. Normal: matches configured concurrency. Watch for: stuck at 0 (no games starting) or exceeding target (games not completing). Check next: Game Completion panel for timeout/fatal counts.',
       gridPos: { h: 6, w: 6, x: 0, y: 1 },
     },
 
@@ -94,12 +82,14 @@ local activeGamesRightAxis = {
       color=colors.fixedColor(colors.client),
     ) + {
       id: 2,
+      description: 'Client-side move throughput (30s rate). Normal: proportional to active games. Watch for: sudden drops (server overload) or flat line at zero (test harness stuck). Check next: E2E Move Latency to see if slowdown explains throughput drop.',
       gridPos: { h: 6, w: 9, x: 6, y: 1 },
       fieldConfig+: {
         defaults+: {
           custom+: {
             fillOpacity: 15,
           },
+          links: [links.toDashboard('Game Engine', links.dashboardUids.gameEngine)],
         },
       },
     },
@@ -137,6 +127,7 @@ local activeGamesRightAxis = {
       ],
     ) + {
       id: 3,
+      description: 'Cumulative game outcomes: completed, timed out, and fatal. Normal: completed grows steadily, others stay flat. Watch for: timed-out or fatal counts climbing (server cannot finish games in time). Check next: Error Rate by Type for error categorization.',
       gridPos: { h: 6, w: 9, x: 15, y: 1 },
       options+: {
         legend+: {
@@ -164,20 +155,28 @@ local activeGamesRightAxis = {
       colorFill='dark-red',
     ) + {
       id: 13,
+      description: 'Heatmap of end-to-end move latency bucket distribution over time. Normal: dense band below 500ms. Watch for: color spreading into higher buckets (latency distribution widening under load). Check next: E2E Move Latency percentile lines for exact P50/P95/P99 values.',
       gridPos: { h: 8, w: 24, x: 0, y: 8 },
+      fieldConfig+: {
+        defaults+: {
+          links: [links.toDashboard('Command Center', links.dashboardUids.perfTestCommandCenter)],
+        },
+      },
     },
 
     // Panel 5: E2E Move Latency P50/P95/P99 (SLO threshold overlay)
     common.timeseriesPanel(
       title='E2E Move Latency (P50/P95/P99)',
-      targets=perfHistTargets(
+      targets=common.histogramQuantileTargetsWithExemplars(
         'perftest_e2e_duration_seconds_bucket',
         [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']],
+        'perftest',
       ),
       unit='s',
       color=colors.fixedColor(colors.client),
     ) + {
       id: 5,
+      description: 'End-to-end move latency percentiles measured by the client. SLO threshold overlay at 500ms. Normal: P95 < 500ms, P99 < 1s. Watch for: P95 crossing the threshold line (SLO breach). Check next: REST Latency by Action to identify which move type is slowest.',
       gridPos: { h: 8, w: 12, x: 12, y: 16 },
       fieldConfig+: {
         defaults+: {
@@ -192,14 +191,16 @@ local activeGamesRightAxis = {
     // Panel 6: WS Delivery Latency P50/P95/P99 (SLO threshold overlay)
     common.timeseriesPanel(
       title='WS Delivery Latency (P50/P95/P99)',
-      targets=perfHistTargets(
+      targets=common.histogramQuantileTargetsWithExemplars(
         'perftest_ws_delivery_duration_seconds_bucket',
         [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']],
+        'perftest',
       ),
       unit='s',
       color=colors.fixedColor(colors.ws),
     ) + {
       id: 6,
+      description: 'WebSocket state delivery latency percentiles. SLO threshold overlay at 200ms. Normal: P95 < 200ms. Watch for: P95 crossing the threshold line (WS delivery SLO breach). Check next: WebSocket dashboard for connection and broadcast details.',
       gridPos: { h: 8, w: 12, x: 0, y: 16 },
       fieldConfig+: {
         defaults+: {
@@ -207,6 +208,7 @@ local activeGamesRightAxis = {
           custom+: {
             thresholdsStyle: { mode: 'line+area' },
           },
+          links: [links.toDashboard('WebSocket Detail', links.dashboardUids.websocket)],
         },
       },
     },
@@ -237,6 +239,7 @@ local activeGamesRightAxis = {
       unit='s',
     ) + {
       id: 4,
+      description: 'REST API latency broken down by move action (deploy, attack, conquer, reinforce, cards) at P50/P95/P99. Normal: all actions < 200ms at P95. Watch for: single action diverging (e.g. attack P95 spiking while others stay flat). Check next: Database dashboard for query-level latency.',
       gridPos: { h: 8, w: 12, x: 0, y: 25 },
     },
 
@@ -254,6 +257,7 @@ local activeGamesRightAxis = {
       color=colors.fixedColor(colors.http),
     ) + {
       id: 8,
+      description: 'Rate of client-side move conflicts (HTTP 409 — optimistic lock retry). Normal: low, proportional to concurrency. Watch for: conflicts/s exceeding moves/s (more retries than successes, contention too high). Check next: E2E Latency vs Concurrency to correlate conflict rate with load.',
       gridPos: { h: 8, w: 12, x: 12, y: 25 },
       fieldConfig+: {
         defaults+: {
@@ -283,7 +287,7 @@ local activeGamesRightAxis = {
       overrides=[activeGamesRightAxis],
     ) + {
       id: 9,
-      description: 'Shows the performance curve: at what concurrency does latency degrade?',
+      description: 'E2E P95 latency overlaid with active game count (right axis). Normal: latency stays flat as concurrency increases. Watch for: inflection point where latency climbs sharply with concurrency (saturation). Check next: Server Latency vs Concurrency to see if server-side shows the same knee.',
       gridPos: { h: 8, w: 12, x: 0, y: 33 },
     },
 
@@ -295,6 +299,7 @@ local activeGamesRightAxis = {
           expr: 'histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
           legendFormat: 'HTTP p95',
           refId: 'A',
+          exemplar: true,
         },
         {
           expr: 'perftest_games_active{service_name="perftest"}',
@@ -306,7 +311,7 @@ local activeGamesRightAxis = {
       overrides=[activeGamesRightAxis],
     ) + {
       id: 10,
-      description: 'Server-side HTTP P95 overlaid with active game count',
+      description: 'Server-side HTTP P95 overlaid with active game count (right axis). Normal: HTTP P95 < 100ms regardless of concurrency. Watch for: server latency rising before client E2E does (server is the bottleneck). Check next: Command Center Latency Attribution to identify which server boundary (DB, game logic, WS) dominates.',
       gridPos: { h: 8, w: 12, x: 12, y: 33 },
     },
 
@@ -326,6 +331,7 @@ local activeGamesRightAxis = {
       unit='ops',
     ) + {
       id: 7,
+      description: 'Client-side errors stacked by type (connection, timeout, HTTP 5xx, etc.). Normal: zero or near-zero. Watch for: any sustained error rate, especially new error types appearing. Check next: Game Completion panel to see if errors cause game failures.',
       gridPos: { h: 8, w: 8, x: 0, y: 42 },
       fieldConfig+: {
         defaults+: {
@@ -340,28 +346,32 @@ local activeGamesRightAxis = {
     // Panel 11: Game Duration P50/P95
     common.timeseriesPanel(
       title='Game Duration (P50/P95)',
-      targets=perfHistTargets(
+      targets=common.histogramQuantileTargetsWithExemplars(
         'perftest_game_duration_seconds_bucket',
         [['0.5', 'p50'], ['0.95', 'p95']],
+        'perftest',
       ),
       unit='s',
       color=colors.fixedColor(colors.gameLogic),
     ) + {
       id: 11,
+      description: 'Time to complete a full game at P50 and P95. Normal: consistent across the test run. Watch for: game duration growing over time (server slowing down under sustained load). Check next: Moves per Game to check if duration increase is from more moves or slower moves.',
       gridPos: { h: 8, w: 8, x: 8, y: 42 },
     },
 
     // Panel 12: Moves per Game P50/P95
     common.timeseriesPanel(
       title='Moves per Game (P50/P95)',
-      targets=perfHistTargets(
+      targets=common.histogramQuantileTargetsWithExemplars(
         'perftest_game_moves_bucket',
         [['0.5', 'p50'], ['0.95', 'p95']],
+        'perftest',
       ),
       unit='short',
       color=colors.fixedColor(colors.client),
     ) + {
       id: 12,
+      description: 'Number of moves per game at P50 and P95. Normal: stable distribution determined by game logic, not server performance. Watch for: sudden changes in move count (game logic bug or strategy change). Check next: Game Duration to correlate move count with total time.',
       gridPos: { h: 8, w: 8, x: 16, y: 42 },
     },
   ],

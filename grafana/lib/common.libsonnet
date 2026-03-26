@@ -122,6 +122,20 @@
       for q in [quantiles[i]]
     ],
 
+  // Same as histogramQuantileTargets but with exemplar support enabled.
+  // Drop-in replacement where trace exemplars are desired on histogram panels.
+  histogramQuantileTargetsWithExemplars(metric, quantiles, serviceName='risk-it')::
+    [
+      {
+        expr: 'histogram_quantile(%s, sum(rate(%s{service_name="%s"}[1m])) by (le))' % [q[0], metric, serviceName],
+        legendFormat: q[1],
+        refId: std.char(65 + i),  // A, B, C, ...
+        exemplar: true,
+      }
+      for i in std.range(0, std.length(quantiles) - 1)
+      for q in [quantiles[i]]
+    ],
+
   // Build a heatmap panel.
   // title: string, targets: array, unit: string (default 's'),
   // colorScheme: string (default 'Oranges'), colorFill: string (default 'dark-orange')

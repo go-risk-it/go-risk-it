@@ -3,6 +3,7 @@
 // Regenerate: make dashboards
 local common = import 'common.libsonnet';
 local colors = import 'colors.libsonnet';
+local links = import 'links.libsonnet';
 local ooda = import 'ooda.libsonnet';
 local thresholds = import 'thresholds.libsonnet';
 
@@ -35,7 +36,13 @@ local thresholds = import 'thresholds.libsonnet';
       thresholds=thresholds.wsConnections,
     ) + {
       id: 1,
+      description: 'Normal: < 100 connections (green). Watch for: sustained > 500 (red) may indicate connection leaks or missing disconnects. Check next: server-golden-signals for overall resource pressure.',
       gridPos: { h: 8, w: 12, x: 0, y: 1 },
+      fieldConfig+: {
+        defaults+: {
+          links: [links.toDashboard('Command Center', links.dashboardUids.perfTestCommandCenter)],
+        },
+      },
     },
 
     // ── Orient — What's the shape? ──────────────────────────────────
@@ -52,6 +59,7 @@ local thresholds = import 'thresholds.libsonnet';
       color=colors.fixedColor(colors.ws),
     ) + {
       id: 3,
+      description: 'Normal: p95 < 200ms (green SLO line). Watch for: p95 crossing 200ms or p99 diverging sharply from p95 (tail latency). Check next: fan-out panel below to distinguish slow writes from high connection counts.',
       gridPos: { h: 8, w: 12, x: 0, y: 10 },
       fieldConfig+: {
         defaults+: {
@@ -59,6 +67,7 @@ local thresholds = import 'thresholds.libsonnet';
           custom+: {
             thresholdsStyle: { mode: 'line+area' },
           },
+          links: [links.toDashboard('Command Center', links.dashboardUids.perfTestCommandCenter)],
         },
       },
     },
@@ -80,6 +89,7 @@ local thresholds = import 'thresholds.libsonnet';
       color=colors.fixedColor(colors.ws),
     ) + {
       id: 2,
+      description: 'Normal: proportional to active games x players (~4 msgs per move). Watch for: sudden drops (broadcast failures) or spikes without matching game activity. Check next: game-engine for move rate correlation.',
       gridPos: { h: 8, w: 12, x: 0, y: 19 },
     },
 
@@ -102,7 +112,7 @@ local thresholds = import 'thresholds.libsonnet';
       color=colors.fixedColor(colors.ws),
     ) + {
       id: 5,
-      description: "Number of connections per broadcast \u2014 distinguishes 'each write is slow' from 'too many connections'",
+      description: 'Normal: ~4 connections per broadcast (one per player). Watch for: P95 diverging from P50 indicates uneven game sizes or stale connections inflating fan-out. Check next: broadcast latency above — high fan-out with high latency means per-write cost is the bottleneck.',
       gridPos: { h: 8, w: 12, x: 12, y: 19 },
     },
 
@@ -123,6 +133,7 @@ local thresholds = import 'thresholds.libsonnet';
       color=colors.fixedColor(colors.errors),
     ) + {
       id: 4,
+      description: 'Normal: 0 errors/sec. Watch for: any sustained errors indicate broken connections not being cleaned up. Check next: active connections stat — errors without connection count dropping suggests a leak.',
       gridPos: { h: 8, w: 12, x: 0, y: 28 },
     },
   ],

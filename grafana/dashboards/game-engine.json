@@ -21,8 +21,16 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: < 50 active games (green). Watch for: sustained > 100 (red) may indicate games not finishing or accumulating due to stuck phases. Check next: games created/finished rate for flow balance.",
             "fieldConfig": {
                 "defaults": {
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "Command Center",
+                            "url": "/d/perf-test-command-center?from=${__from}&to=${__to}"
+                        }
+                    ],
                     "thresholds": {
                         "mode": "absolute",
                         "steps": [
@@ -78,6 +86,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: created and finished rates roughly balanced over time. Watch for: created >> finished means games are accumulating (check for stuck phases); finished >> created means backlog is draining. Check next: active games stat for current count.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -154,6 +163,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: dense band in low-seconds range (fast phase transitions). Watch for: heat spreading to higher buckets over time \u2014 phases are taking longer, possibly due to slow moves or DB contention. Check next: phase duration P50/P95 for per-phase breakdown.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -232,6 +242,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: concentrated distribution showing consistent game lengths. Watch for: bimodal distribution (fast + very slow games) suggests some games are getting stuck mid-play. Check next: game duration P50/P95 for percentile trends over time.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -310,6 +321,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: deploy and attack phases are longest; reinforce is shortest. Watch for: a single phase P95 spiking while others stay flat \u2014 isolates which game phase has the bottleneck. Check next: database transaction duration to see if DB latency is the cause.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -325,6 +337,13 @@
                             "mode": "none"
                         }
                     },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "Database",
+                            "url": "/d/database?from=${__from}&to=${__to}"
+                        }
+                    ],
                     "unit": "s"
                 },
                 "overrides": []
@@ -382,6 +401,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: deploy moves are most frequent, followed by attack, then reinforce/conquer. Watch for: a phase dropping to zero while others continue \u2014 that phase may be blocked or erroring. Check next: server-golden-signals HTTP error rate for failed move requests.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -437,6 +457,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: consistent P50 with P95 within 2-3x of P50. Watch for: P95 growing while P50 stays flat \u2014 a subset of games are taking much longer than typical. Check next: phase duration P50/P95 to identify which phase is slow in outlier games.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -513,6 +534,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: deploy has the highest total, attack second, conquer/reinforce lower. Watch for: unusual ratios \u2014 very few conquer moves relative to attack may indicate game logic issues. Check next: moves per second by phase for the rate view.",
             "fieldConfig": {
                 "defaults": {
                     "color": {

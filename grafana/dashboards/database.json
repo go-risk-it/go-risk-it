@@ -22,8 +22,16 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: < 60% (green). Watch for: sustained > 80% (red) means pool is near exhaustion and requests will start queuing. Check next: pool saturation panel for empty acquire rate.",
             "fieldConfig": {
                 "defaults": {
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "Command Center",
+                            "url": "/d/perf-test-command-center?from=${__from}&to=${__to}"
+                        }
+                    ],
                     "max": 100,
                     "min": 0,
                     "thresholds": {
@@ -80,7 +88,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Connection acquires canceled while waiting \u2014 should be 0 under normal operation",
+            "description": "Normal: 0 canceled/sec (green). Watch for: any value > 0 (red) means requests are timing out waiting for a connection \u2014 pool is fully saturated. Check next: pool utilization gauge and connection pool usage timeseries.",
             "fieldConfig": {
                 "defaults": {
                     "thresholds": {
@@ -134,6 +142,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: > 99% (green). Watch for: drops below 90% (red) indicate working set exceeds shared_buffers or new query patterns causing cold cache reads. Check next: rows read/written panel for query volume changes.",
             "fieldConfig": {
                 "defaults": {
                     "max": 100,
@@ -204,6 +213,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: p95 < 50ms (green SLO line). Watch for: p95 crossing 50ms or p99 > 100ms (red) \u2014 likely lock contention or complex queries. Check next: server-golden-signals HTTP latency to see if DB slowness is the dominant contributor.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -226,6 +236,13 @@
                             "mode": "line+area"
                         }
                     },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "Server Golden Signals",
+                            "url": "/d/server-golden-signals?from=${__from}&to=${__to}"
+                        }
+                    ],
                     "thresholds": {
                         "mode": "absolute",
                         "steps": [
@@ -293,6 +310,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: active well below total (dashed line), healthy idle buffer. Watch for: active approaching total with idle dropping to 0 \u2014 pool exhaustion imminent. Check next: pool utilization gauge for the percentage view.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -400,6 +418,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: < 10ms (green SLO line). Watch for: spikes above 100ms (red) mean requests are waiting for connections \u2014 pool is undersized or transactions are held too long. Check next: pool saturation panel for empty acquire correlation.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -479,7 +498,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Rate of connection acquires that had to wait because the pool was empty \u2014 leading indicator of saturation",
+            "description": "Normal: 0 empty acquires/sec with utilization < 60%. Watch for: rising empty acquire rate \u2014 leading indicator that pool will saturate before canceled acquires appear. Check next: canceled acquires stat for confirmation of full exhaustion.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -568,6 +587,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: stable rate proportional to request throughput. Watch for: sudden spikes (retry storms) or drops (upstream failures stopping DB calls). Check next: server-golden-signals HTTP request rate for correlation.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -639,6 +659,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: 0 or near-zero rollbacks/sec. Watch for: sustained rollbacks indicate serialization conflicts, deadlocks, or application errors aborting transactions. Check next: server-golden-signals HTTP error rate for correlated 5xx responses.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -698,6 +719,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: matches pool active count from application side. Watch for: backends exceeding pool max_conns \u2014 indicates leaked connections or external tools connecting directly. Check next: connection pool usage for the application-side view.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -757,6 +779,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: steady commit rate with rollbacks near zero. Watch for: rollback rate climbing relative to commits \u2014 indicates contention or application errors. Check next: transaction rollbacks panel above for the application-level view.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -821,6 +844,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: fetched >> inserted/updated (read-heavy game state queries). Watch for: sudden ratio changes or spikes in updates \u2014 may indicate inefficient queries or unexpected write patterns. Check next: cache hit rate for I/O impact of changing query patterns.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
