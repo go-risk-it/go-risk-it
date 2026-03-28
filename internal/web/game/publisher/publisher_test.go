@@ -197,7 +197,7 @@ func (s *spyBus) registeredTypes() []string {
 // Test: Registration count
 // ---------------------------------------------------------------------------
 
-func TestRegister_CallsOnGameEventExactlyThreeTimes(t *testing.T) {
+func TestRegister_CallsOnGameEventExactlyFourTimes(t *testing.T) {
 	t.Parallel()
 
 	d := newDeps(t)
@@ -208,13 +208,14 @@ func TestRegister_CallsOnGameEventExactlyThreeTimes(t *testing.T) {
 
 	require.Equal(
 		t,
-		3,
+		4,
 		spy.registrationCount(),
-		"Register should call OnGameEvent exactly 3 times",
+		"Register should call OnGameEvent exactly 4 times",
 	)
 
 	types := spy.registeredTypes()
 	assert.Contains(t, types, gameevt.TypeMoveExecuted)
+	assert.Contains(t, types, gameevt.TypePhaseTransitioned)
 	assert.Contains(t, types, gameevt.TypeGameCompleted)
 	assert.Contains(t, types, gameevt.TypePlayerConnected)
 }

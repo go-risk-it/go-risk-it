@@ -61,9 +61,9 @@ func NewGameStatePublisher(
 }
 
 // Register subscribes the publisher's handlers to game events on the bus.
-// Three registrations total — one per event type.
 func (p *GameStatePublisher) Register(bus events.Bus) {
 	gameevt.OnGameEvent[*gameevt.MoveExecuted](bus, p.handleMoveExecuted)
+	gameevt.OnGameEvent[*gameevt.PhaseTransitioned](bus, p.handlePhaseTransitioned)
 	gameevt.OnGameEvent[*gameevt.GameCompleted](bus, p.handleGameCompleted)
 	gameevt.OnGameEvent[*gameevt.PlayerConnected](bus, p.handlePlayerConnected)
 }
@@ -104,6 +104,23 @@ func (p *GameStatePublisher) handlePlayerConnected(
 
 	safeOp(gameCtx, "publishMoveHistory", func() {
 		p.publishMoveHistory(gameCtx)
+	})
+}
+
+// handlePhaseTransitioned broadcasts updated public and private state after a
+// phase advance (e.g., attack → reinforce). This is separate from MoveExecuted
+// because the advancement service emits PhaseTransitioned directly without a
+// MoveExecuted event.
+func (p *GameStatePublisher) handlePhaseTransitioned(
+	gameCtx ctx.GameContext,
+	_ *gameevt.PhaseTransitioned,
+) {
+	safeOp(gameCtx, "fetchAndPublishPublicState", func() {
+		fetchAndPublishPublicState(gameCtx, p.snapshotService, p.presence, p.writer.Broadcast)
+	})
+
+	safeOp(gameCtx, "publishPrivateStates", func() {
+		p.publishPrivateStates(gameCtx)
 	})
 }
 
