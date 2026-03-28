@@ -711,7 +711,7 @@
                 "type": "tempo",
                 "uid": "tempo"
             },
-            "description": "Normal: Few or no entries. Watch for: Growing count at high concurrency. Check next: Copy a Trace ID and paste into the Trace ID textbox above to load the waterfall.",
+            "description": "Normal: Few entries at low concurrency. Watch for: Growing count at high concurrency. Note: traces measure execution time only \u2014 DB pool queue wait is not included (that is pre-span). Check next: Copy a Trace ID into the textbox above.",
             "fieldConfig": {
                 "defaults": {},
                 "overrides": []
@@ -733,7 +733,7 @@
                     "tableType": "traces"
                 }
             ],
-            "title": "Slow Traces \u2014 > 100ms",
+            "title": "Slow Traces \u2014 execution > 25ms",
             "transformations": [
                 {
                     "id": "filterByValue",
@@ -743,7 +743,7 @@
                                 "config": {
                                     "id": "greaterOrEqual",
                                     "options": {
-                                        "value": 100
+                                        "value": 25
                                     }
                                 },
                                 "fieldName": "traceDuration"

@@ -294,11 +294,13 @@ local gameIdVar = {
       },
     },
 
-    // Panel 8: Slow Traces table (Tempo search, client-side duration filter)
+    // Panel 8: Slow Traces table (traces with execution time > 25ms)
+    // Note: trace duration measures handler execution, not queue wait.
+    // At high concurrency, most HTTP latency is DB pool wait (pre-span).
     {
       id: 8,
-      title: 'Slow Traces — > 100ms',
-      description: 'Normal: Few or no entries. Watch for: Growing count at high concurrency. Check next: Copy a Trace ID and paste into the Trace ID textbox above to load the waterfall.',
+      title: 'Slow Traces — execution > 25ms',
+      description: 'Normal: Few entries at low concurrency. Watch for: Growing count at high concurrency. Note: traces measure execution time only — DB pool queue wait is not included (that is pre-span). Check next: Copy a Trace ID into the textbox above.',
       type: 'table',
       datasource: { type: 'tempo', uid: 'tempo' },
       targets: [{
@@ -316,7 +318,7 @@ local gameIdVar = {
               fieldName: 'traceDuration',
               config: {
                 id: 'greaterOrEqual',
-                options: { value: 100 },
+                options: { value: 25 },
               },
             }],
             type: 'include',
