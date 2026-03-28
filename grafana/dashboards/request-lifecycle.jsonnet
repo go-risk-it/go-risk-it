@@ -294,48 +294,22 @@ local gameIdVar = {
       },
     },
 
-    // Panel 8: Slow Traces table (traces with execution time > 25ms)
+    // Panel 8: Recent Traces table (sorted by duration, click to investigate)
     // Note: trace duration measures handler execution, not queue wait.
     // At high concurrency, most HTTP latency is DB pool wait (pre-span).
     {
       id: 8,
-      title: 'Slow Traces — execution > 25ms',
-      description: 'Normal: Few entries at low concurrency. Watch for: Growing count at high concurrency. Note: traces measure execution time only — DB pool queue wait is not included (that is pre-span). Check next: Copy a Trace ID into the textbox above.',
+      title: 'Traces — click Duration to sort, copy Trace ID to investigate',
+      description: 'Traces measure execution time only — DB pool queue wait is not included (pre-span). Click the Duration column header to sort by slowest. Copy a Trace ID and paste into the textbox above to load the waterfall.',
       type: 'table',
       datasource: { type: 'tempo', uid: 'tempo' },
       targets: [{
         refId: 'A',
         queryType: 'traceqlSearch',
         query: '{resource.service.name="risk-it"}',
-        limit: 100,
+        limit: 20,
         tableType: 'traces',
       }],
-      transformations: [
-        {
-          id: 'filterByValue',
-          options: {
-            filters: [{
-              fieldName: 'traceDuration',
-              config: {
-                id: 'greaterOrEqual',
-                options: { value: 25 },
-              },
-            }],
-            type: 'include',
-            match: 'all',
-          },
-        },
-        {
-          id: 'sortBy',
-          options: {
-            sort: [{ field: 'traceDuration', desc: true }],
-          },
-        },
-        {
-          id: 'limit',
-          options: { limitField: 20 },
-        },
-      ],
       gridPos: { h: 8, w: 24, x: 0, y: 46 },
       fieldConfig: { defaults: {}, overrides: [] },
       options: {},
@@ -350,7 +324,7 @@ local gameIdVar = {
       datasource: { type: 'tempo', uid: 'tempo' },
       targets: [{
         refId: 'A',
-        queryType: 'traceId',
+        queryType: 'traceql',
         query: '${traceId}',
       }],
       gridPos: { h: 12, w: 24, x: 0, y: 54 },

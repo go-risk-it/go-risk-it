@@ -711,7 +711,7 @@
                 "type": "tempo",
                 "uid": "tempo"
             },
-            "description": "Normal: Few entries at low concurrency. Watch for: Growing count at high concurrency. Note: traces measure execution time only \u2014 DB pool queue wait is not included (that is pre-span). Check next: Copy a Trace ID into the textbox above.",
+            "description": "Traces measure execution time only \u2014 DB pool queue wait is not included (pre-span). Click the Duration column header to sort by slowest. Copy a Trace ID and paste into the textbox above to load the waterfall.",
             "fieldConfig": {
                 "defaults": {},
                 "overrides": []
@@ -726,51 +726,14 @@
             "options": {},
             "targets": [
                 {
-                    "limit": 100,
+                    "limit": 20,
                     "query": "{resource.service.name=\"risk-it\"}",
                     "queryType": "traceqlSearch",
                     "refId": "A",
                     "tableType": "traces"
                 }
             ],
-            "title": "Slow Traces \u2014 execution > 25ms",
-            "transformations": [
-                {
-                    "id": "filterByValue",
-                    "options": {
-                        "filters": [
-                            {
-                                "config": {
-                                    "id": "greaterOrEqual",
-                                    "options": {
-                                        "value": 25
-                                    }
-                                },
-                                "fieldName": "traceDuration"
-                            }
-                        ],
-                        "match": "all",
-                        "type": "include"
-                    }
-                },
-                {
-                    "id": "sortBy",
-                    "options": {
-                        "sort": [
-                            {
-                                "desc": true,
-                                "field": "traceDuration"
-                            }
-                        ]
-                    }
-                },
-                {
-                    "id": "limit",
-                    "options": {
-                        "limitField": 20
-                    }
-                }
-            ],
+            "title": "Traces \u2014 click Duration to sort, copy Trace ID to investigate",
             "type": "table"
         },
         {
@@ -789,7 +752,7 @@
             "targets": [
                 {
                     "query": "${traceId}",
-                    "queryType": "traceId",
+                    "queryType": "traceql",
                     "refId": "A"
                 }
             ],
