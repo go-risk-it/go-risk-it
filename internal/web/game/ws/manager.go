@@ -5,11 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/events"
+	gameevt "github.com/go-risk-it/go-risk-it/internal/events/game"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	upgradablerwmutex "github.com/go-risk-it/go-risk-it/internal/upgradablerw_mutex"
@@ -17,22 +19,14 @@ import (
 	"github.com/lesismal/nbio/nbhttp/websocket"
 )
 
-type Manager interface {
-	GetConnectedPlayers(ctx ctx.GameContext) []string
-	ConnectPlayer(ctx ctx.GameContext, connection *websocket.Conn)
-	Broadcast(ctx ctx.GameContext, message json.RawMessage)
-	WriteMessage(ctx ctx.GameContext, message json.RawMessage)
-	RemoveGame(ctx ctx.GameContext)
-}
-
 type manager struct {
 	mu upgradablerwmutex.UpgradableRWMutex
 
-	gameStateService      state.Service
-	playerService         player.Service
-	gameConnections       map[int64]*ws.PlayerConnections
-	playerConnectedSignal signals.PlayerConnectedSignal
-	metrics               *metrics.Metrics
+	gameStateService state.Service
+	playerService    player.Service
+	gameConnections  map[int64]*ws.PlayerConnections
+	bus              events.Bus
+	metrics          *metrics.Metrics
 }
 
 func (m *manager) GetConnectedPlayers(ctx ctx.GameContext) []string {
@@ -44,20 +38,18 @@ func (m *manager) GetConnectedPlayers(ctx ctx.GameContext) []string {
 	return connections.GetConnectedPlayers(ctx)
 }
 
-var _ Manager = (*manager)(nil)
-
 func NewManager(
 	gameStateService state.Service,
 	playerService player.Service,
-	playerConnectedSignal signals.PlayerConnectedSignal,
+	bus events.Bus,
 	metrics *metrics.Metrics,
 ) Manager {
 	return &manager{
-		gameStateService:      gameStateService,
-		playerService:         playerService,
-		gameConnections:       make(map[int64]*ws.PlayerConnections),
-		playerConnectedSignal: playerConnectedSignal,
-		metrics:               metrics,
+		gameStateService: gameStateService,
+		playerService:    playerService,
+		gameConnections:  make(map[int64]*ws.PlayerConnections),
+		bus:              bus,
+		metrics:          metrics,
 	}
 }
 
@@ -90,7 +82,7 @@ func (m *manager) ConnectPlayer(ctx ctx.GameContext, connection *websocket.Conn)
 
 	m.getOrCreatePlayerConnections(ctx).ConnectPlayer(ctx, connection)
 
-	m.playerConnectedSignal.Emit(ctx, signals.PlayerConnectedData{})
+	m.bus.Emit(ctx, gameevt.NewPlayerConnected(ctx.GameID(), ctx.UserID(), time.Now()))
 }
 
 func (m *manager) validateConnectionAttempt(ctx ctx.GameContext) error {

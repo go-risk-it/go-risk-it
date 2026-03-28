@@ -8,7 +8,8 @@ import (
 	dbutil "github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/logic/lobby/signals"
+	"github.com/go-risk-it/go-risk-it/internal/events"
+	lobbyevt "github.com/go-risk-it/go-risk-it/internal/events/lobby"
 	"github.com/go-risk-it/go-risk-it/internal/metrics"
 )
 
@@ -26,22 +27,22 @@ type Service interface {
 }
 
 type service struct {
-	querier                 db.Querier
-	lobbyStateChangedSignal signals.LobbyStateChangedSignal
-	metrics                 *metrics.Metrics
+	querier db.Querier
+	bus     events.Bus
+	metrics *metrics.Metrics
 }
 
 var _ Service = (*service)(nil)
 
 func NewService(
 	querier db.Querier,
-	lobbyStateChangedSignal signals.LobbyStateChangedSignal,
+	bus events.Bus,
 	m *metrics.Metrics,
 ) Service {
 	return &service{
-		querier:                 querier,
-		lobbyStateChangedSignal: lobbyStateChangedSignal,
-		metrics:                 m,
+		querier: querier,
+		bus:     bus,
+		metrics: m,
 	}
 }
 
@@ -56,7 +57,7 @@ func (s *service) JoinLobby(ctx ctx.LobbyContext, name string) error {
 		return fmt.Errorf("failed to join lobby: %w", err)
 	}
 
-	s.lobbyStateChangedSignal.Emit(ctx, signals.LobbyStateChangedData{})
+	s.bus.Emit(ctx, lobbyevt.NewLobbyStateChanged(ctx.LobbyID(), ctx.UserID()))
 
 	return nil
 }

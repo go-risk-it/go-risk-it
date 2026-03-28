@@ -13,8 +13,8 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 	playerws "github.com/go-risk-it/go-risk-it/internal/web/ws"
+	mockevents "github.com/go-risk-it/go-risk-it/mocks/internal_/events"
 	mockplayer "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
-	mocksignals "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/signals"
 	mockstate "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/state"
 	"github.com/lesismal/nbio/nbhttp/websocket"
 	"github.com/stretchr/testify/assert"
@@ -73,16 +73,16 @@ func testWSConn(t *testing.T) *websocket.Conn {
 func connectableManager(
 	t *testing.T,
 	metr *metrics.Metrics,
-) (ws.Manager, *mockstate.Service, *mockplayer.Service, *mocksignals.PlayerConnectedSignal) {
+) (ws.Manager, *mockstate.Service, *mockplayer.Service, *mockevents.Bus) {
 	t.Helper()
 
 	stateSvc := mockstate.NewService(t)
 	playerSvc := mockplayer.NewService(t)
-	signal := mocksignals.NewPlayerConnectedSignal(t)
+	bus := mockevents.NewBus(t)
 
-	manager := ws.NewManager(stateSvc, playerSvc, signal, metr)
+	manager := ws.NewManager(stateSvc, playerSvc, bus, metr)
 
-	return manager, stateSvc, playerSvc, signal
+	return manager, stateSvc, playerSvc, bus
 }
 
 // expectConnectPlayer sets up mock expectations so that ConnectPlayer succeeds
@@ -90,7 +90,7 @@ func connectableManager(
 func expectConnectPlayer(
 	stateSvc *mockstate.Service,
 	playerSvc *mockplayer.Service,
-	signal *mocksignals.PlayerConnectedSignal,
+	bus *mockevents.Bus,
 ) {
 	stateSvc.EXPECT().
 		GetGameState(mock.Anything).
@@ -100,7 +100,7 @@ func expectConnectPlayer(
 		GetPlayersState(mock.Anything).
 		Return([]sqlc.GetPlayersStateRow{{UserID: testPlayerID}}, nil)
 
-	signal.EXPECT().
+	bus.EXPECT().
 		Emit(mock.Anything, mock.Anything).
 		Return()
 }
@@ -194,12 +194,12 @@ func TestManagerImpl_GetConnectedPlayers_MixedConcurrent(t *testing.T) {
 func TestManager_RemoveGame_RemovesEntry(t *testing.T) {
 	t.Parallel()
 
-	manager, stateSvc, playerSvc, signal := connectableManager(t, testMetrics(t))
+	manager, stateSvc, playerSvc, bus := connectableManager(t, testMetrics(t))
 
 	gameCtx := defaultGameContext()
 
 	// Set up mocks so ConnectPlayer succeeds.
-	expectConnectPlayer(stateSvc, playerSvc, signal)
+	expectConnectPlayer(stateSvc, playerSvc, bus)
 
 	// Connect a player — this creates an entry via getOrCreatePlayerConnections.
 	manager.ConnectPlayer(gameCtx, testWSConn(t))
@@ -232,11 +232,11 @@ func TestManager_RemoveGame_NonExistentGame(t *testing.T) {
 func TestManager_RemoveGame_ConcurrentWithGetConnectedPlayers(t *testing.T) {
 	t.Parallel()
 	synctest.Test(t, func(t *testing.T) {
-		manager, stateSvc, playerSvc, signal := connectableManager(t, testMetrics(t))
+		manager, stateSvc, playerSvc, bus := connectableManager(t, testMetrics(t))
 
 		gameCtx := defaultGameContext()
 
-		expectConnectPlayer(stateSvc, playerSvc, signal)
+		expectConnectPlayer(stateSvc, playerSvc, bus)
 		manager.ConnectPlayer(gameCtx, testWSConn(t))
 
 		// Run RemoveGame and GetConnectedPlayers concurrently — must not race.
@@ -255,11 +255,11 @@ func TestManager_RemoveGame_ConcurrentWithGetConnectedPlayers(t *testing.T) {
 func TestManager_Broadcast_AfterRemoveGame(t *testing.T) {
 	t.Parallel()
 
-	manager, stateSvc, playerSvc, signal := connectableManager(t, testMetrics(t))
+	manager, stateSvc, playerSvc, bus := connectableManager(t, testMetrics(t))
 
 	gameCtx := defaultGameContext()
 
-	expectConnectPlayer(stateSvc, playerSvc, signal)
+	expectConnectPlayer(stateSvc, playerSvc, bus)
 	manager.ConnectPlayer(gameCtx, testWSConn(t))
 
 	// Remove the game.
@@ -275,11 +275,11 @@ func TestManager_Broadcast_AfterRemoveGame(t *testing.T) {
 func TestManager_WriteMessage_AfterRemoveGame(t *testing.T) {
 	t.Parallel()
 
-	manager, stateSvc, playerSvc, signal := connectableManager(t, testMetrics(t))
+	manager, stateSvc, playerSvc, bus := connectableManager(t, testMetrics(t))
 
 	gameCtx := defaultGameContext()
 
-	expectConnectPlayer(stateSvc, playerSvc, signal)
+	expectConnectPlayer(stateSvc, playerSvc, bus)
 	manager.ConnectPlayer(gameCtx, testWSConn(t))
 
 	// Remove the game.

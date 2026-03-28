@@ -7,13 +7,13 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/events"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/advancement"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	mockdb "github.com/go-risk-it/go-risk-it/mocks/internal_/data/game/db"
 	mockvalidation "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/move/orchestration/validation"
 	mockmoveservice "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/move/service"
-	mocksignals "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/signals"
 	mockstate "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/state"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -31,6 +31,7 @@ func setup(t *testing.T) (
 	*mockstate.Service,
 	*mockmoveservice.Service[testMove, testResult],
 	*mockvalidation.Service,
+	*events.TestBus,
 	advancement.Service[testMove, testResult],
 ) {
 	t.Helper()
@@ -39,18 +40,18 @@ func setup(t *testing.T) (
 	gameState := mockstate.NewService(t)
 	moveService := mockmoveservice.NewService[testMove, testResult](t)
 	validationService := mockvalidation.NewService(t)
-	signal := mocksignals.NewGameStateChangedSignal(t)
+	bus := events.NewTestBus()
 
 	service := advancement.NewService[testMove, testResult](
 		gameState,
 		querier,
 		moveService,
 		validationService,
-		signal,
+		bus,
 		nil,
 	)
 
-	return querier, gameState, moveService, validationService, service
+	return querier, gameState, moveService, validationService, bus, service
 }
 
 func gameContext() ctx.GameContext {
@@ -78,7 +79,7 @@ func matchGameCtx(expected ctx.GameContext) any {
 func TestAdvanceWithQuerier_HappyPath(t *testing.T) {
 	t.Parallel()
 
-	querier, gameState, moveService, validationService, service := setup(t)
+	querier, gameState, moveService, validationService, _, service := setup(t)
 	gameCtx := gameContext()
 
 	game := &state.Game{
@@ -106,7 +107,7 @@ func TestAdvanceWithQuerier_HappyPath(t *testing.T) {
 func TestAdvanceWithQuerier_GetGameStateFails(t *testing.T) {
 	t.Parallel()
 
-	querier, gameState, moveService, _, service := setup(t)
+	querier, gameState, moveService, _, _, service := setup(t)
 	gameCtx := gameContext()
 
 	moveService.EXPECT().PhaseType().Return(sqlc.GamePhaseTypeATTACK)
@@ -125,7 +126,7 @@ func TestAdvanceWithQuerier_GetGameStateFails(t *testing.T) {
 func TestAdvanceWithQuerier_ValidationFails(t *testing.T) {
 	t.Parallel()
 
-	querier, gameState, moveService, validationService, service := setup(t)
+	querier, gameState, moveService, validationService, _, service := setup(t)
 	gameCtx := gameContext()
 
 	game := &state.Game{
@@ -153,7 +154,7 @@ func TestAdvanceWithQuerier_ValidationFails(t *testing.T) {
 func TestAdvanceWithQuerier_PhaseMismatchReturnsConflictError(t *testing.T) {
 	t.Parallel()
 
-	querier, gameState, moveService, validationService, service := setup(t)
+	querier, gameState, moveService, validationService, _, service := setup(t)
 	gameCtx := gameContext()
 
 	game := &state.Game{
@@ -181,7 +182,7 @@ func TestAdvanceWithQuerier_PhaseMismatchReturnsConflictError(t *testing.T) {
 func TestAdvanceWithQuerier_WalkFails(t *testing.T) {
 	t.Parallel()
 
-	querier, gameState, moveService, validationService, service := setup(t)
+	querier, gameState, moveService, validationService, _, service := setup(t)
 	gameCtx := gameContext()
 
 	game := &state.Game{
@@ -208,7 +209,7 @@ func TestAdvanceWithQuerier_WalkFails(t *testing.T) {
 func TestAdvanceWithQuerier_AdvanceFails(t *testing.T) {
 	t.Parallel()
 
-	querier, gameState, moveService, validationService, service := setup(t)
+	querier, gameState, moveService, validationService, _, service := setup(t)
 	gameCtx := gameContext()
 
 	game := &state.Game{
@@ -269,7 +270,7 @@ func TestAdvanceWithQuerier_DifferentPhaseTransitions(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, gameState, moveService, validationService, service := setup(t)
+			querier, gameState, moveService, validationService, _, service := setup(t)
 			gameCtx := gameContext()
 
 			game := &state.Game{
@@ -301,7 +302,7 @@ func TestAdvanceWithQuerier_DifferentPhaseTransitions(t *testing.T) {
 func TestAdvanceWithQuerier_ForbiddenErrorPropagated(t *testing.T) {
 	t.Parallel()
 
-	querier, gameState, moveService, validationService, service := setup(t)
+	querier, gameState, moveService, validationService, _, service := setup(t)
 	gameCtx := gameContext()
 
 	game := &state.Game{
@@ -323,4 +324,52 @@ func TestAdvanceWithQuerier_ForbiddenErrorPropagated(t *testing.T) {
 
 	var forbiddenErr *domainerrors.DomainError
 	require.ErrorAs(t, err, &forbiddenErr)
+}
+
+func TestAdvanceWithQuerier_NoBusEmission(t *testing.T) {
+	t.Parallel()
+
+	querier, gameState, moveService, validationService, bus, service := setup(t)
+	gameCtx := gameContext()
+
+	game := &state.Game{
+		ID:    gameCtx.GameID(),
+		Phase: sqlc.GamePhaseTypeATTACK,
+		Turn:  2,
+	}
+
+	moveService.EXPECT().PhaseType().Return(sqlc.GamePhaseTypeATTACK)
+	gameState.EXPECT().GetGameStateWithQuerier(matchGameCtx(gameCtx), querier).Return(game, nil)
+	validationService.EXPECT().Validate(matchGameCtx(gameCtx), querier, game).Return(nil)
+	moveService.EXPECT().
+		Walk(matchGameCtx(gameCtx), querier, true).
+		Return(sqlc.GamePhaseTypeREINFORCE, nil)
+	moveService.EXPECT().
+		Advance(matchGameCtx(gameCtx), querier, sqlc.GamePhaseTypeREINFORCE, nil).
+		Return(nil)
+
+	targetPhase, err := service.AdvanceWithQuerier(gameCtx, querier)
+
+	require.NoError(t, err)
+	require.Equal(t, sqlc.GamePhaseTypeREINFORCE, targetPhase)
+
+	// AdvanceWithQuerier does NOT emit bus events — only Advance() does (post-commit)
+	require.Empty(t, bus.Events(), "AdvanceWithQuerier must not emit bus events")
+}
+
+func TestAdvanceWithQuerier_NoBusEmissionOnError(t *testing.T) {
+	t.Parallel()
+
+	querier, gameState, moveService, _, bus, service := setup(t)
+	gameCtx := gameContext()
+
+	moveService.EXPECT().PhaseType().Return(sqlc.GamePhaseTypeATTACK)
+	gameState.EXPECT().
+		GetGameStateWithQuerier(matchGameCtx(gameCtx), querier).
+		Return(nil, errors.New("db error"))
+
+	_, err := service.AdvanceWithQuerier(gameCtx, querier)
+
+	require.Error(t, err)
+	require.Empty(t, bus.Events(), "no bus events on error path")
 }

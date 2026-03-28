@@ -36,6 +36,52 @@ func (_m *Continents) EXPECT() *Continents_Expecter {
 	return &Continents_Expecter{mock: &_m.Mock}
 }
 
+// All provides a mock function for the type Continents
+func (_mock *Continents) All() []*board.Continent {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for All")
+	}
+
+	var r0 []*board.Continent
+	if returnFunc, ok := ret.Get(0).(func() []*board.Continent); ok {
+		r0 = returnFunc()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*board.Continent)
+		}
+	}
+	return r0
+}
+
+// Continents_All_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'All'
+type Continents_All_Call struct {
+	*mock.Call
+}
+
+// All is a helper method to define mock.On call
+func (_e *Continents_Expecter) All() *Continents_All_Call {
+	return &Continents_All_Call{Call: _e.mock.On("All")}
+}
+
+func (_c *Continents_All_Call) Run(run func()) *Continents_All_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Continents_All_Call) Return(continents []*board.Continent) *Continents_All_Call {
+	_c.Call.Return(continents)
+	return _c
+}
+
+func (_c *Continents_All_Call) RunAndReturn(run func() []*board.Continent) *Continents_All_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetContinentsControlledBy provides a mock function for the type Continents
 func (_mock *Continents) GetContinentsControlledBy(regions []string) []*board.Continent {
 	ret := _mock.Called(regions)

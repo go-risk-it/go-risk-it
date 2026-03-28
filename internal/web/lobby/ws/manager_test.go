@@ -3,12 +3,18 @@ package ws_test
 import (
 	"context"
 	"encoding/json"
+	"net"
 	"testing"
 	"testing/synctest"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/events"
+	lobbyevt "github.com/go-risk-it/go-risk-it/internal/events/lobby"
 	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby/ws"
+	mockevents "github.com/go-risk-it/go-risk-it/mocks/internal_/events"
+	"github.com/lesismal/nbio/nbhttp/websocket"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	metricnoop "go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/trace/noop"
@@ -35,10 +41,47 @@ func lobbyContext(lobbyID int64) ctx.LobbyContext {
 	return ctx.WithLobbyID(userContext, lobbyID)
 }
 
+// testWebsocketConn creates a minimal websocket.Conn backed by a net.Pipe for
+// testing purposes. The remote end is closed immediately — the connection is only
+// used so PlayerConnections.ConnectPlayer can call RemoteAddr() without panicking.
+func testWebsocketConn(t *testing.T) *websocket.Conn {
+	t.Helper()
+
+	server, client := net.Pipe()
+	t.Cleanup(func() {
+		server.Close()
+		client.Close()
+	})
+
+	wsConn := &websocket.Conn{Conn: server}
+
+	return wsConn
+}
+
+func TestManagerImpl_ConnectPlayer_EmitsLobbyPlayerConnected(t *testing.T) {
+	t.Parallel()
+
+	bus := mockevents.NewBus(t)
+	manager := ws.NewManager(bus, testMetrics(t))
+
+	lobbyCtx := lobbyContext(int64(42))
+
+	bus.EXPECT().
+		Emit(lobbyCtx, mock.MatchedBy(func(e events.Event) bool {
+			evt, ok := e.(*lobbyevt.LobbyPlayerConnected)
+
+			return ok && evt.LobbyID() == int64(42) && evt.UserID() == "test-user"
+		})).
+		Return()
+
+	manager.ConnectPlayer(lobbyCtx, testWebsocketConn(t))
+}
+
 func TestManagerImpl_Broadcast_ConcurrentSameLobby(t *testing.T) {
 	t.Parallel()
 	synctest.Test(t, func(t *testing.T) {
-		manager := ws.NewManager(nil, testMetrics(t))
+		bus := events.NewTestBus()
+		manager := ws.NewManager(bus, testMetrics(t))
 
 		const numGoroutines = 100
 
@@ -61,7 +104,8 @@ func TestManagerImpl_Broadcast_ConcurrentSameLobby(t *testing.T) {
 func TestManagerImpl_Broadcast_ConcurrentDifferentLobbies(t *testing.T) {
 	t.Parallel()
 	synctest.Test(t, func(t *testing.T) {
-		manager := ws.NewManager(nil, testMetrics(t))
+		bus := events.NewTestBus()
+		manager := ws.NewManager(bus, testMetrics(t))
 
 		const numGoroutines = 100
 
@@ -80,7 +124,8 @@ func TestManagerImpl_Broadcast_ConcurrentDifferentLobbies(t *testing.T) {
 func TestManagerImpl_Broadcast_MixedConcurrent(t *testing.T) {
 	t.Parallel()
 	synctest.Test(t, func(t *testing.T) {
-		manager := ws.NewManager(nil, testMetrics(t))
+		bus := events.NewTestBus()
+		manager := ws.NewManager(bus, testMetrics(t))
 
 		const (
 			numLobbies         = 5

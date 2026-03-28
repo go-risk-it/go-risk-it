@@ -5,37 +5,30 @@ import (
 	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/logic/lobby/signals"
+	"github.com/go-risk-it/go-risk-it/internal/events"
+	lobbyevt "github.com/go-risk-it/go-risk-it/internal/events/lobby"
 	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	upgradablerwmutex "github.com/go-risk-it/go-risk-it/internal/upgradablerw_mutex"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws"
 	"github.com/lesismal/nbio/nbhttp/websocket"
 )
 
-type Manager interface {
-	ConnectPlayer(ctx ctx.LobbyContext, connection *websocket.Conn)
-	Broadcast(ctx ctx.LobbyContext, message json.RawMessage)
-	WriteMessage(ctx ctx.LobbyContext, message json.RawMessage)
-}
-
 type manager struct {
 	mu upgradablerwmutex.UpgradableRWMutex
 
-	lobbyConnections      map[int64]*ws.PlayerConnections
-	playerConnectedSignal signals.PlayerConnectedSignal
-	metrics               *metrics.Metrics
+	lobbyConnections map[int64]*ws.PlayerConnections
+	bus              events.Bus
+	metrics          *metrics.Metrics
 }
 
-var _ Manager = (*manager)(nil)
-
 func NewManager(
-	playerConnectedSignal signals.PlayerConnectedSignal,
+	bus events.Bus,
 	metrics *metrics.Metrics,
 ) Manager {
 	return &manager{
-		lobbyConnections:      make(map[int64]*ws.PlayerConnections),
-		playerConnectedSignal: playerConnectedSignal,
-		metrics:               metrics,
+		lobbyConnections: make(map[int64]*ws.PlayerConnections),
+		bus:              bus,
+		metrics:          metrics,
 	}
 }
 
@@ -44,7 +37,7 @@ func (m *manager) ConnectPlayer(ctx ctx.LobbyContext, connection *websocket.Conn
 
 	m.playerConnections(ctx).ConnectPlayer(ctx, connection)
 
-	m.playerConnectedSignal.Emit(ctx, signals.PlayerConnectedData{})
+	m.bus.Emit(ctx, lobbyevt.NewLobbyPlayerConnected(ctx.LobbyID(), ctx.UserID()))
 }
 
 func (m *manager) Broadcast(ctx ctx.LobbyContext, message json.RawMessage) {

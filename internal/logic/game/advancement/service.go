@@ -3,15 +3,17 @@ package advancement
 import (
 	"fmt"
 	"log/slog"
+	"time"
 
 	gamectx "github.com/go-risk-it/go-risk-it/internal/ctx"
 	dbutil "github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/events"
+	gameevt "github.com/go-risk-it/go-risk-it/internal/events/game"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/validation"
 	moveservice "github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/tracing"
@@ -28,13 +30,19 @@ type Service[T, R any] interface {
 	) (sqlc.GamePhaseType, error)
 }
 
+// advanceOutcome carries the result of advanceInternal for post-commit side effects.
+type advanceOutcome struct {
+	targetPhase sqlc.GamePhaseType
+	turn        int64
+}
+
 type service[T, R any] struct {
-	querier                db.Querier
-	gameState              state.Service
-	moveService            moveservice.Service[T, R]
-	validationService      validation.Service
-	gameStateChangedSignal signals.GameStateChangedSignal
-	metrics                *metrics.Metrics
+	querier           db.Querier
+	gameState         state.Service
+	moveService       moveservice.Service[T, R]
+	validationService validation.Service
+	bus               events.Bus
+	metrics           *metrics.Metrics
 }
 
 func NewService[T, R any](
@@ -42,16 +50,16 @@ func NewService[T, R any](
 	querier db.Querier,
 	moveService moveservice.Service[T, R],
 	validationService validation.Service,
-	gameStateChangedSignal signals.GameStateChangedSignal,
+	bus events.Bus,
 	metrics *metrics.Metrics,
 ) Service[T, R] {
 	return &service[T, R]{
-		gameState:              gameState,
-		querier:                querier,
-		moveService:            moveService,
-		validationService:      validationService,
-		gameStateChangedSignal: gameStateChangedSignal,
-		metrics:                metrics,
+		gameState:         gameState,
+		querier:           querier,
+		moveService:       moveService,
+		validationService: validationService,
+		bus:               bus,
+		metrics:           metrics,
 	}
 }
 
@@ -63,13 +71,13 @@ func (s *service[T, R]) Advance(ctx gamectx.GameContext) error {
 	)
 	defer span.End()
 
-	targetPhase, err := dbutil.InTransactionWithIsolation(
+	outcome, err := dbutil.InTransactionWithIsolation(
 		s.querier,
 		ctx,
 		s.metrics,
 		pgx.RepeatableRead,
-		func(q db.Querier) (sqlc.GamePhaseType, error) {
-			return s.AdvanceWithQuerier(ctx, q)
+		func(q db.Querier) (advanceOutcome, error) {
+			return s.advanceInternal(ctx, q)
 		},
 	)
 	if err != nil {
@@ -79,10 +87,14 @@ func (s *service[T, R]) Advance(ctx gamectx.GameContext) error {
 		return fmt.Errorf("unable to perform move: %w", err)
 	}
 
-	s.gameStateChangedSignal.Emit(ctx, signals.GameStateChangedData{
-		FromPhase: currentPhase,
-		ToPhase:   targetPhase,
-	})
+	s.bus.Emit(ctx, gameevt.NewPhaseTransitioned(
+		ctx.GameID(),
+		ctx.UserID(),
+		time.Now(),
+		currentPhase,
+		outcome.targetPhase,
+		outcome.turn,
+	))
 
 	return nil
 }
@@ -91,6 +103,18 @@ func (s *service[T, R]) AdvanceWithQuerier(
 	ctx gamectx.GameContext,
 	querier db.Querier,
 ) (sqlc.GamePhaseType, error) {
+	outcome, err := s.advanceInternal(ctx, querier)
+	if err != nil {
+		return "", err
+	}
+
+	return outcome.targetPhase, nil
+}
+
+func (s *service[T, R]) advanceInternal(
+	ctx gamectx.GameContext,
+	querier db.Querier,
+) (advanceOutcome, error) {
 	currentPhase := s.moveService.PhaseType()
 	phase := string(currentPhase)
 
@@ -100,18 +124,26 @@ func (s *service[T, R]) AdvanceWithQuerier(
 
 	game, err := s.getAndValidateState(ctx, querier, phase)
 	if err != nil {
-		return "", err
+		return advanceOutcome{}, err
 	}
 
 	if game.Phase != currentPhase {
-		return "", domainerrors.NewConflictErrorf(
+		return advanceOutcome{}, domainerrors.NewConflictErrorf(
 			"game is in phase %s, expected %s",
 			game.Phase,
 			currentPhase,
 		)
 	}
 
-	return s.walkAndAdvance(ctx, querier, phase, currentPhase)
+	targetPhase, err := s.walkAndAdvance(ctx, querier, phase, currentPhase)
+	if err != nil {
+		return advanceOutcome{}, err
+	}
+
+	return advanceOutcome{
+		targetPhase: targetPhase,
+		turn:        game.Turn,
+	}, nil
 }
 
 func (s *service[T, R]) getAndValidateState(
