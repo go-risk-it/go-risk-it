@@ -294,7 +294,7 @@ local gameIdVar = {
       },
     },
 
-    // Panel 8: Slow Traces table (Tempo search with minDuration filter)
+    // Panel 8: Slow Traces table (Tempo search, client-side duration filter)
     {
       id: 8,
       title: 'Slow Traces — > 100ms',
@@ -305,10 +305,35 @@ local gameIdVar = {
         refId: 'A',
         queryType: 'traceqlSearch',
         query: '{resource.service.name="risk-it"}',
-        minDuration: '100ms',
-        limit: 20,
+        limit: 100,
         tableType: 'traces',
       }],
+      transformations: [
+        {
+          id: 'filterByValue',
+          options: {
+            filters: [{
+              fieldName: 'traceDuration',
+              config: {
+                id: 'greaterOrEqual',
+                options: { value: 100 },
+              },
+            }],
+            type: 'include',
+            match: 'all',
+          },
+        },
+        {
+          id: 'sortBy',
+          options: {
+            sort: [{ field: 'traceDuration', desc: true }],
+          },
+        },
+        {
+          id: 'limit',
+          options: { limitField: 20 },
+        },
+      ],
       gridPos: { h: 8, w: 24, x: 0, y: 46 },
       fieldConfig: { defaults: {}, overrides: [] },
       options: {},
