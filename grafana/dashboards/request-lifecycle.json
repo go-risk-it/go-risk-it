@@ -691,7 +691,7 @@
                 "type": "tempo",
                 "uid": "tempo"
             },
-            "description": "Normal: Few or no entries. Watch for: Growing count at high concurrency. Check next: Click traceID to load waterfall below.",
+            "description": "Normal: Recent request traces. Watch for: High error rates or missing services. Check next: Copy a Trace ID and paste into the Trace ID textbox above to load the waterfall.",
             "fieldConfig": {
                 "defaults": {},
                 "overrides": []
@@ -707,13 +707,13 @@
             "targets": [
                 {
                     "limit": 20,
-                    "query": "{resource.service.name=\"risk-it\" && duration > 100ms}",
+                    "query": "{resource.service.name=\"risk-it\"}",
                     "queryType": "traceqlSearch",
                     "refId": "A",
                     "tableType": "traces"
                 }
             ],
-            "title": "Slow Events \u2014 Trace entries > 100ms",
+            "title": "Recent Traces",
             "type": "table"
         },
         {
@@ -732,7 +732,7 @@
             "targets": [
                 {
                     "query": "${traceId}",
-                    "queryType": "traceql",
+                    "queryType": "traceId",
                     "refId": "A"
                 }
             ],

@@ -281,17 +281,17 @@ local gameIdVar = {
       },
     },
 
-    // Panel 8: Slow Events Table (Tempo TraceQL search for slow spans)
+    // Panel 8: Recent Traces table (Tempo TraceQL search)
     {
       id: 8,
-      title: 'Slow Events — Trace entries > 100ms',
-      description: 'Normal: Few or no entries. Watch for: Growing count at high concurrency. Check next: Click traceID to load waterfall below.',
+      title: 'Recent Traces',
+      description: 'Normal: Recent request traces. Watch for: High error rates or missing services. Check next: Copy a Trace ID and paste into the Trace ID textbox above to load the waterfall.',
       type: 'table',
       datasource: { type: 'tempo', uid: 'tempo' },
       targets: [{
         refId: 'A',
         queryType: 'traceqlSearch',
-        query: '{resource.service.name="risk-it" && duration > 100ms}',
+        query: '{resource.service.name="risk-it"}',
         limit: 20,
         tableType: 'traces',
       }],
@@ -309,7 +309,7 @@ local gameIdVar = {
       datasource: { type: 'tempo', uid: 'tempo' },
       targets: [{
         refId: 'A',
-        queryType: 'traceql',
+        queryType: 'traceId',
         query: '${traceId}',
       }],
       gridPos: { h: 12, w: 24, x: 0, y: 54 },
