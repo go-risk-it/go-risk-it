@@ -16,6 +16,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/headlines"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/snapshot"
+	mockboard "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/board"
 	mocksnapshot "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/snapshot"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -218,11 +219,14 @@ func setupDetector(
 	snapshotSvc := mocksnapshot.NewService(t)
 	continents := testContinents(t, continentDefs)
 
+	boardSvc := mockboard.NewService(t)
+	boardSvc.EXPECT().GetContinents(mock.Anything).Return(continents, nil).Maybe()
+
 	headlines.RegisterDetector(headlines.DetectorParams{
-		Bus:        bus,
-		Snapshot:   snapshotSvc,
-		Continents: continents,
-		Logger:     slog.Default(),
+		Bus:      bus,
+		Snapshot: snapshotSvc,
+		Board:    boardSvc,
+		Logger:   slog.Default(),
 	})
 
 	return bus, snapshotSvc

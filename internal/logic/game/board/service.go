@@ -21,6 +21,7 @@ type Service interface {
 		source string,
 		target string,
 	) (bool, error)
+	GetContinents(ctx ctx.GameContext) (Continents, error)
 	GetContinentsControlledByPlayer(
 		ctx ctx.GameContext,
 		querier db.Querier,
@@ -124,7 +125,7 @@ func (s *service) getGraph(ctx context.Context) (Graph, error) {
 	return s.graph, nil
 }
 
-func (s *service) getContinents(ctx ctx.GameContext) (Continents, error) {
+func (s *service) GetContinents(ctx ctx.GameContext) (Continents, error) {
 	slog.DebugContext(ctx, "getting continents")
 
 	if s.continents != nil {
@@ -178,7 +179,7 @@ func (s *service) GetContinentsControlledByPlayer(
 		return nil, fmt.Errorf("failed to get regions: %w", err)
 	}
 
-	continents, err := s.getContinents(ctx)
+	continents, err := s.GetContinents(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get continents: %w", err)
 	}

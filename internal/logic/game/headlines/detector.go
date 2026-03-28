@@ -2,6 +2,7 @@ package headlines
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"slices"
 	"sync"
@@ -27,9 +28,10 @@ type gameOwnership struct {
 type detector struct {
 	mu         sync.RWMutex
 	games      map[int64]*gameOwnership
+	continents board.Continents // lazily loaded from board service
 	bus        events.Bus
 	snapshot   snapshot.Service
-	continents board.Continents
+	board      board.Service
 	logger     *slog.Logger
 }
 
@@ -37,10 +39,10 @@ type detector struct {
 type DetectorParams struct {
 	fx.In
 
-	Bus        events.Bus
-	Snapshot   snapshot.Service
-	Continents board.Continents
-	Logger     *slog.Logger `optional:"true"`
+	Bus      events.Bus
+	Snapshot snapshot.Service
+	Board    board.Service
+	Logger   *slog.Logger `optional:"true"`
 }
 
 // RegisterDetector subscribes the headline detector to MoveExecuted events.
@@ -51,11 +53,11 @@ func RegisterDetector(params DetectorParams) {
 	}
 
 	det := &detector{
-		games:      make(map[int64]*gameOwnership),
-		bus:        params.Bus,
-		snapshot:   params.Snapshot,
-		continents: params.Continents,
-		logger:     log,
+		games:    make(map[int64]*gameOwnership),
+		bus:      params.Bus,
+		snapshot: params.Snapshot,
+		board:    params.Board,
+		logger:   log,
 	}
 
 	gameevt.OnGameEvent[*gameevt.MoveExecuted](params.Bus, det.handleMoveExecuted)
@@ -110,7 +112,7 @@ func (d *detector) ensureCache(
 
 // initCache fetches the public snapshot and builds the ownership maps. Uses a
 // write lock with a double-check to avoid duplicate initialization from
-// concurrent handlers.
+// concurrent handlers. Also lazy-loads board continents on first call.
 func (d *detector) initCache(
 	gameCtx ctx.GameContext,
 	gameID int64,
@@ -121,6 +123,15 @@ func (d *detector) initCache(
 	// Double-check after acquiring write lock
 	if ownership, ok := d.games[gameID]; ok {
 		return ownership, nil
+	}
+
+	if d.continents == nil {
+		continents, err := d.board.GetContinents(gameCtx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get continents: %w", err)
+		}
+
+		d.continents = continents
 	}
 
 	snap, err := d.snapshot.GetPublicSnapshot(gameCtx)
