@@ -318,13 +318,13 @@ local gameIdVar = {
     // Panel 9: Trace Waterfall (driven by $traceId variable)
     {
       id: 9,
-      title: 'Trace Waterfall',
+      title: 'Trace Waterfall — paste a Trace ID above',
       description: 'Normal: Shows full request lifecycle. Watch for: Missing spans, long gaps. Check next: Correlated Logs panel below.',
       type: 'traces',
       datasource: { type: 'tempo', uid: 'tempo' },
       targets: [{
         refId: 'A',
-        queryType: 'traceql',
+        queryType: 'traceId',
         query: '${traceId}',
       }],
       gridPos: { h: 12, w: 24, x: 0, y: 54 },

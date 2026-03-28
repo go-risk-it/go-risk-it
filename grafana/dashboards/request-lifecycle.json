@@ -752,11 +752,11 @@
             "targets": [
                 {
                     "query": "${traceId}",
-                    "queryType": "traceql",
+                    "queryType": "traceId",
                     "refId": "A"
                 }
             ],
-            "title": "Trace Waterfall",
+            "title": "Trace Waterfall \u2014 paste a Trace ID above",
             "type": "traces"
         },
         {
