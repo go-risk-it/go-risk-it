@@ -284,7 +284,7 @@ local gameIdVar = {
     // Panel 8: Slow Traces table (Tempo search with minDuration filter)
     {
       id: 8,
-      title: 'Slow Traces — > 10ms',
+      title: 'Slow Traces — > 100ms',
       description: 'Normal: Few or no entries. Watch for: Growing count at high concurrency. Check next: Copy a Trace ID and paste into the Trace ID textbox above to load the waterfall.',
       type: 'table',
       datasource: { type: 'tempo', uid: 'tempo' },
@@ -292,7 +292,7 @@ local gameIdVar = {
         refId: 'A',
         queryType: 'traceqlSearch',
         query: '{resource.service.name="risk-it"}',
-        minDuration: '10ms',
+        minDuration: '100ms',
         limit: 20,
         tableType: 'traces',
       }],

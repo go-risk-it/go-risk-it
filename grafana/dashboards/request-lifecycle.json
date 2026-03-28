@@ -707,14 +707,14 @@
             "targets": [
                 {
                     "limit": 20,
-                    "minDuration": "10ms",
+                    "minDuration": "100ms",
                     "query": "{resource.service.name=\"risk-it\"}",
                     "queryType": "traceqlSearch",
                     "refId": "A",
                     "tableType": "traces"
                 }
             ],
-            "title": "Slow Traces \u2014 > 10ms",
+            "title": "Slow Traces \u2014 > 100ms",
             "type": "table"
         },
         {
