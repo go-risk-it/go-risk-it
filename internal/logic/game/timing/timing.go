@@ -1,4 +1,3 @@
-// Package timing tracks game start times for duration metric calculation.
 package timing
 
 import (

@@ -1,5 +1,6 @@
 {
   "maxExportsPerPackage": 55,
   "maxFanOut": 25,
-  "maxFilesPerPackage": 12
+  "maxFilesPerPackage": 12,
+  "minDocGoCount": 74
 }

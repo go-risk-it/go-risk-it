@@ -3,6 +3,7 @@
 [![Go](https://github.com/go-risk-it/go-risk-it/actions/workflows/go.yml/badge.svg)](https://github.com/go-risk-it/go-risk-it/actions/workflows/go.yml)
 [![golangci-lint](https://github.com/go-risk-it/go-risk-it/actions/workflows/golangci-lint.yml/badge.svg)](https://github.com/go-risk-it/go-risk-it/actions/workflows/golangci-lint.yml)
 [![Component tests](https://github.com/go-risk-it/go-risk-it/actions/workflows/component-test.yml/badge.svg)](https://github.com/go-risk-it/go-risk-it/actions/workflows/component-test.yml)
+[![Invariant Tests](https://github.com/go-risk-it/go-risk-it/actions/workflows/invariant.yml/badge.svg)](https://github.com/go-risk-it/go-risk-it/actions/workflows/invariant.yml)
 [![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/go-risk-it/go-risk-it/badges/badges/coverage.json)](https://github.com/go-risk-it/go-risk-it/actions/workflows/go.yml)
 
 A multiplayer online [Risk](https://en.wikipedia.org/wiki/Risk_(game)) board game built in Go. Players compete to fulfill secret missions by conquering territories, managing armies, and eliminating opponents in real-time.
@@ -38,6 +39,20 @@ graph TD
 ```
 
 See [Architecture Docs](docs/architecture.md) for the full system design, Go package structure, move execution flow, and API reference.
+
+**[Component Architecture](docs/architecture-components.md)** | **[Auto-Generated Diagram](docs/architecture-diagram.svg)**
+
+## Engineering Highlights
+
+- **Living Architecture** — Every package has a [`doc.go`](docs/doc-go-spec.md) with structured sections (`# Layer`, `# Key Types`, `# Dependencies`). CI validates layer claims against the actual import graph. [21 architecture rules](internal/arch_test.go) enforce boundaries at test time.
+
+- **Property-Based Testing** — A custom [invariant framework](docs/testing-philosophy.md) simulates thousands of randomized games against a real Postgres database, checking [12 game-state invariants](internal/testing/invariant/doc.go) after every move. Failures auto-shrink to minimal reproducers via [rapid](https://pkg.go.dev/pgregory.net/rapid).
+
+- **Event-Driven Architecture** — A custom [EventBus](internal/events/doc.go) with typed subscriptions, OTel linked spans, and sequential per-event dispatch. Zero external dependencies. Decouples game logic from WebSocket broadcasting.
+
+- **Type-Safe Move Pipeline** — Generic `Service[T, R]` interface with compile-time enforcement across 5 move types. The [orchestration pipeline](internal/logic/game/move/orchestration/doc.go) runs validate, perform, log, check mission, and advance in a single transaction.
+
+- **Auto-Generated Architecture Diagram** — A [Go tool](cmd/archdiagram/) reads the import graph and `doc.go` labels to generate a [D2 architecture diagram](docs/architecture-diagram.svg). CI checks freshness via `make diagrams-check`.
 
 ## Prerequisites
 

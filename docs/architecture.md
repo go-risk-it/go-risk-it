@@ -392,3 +392,10 @@ The backend emits traces via [OpenTelemetry](https://opentelemetry.io/) to Jaege
 - **Jaeger UI**: http://localhost:16686
 
 All REST handlers and database operations are instrumented with spans for request tracing.
+
+## Additional Documentation
+
+- **[Component Architecture](architecture-components.md)** — Mermaid flowchart showing subsystem groupings and layer relationships
+- **[Auto-Generated Diagram](architecture-diagram.svg)** — D2 diagram generated from the import graph, CI-checked for freshness
+- **[Testing Philosophy](testing-philosophy.md)** — Invariant-based testing strategy with 12 game-state properties
+- **[doc.go Specification](doc-go-spec.md)** — Living documentation format and layer taxonomy

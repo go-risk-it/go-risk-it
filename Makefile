@@ -68,3 +68,26 @@ dashboards-check: ## Verify generated dashboard JSON matches committed files
 	done; \
 	rm -rf "$$tmpdir"; \
 	echo "OK: all dashboards are up to date."
+
+# Architecture documentation
+new-package: ## Scaffold a new package with doc.go (usage: make new-package PKG=internal/logic/game/foo LAYER=Logic)
+	@scripts/new-package.sh $(PKG) $(LAYER)
+
+# Architecture diagram generation (requires: d2 CLI — brew install d2)
+diagrams: ## Generate architecture diagram from internal packages
+	@go run ./cmd/archdiagram/
+
+diagrams-check: ## Verify architecture diagram is up to date
+	@echo "Checking architecture diagram is up to date..."
+	@tmpdir=$$(mktemp -d); \
+	go run ./cmd/archdiagram/ -output "$$tmpdir" 2>/dev/null; \
+	failed=0; \
+	for f in architecture-diagram.d2 architecture-diagram.svg; do \
+		if ! diff -q "docs/$$f" "$$tmpdir/$$f" > /dev/null 2>&1; then \
+			echo "FAIL: docs/$$f is out of date. Run 'make diagrams' to regenerate."; \
+			failed=1; \
+		fi; \
+	done; \
+	rm -rf "$$tmpdir"; \
+	if [ "$$failed" = "1" ]; then exit 1; fi; \
+	echo "OK: architecture diagram is up to date."
