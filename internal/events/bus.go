@@ -4,21 +4,25 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"runtime/debug"
 	"sync"
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/safego"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/fx"
 )
 
 const defaultHandlerTimeout = 10 * time.Second
 
-// Bus dispatches events to registered handlers. Each handler runs in its own
-// goroutine with a detached context. Close gracefully drains in-flight handlers.
+// Bus dispatches events to registered handlers. Each event gets one goroutine;
+// handlers run sequentially within that goroutine (OnAll before OnType) with
+// per-handler panic recovery. Close gracefully drains in-flight handlers.
 type Bus interface {
-	// Emit dispatches event to all matching handlers. Each handler runs in a separate
-	// goroutine via safego.Go. Panics if event is nil. No-op after Close.
+	// Emit dispatches event to all matching handlers. Handlers run sequentially in a
+	// single goroutine per event (OnAll before OnType). Panics if event is nil. No-op
+	// after Close.
 	Emit(ctx context.Context, event Event)
 
 	// OnAll registers a handler that receives every emitted event.
@@ -68,39 +72,67 @@ func (b *busImpl) Emit(parent context.Context, event Event) {
 		panic("events: Emit called with nil event")
 	}
 
+	handlers := b.collectHandlers(event.EventType())
+	if len(handlers) == 0 {
+		return
+	}
+
+	b.dispatchEvent(handlers, parent, event)
+}
+
+// collectHandlers returns a copy of all matching handlers (OnAll first, then OnType)
+// under a read lock. Returns nil if the bus is closed.
+func (b *busImpl) collectHandlers(eventType string) []Handler {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
 
 	if b.closed {
-		slog.DebugContext(parent, "emit after close, dropping event",
-			"eventType", event.EventType(),
-		)
-
-		return
+		return nil
 	}
 
-	for _, h := range b.allH {
-		b.dispatch(parent, h, event)
-	}
+	handlers := make([]Handler, 0, len(b.allH)+len(b.typedH[eventType]))
+	handlers = append(handlers, b.allH...)
+	handlers = append(handlers, b.typedH[eventType]...)
 
-	if typed, ok := b.typedH[event.EventType()]; ok {
-		for _, h := range typed {
-			b.dispatch(parent, h, event)
-		}
-	}
+	return handlers
 }
 
-func (b *busImpl) dispatch(parent context.Context, handler Handler, event Event) {
+// dispatchEvent launches a single goroutine for the event that runs all handlers
+// sequentially. Each handler is wrapped in runHandler for per-handler panic recovery.
+func (b *busImpl) dispatchEvent(
+	handlers []Handler,
+	parent context.Context,
+	event Event,
+) {
 	b.wg.Add(1)
 
-	detached, cancel := detachContext(parent, b.timeout)
-
-	safego.Go(detached, func() {
+	go func() {
+		detached, cancel := detachContext(parent, event, b.timeout)
 		defer b.wg.Done()
 		defer cancel()
 
-		handler(detached, event)
-	})
+		for _, handler := range handlers {
+			runHandler(detached, handler, event)
+		}
+	}()
+}
+
+// runHandler invokes a single handler with per-handler panic recovery. A panicking
+// handler is logged and does not prevent subsequent handlers from executing.
+func runHandler(handlerCtx context.Context, handler Handler, event Event) {
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			slog.ErrorContext(
+				handlerCtx,
+				"panic recovered in event handler",
+				"panic", recovered,
+				"stack", string(debug.Stack()),
+				"eventType", event.EventType(),
+			)
+		}
+	}()
+
+	handler(handlerCtx, event)
 }
 
 func (b *busImpl) OnAll(handler Handler) {
@@ -157,16 +189,54 @@ func (b *busImpl) Close(closeCtx context.Context) error {
 }
 
 // detachContext creates a context detached from the parent's cancellation chain but
-// preserving domain metadata. If the parent implements ctx.Detachable, its Detach
-// method is used to preserve domain-specific scope (GameID, LobbyID, etc.). All other
-// context types get a plain context.WithTimeout(Background, timeout).
+// preserving domain metadata. It starts a linked span rooted in its own trace and
+// applies a timeout. If the parent implements ctx.Detachable, DetachOnto enriches the
+// timeout context with domain-specific scope (GameID, LobbyID, etc.). The returned
+// cancel function ends the linked span and cancels the timeout context.
 func detachContext(
 	parent context.Context,
+	event Event,
 	timeout time.Duration,
 ) (context.Context, context.CancelFunc) {
+	spanName := "bus:" + event.EventType()
+	spanCtx, span := startLinkedSpan(parent, spanName)
+
+	timeoutCtx, timeoutCancel := context.WithTimeout(spanCtx, timeout)
+
+	result := timeoutCtx
 	if d, ok := parent.(ctx.Detachable); ok {
-		return d.Detach(timeout)
+		result = d.DetachOnto(timeoutCtx)
 	}
 
-	return context.WithTimeout(context.Background(), timeout)
+	cancel := func() {
+		span.End()
+		timeoutCancel()
+	}
+
+	return result, cancel
+}
+
+const busTracerName = "go-risk-it-eventbus"
+
+// startLinkedSpan creates a new root span linked to the trigger span from the parent
+// context. This provides trace correlation (via the link) while ensuring handler spans
+// live in their own trace (via WithNewRoot on context.Background). Degrades gracefully
+// to a noop span when the global TracerProvider is a noop.
+func startLinkedSpan(
+	parent context.Context,
+	spanName string,
+) (context.Context, trace.Span) {
+	triggerSpan := trace.SpanFromContext(parent)
+	opts := []trace.SpanStartOption{trace.WithNewRoot()}
+
+	if triggerSpan.SpanContext().IsValid() {
+		opts = append(opts, trace.WithLinks(trace.Link{
+			SpanContext: triggerSpan.SpanContext(),
+		}))
+	}
+
+	//nolint:spancheck // span is returned to the caller who manages its lifecycle
+	return otel.GetTracerProvider().Tracer(busTracerName).Start(
+		context.Background(), spanName, opts...,
+	)
 }

@@ -157,6 +157,10 @@ func (d *detector) initCache(
 // processConquest updates the ownership cache and collects headline events for a
 // successful conquest (ConqueringTroops > 0). Events are emitted after releasing
 // the lock to avoid deadlocks with synchronous bus implementations (TestBus).
+//
+// Re-emission safety: derived headline events are emitted via bus.Emit from within a
+// handler goroutine. This is safe because collectHandlers uses an RLock (released before
+// dispatch) and dispatchEvent launches a new goroutine per event. No lock re-entrancy.
 func (d *detector) processConquest(
 	eventCtx context.Context,
 	ownership *gameOwnership,

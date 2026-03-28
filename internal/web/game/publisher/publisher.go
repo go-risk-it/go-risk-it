@@ -16,11 +16,15 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/web/game/converter"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 )
 
 // messageDispatcher sends a WS message to either a single player (WriteMessage)
 // or all players (Broadcast).
 type messageDispatcher func(ctx.GameContext, json.RawMessage)
+
+const publisherTracerName = "go-risk-it-publisher"
 
 // GameStatePublisher consumes game events from the bus and publishes state
 // updates over WebSocket connections. Each handler performs sequential ordered
@@ -154,14 +158,30 @@ func safeOp(c context.Context, name string, action func()) {
 
 // fetchAndPublishPublicState fetches the public snapshot, converts it into WS
 // messages, and dispatches each using the provided dispatcher.
+//
+// Trace topology:
+//
+//	HTTP request (Trace 1)
+//	  └──[span link]──▶ bus:<event_type> (Trace 2, root)
+//	                       └── consumer.public_state (child span, this function)
 func fetchAndPublishPublicState(
 	gameCtx ctx.GameContext,
 	snapshotService snapshot.Service,
 	presence ws.Presence,
 	dispatch messageDispatcher,
 ) {
+	spanCtx, span := otel.GetTracerProvider().
+		Tracer(publisherTracerName).
+		Start(gameCtx, "consumer.public_state")
+	defer span.End()
+
+	gameCtx = gameCtx.WithBase(spanCtx)
+
 	snap, err := snapshotService.GetPublicSnapshot(gameCtx)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+
 		slog.ErrorContext(gameCtx, "failed to get public snapshot", "error", err)
 
 		return
@@ -171,6 +191,9 @@ func fetchAndPublishPublicState(
 
 	msgs, err := converter.ConvertPublicSnapshot(snap, connectedPlayers)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+
 		slog.ErrorContext(gameCtx, "failed to convert public snapshot", "error", err)
 
 		return
