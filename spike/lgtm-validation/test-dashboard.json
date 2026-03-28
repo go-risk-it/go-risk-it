@@ -1,0 +1,80 @@
+{
+  "dashboard": {
+    "title": "T4 — Tempo TraceQL Table & Cross-Datasource Variables",
+    "uid": "t4-tempo-validation",
+    "tags": ["spike", "validation"],
+    "timezone": "browser",
+    "refresh": "",
+    "templating": {
+      "list": [
+        {
+          "name": "traceId",
+          "type": "textbox",
+          "label": "Trace ID",
+          "description": "Enter a trace ID to filter Loki logs",
+          "current": {
+            "value": "",
+            "text": ""
+          },
+          "options": []
+        }
+      ]
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Traces — TraceQL in Table Panel (A-5)",
+        "description": "Validates A-5: TraceQL query rendered in a Table panel. Should show traceID, service, span name, and duration columns.",
+        "type": "table",
+        "gridPos": { "h": 10, "w": 24, "x": 0, "y": 0 },
+        "datasource": { "type": "tempo", "uid": "tempo" },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "tempo", "uid": "tempo" },
+            "queryType": "traceqlSearch",
+            "query": "{resource.service.name=\"spike-lgtm-validation\"}",
+            "limit": 20,
+            "tableType": "traces"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "options": {
+          "showHeader": true,
+          "cellHeight": "sm"
+        }
+      },
+      {
+        "id": 2,
+        "title": "Logs — Loki driven by $traceId variable (A-12)",
+        "description": "Validates A-12: Cross-datasource variable interpolation. The $traceId textbox variable drives this Loki query. Enter a trace ID from the table above to filter logs.",
+        "type": "logs",
+        "gridPos": { "h": 10, "w": 24, "x": 0, "y": 10 },
+        "datasource": { "type": "loki", "uid": "loki" },
+        "targets": [
+          {
+            "refId": "B",
+            "datasource": { "type": "loki", "uid": "loki" },
+            "expr": "{service_name=\"spike-lgtm-validation\"} | trace_id=`$traceId`"
+          }
+        ],
+        "options": {
+          "showTime": true,
+          "showLabels": true,
+          "showCommonLabels": false,
+          "wrapLogMessage": true,
+          "prettifyLogMessage": false,
+          "enableLogDetails": true,
+          "dedupStrategy": "none",
+          "sortOrder": "Descending"
+        }
+      }
+    ],
+    "schemaVersion": 39,
+    "version": 0
+  },
+  "overwrite": true
+}

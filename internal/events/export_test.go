@@ -12,6 +12,7 @@ func NewBusForTest() Bus {
 	return &busImpl{
 		typedH:  make(map[string][]Handler),
 		timeout: defaultHandlerTimeout,
+		metrics: nil,
 	}
 }
 

@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/events"
+	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -537,6 +538,7 @@ func TestNewBus_FxLifecycle(t *testing.T) {
 
 	app := fx.New(
 		fx.Provide(events.NewBus),
+		fx.Supply((*metrics.Metrics)(nil)),
 		fx.Populate(&bus),
 		fx.NopLogger,
 	)

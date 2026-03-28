@@ -2,6 +2,7 @@ package publisher
 
 import (
 	"github.com/go-risk-it/go-risk-it/internal/events"
+	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby/ws"
 	"go.uber.org/fx"
@@ -14,12 +15,14 @@ type Params struct {
 	Bus               events.Bus
 	ConnectionManager ws.Manager
 	StateController   *controller.StateController
+	Metrics           *metrics.Metrics
 }
 
 func newLobbyStatePublisher(params Params) *LobbyStatePublisher {
 	return NewLobbyStatePublisher(
 		params.ConnectionManager,
 		params.StateController,
+		params.Metrics,
 	)
 }
 

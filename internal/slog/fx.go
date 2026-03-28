@@ -5,10 +5,12 @@ import (
 	"os"
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
+	"go.opentelemetry.io/contrib/bridges/otelslog"
+	sdklog "go.opentelemetry.io/otel/sdk/log"
 	"go.uber.org/fx"
 )
 
-func NewLogger() *stdslog.Logger {
+func NewLogger(loggerProvider *sdklog.LoggerProvider) *stdslog.Logger {
 	var level stdslog.Level
 	if os.Getenv(config.EnvironmentKey) == "prod" {
 		level = stdslog.LevelInfo
@@ -16,10 +18,12 @@ func NewLogger() *stdslog.Logger {
 		level = stdslog.LevelDebug
 	}
 
-	inner := stdslog.NewJSONHandler(os.Stderr, &stdslog.HandlerOptions{
-		Level: level,
-	})
-	handler := NewContextHandler(inner)
+	inner := otelslog.NewHandler(
+		"go-risk-it",
+		otelslog.WithLoggerProvider(loggerProvider),
+	)
+
+	handler := NewContextHandler(inner, level)
 
 	logger := stdslog.New(handler)
 	stdslog.SetDefault(logger)

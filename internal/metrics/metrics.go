@@ -44,6 +44,11 @@ type Metrics struct {
 	TransactionDuration  metric.Float64Histogram
 	TransactionRollbacks metric.Int64Counter
 	TransactionRetries   metric.Int64Counter
+
+	// Event bus metrics
+	EventBusDispatchDuration metric.Float64Histogram
+	EventBusEventsTotal      metric.Int64Counter
+	EventHandlerDuration     metric.Float64Histogram
 }
 
 func NewMetrics(meter metric.Meter) (*Metrics, error) {
@@ -62,6 +67,10 @@ func NewMetrics(meter metric.Meter) (*Metrics, error) {
 	}
 
 	if err := metrics.initDBMetrics(meter); err != nil {
+		return nil, err
+	}
+
+	if err := metrics.initEventBusMetrics(meter); err != nil {
 		return nil, err
 	}
 
@@ -202,6 +211,37 @@ func (metrics *Metrics) initDBMetrics(meter metric.Meter) error {
 		),
 	); err != nil {
 		return fmt.Errorf("failed to create transaction retries counter: %w", err)
+	}
+
+	return nil
+}
+
+func (metrics *Metrics) initEventBusMetrics(meter metric.Meter) error {
+	var err error
+
+	if metrics.EventBusDispatchDuration, err = meter.Float64Histogram(
+		"event_bus.dispatch.duration",
+		metric.WithDescription("Duration of event bus dispatch (all handlers) in seconds"),
+		metric.WithUnit("s"),
+		metric.WithExplicitBucketBoundaries(LatencyBuckets...),
+	); err != nil {
+		return fmt.Errorf("failed to create event bus dispatch duration histogram: %w", err)
+	}
+
+	if metrics.EventBusEventsTotal, err = meter.Int64Counter(
+		"event_bus.events.total",
+		metric.WithDescription("Total number of events emitted through the event bus"),
+	); err != nil {
+		return fmt.Errorf("failed to create event bus events total counter: %w", err)
+	}
+
+	if metrics.EventHandlerDuration, err = meter.Float64Histogram(
+		"event_handler.duration",
+		metric.WithDescription("Duration of individual event handler execution in seconds"),
+		metric.WithUnit("s"),
+		metric.WithExplicitBucketBoundaries(LatencyBuckets...),
+	); err != nil {
+		return fmt.Errorf("failed to create event handler duration histogram: %w", err)
 	}
 
 	return nil

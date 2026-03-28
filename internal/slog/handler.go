@@ -9,21 +9,23 @@ import (
 )
 
 // ContextHandler is an slog.Handler that auto-extracts structured fields
-// from the context chain (TraceContext, UserContext, GameContext, LobbyContext).
-// This eliminates the need for SetLog() calls that manually enrich the logger
-// at each context layer.
+// from the context chain (UserContext, GameContext, LobbyContext).
+// TraceID and SpanID are NOT extracted here — the otelslog bridge
+// auto-extracts them from context.Context, so manual injection would
+// create duplicates.
 type ContextHandler struct {
 	inner stdslog.Handler
+	level stdslog.Level
 }
 
 var _ stdslog.Handler = (*ContextHandler)(nil)
 
-func NewContextHandler(inner stdslog.Handler) *ContextHandler {
-	return &ContextHandler{inner: inner}
+func NewContextHandler(inner stdslog.Handler, level stdslog.Level) *ContextHandler {
+	return &ContextHandler{inner: inner, level: level}
 }
 
-func (h *ContextHandler) Enabled(reqCtx context.Context, level stdslog.Level) bool {
-	return h.inner.Enabled(reqCtx, level)
+func (h *ContextHandler) Enabled(_ context.Context, level stdslog.Level) bool {
+	return level >= h.level
 }
 
 func (h *ContextHandler) Handle(reqCtx context.Context, record stdslog.Record) error {
@@ -40,28 +42,15 @@ func (h *ContextHandler) Handle(reqCtx context.Context, record stdslog.Record) e
 }
 
 func (h *ContextHandler) WithAttrs(attrs []stdslog.Attr) stdslog.Handler {
-	return &ContextHandler{inner: h.inner.WithAttrs(attrs)}
+	return &ContextHandler{inner: h.inner.WithAttrs(attrs), level: h.level}
 }
 
 func (h *ContextHandler) WithGroup(name string) stdslog.Handler {
-	return &ContextHandler{inner: h.inner.WithGroup(name)}
+	return &ContextHandler{inner: h.inner.WithGroup(name), level: h.level}
 }
 
 func extractContextAttrs(reqCtx context.Context) []stdslog.Attr {
 	var attrs []stdslog.Attr
-
-	// Check for TraceContext (has Span) — must come before more specific checks
-	// since GameContext and LobbyContext embed TraceContext.
-	if traceCtx, ok := reqCtx.(ctx.TraceContext); ok {
-		spanCtx := traceCtx.Span().SpanContext()
-		if spanCtx.HasTraceID() {
-			attrs = append(attrs, stdslog.String("traceID", spanCtx.TraceID().String()))
-		}
-
-		if spanCtx.HasSpanID() {
-			attrs = append(attrs, stdslog.String("spanID", spanCtx.SpanID().String()))
-		}
-	}
 
 	// Check for UserContext (has UserID)
 	if userCtx, ok := reqCtx.(ctx.UserContext); ok {

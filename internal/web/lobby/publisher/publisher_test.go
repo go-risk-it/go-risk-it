@@ -18,6 +18,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.opentelemetry.io/otel/trace/noop"
 )
 
@@ -66,7 +69,7 @@ func newDeps(t *testing.T) *deps {
 func (d *deps) newPublisher() *publisher.LobbyStatePublisher {
 	stateCtrl := controller.NewStateController(d.stateSvc)
 
-	return publisher.NewLobbyStatePublisher(d.writer, stateCtrl)
+	return publisher.NewLobbyStatePublisher(d.writer, stateCtrl, nil)
 }
 
 // wsMessageType extracts the "type" field from a serialized WS message envelope.
@@ -329,4 +332,83 @@ func TestOnPlayerConnected_PanicInStateFetch_DoesNotCrash(t *testing.T) {
 	require.NotPanics(t, func() {
 		bus.Emit(lobbyCtx, lobbyevt.NewLobbyPlayerConnected(testLobbyID, testUserID))
 	})
+}
+
+// ---------------------------------------------------------------------------
+// OTel setup helper — installs a real TracerProvider with InMemoryExporter,
+// restores the previous global on cleanup.
+// ---------------------------------------------------------------------------
+
+func setupOTelExporter(t *testing.T) *tracetest.InMemoryExporter {
+	t.Helper()
+
+	exporter := tracetest.NewInMemoryExporter()
+	tracerProvider := sdktrace.NewTracerProvider(sdktrace.WithSyncer(exporter))
+
+	prev := otel.GetTracerProvider()
+	otel.SetTracerProvider(tracerProvider)
+
+	t.Cleanup(func() {
+		otel.SetTracerProvider(prev)
+		_ = tracerProvider.Shutdown(context.Background())
+	})
+
+	return exporter
+}
+
+// spanNames extracts span names from stubs for diagnostic messages.
+func spanNames(stubs tracetest.SpanStubs) []string {
+	names := make([]string, len(stubs))
+	for i, s := range stubs {
+		names[i] = s.Name
+	}
+
+	return names
+}
+
+// ---------------------------------------------------------------------------
+// Test: StateChanged — creates consumer.fetchLobbyState child span
+// ---------------------------------------------------------------------------
+
+//nolint:paralleltest // swaps global TracerProvider
+func TestOnStateChanged_CreatesSpan(t *testing.T) {
+	// Not t.Parallel() — swaps global TracerProvider.
+	exporter := setupOTelExporter(t)
+
+	testDeps := newDeps(t)
+	pub := testDeps.newPublisher()
+	lobbyCtx := testLobbyContext()
+
+	testDeps.stateSvc.EXPECT().
+		GetLobbyState(mock.Anything).
+		Return(testLobby(), nil)
+
+	testDeps.writer.EXPECT().
+		Broadcast(mock.Anything, mock.Anything).
+		Return().
+		Once()
+
+	bus := events.NewTestBus()
+	pub.Register(bus)
+	bus.Emit(lobbyCtx, lobbyevt.NewLobbyStateChanged(testLobbyID, testUserID))
+
+	stubs := exporter.GetSpans()
+	var foundFetch, foundDispatch bool
+
+	for _, stub := range stubs {
+		if stub.Name == "consumer.fetchLobbyState" {
+			foundFetch = true
+		}
+
+		if stub.Name == "consumer.dispatchLobbyState" {
+			foundDispatch = true
+		}
+	}
+
+	require.True(t, foundFetch,
+		"expected span named 'consumer.fetchLobbyState' in recorded spans, got: %v",
+		spanNames(stubs))
+	require.True(t, foundDispatch,
+		"expected span named 'consumer.dispatchLobbyState' in recorded spans, got: %v",
+		spanNames(stubs))
 }

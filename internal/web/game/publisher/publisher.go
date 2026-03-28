@@ -3,8 +3,10 @@ package publisher
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"runtime/debug"
+	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/config"
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
@@ -12,12 +14,15 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/events"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/events/game"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/snapshot"
+	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/converter"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/metric"
 )
 
 // messageDispatcher sends a WS message to either a single player (WriteMessage)
@@ -40,6 +45,7 @@ type GameStatePublisher struct {
 	missionController *controller.MissionController
 	moveLogController *controller.MoveLogController
 	historyConfig     config.HistoryConfig
+	metrics           *metrics.Metrics
 }
 
 // NewGameStatePublisher creates a publisher with narrow WS dependencies and
@@ -52,6 +58,7 @@ func NewGameStatePublisher(
 	missionController *controller.MissionController,
 	moveLogController *controller.MoveLogController,
 	historyConfig config.HistoryConfig,
+	met *metrics.Metrics,
 ) *GameStatePublisher {
 	return &GameStatePublisher{
 		writer:            writer,
@@ -61,6 +68,7 @@ func NewGameStatePublisher(
 		missionController: missionController,
 		moveLogController: moveLogController,
 		historyConfig:     historyConfig,
+		metrics:           met,
 	}
 }
 
@@ -78,15 +86,15 @@ func (p *GameStatePublisher) handleMoveExecuted(
 	gameCtx ctx.GameContext,
 	event *gameevt.MoveExecuted,
 ) {
-	safeOp(gameCtx, "fetchAndPublishPublicState", func() {
+	safeOp(gameCtx, "fetchAndPublishPublicState", p.metrics, func() {
 		fetchAndPublishPublicState(gameCtx, p.snapshotService, p.presence, p.writer.Broadcast)
 	})
 
-	safeOp(gameCtx, "publishPrivateStates", func() {
+	safeOp(gameCtx, "publishPrivateStates", p.metrics, func() {
 		p.publishPrivateStates(gameCtx)
 	})
 
-	safeOp(gameCtx, "publishMoveLog", func() {
+	safeOp(gameCtx, "publishMoveLog", p.metrics, func() {
 		p.publishMoveLog(gameCtx, event)
 	})
 }
@@ -98,15 +106,15 @@ func (p *GameStatePublisher) handlePlayerConnected(
 	gameCtx ctx.GameContext,
 	_ *gameevt.PlayerConnected,
 ) {
-	safeOp(gameCtx, "fetchAndPublishPublicState", func() {
+	safeOp(gameCtx, "fetchAndPublishPublicState", p.metrics, func() {
 		fetchAndPublishPublicState(gameCtx, p.snapshotService, p.presence, p.writer.WriteMessage)
 	})
 
-	safeOp(gameCtx, "publishPrivateStateToPlayer", func() {
+	safeOp(gameCtx, "publishPrivateStateToPlayer", p.metrics, func() {
 		p.publishPrivateStateToPlayer(gameCtx)
 	})
 
-	safeOp(gameCtx, "publishMoveHistory", func() {
+	safeOp(gameCtx, "publishMoveHistory", p.metrics, func() {
 		p.publishMoveHistory(gameCtx)
 	})
 }
@@ -119,11 +127,11 @@ func (p *GameStatePublisher) handlePhaseTransitioned(
 	gameCtx ctx.GameContext,
 	_ *gameevt.PhaseTransitioned,
 ) {
-	safeOp(gameCtx, "fetchAndPublishPublicState", func() {
+	safeOp(gameCtx, "fetchAndPublishPublicState", p.metrics, func() {
 		fetchAndPublishPublicState(gameCtx, p.snapshotService, p.presence, p.writer.Broadcast)
 	})
 
-	safeOp(gameCtx, "publishPrivateStates", func() {
+	safeOp(gameCtx, "publishPrivateStates", p.metrics, func() {
 		p.publishPrivateStates(gameCtx)
 	})
 }
@@ -133,21 +141,43 @@ func (p *GameStatePublisher) handleGameCompleted(
 	gameCtx ctx.GameContext,
 	_ *gameevt.GameCompleted,
 ) {
-	safeOp(gameCtx, "removeGame", func() {
+	safeOp(gameCtx, "removeGame", p.metrics, func() {
 		p.lifecycle.RemoveGame(gameCtx)
 	})
 }
 
-// safeOp runs fn with panic recovery. On panic it logs the recovered value and
-// stack trace and returns false. On normal return it forwards fn's bool result.
+// safeOp runs action with a child span and duration metric recording. On panic
+// it records the error on the span and logs the recovered value and stack trace.
 // This is a sequential wrapper (not a goroutine) — the bus already owns
 // goroutine lifecycle.
-func safeOp(c context.Context, name string, action func()) {
+func safeOp(
+	parent context.Context,
+	name string,
+	met *metrics.Metrics,
+	action func(),
+) {
+	ctx, span := otel.GetTracerProvider().
+		Tracer(publisherTracerName).
+		Start(parent, "consumer."+name)
+	defer span.End()
+
+	start := time.Now()
+
 	defer func() {
-		if r := recover(); r != nil {
-			slog.ErrorContext(c, "panic in publisher sub-operation",
+		elapsed := time.Since(start).Seconds()
+
+		if met != nil {
+			met.EventHandlerDuration.Record(ctx, elapsed,
+				metric.WithAttributes(attribute.String("handler", name)))
+		}
+
+		if recovered := recover(); recovered != nil {
+			span.RecordError(fmt.Errorf("panic in %s: %v", name, recovered))
+			span.SetStatus(codes.Error, "panic")
+
+			slog.ErrorContext(ctx, "panic in consumer operation",
 				"operation", name,
-				"panic", r,
+				"error", recovered,
 				"stack", string(debug.Stack()),
 			)
 		}
@@ -157,31 +187,16 @@ func safeOp(c context.Context, name string, action func()) {
 }
 
 // fetchAndPublishPublicState fetches the public snapshot, converts it into WS
-// messages, and dispatches each using the provided dispatcher.
-//
-// Trace topology:
-//
-//	HTTP request (Trace 1)
-//	  └──[span link]──▶ bus:<event_type> (Trace 2, root)
-//	                       └── consumer.public_state (child span, this function)
+// messages, and dispatches each using the provided dispatcher. The parent safeOp
+// provides the child span (consumer.fetchAndPublishPublicState).
 func fetchAndPublishPublicState(
 	gameCtx ctx.GameContext,
 	snapshotService snapshot.Service,
 	presence ws.Presence,
 	dispatch messageDispatcher,
 ) {
-	spanCtx, span := otel.GetTracerProvider().
-		Tracer(publisherTracerName).
-		Start(gameCtx, "consumer.public_state")
-	defer span.End()
-
-	gameCtx = gameCtx.WithBase(spanCtx)
-
 	snap, err := snapshotService.GetPublicSnapshot(gameCtx)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-
 		slog.ErrorContext(gameCtx, "failed to get public snapshot", "error", err)
 
 		return
@@ -191,9 +206,6 @@ func fetchAndPublishPublicState(
 
 	msgs, err := converter.ConvertPublicSnapshot(snap, connectedPlayers)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-
 		slog.ErrorContext(gameCtx, "failed to convert public snapshot", "error", err)
 
 		return

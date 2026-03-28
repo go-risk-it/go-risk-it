@@ -3,16 +3,25 @@ package publisher
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"runtime/debug"
+	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/events"
 	lobbyevt "github.com/go-risk-it/go-risk-it/internal/events/lobby"
+	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby/ws"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/metric"
 )
+
+const lobbyPublisherTracerName = "go-risk-it-lobby-publisher"
 
 // LobbyStatePublisher consumes lobby events from the bus and publishes state
 // updates over WebSocket connections. It replaces the channel-based fetcher
@@ -21,6 +30,7 @@ import (
 type LobbyStatePublisher struct {
 	writer          ws.Writer
 	stateController *controller.StateController
+	metrics         *metrics.Metrics
 }
 
 // NewLobbyStatePublisher creates a publisher with narrow WS and controller
@@ -28,10 +38,12 @@ type LobbyStatePublisher struct {
 func NewLobbyStatePublisher(
 	writer ws.Writer,
 	stateController *controller.StateController,
+	met *metrics.Metrics,
 ) *LobbyStatePublisher {
 	return &LobbyStatePublisher{
 		writer:          writer,
 		stateController: stateController,
+		metrics:         met,
 	}
 }
 
@@ -75,7 +87,7 @@ func (p *LobbyStatePublisher) fetchAndPublish(
 
 	var fetchOk bool
 
-	safeOp(lobbyCtx, "fetch lobby state", func() {
+	safeOp(lobbyCtx, "fetchLobbyState", p.metrics, func() {
 		lobbyState, err := p.stateController.GetLobbyState(lobbyCtx)
 		if err != nil {
 			slog.ErrorContext(lobbyCtx, "failed to get lobby state", "error", err)
@@ -98,20 +110,43 @@ func (p *LobbyStatePublisher) fetchAndPublish(
 		return
 	}
 
-	safeOp(lobbyCtx, "dispatch lobby state", func() {
+	safeOp(lobbyCtx, "dispatchLobbyState", p.metrics, func() {
 		dispatch(lobbyCtx, msg)
 	})
 }
 
-// safeOp runs fn with panic recovery. On panic it logs the recovered value and
-// stack trace. This is a sequential wrapper (not a goroutine) — the bus already
-// owns goroutine lifecycle.
-func safeOp(c context.Context, name string, action func()) {
+// safeOp runs action with a child span and duration metric recording. On panic
+// it records the error on the span and logs the recovered value and stack trace.
+// This is a sequential wrapper (not a goroutine) — the bus already owns
+// goroutine lifecycle.
+func safeOp(
+	parent context.Context,
+	name string,
+	met *metrics.Metrics,
+	action func(),
+) {
+	ctx, span := otel.GetTracerProvider().
+		Tracer(lobbyPublisherTracerName).
+		Start(parent, "consumer."+name)
+	defer span.End()
+
+	start := time.Now()
+
 	defer func() {
-		if r := recover(); r != nil {
-			slog.ErrorContext(c, "panic in publisher sub-operation",
+		elapsed := time.Since(start).Seconds()
+
+		if met != nil {
+			met.EventHandlerDuration.Record(ctx, elapsed,
+				metric.WithAttributes(attribute.String("handler", name)))
+		}
+
+		if recovered := recover(); recovered != nil {
+			span.RecordError(fmt.Errorf("panic in %s: %v", name, recovered))
+			span.SetStatus(codes.Error, "panic")
+
+			slog.ErrorContext(ctx, "panic in consumer operation",
 				"operation", name,
-				"panic", r,
+				"error", recovered,
 				"stack", string(debug.Stack()),
 			)
 		}

@@ -4,6 +4,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/config"
 	"github.com/go-risk-it/go-risk-it/internal/events"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/snapshot"
+	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 	"go.uber.org/fx"
@@ -19,6 +20,7 @@ type Params struct {
 	MissionController *controller.MissionController
 	MoveLogController *controller.MoveLogController
 	HistoryConfig     config.HistoryConfig
+	Metrics           *metrics.Metrics
 }
 
 func newGameStatePublisher(params Params) *GameStatePublisher {
@@ -30,6 +32,7 @@ func newGameStatePublisher(params Params) *GameStatePublisher {
 		params.MissionController,
 		params.MoveLogController,
 		params.HistoryConfig,
+		params.Metrics,
 	)
 }
 

@@ -9,7 +9,10 @@ import (
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/fx"
 )
@@ -47,15 +50,17 @@ type busImpl struct {
 	wg      sync.WaitGroup
 	closed  bool
 	timeout time.Duration
+	metrics *metrics.Metrics
 }
 
 var _ Bus = (*busImpl)(nil)
 
 // NewBus creates a new Bus and registers an fx.OnStop hook for graceful shutdown.
-func NewBus(lifecycle fx.Lifecycle) Bus {
+func NewBus(lifecycle fx.Lifecycle, m *metrics.Metrics) Bus {
 	bus := &busImpl{
 		typedH:  make(map[string][]Handler),
 		timeout: defaultHandlerTimeout,
+		metrics: m,
 	}
 
 	lifecycle.Append(fx.Hook{
@@ -72,7 +77,14 @@ func (b *busImpl) Emit(parent context.Context, event Event) {
 		panic("events: Emit called with nil event")
 	}
 
-	handlers := b.collectHandlers(event.EventType())
+	eventType := event.EventType()
+
+	if b.metrics != nil {
+		b.metrics.EventBusEventsTotal.Add(parent, 1,
+			metric.WithAttributes(attribute.String("event_type", eventType)))
+	}
+
+	handlers := b.collectHandlers(eventType)
 	if len(handlers) == 0 {
 		return
 	}
@@ -111,8 +123,16 @@ func (b *busImpl) dispatchEvent(
 		defer b.wg.Done()
 		defer cancel()
 
+		start := time.Now()
+
 		for _, handler := range handlers {
 			runHandler(detached, handler, event)
+		}
+
+		if b.metrics != nil {
+			duration := time.Since(start).Seconds()
+			b.metrics.EventBusDispatchDuration.Record(detached, duration,
+				metric.WithAttributes(attribute.String("event_type", event.EventType())))
 		}
 	}()
 }

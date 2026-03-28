@@ -20,6 +20,9 @@ import (
 	mocksnapshot "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/snapshot"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.opentelemetry.io/otel/trace/noop"
 )
 
@@ -669,4 +672,80 @@ func TestDetector_IgnoresNilAttackResult(t *testing.T) {
 	allEvents := bus.allEvents()
 	require.Len(t, allEvents, 1)
 	require.Equal(t, gameevt.TypeMoveExecuted, allEvents[0].EventType())
+}
+
+// ---------------------------------------------------------------------------
+// OTel setup helper
+// ---------------------------------------------------------------------------
+
+func setupOTelExporter(t *testing.T) *tracetest.InMemoryExporter {
+	t.Helper()
+
+	exporter := tracetest.NewInMemoryExporter()
+	tracerProvider := sdktrace.NewTracerProvider(sdktrace.WithSyncer(exporter))
+
+	prev := otel.GetTracerProvider()
+	otel.SetTracerProvider(tracerProvider)
+
+	t.Cleanup(func() {
+		otel.SetTracerProvider(prev)
+		_ = tracerProvider.Shutdown(context.Background())
+	})
+
+	return exporter
+}
+
+// spanNames extracts span names from stubs for diagnostic messages.
+func spanNames(stubs tracetest.SpanStubs) []string {
+	names := make([]string, len(stubs))
+	for i, s := range stubs {
+		names[i] = s.Name
+	}
+
+	return names
+}
+
+// ---------------------------------------------------------------------------
+// Test: MoveExecuted — headline detector creates detector.headlines span
+// ---------------------------------------------------------------------------
+
+//nolint:paralleltest // swaps global TracerProvider
+func TestDetector_CreatesHeadlineSpan(t *testing.T) {
+	// Not t.Parallel() — swaps global TracerProvider.
+	exporter := setupOTelExporter(t)
+
+	bus, snapshotSvc := setupDetector(t, defaultContinents())
+
+	snapshotSvc.EXPECT().
+		GetPublicSnapshot(mock.Anything).
+		Return(snapshotBoard(map[string]string{
+			"france":  testAttacker,
+			"germany": testAttacker,
+			"italy":   testDefender,
+			"china":   testDefender,
+			"japan":   testDefender,
+		}), nil)
+
+	event := attackEvent(testGameID, &attack.MoveResult{
+		AttackingRegionID: "france",
+		DefendingRegionID: "italy",
+		ConqueringTroops:  3,
+	})
+
+	bus.Emit(gameCtx(testGameID), event)
+
+	stubs := exporter.GetSpans()
+	var found bool
+
+	for _, stub := range stubs {
+		if stub.Name == "detector.headlines" {
+			found = true
+
+			break
+		}
+	}
+
+	require.True(t, found,
+		"expected span named 'detector.headlines' in recorded spans, got: %v",
+		spanNames(stubs))
 }

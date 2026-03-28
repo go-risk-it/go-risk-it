@@ -19,7 +19,7 @@ type parsed map[string]any
 
 func newTestLogger(buf *bytes.Buffer) *stdslog.Logger {
 	inner := stdslog.NewJSONHandler(buf, &stdslog.HandlerOptions{Level: stdslog.LevelDebug})
-	handler := riskslog.NewContextHandler(inner)
+	handler := riskslog.NewContextHandler(inner, stdslog.LevelDebug)
 
 	return stdslog.New(handler)
 }
@@ -83,8 +83,12 @@ func TestTraceContext(t *testing.T) {
 
 	result := parseLine(t, &buf)
 	require.Equal(t, "trace message", result["msg"])
-	require.Equal(t, rwSpan.SpanContext().TraceID().String(), result["traceID"])
-	require.Equal(t, rwSpan.SpanContext().SpanID().String(), result["spanID"])
+
+	// traceID and spanID are NOT extracted by ContextHandler — the otelslog
+	// bridge handles that. With a plain JSONHandler inner (used in tests),
+	// they should not appear.
+	require.NotContains(t, result, "traceID")
+	require.NotContains(t, result, "spanID")
 	require.NotContains(t, result, "userID")
 	require.NotContains(t, result, "gameID")
 	require.NotContains(t, result, "lobbyID")
@@ -104,9 +108,9 @@ func TestUserContext(t *testing.T) {
 
 	result := parseLine(t, &buf)
 	require.Equal(t, "user message", result["msg"])
-	require.Equal(t, rwSpan.SpanContext().TraceID().String(), result["traceID"])
-	require.Equal(t, rwSpan.SpanContext().SpanID().String(), result["spanID"])
 	require.Equal(t, "user-123", result["userID"])
+	require.NotContains(t, result, "traceID")
+	require.NotContains(t, result, "spanID")
 	require.NotContains(t, result, "gameID")
 	require.NotContains(t, result, "lobbyID")
 }
@@ -126,10 +130,10 @@ func TestGameContext(t *testing.T) {
 
 	result := parseLine(t, &buf)
 	require.Equal(t, "game message", result["msg"])
-	require.Equal(t, rwSpan.SpanContext().TraceID().String(), result["traceID"])
-	require.Equal(t, rwSpan.SpanContext().SpanID().String(), result["spanID"])
 	require.Equal(t, "user-456", result["userID"])
 	require.InDelta(t, float64(42), result["gameID"], 0)
+	require.NotContains(t, result, "traceID")
+	require.NotContains(t, result, "spanID")
 	require.NotContains(t, result, "lobbyID")
 }
 
@@ -148,10 +152,10 @@ func TestLobbyContext(t *testing.T) {
 
 	result := parseLine(t, &buf)
 	require.Equal(t, "lobby message", result["msg"])
-	require.Equal(t, rwSpan.SpanContext().TraceID().String(), result["traceID"])
-	require.Equal(t, rwSpan.SpanContext().SpanID().String(), result["spanID"])
 	require.Equal(t, "user-789", result["userID"])
 	require.InDelta(t, float64(99), result["lobbyID"], 0)
+	require.NotContains(t, result, "traceID")
+	require.NotContains(t, result, "spanID")
 	require.NotContains(t, result, "gameID")
 }
 
@@ -160,7 +164,7 @@ func TestWithAttrsPreserved(t *testing.T) {
 
 	var buf bytes.Buffer
 	inner := stdslog.NewJSONHandler(&buf, &stdslog.HandlerOptions{Level: stdslog.LevelDebug})
-	handler := riskslog.NewContextHandler(inner)
+	handler := riskslog.NewContextHandler(inner, stdslog.LevelDebug)
 
 	// Add explicit attrs via WithAttrs.
 	enriched := handler.WithAttrs([]stdslog.Attr{
@@ -180,8 +184,9 @@ func TestWithAttrsPreserved(t *testing.T) {
 
 	// Both explicit attrs and context attrs should be present.
 	require.Equal(t, "deploy", result["component"])
-	require.Equal(t, rwSpan.SpanContext().TraceID().String(), result["traceID"])
 	require.Equal(t, "user-attrs", result["userID"])
+	require.NotContains(t, result, "traceID")
+	require.NotContains(t, result, "spanID")
 }
 
 func TestWithGroupPreserved(t *testing.T) {
@@ -189,7 +194,7 @@ func TestWithGroupPreserved(t *testing.T) {
 
 	var buf bytes.Buffer
 	inner := stdslog.NewJSONHandler(&buf, &stdslog.HandlerOptions{Level: stdslog.LevelDebug})
-	handler := riskslog.NewContextHandler(inner)
+	handler := riskslog.NewContextHandler(inner, stdslog.LevelDebug)
 
 	// Wrap in a group and add attrs.
 	grouped := handler.WithGroup("request").WithAttrs([]stdslog.Attr{
@@ -212,6 +217,26 @@ func TestWithGroupPreserved(t *testing.T) {
 	requestGroup, ok := result["request"].(map[string]any)
 	require.True(t, ok, "expected 'request' group in output")
 	require.Equal(t, "POST", requestGroup["method"])
-	require.Equal(t, rwSpan.SpanContext().TraceID().String(), requestGroup["traceID"])
-	require.Equal(t, rwSpan.SpanContext().SpanID().String(), requestGroup["spanID"])
+	require.NotContains(t, requestGroup, "traceID")
+	require.NotContains(t, requestGroup, "spanID")
+}
+
+func TestLevelFiltering(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	inner := stdslog.NewJSONHandler(&buf, &stdslog.HandlerOptions{Level: stdslog.LevelDebug})
+	handler := riskslog.NewContextHandler(inner, stdslog.LevelInfo)
+
+	logger := stdslog.New(handler)
+
+	// Debug should be filtered out by ContextHandler's level gate.
+	logger.DebugContext(context.Background(), "debug message")
+	require.Empty(t, buf.Bytes(), "debug message should be filtered")
+
+	// Info should pass through.
+	logger.InfoContext(context.Background(), "info message")
+
+	result := parseLine(t, &buf)
+	require.Equal(t, "info message", result["msg"])
 }

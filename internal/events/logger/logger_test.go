@@ -314,13 +314,14 @@ func TestRegister_LogsTraceIDFromLinkedSpan(
 	gameCtx := ctx.WithGameID(userCtx, 42)
 
 	// Create a ContextHandler-wrapped JSONHandler writing to a buffer.
-	// The ContextHandler extracts traceID/spanID from the detached context's linked span.
+	// ContextHandler extracts domain fields (userID, gameID); trace context
+	// (traceID/spanID) is handled by the otelslog bridge in production.
 	var buf bytes.Buffer
 	jsonHandler := slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelInfo})
-	contextHandler := riskslog.NewContextHandler(jsonHandler)
+	contextHandler := riskslog.NewContextHandler(jsonHandler, slog.LevelInfo)
 
 	// Use the real async bus which runs detachContext + startLinkedSpan.
-	bus := events.NewBus(nopLifecycle{})
+	bus := events.NewBus(nopLifecycle{}, nil)
 
 	logger.Register(logger.Params{
 		Bus:    bus,
@@ -354,26 +355,23 @@ func TestRegister_LogsTraceIDFromLinkedSpan(
 	require.NoError(t, json.Unmarshal(buf.Bytes(), &result),
 		"failed to unmarshal log output: %s", buf.String())
 
-	// Assert: traceID is present in log output.
-	loggedTraceID, traceIDFound := result["traceID"].(string)
-	require.True(t, traceIDFound, "traceID must be present in log output")
-	require.NotEmpty(t, loggedTraceID, "traceID must not be empty")
-
-	// Assert: traceID differs from the parent/trigger trace — proves it's from the linked span.
-	require.NotEqual(
+	// Assert: domain fields are present in log output (extracted by ContextHandler).
+	require.Equal(t, "player1", result["userID"], "userID must be present from detached context")
+	require.InDelta(
 		t,
-		parentTraceID.String(),
-		loggedTraceID,
-		"logged traceID must differ from parent HTTP trace (must be from the linked span's new root trace)",
+		float64(42),
+		result["gameID"],
+		0,
+		"gameID must be present from detached context",
 	)
 
-	// Assert: spanID is present in log output.
-	loggedSpanID, spanIDFound := result["spanID"].(string)
-	require.True(t, spanIDFound, "spanID must be present in log output")
-	require.NotEmpty(t, loggedSpanID, "spanID must not be empty")
+	// Note: traceID/spanID are NOT in log output because ContextHandler no longer
+	// extracts them — the otelslog bridge handles that in production. This test
+	// uses a plain JSONHandler as inner, so trace fields are absent.
+	require.NotContains(t, result, "traceID")
+	require.NotContains(t, result, "spanID")
 
-	// Assert: the logged traceID matches a linked span from the exporter.
-	// The bus:game.created span should have the logged traceID.
+	// Assert: the linked span was created and links back to the parent trace.
 	stubs := exporter.GetSpans()
 
 	var linkedStub *tracetest.SpanStub
@@ -386,10 +384,6 @@ func TestRegister_LogsTraceIDFromLinkedSpan(
 	}
 
 	require.NotNil(t, linkedStub, "bus:game_created span must be in recorded spans")
-	require.Equal(t, linkedStub.SpanContext.TraceID().String(), loggedTraceID,
-		"logged traceID must match the linked span's TraceID")
-	require.Equal(t, linkedStub.SpanContext.SpanID().String(), loggedSpanID,
-		"logged spanID must match the linked span's SpanID")
 
 	// Verify the linked span has a link back to the parent trace.
 	require.Len(t, linkedStub.Links, 1, "linked span must have exactly 1 link")

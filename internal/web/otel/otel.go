@@ -11,21 +11,30 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/host"
 	"go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/exporters/stdout/stdoutlog"
 	"go.opentelemetry.io/otel/propagation"
+	sdklog "go.opentelemetry.io/otel/sdk/log"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/fx"
 )
 
 var Module = fx.Options(
+	fx.Provide(NewLoggerProvider),
 	fx.Invoke(SetupOTelSDK),
 )
+
+func NewLoggerProvider(otelConfig config.OtelConfig) (*sdklog.LoggerProvider, error) {
+	return newLoggerProvider(otelConfig)
+}
 
 func SetupOTelSDK(
 	lifecycle fx.Lifecycle,
 	otelConfig config.OtelConfig,
+	loggerProvider *sdklog.LoggerProvider,
 ) {
 	// Set up OpenTelemetry.
 	otelShutdown, err := setupOTelSDK(otelConfig)
@@ -36,9 +45,13 @@ func SetupOTelSDK(
 
 	lifecycle.Append(fx.Hook{
 		OnStop: func(ctx context.Context) error {
-			if err := otelShutdown(ctx); err != nil {
-				slog.Error("failed to shutdown OTel providers", "error", err)
-				panic("failed to shutdown OTel providers: " + err.Error())
+			shutdownErr := errors.Join(
+				otelShutdown(ctx),
+				loggerProvider.Shutdown(ctx),
+			)
+			if shutdownErr != nil {
+				slog.Error("failed to shutdown OTel providers", "error", shutdownErr)
+				panic("failed to shutdown OTel providers: " + shutdownErr.Error())
 			}
 
 			return nil
@@ -138,5 +151,36 @@ func newMeterProvider(otelConfig config.OtelConfig) (*sdkmetric.MeterProvider, e
 				sdkmetric.WithProducer(producer),
 			),
 		),
+	), nil
+}
+
+func newLoggerProvider(otelConfig config.OtelConfig) (*sdklog.LoggerProvider, error) {
+	if !otelConfig.Enabled {
+		// Dev fallback: stdout-only so logs are visible without LGTM stack.
+		stdoutExporter, err := stdoutlog.New()
+		if err != nil {
+			return nil, fmt.Errorf("failed to create stdout log exporter: %w", err)
+		}
+
+		return sdklog.NewLoggerProvider(
+			sdklog.WithProcessor(sdklog.NewSimpleProcessor(stdoutExporter)),
+		), nil
+	}
+
+	// OTLP batch processor for Loki shipping.
+	otlpExporter, err := otlploghttp.New(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to create OTLP log exporter: %w", err)
+	}
+
+	// Stdout simple processor for dev visibility.
+	stdoutExporter, err := stdoutlog.New()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create stdout log exporter: %w", err)
+	}
+
+	return sdklog.NewLoggerProvider(
+		sdklog.WithProcessor(sdklog.NewBatchProcessor(otlpExporter)),
+		sdklog.WithProcessor(sdklog.NewSimpleProcessor(stdoutExporter)),
 	), nil
 }
