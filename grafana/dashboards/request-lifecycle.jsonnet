@@ -281,17 +281,18 @@ local gameIdVar = {
       },
     },
 
-    // Panel 8: Recent Traces table (Tempo TraceQL search)
+    // Panel 8: Slow Traces table (Tempo search with minDuration filter)
     {
       id: 8,
-      title: 'Recent Traces',
-      description: 'Normal: Recent request traces. Watch for: High error rates or missing services. Check next: Copy a Trace ID and paste into the Trace ID textbox above to load the waterfall.',
+      title: 'Slow Traces — > 10ms',
+      description: 'Normal: Few or no entries. Watch for: Growing count at high concurrency. Check next: Copy a Trace ID and paste into the Trace ID textbox above to load the waterfall.',
       type: 'table',
       datasource: { type: 'tempo', uid: 'tempo' },
       targets: [{
         refId: 'A',
         queryType: 'traceqlSearch',
         query: '{resource.service.name="risk-it"}',
+        minDuration: '10ms',
         limit: 20,
         tableType: 'traces',
       }],
