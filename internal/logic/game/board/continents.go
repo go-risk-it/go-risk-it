@@ -73,7 +73,9 @@ func validateContinents(board *BoardDto) error {
 	continentNames := make(map[string]struct{})
 	for _, continent := range board.Continents {
 		if _, ok := continentNames[continent.ExternalReference]; ok {
-			return fmt.Errorf("duplicate continent id: %s", continent.ExternalReference)
+			return domainerrors.NewValidationError(
+				"duplicate continent id: " + continent.ExternalReference,
+			)
 		}
 
 		continentNames[continent.ExternalReference] = struct{}{}

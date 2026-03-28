@@ -7,6 +7,9 @@ on:
     branches: [ "main" ]
   merge_group:
 
+env:
+  D2_VERSION: "0.6.9"
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -97,8 +100,6 @@ jobs:
     - name: Architecture rules
       run: go test -run TestArch -v -count=1 ./internal/
     - name: Install D2
-      env:
-        D2_VERSION: "0.6.9"
       run: |
         curl -fsSL "https://github.com/terrastruct/d2/releases/download/v${D2_VERSION}/d2-v${D2_VERSION}-linux-amd64.tar.gz" -o /tmp/d2.tar.gz
         mkdir -p /tmp/d2-extract

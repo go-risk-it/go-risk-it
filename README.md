@@ -57,7 +57,7 @@ See [Architecture Docs](docs/architecture.md) for the full system design, Go pac
 ## Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) and Docker Compose
-- [Go 1.24+](https://go.dev/dl/)
+- [Go 1.26+](https://go.dev/dl/)
 - [Python 3](https://www.python.org/) + [Poetry](https://python-poetry.org/) (for component tests)
 
 ## Quick Start
@@ -143,40 +143,80 @@ make help
 ## Project Structure
 
 ```
+cmd/
+├── archdiagram/              # Architecture diagram generator (D2 output)
+└── risk-it-server/           # Server entrypoint (app, component-test, prod configs)
+
 internal/
-├── api/                  # API contracts (request/response types)
-│   ├── game/             #   Game API models + message payloads
-│   └── lobby/            #   Lobby API models
-├── config/               # Configuration management
-├── ctx/                  # Context types
-├── data/                 # Data access layer
-│   ├── game/             #   Game DB (SQLC generated + migrations)
-│   ├── lobby/            #   Lobby DB (SQLC generated + migrations)
-│   └── migration/        #   Migration runner
-├── logic/                # Business logic
-│   ├── game/             #   Game engine
-│   │   ├── move/         #     Move orchestration + phase handlers
-│   │   ├── phase/        #     Phase management
-│   │   ├── card/         #     Card logic
-│   │   ├── mission/      #     Victory condition checking
-│   │   ├── player/       #     Player state
-│   │   ├── state/        #     Game state queries
-│   │   └── advancement/  #     Phase advancement
-│   └── lobby/            #   Lobby management
-├── web/                  # HTTP + WebSocket layer
-│   ├── game/             #   Game endpoints + WS manager
-│   ├── lobby/            #   Lobby endpoints + WS manager
-│   ├── middleware/        #   Auth middleware
-│   ├── rest/             #   Route abstraction + health check
-│   └── ws/               #   WebSocket utilities
-└── testonly/             # Test-only endpoints (reset, setup-near-win)
+├── api/                      # API contracts (request/response types)
+│   ├── game/                 #   Game REST + WebSocket message types
+│   └── lobby/                #   Lobby REST + WebSocket message types
+├── config/                   # Configuration management (Koanf)
+├── ctx/                      # Typed request contexts (GameContext, LobbyContext)
+├── data/                     # Data access layer
+│   ├── game/                 #   Game DB (SQLC generated + migrations)
+│   ├── lobby/                #   Lobby DB (SQLC generated + migrations)
+│   ├── migration/            #   Migration runner
+│   └── pool/                 #   Connection pool management
+├── events/                   # Event bus infrastructure
+│   ├── game/                 #   Game domain events (MoveExecuted, PhaseTransitioned, ...)
+│   ├── lobby/                #   Lobby domain events (LobbyStateChanged, ...)
+│   └── logger/               #   Structured event logging consumer
+├── logic/                    # Business logic
+│   ├── errors/               #   Domain error types (ValidationError, NotFoundError)
+│   ├── game/                 #   Game engine
+│   │   ├── board/            #     Board topology (graph, continents)
+│   │   ├── snapshot/         #     Public + private game state snapshots
+│   │   ├── headlines/        #     Headline detection (continent capture, elimination)
+│   │   ├── move/             #     Move pipeline
+│   │   │   ├── orchestration/#       Validate → perform → log → advance pipeline
+│   │   │   ├── attack/       #       ... (+ dice sub-package)
+│   │   │   ├── cards/        #       ...
+│   │   │   ├── conquer/      #       ...
+│   │   │   ├── deploy/       #       ...
+│   │   │   └── reinforce/    #       ...
+│   │   ├── phase/            #     Phase management
+│   │   ├── card/             #     Card deck logic
+│   │   ├── mission/          #     Victory condition checking
+│   │   ├── player/           #     Player state
+│   │   ├── region/           #     Region ownership + assignment
+│   │   ├── state/            #     Game state queries
+│   │   ├── advancement/      #     Phase advancement
+│   │   ├── creation/         #     Game creation
+│   │   └── timing/           #     Turn timing
+│   └── lobby/                #   Lobby management
+│       ├── creation/         #     Lobby creation
+│       ├── management/       #     Join/leave/list
+│       ├── start/            #     Game start from lobby
+│       └── state/            #     Lobby state queries
+├── web/                      # HTTP + WebSocket layer
+│   ├── game/                 #   Game module
+│   │   ├── controller/       #     HTTP + WS handler orchestration
+│   │   ├── converter/        #     Domain → API type conversion
+│   │   ├── publisher/        #     WebSocket game state broadcasting
+│   │   ├── rest/             #     REST route registration
+│   │   └── ws/               #     WebSocket connection management
+│   ├── lobby/                #   Lobby module (same sub-package pattern)
+│   ├── middleware/            #   Auth middleware (JWT validation)
+│   ├── mux/                  #   HTTP mux composition
+│   ├── nbio/                 #   nbio engine lifecycle
+│   ├── otel/                 #   OpenTelemetry HTTP instrumentation
+│   ├── rest/                 #   Route abstraction + health check
+│   └── ws/                   #   WebSocket utilities + message types
+├── metrics/                  # OTel metrics provider
+├── slog/                     # Structured logging setup
+├── tracing/                  # OTel tracing provider
+├── rand/                     # Deterministic random (testable)
+├── upgradablerw_mutex/       # Read → write lock upgrade primitive
+├── testing/invariant/        # Property-based game invariant framework
+└── testonly/                 # Test-only endpoints (reset, setup-near-win)
 ```
 
 ## Tech Stack
 
 | Component | Technology |
 |-----------|-----------|
-| Language | Go 1.24 |
+| Language | Go 1.26 |
 | Web / WebSocket | [nbio](https://github.com/lesismal/nbio) |
 | Database | PostgreSQL + [pgx](https://github.com/jackc/pgx) |
 | Query generation | [SQLC](https://sqlc.dev/) |
@@ -185,7 +225,7 @@ internal/
 | Auth | [GoTrue](https://github.com/supabase/gotrue) (Supabase) via JWT |
 | API gateway | [Kong](https://konghq.com/) |
 | Logging | [log/slog](https://pkg.go.dev/log/slog) (structured JSON) |
-| Tracing | [OpenTelemetry](https://opentelemetry.io/) + [Grafana OTEL LGTM](https://github.com/grafana/docker-otel-lgtm) |
+| Observability | [OpenTelemetry](https://opentelemetry.io/) + [Grafana OTEL LGTM](https://github.com/grafana/docker-otel-lgtm) |
 | Config | [Koanf](https://github.com/knadh/koanf) |
-| Testing | testify, mockery, [testcontainers-go](https://golang.testcontainers.org/) |
+| Testing | testify, mockery, [testcontainers-go](https://golang.testcontainers.org/), [rapid](https://pgregory.net/rapid) |
 | Component tests | Python + [Behave](https://behave.readthedocs.io/) (BDD) |

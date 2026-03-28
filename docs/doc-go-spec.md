@@ -69,16 +69,28 @@ Required doc.go sections:
 
 | Package | Layer | GoFiles |
 |---------|-------|---------|
-| `logic/game/board` | logic | 5 |
-| `logic/game/mission` | logic | 3 |
-| `logic/game/move/attack` | logic | 4 |
-| `logic/game/move/cards` | logic | 4 |
-| `logic/game/move/conquer` | logic | 4 |
-| `logic/game/move/deploy` | logic | 4 |
-| `logic/game/move/reinforce` | logic | 4 |
-| `logic/game/phase` | logic | 3 |
-| `logic/game/player` | logic | 3 |
-| `testonly` | test | 5 |
+| `logic/game/advancement` | logic | 3 |
+| `logic/game/board` | logic | 6 |
+| `logic/game/card` | logic | 3 |
+| `logic/game/creation` | logic | 3 |
+| `logic/game/mission` | logic | 4 |
+| `logic/game/move/attack` | logic | 5 |
+| `logic/game/move/attack/dice` | logic | 3 |
+| `logic/game/move/cards` | logic | 5 |
+| `logic/game/move/conquer` | logic | 5 |
+| `logic/game/move/deploy` | logic | 5 |
+| `logic/game/move/orchestration` | logic | 3 |
+| `logic/game/move/reinforce` | logic | 5 |
+| `logic/game/phase` | logic | 4 |
+| `logic/game/player` | logic | 4 |
+| `logic/game/region` | logic | 3 |
+| `logic/game/snapshot` | logic | 3 |
+| `logic/game/state` | logic | 3 |
+| `logic/lobby/creation` | logic | 3 |
+| `logic/lobby/management` | logic | 3 |
+| `logic/lobby/start` | logic | 3 |
+| `logic/lobby/state` | logic | 3 |
+| `testonly` | test | 6 |
 
 ### Lightweight-tier packages
 
@@ -107,31 +119,18 @@ All other non-excluded packages. Required doc.go sections:
 | `events/lobby` | events-domain |
 | `events/logger` | events |
 | `logic/errors` | shared |
-| `logic/game/advancement` | logic |
-| `logic/game/card` | logic |
-| `logic/game/creation` | logic |
 | `logic/game/headlines` | logic |
 | `logic/game/mission/checker` | logic |
-| `logic/game/move/attack/dice` | logic |
 | `logic/game/move/attack/dice/roller` | logic |
-| `logic/game/move/orchestration` | logic |
 | `logic/game/move/orchestration/logging` | logic |
 | `logic/game/move/orchestration/validation` | logic |
 | `logic/game/move/validation` | logic |
-| `logic/game/region` | logic |
 | `logic/game/region/assignment` | logic |
-| `logic/game/snapshot` | logic |
-| `logic/game/state` | logic |
 | `logic/game/timing` | logic |
-| `logic/lobby/creation` | logic |
-| `logic/lobby/management` | logic |
-| `logic/lobby/start` | logic |
-| `logic/lobby/state` | logic |
 | `metrics` | infrastructure |
 | `rand` | infrastructure |
 | `slog` | infrastructure |
 | `testing/invariant` | test |
-| `testonly` | test |
 | `tracing` | infrastructure |
 | `upgradablerw_mutex` | infrastructure |
 | `web/game/controller` | web |
@@ -155,9 +154,8 @@ All other non-excluded packages. Required doc.go sections:
 | `web/ws/message` | web |
 
 Note: Packages with `service.go` and 2 or fewer non-test GoFiles are
-classified as lightweight (e.g., `logic/game/move/orchestration` has 2 files).
-The `logic/game/move/service` package has only 1 file and is classified as a
-wiring root.
+classified as lightweight. The `logic/game/move/service` package has only
+1 file and is classified as a wiring root.
 
 ## Templates
 
