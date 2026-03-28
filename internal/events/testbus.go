@@ -6,9 +6,10 @@ import (
 )
 
 // TestBus is a synchronous Bus implementation for unit tests. It captures all
-// emitted events in order and dispatches to handlers in the calling goroutine
-// (no safego.Go, no context detachment). Exported because test code in other
-// packages needs to construct it.
+// emitted events in order and dispatches to handlers in the calling goroutine.
+// No linked spans, no goroutines, no detachContext. Dispatch order: OnAll before
+// OnType (same as production bus). Exported because test code in other packages
+// needs to construct it.
 type TestBus struct {
 	mu     sync.Mutex
 	events []Event

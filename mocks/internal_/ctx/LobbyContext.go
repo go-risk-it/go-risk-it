@@ -92,52 +92,41 @@ func (_c *LobbyContext_Deadline_Call) RunAndReturn(run func() (time.Time, bool))
 	return _c
 }
 
-// Detach provides a mock function for the type LobbyContext
-func (_mock *LobbyContext) Detach(timeout time.Duration) (context.Context, context.CancelFunc) {
-	ret := _mock.Called(timeout)
+// DetachOnto provides a mock function for the type LobbyContext
+func (_mock *LobbyContext) DetachOnto(base context.Context) context.Context {
+	ret := _mock.Called(base)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Detach")
+		panic("no return value specified for DetachOnto")
 	}
 
 	var r0 context.Context
-	var r1 context.CancelFunc
-	if returnFunc, ok := ret.Get(0).(func(time.Duration) (context.Context, context.CancelFunc)); ok {
-		return returnFunc(timeout)
-	}
-	if returnFunc, ok := ret.Get(0).(func(time.Duration) context.Context); ok {
-		r0 = returnFunc(timeout)
+	if returnFunc, ok := ret.Get(0).(func(context.Context) context.Context); ok {
+		r0 = returnFunc(base)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(context.Context)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(time.Duration) context.CancelFunc); ok {
-		r1 = returnFunc(timeout)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(context.CancelFunc)
-		}
-	}
-	return r0, r1
+	return r0
 }
 
-// LobbyContext_Detach_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Detach'
-type LobbyContext_Detach_Call struct {
+// LobbyContext_DetachOnto_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DetachOnto'
+type LobbyContext_DetachOnto_Call struct {
 	*mock.Call
 }
 
-// Detach is a helper method to define mock.On call
-//   - timeout time.Duration
-func (_e *LobbyContext_Expecter) Detach(timeout interface{}) *LobbyContext_Detach_Call {
-	return &LobbyContext_Detach_Call{Call: _e.mock.On("Detach", timeout)}
+// DetachOnto is a helper method to define mock.On call
+//   - base context.Context
+func (_e *LobbyContext_Expecter) DetachOnto(base interface{}) *LobbyContext_DetachOnto_Call {
+	return &LobbyContext_DetachOnto_Call{Call: _e.mock.On("DetachOnto", base)}
 }
 
-func (_c *LobbyContext_Detach_Call) Run(run func(timeout time.Duration)) *LobbyContext_Detach_Call {
+func (_c *LobbyContext_DetachOnto_Call) Run(run func(base context.Context)) *LobbyContext_DetachOnto_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 time.Duration
+		var arg0 context.Context
 		if args[0] != nil {
-			arg0 = args[0].(time.Duration)
+			arg0 = args[0].(context.Context)
 		}
 		run(
 			arg0,
@@ -146,12 +135,12 @@ func (_c *LobbyContext_Detach_Call) Run(run func(timeout time.Duration)) *LobbyC
 	return _c
 }
 
-func (_c *LobbyContext_Detach_Call) Return(context1 context.Context, cancelFunc context.CancelFunc) *LobbyContext_Detach_Call {
-	_c.Call.Return(context1, cancelFunc)
+func (_c *LobbyContext_DetachOnto_Call) Return(context1 context.Context) *LobbyContext_DetachOnto_Call {
+	_c.Call.Return(context1)
 	return _c
 }
 
-func (_c *LobbyContext_Detach_Call) RunAndReturn(run func(timeout time.Duration) (context.Context, context.CancelFunc)) *LobbyContext_Detach_Call {
+func (_c *LobbyContext_DetachOnto_Call) RunAndReturn(run func(base context.Context) context.Context) *LobbyContext_DetachOnto_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -15,6 +15,8 @@ type Event interface {
 	ToRecord() map[string]any
 }
 
-// Handler processes a single event. Handlers are invoked by the bus in separate
-// goroutines with detached contexts. Panics are recovered by safego.Go.
+// Handler processes a single event. The bus invokes handlers sequentially within a
+// single goroutine per event (OnAll before OnType), each with a detached context
+// carrying a linked span. Panics are recovered per handler — a panicking handler does
+// not prevent subsequent handlers from executing.
 type Handler func(ctx context.Context, event Event)

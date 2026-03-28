@@ -24,6 +24,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.opentelemetry.io/otel/trace/noop"
 )
 
@@ -820,4 +824,155 @@ func TestHandlePlayerConnected_NoBroadcastCalls(t *testing.T) {
 	bus := events.NewTestBus()
 	pub.Register(bus)
 	bus.Emit(gameCtx, event)
+}
+
+// ---------------------------------------------------------------------------
+// OTel setup helper — installs a real TracerProvider with InMemoryExporter,
+// restores the previous global on cleanup.
+// ---------------------------------------------------------------------------
+
+func setupOTelExporter(t *testing.T) *tracetest.InMemoryExporter {
+	t.Helper()
+
+	exporter := tracetest.NewInMemoryExporter()
+	tracerProvider := sdktrace.NewTracerProvider(sdktrace.WithSyncer(exporter))
+
+	prev := otel.GetTracerProvider()
+	otel.SetTracerProvider(tracerProvider)
+
+	t.Cleanup(func() {
+		otel.SetTracerProvider(prev)
+		_ = tracerProvider.Shutdown(context.Background())
+	})
+
+	return exporter
+}
+
+// ---------------------------------------------------------------------------
+// Test: MoveExecuted — creates consumer.public_state child span
+// ---------------------------------------------------------------------------
+
+//nolint:paralleltest // swaps global TracerProvider
+func TestHandleMoveExecuted_CreatesPublicStateSpan(
+	t *testing.T,
+) {
+	// Not t.Parallel() — swaps global TracerProvider.
+	exporter := setupOTelExporter(t)
+
+	testDeps := newDeps(t)
+	pub := testDeps.newPublisher()
+	gameCtx := testGameContext()
+	event := testMoveExecutedEvent()
+
+	// Setup snapshot and presence mocks for public state path.
+	testDeps.snapSvc.EXPECT().
+		GetPublicSnapshot(mock.Anything).
+		Return(testPublicSnapshot(), nil)
+	testDeps.snapSvc.EXPECT().
+		GetPrivateSnapshotsByUser(mock.Anything).
+		Return(testPrivateSnapshots(), nil)
+	testDeps.presence.EXPECT().
+		GetConnectedPlayers(mock.Anything).
+		Return([]string{testUserID, testUserID2})
+
+	testDeps.writer.EXPECT().
+		Broadcast(mock.Anything, mock.Anything).
+		Return().
+		Times(4) // 3 public + 1 move history
+	testDeps.writer.EXPECT().
+		WriteMessage(mock.Anything, mock.Anything).
+		Return().
+		Times(4) // 2 messages * 2 players
+
+	// TestBus dispatches synchronously — spans are recorded before assertion.
+	bus := events.NewTestBus()
+	pub.Register(bus)
+	bus.Emit(gameCtx, event)
+
+	// Find the consumer.public_state span in recorded spans.
+	stubs := exporter.GetSpans()
+	var found bool
+
+	for _, stub := range stubs {
+		if stub.Name == "consumer.public_state" {
+			found = true
+
+			break
+		}
+	}
+
+	require.True(t, found,
+		"expected span named 'consumer.public_state' in recorded spans, got: %v",
+		spanNames(stubs))
+}
+
+// ---------------------------------------------------------------------------
+// Test: MoveExecuted — public state span records error on snapshot failure
+// ---------------------------------------------------------------------------
+
+//nolint:paralleltest // swaps global TracerProvider
+func TestHandleMoveExecuted_PublicStateSpan_RecordsError(
+	t *testing.T,
+) {
+	// Not t.Parallel() — swaps global TracerProvider.
+	exporter := setupOTelExporter(t)
+
+	testDeps := newDeps(t)
+	pub := testDeps.newPublisher()
+	gameCtx := testGameContext()
+	event := testMoveExecutedEvent()
+
+	snapshotErr := assert.AnError
+
+	// Public snapshot fails.
+	testDeps.snapSvc.EXPECT().
+		GetPublicSnapshot(mock.Anything).
+		Return(nil, snapshotErr)
+
+	// Private states and move log still run (independent safeOps).
+	testDeps.snapSvc.EXPECT().
+		GetPrivateSnapshotsByUser(mock.Anything).
+		Return(testPrivateSnapshots(), nil)
+	testDeps.writer.EXPECT().
+		WriteMessage(mock.Anything, mock.Anything).
+		Return().
+		Times(4)
+	testDeps.writer.EXPECT().
+		Broadcast(mock.Anything, mock.Anything).
+		Return().
+		Times(1) // only move history (public state errored)
+
+	bus := events.NewTestBus()
+	pub.Register(bus)
+	bus.Emit(gameCtx, event)
+
+	// Find the consumer.public_state span and verify error status.
+	stubs := exporter.GetSpans()
+	var publicStateSpan *tracetest.SpanStub
+
+	for i := range stubs {
+		if stubs[i].Name == "consumer.public_state" {
+			publicStateSpan = &stubs[i]
+
+			break
+		}
+	}
+
+	require.NotNil(t, publicStateSpan,
+		"expected span named 'consumer.public_state' in recorded spans, got: %v",
+		spanNames(stubs))
+	require.Equal(t, codes.Error, publicStateSpan.Status.Code,
+		"span should have error status")
+	require.NotEmpty(t, publicStateSpan.Events,
+		"span should have recorded error event")
+}
+
+// spanNames extracts span names from stubs for diagnostic messages.
+func spanNames(stubs tracetest.SpanStubs) []string {
+	names := make([]string, len(stubs))
+	for i, s := range stubs {
+		names[i] = s.Name
+	}
+
+	return names
 }

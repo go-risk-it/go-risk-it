@@ -2,9 +2,8 @@ package ctx
 
 import (
 	"context"
-	"time"
 
-	"go.opentelemetry.io/otel/trace/noop"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type GameContext interface {
@@ -26,8 +25,11 @@ func (c *gameContext) GameID() int64 {
 	return c.gameID
 }
 
-func (c *gameContext) Detach(timeout time.Duration) (context.Context, context.CancelFunc) {
-	return DetachGameContextWithTimeout(c, timeout)
+func (c *gameContext) DetachOnto(base context.Context) context.Context {
+	return WithGameID(
+		WithUserID(WithSpan(base, trace.SpanFromContext(base)), c.UserID()),
+		c.gameID,
+	)
 }
 
 func (c *gameContext) WithBase(base context.Context) GameContext {
@@ -35,7 +37,7 @@ func (c *gameContext) WithBase(base context.Context) GameContext {
 		UserContext: &userContext{
 			TraceContext: &traceContext{
 				Context: base,
-				span:    c.Span(),
+				span:    trace.SpanFromContext(base),
 			},
 			userID: c.UserID(),
 		},
@@ -47,31 +49,5 @@ func WithGameID(ctx UserContext, gameID int64) GameContext {
 	return &gameContext{
 		UserContext: ctx,
 		gameID:      gameID,
-	}
-}
-
-// DetachGameContextWithTimeout creates a detached GameContext with a timeout.
-// The returned cancel function must be called to release resources.
-// This is useful for fire-and-forget goroutines that should be cancelled
-// if they don't complete within the timeout.
-func DetachGameContextWithTimeout(
-	original GameContext,
-	timeout time.Duration,
-) (GameContext, context.CancelFunc) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), timeout)
-
-	return detachGameContext(original, timeoutCtx), cancel
-}
-
-func detachGameContext(original GameContext, parent context.Context) GameContext {
-	traceCtx := WithSpan(parent, noop.Span{})
-	userCtx := &userContext{
-		TraceContext: traceCtx,
-		userID:       original.UserID(),
-	}
-
-	return &gameContext{
-		UserContext: userCtx,
-		gameID:      original.GameID(),
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/events"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/events/game"
@@ -15,8 +16,19 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/headlines"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/cards"
+	riskslog "github.com/go-risk-it/go-risk-it/internal/slog"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	"go.uber.org/fx"
 )
+
+// nopLifecycle satisfies fx.Lifecycle by discarding hooks. Used to construct a
+// real Bus without a full fx.App — the test manages shutdown explicitly via Close.
+type nopLifecycle struct{}
+
+func (nopLifecycle) Append(fx.Hook) {}
 
 // fixedTime provides a deterministic timestamp for all test events.
 var fixedTime = time.Date(2026, 3, 27, 14, 0, 0, 0, time.UTC)
@@ -274,4 +286,113 @@ func TestRegister_LogsAllEventTypes(t *testing.T) {
 			}
 		})
 	}
+}
+
+//nolint:paralleltest // swaps global TracerProvider
+func TestRegister_LogsTraceIDFromLinkedSpan(
+	t *testing.T,
+) {
+	// Setup: real TracerProvider + InMemoryExporter so spans are recorded.
+	exporter := tracetest.NewInMemoryExporter()
+	tracerProvider := sdktrace.NewTracerProvider(sdktrace.WithSyncer(exporter))
+	t.Cleanup(func() { _ = tracerProvider.Shutdown(context.Background()) })
+
+	// Swap global TracerProvider — the bus's startLinkedSpan uses otel.GetTracerProvider().
+	prev := otel.GetTracerProvider()
+	otel.SetTracerProvider(tracerProvider)
+	t.Cleanup(func() { otel.SetTracerProvider(prev) })
+
+	// Create a parent span simulating the HTTP handler trace (Trace 1).
+	tracer := tracerProvider.Tracer("test")
+	parentCtx, parentSpan := tracer.Start(context.Background(), "http-handler")
+	parentTraceID := parentSpan.SpanContext().TraceID()
+	parentSpan.End()
+
+	// Build a GameContext carrying the parent span so DetachOnto copies domain metadata.
+	traceCtx := ctx.WithSpan(parentCtx, parentSpan)
+	userCtx := ctx.WithUserID(traceCtx, "player1")
+	gameCtx := ctx.WithGameID(userCtx, 42)
+
+	// Create a ContextHandler-wrapped JSONHandler writing to a buffer.
+	// The ContextHandler extracts traceID/spanID from the detached context's linked span.
+	var buf bytes.Buffer
+	jsonHandler := slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelInfo})
+	contextHandler := riskslog.NewContextHandler(jsonHandler)
+
+	// Use the real async bus which runs detachContext + startLinkedSpan.
+	bus := events.NewBus(nopLifecycle{})
+
+	logger.Register(logger.Params{
+		Bus:    bus,
+		Logger: slog.New(contextHandler),
+	})
+
+	// Register a second OnAll handler to signal when handlers complete.
+	// The signal fires after the logger handler (OnAll dispatch is sequential).
+	done := make(chan struct{}, 1)
+	bus.OnAll(func(_ context.Context, _ events.Event) {
+		done <- struct{}{}
+	})
+
+	// Emit a game event with the GameContext as parent.
+	evt := gameevt.NewGameCreated(42, fixedTime, 4)
+	bus.Emit(gameCtx, evt)
+
+	// Wait for handlers to complete.
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("handler did not complete within timeout")
+	}
+
+	// Close the bus to ensure the dispatch goroutine finishes (deferred cancel ends
+	// the linked span, syncing it to the in-memory exporter via WithSyncer).
+	require.NoError(t, bus.Close(context.Background()))
+
+	// Parse the JSON log line.
+	var result map[string]any
+	require.NoError(t, json.Unmarshal(buf.Bytes(), &result),
+		"failed to unmarshal log output: %s", buf.String())
+
+	// Assert: traceID is present in log output.
+	loggedTraceID, traceIDFound := result["traceID"].(string)
+	require.True(t, traceIDFound, "traceID must be present in log output")
+	require.NotEmpty(t, loggedTraceID, "traceID must not be empty")
+
+	// Assert: traceID differs from the parent/trigger trace — proves it's from the linked span.
+	require.NotEqual(
+		t,
+		parentTraceID.String(),
+		loggedTraceID,
+		"logged traceID must differ from parent HTTP trace (must be from the linked span's new root trace)",
+	)
+
+	// Assert: spanID is present in log output.
+	loggedSpanID, spanIDFound := result["spanID"].(string)
+	require.True(t, spanIDFound, "spanID must be present in log output")
+	require.NotEmpty(t, loggedSpanID, "spanID must not be empty")
+
+	// Assert: the logged traceID matches a linked span from the exporter.
+	// The bus:game.created span should have the logged traceID.
+	stubs := exporter.GetSpans()
+
+	var linkedStub *tracetest.SpanStub
+	for i := range stubs {
+		if stubs[i].Name == "bus:game_created" {
+			linkedStub = &stubs[i]
+
+			break
+		}
+	}
+
+	require.NotNil(t, linkedStub, "bus:game_created span must be in recorded spans")
+	require.Equal(t, linkedStub.SpanContext.TraceID().String(), loggedTraceID,
+		"logged traceID must match the linked span's TraceID")
+	require.Equal(t, linkedStub.SpanContext.SpanID().String(), loggedSpanID,
+		"logged spanID must match the linked span's SpanID")
+
+	// Verify the linked span has a link back to the parent trace.
+	require.Len(t, linkedStub.Links, 1, "linked span must have exactly 1 link")
+	require.Equal(t, parentTraceID, linkedStub.Links[0].SpanContext.TraceID(),
+		"linked span's link must reference the parent HTTP trace")
 }
