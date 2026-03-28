@@ -27,7 +27,7 @@ graph TD
     subgraph Infrastructure
         PG[("PostgreSQL")]
         AUTH["GoTrue (Supabase)\nvia Kong"]
-        JAEGER["Jaeger\ntracing"]
+        LGTM["Grafana OTEL LGTM\ntracing + metrics + logs"]
     end
 
     FE -->|"REST + WebSocket"| WEB
@@ -35,7 +35,7 @@ graph TD
     WEB --> LOGIC
     LOGIC --> DATA
     DATA --> PG
-    WEB -->|"OTLP"| JAEGER
+    WEB -->|"OTLP"| LGTM
 ```
 
 See [Architecture Docs](docs/architecture.md) for the full system design, Go package structure, move execution flow, and API reference.
@@ -62,7 +62,7 @@ See [Architecture Docs](docs/architecture.md) for the full system design, Go pac
 
 ## Quick Start
 
-Start the full stack (backend, PostgreSQL, Supabase auth, Jaeger):
+Start the full stack (backend, PostgreSQL, Supabase auth, Grafana OTEL LGTM):
 
 ```bash
 make run
@@ -76,7 +76,7 @@ Then start the [frontend](https://github.com/go-risk-it/go-risk-it-frontend) to 
 
 The game requires both the backend and frontend running together:
 
-1. **Backend** — Start all backend services (Go server, PostgreSQL, Supabase auth, Jaeger):
+1. **Backend** — Start all backend services (Go server, PostgreSQL, Supabase auth, Grafana OTEL LGTM):
    ```bash
    make run
    ```
@@ -184,8 +184,8 @@ internal/
 | Dependency injection | [Uber Fx](https://github.com/uber-go/fx) |
 | Auth | [GoTrue](https://github.com/supabase/gotrue) (Supabase) via JWT |
 | API gateway | [Kong](https://konghq.com/) |
-| Logging | [Zap](https://github.com/uber-go/zap) |
-| Tracing | [OpenTelemetry](https://opentelemetry.io/) + [Jaeger](https://www.jaegertracing.io/) |
+| Logging | [log/slog](https://pkg.go.dev/log/slog) (structured JSON) |
+| Tracing | [OpenTelemetry](https://opentelemetry.io/) + [Grafana OTEL LGTM](https://github.com/grafana/docker-otel-lgtm) |
 | Config | [Koanf](https://github.com/knadh/koanf) |
 | Testing | testify, mockery, [testcontainers-go](https://golang.testcontainers.org/) |
 | Component tests | Python + [Behave](https://behave.readthedocs.io/) (BDD) |

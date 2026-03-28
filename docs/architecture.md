@@ -15,7 +15,7 @@ graph LR
         Kong[Kong API Gateway :8000]
         GoTrue[GoTrue Auth :9999]
         PG[(PostgreSQL :5432)]
-        Jaeger[Jaeger :16686]
+        LGTM[Grafana OTEL LGTM :3000]
     end
 
     FE -- "/api/* (REST)\n/ws/* (WebSocket)" --> BE
@@ -23,7 +23,7 @@ graph LR
     Kong --> GoTrue
     GoTrue --> PG
     BE --> PG
-    BE -- "OTLP" --> Jaeger
+    BE -- "OTLP" --> LGTM
 ```
 
 | Service | Port | Purpose |
@@ -33,7 +33,7 @@ graph LR
 | Kong | 8000 | API gateway for auth routes |
 | GoTrue | 9999 | Supabase auth (JWT issuance) |
 | PostgreSQL | 5432 | Persistent storage (game + lobby schemas) |
-| Jaeger | 16686 | Distributed tracing UI |
+| Grafana OTEL LGTM | 3000 | Observability stack (traces, metrics, logs) |
 
 ## Go Package Architecture
 
@@ -47,7 +47,7 @@ graph TD
         wsm["ws/\nWebSocket manager"]
         ctrl["controller/\nRequest → domain"]
         mw["middleware/\nJWT auth"]
-        sig_w["signals/\nWS broadcast"]
+        pub["publisher/\nEvent consumers"]
     end
 
     subgraph Logic["Logic Layer (internal/logic)"]
@@ -89,7 +89,7 @@ The application uses [Uber Fx](https://github.com/uber-go/fx) for compile-time-s
 ```
 app.Module
 ├── config.Module        # Koanf config loading
-├── loggerfx.Module      # Zap logger setup
+├── slog.Module          # Structured JSON logging (log/slog)
 ├── data.Module          # DB pools, SQLC queries, migrations
 │   ├── game.Module
 │   └── lobby.Module
@@ -97,8 +97,8 @@ app.Module
 │   ├── game.Module      # Game engine (move/, phase/, mission/, card/, board/, ...)
 │   └── lobby.Module     # Lobby management
 ├── web.Module           # HTTP/WS servers
-│   ├── game.Module      # Game REST + WS + signal handlers
-│   ├── lobby.Module     # Lobby REST + WS + signal handlers
+│   ├── game.Module      # Game REST + WS + event consumers
+│   ├── lobby.Module     # Lobby REST + WS + event consumers
 │   ├── middleware.Module # JWT auth middleware
 │   ├── mux.Module       # Route registration
 │   ├── nbio.Module      # nbio HTTP engine
@@ -121,7 +121,7 @@ sequenceDiagram
     participant Orchestrator as Orchestrator[T]<br/>(logic/move/orchestration)
     participant Service as AttackService<br/>(logic/move/attack)
     participant DB as PostgreSQL
-    participant Signal as GameStateChangedSignal
+    participant Bus as EventBus
     participant WS as WebSocket Clients
 
     Client->>Handler: POST /moves/attacks
@@ -143,8 +143,8 @@ sequenceDiagram
     Service->>DB: INSERT INTO phase ...
     Orchestrator->>DB: Commit TX
 
-    Orchestrator--)Signal: Emit(GameStateChanged)
-    Signal--)WS: Broadcast updated state
+    Orchestrator--)Bus: Emit(MoveExecuted)
+    Bus--)WS: Broadcast updated state
     WS--)Client: gameState, boardState, playerState
 ```
 
@@ -276,13 +276,13 @@ stateDiagram-v2
 
 ## REST API Reference
 
-All endpoints except `/healthz` require a valid JWT in the `Authorization: Bearer {token}` header.
+All endpoints except `/status` require a valid JWT in the `Authorization: Bearer {token}` header.
 
 ### Health
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/healthz` | Health check (no auth) |
+| GET | `/status` | Health check (no auth) |
 
 ### Lobby
 
@@ -385,11 +385,12 @@ Two PostgreSQL schemas, auto-migrated on startup via [golang-migrate](https://gi
 
 ## Observability
 
-The backend emits traces via [OpenTelemetry](https://opentelemetry.io/) to Jaeger:
+The backend emits traces, metrics, and logs via [OpenTelemetry](https://opentelemetry.io/) to [Grafana OTEL LGTM](https://github.com/grafana/docker-otel-lgtm):
 
-- **Protocol**: OTLP over HTTP (`http://jaeger:4318`)
+- **Protocol**: OTLP over HTTP (`http://lgtm:4318`)
 - **Service name**: `risk-it`
-- **Jaeger UI**: http://localhost:16686
+- **Grafana UI**: http://localhost:3000
+- **EventBus**: Post-commit events use OTel linked spans to connect transaction traces with async consumer traces
 
 All REST handlers and database operations are instrumented with spans for request tracing.
 
