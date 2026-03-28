@@ -24,6 +24,8 @@ func (s *StateController) GetLobbyState(ctx ctx.LobbyContext) (messaging.LobbySt
 	lobby, err := s.stateService.GetLobbyState(ctx)
 	if err != nil {
 		slog.WarnContext(ctx, "failed to get lobby state", "error", err)
+
+		return messaging.LobbyState{}, err
 	}
 
 	return messaging.LobbyState{

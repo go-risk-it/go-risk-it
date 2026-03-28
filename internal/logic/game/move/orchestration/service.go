@@ -9,12 +9,15 @@ import (
 	dbutil "github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/events"
+	gameevt "github.com/go-risk-it/go-risk-it/internal/events/game"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack"
+	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/cards"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/logging"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/validation"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/timing"
 	"github.com/go-risk-it/go-risk-it/internal/metrics"
@@ -29,16 +32,25 @@ type Orchestrator[T, R any] interface {
 	OrchestrateMove(ctx gamectx.GameContext, move T) error
 }
 
+// moveOutcome carries the committed transaction result for post-commit event emission.
+type moveOutcome[R any] struct {
+	targetPhase sqlc.GamePhaseType
+	gameOver    bool
+	result      R
+	moveLog     sqlc.GameMoveLog
+	turn        int64
+}
+
 type orchestrator[T, R any] struct {
-	querier                db.Querier
-	service                service.Service[T, R]
-	gameService            state.Service
-	loggingService         logging.Service
-	missionService         mission.Service
-	validationService      validation.Service
-	gameStateChangedSignal signals.GameStateChangedSignal
-	metrics                *metrics.Metrics
-	gameTiming             *timing.GameTiming
+	querier           db.Querier
+	service           service.Service[T, R]
+	gameService       state.Service
+	loggingService    logging.Service
+	missionService    mission.Service
+	validationService validation.Service
+	bus               events.Bus
+	metrics           *metrics.Metrics
+	gameTiming        *timing.GameTiming
 }
 
 var _ Orchestrator[any, any] = (*orchestrator[any, any])(nil)
@@ -50,20 +62,20 @@ func NewOrchestrator[T, R any](
 	loggingService logging.Service,
 	missionService mission.Service,
 	validationService validation.Service,
-	gameStateChangedSignal signals.GameStateChangedSignal,
+	bus events.Bus,
 	metrics *metrics.Metrics,
 	gameTiming *timing.GameTiming,
 ) Orchestrator[T, R] {
 	return &orchestrator[T, R]{
-		querier:                querier,
-		service:                service,
-		gameService:            gameService,
-		loggingService:         loggingService,
-		missionService:         missionService,
-		validationService:      validationService,
-		gameStateChangedSignal: gameStateChangedSignal,
-		metrics:                metrics,
-		gameTiming:             gameTiming,
+		querier:           querier,
+		service:           service,
+		gameService:       gameService,
+		loggingService:    loggingService,
+		missionService:    missionService,
+		validationService: validationService,
+		bus:               bus,
+		metrics:           metrics,
+		gameTiming:        gameTiming,
 	}
 }
 
@@ -78,7 +90,7 @@ func (s *orchestrator[T, R]) OrchestrateMove(
 
 	start := time.Now()
 
-	targetPhase, err := s.executeTransaction(ctx, move)
+	outcome, err := s.executeTransaction(ctx, move)
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
@@ -87,7 +99,7 @@ func (s *orchestrator[T, R]) OrchestrateMove(
 	}
 
 	s.recordMetrics(ctx, start)
-	s.emitSignal(ctx, targetPhase)
+	s.emitEvents(ctx, outcome)
 
 	return nil
 }
@@ -95,23 +107,23 @@ func (s *orchestrator[T, R]) OrchestrateMove(
 func (s *orchestrator[T, R]) executeTransaction(
 	ctx gamectx.GameContext,
 	move T,
-) (sqlc.GamePhaseType, error) {
+) (moveOutcome[R], error) {
 	return dbutil.InTransactionWithIsolation(
 		s.querier, ctx, s.metrics, pgx.RepeatableRead,
-		func(querier db.Querier) (sqlc.GamePhaseType, error) {
+		func(querier db.Querier) (moveOutcome[R], error) {
 			phase := s.service.PhaseType()
 
 			gameState, err := s.gameService.GetGameStateWithQuerier(
 				ctx, querier,
 			)
 			if err != nil {
-				return "", fmt.Errorf(
+				return moveOutcome[R]{}, fmt.Errorf(
 					"unable to get game state: %w", err,
 				)
 			}
 
 			if gameState.Phase != phase {
-				return "", domainerrors.NewConflictErrorf(
+				return moveOutcome[R]{}, domainerrors.NewConflictErrorf(
 					"game is in phase %s, expected %s",
 					gameState.Phase, phase,
 				)
@@ -139,30 +151,14 @@ func (s *orchestrator[T, R]) recordMetrics(
 	)
 }
 
-func (s *orchestrator[T, R]) emitSignal(
-	ctx gamectx.GameContext,
-	targetPhase sqlc.GamePhaseType,
-) {
-	_, signalSpan := tracing.StartGameSpan(
-		ctx, "game.move.signal",
-		attribute.String("phase", string(s.service.PhaseType())),
-		attribute.String("target_phase", string(targetPhase)),
-	)
-
-	s.gameStateChangedSignal.Emit(ctx, signals.GameStateChangedData{
-		FromPhase: s.service.PhaseType(),
-		ToPhase:   targetPhase,
-	})
-	signalSpan.End()
-}
-
 func (s *orchestrator[T, R]) orchestrateMoveWithQuerier(
 	ctx gamectx.GameContext,
 	querier db.Querier,
 	move T,
 	gameState *state.Game,
-) (sqlc.GamePhaseType, error) {
+) (moveOutcome[R], error) {
 	phase := string(s.service.PhaseType())
+	turn := gameState.Turn
 	slog.InfoContext(ctx, "orchestrating move", "move", move)
 
 	if err := tracing.SpanStep(
@@ -173,19 +169,30 @@ func (s *orchestrator[T, R]) orchestrateMoveWithQuerier(
 			)
 		},
 	); err != nil {
-		return "", fmt.Errorf("invalid move: %w", err)
+		return moveOutcome[R]{}, fmt.Errorf("invalid move: %w", err)
 	}
 
-	performResult, err := s.performAndLog(
+	performResult, moveLog, err := s.performAndLog(
 		ctx, querier, move, phase,
 	)
 	if err != nil {
-		return "", err
+		return moveOutcome[R]{}, err
 	}
 
-	return s.resolveTargetPhase(
+	targetPhase, gameOver, err := s.resolveTargetPhase(
 		ctx, querier, phase, performResult,
 	)
+	if err != nil {
+		return moveOutcome[R]{}, err
+	}
+
+	return moveOutcome[R]{
+		targetPhase: targetPhase,
+		gameOver:    gameOver,
+		result:      performResult,
+		moveLog:     moveLog,
+		turn:        turn,
+	}, nil
 }
 
 func (s *orchestrator[T, R]) performAndLog(
@@ -193,7 +200,7 @@ func (s *orchestrator[T, R]) performAndLog(
 	querier db.Querier,
 	move T,
 	phase string,
-) (R, error) {
+) (R, sqlc.GameMoveLog, error) {
 	var performResult R
 
 	if err := tracing.SpanStep(
@@ -209,23 +216,28 @@ func (s *orchestrator[T, R]) performAndLog(
 	); err != nil {
 		var zero R
 
-		return zero, fmt.Errorf("unable to perform move: %w", err)
+		return zero, sqlc.GameMoveLog{}, fmt.Errorf("unable to perform move: %w", err)
 	}
+
+	var moveLog sqlc.GameMoveLog
 
 	if err := tracing.SpanStep(
 		ctx, "game.move.log", phase,
 		func(spanCtx gamectx.GameContext) error {
-			return s.loggingService.LogMove(
+			var logErr error
+			moveLog, logErr = s.loggingService.LogMove(
 				spanCtx, querier, move, performResult,
 			)
+
+			return logErr
 		},
 	); err != nil {
 		var zero R
 
-		return zero, fmt.Errorf("unable to log move: %w", err)
+		return zero, sqlc.GameMoveLog{}, fmt.Errorf("unable to log move: %w", err)
 	}
 
-	return performResult, nil
+	return performResult, moveLog, nil
 }
 
 func (s *orchestrator[T, R]) resolveTargetPhase(
@@ -233,18 +245,23 @@ func (s *orchestrator[T, R]) resolveTargetPhase(
 	querier db.Querier,
 	phase string,
 	performResult R,
-) (sqlc.GamePhaseType, error) {
+) (sqlc.GamePhaseType, bool, error) {
 	if accomplished, err := s.checkMission(
 		ctx, querier, phase,
 	); err != nil {
-		return "", err
+		return "", false, err
 	} else if accomplished {
-		return s.service.PhaseType(), nil
+		return s.service.PhaseType(), true, nil
 	}
 
-	return s.walkAndAdvance(
+	targetPhase, err := s.walkAndAdvance(
 		ctx, querier, phase, performResult,
 	)
+	if err != nil {
+		return "", false, err
+	}
+
+	return targetPhase, false, nil
 }
 
 func (s *orchestrator[T, R]) checkMission(
@@ -324,6 +341,69 @@ func (s *orchestrator[T, R]) walkAndAdvance(
 	)
 
 	return targetPhase, nil
+}
+
+func (s *orchestrator[T, R]) emitEvents(
+	ctx gamectx.GameContext,
+	outcome moveOutcome[R],
+) {
+	now := time.Now()
+	attackResult, cardsResult := extractResults(outcome.result, s.service.PhaseType())
+
+	s.bus.Emit(ctx, gameevt.NewMoveExecuted(
+		ctx.GameID(),
+		ctx.UserID(),
+		now,
+		s.service.PhaseType(),
+		outcome.moveLog,
+		outcome.targetPhase,
+		outcome.gameOver,
+		outcome.turn,
+		attackResult,
+		cardsResult,
+	))
+
+	if outcome.targetPhase != s.service.PhaseType() {
+		s.bus.Emit(ctx, gameevt.NewPhaseTransitioned(
+			ctx.GameID(),
+			ctx.UserID(),
+			now,
+			s.service.PhaseType(),
+			outcome.targetPhase,
+			outcome.turn,
+		))
+	}
+
+	if outcome.gameOver {
+		s.bus.Emit(ctx, gameevt.NewGameCompleted(
+			ctx.GameID(),
+			ctx.UserID(),
+			now,
+			outcome.turn,
+		))
+	}
+}
+
+// extractResults bridges generic R to concrete action-specific result types.
+// It switches on phaseType (not R) to determine the correct type assertion.
+func extractResults[R any](
+	result R,
+	phaseType sqlc.GamePhaseType,
+) (*attack.MoveResult, *cards.MoveResult) {
+	switch phaseType {
+	case sqlc.GamePhaseTypeATTACK:
+		if ar, ok := any(result).(*attack.MoveResult); ok {
+			return ar, nil
+		}
+	case sqlc.GamePhaseTypeCARDS:
+		if cr, ok := any(result).(*cards.MoveResult); ok {
+			return nil, cr
+		}
+	default:
+		// DEPLOY, CONQUER, REINFORCE produce no typed result.
+	}
+
+	return nil, nil
 }
 
 func (s *orchestrator[T, R]) recordGameFinished(

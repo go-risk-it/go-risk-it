@@ -8,29 +8,24 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
-	"github.com/go-risk-it/go-risk-it/internal/safego"
 )
 
 type Service interface {
 	GetMoveLogs(ctx ctx.GameContext, limit int64) ([]sqlc.GetMoveLogsRow, error)
-	LogMove(ctx ctx.GameContext, querier db.Querier, move, result any) error
+	LogMove(ctx ctx.GameContext, querier db.Querier, move, result any) (sqlc.GameMoveLog, error)
 }
 
 type service struct {
-	querier             db.Querier
-	movePerformedSignal signals.MovePerformedSignal
+	querier db.Querier
 }
 
 var _ Service = (*service)(nil)
 
 func New(
 	querier db.Querier,
-	movePerformedSignal signals.MovePerformedSignal,
 ) Service {
 	return &service{
-		querier:             querier,
-		movePerformedSignal: movePerformedSignal,
+		querier: querier,
 	}
 }
 
@@ -51,17 +46,21 @@ func (s *service) GetMoveLogs(
 	return moveLogs, nil
 }
 
-func (s *service) LogMove(ctx ctx.GameContext, querier db.Querier, move, result any) error {
+func (s *service) LogMove(
+	ctx ctx.GameContext,
+	querier db.Querier,
+	move, result any,
+) (sqlc.GameMoveLog, error) {
 	moveJSON, err := json.Marshal(move)
 	if err != nil {
-		return fmt.Errorf("failed to marshal move: %w", err)
+		return sqlc.GameMoveLog{}, fmt.Errorf("failed to marshal move: %w", err)
 	}
 
 	var resultJSON []byte
 	if result != nil {
 		resultJSON, err = json.Marshal(result)
 		if err != nil {
-			return fmt.Errorf("failed to marshal result: %w", err)
+			return sqlc.GameMoveLog{}, fmt.Errorf("failed to marshal result: %w", err)
 		}
 	}
 
@@ -72,14 +71,8 @@ func (s *service) LogMove(ctx ctx.GameContext, querier db.Querier, move, result 
 		Result:   resultJSON,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to insert move log: %w", err)
+		return sqlc.GameMoveLog{}, fmt.Errorf("failed to insert move log: %w", err)
 	}
 
-	safego.Go(ctx, func() {
-		s.movePerformedSignal.Emit(ctx, signals.MovePerformedData{
-			MoveLog: moveLog,
-		})
-	})
-
-	return nil
+	return moveLog, nil
 }

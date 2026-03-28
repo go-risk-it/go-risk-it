@@ -252,6 +252,68 @@ func (_c *Service_GetBoardRegions_Call) RunAndReturn(run func(ctx1 context.Conte
 	return _c
 }
 
+// GetContinents provides a mock function for the type Service
+func (_mock *Service) GetContinents(ctx1 ctx.GameContext) (board.Continents, error) {
+	ret := _mock.Called(ctx1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetContinents")
+	}
+
+	var r0 board.Continents
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext) (board.Continents, error)); ok {
+		return returnFunc(ctx1)
+	}
+	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext) board.Continents); ok {
+		r0 = returnFunc(ctx1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(board.Continents)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(ctx.GameContext) error); ok {
+		r1 = returnFunc(ctx1)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Service_GetContinents_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetContinents'
+type Service_GetContinents_Call struct {
+	*mock.Call
+}
+
+// GetContinents is a helper method to define mock.On call
+//   - ctx1 ctx.GameContext
+func (_e *Service_Expecter) GetContinents(ctx1 interface{}) *Service_GetContinents_Call {
+	return &Service_GetContinents_Call{Call: _e.mock.On("GetContinents", ctx1)}
+}
+
+func (_c *Service_GetContinents_Call) Run(run func(ctx1 ctx.GameContext)) *Service_GetContinents_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 ctx.GameContext
+		if args[0] != nil {
+			arg0 = args[0].(ctx.GameContext)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *Service_GetContinents_Call) Return(continents board.Continents, err error) *Service_GetContinents_Call {
+	_c.Call.Return(continents, err)
+	return _c
+}
+
+func (_c *Service_GetContinents_Call) RunAndReturn(run func(ctx1 ctx.GameContext) (board.Continents, error)) *Service_GetContinents_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetContinentsControlledByPlayer provides a mock function for the type Service
 func (_mock *Service) GetContinentsControlledByPlayer(ctx1 ctx.GameContext, querier db.Querier, playerID int64) ([]*board.Continent, error) {
 	ret := _mock.Called(ctx1, querier, playerID)

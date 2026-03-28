@@ -3,11 +3,14 @@ package creation
 import (
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	dbutil "github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/events"
+	gameevt "github.com/go-risk-it/go-risk-it/internal/events/game"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/card"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
@@ -33,6 +36,7 @@ type Service interface {
 
 type service struct {
 	querier        db.Querier
+	bus            events.Bus
 	cardService    card.Service
 	missionService mission.Service
 	playerService  player.Service
@@ -45,6 +49,7 @@ var _ Service = (*service)(nil)
 
 func NewService(
 	querier db.Querier,
+	bus events.Bus,
 	cardService card.Service,
 	missionService mission.Service,
 	playerService player.Service,
@@ -54,6 +59,7 @@ func NewService(
 ) Service {
 	return &service{
 		querier:        querier,
+		bus:            bus,
 		playerService:  playerService,
 		missionService: missionService,
 		regionService:  regionService,
@@ -83,6 +89,8 @@ func (s *service) CreateGame(
 	s.metrics.GamesCreated.Add(ctx, 1)
 	s.metrics.ActiveGames.Add(ctx, 1)
 	s.gameTiming.RecordStart(gameID)
+
+	s.bus.Emit(ctx, gameevt.NewGameCreated(gameID, time.Now(), len(players)))
 
 	return gameID, nil
 }

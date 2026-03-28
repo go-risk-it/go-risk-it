@@ -2,12 +2,12 @@ package advancement
 
 import (
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
+	"github.com/go-risk-it/go-risk-it/internal/events"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/cards"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/validation"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/reinforce"
 	moveservice "github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"go.uber.org/fx"
@@ -24,7 +24,7 @@ func NewAttackAdvancer(
 	querier db.Querier,
 	moveService moveservice.Service[attack.Move, *attack.MoveResult],
 	validationService validation.Service,
-	gameStateChangedSignal signals.GameStateChangedSignal,
+	bus events.Bus,
 	metrics *metrics.Metrics,
 ) AttackAdvancer {
 	return NewService[attack.Move, *attack.MoveResult](
@@ -32,7 +32,7 @@ func NewAttackAdvancer(
 		querier,
 		moveService,
 		validationService,
-		gameStateChangedSignal,
+		bus,
 		metrics,
 	)
 }
@@ -42,7 +42,7 @@ func NewCardsAdvancer(
 	querier db.Querier,
 	moveService moveservice.Service[cards.Move, *cards.MoveResult],
 	validationService validation.Service,
-	gameStateChangedSignal signals.GameStateChangedSignal,
+	bus events.Bus,
 	metrics *metrics.Metrics,
 ) CardsAdvancer {
 	return NewService[cards.Move, *cards.MoveResult](
@@ -50,7 +50,7 @@ func NewCardsAdvancer(
 		querier,
 		moveService,
 		validationService,
-		gameStateChangedSignal,
+		bus,
 		metrics,
 	)
 }
@@ -60,7 +60,7 @@ func NewReinforceAdvancer(
 	querier db.Querier,
 	moveService moveservice.Service[reinforce.Move, struct{}],
 	validationService validation.Service,
-	gameStateChangedSignal signals.GameStateChangedSignal,
+	bus events.Bus,
 	metrics *metrics.Metrics,
 ) ReinforceAdvancer {
 	return NewService[reinforce.Move, struct{}](
@@ -68,7 +68,7 @@ func NewReinforceAdvancer(
 		querier,
 		moveService,
 		validationService,
-		gameStateChangedSignal,
+		bus,
 		metrics,
 	)
 }

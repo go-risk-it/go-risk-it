@@ -2,6 +2,7 @@ package orchestration
 
 import (
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
+	"github.com/go-risk-it/go-risk-it/internal/events"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/cards"
@@ -11,7 +12,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/validation"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/reinforce"
 	moveservice "github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/signals"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/timing"
 	"github.com/go-risk-it/go-risk-it/internal/metrics"
@@ -22,14 +22,14 @@ import (
 type OrchestratorDeps struct {
 	fx.In
 
-	Querier                db.Querier
-	GameService            state.Service
-	LoggingService         logging.Service
-	MissionService         mission.Service
-	ValidationService      validation.Service
-	GameStateChangedSignal signals.GameStateChangedSignal
-	Metrics                *metrics.Metrics
-	GameTiming             *timing.GameTiming
+	Querier           db.Querier
+	GameService       state.Service
+	LoggingService    logging.Service
+	MissionService    mission.Service
+	ValidationService validation.Service
+	Bus               events.Bus
+	Metrics           *metrics.Metrics
+	GameTiming        *timing.GameTiming
 }
 
 type DeployOrchestrator = Orchestrator[deploy.Move, struct{}]
@@ -88,7 +88,7 @@ func newOrchestratorFromDeps[T, R any](
 		deps.LoggingService,
 		deps.MissionService,
 		deps.ValidationService,
-		deps.GameStateChangedSignal,
+		deps.Bus,
 		deps.Metrics,
 		deps.GameTiming,
 	)

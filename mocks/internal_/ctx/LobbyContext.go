@@ -5,6 +5,7 @@
 package ctx
 
 import (
+	"context"
 	"time"
 
 	mock "github.com/stretchr/testify/mock"
@@ -87,6 +88,70 @@ func (_c *LobbyContext_Deadline_Call) Return(deadline time.Time, ok bool) *Lobby
 }
 
 func (_c *LobbyContext_Deadline_Call) RunAndReturn(run func() (time.Time, bool)) *LobbyContext_Deadline_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Detach provides a mock function for the type LobbyContext
+func (_mock *LobbyContext) Detach(timeout time.Duration) (context.Context, context.CancelFunc) {
+	ret := _mock.Called(timeout)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Detach")
+	}
+
+	var r0 context.Context
+	var r1 context.CancelFunc
+	if returnFunc, ok := ret.Get(0).(func(time.Duration) (context.Context, context.CancelFunc)); ok {
+		return returnFunc(timeout)
+	}
+	if returnFunc, ok := ret.Get(0).(func(time.Duration) context.Context); ok {
+		r0 = returnFunc(timeout)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(context.Context)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(time.Duration) context.CancelFunc); ok {
+		r1 = returnFunc(timeout)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(context.CancelFunc)
+		}
+	}
+	return r0, r1
+}
+
+// LobbyContext_Detach_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Detach'
+type LobbyContext_Detach_Call struct {
+	*mock.Call
+}
+
+// Detach is a helper method to define mock.On call
+//   - timeout time.Duration
+func (_e *LobbyContext_Expecter) Detach(timeout interface{}) *LobbyContext_Detach_Call {
+	return &LobbyContext_Detach_Call{Call: _e.mock.On("Detach", timeout)}
+}
+
+func (_c *LobbyContext_Detach_Call) Run(run func(timeout time.Duration)) *LobbyContext_Detach_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 time.Duration
+		if args[0] != nil {
+			arg0 = args[0].(time.Duration)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *LobbyContext_Detach_Call) Return(context1 context.Context, cancelFunc context.CancelFunc) *LobbyContext_Detach_Call {
+	_c.Call.Return(context1, cancelFunc)
+	return _c
+}
+
+func (_c *LobbyContext_Detach_Call) RunAndReturn(run func(timeout time.Duration) (context.Context, context.CancelFunc)) *LobbyContext_Detach_Call {
 	_c.Call.Return(run)
 	return _c
 }

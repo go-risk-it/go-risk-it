@@ -13,8 +13,17 @@ type Continent struct {
 	regions           []string
 }
 
+// Regions returns a copy of the continent's region identifiers.
+func (c *Continent) Regions() []string {
+	result := make([]string, len(c.regions))
+	copy(result, c.regions)
+
+	return result
+}
+
 type Continents interface {
 	GetContinentsControlledBy(regions []string) []*Continent
+	All() []*Continent
 }
 
 type continentsImpl struct {
@@ -22,6 +31,13 @@ type continentsImpl struct {
 }
 
 var _ Continents = (*continentsImpl)(nil)
+
+func (c *continentsImpl) All() []*Continent {
+	result := make([]*Continent, len(c.continents))
+	copy(result, c.continents)
+
+	return result
+}
 
 func (c *continentsImpl) GetContinentsControlledBy(regions []string) []*Continent {
 	result := make([]*Continent, 0)

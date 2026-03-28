@@ -9,6 +9,7 @@ import (
 
 type LobbyContext interface {
 	UserContext
+	Detachable
 	LobbyID() int64
 }
 
@@ -22,6 +23,10 @@ var _ LobbyContext = (*lobbyContext)(nil)
 
 func (c *lobbyContext) LobbyID() int64 {
 	return c.lobbyID
+}
+
+func (c *lobbyContext) Detach(timeout time.Duration) (context.Context, context.CancelFunc) {
+	return DetachLobbyContextWithTimeout(c, timeout)
 }
 
 func WithLobbyID(ctx UserContext, lobbyID int64) LobbyContext {

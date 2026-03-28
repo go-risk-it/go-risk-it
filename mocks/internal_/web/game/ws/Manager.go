@@ -184,6 +184,46 @@ func (_c *Manager_GetConnectedPlayers_Call) RunAndReturn(run func(ctx1 ctx.GameC
 	return _c
 }
 
+// RemoveGame provides a mock function for the type Manager
+func (_mock *Manager) RemoveGame(ctx1 ctx.GameContext) {
+	_mock.Called(ctx1)
+	return
+}
+
+// Manager_RemoveGame_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RemoveGame'
+type Manager_RemoveGame_Call struct {
+	*mock.Call
+}
+
+// RemoveGame is a helper method to define mock.On call
+//   - ctx1 ctx.GameContext
+func (_e *Manager_Expecter) RemoveGame(ctx1 interface{}) *Manager_RemoveGame_Call {
+	return &Manager_RemoveGame_Call{Call: _e.mock.On("RemoveGame", ctx1)}
+}
+
+func (_c *Manager_RemoveGame_Call) Run(run func(ctx1 ctx.GameContext)) *Manager_RemoveGame_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 ctx.GameContext
+		if args[0] != nil {
+			arg0 = args[0].(ctx.GameContext)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *Manager_RemoveGame_Call) Return() *Manager_RemoveGame_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Manager_RemoveGame_Call) RunAndReturn(run func(ctx1 ctx.GameContext)) *Manager_RemoveGame_Call {
+	_c.Run(run)
+	return _c
+}
+
 // WriteMessage provides a mock function for the type Manager
 func (_mock *Manager) WriteMessage(ctx1 ctx.GameContext, message json.RawMessage) {
 	_mock.Called(ctx1, message)

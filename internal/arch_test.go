@@ -151,6 +151,22 @@ func TestArch_LogicGameAndLobbyIsolated(t *testing.T) {
 	assertNoImports(t, lobbyPkgs, modulePrefix+"logic/game/")
 }
 
+// Rule 4b: events/ root and events/logger are infrastructure — they must never import logic/ or web/.
+// Sub-packages events/game/ and events/lobby/ carry domain payloads and may import logic/ types.
+func TestArch_EventsRootIsolation(t *testing.T) {
+	t.Parallel()
+
+	rootPkgs := loadPackages(t, "./internal/events")
+	loggerPkgs := loadPackages(t, "./internal/events/logger")
+
+	infraPkgs := slices.Concat(rootPkgs, loggerPkgs)
+
+	assertNoImports(t, infraPkgs,
+		modulePrefix+"logic/",
+		modulePrefix+"web/",
+	)
+}
+
 // Rule 5: web/game/ and web/lobby/ are mutually isolated.
 func TestArch_WebGameAndLobbyIsolated(t *testing.T) {
 	t.Parallel()

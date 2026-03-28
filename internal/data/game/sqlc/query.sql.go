@@ -136,6 +136,77 @@ func (q *Queries) DrawCard(ctx context.Context, arg DrawCardParams) error {
 	return err
 }
 
+const getAllCardsForGame = `-- name: GetAllCardsForGame :many
+SELECT c.id, c.card_type, r.external_reference AS region, c.owner_id AS player_id
+FROM game.card c
+         LEFT JOIN game.region r ON c.region_id = r.id
+WHERE c.game_id = $1
+  AND c.owner_id IS NOT NULL
+`
+
+type GetAllCardsForGameRow struct {
+	ID       int64
+	CardType GameCardType
+	Region   pgtype.Text
+	PlayerID pgtype.Int8
+}
+
+// Batch fetch all owned cards for a game, returning player_id for per-player partitioning.
+// Used by SnapshotService.GetPrivateSnapshotsByUser to avoid per-player query amplification.
+func (q *Queries) GetAllCardsForGame(ctx context.Context, gameID int64) ([]GetAllCardsForGameRow, error) {
+	rows, err := q.db.Query(ctx, getAllCardsForGame, gameID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllCardsForGameRow
+	for rows.Next() {
+		var i GetAllCardsForGameRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.CardType,
+			&i.Region,
+			&i.PlayerID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getAllMissionsForGame = `-- name: GetAllMissionsForGame :many
+SELECT m.id, m.player_id, m.type
+FROM game.mission m
+         JOIN game.player p ON m.player_id = p.id
+WHERE p.game_id = $1
+`
+
+// Batch fetch all missions for a game, joining through player to filter by game.
+// Used by SnapshotService.GetPrivateSnapshotsByUser for per-player partitioning.
+func (q *Queries) GetAllMissionsForGame(ctx context.Context, gameID int64) ([]GameMission, error) {
+	rows, err := q.db.Query(ctx, getAllMissionsForGame, gameID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GameMission
+	for rows.Next() {
+		var i GameMission
+		if err := rows.Scan(&i.ID, &i.PlayerID, &i.Type); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getAvailableCards = `-- name: GetAvailableCards :many
 select c.id, c.game_id, c.region_id, c.owner_id, c.card_type
 from game.game g

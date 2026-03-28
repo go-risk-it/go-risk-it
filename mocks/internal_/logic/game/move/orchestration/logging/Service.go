@@ -107,20 +107,29 @@ func (_c *Service_GetMoveLogs_Call) RunAndReturn(run func(ctx1 ctx.GameContext, 
 }
 
 // LogMove provides a mock function for the type Service
-func (_mock *Service) LogMove(ctx1 ctx.GameContext, querier db.Querier, move any, result any) error {
+func (_mock *Service) LogMove(ctx1 ctx.GameContext, querier db.Querier, move any, result any) (sqlc.GameMoveLog, error) {
 	ret := _mock.Called(ctx1, querier, move, result)
 
 	if len(ret) == 0 {
 		panic("no return value specified for LogMove")
 	}
 
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, any, any) error); ok {
+	var r0 sqlc.GameMoveLog
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, any, any) (sqlc.GameMoveLog, error)); ok {
+		return returnFunc(ctx1, querier, move, result)
+	}
+	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, any, any) sqlc.GameMoveLog); ok {
 		r0 = returnFunc(ctx1, querier, move, result)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(sqlc.GameMoveLog)
 	}
-	return r0
+	if returnFunc, ok := ret.Get(1).(func(ctx.GameContext, db.Querier, any, any) error); ok {
+		r1 = returnFunc(ctx1, querier, move, result)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
 }
 
 // Service_LogMove_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LogMove'
@@ -165,12 +174,12 @@ func (_c *Service_LogMove_Call) Run(run func(ctx1 ctx.GameContext, querier db.Qu
 	return _c
 }
 
-func (_c *Service_LogMove_Call) Return(err error) *Service_LogMove_Call {
-	_c.Call.Return(err)
+func (_c *Service_LogMove_Call) Return(gameMoveLog sqlc.GameMoveLog, err error) *Service_LogMove_Call {
+	_c.Call.Return(gameMoveLog, err)
 	return _c
 }
 
-func (_c *Service_LogMove_Call) RunAndReturn(run func(ctx1 ctx.GameContext, querier db.Querier, move any, result any) error) *Service_LogMove_Call {
+func (_c *Service_LogMove_Call) RunAndReturn(run func(ctx1 ctx.GameContext, querier db.Querier, move any, result any) (sqlc.GameMoveLog, error)) *Service_LogMove_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -9,6 +9,7 @@ import (
 
 type GameContext interface {
 	UserContext
+	Detachable
 	GameID() int64
 	WithBase(base context.Context) GameContext
 }
@@ -23,6 +24,10 @@ var _ GameContext = (*gameContext)(nil)
 
 func (c *gameContext) GameID() int64 {
 	return c.gameID
+}
+
+func (c *gameContext) Detach(timeout time.Duration) (context.Context, context.CancelFunc) {
+	return DetachGameContextWithTimeout(c, timeout)
 }
 
 func (c *gameContext) WithBase(base context.Context) GameContext {
