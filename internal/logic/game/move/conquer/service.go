@@ -54,7 +54,7 @@ func NewService(
 		regionService:  regionService,
 	}
 
-	return svc, svc
+	return svc, moveservice.NewTracedService[Move, struct{}](svc)
 }
 
 var _ Service = (*service)(nil)

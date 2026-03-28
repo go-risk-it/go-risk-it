@@ -133,7 +133,10 @@ local ooda = import 'ooda.libsonnet';
       gridPos: { h: 8, w: 12, x: 0, y: 18 },
       fieldConfig+: {
         defaults+: {
-          links: [links.toDashboard('Database', links.dashboardUids.database)],
+          links: [
+            links.toDashboard('Database', links.dashboardUids.database),
+            links.toDashboard('Request Lifecycle', links.dashboardUids.requestLifecycle),
+          ],
         },
       },
     },
@@ -161,7 +164,7 @@ local ooda = import 'ooda.libsonnet';
     // Panel 7: Game Duration P50/P95 (timeseries, fixed green)
     common.timeseriesPanel(
       title='Game Duration P50/P95',
-      targets=common.histogramQuantileTargets(
+      targets=common.histogramQuantileTargetsWithExemplars(
         'game_duration_seconds_bucket',
         [['0.5', 'P50'], ['0.95', 'P95']],
       ),
@@ -176,6 +179,30 @@ local ooda = import 'ooda.libsonnet';
     // ── Act — What's the evidence? ──────────────────────────────────
     ooda.actRow() + { gridPos: { h: 1, w: 24, x: 0, y: 35 } },
 
+    // Panel 9: Game Event Logs (Loki)
+    {
+      id: 9,
+      title: 'Game Event Logs',
+      description: 'Normal: Game creation, move execution, phase transitions. Watch for: Error-level entries, panic recoveries.',
+      type: 'logs',
+      datasource: { type: 'loki', uid: 'loki' },
+      targets: [{
+        refId: 'A',
+        expr: '{service_name="risk-it"} |= "game"',
+      }],
+      gridPos: { h: 8, w: 12, x: 0, y: 36 },
+      options: {
+        showTime: true,
+        showLabels: false,
+        showCommonLabels: false,
+        wrapLogMessage: true,
+        prettifyLogMessage: false,
+        enableLogDetails: true,
+        sortOrder: 'Descending',
+        dedupStrategy: 'none',
+      },
+    },
+
     // Panel 6: Total Moves by Phase (bar gauge, palette-classic)
     common.barGaugePanel(
       title='Total Moves by Phase',
@@ -189,7 +216,7 @@ local ooda = import 'ooda.libsonnet';
     ) + {
       id: 6,
       description: 'Normal: deploy has the highest total, attack second, conquer/reinforce lower. Watch for: unusual ratios — very few conquer moves relative to attack may indicate game logic issues. Check next: moves per second by phase for the rate view.',
-      gridPos: { h: 8, w: 12, x: 12, y: 36 },
+      gridPos: { h: 8, w: 12, x: 12, y: 44 },
     },
   ],
 }

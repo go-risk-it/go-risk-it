@@ -172,16 +172,19 @@
             },
             "targets": [
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.5, sum(rate(ws_broadcast_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
                     "legendFormat": "P50",
                     "refId": "A"
                 },
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.95, sum(rate(ws_broadcast_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
                     "legendFormat": "P95",
                     "refId": "B"
                 },
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.99, sum(rate(ws_broadcast_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
                     "legendFormat": "P99",
                     "refId": "C"
@@ -398,6 +401,38 @@
             ],
             "title": "Broadcast Errors Rate",
             "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "loki",
+                "uid": "loki"
+            },
+            "description": "Normal: Broadcast operations. Watch for: Error-level entries, panic recoveries.",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 28
+            },
+            "id": 6,
+            "options": {
+                "dedupStrategy": "none",
+                "enableLogDetails": true,
+                "prettifyLogMessage": false,
+                "showCommonLabels": false,
+                "showLabels": false,
+                "showTime": true,
+                "sortOrder": "Descending",
+                "wrapLogMessage": true
+            },
+            "targets": [
+                {
+                    "expr": "{service_name=\"risk-it\"} |= \"broadcast\" or |= \"websocket\" or |= \"ws\"",
+                    "refId": "A"
+                }
+            ],
+            "title": "WebSocket Broadcast Logs",
+            "type": "logs"
         }
     ],
     "refresh": "10s",

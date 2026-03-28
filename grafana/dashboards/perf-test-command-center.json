@@ -655,7 +655,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "P95 latency for each server boundary overlaid: HTTP total, DB transaction, game logic, WS broadcast. Normal: DB + game logic + WS sum to roughly HTTP total. Watch for: one boundary dominating (e.g. DB > 70% of HTTP). Check next: Database dashboard if DB dominates, WebSocket dashboard if WS dominates.",
+            "description": "P95 latency for each server boundary overlaid: HTTP total, DB transaction, game logic, WS broadcast, event handler (dashed, async post-response). Normal: DB + game logic + WS sum to roughly HTTP total; event handler runs independently after response. Watch for: one boundary dominating (e.g. DB > 70% of HTTP) or event handler exceeding HTTP total. Check next: Database dashboard if DB dominates, WebSocket dashboard if WS dominates, Request Lifecycle for event handler breakdown.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -681,6 +681,11 @@
                             "targetBlank": true,
                             "title": "WebSocket Detail",
                             "url": "/d/websocket?from=${__from}&to=${__to}"
+                        },
+                        {
+                            "targetBlank": true,
+                            "title": "Request Lifecycle",
+                            "url": "/d/request-lifecycle?from=${__from}&to=${__to}"
                         }
                     ],
                     "unit": "s"
@@ -749,6 +754,35 @@
                                 }
                             }
                         ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Event Handler (post-response)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#00BCD4",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.lineStyle",
+                                "value": {
+                                    "dash": [
+                                        10,
+                                        10
+                                    ],
+                                    "fill": "dash"
+                                }
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 0
+                            }
+                        ]
                     }
                 ]
             },
@@ -797,6 +831,12 @@
                     "expr": "histogram_quantile(0.95, sum(rate(ws_broadcast_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
                     "legendFormat": "WS Broadcast",
                     "refId": "D"
+                },
+                {
+                    "exemplar": true,
+                    "expr": "histogram_quantile(0.95, sum(rate(event_handler_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                    "legendFormat": "Event Handler (post-response)",
+                    "refId": "E"
                 }
             ],
             "title": "Latency Attribution (p95)",

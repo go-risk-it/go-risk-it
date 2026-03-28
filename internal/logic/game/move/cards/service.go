@@ -65,7 +65,7 @@ func NewService(
 		rng:           rng,
 	}
 
-	return svc, svc
+	return svc, moveservice.NewTracedService[Move, *MoveResult](svc)
 }
 
 func (s *service) PhaseType() sqlc.GamePhaseType {

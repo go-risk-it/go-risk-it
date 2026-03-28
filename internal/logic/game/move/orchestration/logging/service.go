@@ -8,6 +8,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/tracing"
 )
 
 type Service interface {
@@ -51,6 +52,9 @@ func (s *service) LogMove(
 	querier db.Querier,
 	move, result any,
 ) (sqlc.GameMoveLog, error) {
+	ctx, span := tracing.StartGameSpan(ctx, "game.move.log")
+	defer span.End()
+
 	moveJSON, err := json.Marshal(move)
 	if err != nil {
 		return sqlc.GameMoveLog{}, fmt.Errorf("failed to marshal move: %w", err)

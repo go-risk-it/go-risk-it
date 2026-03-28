@@ -8,6 +8,7 @@
   http: '#FF9830',      // HTTP — amber
   errors: '#E02F44',    // Errors — red
   client: '#73BF69',    // Client/perf-test — cyan-green
+  eventBus: '#00BCD4',  // Event Bus — teal (post-response async)
 
   // Helper: returns a Grafana fixed-color object
   fixedColor(hex):: { mode: 'fixed', fixedColor: hex },

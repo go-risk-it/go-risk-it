@@ -7,6 +7,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/tracing"
 )
 
 type Game struct {
@@ -41,6 +42,9 @@ func (s *service) GetGameState(ctx ctx.GameContext) (*Game, error) {
 }
 
 func (s *service) GetGameStateWithQuerier(ctx ctx.GameContext, querier db.Querier) (*Game, error) {
+	ctx, span := tracing.StartGameSpan(ctx, "game.advance.get_state")
+	defer span.End()
+
 	game, err := querier.GetGame(ctx, ctx.GameID())
 	if err != nil {
 		slog.WarnContext(ctx, "failed to get game", "error", err)

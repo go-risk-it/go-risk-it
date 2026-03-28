@@ -287,16 +287,19 @@
             },
             "targets": [
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.5, sum(rate(db_transaction_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
                     "legendFormat": "p50",
                     "refId": "A"
                 },
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.95, sum(rate(db_transaction_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
                     "legendFormat": "p95",
                     "refId": "B"
                 },
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.99, sum(rate(db_transaction_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
                     "legendFormat": "p99",
                     "refId": "C"

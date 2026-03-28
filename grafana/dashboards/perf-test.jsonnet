@@ -313,6 +313,14 @@ local activeGamesRightAxis = {
       id: 10,
       description: 'Server-side HTTP P95 overlaid with active game count (right axis). Normal: HTTP P95 < 100ms regardless of concurrency. Watch for: server latency rising before client E2E does (server is the bottleneck). Check next: Command Center Latency Attribution to identify which server boundary (DB, game logic, WS) dominates.',
       gridPos: { h: 8, w: 12, x: 12, y: 33 },
+      fieldConfig+: {
+        defaults+: {
+          links: [
+            links.toDashboard('Request Lifecycle', links.dashboardUids.requestLifecycle),
+            links.toDashboard('Command Center', links.dashboardUids.perfTestCommandCenter),
+          ],
+        },
+      },
     },
 
     // ── Act — What's the evidence? ───────────────────────────────────

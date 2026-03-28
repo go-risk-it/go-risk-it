@@ -89,7 +89,7 @@ local ooda = import 'ooda.libsonnet';
     // Panel 4: Transaction Duration P50/P95/P99 (timeseries + SLO threshold line)
     common.timeseriesPanel(
       title='Transaction Duration P50/P95/P99',
-      targets=common.histogramQuantileTargets(
+      targets=common.histogramQuantileTargetsWithExemplars(
         'db_transaction_duration_seconds_bucket',
         [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']],
       ),

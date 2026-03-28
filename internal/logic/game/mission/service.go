@@ -10,6 +10,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission/checker"
 	"github.com/go-risk-it/go-risk-it/internal/rand"
+	"github.com/go-risk-it/go-risk-it/internal/tracing"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -220,6 +221,9 @@ func (s *service) IsMissionAccomplished(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) (bool, error) {
+	ctx, span := tracing.StartGameSpan(ctx, "game.move.check_mission")
+	defer span.End()
+
 	slog.DebugContext(ctx, "checking if mission is accomplished")
 
 	baseMission, err := querier.GetMission(ctx, sqlc.GetMissionParams{

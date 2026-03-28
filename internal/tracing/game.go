@@ -4,7 +4,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -25,28 +24,4 @@ func StartGameSpan(
 		)
 
 	return gameCtx.WithBase(enrichedCtx), span //nolint:spancheck // caller ends span
-}
-
-// SpanStep creates a child span for a pipeline step, passing the enriched context
-// to the function. Error recording is handled automatically.
-func SpanStep(
-	gameCtx ctx.GameContext,
-	spanName string,
-	phase string,
-	stepFn func(ctx.GameContext) error,
-) error {
-	enrichedCtx, span := otel.GetTracerProvider().Tracer(GameTracer).Start(
-		gameCtx, spanName,
-		trace.WithAttributes(attribute.String("phase", phase)),
-	)
-	defer span.End()
-
-	if err := stepFn(gameCtx.WithBase(enrichedCtx)); err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-
-		return err
-	}
-
-	return nil
 }

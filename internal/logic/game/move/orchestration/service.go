@@ -157,30 +157,24 @@ func (s *orchestrator[T, R]) orchestrateMoveWithQuerier(
 	move T,
 	gameState *state.Game,
 ) (moveOutcome[R], error) {
-	phase := string(s.service.PhaseType())
 	turn := gameState.Turn
 	slog.InfoContext(ctx, "orchestrating move", "move", move)
 
-	if err := tracing.SpanStep(
-		ctx, "game.move.validate", phase,
-		func(spanCtx gamectx.GameContext) error {
-			return s.validationService.Validate(
-				spanCtx, querier, gameState,
-			)
-		},
+	if err := s.validationService.Validate(
+		ctx, querier, gameState,
 	); err != nil {
 		return moveOutcome[R]{}, fmt.Errorf("invalid move: %w", err)
 	}
 
 	performResult, moveLog, err := s.performAndLog(
-		ctx, querier, move, phase,
+		ctx, querier, move,
 	)
 	if err != nil {
 		return moveOutcome[R]{}, err
 	}
 
 	targetPhase, gameOver, err := s.resolveTargetPhase(
-		ctx, querier, phase, performResult,
+		ctx, querier, performResult,
 	)
 	if err != nil {
 		return moveOutcome[R]{}, err
@@ -199,39 +193,16 @@ func (s *orchestrator[T, R]) performAndLog(
 	ctx gamectx.GameContext,
 	querier db.Querier,
 	move T,
-	phase string,
 ) (R, sqlc.GameMoveLog, error) {
-	var performResult R
-
-	if err := tracing.SpanStep(
-		ctx, "game.move.perform", phase,
-		func(spanCtx gamectx.GameContext) error {
-			var performErr error
-			performResult, performErr = s.service.Perform(
-				spanCtx, querier, move,
-			)
-
-			return performErr
-		},
-	); err != nil {
+	performResult, err := s.service.Perform(ctx, querier, move)
+	if err != nil {
 		var zero R
 
 		return zero, sqlc.GameMoveLog{}, fmt.Errorf("unable to perform move: %w", err)
 	}
 
-	var moveLog sqlc.GameMoveLog
-
-	if err := tracing.SpanStep(
-		ctx, "game.move.log", phase,
-		func(spanCtx gamectx.GameContext) error {
-			var logErr error
-			moveLog, logErr = s.loggingService.LogMove(
-				spanCtx, querier, move, performResult,
-			)
-
-			return logErr
-		},
-	); err != nil {
+	moveLog, err := s.loggingService.LogMove(ctx, querier, move, performResult)
+	if err != nil {
 		var zero R
 
 		return zero, sqlc.GameMoveLog{}, fmt.Errorf("unable to log move: %w", err)
@@ -243,11 +214,10 @@ func (s *orchestrator[T, R]) performAndLog(
 func (s *orchestrator[T, R]) resolveTargetPhase(
 	ctx gamectx.GameContext,
 	querier db.Querier,
-	phase string,
 	performResult R,
 ) (sqlc.GamePhaseType, bool, error) {
 	if accomplished, err := s.checkMission(
-		ctx, querier, phase,
+		ctx, querier,
 	); err != nil {
 		return "", false, err
 	} else if accomplished {
@@ -255,7 +225,7 @@ func (s *orchestrator[T, R]) resolveTargetPhase(
 	}
 
 	targetPhase, err := s.walkAndAdvance(
-		ctx, querier, phase, performResult,
+		ctx, querier, performResult,
 	)
 	if err != nil {
 		return "", false, err
@@ -267,21 +237,11 @@ func (s *orchestrator[T, R]) resolveTargetPhase(
 func (s *orchestrator[T, R]) checkMission(
 	ctx gamectx.GameContext,
 	querier db.Querier,
-	phase string,
 ) (bool, error) {
-	var isMissionAccomplished bool
-
-	if err := tracing.SpanStep(
-		ctx, "game.move.check_mission", phase,
-		func(spanCtx gamectx.GameContext) error {
-			var missionErr error
-			isMissionAccomplished, missionErr = s.missionService.IsMissionAccomplished(
-				spanCtx, querier,
-			)
-
-			return missionErr
-		},
-	); err != nil {
+	isMissionAccomplished, err := s.missionService.IsMissionAccomplished(
+		ctx, querier,
+	)
+	if err != nil {
 		return false, fmt.Errorf(
 			"unable to check if mission is accomplished: %w", err,
 		)
@@ -298,22 +258,10 @@ func (s *orchestrator[T, R]) checkMission(
 func (s *orchestrator[T, R]) walkAndAdvance(
 	ctx gamectx.GameContext,
 	querier db.Querier,
-	phase string,
 	performResult R,
 ) (sqlc.GamePhaseType, error) {
-	var targetPhase sqlc.GamePhaseType
-
-	if err := tracing.SpanStep(
-		ctx, "game.move.walk", phase,
-		func(spanCtx gamectx.GameContext) error {
-			var walkErr error
-			targetPhase, walkErr = s.service.Walk(
-				spanCtx, querier, false,
-			)
-
-			return walkErr
-		},
-	); err != nil {
+	targetPhase, err := s.service.Walk(ctx, querier, false)
+	if err != nil {
 		return "", fmt.Errorf("unable to walk phase: %w", err)
 	}
 
@@ -325,13 +273,8 @@ func (s *orchestrator[T, R]) walkAndAdvance(
 
 	slog.InfoContext(ctx, "advancing phase", "target", targetPhase)
 
-	if err := tracing.SpanStep(
-		ctx, "game.move.advance", phase,
-		func(spanCtx gamectx.GameContext) error {
-			return s.service.Advance(
-				spanCtx, querier, targetPhase, performResult,
-			)
-		},
+	if err := s.service.Advance(
+		ctx, querier, targetPhase, performResult,
 	); err != nil {
 		return "", fmt.Errorf("unable to advance move: %w", err)
 	}

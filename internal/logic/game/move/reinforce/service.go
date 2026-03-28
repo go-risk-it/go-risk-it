@@ -47,7 +47,7 @@ func NewService(
 		regionService: regionService,
 	}
 
-	return svc, svc
+	return svc, moveservice.NewTracedService[Move, struct{}](svc)
 }
 
 func (s *service) PhaseType() sqlc.GamePhaseType {

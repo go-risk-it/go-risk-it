@@ -798,6 +798,18 @@
                             "mode": "none"
                         }
                     },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "Request Lifecycle",
+                            "url": "/d/request-lifecycle?from=${__from}&to=${__to}"
+                        },
+                        {
+                            "targetBlank": true,
+                            "title": "Command Center",
+                            "url": "/d/perf-test-command-center?from=${__from}&to=${__to}"
+                        }
+                    ],
                     "unit": "s"
                 },
                 "overrides": [

@@ -15,6 +15,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/rand"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
@@ -136,7 +137,7 @@ func TestServiceImpl_IsTwoContinentsMissionAccomplished(t *testing.T) {
 
 			querier.
 				EXPECT().
-				GetMission(ctx, sqlc.GetMissionParams{
+				GetMission(mock.Anything, sqlc.GetMissionParams{
 					GameID: ctx.GameID(),
 					UserID: ctx.UserID(),
 				}).Return(baseMission, nil)
@@ -149,18 +150,18 @@ func TestServiceImpl_IsTwoContinentsMissionAccomplished(t *testing.T) {
 
 			querier.
 				EXPECT().
-				GetTwoContinentsMission(ctx, baseMission.ID).
+				GetTwoContinentsMission(mock.Anything, baseMission.ID).
 				Return(twoContinentsMission, nil)
 
 			boardService.
 				EXPECT().
-				GetContinentsControlledByPlayer(ctx, querier, int64(1)).
+				GetContinentsControlledByPlayer(mock.Anything, querier, int64(1)).
 				Return(test.controlledContinents, nil)
 
 			if test.expectedResult {
 				querier.
 					EXPECT().
-					AssignGameWinner(ctx, sqlc.AssignGameWinnerParams{
+					AssignGameWinner(mock.Anything, sqlc.AssignGameWinnerParams{
 						WinnerPlayerID: pgtype.Int8{
 							Int64: 1,
 							Valid: true,
@@ -277,7 +278,7 @@ func TestServiceImpl_IsTwoContinentsPlusOneMissionAccomplished(t *testing.T) {
 
 			querier.
 				EXPECT().
-				GetMission(ctx, sqlc.GetMissionParams{
+				GetMission(mock.Anything, sqlc.GetMissionParams{
 					GameID: ctx.GameID(),
 					UserID: ctx.UserID(),
 				}).Return(baseMission, nil)
@@ -290,18 +291,18 @@ func TestServiceImpl_IsTwoContinentsPlusOneMissionAccomplished(t *testing.T) {
 
 			querier.
 				EXPECT().
-				GetTwoContinentsPlusOneMission(ctx, baseMission.ID).
+				GetTwoContinentsPlusOneMission(mock.Anything, baseMission.ID).
 				Return(twoContinentsMission, nil)
 
 			boardService.
 				EXPECT().
-				GetContinentsControlledByPlayer(ctx, querier, int64(1)).
+				GetContinentsControlledByPlayer(mock.Anything, querier, int64(1)).
 				Return(test.controlledContinents, nil)
 
 			if test.expectedResult {
 				querier.
 					EXPECT().
-					AssignGameWinner(ctx, sqlc.AssignGameWinnerParams{
+					AssignGameWinner(mock.Anything, sqlc.AssignGameWinnerParams{
 						WinnerPlayerID: pgtype.Int8{
 							Int64: 1,
 							Valid: true,
@@ -415,20 +416,20 @@ func TestServiceImpl_IsEighteenTerritoriesTwoTroopsMissionAccomplished(t *testin
 
 			querier.
 				EXPECT().
-				GetMission(ctx, sqlc.GetMissionParams{
+				GetMission(mock.Anything, sqlc.GetMissionParams{
 					GameID: ctx.GameID(),
 					UserID: ctx.UserID(),
 				}).Return(baseMission, nil)
 
 			regionService.
 				EXPECT().
-				GetPlayerRegions(ctx, querier).
+				GetPlayerRegions(mock.Anything, querier).
 				Return(test.playerRegions, nil)
 
 			if test.expectedResult {
 				querier.
 					EXPECT().
-					AssignGameWinner(ctx, sqlc.AssignGameWinnerParams{
+					AssignGameWinner(mock.Anything, sqlc.AssignGameWinnerParams{
 						WinnerPlayerID: pgtype.Int8{
 							Int64: 1,
 							Valid: true,
@@ -506,20 +507,20 @@ func TestServiceImpl_IsTwentyFourTerritoriesMissionAccomplished(t *testing.T) {
 
 			querier.
 				EXPECT().
-				GetMission(ctx, sqlc.GetMissionParams{
+				GetMission(mock.Anything, sqlc.GetMissionParams{
 					GameID: ctx.GameID(),
 					UserID: ctx.UserID(),
 				}).Return(baseMission, nil)
 
 			regionService.
 				EXPECT().
-				GetPlayerRegions(ctx, querier).
+				GetPlayerRegions(mock.Anything, querier).
 				Return(test.playerRegions, nil)
 
 			if test.expectedResult {
 				querier.
 					EXPECT().
-					AssignGameWinner(ctx, sqlc.AssignGameWinnerParams{
+					AssignGameWinner(mock.Anything, sqlc.AssignGameWinnerParams{
 						WinnerPlayerID: pgtype.Int8{
 							Int64: 1,
 							Valid: true,
@@ -592,7 +593,7 @@ func TestServiceImpl_IsEliminatePlayerMissionAccomplished(t *testing.T) {
 
 			querier.
 				EXPECT().
-				GetMission(ctx, sqlc.GetMissionParams{
+				GetMission(mock.Anything, sqlc.GetMissionParams{
 					GameID: ctx.GameID(),
 					UserID: ctx.UserID(),
 				}).Return(baseMission, nil)
@@ -604,18 +605,18 @@ func TestServiceImpl_IsEliminatePlayerMissionAccomplished(t *testing.T) {
 
 			querier.
 				EXPECT().
-				GetEliminatePlayerMission(ctx, baseMission.ID).
+				GetEliminatePlayerMission(mock.Anything, baseMission.ID).
 				Return(eliminatePlayerMission, nil)
 
 			regionService.
 				EXPECT().
-				GetRegionsControlledByPlayer(ctx, querier, int64(2)).
+				GetRegionsControlledByPlayer(mock.Anything, querier, int64(2)).
 				Return(test.regionsControlledByTarget, nil)
 
 			if test.expectedResult {
 				querier.
 					EXPECT().
-					AssignGameWinner(ctx, sqlc.AssignGameWinnerParams{
+					AssignGameWinner(mock.Anything, sqlc.AssignGameWinnerParams{
 						WinnerPlayerID: pgtype.Int8{
 							Int64: 1,
 							Valid: true,

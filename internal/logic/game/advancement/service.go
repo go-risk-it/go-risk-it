@@ -116,13 +116,12 @@ func (s *service[T, R]) advanceInternal(
 	querier db.Querier,
 ) (advanceOutcome, error) {
 	currentPhase := s.moveService.PhaseType()
-	phase := string(currentPhase)
 
 	slog.InfoContext(ctx, "processing request to advance phase",
 		"currentPhase", currentPhase,
 	)
 
-	game, err := s.getAndValidateState(ctx, querier, phase)
+	game, err := s.getAndValidateState(ctx, querier)
 	if err != nil {
 		return advanceOutcome{}, err
 	}
@@ -135,7 +134,7 @@ func (s *service[T, R]) advanceInternal(
 		)
 	}
 
-	targetPhase, err := s.walkAndAdvance(ctx, querier, phase, currentPhase)
+	targetPhase, err := s.walkAndAdvance(ctx, querier, currentPhase)
 	if err != nil {
 		return advanceOutcome{}, err
 	}
@@ -149,32 +148,13 @@ func (s *service[T, R]) advanceInternal(
 func (s *service[T, R]) getAndValidateState(
 	ctx gamectx.GameContext,
 	querier db.Querier,
-	phase string,
 ) (*state.Game, error) {
-	var game *state.Game
-
-	if err := tracing.SpanStep(
-		ctx, "game.advance.get_state", phase,
-		func(spanCtx gamectx.GameContext) error {
-			var getErr error
-			game, getErr = s.gameState.GetGameStateWithQuerier(
-				spanCtx, querier,
-			)
-
-			return getErr
-		},
-	); err != nil {
+	game, err := s.gameState.GetGameStateWithQuerier(ctx, querier)
+	if err != nil {
 		return nil, fmt.Errorf("unable to get game state: %w", err)
 	}
 
-	if err := tracing.SpanStep(
-		ctx, "game.advance.validate", phase,
-		func(spanCtx gamectx.GameContext) error {
-			return s.validationService.Validate(
-				spanCtx, querier, game,
-			)
-		},
-	); err != nil {
+	if err := s.validationService.Validate(ctx, querier, game); err != nil {
 		slog.ErrorContext(ctx, "validation failed", "error", err)
 
 		return nil, fmt.Errorf("validation failed: %w", err)
@@ -188,34 +168,17 @@ func (s *service[T, R]) getAndValidateState(
 func (s *service[T, R]) walkAndAdvance(
 	ctx gamectx.GameContext,
 	querier db.Querier,
-	phase string,
 	currentPhase sqlc.GamePhaseType,
 ) (sqlc.GamePhaseType, error) {
-	var targetPhase sqlc.GamePhaseType
-
-	if err := tracing.SpanStep(
-		ctx, "game.advance.walk", phase,
-		func(spanCtx gamectx.GameContext) error {
-			var walkErr error
-			targetPhase, walkErr = s.moveService.Walk(
-				spanCtx, querier, true,
-			)
-
-			return walkErr
-		},
-	); err != nil {
+	targetPhase, err := s.moveService.Walk(ctx, querier, true)
+	if err != nil {
 		return "", fmt.Errorf("unable to walk to target phase: %w", err)
 	}
 
-	if err := tracing.SpanStep(
-		ctx, "game.advance.advance", phase,
-		func(spanCtx gamectx.GameContext) error {
-			var zero R
+	var zero R
 
-			return s.moveService.Advance(
-				spanCtx, querier, targetPhase, zero,
-			)
-		},
+	if err := s.moveService.Advance(
+		ctx, querier, targetPhase, zero,
 	); err != nil {
 		return "", fmt.Errorf("unable to perform move: %w", err)
 	}

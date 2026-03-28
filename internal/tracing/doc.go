@@ -2,9 +2,9 @@
 // the game context chain.
 //
 // [StartGameSpan] begins a new span and threads it through the [ctx.GameContext]
-// so that downstream code inherits the trace. [SpanStep] wraps a function call
-// in a child span with automatic error recording, suitable for pipeline steps
-// in the move execution path.
+// so that downstream code inherits the trace. Services self-instrument by calling
+// StartGameSpan at method entry; the [service.TracedService] decorator wraps the
+// [service.Service] interface with automatic span creation and error recording.
 //
 // # Layer
 //

@@ -266,6 +266,12 @@ local ooda = import 'ooda.libsonnet';
           legendFormat: 'WS Broadcast',
           exemplar: true,
         },
+        {
+          refId: 'E',
+          expr: 'histogram_quantile(0.95, sum(rate(event_handler_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
+          legendFormat: 'Event Handler (post-response)',
+          exemplar: true,
+        },
       ],
       unit='s',
       overrides=[
@@ -294,16 +300,25 @@ local ooda = import 'ooda.libsonnet';
             { id: 'color', value: { mode: 'fixed', fixedColor: colors.ws } },
           ],
         },
+        {
+          matcher: { id: 'byName', options: 'Event Handler (post-response)' },
+          properties: [
+            { id: 'color', value: { mode: 'fixed', fixedColor: colors.eventBus } },
+            { id: 'custom.lineStyle', value: { fill: 'dash', dash: [10, 10] } },
+            { id: 'custom.fillOpacity', value: 0 },
+          ],
+        },
       ],
     ) + {
       id: 10,
-      description: 'P95 latency for each server boundary overlaid: HTTP total, DB transaction, game logic, WS broadcast. Normal: DB + game logic + WS sum to roughly HTTP total. Watch for: one boundary dominating (e.g. DB > 70% of HTTP). Check next: Database dashboard if DB dominates, WebSocket dashboard if WS dominates.',
+      description: 'P95 latency for each server boundary overlaid: HTTP total, DB transaction, game logic, WS broadcast, event handler (dashed, async post-response). Normal: DB + game logic + WS sum to roughly HTTP total; event handler runs independently after response. Watch for: one boundary dominating (e.g. DB > 70% of HTTP) or event handler exceeding HTTP total. Check next: Database dashboard if DB dominates, WebSocket dashboard if WS dominates, Request Lifecycle for event handler breakdown.',
       gridPos: { h: 8, w: 24, x: 0, y: 22 },
       fieldConfig+: {
         defaults+: {
           links: [
             links.toDashboard('Database Detail', links.dashboardUids.database),
             links.toDashboard('WebSocket Detail', links.dashboardUids.websocket),
+            links.toDashboard('Request Lifecycle', links.dashboardUids.requestLifecycle),
           ],
         },
       },

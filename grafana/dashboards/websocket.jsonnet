@@ -51,7 +51,7 @@ local thresholds = import 'thresholds.libsonnet';
     // Panel 3: Broadcast Latency P50/P95/P99 (timeseries + SLO threshold line)
     common.timeseriesPanel(
       title='Broadcast Latency P50/P95/P99',
-      targets=common.histogramQuantileTargets(
+      targets=common.histogramQuantileTargetsWithExemplars(
         'ws_broadcast_duration_seconds_bucket',
         [['0.5', 'P50'], ['0.95', 'P95'], ['0.99', 'P99']],
       ),
@@ -135,6 +135,30 @@ local thresholds = import 'thresholds.libsonnet';
       id: 4,
       description: 'Normal: 0 errors/sec. Watch for: any sustained errors indicate broken connections not being cleaned up. Check next: active connections stat — errors without connection count dropping suggests a leak.',
       gridPos: { h: 8, w: 12, x: 0, y: 28 },
+    },
+
+    // Panel 6: WebSocket Broadcast Logs (Loki)
+    {
+      id: 6,
+      title: 'WebSocket Broadcast Logs',
+      description: 'Normal: Broadcast operations. Watch for: Error-level entries, panic recoveries.',
+      type: 'logs',
+      datasource: { type: 'loki', uid: 'loki' },
+      targets: [{
+        refId: 'A',
+        expr: '{service_name="risk-it"} |= "broadcast" or |= "websocket" or |= "ws"',
+      }],
+      gridPos: { h: 8, w: 12, x: 12, y: 28 },
+      options: {
+        showTime: true,
+        showLabels: false,
+        showCommonLabels: false,
+        wrapLogMessage: true,
+        prettifyLogMessage: false,
+        enableLogDetails: true,
+        sortOrder: 'Descending',
+        dedupStrategy: 'none',
+      },
     },
   ],
 }

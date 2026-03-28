@@ -67,8 +67,8 @@ func gameContext() ctx.GameContext {
 }
 
 // matchGameCtx returns a mock.MatchedBy matcher that validates a GameContext
-// carries the expected gameID and userID. SpanStep wraps contexts via WithBase,
-// so we can't match on exact instance identity.
+// carries the expected gameID and userID. TracedService and StartGameSpan wrap
+// contexts via WithBase, so we can't match on exact instance identity.
 func matchGameCtx(expected ctx.GameContext) any {
 	return mock.MatchedBy(func(actual ctx.GameContext) bool {
 		return actual.GameID() == expected.GameID() &&

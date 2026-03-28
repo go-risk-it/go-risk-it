@@ -10,6 +10,7 @@ import (
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
+	"github.com/go-risk-it/go-risk-it/internal/tracing"
 )
 
 type Service interface {
@@ -27,6 +28,9 @@ func New(playerService player.Service) Service {
 }
 
 func (s *service) Validate(ctx ctx.GameContext, querier db.Querier, game *state.Game) error {
+	ctx, span := tracing.StartGameSpan(ctx, "game.move.validate")
+	defer span.End()
+
 	slog.DebugContext(ctx, "performing generic move validation")
 
 	if game.WinnerUserID != "" {

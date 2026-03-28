@@ -342,6 +342,11 @@
                             "targetBlank": true,
                             "title": "Database",
                             "url": "/d/database?from=${__from}&to=${__to}"
+                        },
+                        {
+                            "targetBlank": true,
+                            "title": "Request Lifecycle",
+                            "url": "/d/request-lifecycle?from=${__from}&to=${__to}"
                         }
                     ],
                     "unit": "s"
@@ -504,11 +509,13 @@
             },
             "targets": [
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.5, sum(rate(game_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
                     "legendFormat": "P50",
                     "refId": "A"
                 },
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.95, sum(rate(game_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
                     "legendFormat": "P95",
                     "refId": "B"
@@ -531,6 +538,38 @@
         },
         {
             "datasource": {
+                "type": "loki",
+                "uid": "loki"
+            },
+            "description": "Normal: Game creation, move execution, phase transitions. Watch for: Error-level entries, panic recoveries.",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 36
+            },
+            "id": 9,
+            "options": {
+                "dedupStrategy": "none",
+                "enableLogDetails": true,
+                "prettifyLogMessage": false,
+                "showCommonLabels": false,
+                "showLabels": false,
+                "showTime": true,
+                "sortOrder": "Descending",
+                "wrapLogMessage": true
+            },
+            "targets": [
+                {
+                    "expr": "{service_name=\"risk-it\"} |= \"game\"",
+                    "refId": "A"
+                }
+            ],
+            "title": "Game Event Logs",
+            "type": "logs"
+        },
+        {
+            "datasource": {
                 "type": "prometheus",
                 "uid": "prometheus"
             },
@@ -547,7 +586,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 36
+                "y": 44
             },
             "id": 6,
             "options": {

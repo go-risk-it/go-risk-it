@@ -43,7 +43,7 @@ func NewService(
 		regionService: regionService,
 	}
 
-	return svc, svc
+	return svc, moveservice.NewTracedService[Move, struct{}](svc)
 }
 
 func (s *service) GetDeployableTroops(ctx ctx.GameContext) (int64, error) {

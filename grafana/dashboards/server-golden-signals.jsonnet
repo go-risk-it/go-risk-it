@@ -83,7 +83,7 @@ local ooda = import 'ooda.libsonnet';
     // Panel 3: HTTP Latency P50/P95/P99 (histogram_quantile + SLO threshold)
     common.timeseriesPanel(
       title='HTTP Latency P50/P95/P99',
-      targets=common.histogramQuantileTargets(
+      targets=common.histogramQuantileTargetsWithExemplars(
         'http_server_request_duration_seconds_bucket',
         [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']],
       ),
@@ -107,7 +107,7 @@ local ooda = import 'ooda.libsonnet';
     // Panel 10: Scheduler Latency P50/P95/P99 (histogram_quantile)
     common.timeseriesPanel(
       title='Scheduler Latency P50/P95/P99',
-      targets=common.histogramQuantileTargets(
+      targets=common.histogramQuantileTargetsWithExemplars(
         'go_schedule_duration_seconds_bucket',
         [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']],
       ),

@@ -10,6 +10,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/game/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
@@ -57,7 +58,7 @@ func TestServiceImpl_ShouldFailWhenPlayerNotInGame(t *testing.T) {
 
 	playerService.
 		EXPECT().
-		GetPlayers(ctx, querier).
+		GetPlayers(mock.Anything, querier).
 		Return(players, nil)
 
 	err := service.Validate(ctx, querier, game)
@@ -97,7 +98,7 @@ func TestServiceImpl_ShouldFailOnTurnCheck(t *testing.T) {
 			}
 			playerService.
 				EXPECT().
-				GetPlayers(ctx, querier).
+				GetPlayers(mock.Anything, querier).
 				Return(players, nil)
 
 			game := &state.Game{
