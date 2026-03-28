@@ -38,7 +38,20 @@ local gameIdVar = {
     list: [traceIdVar, gameIdVar],
   },
 
-  annotations: { list: [] },
+  annotations: {
+    list: [
+      {
+        builtIn: 1,
+        datasource: { type: 'grafana', uid: '-- Grafana --' },
+        enable: true,
+        hide: false,
+        iconColor: 'rgba(0, 211, 255, 1)',
+        name: 'Perf Test Phases',
+        type: 'dashboard',
+        target: { matchAny: true, tags: ['perf-test'], type: 'tags' },
+      },
+    ],
+  },
 
   panels: [
     // ── Observe — Am I OK? ──────────────────────────────────────────

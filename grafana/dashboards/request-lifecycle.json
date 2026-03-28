@@ -1,6 +1,26 @@
 {
     "annotations": {
-        "list": []
+        "list": [
+            {
+                "builtIn": 1,
+                "datasource": {
+                    "type": "grafana",
+                    "uid": "-- Grafana --"
+                },
+                "enable": true,
+                "hide": false,
+                "iconColor": "rgba(0, 211, 255, 1)",
+                "name": "Perf Test Phases",
+                "target": {
+                    "matchAny": true,
+                    "tags": [
+                        "perf-test"
+                    ],
+                    "type": "tags"
+                },
+                "type": "dashboard"
+            }
+        ]
     },
     "description": "Full request lifecycle: HTTP ingress through game logic, DB transaction, WS broadcast, and async event handling",
     "editable": true,
