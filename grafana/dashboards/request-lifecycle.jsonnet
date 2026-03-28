@@ -294,13 +294,17 @@ local gameIdVar = {
       },
     },
 
-    // Panel 8: Recent Traces table (sorted by duration, click to investigate)
+    // Panel 8: Slow Traces table (client-side duration filter, click to investigate)
     // Note: trace duration measures handler execution, not queue wait.
     // At high concurrency, most HTTP latency is DB pool wait (pre-span).
+    // Local Tempo doesn't support TraceQL duration filtering — using Grafana
+    // filterByValue transformation on traceDuration (ms) instead.
+    // The traces panel type hangs indefinitely with queryType traceId in
+    // Grafana 12 + otel-lgtm (streaming query issue), so we link to Explore.
     {
       id: 8,
-      title: 'Traces — click Duration to sort, copy Trace ID to investigate',
-      description: 'Traces measure execution time only — DB pool queue wait is not included (pre-span). Click the Duration column header to sort by slowest. Copy a Trace ID and paste into the textbox above to load the waterfall.',
+      title: 'Slow Traces (>250ms) — click Trace ID to investigate',
+      description: 'Traces exceeding 250ms duration. Measures execution time only — DB pool queue wait is not included (pre-span). Click a Trace ID to open the full trace waterfall in Explore. Duration filtered client-side (local Tempo has no duration index).',
       type: 'table',
       datasource: { type: 'tempo', uid: 'tempo' },
       targets: [{
@@ -310,46 +314,116 @@ local gameIdVar = {
         limit: 20,
         tableType: 'traces',
       }],
+      transformations: [
+        // Strip nested span sub-frames so filterByValue works on flat data.
+        // Field names must use display names (Grafana transforms match on displayNameFromDS).
+        {
+          id: 'filterFieldsByName',
+          options: {
+            include: {
+              names: ['Trace ID', 'Start time', 'Service', 'Name', 'Duration'],
+            },
+          },
+        },
+        // Client-side duration filter (local Tempo ignores TraceQL duration/minDuration).
+        // traceDuration unit is ms (confirmed via Grafana API).
+        {
+          id: 'filterByValue',
+          options: {
+            type: 'include',
+            match: 'all',
+            filters: [{
+              fieldName: 'Duration',
+              config: {
+                id: 'greater',
+                options: { value: 250 },
+              },
+            }],
+          },
+        },
+      ],
       gridPos: { h: 8, w: 24, x: 0, y: 46 },
-      fieldConfig: { defaults: {}, overrides: [] },
-      options: {},
+      fieldConfig: {
+        defaults: {},
+        overrides: [
+          {
+            matcher: { id: 'byName', options: 'Trace ID' },
+            properties: [{
+              id: 'links',
+              value: [{
+                title: 'View trace waterfall',
+                url: '/d/request-lifecycle/?var-traceId=${__value.raw}&from=${__from}&to=${__to}',
+                targetBlank: false,
+              }],
+            }],
+          },
+          {
+            matcher: { id: 'byName', options: 'Duration' },
+            properties: [
+              {
+                id: 'custom.cellOptions',
+                value: { type: 'color-background', mode: 'gradient' },
+              },
+              {
+                id: 'thresholds',
+                value: {
+                  mode: 'absolute',
+                  steps: [
+                    { color: 'green', value: null },
+                    { color: 'yellow', value: 500 },
+                    { color: 'red', value: 1000 },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      },
+      options: {
+        sortBy: [{ displayName: 'Duration', desc: true }],
+      },
     },
 
     // Panel 9: Trace Waterfall (driven by $traceId variable)
+    // IMPORTANT: queryType must be 'traceql', NOT 'traceId'.
+    // 'traceId' is internal-only — the Tempo datasource query() method has no
+    // handler for it, returning EMPTY and causing infinite loading.
+    // 'traceql' with a bare hex string triggers isTraceIdQuery() detection,
+    // which routes to handleTraceIdQuery() internally.
     {
       id: 9,
-      title: 'Trace Waterfall — paste a Trace ID above',
+      title: 'Trace Waterfall',
       description: 'Normal: Shows full request lifecycle. Watch for: Missing spans, long gaps. Check next: Correlated Logs panel below.',
       type: 'traces',
       datasource: { type: 'tempo', uid: 'tempo' },
       targets: [{
         refId: 'A',
-        queryType: 'traceId',
+        queryType: 'traceql',
         query: '${traceId}',
       }],
-      gridPos: { h: 12, w: 24, x: 0, y: 54 },
+      gridPos: { h: 24, w: 24, x: 0, y: 54 },
     },
 
     // Panel 10: Correlated Logs (Loki entries matching selected trace)
     {
       id: 10,
       title: 'Correlated Logs',
-      description: 'Normal: Log entries matching the selected trace. Watch for: Error-level entries. Check next: Click trace_id to cross-reference.',
+      description: 'Log entries matching the selected trace, color-coded by level. Watch for: Error-level entries (red). Timestamps correlate with waterfall spans above.',
       type: 'logs',
       datasource: { type: 'loki', uid: 'loki' },
       targets: [{
         refId: 'A',
         expr: '{service_name="risk-it"} | trace_id=`${traceId}`',
       }],
-      gridPos: { h: 10, w: 24, x: 0, y: 66 },
+      gridPos: { h: 14, w: 24, x: 0, y: 78 },
       options: {
         showTime: true,
-        showLabels: false,
+        showLabels: true,
         showCommonLabels: false,
         wrapLogMessage: true,
-        prettifyLogMessage: false,
+        prettifyLogMessage: true,
         enableLogDetails: true,
-        sortOrder: 'Descending',
+        sortOrder: 'Ascending',
         dedupStrategy: 'none',
       },
     },

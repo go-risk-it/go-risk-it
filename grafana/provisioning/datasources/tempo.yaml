@@ -1,0 +1,27 @@
+# Override built-in Tempo datasource with trace-to-logs and node graph.
+# The otel-lgtm image pre-provisions Tempo (uid: tempo) with defaults.
+# This file adds cross-datasource correlation features.
+apiVersion: 1
+
+datasources:
+  - name: Tempo
+    type: tempo
+    uid: tempo
+    url: http://127.0.0.1:3200
+    access: proxy
+    isDefault: false
+    jsonData:
+      tracesToLogsV2:
+        datasourceUid: loki
+        spanStartTimeShift: '-1m'
+        spanEndTimeShift: '1m'
+        filterByTraceID: true
+        filterBySpanID: false
+        customQuery: true
+        query: '{service_name="${__span.tags["service.name"]}"} | trace_id=`${__trace.traceId}`'
+      nodeGraph:
+        enabled: true
+      tracesToMetrics:
+        datasourceUid: prometheus
+        spanStartTimeShift: '-1m'
+        spanEndTimeShift: '1m'

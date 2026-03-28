@@ -711,10 +711,64 @@
                 "type": "tempo",
                 "uid": "tempo"
             },
-            "description": "Traces measure execution time only \u2014 DB pool queue wait is not included (pre-span). Click the Duration column header to sort by slowest. Copy a Trace ID and paste into the textbox above to load the waterfall.",
+            "description": "Traces exceeding 250ms duration. Measures execution time only \u2014 DB pool queue wait is not included (pre-span). Click a Trace ID to open the full trace waterfall in Explore. Duration filtered client-side (local Tempo has no duration index).",
             "fieldConfig": {
                 "defaults": {},
-                "overrides": []
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Trace ID"
+                        },
+                        "properties": [
+                            {
+                                "id": "links",
+                                "value": [
+                                    {
+                                        "targetBlank": false,
+                                        "title": "View trace waterfall",
+                                        "url": "/d/request-lifecycle/?var-traceId=${__value.raw}&from=${__from}&to=${__to}"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Duration"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.cellOptions",
+                                "value": {
+                                    "mode": "gradient",
+                                    "type": "color-background"
+                                }
+                            },
+                            {
+                                "id": "thresholds",
+                                "value": {
+                                    "mode": "absolute",
+                                    "steps": [
+                                        {
+                                            "color": "green",
+                                            "value": null
+                                        },
+                                        {
+                                            "color": "yellow",
+                                            "value": 500
+                                        },
+                                        {
+                                            "color": "red",
+                                            "value": 1000
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                ]
             },
             "gridPos": {
                 "h": 8,
@@ -723,7 +777,14 @@
                 "y": 46
             },
             "id": 8,
-            "options": {},
+            "options": {
+                "sortBy": [
+                    {
+                        "desc": true,
+                        "displayName": "Duration"
+                    }
+                ]
+            },
             "targets": [
                 {
                     "limit": 20,
@@ -733,7 +794,41 @@
                     "tableType": "traces"
                 }
             ],
-            "title": "Traces \u2014 click Duration to sort, copy Trace ID to investigate",
+            "title": "Slow Traces (>250ms) \u2014 click Trace ID to investigate",
+            "transformations": [
+                {
+                    "id": "filterFieldsByName",
+                    "options": {
+                        "include": {
+                            "names": [
+                                "Trace ID",
+                                "Start time",
+                                "Service",
+                                "Name",
+                                "Duration"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "id": "filterByValue",
+                    "options": {
+                        "filters": [
+                            {
+                                "config": {
+                                    "id": "greater",
+                                    "options": {
+                                        "value": 250
+                                    }
+                                },
+                                "fieldName": "Duration"
+                            }
+                        ],
+                        "match": "all",
+                        "type": "include"
+                    }
+                }
+            ],
             "type": "table"
         },
         {
@@ -743,7 +838,7 @@
             },
             "description": "Normal: Shows full request lifecycle. Watch for: Missing spans, long gaps. Check next: Correlated Logs panel below.",
             "gridPos": {
-                "h": 12,
+                "h": 24,
                 "w": 24,
                 "x": 0,
                 "y": 54
@@ -752,11 +847,11 @@
             "targets": [
                 {
                     "query": "${traceId}",
-                    "queryType": "traceId",
+                    "queryType": "traceql",
                     "refId": "A"
                 }
             ],
-            "title": "Trace Waterfall \u2014 paste a Trace ID above",
+            "title": "Trace Waterfall",
             "type": "traces"
         },
         {
@@ -764,22 +859,22 @@
                 "type": "loki",
                 "uid": "loki"
             },
-            "description": "Normal: Log entries matching the selected trace. Watch for: Error-level entries. Check next: Click trace_id to cross-reference.",
+            "description": "Log entries matching the selected trace, color-coded by level. Watch for: Error-level entries (red). Timestamps correlate with waterfall spans above.",
             "gridPos": {
-                "h": 10,
+                "h": 14,
                 "w": 24,
                 "x": 0,
-                "y": 66
+                "y": 78
             },
             "id": 10,
             "options": {
                 "dedupStrategy": "none",
                 "enableLogDetails": true,
-                "prettifyLogMessage": false,
+                "prettifyLogMessage": true,
                 "showCommonLabels": false,
-                "showLabels": false,
+                "showLabels": true,
                 "showTime": true,
-                "sortOrder": "Descending",
+                "sortOrder": "Ascending",
                 "wrapLogMessage": true
             },
             "targets": [

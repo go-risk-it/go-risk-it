@@ -60,6 +60,7 @@ services:
       - lgtm-data:/data
       - ./grafana/dashboards/dashboards.yml:/otel-lgtm/grafana/conf/provisioning/dashboards/go-risk-it.yaml
       - ./grafana/dashboards:/otel-lgtm/go-risk-it-dashboards
+      - ./grafana/provisioning/datasources/tempo.yaml:/otel-lgtm/grafana/conf/provisioning/datasources/tempo.yaml
       - ./grafana/otelcol-extra.yaml:/otel-lgtm/otelcol-config.yaml
 
   postgres-exporter:
