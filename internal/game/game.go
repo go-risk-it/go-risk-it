@@ -1,7 +1,7 @@
 package game
 
 import (
-	"github.com/go-risk-it/go-risk-it/internal/game/consumers"
+	consumers "github.com/go-risk-it/go-risk-it/internal/game/publisher"
 	"github.com/go-risk-it/go-risk-it/internal/game/routes"
 	"github.com/go-risk-it/go-risk-it/internal/game/ws"
 	"go.uber.org/fx"

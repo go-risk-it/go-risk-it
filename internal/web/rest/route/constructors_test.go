@@ -146,3 +146,136 @@ func TestRoute_Wrap_PreservesWebSocketFlag(t *testing.T) {
 	assert.True(t, wrapped.RequiresAuth())
 	assert.Equal(t, wsRoute.Pattern(), wrapped.Pattern())
 }
+
+// --- Domain ---
+
+const testContextValue = "ctx"
+
+func TestDomain_RequiresAuth(t *testing.T) {
+	t.Parallel()
+
+	domainRoute := route.Domain(
+		"POST /api/v1/things/{id}/action",
+		func(_ *http.Request) (string, error) {
+			return testContextValue, nil
+		},
+		func(_ http.ResponseWriter, _ *http.Request, _ string) error {
+			return nil
+		},
+	)
+
+	assert.True(t, domainRoute.RequiresAuth())
+	assert.False(t, domainRoute.IsWebSocket())
+}
+
+func TestDomain_ExtractsContext(t *testing.T) {
+	t.Parallel()
+
+	type testContext struct {
+		value string
+	}
+
+	var received testContext
+
+	domainRoute := route.Domain(
+		"POST /api/v1/things/{id}/action",
+		func(_ *http.Request) (testContext, error) {
+			return testContext{value: "hello"}, nil
+		},
+		func(_ http.ResponseWriter, _ *http.Request, tc testContext) error {
+			received = tc
+
+			return nil
+		},
+	)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequestWithContext(
+		t.Context(),
+		http.MethodPost,
+		"/api/v1/things/1/action",
+		nil,
+	)
+	domainRoute.ServeHTTP(rec, req)
+
+	assert.Equal(t, "hello", received.value)
+}
+
+func TestDomain_BuildCtxError_ReturnsHTTPError(t *testing.T) {
+	t.Parallel()
+
+	spanCtx := newTracedContext(t)
+
+	domainRoute := route.Domain(
+		"POST /api/v1/things/{id}/action",
+		func(_ *http.Request) (string, error) {
+			return "", domainerrors.NewValidationError("bad id")
+		},
+		func(_ http.ResponseWriter, _ *http.Request, _ string) error {
+			t.Fatal("handler should not be called")
+
+			return nil
+		},
+	)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequestWithContext(
+		spanCtx,
+		http.MethodPost,
+		"/api/v1/things/abc/action",
+		nil,
+	)
+	domainRoute.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+
+	var resp restutils.ErrorResponse
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+	assert.Equal(t, "VALIDATION_ERROR", resp.Code)
+}
+
+func TestDomain_HandlerError_MapsToHTTPResponse(t *testing.T) {
+	t.Parallel()
+
+	spanCtx := newTracedContext(t)
+
+	domainRoute := route.Domain(
+		"POST /api/v1/things/{id}/action",
+		func(_ *http.Request) (string, error) {
+			return testContextValue, nil
+		},
+		func(_ http.ResponseWriter, _ *http.Request, _ string) error {
+			return domainerrors.NewConflictError("wrong state")
+		},
+	)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequestWithContext(spanCtx, http.MethodPost, "/api/v1/things/1/action", nil)
+	domainRoute.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusConflict, rec.Code)
+
+	var resp restutils.ErrorResponse
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+	assert.Equal(t, "CONFLICT", resp.Code)
+}
+
+// --- DomainWS ---
+
+func TestDomainWS_CreatesWSRoute(t *testing.T) {
+	t.Parallel()
+
+	wsRoute := route.DomainWS(
+		"GET /api/v1/things/{id}/ws",
+		func(_ *http.Request) (string, error) {
+			return testContextValue, nil
+		},
+		func(_ http.ResponseWriter, _ *http.Request, _ string) error {
+			return nil
+		},
+	)
+
+	assert.True(t, wsRoute.IsWebSocket())
+	assert.True(t, wsRoute.RequiresAuth())
+	assert.Equal(t, "GET /api/v1/things/{id}/ws", wsRoute.Pattern())
+}

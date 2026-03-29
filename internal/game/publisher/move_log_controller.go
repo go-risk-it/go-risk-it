@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"log/slog"
 
-	game "github.com/go-risk-it/go-risk-it/internal/game/api"
 	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/orchestration/logging"
+	"github.com/go-risk-it/go-risk-it/internal/game/publisher/converter"
 )
 
 // MoveLogController translates between sqlc move log rows and messaging DTOs.
@@ -93,7 +93,7 @@ func convertMoveLogs(moveLogs []sqlc.GetMoveLogsRow) ([]messaging.MovePerformed,
 }
 
 func convertSqlcLog(userID string, sqlcLog sqlc.GameMoveLog) (messaging.MovePerformed, error) {
-	phase, err := convertPhase(sqlcLog.Phase)
+	phase, err := converter.ConvertPhaseType(sqlcLog.Phase)
 	if err != nil {
 		return messaging.MovePerformed{}, fmt.Errorf("unable to convert phase: %w", err)
 	}
@@ -108,7 +108,7 @@ func convertSqlcLog(userID string, sqlcLog sqlc.GameMoveLog) (messaging.MovePerf
 }
 
 func convertMoveLog(moveLog sqlc.GetMoveLogsRow) (messaging.MovePerformed, error) {
-	phase, err := convertPhase(moveLog.Phase)
+	phase, err := converter.ConvertPhaseType(moveLog.Phase)
 	if err != nil {
 		return messaging.MovePerformed{}, fmt.Errorf("unable to convert phase: %w", err)
 	}
@@ -120,21 +120,4 @@ func convertMoveLog(moveLog sqlc.GetMoveLogsRow) (messaging.MovePerformed, error
 		Created: moveLog.Created.Time,
 		UserID:  moveLog.UserID,
 	}, nil
-}
-
-func convertPhase(phaseType sqlc.GamePhaseType) (game.PhaseType, error) {
-	switch phaseType {
-	case sqlc.GamePhaseTypeCARDS:
-		return game.Cards, nil
-	case sqlc.GamePhaseTypeDEPLOY:
-		return game.Deploy, nil
-	case sqlc.GamePhaseTypeATTACK:
-		return game.Attack, nil
-	case sqlc.GamePhaseTypeCONQUER:
-		return game.Conquer, nil
-	case sqlc.GamePhaseTypeREINFORCE:
-		return game.Reinforce, nil
-	default:
-		return "", fmt.Errorf("invalid phase type: %s", phaseType)
-	}
 }

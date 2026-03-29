@@ -2,39 +2,40 @@ package converter
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	game "github.com/go-risk-it/go-risk-it/internal/game/api"
+	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 )
 
 // MissionResolver fetches mission details for a given mission type and ID,
-// returning the result as a json.RawMessage envelope ready for WS delivery.
-// The caller (signal handler) provides the real implementation backed by
+// returning the result as a typed DTO ready for serialization at the dispatch
+// boundary. The caller (publisher) provides the real implementation backed by
 // MissionController; tests provide a stub.
 type MissionResolver func(
 	ctx context.Context,
 	missionType sqlc.GameMissionType,
 	missionID int64,
-) (json.RawMessage, error)
+) (any, error)
 
-// PublicMessages holds the pre-serialized WS messages for the public broadcast path.
+// PublicMessages holds the typed DTOs for the public broadcast path.
+// The publisher serializes these into WS message envelopes at dispatch time.
 type PublicMessages struct {
-	GameState   json.RawMessage
-	BoardState  json.RawMessage
-	PlayerState json.RawMessage
+	GameState   any
+	BoardState  messaging.BoardState
+	PlayerState messaging.PlayersState
 }
 
-// PrivateMessages holds the pre-serialized WS messages for a single player's
-// private write path.
+// PrivateMessages holds the typed DTOs for a single player's private write path.
+// The publisher serializes these into WS message envelopes at dispatch time.
 type PrivateMessages struct {
-	CardState    json.RawMessage
-	MissionState json.RawMessage
+	CardState    messaging.CardState
+	MissionState any
 }
 
-// convertPhaseType maps sqlc phase types to the API-layer game.PhaseType.
-func convertPhaseType(phaseType sqlc.GamePhaseType) (game.PhaseType, error) {
+// ConvertPhaseType maps sqlc phase types to the API-layer game.PhaseType.
+func ConvertPhaseType(phaseType sqlc.GamePhaseType) (game.PhaseType, error) {
 	switch phaseType {
 	case sqlc.GamePhaseTypeDEPLOY:
 		return game.Deploy, nil

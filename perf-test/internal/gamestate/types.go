@@ -16,7 +16,7 @@ const (
 	Reinforce PhaseType = "reinforce"
 )
 
-// WSMessage is the WS envelope — matches internal/web/ws/message/message.go.
+// WSMessage is the WS envelope — matches game/api/messaging.Message.
 type WSMessage struct {
 	Type    string          `json:"type"`
 	Payload json.RawMessage `json:"data"`

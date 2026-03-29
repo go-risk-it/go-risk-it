@@ -2,27 +2,27 @@ package converter_test
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/game/consumers/converter"
+	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/snapshot"
+	"github.com/go-risk-it/go-risk-it/internal/game/publisher/converter"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 )
 
 func stubMissionResolver(
-	msg json.RawMessage,
+	val any,
 	err error,
 ) converter.MissionResolver {
 	return func(
 		_ context.Context,
 		_ sqlc.GameMissionType,
 		_ int64,
-	) (json.RawMessage, error) {
-		return msg, err
+	) (any, error) {
+		return val, err
 	}
 }
 
@@ -41,7 +41,7 @@ func TestConvertPrivateSnapshot_Infantry(t *testing.T) {
 		MissionID:   100,
 	}
 
-	fakeMission := json.RawMessage(`{"type":"missionState","data":{"type":"twoContinents"}}`)
+	fakeMission := "stub-mission"
 	result, err := converter.ConvertPrivateSnapshot(
 		t.Context(),
 		snap,
@@ -50,21 +50,10 @@ func TestConvertPrivateSnapshot_Infantry(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify card state
-	cardMsg := unmarshalMessage(t, result.CardState)
-	require.Equal(t, "cardState", cardMsg.Type)
-
-	var cardData map[string]any
-	require.NoError(t, json.Unmarshal(cardMsg.Payload, &cardData))
-
-	cards, ok := cardData["cards"].([]any)
-	require.True(t, ok)
-	require.Len(t, cards, 1)
-
-	card0, ok := cards[0].(map[string]any)
-	require.True(t, ok)
-	require.InDelta(t, float64(1), card0["id"], 0)
-	require.Equal(t, "infantry", card0["type"])
-	require.Equal(t, "alaska", card0["region"])
+	require.Len(t, result.CardState.Cards, 1)
+	require.Equal(t, int64(1), result.CardState.Cards[0].ID)
+	require.Equal(t, messaging.Infantry, result.CardState.Cards[0].Type)
+	require.Equal(t, "alaska", result.CardState.Cards[0].Region)
 
 	// Verify mission state is passed through from resolver
 	require.Equal(t, fakeMission, result.MissionState)
@@ -85,23 +74,15 @@ func TestConvertPrivateSnapshot_Cavalry(t *testing.T) {
 		MissionID:   100,
 	}
 
-	fakeMission := json.RawMessage(`{}`)
 	result, err := converter.ConvertPrivateSnapshot(
 		t.Context(),
 		snap,
-		stubMissionResolver(fakeMission, nil),
+		stubMissionResolver("stub", nil),
 	)
 	require.NoError(t, err)
 
-	cardMsg := unmarshalMessage(t, result.CardState)
-	var cardData map[string]any
-	require.NoError(t, json.Unmarshal(cardMsg.Payload, &cardData))
-
-	cards, ok := cardData["cards"].([]any)
-	require.True(t, ok)
-	card0, ok := cards[0].(map[string]any)
-	require.True(t, ok)
-	require.Equal(t, "cavalry", card0["type"])
+	require.Len(t, result.CardState.Cards, 1)
+	require.Equal(t, messaging.Cavalry, result.CardState.Cards[0].Type)
 }
 
 func TestConvertPrivateSnapshot_Artillery(t *testing.T) {
@@ -119,23 +100,15 @@ func TestConvertPrivateSnapshot_Artillery(t *testing.T) {
 		MissionID:   100,
 	}
 
-	fakeMission := json.RawMessage(`{}`)
 	result, err := converter.ConvertPrivateSnapshot(
 		t.Context(),
 		snap,
-		stubMissionResolver(fakeMission, nil),
+		stubMissionResolver("stub", nil),
 	)
 	require.NoError(t, err)
 
-	cardMsg := unmarshalMessage(t, result.CardState)
-	var cardData map[string]any
-	require.NoError(t, json.Unmarshal(cardMsg.Payload, &cardData))
-
-	cards, ok := cardData["cards"].([]any)
-	require.True(t, ok)
-	card0, ok := cards[0].(map[string]any)
-	require.True(t, ok)
-	require.Equal(t, "artillery", card0["type"])
+	require.Len(t, result.CardState.Cards, 1)
+	require.Equal(t, messaging.Artillery, result.CardState.Cards[0].Type)
 }
 
 func TestConvertPrivateSnapshot_JollyCard(t *testing.T) {
@@ -153,24 +126,16 @@ func TestConvertPrivateSnapshot_JollyCard(t *testing.T) {
 		MissionID:   200,
 	}
 
-	fakeMission := json.RawMessage(`{}`)
 	result, err := converter.ConvertPrivateSnapshot(
 		t.Context(),
 		snap,
-		stubMissionResolver(fakeMission, nil),
+		stubMissionResolver("stub", nil),
 	)
 	require.NoError(t, err)
 
-	cardMsg := unmarshalMessage(t, result.CardState)
-	var cardData map[string]any
-	require.NoError(t, json.Unmarshal(cardMsg.Payload, &cardData))
-
-	cards, ok := cardData["cards"].([]any)
-	require.True(t, ok)
-	card0, ok := cards[0].(map[string]any)
-	require.True(t, ok)
-	require.Equal(t, "jolly", card0["type"])
-	require.Empty(t, card0["region"])
+	require.Len(t, result.CardState.Cards, 1)
+	require.Equal(t, messaging.Jolly, result.CardState.Cards[0].Type)
+	require.Empty(t, result.CardState.Cards[0].Region)
 }
 
 func TestConvertPrivateSnapshot_EmptyCardList(t *testing.T) {
@@ -182,21 +147,14 @@ func TestConvertPrivateSnapshot_EmptyCardList(t *testing.T) {
 		MissionID:   300,
 	}
 
-	fakeMission := json.RawMessage(`{}`)
 	result, err := converter.ConvertPrivateSnapshot(
 		t.Context(),
 		snap,
-		stubMissionResolver(fakeMission, nil),
+		stubMissionResolver("stub", nil),
 	)
 	require.NoError(t, err)
 
-	cardMsg := unmarshalMessage(t, result.CardState)
-	var cardData map[string]any
-	require.NoError(t, json.Unmarshal(cardMsg.Payload, &cardData))
-
-	cards, ok := cardData["cards"].([]any)
-	require.True(t, ok)
-	require.Empty(t, cards)
+	require.Empty(t, result.CardState.Cards)
 }
 
 func TestConvertPrivateSnapshot_NilCardList(t *testing.T) {
@@ -208,21 +166,14 @@ func TestConvertPrivateSnapshot_NilCardList(t *testing.T) {
 		MissionID:   400,
 	}
 
-	fakeMission := json.RawMessage(`{}`)
 	result, err := converter.ConvertPrivateSnapshot(
 		t.Context(),
 		snap,
-		stubMissionResolver(fakeMission, nil),
+		stubMissionResolver("stub", nil),
 	)
 	require.NoError(t, err)
 
-	cardMsg := unmarshalMessage(t, result.CardState)
-	var cardData map[string]any
-	require.NoError(t, json.Unmarshal(cardMsg.Payload, &cardData))
-
-	cards, ok := cardData["cards"].([]any)
-	require.True(t, ok)
-	require.Empty(t, cards)
+	require.Empty(t, result.CardState.Cards)
 }
 
 func TestConvertPrivateSnapshot_MissionResolverError(t *testing.T) {
@@ -261,11 +212,11 @@ func TestConvertPrivateSnapshot_MissionResolverReceivesCorrectArgs(t *testing.T)
 		_ context.Context,
 		missionType sqlc.GameMissionType,
 		missionID int64,
-	) (json.RawMessage, error) {
+	) (any, error) {
 		capturedType = missionType
 		capturedID = missionID
 
-		return json.RawMessage(`{}`), nil
+		return "stub", nil
 	}
 
 	_, err := converter.ConvertPrivateSnapshot(t.Context(), snap, resolver)
@@ -300,30 +251,19 @@ func TestConvertPrivateSnapshot_MultipleCards(t *testing.T) {
 		MissionID:   500,
 	}
 
-	fakeMission := json.RawMessage(`{}`)
 	result, err := converter.ConvertPrivateSnapshot(
 		t.Context(),
 		snap,
-		stubMissionResolver(fakeMission, nil),
+		stubMissionResolver("stub", nil),
 	)
 	require.NoError(t, err)
 
-	cardMsg := unmarshalMessage(t, result.CardState)
-	var cardData map[string]any
-	require.NoError(t, json.Unmarshal(cardMsg.Payload, &cardData))
-
-	cards, ok := cardData["cards"].([]any) //nolint:varnamelen
-	require.True(t, ok)
-	require.Len(t, cards, 4)
+	require.Len(t, result.CardState.Cards, 4)
 
 	// Verify order preserved
-	card0, ok := cards[0].(map[string]any)
-	require.True(t, ok)
-	require.Equal(t, "infantry", card0["type"])
-	require.Equal(t, "alaska", card0["region"])
+	require.Equal(t, messaging.Infantry, result.CardState.Cards[0].Type)
+	require.Equal(t, "alaska", result.CardState.Cards[0].Region)
 
-	card3, ok := cards[3].(map[string]any)
-	require.True(t, ok)
-	require.Equal(t, "jolly", card3["type"])
-	require.Empty(t, card3["region"])
+	require.Equal(t, messaging.Jolly, result.CardState.Cards[3].Type)
+	require.Empty(t, result.CardState.Cards[3].Region)
 }

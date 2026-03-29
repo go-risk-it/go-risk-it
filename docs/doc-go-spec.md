@@ -135,11 +135,11 @@ All other non-excluded packages. Required doc.go sections:
 | `game/logic/timing` | logic |
 | `game/rand` | logic |
 | `game/tracing` | logic |
-| `game/consumers` | web |
-| `game/consumers/converter` | web |
+| `game/publisher` | web |
+| `game/publisher/converter` | web |
 | `game/routes` | web |
 | `game/ws` | web |
-| `lobby/consumers` | web |
+| `lobby/publisher` | web |
 | `lobby/routes` | web |
 | `lobby/ws` | web |
 | `web/middleware` | web |
@@ -222,7 +222,7 @@ checked first (see `expectedLayer` in arch_test.go), then prefix-based rules:
 3. starts with "game/data/" or "lobby/data/" → data
 4. starts with "game/events" or "lobby/events" → events-domain
 5. starts with "game/logic/" or "lobby/logic/" → logic
-6. starts with "game/consumers" or "lobby/consumers" → web
+6. starts with "game/publisher" or "lobby/publisher" → web
 7. starts with "data/" → data
 8. starts with "web/" → web
 9. starts with "testing/" or == "testonly" → test

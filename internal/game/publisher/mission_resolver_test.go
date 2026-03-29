@@ -2,12 +2,12 @@ package consumers_test
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/game/consumers"
+	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/mission"
+	consumers "github.com/go-risk-it/go-risk-it/internal/game/publisher"
 	mockMission "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/mission"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -29,20 +29,14 @@ func TestBuildMissionResolver_TwoContinents(t *testing.T) {
 	resolver := consumers.BuildMissionResolver(missionCtrl)
 	gameCtx := testGameContext()
 
-	raw, err := resolver(gameCtx, sqlc.GameMissionTypeTWOCONTINENTS, 10)
+	result, err := resolver(gameCtx, sqlc.GameMissionTypeTWOCONTINENTS, 10)
 	require.NoError(t, err)
 
-	msg := unmarshalEnvelope(t, raw)
-	require.Equal(t, "missionState", msg.Type)
-
-	var data map[string]any
-	require.NoError(t, json.Unmarshal(msg.Payload, &data))
-	require.Equal(t, "twoContinents", data["type"])
-
-	details, ok := data["details"].(map[string]any)
+	state, ok := result.(messaging.MissionState[messaging.TwoContinentsMission])
 	require.True(t, ok)
-	require.Equal(t, "Europe", details["continent1"])
-	require.Equal(t, "Asia", details["continent2"])
+	require.Equal(t, messaging.TwoContinents, state.Type)
+	require.Equal(t, "Europe", state.Details.Continent1)
+	require.Equal(t, "Asia", state.Details.Continent2)
 }
 
 func TestBuildMissionResolver_TwoContinentsPlusOne(t *testing.T) {
@@ -61,20 +55,14 @@ func TestBuildMissionResolver_TwoContinentsPlusOne(t *testing.T) {
 	resolver := consumers.BuildMissionResolver(missionCtrl)
 	gameCtx := testGameContext()
 
-	raw, err := resolver(gameCtx, sqlc.GameMissionTypeTWOCONTINENTSPLUSONE, 50)
+	result, err := resolver(gameCtx, sqlc.GameMissionTypeTWOCONTINENTSPLUSONE, 50)
 	require.NoError(t, err)
 
-	msg := unmarshalEnvelope(t, raw)
-	require.Equal(t, "missionState", msg.Type)
-
-	var data map[string]any
-	require.NoError(t, json.Unmarshal(msg.Payload, &data))
-	require.Equal(t, "twoContinentsPlusOne", data["type"])
-
-	details, ok := data["details"].(map[string]any)
+	state, ok := result.(messaging.MissionState[messaging.TwoContinentsPlusOneMission])
 	require.True(t, ok)
-	require.Equal(t, "Africa", details["continent1"])
-	require.Equal(t, "SouthAmerica", details["continent2"])
+	require.Equal(t, messaging.TwoContinentsPlusOne, state.Type)
+	require.Equal(t, "Africa", state.Details.Continent1)
+	require.Equal(t, "SouthAmerica", state.Details.Continent2)
 }
 
 func TestBuildMissionResolver_EliminatePlayer(t *testing.T) {
@@ -90,19 +78,13 @@ func TestBuildMissionResolver_EliminatePlayer(t *testing.T) {
 	resolver := consumers.BuildMissionResolver(missionCtrl)
 	gameCtx := testGameContext()
 
-	raw, err := resolver(gameCtx, sqlc.GameMissionTypeELIMINATEPLAYER, 20)
+	result, err := resolver(gameCtx, sqlc.GameMissionTypeELIMINATEPLAYER, 20)
 	require.NoError(t, err)
 
-	msg := unmarshalEnvelope(t, raw)
-	require.Equal(t, "missionState", msg.Type)
-
-	var data map[string]any
-	require.NoError(t, json.Unmarshal(msg.Payload, &data))
-	require.Equal(t, "eliminatePlayer", data["type"])
-
-	details, ok := data["details"].(map[string]any)
+	state, ok := result.(messaging.MissionState[messaging.EliminatePlayerMission])
 	require.True(t, ok)
-	require.Equal(t, "target-user", details["targetUserId"])
+	require.Equal(t, messaging.EliminatePlayer, state.Type)
+	require.Equal(t, "target-user", state.Details.TargetUserID)
 }
 
 func TestBuildMissionResolver_EighteenTerritories(t *testing.T) {
@@ -111,19 +93,16 @@ func TestBuildMissionResolver_EighteenTerritories(t *testing.T) {
 	missionSvc := mockMission.NewService(t)
 	missionCtrl := consumers.NewMissionController(missionSvc)
 
-	// Static mission — service is not called.
+	// Static mission -- service is not called.
 	resolver := consumers.BuildMissionResolver(missionCtrl)
 	gameCtx := testGameContext()
 
-	raw, err := resolver(gameCtx, sqlc.GameMissionTypeEIGHTEENTERRITORIESTWOTROOPS, 30)
+	result, err := resolver(gameCtx, sqlc.GameMissionTypeEIGHTEENTERRITORIESTWOTROOPS, 30)
 	require.NoError(t, err)
 
-	msg := unmarshalEnvelope(t, raw)
-	require.Equal(t, "missionState", msg.Type)
-
-	var data map[string]any
-	require.NoError(t, json.Unmarshal(msg.Payload, &data))
-	require.Equal(t, "eighteenTerritoriesTwoTroops", data["type"])
+	state, ok := result.(messaging.MissionState[messaging.EighteenTerritoriesTwoTroopsMission])
+	require.True(t, ok)
+	require.Equal(t, messaging.EighteenTerritoriesTwoTroops, state.Type)
 }
 
 func TestBuildMissionResolver_TwentyFourTerritories(t *testing.T) {
@@ -132,19 +111,16 @@ func TestBuildMissionResolver_TwentyFourTerritories(t *testing.T) {
 	missionSvc := mockMission.NewService(t)
 	missionCtrl := consumers.NewMissionController(missionSvc)
 
-	// Static mission — service is not called.
+	// Static mission -- service is not called.
 	resolver := consumers.BuildMissionResolver(missionCtrl)
 	gameCtx := testGameContext()
 
-	raw, err := resolver(gameCtx, sqlc.GameMissionTypeTWENTYFOURTERRITORIES, 40)
+	result, err := resolver(gameCtx, sqlc.GameMissionTypeTWENTYFOURTERRITORIES, 40)
 	require.NoError(t, err)
 
-	msg := unmarshalEnvelope(t, raw)
-	require.Equal(t, "missionState", msg.Type)
-
-	var data map[string]any
-	require.NoError(t, json.Unmarshal(msg.Payload, &data))
-	require.Equal(t, "twentyFourTerritories", data["type"])
+	state, ok := result.(messaging.MissionState[messaging.TwentyFourTerritoriesMission])
+	require.True(t, ok)
+	require.Equal(t, messaging.TwentyFourTerritories, state.Type)
 }
 
 func TestBuildMissionResolver_UnknownType(t *testing.T) {
@@ -172,20 +148,4 @@ func TestBuildMissionResolver_NonGameContext(t *testing.T) {
 	_, err := resolver(context.Background(), sqlc.GameMissionTypeTWOCONTINENTS, 10)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "mission resolver requires GameContext")
-}
-
-// unmarshalEnvelope parses a WS message envelope from raw JSON.
-func unmarshalEnvelope(t *testing.T, raw json.RawMessage) struct {
-	Type    string          `json:"type"`
-	Payload json.RawMessage `json:"data"`
-} {
-	t.Helper()
-
-	var msg struct {
-		Type    string          `json:"type"`
-		Payload json.RawMessage `json:"data"`
-	}
-	require.NoError(t, json.Unmarshal(raw, &msg))
-
-	return msg
 }

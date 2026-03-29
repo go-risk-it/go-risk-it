@@ -1,7 +1,6 @@
 package converter
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"slices"
@@ -10,11 +9,10 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/snapshot"
-	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 )
 
-// ConvertPublicSnapshot transforms a PublicSnapshot into pre-serialized WS
-// messages for the broadcast path: gameState, boardState, playerState.
+// ConvertPublicSnapshot transforms a PublicSnapshot into typed DTOs for the
+// broadcast path: gameState, boardState, playerState.
 //
 // connectedPlayers is the list of user IDs currently connected via WebSocket,
 // used to enrich each player's ConnectionStatus field.
@@ -22,35 +20,25 @@ func ConvertPublicSnapshot(
 	snap *snapshot.PublicSnapshot,
 	connectedPlayers []string,
 ) (*PublicMessages, error) {
-	gameMsg, err := buildGameStateMessage(snap)
+	gameState, err := buildGameState(snap)
 	if err != nil {
-		return nil, fmt.Errorf("building game state message: %w", err)
-	}
-
-	boardMsg, err := buildBoardStateMessage(snap.Board)
-	if err != nil {
-		return nil, fmt.Errorf("building board state message: %w", err)
-	}
-
-	playerMsg, err := buildPlayerStateMessage(snap.Players, connectedPlayers)
-	if err != nil {
-		return nil, fmt.Errorf("building player state message: %w", err)
+		return nil, fmt.Errorf("building game state: %w", err)
 	}
 
 	return &PublicMessages{
-		GameState:   gameMsg,
-		BoardState:  boardMsg,
-		PlayerState: playerMsg,
+		GameState:   gameState,
+		BoardState:  buildBoardState(snap.Board),
+		PlayerState: buildPlayerState(snap.Players, connectedPlayers),
 	}, nil
 }
 
-// buildGameStateMessage produces the GameState message envelope.
+// buildGameState produces the GameState DTO.
 // The phase-discriminated generic GameState[T] from messaging cannot be
 // used here because Go generics require compile-time type parameters.
 // Instead we build the same JSON structure using a local untyped struct,
-// which produces byte-identical output.
-func buildGameStateMessage(snap *snapshot.PublicSnapshot) (json.RawMessage, error) {
-	phaseType, err := convertPhaseType(snap.Phase.Type)
+// which produces byte-identical output when serialized.
+func buildGameState(snap *snapshot.PublicSnapshot) (any, error) {
+	phaseType, err := ConvertPhaseType(snap.Phase.Type)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +53,7 @@ func buildGameStateMessage(snap *snapshot.PublicSnapshot) (json.RawMessage, erro
 		winnerUserID = snap.Game.WinnerUserID.String
 	}
 
-	gameState := struct {
+	return struct {
 		ID     int64  `json:"id"`
 		Turn   int64  `json:"turn"`
 		Phase  any    `json:"phase"`
@@ -81,9 +69,7 @@ func buildGameStateMessage(snap *snapshot.PublicSnapshot) (json.RawMessage, erro
 			State: phaseState,
 		},
 		Winner: winnerUserID,
-	}
-
-	return message.BuildMessage(message.GameState, gameState)
+	}, nil
 }
 
 // buildPhaseState returns the phase-specific state payload, matching what
@@ -115,12 +101,8 @@ func buildPhaseState(phase snapshot.PhaseState) (any, error) {
 	}
 }
 
-func buildBoardStateMessage(
-	regions []sqlc.GetRegionsByGameRow,
-) (json.RawMessage, error) {
-	boardState := messaging.BoardState{Regions: convertRegions(regions)}
-
-	return message.BuildMessage(message.BoardState, boardState)
+func buildBoardState(regions []sqlc.GetRegionsByGameRow) messaging.BoardState {
+	return messaging.BoardState{Regions: convertRegions(regions)}
 }
 
 func convertRegions(regions []sqlc.GetRegionsByGameRow) []messaging.Region {
@@ -136,15 +118,13 @@ func convertRegions(regions []sqlc.GetRegionsByGameRow) []messaging.Region {
 	return result
 }
 
-func buildPlayerStateMessage(
+func buildPlayerState(
 	players []sqlc.GetPlayersStateRow,
 	connectedPlayers []string,
-) (json.RawMessage, error) {
-	playersState := messaging.PlayersState{
+) messaging.PlayersState {
+	return messaging.PlayersState{
 		Players: convertPlayers(players, connectedPlayers),
 	}
-
-	return message.BuildMessage(message.PlayerState, playersState)
 }
 
 func convertPlayers(
