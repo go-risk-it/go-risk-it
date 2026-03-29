@@ -17,10 +17,17 @@ api: API {
 infrastructure: Infrastructure {
   style.fill: "#F3E5F5"
   observability: "Observability"
+  utilities: "Utilities"
+}
+
+ctx: Ctx {
+  style.fill: "#E0F7FA"
+  context: "Context"
 }
 
 data: Data {
   style.fill: "#FFF3E0"
+  database: "Database"
   game_data: "Game Data"
   lobby_data: "Lobby Data"
 }
@@ -34,6 +41,11 @@ events_domain: Events-domain {
   style.fill: "#FCE4EC"
   game_events: "Game Events"
   lobby_events: "Lobby Events"
+}
+
+shared: Shared {
+  style.fill: "#FFF9C4"
+  domain_errors: "Domain Errors"
 }
 
 logic: Logic {
@@ -58,12 +70,25 @@ test: Test {
 }
 
 # Cross-layer dependencies (layer-to-layer)
+data -> infrastructure
+events -> ctx
+events_domain -> ctx
+events_domain -> events
 events_domain -> logic
+infrastructure -> ctx
+logic -> ctx
 logic -> data
+logic -> events
 logic -> events_domain
 logic -> infrastructure
+logic -> shared
 test -> data
+test -> infrastructure
 test -> web
 web -> api
+web -> ctx
+web -> events
 web -> events_domain
+web -> infrastructure
 web -> logic
+web -> shared
