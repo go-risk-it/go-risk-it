@@ -11,6 +11,25 @@ type Route struct {
 	isWebSocket  bool
 }
 
+// New creates a Route with the given metadata and handler.
+func New(pattern string, requiresAuth bool, handler http.Handler) *Route {
+	return &Route{
+		pattern:      pattern,
+		requiresAuth: requiresAuth,
+		handler:      handler,
+	}
+}
+
+// NewWS creates a WebSocket Route with the given metadata and handler.
+func NewWS(pattern string, requiresAuth bool, handler http.Handler) *Route {
+	return &Route{
+		pattern:      pattern,
+		requiresAuth: requiresAuth,
+		isWebSocket:  true,
+		handler:      handler,
+	}
+}
+
 // Wrap creates a new Route with the same metadata but a different handler.
 func (r *Route) Wrap(handler http.Handler) *Route {
 	return &Route{

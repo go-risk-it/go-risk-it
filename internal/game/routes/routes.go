@@ -26,28 +26,28 @@ func ProvideRoutes(
 	return []*route.Route{
 		route.Authed("POST /api/v1/games", createGame(gameCtrl)),
 		route.Authed("GET /api/v1/games/summary", getGamesSummary(gameCtrl)),
-		route.Game("POST /api/v1/games/{id}/advancements", advanceGame(advCtrl)),
-		route.Game(
+		Game("POST /api/v1/games/{id}/advancements", advanceGame(advCtrl)),
+		Game(
 			"POST /api/v1/games/{id}/moves/deployments",
 			moveHandler[gameRequest.DeployMove](moveCtrl.PerformDeployMove),
 		),
-		route.Game(
+		Game(
 			"POST /api/v1/games/{id}/moves/attacks",
 			moveHandler[gameRequest.AttackMove](moveCtrl.PerformAttackMove),
 		),
-		route.Game(
+		Game(
 			"POST /api/v1/games/{id}/moves/conquers",
 			moveHandler[gameRequest.ConquerMove](moveCtrl.PerformConquerMove),
 		),
-		route.Game(
+		Game(
 			"POST /api/v1/games/{id}/moves/reinforcements",
 			moveHandler[gameRequest.ReinforceMove](moveCtrl.PerformReinforceMove),
 		),
-		route.Game(
+		Game(
 			"POST /api/v1/games/{id}/moves/cards",
 			moveHandler[gameRequest.CardsMove](moveCtrl.PerformCardsMove),
 		),
-		route.GameWS("GET /api/v1/games/{id}/ws", connectGameWS(gameConnectionManager, upgrader)),
+		GameWS("GET /api/v1/games/{id}/ws", connectGameWS(gameConnectionManager, upgrader)),
 	}
 }
 
@@ -102,7 +102,7 @@ func getGamesSummary(gameCtrl *GameController) route.PlainHandler {
 	}
 }
 
-func advanceGame(advCtrl *AdvancementController) route.GameHandler {
+func advanceGame(advCtrl *AdvancementController) GameHandler {
 	return func(writer http.ResponseWriter, req *http.Request, gameCtx ctx.GameContext) error {
 		advancementRequest, err := restutils.DecodeRequest[gameRequest.Advancement](writer, req)
 		if err != nil {
@@ -121,7 +121,7 @@ func advanceGame(advCtrl *AdvancementController) route.GameHandler {
 
 func moveHandler[T any](
 	perform func(ctx.GameContext, T) error,
-) route.GameHandler {
+) GameHandler {
 	return func(writer http.ResponseWriter, req *http.Request, gameCtx ctx.GameContext) error {
 		moveRequest, err := restutils.DecodeRequest[T](writer, req)
 		if err != nil {
@@ -141,7 +141,7 @@ func moveHandler[T any](
 func connectGameWS(
 	gameConnectionManager gameWs.Manager,
 	upgrader ws.Upgrader,
-) route.GameHandler {
+) GameHandler {
 	return func(writer http.ResponseWriter, request *http.Request, gameCtx ctx.GameContext) error {
 		conn, err := upgrader.Upgrade(writer, request, nil)
 		if err != nil {

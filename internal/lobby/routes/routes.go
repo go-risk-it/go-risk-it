@@ -26,9 +26,9 @@ func ProvideRoutes(
 	return []*route.Route{
 		route.Authed("POST /api/v1/lobbies", createLobby(creationCtrl)),
 		route.Authed("GET /api/v1/lobbies/summary", getLobbiesSummary(managementCtrl)),
-		route.Lobby("POST /api/v1/lobbies/{id}/join", joinLobby(managementCtrl)),
-		route.Lobby("POST /api/v1/lobbies/{id}/start", startGame(startCtrl)),
-		route.LobbyWS(
+		Lobby("POST /api/v1/lobbies/{id}/join", joinLobby(managementCtrl)),
+		Lobby("POST /api/v1/lobbies/{id}/start", startGame(startCtrl)),
+		LobbyWS(
 			"GET /api/v1/lobbies/{id}/ws",
 			connectLobbyWS(lobbyConnectionManager, upgrader),
 		),
@@ -86,7 +86,7 @@ func getLobbiesSummary(managementCtrl *ManagementController) route.PlainHandler 
 	}
 }
 
-func joinLobby(managementCtrl *ManagementController) route.LobbyHandler {
+func joinLobby(managementCtrl *ManagementController) LobbyHandler {
 	return func(writer http.ResponseWriter, req *http.Request, lobbyCtx ctx.LobbyContext) error {
 		joinLobbyRequest, err := restutils.DecodeRequest[lobbyRequest.JoinLobby](writer, req)
 		if err != nil {
@@ -103,7 +103,7 @@ func joinLobby(managementCtrl *ManagementController) route.LobbyHandler {
 	}
 }
 
-func startGame(startCtrl *StartController) route.LobbyHandler {
+func startGame(startCtrl *StartController) LobbyHandler {
 	return func(_ http.ResponseWriter, _ *http.Request, lc ctx.LobbyContext) error {
 		return startCtrl.StartGame(lc)
 	}
@@ -112,7 +112,7 @@ func startGame(startCtrl *StartController) route.LobbyHandler {
 func connectLobbyWS(
 	lobbyConnectionManager lobbyWs.Manager,
 	upgrader ws.Upgrader,
-) route.LobbyHandler {
+) LobbyHandler {
 	return func(
 		writer http.ResponseWriter,
 		request *http.Request,

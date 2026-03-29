@@ -1,15 +1,13 @@
-// Package route provides typed route constructors and handler signatures
-// for the REST API.
+// Package route provides the Route type, module-agnostic route constructors,
+// and shared HTTP plumbing for the REST API.
 //
-// Six constructors encode the authentication and context enrichment
-// requirements at the type level:
+// Two constructors encode authentication requirements at the type level:
 //
 //   - [Public] — no auth, plain handler.
 //   - [Authed] — JWT auth, plain handler.
-//   - [Game] — JWT auth, extracts {id} into GameContext.
-//   - [Lobby] — JWT auth, extracts {id} into LobbyContext.
-//   - [GameWS] — JWT auth + WebSocket flag, extracts {id} into GameContext.
-//   - [LobbyWS] — JWT auth + WebSocket flag, extracts {id} into LobbyContext.
+//
+// Module-specific constructors (Game, GameWS, Lobby, LobbyWS) live in their
+// respective module route packages (game/routes/, lobby/routes/).
 //
 // All constructors wrap handlers with [WrapErrors], which maps domain
 // errors to HTTP status codes and records them on the OTel span.
