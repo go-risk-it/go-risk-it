@@ -29,3 +29,15 @@ repos:
         language: script
         pass_filenames: false
         always_run: true
+      - id: diagrams-freshness
+        name: architecture diagram freshness
+        entry: make diagrams-check
+        language: system
+        pass_filenames: false
+        files: '^internal/.*\.go$|^cmd/archdiagram/'
+      - id: dashboards-freshness
+        name: dashboard JSON freshness
+        entry: make dashboards-check
+        language: system
+        pass_filenames: false
+        files: '^grafana/'

@@ -3,13 +3,9 @@
 {
   // Named dashboard UIDs — one constant per dashboard.
   dashboardUids: {
-    websocket: 'websocket',
-    database: 'database',
+    systemHealth: 'system-health',
     gameEngine: 'game-engine',
-    serverGoldenSignals: 'server-golden-signals',
     perfTest: 'perf-test',
-    perfTestCommandCenter: 'perf-test-command-center',
-    requestLifecycle: 'request-lifecycle',
   },
 
   // Build a Grafana data link to another dashboard, preserving time range.
