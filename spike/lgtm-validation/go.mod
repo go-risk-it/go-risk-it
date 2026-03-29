@@ -3,7 +3,7 @@ module github.com/go-risk-it/go-risk-it/spike/lgtm-validation
 go 1.25.0
 
 require (
-	go.opentelemetry.io/contrib/bridges/otelslog v0.16.0
+	go.opentelemetry.io/contrib/bridges/otelslog v0.17.0
 	go.opentelemetry.io/otel v1.42.0
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp v0.18.0
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.42.0
