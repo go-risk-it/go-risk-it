@@ -1,6 +1,7 @@
 package lobby
 
 import (
+	"log/slog"
 	"time"
 
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
@@ -40,6 +41,10 @@ func (e *LobbyStateChanged) LobbyID() int64            { return e.lobbyID }
 func (e *LobbyStateChanged) UserID() string            { return e.userID }
 func (e *LobbyStateChanged) EventTimestamp() time.Time { return e.timestamp }
 
+func (e *LobbyStateChanged) ScopeAttrs() []slog.Attr {
+	return []slog.Attr{slog.Int64("lobbyId", e.lobbyID)}
+}
+
 func (e *LobbyStateChanged) ToRecord() map[string]any {
 	return map[string]any{
 		"event_type": TypeLobbyStateChanged,
@@ -68,6 +73,10 @@ func (*LobbyPlayerConnected) EventType() string           { return TypeLobbyPlay
 func (e *LobbyPlayerConnected) LobbyID() int64            { return e.lobbyID }
 func (e *LobbyPlayerConnected) UserID() string            { return e.userID }
 func (e *LobbyPlayerConnected) EventTimestamp() time.Time { return e.timestamp }
+
+func (e *LobbyPlayerConnected) ScopeAttrs() []slog.Attr {
+	return []slog.Attr{slog.Int64("lobbyId", e.lobbyID)}
+}
 
 func (e *LobbyPlayerConnected) ToRecord() map[string]any {
 	return map[string]any{

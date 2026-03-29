@@ -2,6 +2,7 @@ package bus
 
 import (
 	"context"
+	"log/slog"
 	"time"
 )
 
@@ -13,6 +14,13 @@ type Event interface {
 	EventType() string
 	EventTimestamp() time.Time
 	ToRecord() map[string]any
+}
+
+// ScopedEvent is an optional interface for events that carry a domain scope ID
+// (e.g., gameID for game events, lobbyID for lobby events). The event logger uses
+// a single ScopedEvent type assertion instead of switching on anonymous interfaces.
+type ScopedEvent interface {
+	ScopeAttrs() []slog.Attr
 }
 
 // Handler processes a single event. The bus invokes handlers sequentially within a

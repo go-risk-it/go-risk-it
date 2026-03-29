@@ -2,6 +2,7 @@ package ctx
 
 import (
 	"context"
+	"log/slog"
 
 	"go.opentelemetry.io/otel/trace"
 )
@@ -19,10 +20,17 @@ type gameContext struct {
 	gameID int64
 }
 
-var _ GameContext = (*gameContext)(nil)
+var (
+	_ GameContext = (*gameContext)(nil)
+	_ LogEnricher = (*gameContext)(nil)
+)
 
 func (c *gameContext) GameID() int64 {
 	return c.gameID
+}
+
+func (c *gameContext) SlogAttrs() []slog.Attr {
+	return append(c.UserContext.SlogAttrs(), slog.Int64("gameID", c.gameID))
 }
 
 func (c *gameContext) DetachOnto(base context.Context) context.Context {

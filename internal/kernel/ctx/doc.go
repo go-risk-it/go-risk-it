@@ -6,7 +6,8 @@
 // the previous one, so a GameContext satisfies both UserContext and
 // TraceContext. The [Detachable] interface allows the event bus to copy
 // domain metadata onto a fresh context without type-switching on concrete
-// types.
+// types. The [LogEnricher] interface allows the slog handler to extract
+// structured attributes from any context type without concrete type switches.
 //
 // # Layer
 //

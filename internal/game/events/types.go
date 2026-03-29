@@ -1,6 +1,7 @@
 package game
 
 import (
+	"log/slog"
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
@@ -72,6 +73,10 @@ func (*MoveExecuted) EventType() string           { return TypeMoveExecuted }
 func (e *MoveExecuted) GameID() int64             { return e.gameID }
 func (e *MoveExecuted) EventTimestamp() time.Time { return e.timestamp }
 
+func (e *MoveExecuted) ScopeAttrs() []slog.Attr {
+	return []slog.Attr{slog.Int64("gameId", e.gameID)}
+}
+
 func (e *MoveExecuted) ToRecord() map[string]any {
 	record := map[string]any{
 		"event_type":   TypeMoveExecuted,
@@ -132,6 +137,10 @@ func (*PhaseTransitioned) EventType() string           { return TypePhaseTransit
 func (e *PhaseTransitioned) GameID() int64             { return e.gameID }
 func (e *PhaseTransitioned) EventTimestamp() time.Time { return e.timestamp }
 
+func (e *PhaseTransitioned) ScopeAttrs() []slog.Attr {
+	return []slog.Attr{slog.Int64("gameId", e.gameID)}
+}
+
 func (e *PhaseTransitioned) ToRecord() map[string]any {
 	return map[string]any{
 		"event_type": TypePhaseTransitioned,
@@ -171,6 +180,10 @@ func (*GameCompleted) EventType() string           { return TypeGameCompleted }
 func (e *GameCompleted) GameID() int64             { return e.gameID }
 func (e *GameCompleted) EventTimestamp() time.Time { return e.timestamp }
 
+func (e *GameCompleted) ScopeAttrs() []slog.Attr {
+	return []slog.Attr{slog.Int64("gameId", e.gameID)}
+}
+
 func (e *GameCompleted) ToRecord() map[string]any {
 	return map[string]any{
 		"event_type":     TypeGameCompleted,
@@ -205,6 +218,10 @@ func (*GameCreated) EventType() string           { return TypeGameCreated }
 func (e *GameCreated) GameID() int64             { return e.gameID }
 func (e *GameCreated) EventTimestamp() time.Time { return e.timestamp }
 
+func (e *GameCreated) ScopeAttrs() []slog.Attr {
+	return []slog.Attr{slog.Int64("gameId", e.gameID)}
+}
+
 func (e *GameCreated) ToRecord() map[string]any {
 	return map[string]any{
 		"event_type":  TypeGameCreated,
@@ -236,6 +253,10 @@ func NewPlayerConnected(
 func (*PlayerConnected) EventType() string           { return TypePlayerConnected }
 func (e *PlayerConnected) GameID() int64             { return e.gameID }
 func (e *PlayerConnected) EventTimestamp() time.Time { return e.timestamp }
+
+func (e *PlayerConnected) ScopeAttrs() []slog.Attr {
+	return []slog.Attr{slog.Int64("gameId", e.gameID)}
+}
 
 func (e *PlayerConnected) ToRecord() map[string]any {
 	return map[string]any{

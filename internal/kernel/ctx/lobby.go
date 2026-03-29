@@ -2,6 +2,7 @@ package ctx
 
 import (
 	"context"
+	"log/slog"
 
 	"go.opentelemetry.io/otel/trace"
 )
@@ -18,10 +19,17 @@ type lobbyContext struct {
 	lobbyID int64
 }
 
-var _ LobbyContext = (*lobbyContext)(nil)
+var (
+	_ LobbyContext = (*lobbyContext)(nil)
+	_ LogEnricher  = (*lobbyContext)(nil)
+)
 
 func (c *lobbyContext) LobbyID() int64 {
 	return c.lobbyID
+}
+
+func (c *lobbyContext) SlogAttrs() []slog.Attr {
+	return append(c.UserContext.SlogAttrs(), slog.Int64("lobbyID", c.lobbyID))
 }
 
 func (c *lobbyContext) DetachOnto(base context.Context) context.Context {

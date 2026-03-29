@@ -9,7 +9,8 @@ import (
 )
 
 // ContextHandler is an slog.Handler that auto-extracts structured fields
-// from the context chain (UserContext, GameContext, LobbyContext).
+// from the context chain via the ctx.LogEnricher interface. Any context type
+// implementing SlogAttrs() is supported without concrete type switches.
 // TraceID and SpanID are NOT extracted here — the otelslog bridge
 // auto-extracts them from context.Context, so manual injection would
 // create duplicates.
@@ -50,22 +51,9 @@ func (h *ContextHandler) WithGroup(name string) stdslog.Handler {
 }
 
 func extractContextAttrs(reqCtx context.Context) []stdslog.Attr {
-	var attrs []stdslog.Attr
-
-	// Check for UserContext (has UserID)
-	if userCtx, ok := reqCtx.(ctx.UserContext); ok {
-		attrs = append(attrs, stdslog.String("userID", userCtx.UserID()))
+	if enricher, ok := reqCtx.(ctx.LogEnricher); ok {
+		return enricher.SlogAttrs()
 	}
 
-	// Check for GameContext (has GameID)
-	if gameCtx, ok := reqCtx.(ctx.GameContext); ok {
-		attrs = append(attrs, stdslog.Int64("gameID", gameCtx.GameID()))
-	}
-
-	// Check for LobbyContext (has LobbyID)
-	if lobbyCtx, ok := reqCtx.(ctx.LobbyContext); ok {
-		attrs = append(attrs, stdslog.Int64("lobbyID", lobbyCtx.LobbyID()))
-	}
-
-	return attrs
+	return nil
 }

@@ -19,8 +19,8 @@ type Params struct {
 
 // Register subscribes to all events and logs each as a single structured
 // slog line at LevelInfo. Top-level attributes (event_type, event_timestamp)
-// are always present. Scope IDs (game_id, lobby_id) are added via type-switch
-// on the concrete event interface. The ToRecord() payload appears as a nested
+// are always present. Scope IDs (game_id, lobby_id) are added via the
+// ScopedEvent interface. The ToRecord() payload appears as a nested
 // "payload" group for full event data.
 func Register(params Params) {
 	log := params.Logger
@@ -41,12 +41,9 @@ func Register(params Params) {
 			slog.String("eventTimestamp", event.EventTimestamp().Format(time.RFC3339)),
 		}
 
-		// Scope ID: type-switch on concrete event interface for domain-specific identifiers.
-		switch e := event.(type) {
-		case interface{ GameID() int64 }:
-			attrs = append(attrs, slog.Int64("gameId", e.GameID()))
-		case interface{ LobbyID() int64 }:
-			attrs = append(attrs, slog.Int64("lobbyId", e.LobbyID()))
+		// Scope ID: use structured ScopeAttrs if the event implements ScopedEvent.
+		if scoped, ok := event.(bus.ScopedEvent); ok {
+			attrs = append(attrs, scoped.ScopeAttrs()...)
 		}
 
 		attrs = append(attrs, slog.Group("payload", payloadAttrs...))

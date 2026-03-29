@@ -1,6 +1,7 @@
 package headlines
 
 import (
+	"log/slog"
 	"time"
 )
 
@@ -42,6 +43,10 @@ func (e *PlayerEliminated) GameID() int64             { return e.gameID }
 func (e *PlayerEliminated) EventTimestamp() time.Time { return e.timestamp }
 func (e *PlayerEliminated) EliminatedUserID() string  { return e.eliminatedUserID }
 func (e *PlayerEliminated) EliminatorUserID() string  { return e.eliminatorUserID }
+
+func (e *PlayerEliminated) ScopeAttrs() []slog.Attr {
+	return []slog.Attr{slog.Int64("gameId", e.gameID)}
+}
 
 func (e *PlayerEliminated) ToRecord() map[string]any {
 	return map[string]any{
@@ -85,6 +90,10 @@ func (e *ContinentCaptured) GameID() int64             { return e.gameID }
 func (e *ContinentCaptured) EventTimestamp() time.Time { return e.timestamp }
 func (e *ContinentCaptured) UserID() string            { return e.userID }
 
+func (e *ContinentCaptured) ScopeAttrs() []slog.Attr {
+	return []slog.Attr{slog.Int64("gameId", e.gameID)}
+}
+
 func (e *ContinentCaptured) ToRecord() map[string]any {
 	return map[string]any{
 		"event_type":   TypeContinentCaptured,
@@ -126,6 +135,10 @@ func (*ContinentLost) EventType() string           { return TypeContinentLost }
 func (e *ContinentLost) GameID() int64             { return e.gameID }
 func (e *ContinentLost) EventTimestamp() time.Time { return e.timestamp }
 func (e *ContinentLost) UserID() string            { return e.userID }
+
+func (e *ContinentLost) ScopeAttrs() []slog.Attr {
+	return []slog.Attr{slog.Int64("gameId", e.gameID)}
+}
 
 func (e *ContinentLost) ToRecord() map[string]any {
 	return map[string]any{
