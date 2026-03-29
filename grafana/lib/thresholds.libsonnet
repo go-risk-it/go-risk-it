@@ -1,8 +1,7 @@
-// SLO threshold values extracted from existing dashboard JSON files.
+// SLO threshold values for go-risk-it Grafana dashboards.
 // Each entry is a Grafana thresholds object { mode, steps[] }.
 {
-  // WebSocket dashboard: Active Connections stat panel
-  // Source: websocket.json panel 1
+  // Active WS Connections
   wsConnections: {
     mode: 'absolute',
     steps: [
@@ -12,8 +11,7 @@
     ],
   },
 
-  // Game Engine dashboard: Active Games stat panel
-  // Source: game-engine.json panel 1
+  // Active Games
   activeGames: {
     mode: 'absolute',
     steps: [
@@ -23,8 +21,7 @@
     ],
   },
 
-  // Database dashboard: Pool Utilization %
-  // Source: database.json panel 4
+  // DB Pool Utilization %
   poolUtil: {
     mode: 'absolute',
     steps: [
@@ -34,8 +31,7 @@
     ],
   },
 
-  // Database dashboard: Postgres Cache Hit Rate (inverted — red is low)
-  // Source: database.json panel 8
+  // Postgres Cache Hit Rate (inverted — red is low)
   cacheHit: {
     mode: 'absolute',
     steps: [
@@ -45,8 +41,7 @@
     ],
   },
 
-  // Server Golden Signals dashboard: HTTP Error Rate %
-  // Source: server-golden-signals.json panel 9
+  // HTTP Error Rate %
   httpError: {
     mode: 'absolute',
     steps: [
@@ -56,8 +51,7 @@
     ],
   },
 
-  // Database dashboard: Canceled Acquires stat panel
-  // Source: database.json panel 10
+  // Canceled Acquires
   canceledAcquires: {
     mode: 'absolute',
     steps: [
@@ -66,10 +60,7 @@
     ],
   },
 
-  // --- Perf Test Command Center SLOs ---
-
   // E2E p95 latency. SLO: < 500ms
-  // Source: perf-test-command-center.json panel 1
   e2eP95: {
     mode: 'absolute',
     steps: [
@@ -80,7 +71,6 @@
   },
 
   // WS Delivery p95 latency. SLO: < 200ms
-  // Source: perf-test-command-center.json panel 2
   wsDeliveryP95: {
     mode: 'absolute',
     steps: [
@@ -91,7 +81,6 @@
   },
 
   // DB Transaction p95 latency. SLO: < 50ms
-  // Source: perf-test-command-center.json panel 3
   dbTxnP95: {
     mode: 'absolute',
     steps: [
@@ -102,7 +91,6 @@
   },
 
   // HTTP Error Rate (percentunit). SLO: < 1%
-  // Source: perf-test-command-center.json panel 4
   httpErrorRate: {
     mode: 'absolute',
     steps: [
@@ -123,7 +111,6 @@
   },
 
   // Fan-out Amplification (WS broadcasts per game move)
-  // Normal: ~4 (one broadcast per player per move). Watch: > 10 suggests broadcast storms.
   ccFanOut: {
     mode: 'absolute',
     steps: [
@@ -134,7 +121,6 @@
   },
 
   // DB Latency Share % (DB p95 as % of HTTP p95)
-  // Normal: 30-50%. Watch: > 70% means DB dominates request time.
   ccDbLatencyShare: {
     mode: 'absolute',
     steps: [
@@ -144,10 +130,7 @@
     ],
   },
 
-  // --- Perf Test (Client-Side) dashboard ---
-
-  // Active Games stat panel (perf-test scale, higher red threshold than game-engine)
-  // Source: perf-test.json panel 1
+  // Active Games (perf-test scale, higher red threshold)
   perfTestActiveGames: {
     mode: 'absolute',
     steps: [

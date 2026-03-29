@@ -1,26 +1,6 @@
 {
     "annotations": {
-        "list": [
-            {
-                "builtIn": 1,
-                "datasource": {
-                    "type": "grafana",
-                    "uid": "-- Grafana --"
-                },
-                "enable": true,
-                "hide": false,
-                "iconColor": "rgba(0, 211, 255, 1)",
-                "name": "Perf Test Phases",
-                "target": {
-                    "matchAny": true,
-                    "tags": [
-                        "perf-test"
-                    ],
-                    "type": "tags"
-                },
-                "type": "dashboard"
-            }
-        ]
+        "list": []
     },
     "description": "Consolidated system health: HTTP, DB, WS, runtime + Postgres internals, query performance. Progressive disclosure via collapsed rows.",
     "editable": true,
@@ -782,51 +762,6 @@
                                 "value": 10
                             }
                         ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "p50"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#FFBE73",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "p95"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#FF9830",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "p99"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#CC7A26",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
                     }
                 ]
             },
@@ -889,9 +824,13 @@
                     "description": "Normal: p95 < 50ms, p99 < 100ms. Watch for: p99 diverging from p95 (long-tail transactions). Check next: Pool Usage for saturation.",
                     "fieldConfig": {
                         "defaults": {
+                            "color": {
+                                "fixedColor": "#3274D9",
+                                "mode": "fixed"
+                            },
                             "custom": {
                                 "drawStyle": "line",
-                                "fillOpacity": 0,
+                                "fillOpacity": 10,
                                 "lineInterpolation": "smooth",
                                 "lineWidth": 2,
                                 "pointSize": 5,
@@ -900,109 +839,11 @@
                                 "stacking": {
                                     "group": "A",
                                     "mode": "none"
-                                },
-                                "thresholdsStyle": {
-                                    "mode": "line+area"
                                 }
-                            },
-                            "thresholds": {
-                                "mode": "absolute",
-                                "steps": [
-                                    {
-                                        "color": "green",
-                                        "value": null
-                                    },
-                                    {
-                                        "color": "yellow",
-                                        "value": 0.05
-                                    },
-                                    {
-                                        "color": "red",
-                                        "value": 0.1
-                                    }
-                                ]
                             },
                             "unit": "s"
                         },
-                        "overrides": [
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p99"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "custom.fillBelowTo",
-                                        "value": "p95"
-                                    },
-                                    {
-                                        "id": "custom.fillOpacity",
-                                        "value": 5
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p95"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "custom.fillBelowTo",
-                                        "value": "p50"
-                                    },
-                                    {
-                                        "id": "custom.fillOpacity",
-                                        "value": 10
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p50"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#73A9F2",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p95"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#3274D9",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p99"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#1F4FA0",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            }
-                        ]
+                        "overrides": []
                     },
                     "gridPos": {
                         "h": 8,
@@ -1045,7 +886,7 @@
                             "refId": "C"
                         }
                     ],
-                    "title": "DB Transaction Latency Bands",
+                    "title": "Txn Duration P50/P95/P99",
                     "type": "timeseries"
                 },
                 {
@@ -1056,6 +897,10 @@
                     "description": "Normal: active well below total, healthy idle buffer. Watch for: active approaching total (saturation). Check next: Acquire Time for queue pressure.",
                     "fieldConfig": {
                         "defaults": {
+                            "color": {
+                                "fixedColor": "#3274D9",
+                                "mode": "fixed"
+                            },
                             "custom": {
                                 "drawStyle": "line",
                                 "fillOpacity": 10,
@@ -1122,6 +967,10 @@
                     "description": "Normal: < 1ms acquire time. Watch for: p95 > 10ms (pool exhaustion starting). Check next: Canceled Acquires in Observe.",
                     "fieldConfig": {
                         "defaults": {
+                            "color": {
+                                "fixedColor": "#3274D9",
+                                "mode": "fixed"
+                            },
                             "custom": {
                                 "drawStyle": "line",
                                 "fillOpacity": 10,
@@ -1137,53 +986,7 @@
                             },
                             "unit": "s"
                         },
-                        "overrides": [
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p50"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#73A9F2",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p95"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#3274D9",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p99"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#1F4FA0",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            }
-                        ]
+                        "overrides": []
                     },
                     "gridPos": {
                         "h": 8,
@@ -1776,6 +1579,10 @@
                     "description": "Normal: p50 < 100ms, p95 < 500ms, p99 < 1s. Watch for: p99 diverging sharply from p95 (long tail). Check next: HTTP Rate by Route for per-endpoint breakdown.",
                     "fieldConfig": {
                         "defaults": {
+                            "color": {
+                                "fixedColor": "#FF9830",
+                                "mode": "fixed"
+                            },
                             "custom": {
                                 "drawStyle": "line",
                                 "fillOpacity": 10,
@@ -1791,53 +1598,7 @@
                             },
                             "unit": "s"
                         },
-                        "overrides": [
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p50"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#FFBE73",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p95"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#FF9830",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p99"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#CC7A26",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            }
-                        ]
+                        "overrides": []
                     },
                     "gridPos": {
                         "h": 8,
@@ -1891,6 +1652,10 @@
                     "description": "Normal: move endpoints dominate. Watch for: unusual routes or disproportionate rates. Check next: Game Engine dashboard for game-specific routes.",
                     "fieldConfig": {
                         "defaults": {
+                            "color": {
+                                "fixedColor": "#FF9830",
+                                "mode": "fixed"
+                            },
                             "custom": {
                                 "drawStyle": "line",
                                 "fillOpacity": 10,
@@ -2175,6 +1940,123 @@
                     ],
                     "title": "Heap Memory",
                     "type": "timeseries"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "description": "Normal: stable GC goal values. Watch for: GOMEMLIMIT being hit (OOM risk). Check next: Process Memory for total footprint.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "custom": {
+                                "drawStyle": "line",
+                                "fillOpacity": 10,
+                                "lineInterpolation": "smooth",
+                                "lineWidth": 2,
+                                "pointSize": 5,
+                                "showPoints": "never",
+                                "spanNulls": false,
+                                "stacking": {
+                                    "group": "A",
+                                    "mode": "none"
+                                }
+                            },
+                            "unit": "bytes"
+                        },
+                        "overrides": []
+                    },
+                    "gridPos": {
+                        "h": 8,
+                        "w": 8,
+                        "x": 8,
+                        "y": 66
+                    },
+                    "id": 31,
+                    "options": {
+                        "legend": {
+                            "calcs": [
+                                "mean",
+                                "max"
+                            ],
+                            "displayMode": "table",
+                            "placement": "bottom"
+                        },
+                        "tooltip": {
+                            "mode": "multi",
+                            "sort": "desc"
+                        }
+                    },
+                    "targets": [
+                        {
+                            "expr": "runtime_go_gc_gogc{service_name=\"risk-it\"}",
+                            "legendFormat": "GOGC",
+                            "refId": "A"
+                        },
+                        {
+                            "expr": "runtime_go_gc_gomemlimit{service_name=\"risk-it\"}",
+                            "legendFormat": "GOMEMLIMIT",
+                            "refId": "B"
+                        }
+                    ],
+                    "title": "GC Goal",
+                    "type": "timeseries"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "description": "Normal: stable RSS proportional to heap + stack. Watch for: monotonic growth (memory leak). Check next: Goroutines for stack memory contributors.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "custom": {
+                                "drawStyle": "line",
+                                "fillOpacity": 10,
+                                "lineInterpolation": "smooth",
+                                "lineWidth": 2,
+                                "pointSize": 5,
+                                "showPoints": "never",
+                                "spanNulls": false,
+                                "stacking": {
+                                    "group": "A",
+                                    "mode": "none"
+                                }
+                            },
+                            "unit": "bytes"
+                        },
+                        "overrides": []
+                    },
+                    "gridPos": {
+                        "h": 8,
+                        "w": 8,
+                        "x": 16,
+                        "y": 66
+                    },
+                    "id": 32,
+                    "options": {
+                        "legend": {
+                            "calcs": [
+                                "mean",
+                                "max"
+                            ],
+                            "displayMode": "table",
+                            "placement": "bottom"
+                        },
+                        "tooltip": {
+                            "mode": "multi",
+                            "sort": "desc"
+                        }
+                    },
+                    "targets": [
+                        {
+                            "expr": "process_resident_memory_bytes{service_name=\"risk-it\"}",
+                            "legendFormat": "RSS",
+                            "refId": "A"
+                        }
+                    ],
+                    "title": "Process Memory",
+                    "type": "timeseries"
                 }
             ],
             "title": "Server & HTTP",
@@ -2188,7 +2070,7 @@
                 "x": 0,
                 "y": 34
             },
-            "id": 31,
+            "id": 33,
             "panels": [
                 {
                     "datasource": {
@@ -2198,9 +2080,13 @@
                     "description": "Normal: p95 < 100ms. Watch for: p99 > 500ms (slow consumers blocking broadcast). Check next: Messages Rate for throughput.",
                     "fieldConfig": {
                         "defaults": {
+                            "color": {
+                                "fixedColor": "#8F3BB8",
+                                "mode": "fixed"
+                            },
                             "custom": {
                                 "drawStyle": "line",
-                                "fillOpacity": 0,
+                                "fillOpacity": 10,
                                 "lineInterpolation": "smooth",
                                 "lineWidth": 2,
                                 "pointSize": 5,
@@ -2213,85 +2099,7 @@
                             },
                             "unit": "s"
                         },
-                        "overrides": [
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p99"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "custom.fillBelowTo",
-                                        "value": "p95"
-                                    },
-                                    {
-                                        "id": "custom.fillOpacity",
-                                        "value": 5
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p95"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "custom.fillBelowTo",
-                                        "value": "p50"
-                                    },
-                                    {
-                                        "id": "custom.fillOpacity",
-                                        "value": 10
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p50"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#B57ADB",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p95"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#8F3BB8",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p99"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#6A2A8A",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            }
-                        ]
+                        "overrides": []
                     },
                     "gridPos": {
                         "h": 8,
@@ -2299,7 +2107,7 @@
                         "x": 0,
                         "y": 35
                     },
-                    "id": 32,
+                    "id": 34,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -2334,7 +2142,7 @@
                             "refId": "C"
                         }
                     ],
-                    "title": "WS Broadcast Latency Bands",
+                    "title": "Broadcast Latency P50/P95/P99",
                     "type": "timeseries"
                 },
                 {
@@ -2345,6 +2153,10 @@
                     "description": "Normal: outbound >> inbound (server pushes state). Watch for: inbound spikes (clients retrying). Check next: Fan-Out for amplification ratio.",
                     "fieldConfig": {
                         "defaults": {
+                            "color": {
+                                "fixedColor": "#8F3BB8",
+                                "mode": "fixed"
+                            },
                             "custom": {
                                 "drawStyle": "line",
                                 "fillOpacity": 10,
@@ -2368,7 +2180,7 @@
                         "x": 12,
                         "y": 35
                     },
-                    "id": 33,
+                    "id": 35,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -2391,6 +2203,66 @@
                         }
                     ],
                     "title": "Messages Rate",
+                    "type": "timeseries"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "description": "Normal: ~4x (one broadcast per player per move). Watch for: > 10x indicates broadcast storms. Check next: Errors for delivery failures.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "color": {
+                                "fixedColor": "#8F3BB8",
+                                "mode": "fixed"
+                            },
+                            "custom": {
+                                "drawStyle": "line",
+                                "fillOpacity": 10,
+                                "lineInterpolation": "smooth",
+                                "lineWidth": 2,
+                                "pointSize": 5,
+                                "showPoints": "never",
+                                "spanNulls": false,
+                                "stacking": {
+                                    "group": "A",
+                                    "mode": "none"
+                                }
+                            },
+                            "unit": "short"
+                        },
+                        "overrides": []
+                    },
+                    "gridPos": {
+                        "h": 8,
+                        "w": 12,
+                        "x": 0,
+                        "y": 43
+                    },
+                    "id": 36,
+                    "options": {
+                        "legend": {
+                            "calcs": [
+                                "mean",
+                                "max"
+                            ],
+                            "displayMode": "table",
+                            "placement": "bottom"
+                        },
+                        "tooltip": {
+                            "mode": "multi",
+                            "sort": "desc"
+                        }
+                    },
+                    "targets": [
+                        {
+                            "expr": "sum(rate(ws_messages_total{service_name=\"risk-it\",direction=\"outbound\"}[1m])) / sum(rate(event_bus_events_total{service_name=\"risk-it\",event_type=\"move_executed\"}[1m]))",
+                            "legendFormat": "msgs/move",
+                            "refId": "A"
+                        }
+                    ],
+                    "title": "Fan-Out",
                     "type": "timeseries"
                 },
                 {
@@ -2425,10 +2297,10 @@
                     "gridPos": {
                         "h": 8,
                         "w": 12,
-                        "x": 0,
+                        "x": 12,
                         "y": 43
                     },
-                    "id": 34,
+                    "id": 37,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -2465,7 +2337,7 @@
                 "x": 0,
                 "y": 35
             },
-            "id": 35,
+            "id": 38,
             "title": "Decide \u2014 Where\u2019s the bottleneck?",
             "type": "row"
         },
@@ -2524,7 +2396,7 @@
                 "x": 0,
                 "y": 36
             },
-            "id": 36,
+            "id": 39,
             "options": {
                 "legend": {
                     "calcs": [
@@ -2604,7 +2476,7 @@
                 "x": 8,
                 "y": 36
             },
-            "id": 37,
+            "id": 40,
             "options": {
                 "legend": {
                     "calcs": [
@@ -2660,7 +2532,7 @@
                 "x": 16,
                 "y": 36
             },
-            "id": 38,
+            "id": 41,
             "options": {
                 "legend": {
                     "calcs": [
@@ -2698,7 +2570,7 @@
                 "x": 0,
                 "y": 44
             },
-            "id": 39,
+            "id": 42,
             "panels": [
                 {
                     "datasource": {
@@ -2853,7 +2725,7 @@
                         "x": 0,
                         "y": 45
                     },
-                    "id": 40,
+                    "id": 43,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -2913,7 +2785,7 @@
                         "x": 0,
                         "y": 55
                     },
-                    "id": 41,
+                    "id": 44,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -2969,7 +2841,7 @@
                         "x": 12,
                         "y": 55
                     },
-                    "id": 42,
+                    "id": 45,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -3048,7 +2920,7 @@
                         "x": 0,
                         "y": 63
                     },
-                    "id": 43,
+                    "id": 46,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -3109,7 +2981,7 @@
                         "x": 12,
                         "y": 63
                     },
-                    "id": 44,
+                    "id": 47,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -3169,7 +3041,7 @@
                         "x": 0,
                         "y": 71
                     },
-                    "id": 45,
+                    "id": 48,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -3225,7 +3097,7 @@
                         "x": 0,
                         "y": 79
                     },
-                    "id": 46,
+                    "id": 49,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -3262,7 +3134,7 @@
                 "x": 0,
                 "y": 45
             },
-            "id": 47,
+            "id": 50,
             "panels": [
                 {
                     "datasource": {
@@ -3296,7 +3168,7 @@
                         "x": 0,
                         "y": 46
                     },
-                    "id": 48,
+                    "id": 51,
                     "options": {
                         "calculate": false,
                         "cellGap": 1,
@@ -3374,7 +3246,7 @@
                         "x": 0,
                         "y": 56
                     },
-                    "id": 49,
+                    "id": 52,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -3430,7 +3302,7 @@
                         "x": 12,
                         "y": 56
                     },
-                    "id": 50,
+                    "id": 53,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -3467,7 +3339,7 @@
                 "x": 0,
                 "y": 46
             },
-            "id": 51,
+            "id": 54,
             "title": "Act \u2014 What\u2019s the evidence?",
             "type": "row"
         },
@@ -3501,7 +3373,7 @@
                 "x": 0,
                 "y": 47
             },
-            "id": 52,
+            "id": 55,
             "options": {
                 "footer": {
                     "show": false
@@ -3546,7 +3418,7 @@
                 "x": 0,
                 "y": 57
             },
-            "id": 53,
+            "id": 56,
             "options": {
                 "dedupStrategy": "none",
                 "enableLogDetails": true,
@@ -3574,7 +3446,7 @@
                 "x": 0,
                 "y": 65
             },
-            "id": 54,
+            "id": 57,
             "panels": [
                 {
                     "datasource": {
@@ -3588,7 +3460,7 @@
                         "x": 0,
                         "y": 66
                     },
-                    "id": 55,
+                    "id": 58,
                     "targets": [
                         {
                             "query": "${traceId}",
@@ -3611,7 +3483,7 @@
                         "x": 0,
                         "y": 90
                     },
-                    "id": 56,
+                    "id": 59,
                     "options": {
                         "dedupStrategy": "none",
                         "enableLogDetails": true,

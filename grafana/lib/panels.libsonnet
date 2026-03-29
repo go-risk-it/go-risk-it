@@ -91,6 +91,29 @@ local targets = import 'targets.libsonnet';
       },
     },
 
+  // Build a gauge panel with thresholds.
+  gaugePanel(title, targets, thresholds, unit, min=0, max=100)::
+    {
+      title: title,
+      type: 'gauge',
+      datasource: $.datasource(),
+      targets: targets,
+      fieldConfig: {
+        defaults: {
+          unit: unit,
+          min: min,
+          max: max,
+          thresholds: thresholds,
+        },
+        overrides: [],
+      },
+      options: {
+        reduceOptions: { calcs: ['lastNotNull'], fields: '', values: false },
+        showThresholdLabels: false,
+        showThresholdMarkers: true,
+      },
+    },
+
   // Build a heatmap panel.
   // title: string, targets: array, unit: string (default 's'),
   // colorScheme: string (default 'Oranges'), colorFill: string (default 'dark-orange')
@@ -136,13 +159,6 @@ local targets = import 'targets.libsonnet';
   // Build a percentile bands timeseries panel with filled areas between p50-p95-p99.
   // Inner band (p95->p50) has fillOpacity 10, outer band (p99->p95) has fillOpacity 5.
   // Uses fillBelowTo overrides so each band fills down to the next percentile line.
-  //
-  // Usage:
-  //   panels.percentileBandsPanel(
-  //     title='HTTP Latency Bands',
-  //     metric='http_server_request_duration_seconds_bucket',
-  //     unit='s',
-  //   ) + { id: 1, gridPos: { h: 8, w: 12, x: 0, y: 0 } }
   percentileBandsPanel(title, metric, unit, serviceName='risk-it', exemplars=false)::
     $.timeseriesPanel(
       title=title,
@@ -235,5 +251,13 @@ local targets = import 'targets.libsonnet';
         sortOrder: sortOrder,
         dedupStrategy: 'none',
       },
+    },
+
+  // Build a row panel (section header).
+  rowPanel(title)::
+    {
+      title: title,
+      type: 'row',
+      collapsed: false,
     },
 }

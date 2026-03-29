@@ -35,6 +35,12 @@ repos:
         language: system
         pass_filenames: false
         files: '^internal/.*\.go$|^cmd/archdiagram/'
+      - id: jsonnet-lint
+        name: jsonnet lint
+        entry: bash -c 'for f in "$@"; do jsonnet-lint -J grafana/lib "$f"; done'
+        language: system
+        types_or: [jsonnet]
+        files: '^grafana/'
       - id: dashboards-freshness
         name: dashboard JSON freshness
         entry: make dashboards-check

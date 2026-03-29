@@ -777,11 +777,6 @@
                             "targetBlank": true,
                             "title": "System Health",
                             "url": "/d/system-health?from=${__from}&to=${__to}"
-                        },
-                        {
-                            "targetBlank": true,
-                            "title": "Game Engine",
-                            "url": "/d/game-engine?from=${__from}&to=${__to}"
                         }
                     ],
                     "unit": "s"
@@ -958,9 +953,13 @@
             "description": "Normal: P95 < 500ms, P99 < 1s. Watch for: P95 crossing the threshold line (SLO breach). Check next: REST Latency by Action to identify which move type is slowest.",
             "fieldConfig": {
                 "defaults": {
+                    "color": {
+                        "fixedColor": "#73BF69",
+                        "mode": "fixed"
+                    },
                     "custom": {
                         "drawStyle": "line",
-                        "fillOpacity": 0,
+                        "fillOpacity": 10,
                         "lineInterpolation": "smooth",
                         "lineWidth": 2,
                         "pointSize": 5,
@@ -993,85 +992,7 @@
                     },
                     "unit": "s"
                 },
-                "overrides": [
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "p99"
-                        },
-                        "properties": [
-                            {
-                                "id": "custom.fillBelowTo",
-                                "value": "p95"
-                            },
-                            {
-                                "id": "custom.fillOpacity",
-                                "value": 5
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "p95"
-                        },
-                        "properties": [
-                            {
-                                "id": "custom.fillBelowTo",
-                                "value": "p50"
-                            },
-                            {
-                                "id": "custom.fillOpacity",
-                                "value": 10
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "p50"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#A8DB9F",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "p95"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#73BF69",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "p99"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#52914A",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    }
-                ]
+                "overrides": []
             },
             "gridPos": {
                 "h": 8,
@@ -1114,7 +1035,7 @@
                     "refId": "C"
                 }
             ],
-            "title": "E2E Move Latency Bands",
+            "title": "E2E Move Latency (P50/P95/P99)",
             "type": "timeseries"
         },
         {
@@ -1125,9 +1046,13 @@
             "description": "Normal: P95 < 200ms. Watch for: P95 crossing the threshold line (WS delivery SLO breach). Check next: WebSocket dashboard for connection and broadcast details.",
             "fieldConfig": {
                 "defaults": {
+                    "color": {
+                        "fixedColor": "#8F3BB8",
+                        "mode": "fixed"
+                    },
                     "custom": {
                         "drawStyle": "line",
-                        "fillOpacity": 0,
+                        "fillOpacity": 10,
                         "lineInterpolation": "smooth",
                         "lineWidth": 2,
                         "pointSize": 5,
@@ -1167,85 +1092,7 @@
                     },
                     "unit": "s"
                 },
-                "overrides": [
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "p99"
-                        },
-                        "properties": [
-                            {
-                                "id": "custom.fillBelowTo",
-                                "value": "p95"
-                            },
-                            {
-                                "id": "custom.fillOpacity",
-                                "value": 5
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "p95"
-                        },
-                        "properties": [
-                            {
-                                "id": "custom.fillBelowTo",
-                                "value": "p50"
-                            },
-                            {
-                                "id": "custom.fillOpacity",
-                                "value": 10
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "p50"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#B57ADB",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "p95"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#8F3BB8",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "p99"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#6A2A8A",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    }
-                ]
+                "overrides": []
             },
             "gridPos": {
                 "h": 8,
@@ -1288,7 +1135,7 @@
                     "refId": "C"
                 }
             ],
-            "title": "WS Delivery Latency Bands",
+            "title": "WS Delivery Latency (P50/P95/P99)",
             "type": "timeseries"
         },
         {
@@ -2005,6 +1852,10 @@
             "description": "Normal: consistent across the test run. Watch for: game duration growing over time (server slowing down under sustained load). Check next: Moves per Game to check if duration increase is from more moves or slower moves.",
             "fieldConfig": {
                 "defaults": {
+                    "color": {
+                        "fixedColor": "#56A64B",
+                        "mode": "fixed"
+                    },
                     "custom": {
                         "drawStyle": "line",
                         "fillOpacity": 10,
@@ -2020,53 +1871,7 @@
                     },
                     "unit": "s"
                 },
-                "overrides": [
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "p50"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#8CCF82",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "p95"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#56A64B",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "p99"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#3D7A35",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    }
-                ]
+                "overrides": []
             },
             "gridPos": {
                 "h": 8,
@@ -2114,6 +1919,10 @@
             "description": "Normal: stable distribution determined by game logic, not server performance. Watch for: sudden changes in move count (game logic bug or strategy change). Check next: Game Duration to correlate move count with total time.",
             "fieldConfig": {
                 "defaults": {
+                    "color": {
+                        "fixedColor": "#73BF69",
+                        "mode": "fixed"
+                    },
                     "custom": {
                         "drawStyle": "line",
                         "fillOpacity": 10,
@@ -2129,53 +1938,7 @@
                     },
                     "unit": "short"
                 },
-                "overrides": [
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "p50"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#A8DB9F",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "p95"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#73BF69",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "p99"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#52914A",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    }
-                ]
+                "overrides": []
             },
             "gridPos": {
                 "h": 8,

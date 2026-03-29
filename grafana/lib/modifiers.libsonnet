@@ -68,9 +68,9 @@ local colors = import 'colors.libsonnet';
     },
   },
 
-  // Data links for cross-dashboard navigation or external URLs.
-  // dataLinks: array of link objects (e.g., from links.libsonnet).
-  // Usage: panel + modifiers.withLinks([links.toDashboard('Lifecycle', links.dashboardUids.lifecycle)])
+  // Data links modifier — adds cross-dashboard navigation links.
+  // dataLinks: array of link objects (e.g., from links.toDashboard()).
+  // Usage: panel + modifiers.withLinks([links.toDashboard('System Health', uid)])
   withLinks(dataLinks):: {
     fieldConfig+: {
       defaults+: {
