@@ -6,9 +6,9 @@ import (
 )
 
 var Module = fx.Options(
-	fx.Provide(func() (*Metrics, error) {
+	fx.Provide(func() (*InfraMetrics, error) {
 		meter := otel.GetMeterProvider().Meter("go-risk-it")
 
-		return NewMetrics(meter)
+		return NewInfraMetrics(meter)
 	}),
 )

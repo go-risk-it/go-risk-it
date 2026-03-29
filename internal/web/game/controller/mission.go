@@ -1,9 +1,9 @@
 package controller
 
 import (
-	"github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
+	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/mission"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission"
 )
 
 type MissionController struct {

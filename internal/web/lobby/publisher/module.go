@@ -15,7 +15,7 @@ type Params struct {
 	Bus               bus.Bus
 	ConnectionManager ws.Manager
 	StateController   *controller.StateController
-	Metrics           *metrics.Metrics
+	Metrics           *metrics.InfraMetrics
 }
 
 func newLobbyStatePublisher(params Params) *LobbyStatePublisher {

@@ -1,7 +1,7 @@
 package logic
 
 import (
-	"github.com/go-risk-it/go-risk-it/internal/logic/game"
+	game "github.com/go-risk-it/go-risk-it/internal/game/logic"
 	"github.com/go-risk-it/go-risk-it/internal/logic/lobby"
 	"go.uber.org/fx"
 )

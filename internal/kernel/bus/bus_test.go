@@ -538,7 +538,7 @@ func TestNewBus_FxLifecycle(t *testing.T) {
 
 	app := fx.New(
 		fx.Provide(eventbus.NewBus),
-		fx.Supply((*metrics.Metrics)(nil)),
+		fx.Supply((*metrics.InfraMetrics)(nil)),
 		fx.Populate(&bus),
 		fx.NopLogger,
 	)

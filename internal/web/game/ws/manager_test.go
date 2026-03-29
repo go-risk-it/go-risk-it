@@ -7,15 +7,15 @@ import (
 	"testing"
 	"testing/synctest"
 
-	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/state"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 	playerws "github.com/go-risk-it/go-risk-it/internal/web/ws"
+	mockplayer "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/player"
+	mockstate "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/state"
 	mockbus "github.com/go-risk-it/go-risk-it/mocks/internal_/kernel/bus"
-	mockplayer "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
-	mockstate "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/state"
 	"github.com/lesismal/nbio/nbhttp/websocket"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -26,10 +26,10 @@ import (
 
 const testPlayerID = "player-1"
 
-func testMetrics(t *testing.T) *metrics.Metrics {
+func testMetrics(t *testing.T) *metrics.InfraMetrics {
 	t.Helper()
 
-	m, err := metrics.NewMetrics(metricnoop.Meter{})
+	m, err := metrics.NewInfraMetrics(metricnoop.Meter{})
 	require.NoError(t, err)
 
 	return m
@@ -72,7 +72,7 @@ func testWSConn(t *testing.T) *websocket.Conn {
 // to succeed for the given userID. Returns the manager and cleanup-aware mocks.
 func connectableManager(
 	t *testing.T,
-	metr *metrics.Metrics,
+	metr *metrics.InfraMetrics,
 ) (ws.Manager, *mockstate.Service, *mockplayer.Service, *mockbus.Bus) {
 	t.Helper()
 

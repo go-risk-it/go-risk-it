@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"net/http"
 
-	gameRequest "github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
-	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/response"
+	gameRequest "github.com/go-risk-it/go-risk-it/internal/game/api/rest/request"
+	"github.com/go-risk-it/go-risk-it/internal/game/api/rest/response"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	gameWs "github.com/go-risk-it/go-risk-it/internal/web/game/ws"

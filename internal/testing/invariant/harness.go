@@ -11,25 +11,27 @@ import (
 	"testing"
 	"time"
 
-	gamedb "github.com/go-risk-it/go-risk-it/internal/data/game/db"
-	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/config"
+	gamedb "github.com/go-risk-it/go-risk-it/internal/game/data/db"
+	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
+	game "github.com/go-risk-it/go-risk-it/internal/game/logic"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/advancement"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/board"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/creation"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/conquer"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/deploy"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/orchestration"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/player"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/state"
+	"github.com/go-risk-it/go-risk-it/internal/game/rand"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/rand"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/advancement"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/creation"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/conquer"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/deploy"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/knadh/koanf/parsers/yaml"
+	"github.com/knadh/koanf/providers/rawbytes"
+	"github.com/knadh/koanf/v2"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -91,10 +93,12 @@ func buildFxApp(
 	provider := metric.NewMeterProvider(metric.WithReader(reader))
 	meter := provider.Meter("invariant-test")
 
-	testMetrics, err := metrics.NewMetrics(meter)
+	testMetrics, err := metrics.NewInfraMetrics(meter)
 	if err != nil {
 		panic(fmt.Sprintf("failed to create test metrics: %v", err))
 	}
+
+	testKoanf := buildTestKoanf()
 
 	app := fx.New(
 		fx.NopLogger,
@@ -102,15 +106,7 @@ func buildFxApp(
 		fx.Provide(func() sqlc.DBTX { return dbPool }),
 		fx.Provide(gamedb.New),
 		game.Module,
-		fx.Supply(
-			config.DiceConfig{RollStrategy: "attacker_always_wins"},
-		),
-		fx.Supply(
-			config.RegionassignmentConfig{
-				AssignmentStrategy: "sequential",
-			},
-		),
-		fx.Supply(config.HistoryConfig{Size: 50}),
+		fx.Supply(testKoanf),
 		rand.Module,
 		fx.Supply(testMetrics),
 		fx.Populate(
@@ -255,7 +251,7 @@ func runMigrations(connStr string) error {
 
 	migrationDir := filepath.Join(
 		filepath.Dir(callerPath),
-		"..", "..", "data", "game", "sqlc", "migrations",
+		"..", "..", "game", "data", "sqlc", "migrations",
 	)
 
 	mig, err := migrate.New("file://"+migrationDir, connStr)
@@ -273,4 +269,24 @@ func runMigrations(connStr string) error {
 	}
 
 	return nil
+}
+
+func buildTestKoanf() *koanf.Koanf {
+	raw := []byte(`
+game:
+  dice:
+    roll_strategy: attacker_always_wins
+  regionassignment:
+    assignment_strategy: sequential
+  history:
+    size: 50
+`)
+
+	k := koanf.New(".")
+
+	if err := k.Load(rawbytes.Provider(raw), yaml.Parser()); err != nil {
+		panic(fmt.Sprintf("failed to load test koanf: %v", err))
+	}
+
+	return k
 }

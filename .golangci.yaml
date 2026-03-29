@@ -43,9 +43,11 @@ linters:
         - go\.opentelemetry\.io/otel/.*
         - github\.com/go-risk-it/go-risk-it/internal/kernel/bus\..*
         - github\.com/go-risk-it/go-risk-it/internal/logic/.*
+        - github\.com/go-risk-it/go-risk-it/internal/game/logic/.*
+        - github\.com/go-risk-it/go-risk-it/internal/game/data/db\.Querier
         - github\.com/go-risk-it/go-risk-it/internal/testonly\..*
         - github\.com/go-risk-it/go-risk-it/internal/web/.*
-        - github\.com/go-risk-it/go-risk-it/internal/kernel/rand\.RNG
+        - github\.com/go-risk-it/go-risk-it/internal/game/rand\.RNG
     lll:
       line-length: 99
       tab-width: 4

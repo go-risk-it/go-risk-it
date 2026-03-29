@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/go-risk-it/go-risk-it/internal/api/game"
-	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
+	game "github.com/go-risk-it/go-risk-it/internal/game/api"
+	"github.com/go-risk-it/go-risk-it/internal/game/api/rest/request"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/advancement"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/advancement"
 )
 
 type AdvancementController struct {

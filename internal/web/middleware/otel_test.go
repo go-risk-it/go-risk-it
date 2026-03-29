@@ -16,14 +16,14 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
-func setupOTelTest(t *testing.T) (*metrics.Metrics, *sdkmetric.ManualReader) {
+func setupOTelTest(t *testing.T) (*metrics.InfraMetrics, *sdkmetric.ManualReader) {
 	t.Helper()
 
 	reader := sdkmetric.NewManualReader()
 	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
 	meter := provider.Meter("test")
 
-	m, err := metrics.NewMetrics(meter)
+	m, err := metrics.NewInfraMetrics(meter)
 	require.NoError(t, err)
 
 	return m, reader
@@ -270,7 +270,7 @@ func TestOTelMiddleware_ExemplarHasTraceContext(t *testing.T) {
 	meterProvider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
 	meter := meterProvider.Meter("test")
 
-	m, err := metrics.NewMetrics(meter)
+	m, err := metrics.NewInfraMetrics(meter)
 	require.NoError(t, err)
 
 	otelMiddleware := middleware.NewOTelMiddleware(m)

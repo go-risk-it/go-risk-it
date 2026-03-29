@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	gameevt "github.com/go-risk-it/go-risk-it/internal/events/game"
+	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
+	gameevt "github.com/go-risk-it/go-risk-it/internal/game/events"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	"github.com/stretchr/testify/require"
 )

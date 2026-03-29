@@ -50,13 +50,13 @@ type busImpl struct {
 	wg      sync.WaitGroup
 	closed  bool
 	timeout time.Duration
-	metrics *metrics.Metrics
+	metrics *metrics.InfraMetrics
 }
 
 var _ Bus = (*busImpl)(nil)
 
 // NewBus creates a new Bus and registers an fx.OnStop hook for graceful shutdown.
-func NewBus(lifecycle fx.Lifecycle, m *metrics.Metrics) Bus {
+func NewBus(lifecycle fx.Lifecycle, m *metrics.InfraMetrics) Bus {
 	bus := &busImpl{
 		typedH:  make(map[string][]Handler),
 		timeout: defaultHandlerTimeout,

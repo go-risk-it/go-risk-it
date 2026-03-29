@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
-	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/snapshot"
+	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
+	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 )
 

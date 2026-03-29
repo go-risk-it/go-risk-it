@@ -30,7 +30,7 @@ const lobbyPublisherTracerName = "go-risk-it-lobby-publisher"
 type LobbyStatePublisher struct {
 	writer          ws.Writer
 	stateController *controller.StateController
-	metrics         *metrics.Metrics
+	metrics         *metrics.InfraMetrics
 }
 
 // NewLobbyStatePublisher creates a publisher with narrow WS and controller
@@ -38,7 +38,7 @@ type LobbyStatePublisher struct {
 func NewLobbyStatePublisher(
 	writer ws.Writer,
 	stateController *controller.StateController,
-	met *metrics.Metrics,
+	met *metrics.InfraMetrics,
 ) *LobbyStatePublisher {
 	return &LobbyStatePublisher{
 		writer:          writer,
@@ -122,7 +122,7 @@ func (p *LobbyStatePublisher) fetchAndPublish(
 func safeOp(
 	parent context.Context,
 	name string,
-	met *metrics.Metrics,
+	met *metrics.InfraMetrics,
 	action func(),
 ) {
 	ctx, span := otel.GetTracerProvider().

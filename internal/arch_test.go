@@ -112,11 +112,15 @@ func assertNoRawImports(t *testing.T, pkgs []goPackage, forbidden ...string) {
 func TestArch_LogicNeverImportsWebOrAPI(t *testing.T) {
 	t.Parallel()
 
-	pkgs := loadPackages(t, "./internal/logic/...")
+	lobbyPkgs := loadPackages(t, "./internal/logic/...")
+	gamePkgs := loadPackages(t, "./internal/game/logic/...")
+	lobbyPkgs = append(lobbyPkgs, gamePkgs...)
+	pkgs := lobbyPkgs
 
 	assertNoImports(t, pkgs,
 		modulePrefix+"web/",
 		modulePrefix+"api/",
+		modulePrefix+"game/api/",
 	)
 }
 
@@ -124,7 +128,10 @@ func TestArch_LogicNeverImportsWebOrAPI(t *testing.T) {
 func TestArch_LogicNeverImportsNetHTTP(t *testing.T) {
 	t.Parallel()
 
-	pkgs := loadPackages(t, "./internal/logic/...")
+	lobbyPkgs := loadPackages(t, "./internal/logic/...")
+	gamePkgs := loadPackages(t, "./internal/game/logic/...")
+	lobbyPkgs = append(lobbyPkgs, gamePkgs...)
+	pkgs := lobbyPkgs
 
 	assertNoRawImports(t, pkgs, "net/http")
 }
@@ -133,23 +140,30 @@ func TestArch_LogicNeverImportsNetHTTP(t *testing.T) {
 func TestArch_DataNeverImportsLogicOrWeb(t *testing.T) {
 	t.Parallel()
 
-	pkgs := loadPackages(t, "./internal/data/...")
+	lobbyPkgs := loadPackages(t, "./internal/data/...")
+	gamePkgs := loadPackages(t, "./internal/game/data/...")
+	lobbyPkgs = append(lobbyPkgs, gamePkgs...)
+	pkgs := lobbyPkgs
 
 	assertNoImports(t, pkgs,
 		modulePrefix+"logic/",
+		modulePrefix+"game/logic/",
 		modulePrefix+"web/",
 	)
 }
 
-// Rule 4: logic/game/ and logic/lobby/ are mutually isolated.
+// Rule 4: game/logic/ and logic/lobby/ are mutually isolated.
 func TestArch_LogicGameAndLobbyIsolated(t *testing.T) {
 	t.Parallel()
 
-	gamePkgs := loadPackages(t, "./internal/logic/game/...")
+	gamePkgs := loadPackages(t, "./internal/game/logic/...")
 	assertNoImports(t, gamePkgs, modulePrefix+"logic/lobby/")
 
 	lobbyPkgs := loadPackages(t, "./internal/logic/lobby/...")
-	assertNoImports(t, lobbyPkgs, modulePrefix+"logic/game/")
+	assertNoImports(t, lobbyPkgs,
+		modulePrefix+"game/logic/",
+		modulePrefix+"logic/game/",
+	)
 }
 
 // Rule 4b: events/logger is infrastructure — it must never import logic/ or web/.
@@ -165,7 +179,7 @@ func TestArch_EventsRootIsolation(t *testing.T) {
 	)
 }
 
-// Rule 4c: kernel/ must never import game/lobby domain packages.
+// Rule 4c: kernel/ must never import game or lobby domain packages.
 func TestArch_KernelNeverImportsDomain(t *testing.T) {
 	t.Parallel()
 
@@ -174,6 +188,7 @@ func TestArch_KernelNeverImportsDomain(t *testing.T) {
 	assertNoImports(t, pkgs,
 		modulePrefix+"logic/",
 		modulePrefix+"web/",
+		modulePrefix+"game/",
 		modulePrefix+"data/game/",
 		modulePrefix+"data/lobby/",
 		modulePrefix+"events/game/",
@@ -228,7 +243,10 @@ func assertHasExportedInterface(t *testing.T, pkg goPackage) {
 func TestArch_LogicServicesDefineExportedInterface(t *testing.T) {
 	t.Parallel()
 
-	pkgs := loadPackages(t, "./internal/logic/...")
+	lobbyPkgs := loadPackages(t, "./internal/logic/...")
+	gamePkgs := loadPackages(t, "./internal/game/logic/...")
+	lobbyPkgs = append(lobbyPkgs, gamePkgs...)
+	pkgs := lobbyPkgs
 
 	for _, pkg := range pkgs {
 		if !containsFile(pkg, "service.go") {
@@ -245,11 +263,15 @@ func TestArch_LogicServicesDefineExportedInterface(t *testing.T) {
 func TestArch_APIOnlyImportsAPI(t *testing.T) {
 	t.Parallel()
 
-	pkgs := loadPackages(t, "./internal/api/...")
+	lobbyPkgs := loadPackages(t, "./internal/api/...")
+	gamePkgs := loadPackages(t, "./internal/game/api/...")
+	lobbyPkgs = append(lobbyPkgs, gamePkgs...)
+	pkgs := lobbyPkgs
 
 	for _, pkg := range pkgs {
 		for _, imp := range internalImports(pkg) {
-			if !hasPrefix(imp, modulePrefix+"api/") {
+			short := strings.TrimPrefix(imp, modulePrefix)
+			if !strings.HasPrefix(short, "api/") && !strings.HasPrefix(short, "game/api") {
 				t.Errorf("%s imports non-api package %s", pkg.ImportPath, imp)
 			}
 		}
@@ -264,7 +286,7 @@ func TestArch_InfrastructureIsolation(t *testing.T) {
 	infraPatterns := []string{
 		"./internal/kernel/config/...",
 		"./internal/kernel/metrics/...",
-		"./internal/kernel/rand/...",
+		"./internal/game/rand/...",
 	}
 
 	for _, pattern := range infraPatterns {
@@ -300,7 +322,10 @@ func TestArch_TestOnlyNeverImportedByProduction(t *testing.T) {
 func TestArch_DataNeverImportsNetHTTP(t *testing.T) {
 	t.Parallel()
 
-	pkgs := loadPackages(t, "./internal/data/...")
+	lobbyPkgs := loadPackages(t, "./internal/data/...")
+	gamePkgs := loadPackages(t, "./internal/game/data/...")
+	lobbyPkgs = append(lobbyPkgs, gamePkgs...)
+	pkgs := lobbyPkgs
 
 	assertNoRawImports(t, pkgs, "net/http")
 }
@@ -315,12 +340,14 @@ func TestArch_WebNeverImportsDataQuerier(t *testing.T) {
 	for _, pkg := range pkgs {
 		for _, imp := range internalImports(pkg) {
 			dataPart := strings.TrimPrefix(imp, modulePrefix+"data/")
-			if dataPart == imp {
-				continue // not a data/ import
+			if dataPart != imp && strings.Contains(dataPart, "/db") {
+				t.Errorf("%s imports data querier %s (web must go through logic)",
+					pkg.ImportPath, imp)
 			}
 
-			if strings.Contains(dataPart, "/db") {
-				t.Errorf("%s imports data querier %s (web must go through logic)",
+			gameDataPart := strings.TrimPrefix(imp, modulePrefix+"game/data/")
+			if gameDataPart != imp && strings.Contains(gameDataPart, "/db") {
+				t.Errorf("%s imports game data querier %s (web must go through logic)",
 					pkg.ImportPath, imp)
 			}
 		}
@@ -543,11 +570,13 @@ func TestArch_ReportHeadroom(t *testing.T) {
 //
 //nolint:gochecknoglobals // test-only mapping used by doc.go validation rules
 var expectedLayer = map[string]string{
-	// api
-	"api/game":                "API",
-	"api/game/messaging":      "API",
-	"api/game/rest/request":   "API",
-	"api/game/rest/response":  "API",
+	// game/api
+	"game/api":               "API",
+	"game/api/messaging":     "API",
+	"game/api/rest/request":  "API",
+	"game/api/rest/response": "API",
+
+	// api (lobby)
 	"api/lobby/messaging":     "API",
 	"api/lobby/rest/request":  "API",
 	"api/lobby/rest/response": "API",
@@ -563,21 +592,23 @@ var expectedLayer = map[string]string{
 	"kernel/errors":             "Kernel",
 	"kernel/metrics":            "Kernel",
 	"kernel/otelsetup":          "Kernel",
-	"kernel/rand":               "Kernel",
 	"kernel/slog":               "Kernel",
-	"kernel/tracing":            "Kernel",
 	"kernel/upgradablerw_mutex": "Kernel",
 
-	// data
-	"data/game/db":  "Data",
+	// game domain
+	"game/data/db":       "Data",
+	"game/events":        "Events-domain",
+	"game/tracing":       "Logic",
+	"game/rand":          "Logic",
+	"game/logic/config":  "Logic",
+	"game/logic/metrics": "Logic",
+
+	// data (lobby)
 	"data/lobby/db": "Data",
 
 	// events
 	"events/logger": "Events",
-
-	// events-domain
-	"events/game":  "Events-domain",
-	"events/lobby": "Events-domain",
+	"events/lobby":  "Events-domain",
 
 	// test
 	"testing/invariant": "Test",
@@ -594,13 +625,22 @@ func layerFromPrefix(suffix string) string {
 	}
 
 	switch {
+	case strings.HasPrefix(suffix, "game/api/"):
+		return "API"
+	case strings.HasPrefix(suffix, "game/data/"):
+		return "Data"
+	case strings.HasPrefix(suffix, "game/events"):
+		return "Events-domain"
+	case strings.HasPrefix(suffix, "game/logic/") || strings.HasPrefix(suffix, "game/tracing") ||
+		strings.HasPrefix(suffix, "game/rand"):
+		return "Logic"
 	case strings.HasPrefix(suffix, "api/"):
 		return "API"
 	case strings.HasPrefix(suffix, "kernel/"):
 		return "Kernel"
 	case strings.HasPrefix(suffix, "data/"):
 		return "Data"
-	case strings.HasPrefix(suffix, "events/game") || strings.HasPrefix(suffix, "events/lobby"):
+	case strings.HasPrefix(suffix, "events/lobby"):
 		return "Events-domain"
 	case strings.HasPrefix(suffix, "events/"):
 		return "Events"
@@ -628,12 +668,12 @@ var wiringRoots = map[string]bool{
 	"":                        true, // internal root
 	"kernel":                  true,
 	"logic":                   true,
-	"logic/game":              true,
-	"logic/game/move":         true,
-	"logic/game/move/service": true,
+	"game/logic":              true,
+	"game/logic/move":         true,
+	"game/logic/move/service": true,
+	"game/data":               true,
 	"logic/lobby":             true,
 	"data":                    true,
-	"data/game":               true,
 	"data/lobby":              true,
 	"web":                     true,
 	"web/game":                true,

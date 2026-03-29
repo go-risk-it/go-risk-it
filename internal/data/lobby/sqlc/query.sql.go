@@ -33,7 +33,6 @@ func (q *Queries) CanLobbyBeStarted(ctx context.Context, arg CanLobbyBeStartedPa
 	row := q.db.QueryRow(ctx, canLobbyBeStarted, arg.LobbyID, arg.UserID, arg.MinimumParticipants)
 	var exists bool
 	err := row.Scan(&exists)
-
 	return exists, err
 }
 
@@ -47,7 +46,6 @@ func (q *Queries) CreateLobby(ctx context.Context) (int64, error) {
 	row := q.db.QueryRow(ctx, createLobby)
 	var id int64
 	err := row.Scan(&id)
-
 	return id, err
 }
 
@@ -87,7 +85,6 @@ func (q *Queries) GetJoinableLobbies(ctx context.Context, userID string) ([]GetJ
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-
 	return items, nil
 }
 
@@ -128,7 +125,6 @@ func (q *Queries) GetJoinedLobbies(ctx context.Context, userID string) ([]GetJoi
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-
 	return items, nil
 }
 
@@ -162,7 +158,6 @@ func (q *Queries) GetLobby(ctx context.Context, id int64) ([]GetLobbyRow, error)
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-
 	return items, nil
 }
 
@@ -195,7 +190,6 @@ func (q *Queries) GetLobbyPlayers(ctx context.Context, id int64) ([]GetLobbyPlay
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-
 	return items, nil
 }
 
@@ -231,7 +225,6 @@ func (q *Queries) GetOwnedLobbies(ctx context.Context, userID string) ([]GetOwne
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-
 	return items, nil
 }
 
@@ -251,7 +244,6 @@ func (q *Queries) InsertParticipant(ctx context.Context, arg InsertParticipantPa
 	row := q.db.QueryRow(ctx, insertParticipant, arg.LobbyID, arg.UserID, arg.Name)
 	var id int64
 	err := row.Scan(&id)
-
 	return id, err
 }
 
@@ -268,7 +260,6 @@ type MarkLobbyAsStartedParams struct {
 
 func (q *Queries) MarkLobbyAsStarted(ctx context.Context, arg MarkLobbyAsStartedParams) error {
 	_, err := q.db.Exec(ctx, markLobbyAsStarted, arg.GameID, arg.LobbyID)
-
 	return err
 }
 
@@ -285,6 +276,5 @@ type UpdateLobbyOwnerParams struct {
 
 func (q *Queries) UpdateLobbyOwner(ctx context.Context, arg UpdateLobbyOwnerParams) error {
 	_, err := q.db.Exec(ctx, updateLobbyOwner, arg.OwnerID, arg.ID)
-
 	return err
 }

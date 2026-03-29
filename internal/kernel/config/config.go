@@ -16,29 +16,28 @@ import (
 
 const EnvironmentKey = "ENVIRONMENT"
 
+// Config holds infrastructure-only configuration (no game-domain sections).
 type Config struct {
-	Jwt              JwtConfig
-	Database         DatabaseConfig
-	Dice             DiceConfig
-	Regionassignment RegionassignmentConfig
-	History          HistoryConfig
-	Otel             OtelConfig
-	Server           ServerConfig
+	Jwt      JwtConfig
+	Database DatabaseConfig
+	Otel     OtelConfig
+	Server   ServerConfig
 }
 
+// Result provides individual infrastructure config types as fx dependencies.
 type Result struct {
 	fx.Out
 
-	JwtConfig              JwtConfig
-	DatabaseConfig         DatabaseConfig
-	DiceConfig             DiceConfig
-	RegionassignmentConfig RegionassignmentConfig
-	HistoryConfig          HistoryConfig
-	OtelConfig             OtelConfig
-	ServerConfig           ServerConfig
+	JwtConfig      JwtConfig
+	DatabaseConfig DatabaseConfig
+	OtelConfig     OtelConfig
+	ServerConfig   ServerConfig
 }
 
-func newConfig() (Result, error) {
+// newKoanf creates and loads the koanf configuration manager. The returned
+// *koanf.Koanf is provided to downstream modules (e.g. game/logic/config)
+// so they can unmarshal their own sections.
+func newKoanf() (*koanf.Koanf, error) {
 	koanfManager := koanf.New(".")
 
 	err := godotenv.Load(".env")
@@ -47,28 +46,30 @@ func newConfig() (Result, error) {
 	}
 
 	if err := readFromConfigFile(koanfManager); err != nil {
-		return Result{}, fmt.Errorf("failed to read config file: %w", err)
+		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
 
 	if err := readFromEnv(koanfManager); err != nil {
-		return Result{}, fmt.Errorf("failed to read env config: %w", err)
-	}
-
-	var config Config
-	if err := koanfManager.Unmarshal("", &config); err != nil {
-		return Result{}, fmt.Errorf("failed to unmarshal config: %w", err)
+		return nil, fmt.Errorf("failed to read env config: %w", err)
 	}
 
 	slog.Debug("loaded config", "config", fmt.Sprintf("%+v", koanfManager))
 
+	return koanfManager, nil
+}
+
+// newConfig unmarshals the top-level infrastructure config from koanf.
+func newConfig(k *koanf.Koanf) (Result, error) {
+	var config Config
+	if err := k.Unmarshal("", &config); err != nil {
+		return Result{}, fmt.Errorf("failed to unmarshal config: %w", err)
+	}
+
 	return Result{
-		JwtConfig:              config.Jwt,
-		DatabaseConfig:         config.Database,
-		DiceConfig:             config.Dice,
-		RegionassignmentConfig: config.Regionassignment,
-		HistoryConfig:          config.History,
-		OtelConfig:             config.Otel,
-		ServerConfig:           config.Server,
+		JwtConfig:      config.Jwt,
+		DatabaseConfig: config.Database,
+		OtelConfig:     config.Otel,
+		ServerConfig:   config.Server,
 	}, nil
 }
 
@@ -103,6 +104,7 @@ func readFromEnv(k *koanf.Koanf) error {
 
 var Module = fx.Options(
 	fx.Provide(
+		newKoanf,
 		newConfig,
 	),
 )

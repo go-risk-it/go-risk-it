@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission"
+	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/mission"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/publisher"
-	mockMission "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/mission"
+	mockMission "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/mission"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )

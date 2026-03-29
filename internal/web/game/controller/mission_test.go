@@ -4,11 +4,11 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
+	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/mission"
 	ctx2 "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission"
 	missionController "github.com/go-risk-it/go-risk-it/internal/web/game/controller"
-	missionMock "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/mission"
+	missionMock "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/mission"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )

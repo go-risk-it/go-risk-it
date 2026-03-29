@@ -8,13 +8,13 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	gameevt "github.com/go-risk-it/go-risk-it/internal/events/game"
+	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
+	gameevt "github.com/go-risk-it/go-risk-it/internal/game/events"
+	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/logic/config"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/snapshot"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/config"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/converter"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/ws"
@@ -44,12 +44,12 @@ type GameStatePublisher struct {
 	snapshotService   snapshot.Service
 	missionController *controller.MissionController
 	moveLogController *controller.MoveLogController
-	historyConfig     config.HistoryConfig
-	metrics           *metrics.Metrics
+	historyConfig     gameconfig.HistoryConfig
+	metrics           *metrics.InfraMetrics
 }
 
 // NewGameStatePublisher creates a publisher with narrow WS dependencies and
-// domain services.
+// domain services. Panics if historyConfig.Size <= 0.
 func NewGameStatePublisher(
 	writer ws.Writer,
 	presence ws.Presence,
@@ -57,9 +57,13 @@ func NewGameStatePublisher(
 	snapshotService snapshot.Service,
 	missionController *controller.MissionController,
 	moveLogController *controller.MoveLogController,
-	historyConfig config.HistoryConfig,
-	met *metrics.Metrics,
+	historyConfig gameconfig.HistoryConfig,
+	met *metrics.InfraMetrics,
 ) *GameStatePublisher {
+	if historyConfig.Size <= 0 {
+		panic("HistoryConfig.Size must be > 0")
+	}
+
 	return &GameStatePublisher{
 		writer:            writer,
 		presence:          presence,
@@ -153,7 +157,7 @@ func (p *GameStatePublisher) handleGameCompleted(
 func safeOp(
 	parent context.Context,
 	name string,
-	met *metrics.Metrics,
+	met *metrics.InfraMetrics,
 	action func(),
 ) {
 	ctx, span := otel.GetTracerProvider().

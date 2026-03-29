@@ -18,10 +18,10 @@ type PlayerConnections struct {
 	mu upgradablerwmutex.UpgradableRWMutex
 
 	playerConnections map[string]*websocket.Conn
-	metrics           *metrics.Metrics
+	metrics           *metrics.InfraMetrics
 }
 
-func NewPlayerConnections(m *metrics.Metrics) *PlayerConnections {
+func NewPlayerConnections(m *metrics.InfraMetrics) *PlayerConnections {
 	return &PlayerConnections{
 		playerConnections: make(map[string]*websocket.Conn),
 		metrics:           m,

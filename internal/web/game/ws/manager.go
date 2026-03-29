@@ -7,14 +7,14 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	gameevt "github.com/go-risk-it/go-risk-it/internal/events/game"
+	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
+	gameevt "github.com/go-risk-it/go-risk-it/internal/game/events"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/player"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/state"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	upgradablerwmutex "github.com/go-risk-it/go-risk-it/internal/kernel/upgradablerw_mutex"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws"
 	"github.com/lesismal/nbio/nbhttp/websocket"
 )
@@ -26,7 +26,7 @@ type manager struct {
 	playerService    player.Service
 	gameConnections  map[int64]*ws.PlayerConnections
 	bus              eventbus.Bus
-	metrics          *metrics.Metrics
+	metrics          *metrics.InfraMetrics
 }
 
 func (m *manager) GetConnectedPlayers(ctx ctx.GameContext) []string {
@@ -42,7 +42,7 @@ func NewManager(
 	gameStateService state.Service,
 	playerService player.Service,
 	bus eventbus.Bus,
-	metrics *metrics.Metrics,
+	metrics *metrics.InfraMetrics,
 ) Manager {
 	return &manager{
 		gameStateService: gameStateService,

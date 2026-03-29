@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/go-risk-it/go-risk-it/internal/api/game"
-	"github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
+	game "github.com/go-risk-it/go-risk-it/internal/game/api"
+	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/conquer"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/deploy"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/state"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/conquer"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/deploy"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 )
 
 type PhaseController struct {

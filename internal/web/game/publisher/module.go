@@ -1,10 +1,10 @@
 package publisher
 
 import (
+	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/logic/config"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/bus"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/config"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 	"go.uber.org/fx"
@@ -19,8 +19,8 @@ type Params struct {
 	SnapshotService   snapshot.Service
 	MissionController *controller.MissionController
 	MoveLogController *controller.MoveLogController
-	HistoryConfig     config.HistoryConfig
-	Metrics           *metrics.Metrics
+	HistoryConfig     gameconfig.HistoryConfig
+	Metrics           *metrics.InfraMetrics
 }
 
 func newGameStatePublisher(params Params) *GameStatePublisher {

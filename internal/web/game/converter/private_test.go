@@ -6,8 +6,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/snapshot"
+	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/converter"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"

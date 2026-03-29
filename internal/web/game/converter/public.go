@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/go-risk-it/go-risk-it/internal/api/game"
-	"github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
-	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/snapshot"
+	game "github.com/go-risk-it/go-risk-it/internal/game/api"
+	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
+	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 )
 

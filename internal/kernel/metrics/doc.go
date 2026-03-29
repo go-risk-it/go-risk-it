@@ -1,11 +1,12 @@
-// Package metrics registers OpenTelemetry instruments for the game server.
+// Package metrics registers OpenTelemetry instruments for infrastructure
+// observability: HTTP request handling, WebSocket broadcasting, database
+// transactions, and event bus dispatch.
 //
-// It defines histograms, counters, and up-down counters across four domains:
-// HTTP request handling, game lifecycle, WebSocket broadcasting, and database
-// transactions. [NewMetrics] creates all instruments from a single OTel Meter
-// and returns the consolidated [Metrics] struct that other packages record into.
+// [NewInfraMetrics] creates all instruments from a single OTel Meter
+// and returns the consolidated [InfraMetrics] struct. Game-domain metrics
+// live in internal/game/logic/metrics.
 //
 // # Layer
 //
-// Kernel — observability instruments with no internal dependencies.
+// Kernel — infrastructure observability instruments with no internal dependencies.
 package metrics

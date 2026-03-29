@@ -3,9 +3,10 @@
 // the ENVIRONMENT variable (defaulting to "component-test.yml"), then
 // overlays any matching environment variables.
 //
-// Each configuration section (JWT, database, dice, region assignment,
-// history, OpenTelemetry, server) is provided as a separate fx dependency,
-// allowing consumers to declare only the config they need.
+// Infrastructure configuration sections (JWT, database, OpenTelemetry,
+// server) are provided as separate fx dependencies. The *koanf.Koanf
+// instance is also provided for downstream modules (e.g.
+// game/logic/config) to unmarshal their own sections.
 //
 // # Layer
 //

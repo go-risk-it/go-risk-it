@@ -35,7 +35,7 @@ const (
 func InTransaction[Q Transactable[Q], T any](
 	querier Q,
 	ctx context.Context,
-	txMetrics *metrics.Metrics,
+	txMetrics *metrics.InfraMetrics,
 	txFunc func(Q) (T, error),
 ) (T, error) {
 	return InTransactionWithIsolation(querier, ctx, txMetrics, pgx.ReadCommitted, txFunc)
@@ -48,7 +48,7 @@ func InTransaction[Q Transactable[Q], T any](
 func InTransactionWithIsolation[Q Transactable[Q], T any](
 	querier Q,
 	ctx context.Context,
-	txMetrics *metrics.Metrics,
+	txMetrics *metrics.InfraMetrics,
 	isolationLevel pgx.TxIsoLevel,
 	txFunc func(Q) (T, error),
 ) (T, error) {
@@ -111,7 +111,7 @@ func isRetryable(err error) bool {
 func executeTransaction[Q Transactable[Q], T any](
 	querier Q,
 	ctx context.Context,
-	txMetrics *metrics.Metrics,
+	txMetrics *metrics.InfraMetrics,
 	isolationLevel pgx.TxIsoLevel,
 	txFunc func(Q) (T, error),
 	transaction pgx.Tx,
@@ -162,7 +162,7 @@ func executeTransaction[Q Transactable[Q], T any](
 func rollback(
 	transaction pgx.Tx,
 	ctx context.Context,
-	txMetrics *metrics.Metrics,
+	txMetrics *metrics.InfraMetrics,
 ) {
 	slog.InfoContext(ctx, "rolling back transaction")
 

@@ -3,14 +3,14 @@ package controller
 import (
 	"fmt"
 
-	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
+	"github.com/go-risk-it/go-risk-it/internal/game/api/rest/request"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/attack"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/cards"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/conquer"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/deploy"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/orchestration"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/reinforce"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/cards"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/conquer"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/deploy"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/reinforce"
 )
 
 type MoveController struct {

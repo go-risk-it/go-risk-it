@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/go-risk-it/go-risk-it/internal/api/game"
-	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	game "github.com/go-risk-it/go-risk-it/internal/game/api"
+	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 )
 
 // MissionResolver fetches mission details for a given mission type and ID,

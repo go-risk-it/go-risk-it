@@ -7,31 +7,19 @@ import (
 )
 
 // LatencyBuckets defines histogram bucket boundaries in seconds,
-// suitable for sub-second API and phase latencies.
+// suitable for sub-second API latencies.
 var LatencyBuckets = []float64{
 	0.001, 0.005, 0.01, 0.025, 0.05,
 	0.1, 0.25, 0.5, 1, 2.5, 5, 10,
 }
 
-// GameDurationBuckets defines histogram bucket boundaries in seconds,
-// suitable for game durations (seconds to minutes).
-var GameDurationBuckets = []float64{
-	1, 5, 10, 30, 60, 120, 300, 600, 1800, 3600,
-}
-
-type Metrics struct {
+// InfraMetrics holds OTel instruments for infrastructure observability:
+// HTTP, WebSocket, DB transactions, and event bus.
+type InfraMetrics struct {
 	// HTTP metrics
 	HTTPRequestDuration metric.Float64Histogram
 	HTTPRequestsTotal   metric.Int64Counter
 	HTTPErrorsTotal     metric.Int64Counter
-
-	// Game metrics
-	ActiveGames   metric.Int64UpDownCounter
-	MovesTotal    metric.Int64Counter
-	PhaseDuration metric.Float64Histogram
-	GamesCreated  metric.Int64Counter
-	GamesFinished metric.Int64Counter
-	GameDuration  metric.Float64Histogram
 
 	// WebSocket metrics
 	ActiveConnections metric.Int64UpDownCounter
@@ -51,36 +39,33 @@ type Metrics struct {
 	EventHandlerDuration     metric.Float64Histogram
 }
 
-func NewMetrics(meter metric.Meter) (*Metrics, error) {
-	metrics := &Metrics{}
+// NewInfraMetrics creates all infrastructure OTel instruments on the given meter.
+func NewInfraMetrics(meter metric.Meter) (*InfraMetrics, error) {
+	infraMetrics := &InfraMetrics{}
 
-	if err := metrics.initHTTPMetrics(meter); err != nil {
+	if err := infraMetrics.initHTTPMetrics(meter); err != nil {
 		return nil, err
 	}
 
-	if err := metrics.initGameMetrics(meter); err != nil {
+	if err := infraMetrics.initWebSocketMetrics(meter); err != nil {
 		return nil, err
 	}
 
-	if err := metrics.initWebSocketMetrics(meter); err != nil {
+	if err := infraMetrics.initDBMetrics(meter); err != nil {
 		return nil, err
 	}
 
-	if err := metrics.initDBMetrics(meter); err != nil {
+	if err := infraMetrics.initEventBusMetrics(meter); err != nil {
 		return nil, err
 	}
 
-	if err := metrics.initEventBusMetrics(meter); err != nil {
-		return nil, err
-	}
-
-	return metrics, nil
+	return infraMetrics, nil
 }
 
-func (metrics *Metrics) initHTTPMetrics(meter metric.Meter) error {
+func (m *InfraMetrics) initHTTPMetrics(meter metric.Meter) error {
 	var err error
 
-	if metrics.HTTPRequestDuration, err = meter.Float64Histogram("http.server.request.duration",
+	if m.HTTPRequestDuration, err = meter.Float64Histogram("http.server.request.duration",
 		metric.WithDescription("Duration of HTTP requests in seconds"),
 		metric.WithUnit("s"),
 		metric.WithExplicitBucketBoundaries(LatencyBuckets...),
@@ -88,13 +73,13 @@ func (metrics *Metrics) initHTTPMetrics(meter metric.Meter) error {
 		return fmt.Errorf("failed to create http request duration histogram: %w", err)
 	}
 
-	if metrics.HTTPRequestsTotal, err = meter.Int64Counter("http.server.requests.total",
+	if m.HTTPRequestsTotal, err = meter.Int64Counter("http.server.requests.total",
 		metric.WithDescription("Total number of HTTP requests"),
 	); err != nil {
 		return fmt.Errorf("failed to create http requests total counter: %w", err)
 	}
 
-	if metrics.HTTPErrorsTotal, err = meter.Int64Counter("http.server.errors.total",
+	if m.HTTPErrorsTotal, err = meter.Int64Counter("http.server.errors.total",
 		metric.WithDescription("Total number of HTTP error responses"),
 	); err != nil {
 		return fmt.Errorf("failed to create http errors total counter: %w", err)
@@ -103,62 +88,16 @@ func (metrics *Metrics) initHTTPMetrics(meter metric.Meter) error {
 	return nil
 }
 
-func (metrics *Metrics) initGameMetrics(meter metric.Meter) error {
+func (m *InfraMetrics) initWebSocketMetrics(meter metric.Meter) error {
 	var err error
 
-	if metrics.ActiveGames, err = meter.Int64UpDownCounter("game.active",
-		metric.WithDescription("Number of currently active games"),
-	); err != nil {
-		return fmt.Errorf("failed to create active games counter: %w", err)
-	}
-
-	if metrics.MovesTotal, err = meter.Int64Counter("game.moves.total",
-		metric.WithDescription("Total number of moves performed"),
-	); err != nil {
-		return fmt.Errorf("failed to create moves total counter: %w", err)
-	}
-
-	if metrics.PhaseDuration, err = meter.Float64Histogram("game.phase.duration",
-		metric.WithDescription("Duration of phase execution in seconds"),
-		metric.WithUnit("s"),
-		metric.WithExplicitBucketBoundaries(LatencyBuckets...),
-	); err != nil {
-		return fmt.Errorf("failed to create phase duration histogram: %w", err)
-	}
-
-	if metrics.GamesCreated, err = meter.Int64Counter("game.created.total",
-		metric.WithDescription("Total number of games created"),
-	); err != nil {
-		return fmt.Errorf("failed to create games created counter: %w", err)
-	}
-
-	if metrics.GamesFinished, err = meter.Int64Counter("game.finished.total",
-		metric.WithDescription("Total number of games finished"),
-	); err != nil {
-		return fmt.Errorf("failed to create games finished counter: %w", err)
-	}
-
-	if metrics.GameDuration, err = meter.Float64Histogram("game.duration",
-		metric.WithDescription("Duration of completed games in seconds"),
-		metric.WithUnit("s"),
-		metric.WithExplicitBucketBoundaries(GameDurationBuckets...),
-	); err != nil {
-		return fmt.Errorf("failed to create game duration histogram: %w", err)
-	}
-
-	return nil
-}
-
-func (metrics *Metrics) initWebSocketMetrics(meter metric.Meter) error {
-	var err error
-
-	if metrics.ActiveConnections, err = meter.Int64UpDownCounter("ws.connections.active",
+	if m.ActiveConnections, err = meter.Int64UpDownCounter("ws.connections.active",
 		metric.WithDescription("Number of active WebSocket connections"),
 	); err != nil {
 		return fmt.Errorf("failed to create active connections counter: %w", err)
 	}
 
-	if metrics.BroadcastDuration, err = meter.Float64Histogram("ws.broadcast.duration",
+	if m.BroadcastDuration, err = meter.Float64Histogram("ws.broadcast.duration",
 		metric.WithDescription("Duration of broadcast operations in seconds"),
 		metric.WithUnit("s"),
 		metric.WithExplicitBucketBoundaries(LatencyBuckets...),
@@ -166,19 +105,19 @@ func (metrics *Metrics) initWebSocketMetrics(meter metric.Meter) error {
 		return fmt.Errorf("failed to create broadcast duration histogram: %w", err)
 	}
 
-	if metrics.MessagesSent, err = meter.Int64Counter("ws.messages.sent.total",
+	if m.MessagesSent, err = meter.Int64Counter("ws.messages.sent.total",
 		metric.WithDescription("Total number of WebSocket messages sent"),
 	); err != nil {
 		return fmt.Errorf("failed to create messages sent counter: %w", err)
 	}
 
-	if metrics.BroadcastErrors, err = meter.Int64Counter("ws.broadcast.errors.total",
+	if m.BroadcastErrors, err = meter.Int64Counter("ws.broadcast.errors.total",
 		metric.WithDescription("Total number of broadcast errors"),
 	); err != nil {
 		return fmt.Errorf("failed to create broadcast errors counter: %w", err)
 	}
 
-	if metrics.BroadcastFanOut, err = meter.Int64Histogram("ws.broadcast.fanout",
+	if m.BroadcastFanOut, err = meter.Int64Histogram("ws.broadcast.fanout",
 		metric.WithDescription("Number of connections per broadcast"),
 	); err != nil {
 		return fmt.Errorf("failed to create broadcast fanout histogram: %w", err)
@@ -187,10 +126,10 @@ func (metrics *Metrics) initWebSocketMetrics(meter metric.Meter) error {
 	return nil
 }
 
-func (metrics *Metrics) initDBMetrics(meter metric.Meter) error {
+func (m *InfraMetrics) initDBMetrics(meter metric.Meter) error {
 	var err error
 
-	if metrics.TransactionDuration, err = meter.Float64Histogram("db.transaction.duration",
+	if m.TransactionDuration, err = meter.Float64Histogram("db.transaction.duration",
 		metric.WithDescription("Duration of database transactions"),
 		metric.WithUnit("s"),
 		metric.WithExplicitBucketBoundaries(LatencyBuckets...),
@@ -198,13 +137,13 @@ func (metrics *Metrics) initDBMetrics(meter metric.Meter) error {
 		return fmt.Errorf("failed to create transaction duration histogram: %w", err)
 	}
 
-	if metrics.TransactionRollbacks, err = meter.Int64Counter("db.transaction.rollbacks.total",
+	if m.TransactionRollbacks, err = meter.Int64Counter("db.transaction.rollbacks.total",
 		metric.WithDescription("Total number of transaction rollbacks"),
 	); err != nil {
 		return fmt.Errorf("failed to create transaction rollbacks counter: %w", err)
 	}
 
-	if metrics.TransactionRetries, err = meter.Int64Counter(
+	if m.TransactionRetries, err = meter.Int64Counter(
 		"db.transaction.retries.total",
 		metric.WithDescription(
 			"Total number of transaction retries due to serialization failures",
@@ -216,10 +155,10 @@ func (metrics *Metrics) initDBMetrics(meter metric.Meter) error {
 	return nil
 }
 
-func (metrics *Metrics) initEventBusMetrics(meter metric.Meter) error {
+func (m *InfraMetrics) initEventBusMetrics(meter metric.Meter) error {
 	var err error
 
-	if metrics.EventBusDispatchDuration, err = meter.Float64Histogram(
+	if m.EventBusDispatchDuration, err = meter.Float64Histogram(
 		"event_bus.dispatch.duration",
 		metric.WithDescription("Duration of event bus dispatch (all handlers) in seconds"),
 		metric.WithUnit("s"),
@@ -228,14 +167,14 @@ func (metrics *Metrics) initEventBusMetrics(meter metric.Meter) error {
 		return fmt.Errorf("failed to create event bus dispatch duration histogram: %w", err)
 	}
 
-	if metrics.EventBusEventsTotal, err = meter.Int64Counter(
+	if m.EventBusEventsTotal, err = meter.Int64Counter(
 		"event_bus.events.total",
 		metric.WithDescription("Total number of events emitted through the event bus"),
 	); err != nil {
 		return fmt.Errorf("failed to create event bus events total counter: %w", err)
 	}
 
-	if metrics.EventHandlerDuration, err = meter.Float64Histogram(
+	if m.EventHandlerDuration, err = meter.Float64Histogram(
 		"event_handler.duration",
 		metric.WithDescription("Duration of individual event handler execution in seconds"),
 		metric.WithUnit("s"),

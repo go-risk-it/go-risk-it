@@ -1,0 +1,16 @@
+{
+  "id": "gzotta-modular-architecture",
+  "branch": "gzotta/modular-architecture",
+  "baseline_entry": "perf-journal/entries/011-staircase-heavy-17b88342.json",
+  "started_at": "2026-03-29T17:30:41.463302+02:00",
+  "runs": [
+    {
+      "entry_path": "perf-journal/entries/011-staircase-heavy-17b88342.json",
+      "commit_sha": "17b88342",
+      "ceiling_games": 160,
+      "ceiling_delta": 160,
+      "timestamp": "2026-03-29T17:30:41.463812+02:00"
+    }
+  ],
+  "status": "active"
+}

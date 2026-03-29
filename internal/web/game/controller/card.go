@@ -3,10 +3,10 @@ package controller
 import (
 	"fmt"
 
-	"github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
-	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
+	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/card"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/card"
 )
 
 type CardController struct {

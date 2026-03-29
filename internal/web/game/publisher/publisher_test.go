@@ -7,18 +7,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	gameevt "github.com/go-risk-it/go-risk-it/internal/events/game"
+	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
+	gameevt "github.com/go-risk-it/go-risk-it/internal/game/events"
+	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/logic/config"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/mission"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/snapshot"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/config"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/publisher"
-	mockMission "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/mission"
-	mockLogging "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/move/orchestration/logging"
-	mockSnapshot "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/snapshot"
+	mockMission "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/mission"
+	mockLogging "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/move/orchestration/logging"
+	mockSnapshot "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/snapshot"
 	mockWS "github.com/go-risk-it/go-risk-it/mocks/internal_/web/game/ws"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/assert"
@@ -141,7 +141,7 @@ func (d *deps) newPublisher() *publisher.GameStatePublisher {
 		d.snapSvc,
 		controller.NewMissionController(d.missionSvc),
 		controller.NewMoveLogController(d.loggingSvc),
-		config.HistoryConfig{Size: historySize},
+		gameconfig.HistoryConfig{Size: historySize},
 		nil, // metrics — nil is safe, safeOp guards with nil check
 	)
 }

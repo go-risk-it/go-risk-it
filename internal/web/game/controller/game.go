@@ -3,13 +3,13 @@ package controller
 import (
 	"fmt"
 
-	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
-	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/response"
+	"github.com/go-risk-it/go-risk-it/internal/game/api/rest/request"
+	"github.com/go-risk-it/go-risk-it/internal/game/api/rest/response"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/board"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/creation"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/player"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/state"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/creation"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
-	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 )
 
 type GameController struct {

@@ -23,12 +23,12 @@ type Service interface {
 
 type service struct {
 	querier db.Querier
-	metrics *metrics.Metrics
+	metrics *metrics.InfraMetrics
 }
 
 var _ Service = (*service)(nil)
 
-func NewService(querier db.Querier, m *metrics.Metrics) Service {
+func NewService(querier db.Querier, m *metrics.InfraMetrics) Service {
 	return &service{
 		querier: querier,
 		metrics: m,

@@ -1,0 +1,210 @@
+package player_test
+
+import (
+	"errors"
+	"testing"
+
+	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/player"
+	ctx2 "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/game/data/db"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/state"
+	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace/noop"
+)
+
+var (
+	errInsertPlayers    = errors.New("error inserting players")
+	errGetPlayersByGame = errors.New("error getting players")
+)
+
+func TestServiceImpl_CreatePlayers_WithValidData(t *testing.T) {
+	t.Parallel()
+
+	// Initialize dependencies
+	querier := db.NewQuerier(t)
+	gameService := state.NewService(t)
+
+	// Initialize the state under test
+	service := player.NewService(querier, gameService)
+
+	// Set up test data
+	gameID := int64(1)
+	ctx := ctx2.WithGameID(ctx2.WithUserID(
+		ctx2.WithSpan(
+			t.Context(),
+			noop.Span{}),
+		"5a4fde41-4a68-4625-b42b-a9f5f938b394",
+	), gameID)
+	users := []player.Player{
+		{UserID: "5a4fde41-4a68-4625-b42b-a9f5f938b394", Name: "francesco"},
+		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "gabriele"},
+		{UserID: "fc497971-de4d-49c2-842a-4af62ec9e858", Name: "giovanni"},
+	}
+
+	// Set up expectations for InsertPlayers method
+	querier.EXPECT().InsertPlayers(ctx, []sqlc.InsertPlayersParams{
+		{
+			GameID:    gameID,
+			UserID:    "5a4fde41-4a68-4625-b42b-a9f5f938b394",
+			Name:      "francesco",
+			TurnIndex: 0,
+		},
+		{
+			GameID:    gameID,
+			UserID:    "dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
+			Name:      "gabriele",
+			TurnIndex: 1,
+		},
+		{
+			GameID:    gameID,
+			UserID:    "fc497971-de4d-49c2-842a-4af62ec9e858",
+			Name:      "giovanni",
+			TurnIndex: 2,
+		},
+	}).Return(int64(2), nil)
+
+	querier.EXPECT().GetPlayersByGame(ctx, gameID).Return([]sqlc.GamePlayer{
+		{
+			ID:        1,
+			GameID:    gameID,
+			UserID:    "5a4fde41-4a68-4625-b42b-a9f5f938b394",
+			Name:      "francesco",
+			TurnIndex: 0,
+		},
+		{
+			ID:        2,
+			GameID:    gameID,
+			UserID:    "dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
+			Name:      "gabriele",
+			TurnIndex: 1,
+		},
+		{
+			ID:        3,
+			GameID:    gameID,
+			UserID:    "fc497971-de4d-49c2-842a-4af62ec9e858",
+			Name:      "giovanni",
+			TurnIndex: 2,
+		},
+	}, nil)
+
+	// Call the method under test
+	players, err := service.CreatePlayers(ctx, querier, gameID, users)
+
+	// Assert the result
+	require.NoError(t, err)
+	require.Len(t, players, 3)
+	require.Equal(t, "5a4fde41-4a68-4625-b42b-a9f5f938b394", players[0].UserID)
+	require.Equal(t, "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", players[1].UserID)
+	require.Equal(t, "fc497971-de4d-49c2-842a-4af62ec9e858", players[2].UserID)
+}
+
+func TestServiceImpl_CreatePlayers_InsertPlayersError(t *testing.T) {
+	t.Parallel()
+
+	// Initialize dependencies
+	querier := db.NewQuerier(t)
+	gameService := state.NewService(t)
+
+	// Initialize the state under test
+	service := player.NewService(querier, gameService)
+
+	// Set up test data
+	gameID := int64(1)
+	ctx := ctx2.WithGameID(ctx2.WithUserID(
+		ctx2.WithSpan(
+			t.Context(),
+			noop.Span{}),
+		"5a4fde41-4a68-4625-b42b-a9f5f938b394",
+	), gameID)
+	users := []player.Player{
+		{UserID: "5a4fde41-4a68-4625-b42b-a9f5f938b394", Name: "francesco"},
+		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "gabriele"},
+		{UserID: "fc497971-de4d-49c2-842a-4af62ec9e858", Name: "giovanni"},
+	}
+
+	// Set up expectations for InsertPlayers method
+	querier.EXPECT().InsertPlayers(ctx, []sqlc.InsertPlayersParams{
+		{
+			GameID:    gameID,
+			UserID:    "5a4fde41-4a68-4625-b42b-a9f5f938b394",
+			Name:      "francesco",
+			TurnIndex: 0,
+		},
+		{
+			GameID:    gameID,
+			UserID:    "dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
+			Name:      "gabriele",
+			TurnIndex: 1,
+		},
+		{
+			GameID:    gameID,
+			UserID:    "fc497971-de4d-49c2-842a-4af62ec9e858",
+			Name:      "giovanni",
+			TurnIndex: 2,
+		},
+	}).Return(int64(0), errInsertPlayers)
+
+	// Call the method under test
+	players, err := service.CreatePlayers(ctx, querier, gameID, users)
+
+	// Assert the result
+	require.Error(t, err)
+	require.Nil(t, players)
+}
+
+func TestServiceImpl_CreatePlayers_GetPlayersByGameError(t *testing.T) {
+	t.Parallel()
+
+	// Initialize dependencies
+	querier := db.NewQuerier(t)
+	gameService := state.NewService(t)
+
+	// Initialize the state under test
+	service := player.NewService(querier, gameService)
+
+	// Set up test data
+	gameID := int64(1)
+	ctx := ctx2.WithGameID(ctx2.WithUserID(
+		ctx2.WithSpan(
+			t.Context(),
+			noop.Span{}),
+		"5a4fde41-4a68-4625-b42b-a9f5f938b394",
+	), gameID)
+	users := []player.Player{
+		{UserID: "5a4fde41-4a68-4625-b42b-a9f5f938b394", Name: "francesco"},
+		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "gabriele"},
+		{UserID: "fc497971-de4d-49c2-842a-4af62ec9e858", Name: "giovanni"},
+	}
+
+	// Set up expectations for InsertPlayers method
+	querier.EXPECT().InsertPlayers(ctx, []sqlc.InsertPlayersParams{
+		{
+			GameID:    gameID,
+			UserID:    "5a4fde41-4a68-4625-b42b-a9f5f938b394",
+			Name:      "francesco",
+			TurnIndex: 0,
+		},
+		{
+			GameID:    gameID,
+			UserID:    "dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
+			Name:      "gabriele",
+			TurnIndex: 1,
+		},
+		{
+			GameID:    gameID,
+			UserID:    "fc497971-de4d-49c2-842a-4af62ec9e858",
+			Name:      "giovanni",
+			TurnIndex: 2,
+		},
+	}).Return(int64(2), nil)
+
+	querier.EXPECT().GetPlayersByGame(ctx, gameID).Return(nil, errGetPlayersByGame)
+
+	// Call the method under test
+	players, err := service.CreatePlayers(ctx, querier, gameID, users)
+
+	// Assert the result
+	require.Error(t, err)
+	require.Nil(t, players)
+}

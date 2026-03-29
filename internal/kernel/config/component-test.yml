@@ -12,14 +12,13 @@ database:
 jwt:
   secret: ${JWT_SECRET}
 
-dice:
-  roll_strategy: attacker_always_wins
-
-regionassignment:
-  assignment_strategy: sequential
-
-history:
-  size: 999
+game:
+  dice:
+    roll_strategy: attacker_always_wins
+  regionassignment:
+    assignment_strategy: sequential
+  history:
+    size: 999
 
 otel:
   enabled: true

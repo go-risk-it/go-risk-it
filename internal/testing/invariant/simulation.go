@@ -5,7 +5,7 @@ package invariant
 import (
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 )
 

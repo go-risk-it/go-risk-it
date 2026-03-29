@@ -3,11 +3,11 @@ package controller_test
 import (
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
-	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
+	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	ctx2 "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	boardController "github.com/go-risk-it/go-risk-it/internal/web/game/controller"
-	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/region"
+	"github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/region"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )

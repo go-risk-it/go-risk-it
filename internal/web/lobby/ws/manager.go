@@ -18,12 +18,12 @@ type manager struct {
 
 	lobbyConnections map[int64]*ws.PlayerConnections
 	bus              eventbus.Bus
-	metrics          *metrics.Metrics
+	metrics          *metrics.InfraMetrics
 }
 
 func NewManager(
 	bus eventbus.Bus,
-	metrics *metrics.Metrics,
+	metrics *metrics.InfraMetrics,
 ) Manager {
 	return &manager{
 		lobbyConnections: make(map[int64]*ws.PlayerConnections),

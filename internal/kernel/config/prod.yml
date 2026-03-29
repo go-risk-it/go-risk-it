@@ -9,14 +9,13 @@ database:
 jwt:
   secret: ${JWT_SECRET}
 
-dice:
-  roll_strategy: random
-
-regionassignment:
-  assignment_strategy: random
-
-history:
-  size: 50
+game:
+  dice:
+    roll_strategy: random
+  regionassignment:
+    assignment_strategy: random
+  history:
+    size: 50
 
 otel:
   enabled: false

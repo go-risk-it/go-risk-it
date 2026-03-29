@@ -17,10 +17,10 @@ import (
 
 type OTelMiddleware struct {
 	tracer  trace.Tracer
-	metrics *metrics.Metrics
+	metrics *metrics.InfraMetrics
 }
 
-func NewOTelMiddleware(metrics *metrics.Metrics) *OTelMiddleware {
+func NewOTelMiddleware(metrics *metrics.InfraMetrics) *OTelMiddleware {
 	return &OTelMiddleware{
 		tracer:  otel.GetTracerProvider().Tracer("go-risk-it-http"),
 		metrics: metrics,
