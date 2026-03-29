@@ -1,12 +1,13 @@
 // Perf Test dashboard — generated from Jsonnet.
 // Source of truth: grafana/dashboards/perf-test.jsonnet
 // Regenerate: make dashboards
-local common = import 'common.libsonnet';
 local colors = import 'colors.libsonnet';
 local dashboard = import 'dashboard.libsonnet';
 local layout = import 'layout.libsonnet';
 local links = import 'links.libsonnet';
 local modifiers = import 'modifiers.libsonnet';
+local panels = import 'panels.libsonnet';
+local targets = import 'targets.libsonnet';
 local thresholds = import 'thresholds.libsonnet';
 
 // Local helper: right-axis override for "active games" series on correlation panels.
@@ -42,7 +43,7 @@ dashboard.new(
 
       // E2E p95 (stat bg)
       layout.panel(
-        common.statPanel(
+        panels.statPanel(
           title='E2E p95',
           targets=[{
             refId: 'A',
@@ -65,7 +66,7 @@ dashboard.new(
 
       // WS Delivery p95 (stat bg)
       layout.panel(
-        common.statPanel(
+        panels.statPanel(
           title='WS Delivery p95',
           targets=[{
             refId: 'A',
@@ -88,7 +89,7 @@ dashboard.new(
 
       // DB Txn p95 (stat bg)
       layout.panel(
-        common.statPanel(
+        panels.statPanel(
           title='DB Txn p95',
           targets=[{
             refId: 'A',
@@ -111,7 +112,7 @@ dashboard.new(
 
       // HTTP Error Rate (stat bg)
       layout.panel(
-        common.statPanel(
+        panels.statPanel(
           title='HTTP Error Rate',
           targets=[{
             refId: 'A',
@@ -136,7 +137,7 @@ dashboard.new(
 
       // Active Games (stat, no background)
       layout.panel(
-        common.statPanel(
+        panels.statPanel(
           title='Active Games',
           targets=[{
             refId: 'A',
@@ -151,7 +152,7 @@ dashboard.new(
 
       // Throughput (timeseries)
       layout.panel(
-        common.timeseriesPanel(
+        panels.timeseriesPanel(
           title='Throughput',
           targets=[{
             refId: 'A',
@@ -174,7 +175,7 @@ dashboard.new(
 
       // Completion Rate (stat bg, inverted thresholds)
       layout.panel(
-        common.statPanel(
+        panels.statPanel(
           title='Completion Rate',
           targets=[{
             refId: 'A',
@@ -191,7 +192,7 @@ dashboard.new(
 
       // Error Breakdown (timeseries stacked)
       layout.panel(
-        common.timeseriesPanel(
+        panels.timeseriesPanel(
           title='Error Breakdown',
           targets=[{
             refId: 'A',
@@ -224,7 +225,7 @@ dashboard.new(
     orient=[
       // E2E Latency Heatmap (w=24, h=8, YlOrRd)
       layout.panel(
-        common.heatmapPanel(
+        panels.heatmapPanel(
           title='E2E Latency Heatmap',
           targets=[{
             expr: 'sum(rate(perftest_e2e_duration_seconds_bucket{service_name="perftest"}[$__rate_interval])) by (le)',
@@ -242,7 +243,7 @@ dashboard.new(
 
       // E2E Percentile Bands (w=24, h=8)
       layout.panel(
-        common.percentileBandsPanel(
+        panels.percentileBandsPanel(
           title='E2E Latency Percentile Bands',
           metric='perftest_e2e_duration_seconds_bucket',
           unit='s',
@@ -254,19 +255,15 @@ dashboard.new(
 
       // Latency Attribution (w=24, h=8)
       layout.panel(
-        common.timeseriesPanel(
+        panels.timeseriesPanel(
           title='Latency Attribution (p95)',
-          targets=common.lifecycleTargets,
+          targets=targets.lifecycleTargets,
           unit='s',
-          overrides=common.lifecycleOverrides,
+          overrides=targets.lifecycleOverrides,
         ) + {
           fieldConfig+: {
             defaults+: {
-              links: [
-                links.toDashboard('System Health', links.dashboardUids.systemHealth),
-                links.toDashboard('System Health', links.dashboardUids.systemHealth),
-                links.toDashboard('System Health', links.dashboardUids.systemHealth),
-              ],
+              links: [crossLinksSystemHealth, crossLinksGameEngine],
             },
           },
         },
@@ -279,34 +276,30 @@ dashboard.new(
     // DECIDE — Where's the bottleneck? (7 always-visible + 2 collapsed)
     // ================================================================
     decide=[
-      // E2E Move Latency P50/P95/P99 (w=12, h=8, SLO threshold overlay)
+      // E2E Move Latency P50/P95/P99 (w=12, h=8, SLO threshold overlay, percentile bands)
       layout.panel(
-        common.timeseriesPanel(
-          title='E2E Move Latency (P50/P95/P99)',
-          targets=common.histogramQuantileTargetsWithExemplars(
-            'perftest_e2e_duration_seconds_bucket',
-            [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']],
-            'perftest',
-          ),
+        panels.percentileBandsPanel(
+          title='E2E Move Latency Bands',
+          metric='perftest_e2e_duration_seconds_bucket',
           unit='s',
-          color=colors.fixedColor(colors.client),
-        ) + common.withSloThreshold(thresholds.e2eP95),
+          serviceName='perftest',
+          exemplars=true,
+        ) + modifiers.withSloThreshold(thresholds.e2eP95)
+          + modifiers.withPercentileColors('client'),
         w=12, h=8,
         description='Normal: P95 < 500ms, P99 < 1s. Watch for: P95 crossing the threshold line (SLO breach). Check next: REST Latency by Action to identify which move type is slowest.',
       ),
 
-      // WS Delivery Latency P50/P95/P99 (w=12, h=8, SLO threshold overlay)
+      // WS Delivery Latency P50/P95/P99 (w=12, h=8, SLO threshold overlay, percentile bands)
       layout.panel(
-        common.timeseriesPanel(
-          title='WS Delivery Latency (P50/P95/P99)',
-          targets=common.histogramQuantileTargetsWithExemplars(
-            'perftest_ws_delivery_duration_seconds_bucket',
-            [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']],
-            'perftest',
-          ),
+        panels.percentileBandsPanel(
+          title='WS Delivery Latency Bands',
+          metric='perftest_ws_delivery_duration_seconds_bucket',
           unit='s',
-          color=colors.fixedColor(colors.ws),
-        ) + common.withSloThreshold(thresholds.wsDeliveryP95) + {
+          serviceName='perftest',
+          exemplars=true,
+        ) + modifiers.withSloThreshold(thresholds.wsDeliveryP95)
+          + modifiers.withPercentileColors('ws') + {
           fieldConfig+: {
             defaults+: {
               links: [links.toDashboard('System Health', links.dashboardUids.systemHealth)],
@@ -319,7 +312,7 @@ dashboard.new(
 
       // REST Latency by Action (w=12, h=8)
       layout.panel(
-        common.timeseriesPanel(
+        panels.timeseriesPanel(
           title='REST Latency by Action (P50/P95/P99)',
           targets=[
             {
@@ -346,7 +339,7 @@ dashboard.new(
 
       // Conflicts/sec (w=12, h=8)
       layout.panel(
-        common.timeseriesPanel(
+        panels.timeseriesPanel(
           title='Conflicts/sec',
           targets=[{
             expr: 'rate(perftest_conflicts_total{service_name="perftest"}[30s])',
@@ -368,7 +361,7 @@ dashboard.new(
 
       // E2E Latency vs Concurrency (w=12, h=8, dual-axis)
       layout.panel(
-        common.timeseriesPanel(
+        panels.timeseriesPanel(
           title='E2E Latency vs Concurrency',
           targets=[
             {
@@ -391,7 +384,7 @@ dashboard.new(
 
       // Server Latency vs Concurrency (w=12, h=8, dual-axis)
       layout.panel(
-        common.timeseriesPanel(
+        panels.timeseriesPanel(
           title='Server Latency vs Concurrency',
           targets=[
             {
@@ -411,10 +404,7 @@ dashboard.new(
         ) + {
           fieldConfig+: {
             defaults+: {
-              links: [
-                links.toDashboard('System Health', links.dashboardUids.systemHealth),
-                crossLinksSystemHealth,
-              ],
+              links: [crossLinksSystemHealth],
             },
           },
         },
@@ -424,7 +414,7 @@ dashboard.new(
 
       // Effective Concurrency (w=12, h=8)
       layout.panel(
-        common.timeseriesPanel(
+        panels.timeseriesPanel(
           title='Effective Concurrency',
           targets=[
             {
@@ -465,7 +455,7 @@ dashboard.new(
       // ── Collapsed: Client Phase Latency (1 panel) ──
       'Client Phase Latency': [
         layout.panel(
-          common.timeseriesPanel(
+          panels.timeseriesPanel(
             title='Phase Duration by Phase',
             targets=[{
               expr: 'histogram_quantile(0.95, sum(rate(perftest_phase_duration_seconds_bucket{service_name="perftest"}[1m])) by (le, phase))',
@@ -483,7 +473,7 @@ dashboard.new(
       'Health Breakdown': [
         // Health State Waterfall SHOWCASE
         layout.panel(
-          common.timeseriesPanel(
+          panels.timeseriesPanel(
             title='Health State Waterfall',
             targets=[
               {
@@ -536,7 +526,7 @@ dashboard.new(
     act=[
       // Error Rate by Type (timeseries stacked, w=8)
       layout.panel(
-        common.timeseriesPanel(
+        panels.timeseriesPanel(
           title='Error Rate by Type',
           targets=[{
             expr: 'sum(rate(perftest_errors_total{service_name="perftest"}[1m])) by (type)',
@@ -560,39 +550,37 @@ dashboard.new(
 
       // Game Duration P50/P95 (timeseries, w=8)
       layout.panel(
-        common.timeseriesPanel(
+        panels.timeseriesPanel(
           title='Game Duration (P50/P95)',
-          targets=common.histogramQuantileTargetsWithExemplars(
+          targets=targets.histogramQuantileTargetsWithExemplars(
             'perftest_game_duration_seconds_bucket',
             [['0.5', 'p50'], ['0.95', 'p95']],
             'perftest',
           ),
           unit='s',
-          color=colors.fixedColor(colors.gameLogic),
-        ),
+        ) + modifiers.withPercentileColors('gameLogic'),
         w=8, h=8,
         description='Normal: consistent across the test run. Watch for: game duration growing over time (server slowing down under sustained load). Check next: Moves per Game to check if duration increase is from more moves or slower moves.',
       ),
 
       // Moves per Game P50/P95 (timeseries, w=8)
       layout.panel(
-        common.timeseriesPanel(
+        panels.timeseriesPanel(
           title='Moves per Game (P50/P95)',
-          targets=common.histogramQuantileTargetsWithExemplars(
+          targets=targets.histogramQuantileTargetsWithExemplars(
             'perftest_game_moves_bucket',
             [['0.5', 'p50'], ['0.95', 'p95']],
             'perftest',
           ),
           unit='short',
-          color=colors.fixedColor(colors.client),
-        ),
+        ) + modifiers.withPercentileColors('client'),
         w=8, h=8,
         description='Normal: stable distribution determined by game logic, not server performance. Watch for: sudden changes in move count (game logic bug or strategy change). Check next: Game Duration to correlate move count with total time.',
       ),
 
       // Game Completion cumulative (timeseries, w=24)
       layout.panel(
-        common.timeseriesPanel(
+        panels.timeseriesPanel(
           title='Game Completion',
           targets=[
             {

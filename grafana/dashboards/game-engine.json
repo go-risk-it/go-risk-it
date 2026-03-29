@@ -1,6 +1,26 @@
 {
     "annotations": {
-        "list": []
+        "list": [
+            {
+                "builtIn": 1,
+                "datasource": {
+                    "type": "grafana",
+                    "uid": "-- Grafana --"
+                },
+                "enable": true,
+                "hide": false,
+                "iconColor": "rgba(0, 211, 255, 1)",
+                "name": "Perf Test Phases",
+                "target": {
+                    "matchAny": true,
+                    "tags": [
+                        "perf-test"
+                    ],
+                    "type": "tags"
+                },
+                "type": "dashboard"
+            }
+        ]
     },
     "description": "Game engine observability: game lifecycle, phase timing, event bus health, and move analytics",
     "editable": true,
@@ -90,10 +110,6 @@
             "description": "Normal: created and finished rates roughly balanced. Watch for: created >> finished means games accumulating (stuck phases). Check next: Active Games stat for current count.",
             "fieldConfig": {
                 "defaults": {
-                    "color": {
-                        "fixedColor": "#56A64B",
-                        "mode": "fixed"
-                    },
                     "custom": {
                         "drawStyle": "line",
                         "fillOpacity": 10,
@@ -521,11 +537,6 @@
                             "targetBlank": true,
                             "title": "System Health",
                             "url": "/d/system-health?from=${__from}&to=${__to}"
-                        },
-                        {
-                            "targetBlank": true,
-                            "title": "System Health",
-                            "url": "/d/system-health?from=${__from}&to=${__to}"
                         }
                     ],
                     "unit": "s"
@@ -738,10 +749,6 @@
                     "description": "Normal: p95 < 500ms. Watch for: p95 diverging from p50 (slow outliers). Check next: Database dashboard for transaction contention.",
                     "fieldConfig": {
                         "defaults": {
-                            "color": {
-                                "fixedColor": "#56A64B",
-                                "mode": "fixed"
-                            },
                             "custom": {
                                 "drawStyle": "line",
                                 "fillOpacity": 10,
@@ -757,7 +764,53 @@
                             },
                             "unit": "s"
                         },
-                        "overrides": []
+                        "overrides": [
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "p50"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#8CCF82",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "p95"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#56A64B",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "p99"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#3D7A35",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
                     },
                     "gridPos": {
                         "h": 8,
@@ -808,10 +861,6 @@
                     "description": "Normal: p95 < 1s (attack involves dice + region updates). Watch for: p99 spikes (complex multi-region attacks). Check next: Conquer Phase Latency for post-attack overhead.",
                     "fieldConfig": {
                         "defaults": {
-                            "color": {
-                                "fixedColor": "#56A64B",
-                                "mode": "fixed"
-                            },
                             "custom": {
                                 "drawStyle": "line",
                                 "fillOpacity": 10,
@@ -827,7 +876,53 @@
                             },
                             "unit": "s"
                         },
-                        "overrides": []
+                        "overrides": [
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "p50"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#8CCF82",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "p95"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#56A64B",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "p99"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#3D7A35",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
                     },
                     "gridPos": {
                         "h": 8,
@@ -878,10 +973,6 @@
                     "description": "Normal: fastest phase (single troop movement). Watch for: p95 > 200ms indicates DB contention on region updates. Check next: Reinforce Phase Latency.",
                     "fieldConfig": {
                         "defaults": {
-                            "color": {
-                                "fixedColor": "#56A64B",
-                                "mode": "fixed"
-                            },
                             "custom": {
                                 "drawStyle": "line",
                                 "fillOpacity": 10,
@@ -897,7 +988,53 @@
                             },
                             "unit": "s"
                         },
-                        "overrides": []
+                        "overrides": [
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "p50"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#8CCF82",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "p95"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#56A64B",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "p99"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#3D7A35",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
                     },
                     "gridPos": {
                         "h": 8,
@@ -948,10 +1085,6 @@
                     "description": "Normal: fast, single troop redistribution. Watch for: p95 > 200ms. Check next: Cards Phase Latency.",
                     "fieldConfig": {
                         "defaults": {
-                            "color": {
-                                "fixedColor": "#56A64B",
-                                "mode": "fixed"
-                            },
                             "custom": {
                                 "drawStyle": "line",
                                 "fillOpacity": 10,
@@ -967,7 +1100,53 @@
                             },
                             "unit": "s"
                         },
-                        "overrides": []
+                        "overrides": [
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "p50"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#8CCF82",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "p95"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#56A64B",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "p99"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#3D7A35",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
                     },
                     "gridPos": {
                         "h": 8,
@@ -1018,10 +1197,6 @@
                     "description": "Normal: fast card redemption. Watch for: p95 spikes when many players redeem simultaneously. Check next: Phase Duration P50/P95 for aggregate view.",
                     "fieldConfig": {
                         "defaults": {
-                            "color": {
-                                "fixedColor": "#56A64B",
-                                "mode": "fixed"
-                            },
                             "custom": {
                                 "drawStyle": "line",
                                 "fillOpacity": 10,
@@ -1037,7 +1212,53 @@
                             },
                             "unit": "s"
                         },
-                        "overrides": []
+                        "overrides": [
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "p50"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#8CCF82",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "p95"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#56A64B",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "p99"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#3D7A35",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
                     },
                     "gridPos": {
                         "h": 8,
@@ -1172,10 +1393,6 @@
             "description": "Normal: consistent P50 with P95 within 2-3x of P50. Watch for: P95 growing while P50 stays flat (subset of slow games). Check next: Phase Duration P50/P95 in Orient to identify which phase is slow.",
             "fieldConfig": {
                 "defaults": {
-                    "color": {
-                        "fixedColor": "#56A64B",
-                        "mode": "fixed"
-                    },
                     "custom": {
                         "drawStyle": "line",
                         "fillOpacity": 10,
@@ -1191,7 +1408,53 @@
                     },
                     "unit": "s"
                 },
-                "overrides": []
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "p50"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#8CCF82",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "p95"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#56A64B",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "p99"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#3D7A35",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
             },
             "gridPos": {
                 "h": 8,
@@ -1218,13 +1481,13 @@
                 {
                     "exemplar": true,
                     "expr": "histogram_quantile(0.5, sum(rate(game_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
-                    "legendFormat": "P50",
+                    "legendFormat": "p50",
                     "refId": "A"
                 },
                 {
                     "exemplar": true,
                     "expr": "histogram_quantile(0.95, sum(rate(game_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
-                    "legendFormat": "P95",
+                    "legendFormat": "p95",
                     "refId": "B"
                 }
             ],
@@ -1239,10 +1502,6 @@
             "description": "Normal: all handlers < 100ms p95. Watch for: individual handler p95 > 500ms (slow consumer bottleneck). Check next: Event Dispatch Duration for bus-level overhead.",
             "fieldConfig": {
                 "defaults": {
-                    "color": {
-                        "fixedColor": "#00BCD4",
-                        "mode": "fixed"
-                    },
                     "custom": {
                         "drawStyle": "line",
                         "fillOpacity": 10,
@@ -1306,10 +1565,6 @@
             "description": "Normal: all event types dispatched < 50ms. Watch for: move_executed dispatch exceeding 100ms (many handlers subscribed). Check next: Event Bus Detail collapsed row for throughput and errors.",
             "fieldConfig": {
                 "defaults": {
-                    "color": {
-                        "fixedColor": "#00BCD4",
-                        "mode": "fixed"
-                    },
                     "custom": {
                         "drawStyle": "line",
                         "fillOpacity": 10,
@@ -1376,10 +1631,6 @@
                     "description": "Normal: move_executed dominates throughput. Watch for: unexpected event type surges. Check next: Event Handler Errors.",
                     "fieldConfig": {
                         "defaults": {
-                            "color": {
-                                "fixedColor": "#00BCD4",
-                                "mode": "fixed"
-                            },
                             "custom": {
                                 "drawStyle": "line",
                                 "fillOpacity": 10,
@@ -1433,63 +1684,9 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "description": "Normal: growing counter proportional to game activity. Watch for: counter stalling (bus stopped processing). Check next: Handler Throughput for rate view.",
-                    "fieldConfig": {
-                        "defaults": {
-                            "thresholds": {
-                                "mode": "absolute",
-                                "steps": [
-                                    {
-                                        "color": "green",
-                                        "value": null
-                                    }
-                                ]
-                            }
-                        },
-                        "overrides": []
-                    },
-                    "gridPos": {
-                        "h": 8,
-                        "w": 12,
-                        "x": 12,
-                        "y": 53
-                    },
-                    "id": 24,
-                    "options": {
-                        "colorMode": "value",
-                        "graphMode": "area",
-                        "justifyMode": "auto",
-                        "reduceOptions": {
-                            "calcs": [
-                                "lastNotNull"
-                            ],
-                            "fields": "",
-                            "values": false
-                        },
-                        "textMode": "auto"
-                    },
-                    "targets": [
-                        {
-                            "expr": "sum(event_bus_events_total{service_name=\"risk-it\"})",
-                            "legendFormat": "total events",
-                            "refId": "A"
-                        }
-                    ],
-                    "title": "Event Bus Events Total",
-                    "type": "stat"
-                },
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "prometheus"
-                    },
                     "description": "Normal: 0 errors. Watch for: any sustained error rate indicates handler panics or logic failures. Check next: Game Event Logs in Act for error details.",
                     "fieldConfig": {
                         "defaults": {
-                            "color": {
-                                "fixedColor": "#E02F44",
-                                "mode": "fixed"
-                            },
                             "custom": {
                                 "drawStyle": "line",
                                 "fillOpacity": 10,
@@ -1513,7 +1710,7 @@
                         "x": 0,
                         "y": 61
                     },
-                    "id": 25,
+                    "id": 24,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -1550,7 +1747,7 @@
                 "x": 0,
                 "y": 53
             },
-            "id": 26,
+            "id": 25,
             "panels": [
                 {
                     "datasource": {
@@ -1572,7 +1769,7 @@
                         "x": 0,
                         "y": 54
                     },
-                    "id": 27,
+                    "id": 26,
                     "options": {
                         "displayMode": "gradient",
                         "maxVizHeight": 300,
@@ -1609,10 +1806,6 @@
                     "description": "Normal: move endpoints dominate game traffic. Watch for: unexpected routes or disproportionate error rates. Check next: System Health for full HTTP breakdown.",
                     "fieldConfig": {
                         "defaults": {
-                            "color": {
-                                "fixedColor": "#FF9830",
-                                "mode": "fixed"
-                            },
                             "custom": {
                                 "drawStyle": "line",
                                 "fillOpacity": 10,
@@ -1636,7 +1829,7 @@
                         "x": 12,
                         "y": 54
                     },
-                    "id": 28,
+                    "id": 27,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -1673,7 +1866,7 @@
                 "x": 0,
                 "y": 54
             },
-            "id": 29,
+            "id": 28,
             "title": "Act \u2014 What\u2019s the evidence?",
             "type": "row"
         },
@@ -1689,7 +1882,7 @@
                 "x": 0,
                 "y": 55
             },
-            "id": 30,
+            "id": 29,
             "options": {
                 "dedupStrategy": "none",
                 "enableLogDetails": true,

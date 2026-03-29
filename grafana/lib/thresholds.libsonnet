@@ -23,17 +23,6 @@
     ],
   },
 
-  // Database dashboard: Avg Connection Acquire Time
-  // Source: database.json panel 3
-  dbAcquireTime: {
-    mode: 'absolute',
-    steps: [
-      { color: 'green', value: null },
-      { color: 'yellow', value: 0.01 },
-      { color: 'red', value: 0.1 },
-    ],
-  },
-
   // Database dashboard: Pool Utilization %
   // Source: database.json panel 4
   poolUtil: {
@@ -123,69 +112,6 @@
     ],
   },
 
-  // --- Command Center variants (cc prefix) ---
-  // Tuned for high-concurrency load testing dashboards.
-
-  // DB Pool Utilization % (command center scale)
-  ccPoolUtil: {
-    mode: 'absolute',
-    steps: [
-      { color: 'green', value: null },
-      { color: 'yellow', value: 70 },
-      { color: 'red', value: 90 },
-    ],
-  },
-
-  // DB Pool Wait Rate (acquires waiting for connection)
-  ccPoolWaitRate: {
-    mode: 'absolute',
-    steps: [
-      { color: 'green', value: null },
-      { color: 'yellow', value: 10 },
-      { color: 'red', value: 100 },
-    ],
-  },
-
-  // WebSocket Active Connections (command center scale)
-  ccWsConnections: {
-    mode: 'absolute',
-    steps: [
-      { color: 'green', value: null },
-      { color: 'yellow', value: 5000 },
-      { color: 'red', value: 10000 },
-    ],
-  },
-
-  // WebSocket Broadcast Rate (msgs/sec, command center scale)
-  ccWsBroadcastRate: {
-    mode: 'absolute',
-    steps: [
-      { color: 'green', value: null },
-      { color: 'yellow', value: 50000 },
-      { color: 'red', value: 100000 },
-    ],
-  },
-
-  // Game Moves Rate (moves/sec, command center scale)
-  ccGameMoves: {
-    mode: 'absolute',
-    steps: [
-      { color: 'green', value: null },
-      { color: 'yellow', value: 5000 },
-      { color: 'red', value: 10000 },
-    ],
-  },
-
-  // HTTP Request Rate (req/sec, command center scale)
-  ccHttpReqs: {
-    mode: 'absolute',
-    steps: [
-      { color: 'green', value: null },
-      { color: 'yellow', value: 5000 },
-      { color: 'red', value: 10000 },
-    ],
-  },
-
   // Game Completion Rate (inverted — red is low)
   completionRate: {
     mode: 'absolute',
@@ -193,14 +119,6 @@
       { color: 'red', value: null },
       { color: 'yellow', value: 0.8 },
       { color: 'green', value: 0.95 },
-    ],
-  },
-
-  // Moves by Phase (decorative — single green step)
-  movesByPhase: {
-    mode: 'absolute',
-    steps: [
-      { color: 'green', value: null },
     ],
   },
 

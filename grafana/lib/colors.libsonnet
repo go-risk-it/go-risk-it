@@ -1,5 +1,10 @@
 // Semantic boundary colors for go-risk-it dashboards.
 // Each color maps to an architectural boundary in the system.
+//
+// COLORING RULES:
+// 1. Single-series panels → color=colors.fixedColor(colors.XX) — boundary identification
+// 2. Multi-series data-driven panels (by route, by phase, by label) → no color param (palette-classic)
+// 3. Multi-series percentile panels (p50/p95/p99) → + modifiers.withPercentileColors('XX')
 {
   // Architectural boundaries
   db: '#3274D9',        // Database — blue
@@ -32,6 +37,18 @@
     player_eliminated: '#E02F44',   // errors red
     continent_captured: '#FF9830',  // http amber
     continent_lost: '#FF780A',      // dark orange
+  },
+
+  // Shade variants for percentile panels (p50=light, p95=medium, p99=dark).
+  // Used by modifiers.withPercentileColors().
+  shades: {
+    db: { light: '#73A9F2', medium: '#3274D9', dark: '#1F4FA0' },
+    ws: { light: '#B57ADB', medium: '#8F3BB8', dark: '#6A2A8A' },
+    gameLogic: { light: '#8CCF82', medium: '#56A64B', dark: '#3D7A35' },
+    http: { light: '#FFBE73', medium: '#FF9830', dark: '#CC7A26' },
+    errors: { light: '#F07A8B', medium: '#E02F44', dark: '#A82233' },
+    client: { light: '#A8DB9F', medium: '#73BF69', dark: '#52914A' },
+    eventBus: { light: '#4DD9E8', medium: '#00BCD4', dark: '#008C9E' },
   },
 
   // Helper: returns a Grafana fixed-color object

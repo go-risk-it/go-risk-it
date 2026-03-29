@@ -2,12 +2,12 @@
 // Source of truth: grafana/dashboards/game-engine.jsonnet
 // Regenerate: make dashboards
 local colors = import 'colors.libsonnet';
-local common = import 'common.libsonnet';
 local dashboard = import 'dashboard.libsonnet';
 local layout = import 'layout.libsonnet';
 local links = import 'links.libsonnet';
 local modifiers = import 'modifiers.libsonnet';
 local panels = import 'panels.libsonnet';
+local targets = import 'targets.libsonnet';
 local thresholds = import 'thresholds.libsonnet';
 
 // Template variable for game-scoped log filtering.
@@ -35,12 +35,25 @@ local phaseLatencyTargets(phase) = [
   for q in [[['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']][i]]
 ];
 
+// Helper: per-phase latency panel for the Move Timing collapsed row.
+local phasePanel(phase, phaseName, description) =
+  layout.panel(
+    panels.timeseriesPanel(
+      title='%s Phase Latency' % phaseName,
+      targets=phaseLatencyTargets(phase),
+      unit='s',
+    ) + modifiers.withPercentileColors('gameLogic'),
+    w=12, h=8,
+    description=description,
+  );
+
 dashboard.new(
   uid='game-engine',
   title='Game Engine',
   description='Game engine observability: game lifecycle, phase timing, event bus health, and move analytics',
   tags=['risk-it', 'game-engine'],
   templating={ list: [gameIdVar] },
+  annotations={ list: [dashboard.perfTestAnnotation] },
   panels=layout.ooda(
 
     // ════════════════════════════════════════════════════════════════
@@ -57,13 +70,7 @@ dashboard.new(
             refId: 'A',
           }],
           thresholds=thresholds.activeGames,
-        ) + {
-          fieldConfig+: {
-            defaults+: {
-              links: [links.toDashboard('Perf Test', links.dashboardUids.perfTest)],
-            },
-          },
-        },
+        ) + modifiers.withLinks([links.toDashboard('Perf Test', links.dashboardUids.perfTest)]),
         w=8, h=8,
         description='Normal: < 50 active games (green). Watch for: sustained > 100 (red) may indicate stuck phases or games not finishing. Check next: Games Created/Finished Rate for flow balance.',
       ),
@@ -85,7 +92,6 @@ dashboard.new(
             },
           ],
           unit='ops',
-          color=colors.fixedColor(colors.gameLogic),
         ),
         w=8, h=8,
         description='Normal: created and finished rates roughly balanced. Watch for: created >> finished means games accumulating (stuck phases). Check next: Active Games stat for current count.',
@@ -164,16 +170,7 @@ dashboard.new(
             },
           ],
           unit='s',
-        ) + {
-          fieldConfig+: {
-            defaults+: {
-              links: [
-                links.toDashboard('System Health', links.dashboardUids.systemHealth),
-                links.toDashboard('System Health', links.dashboardUids.systemHealth),
-              ],
-            },
-          },
-        },
+        ) + modifiers.withLinks([links.toDashboard('System Health', links.dashboardUids.systemHealth)]),
         w=12, h=8,
         description='Normal: deploy and attack phases are longest; reinforce is shortest. Watch for: a single phase P95 spiking while others stay flat. Check next: Move Timing collapsed row for per-phase latency bands.',
       ),
@@ -234,65 +231,11 @@ dashboard.new(
     orientDepth={
       // ── Collapsed: Move Timing (5 per-phase latency panels) ──
       'Move Timing': [
-        // Deploy Phase Latency
-        layout.panel(
-          panels.timeseriesPanel(
-            title='Deploy Phase Latency',
-            targets=phaseLatencyTargets('DEPLOY'),
-            unit='s',
-            color=colors.fixedColor(colors.gameLogic),
-          ),
-          w=12, h=8,
-          description='Normal: p95 < 500ms. Watch for: p95 diverging from p50 (slow outliers). Check next: Database dashboard for transaction contention.',
-        ),
-
-        // Attack Phase Latency
-        layout.panel(
-          panels.timeseriesPanel(
-            title='Attack Phase Latency',
-            targets=phaseLatencyTargets('ATTACK'),
-            unit='s',
-            color=colors.fixedColor(colors.gameLogic),
-          ),
-          w=12, h=8,
-          description='Normal: p95 < 1s (attack involves dice + region updates). Watch for: p99 spikes (complex multi-region attacks). Check next: Conquer Phase Latency for post-attack overhead.',
-        ),
-
-        // Conquer Phase Latency
-        layout.panel(
-          panels.timeseriesPanel(
-            title='Conquer Phase Latency',
-            targets=phaseLatencyTargets('CONQUER'),
-            unit='s',
-            color=colors.fixedColor(colors.gameLogic),
-          ),
-          w=12, h=8,
-          description='Normal: fastest phase (single troop movement). Watch for: p95 > 200ms indicates DB contention on region updates. Check next: Reinforce Phase Latency.',
-        ),
-
-        // Reinforce Phase Latency
-        layout.panel(
-          panels.timeseriesPanel(
-            title='Reinforce Phase Latency',
-            targets=phaseLatencyTargets('REINFORCE'),
-            unit='s',
-            color=colors.fixedColor(colors.gameLogic),
-          ),
-          w=12, h=8,
-          description='Normal: fast, single troop redistribution. Watch for: p95 > 200ms. Check next: Cards Phase Latency.',
-        ),
-
-        // Cards Phase Latency
-        layout.panel(
-          panels.timeseriesPanel(
-            title='Cards Phase Latency',
-            targets=phaseLatencyTargets('CARDS'),
-            unit='s',
-            color=colors.fixedColor(colors.gameLogic),
-          ),
-          w=12, h=8,
-          description='Normal: fast card redemption. Watch for: p95 spikes when many players redeem simultaneously. Check next: Phase Duration P50/P95 for aggregate view.',
-        ),
+        phasePanel('DEPLOY', 'Deploy', 'Normal: p95 < 500ms. Watch for: p95 diverging from p50 (slow outliers). Check next: Database dashboard for transaction contention.'),
+        phasePanel('ATTACK', 'Attack', 'Normal: p95 < 1s (attack involves dice + region updates). Watch for: p99 spikes (complex multi-region attacks). Check next: Conquer Phase Latency for post-attack overhead.'),
+        phasePanel('CONQUER', 'Conquer', 'Normal: fastest phase (single troop movement). Watch for: p95 > 200ms indicates DB contention on region updates. Check next: Reinforce Phase Latency.'),
+        phasePanel('REINFORCE', 'Reinforce', 'Normal: fast, single troop redistribution. Watch for: p95 > 200ms. Check next: Cards Phase Latency.'),
+        phasePanel('CARDS', 'Cards', 'Normal: fast card redemption. Watch for: p95 spikes when many players redeem simultaneously. Check next: Phase Duration P50/P95 for aggregate view.'),
       ],
     },
 
@@ -310,13 +253,7 @@ dashboard.new(
             refId: 'A',
           }],
           unit='ops',
-        ) + {
-          fieldConfig+: {
-            defaults+: {
-              links: crossLinks,
-            },
-          },
-        },
+        ) + modifiers.withLinks(crossLinks),
         w=12, h=8,
         description='Normal: deploy most frequent, then attack, then reinforce/conquer. Watch for: a phase dropping to zero while others continue (phase blocked). Check next: Event Handler Latency for downstream processing speed.',
       ),
@@ -325,13 +262,12 @@ dashboard.new(
       layout.panel(
         panels.timeseriesPanel(
           title='Game Duration P50/P95',
-          targets=panels.histogramQuantileTargetsWithExemplars(
+          targets=targets.histogramQuantileTargetsWithExemplars(
             'game_duration_seconds_bucket',
-            [['0.5', 'P50'], ['0.95', 'P95']],
+            [['0.5', 'p50'], ['0.95', 'p95']],
           ),
           unit='s',
-          color=colors.fixedColor(colors.gameLogic),
-        ),
+        ) + modifiers.withPercentileColors('gameLogic'),
         w=12, h=8,
         description='Normal: consistent P50 with P95 within 2-3x of P50. Watch for: P95 growing while P50 stays flat (subset of slow games). Check next: Phase Duration P50/P95 in Orient to identify which phase is slow.',
       ),
@@ -346,14 +282,7 @@ dashboard.new(
             refId: 'A',
           }],
           unit='s',
-          color=colors.fixedColor(colors.eventBus),
-        ) + {
-          fieldConfig+: {
-            defaults+: {
-              links: [links.toDashboard('System Health', links.dashboardUids.systemHealth)],
-            },
-          },
-        },
+        ) + modifiers.withLinks([links.toDashboard('System Health', links.dashboardUids.systemHealth)]),
         w=12, h=8,
         description='Normal: all handlers < 100ms p95. Watch for: individual handler p95 > 500ms (slow consumer bottleneck). Check next: Event Dispatch Duration for bus-level overhead.',
       ),
@@ -368,7 +297,6 @@ dashboard.new(
             refId: 'A',
           }],
           unit='s',
-          color=colors.fixedColor(colors.eventBus),
         ),
         w=12, h=8,
         description='Normal: all event types dispatched < 50ms. Watch for: move_executed dispatch exceeding 100ms (many handlers subscribed). Check next: Event Bus Detail collapsed row for throughput and errors.',
@@ -388,28 +316,9 @@ dashboard.new(
               refId: 'A',
             }],
             unit='ops',
-            color=colors.fixedColor(colors.eventBus),
           ),
           w=12, h=8,
           description='Normal: move_executed dominates throughput. Watch for: unexpected event type surges. Check next: Event Handler Errors.',
-        ),
-
-        // Event Bus Events Total (stat)
-        layout.panel(
-          panels.statPanel(
-            title='Event Bus Events Total',
-            targets=[{
-              expr: 'sum(event_bus_events_total{service_name="risk-it"})',
-              legendFormat: 'total events',
-              refId: 'A',
-            }],
-            thresholds={
-              mode: 'absolute',
-              steps: [{ color: 'green', value: null }],
-            },
-          ),
-          w=12, h=8,
-          description='Normal: growing counter proportional to game activity. Watch for: counter stalling (bus stopped processing). Check next: Handler Throughput for rate view.',
         ),
 
         // Event Handler Errors
@@ -422,7 +331,6 @@ dashboard.new(
               refId: 'A',
             }],
             unit='ops',
-            color=colors.fixedColor(colors.errors),
           ),
           w=24, h=8,
           description='Normal: 0 errors. Watch for: any sustained error rate indicates handler panics or logic failures. Check next: Game Event Logs in Act for error details.',
@@ -455,7 +363,6 @@ dashboard.new(
               refId: 'A',
             }],
             unit='reqps',
-            color=colors.fixedColor(colors.http),
           ),
           w=12, h=8,
           description='Normal: move endpoints dominate game traffic. Watch for: unexpected routes or disproportionate error rates. Check next: System Health for full HTTP breakdown.',

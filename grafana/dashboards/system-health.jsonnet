@@ -2,12 +2,12 @@
 // Source of truth: grafana/dashboards/system-health.jsonnet
 // Regenerate: make dashboards
 local colors = import 'colors.libsonnet';
-local common = import 'common.libsonnet';
 local dashboard = import 'dashboard.libsonnet';
 local layout = import 'layout.libsonnet';
 local links = import 'links.libsonnet';
 local modifiers = import 'modifiers.libsonnet';
 local panels = import 'panels.libsonnet';
+local targets = import 'targets.libsonnet';
 local thresholds = import 'thresholds.libsonnet';
 
 // Template variable for trace investigation.
@@ -24,14 +24,6 @@ local observeLinks = [
   links.toDashboard('Perf Test', links.dashboardUids.perfTest),
 ];
 
-// Helper: add data links to a panel.
-local withLinks(panel, dataLinks) = panel + {
-  fieldConfig+: {
-    defaults+: {
-      links: dataLinks,
-    },
-  },
-};
 
 dashboard.new(
   uid='system-health',
@@ -39,6 +31,7 @@ dashboard.new(
   description='Consolidated system health: HTTP, DB, WS, runtime + Postgres internals, query performance. Progressive disclosure via collapsed rows.',
   tags=['risk-it', 'system-health'],
   templating={ list: [traceIdVar] },
+  annotations={ list: [dashboard.perfTestAnnotation] },
   panels=layout.ooda(
 
     // ════════════════════════════════════════════════════════════════
@@ -47,130 +40,109 @@ dashboard.new(
     observe=[
       // Row 1: 4x w=6 stat panels with background color
       layout.panel(
-        withLinks(
-          panels.statPanel(
-            title='HTTP Latency p95',
-            targets=[{
-              expr: 'histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
-              legendFormat: 'p95',
-              refId: 'A',
-            }],
-            thresholds=thresholds.e2eP95,
-            unit='s',
-            colorMode='background',
-          ),
-          observeLinks,
-        ),
+        panels.statPanel(
+          title='HTTP Latency p95',
+          targets=[{
+            expr: 'histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
+            legendFormat: 'p95',
+            refId: 'A',
+          }],
+          thresholds=thresholds.e2eP95,
+          unit='s',
+          colorMode='background',
+        ) + modifiers.withLinks(observeLinks),
         w=6, h=6,
         description='Normal: < 500ms p95 (green). Watch for: sustained yellow (> 500ms) or red (> 1s). Check next: Lifecycle Timing in Orient for breakdown.',
       ),
 
       layout.panel(
-        withLinks(
-          panels.statPanel(
-            title='DB Transaction p95',
-            targets=[{
-              expr: 'histogram_quantile(0.95, sum(rate(db_transaction_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
-              legendFormat: 'p95',
-              refId: 'A',
-            }],
-            thresholds=thresholds.dbTxnP95,
-            unit='s',
-            colorMode='background',
-          ),
-          observeLinks,
-        ),
+        panels.statPanel(
+          title='DB Transaction p95',
+          targets=[{
+            expr: 'histogram_quantile(0.95, sum(rate(db_transaction_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
+            legendFormat: 'p95',
+            refId: 'A',
+          }],
+          thresholds=thresholds.dbTxnP95,
+          unit='s',
+          colorMode='background',
+        ) + modifiers.withLinks(observeLinks),
         w=6, h=6,
         description='Normal: < 50ms p95 (green). Watch for: yellow (> 50ms) signals pool pressure, red (> 100ms) signals contention. Check next: Database collapsed row in Orient.',
       ),
 
       layout.panel(
-        withLinks(
-          panels.statPanel(
-            title='HTTP Error Rate %',
-            targets=[{
-              expr: 'sum(rate(http_server_requests_total{service_name="risk-it",http_status_code=~"[45].."}[1m])) / sum(rate(http_server_requests_total{service_name="risk-it"}[1m])) * 100',
-              legendFormat: 'error %',
-              refId: 'A',
-            }],
-            thresholds=thresholds.httpError,
-            unit='percent',
-            colorMode='background',
-          ),
-          observeLinks,
-        ),
+        panels.statPanel(
+          title='HTTP Error Rate %',
+          targets=[{
+            expr: 'sum(rate(http_server_requests_total{service_name="risk-it",http_status_code=~"[45].."}[1m])) / sum(rate(http_server_requests_total{service_name="risk-it"}[1m])) * 100',
+            legendFormat: 'error %',
+            refId: 'A',
+          }],
+          thresholds=thresholds.httpError,
+          unit='percent',
+          colorMode='background',
+        ) + modifiers.withLinks(observeLinks),
         w=6, h=6,
         description='Normal: < 1% errors (green). Watch for: yellow (> 1%) may be transient; red (> 5%) indicates systematic failures. Check next: HTTP Error Rate timeseries in Server & HTTP.',
       ),
 
       layout.panel(
-        withLinks(
-          panels.statPanel(
-            title='Pool Utilization',
-            targets=[{
-              expr: 'db_pool_active{service_name="risk-it"} / db_pool_total{service_name="risk-it"} * 100',
-              legendFormat: 'utilization',
-              refId: 'A',
-            }],
-            thresholds=thresholds.poolUtil,
-            unit='percent',
-            colorMode='background',
-          ),
-          observeLinks,
-        ),
+        panels.statPanel(
+          title='Pool Utilization',
+          targets=[{
+            expr: 'db_pool_active{service_name="risk-it"} / db_pool_total{service_name="risk-it"} * 100',
+            legendFormat: 'utilization',
+            refId: 'A',
+          }],
+          thresholds=thresholds.poolUtil,
+          unit='percent',
+          colorMode='background',
+        ) + modifiers.withLinks(observeLinks),
         w=6, h=6,
         description='Normal: < 60% utilization (green). Watch for: yellow (> 60%) under moderate load, red (> 80%) approaching saturation. Check next: Pool Usage timeseries in Database collapsed row.',
       ),
 
       // Row 2: 3x w=8 stat panels
       layout.panel(
-        withLinks(
-          panels.statPanel(
-            title='Canceled Acquires',
-            targets=[{
-              expr: 'rate(db_pool_canceled_acquires_total{service_name="risk-it"}[1m])',
-              legendFormat: 'canceled/s',
-              refId: 'A',
-            }],
-            thresholds=thresholds.canceledAcquires,
-          ),
-          observeLinks,
-        ),
+        panels.statPanel(
+          title='Canceled Acquires',
+          targets=[{
+            expr: 'rate(db_pool_canceled_acquires_total{service_name="risk-it"}[1m])',
+            legendFormat: 'canceled/s',
+            refId: 'A',
+          }],
+          thresholds=thresholds.canceledAcquires,
+        ) + modifiers.withLinks(observeLinks),
         w=8, h=6,
         description='Normal: 0 canceled acquires (green). Watch for: any non-zero rate (red) means requests timing out waiting for DB connections. Check next: Pool Utilization and Acquire Time in Database row.',
       ),
 
       layout.panel(
-        withLinks(
-          panels.statPanel(
-            title='Cache Hit Rate',
-            targets=[{
-              expr: 'pg_stat_database_blks_hit_total{datname=~"postgres"} / (pg_stat_database_blks_hit_total{datname=~"postgres"} + pg_stat_database_blks_read_total{datname=~"postgres"}) * 100',
-              legendFormat: 'hit %',
-              refId: 'A',
-            }],
-            thresholds=thresholds.cacheHit,
-            unit='percent',
-          ),
-          observeLinks,
-        ),
+        panels.statPanel(
+          title='Cache Hit Rate',
+          targets=[{
+            expr: 'pg_stat_database_blks_hit_total{datname=~"postgres"} / (pg_stat_database_blks_hit_total{datname=~"postgres"} + pg_stat_database_blks_read_total{datname=~"postgres"}) * 100',
+            legendFormat: 'hit %',
+            refId: 'A',
+          }],
+          thresholds=thresholds.cacheHit,
+          unit='percent',
+        ) + modifiers.withLinks(observeLinks),
         w=8, h=6,
         description='Normal: > 99% cache hit rate (green). Watch for: yellow (< 99%) indicates working set exceeds shared_buffers; red (< 90%) severe miss rate. Check next: Postgres Internals collapsed row.',
       ),
 
       layout.panel(
-        withLinks(
-          panels.statPanel(
-            title='WS Connections',
-            targets=[{
-              expr: 'ws_connections_active{service_name="risk-it"}',
-              legendFormat: 'active',
-              refId: 'A',
-            }],
-            thresholds=thresholds.wsConnections,
-          ),
-          observeLinks,
-        ),
+        panels.statPanel(
+          title='WS Connections',
+          targets=[{
+            expr: 'ws_connections_active{service_name="risk-it"}',
+            legendFormat: 'active',
+            refId: 'A',
+          }],
+          thresholds=thresholds.wsConnections,
+        ) + modifiers.withLinks(observeLinks),
         w=8, h=6,
         description='Normal: < 100 connections (green). Watch for: yellow (> 100) under moderate load; red (> 500) may indicate leak. Check next: WebSocket collapsed row for broadcast health.',
       ),
@@ -184,9 +156,9 @@ dashboard.new(
       layout.panel(
         panels.timeseriesPanel(
           title='Lifecycle Timing (p95)',
-          targets=panels.lifecycleTargets,
+          targets=targets.lifecycleTargets,
           unit='s',
-          overrides=panels.lifecycleOverrides,
+          overrides=targets.lifecycleOverrides,
         ),
         w=24, h=10,
         description='Normal: HTTP Total < 500ms, DB < 50ms, Game Logic < 200ms, WS < 100ms. Watch for: any boundary diverging from baseline. Check next: collapsed rows below for per-boundary detail.',
@@ -198,7 +170,7 @@ dashboard.new(
           title='HTTP Latency Percentile Bands',
           metric='http_server_request_duration_seconds_bucket',
           unit='s',
-        ),
+        ) + modifiers.withPercentileColors('http'),
         w=24, h=8,
         description='Normal: tight bands (p50-p95 close together). Watch for: p99 band widening (tail latency divergence). Check next: Server & HTTP collapsed row for per-route breakdown.',
       ),
@@ -207,17 +179,14 @@ dashboard.new(
     orientDepth={
       // ── Collapsed: Database (~9 panels) ──
       Database: [
-        // Txn Duration P50/P95/P99
+        // Txn Duration Bands
         layout.panel(
-          panels.timeseriesPanel(
-            title='Txn Duration P50/P95/P99',
-            targets=panels.histogramQuantileTargetsWithExemplars(
-              'db_transaction_duration_seconds_bucket',
-              [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']],
-            ),
+          panels.percentileBandsPanel(
+            title='DB Transaction Latency Bands',
+            metric='db_transaction_duration_seconds_bucket',
             unit='s',
-            color=colors.fixedColor(colors.db),
-          ),
+            exemplars=true,
+          ) + modifiers.withPercentileColors('db') + modifiers.withSloThreshold(thresholds.dbTxnP95),
           w=12, h=8,
           description='Normal: p95 < 50ms, p99 < 100ms. Watch for: p99 diverging from p95 (long-tail transactions). Check next: Pool Usage for saturation.',
         ),
@@ -232,7 +201,6 @@ dashboard.new(
               { expr: 'db_pool_total{service_name="risk-it"}', legendFormat: 'Total', refId: 'C' },
             ],
             unit='short',
-            color=colors.fixedColor(colors.db),
           ),
           w=12, h=8,
           description='Normal: active well below total, healthy idle buffer. Watch for: active approaching total (saturation). Check next: Acquire Time for queue pressure.',
@@ -242,13 +210,12 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='Acquire Time P50/P95/P99',
-            targets=panels.histogramQuantileTargets(
+            targets=targets.histogramQuantileTargets(
               'db_pool_acquire_duration_seconds_bucket',
               [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']],
             ),
             unit='s',
-            color=colors.fixedColor(colors.db),
-          ),
+          ) + modifiers.withPercentileColors('db'),
           w=12, h=8,
           description='Normal: < 1ms acquire time. Watch for: p95 > 10ms (pool exhaustion starting). Check next: Canceled Acquires in Observe.',
         ),
@@ -383,13 +350,12 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='HTTP Latency P50/P95/P99',
-            targets=panels.histogramQuantileTargetsWithExemplars(
+            targets=targets.histogramQuantileTargetsWithExemplars(
               'http_server_request_duration_seconds_bucket',
               [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']],
             ),
             unit='s',
-            color=colors.fixedColor(colors.http),
-          ),
+          ) + modifiers.withPercentileColors('http'),
           w=24, h=8,
           description='Normal: p50 < 100ms, p95 < 500ms, p99 < 1s. Watch for: p99 diverging sharply from p95 (long tail). Check next: HTTP Rate by Route for per-endpoint breakdown.',
         ),
@@ -404,7 +370,6 @@ dashboard.new(
               refId: 'A',
             }],
             unit='reqps',
-            color=colors.fixedColor(colors.http),
           ),
           w=24, h=8,
           description='Normal: move endpoints dominate. Watch for: unusual routes or disproportionate rates. Check next: Game Engine dashboard for game-specific routes.',
@@ -471,49 +436,18 @@ dashboard.new(
           description='Normal: alloc well below sys, sawtooth GC pattern. Watch for: alloc approaching sys (heap pressure). Check next: GC Goal for tuning.',
         ),
 
-        // GC Goal
-        layout.panel(
-          panels.timeseriesPanel(
-            title='GC Goal',
-            targets=[
-              { expr: 'runtime_go_gc_gogc{service_name="risk-it"}', legendFormat: 'GOGC', refId: 'A' },
-              { expr: 'runtime_go_gc_gomemlimit{service_name="risk-it"}', legendFormat: 'GOMEMLIMIT', refId: 'B' },
-            ],
-            unit='bytes',
-          ),
-          w=8, h=8,
-          description='Normal: stable GC goal values. Watch for: GOMEMLIMIT being hit (OOM risk). Check next: Process Memory for total footprint.',
-        ),
-
-        // Process Memory
-        layout.panel(
-          panels.timeseriesPanel(
-            title='Process Memory',
-            targets=[{
-              expr: 'process_resident_memory_bytes{service_name="risk-it"}',
-              legendFormat: 'RSS',
-              refId: 'A',
-            }],
-            unit='bytes',
-          ),
-          w=8, h=8,
-          description='Normal: stable RSS proportional to heap + stack. Watch for: monotonic growth (memory leak). Check next: Goroutines for stack memory contributors.',
-        ),
       ],
 
       // ── Collapsed: WebSocket (~4 panels) ──
       WebSocket: [
-        // Broadcast Latency P50/P95/P99
+        // Broadcast Latency Bands
         layout.panel(
-          panels.timeseriesPanel(
-            title='Broadcast Latency P50/P95/P99',
-            targets=panels.histogramQuantileTargetsWithExemplars(
-              'ws_broadcast_duration_seconds_bucket',
-              [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']],
-            ),
+          panels.percentileBandsPanel(
+            title='WS Broadcast Latency Bands',
+            metric='ws_broadcast_duration_seconds_bucket',
             unit='s',
-            color=colors.fixedColor(colors.ws),
-          ),
+            exemplars=true,
+          ) + modifiers.withPercentileColors('ws'),
           w=12, h=8,
           description='Normal: p95 < 100ms. Watch for: p99 > 500ms (slow consumers blocking broadcast). Check next: Messages Rate for throughput.',
         ),
@@ -528,26 +462,9 @@ dashboard.new(
               refId: 'A',
             }],
             unit='ops',
-            color=colors.fixedColor(colors.ws),
           ),
           w=12, h=8,
           description='Normal: outbound >> inbound (server pushes state). Watch for: inbound spikes (clients retrying). Check next: Fan-Out for amplification ratio.',
-        ),
-
-        // Fan-Out
-        layout.panel(
-          panels.timeseriesPanel(
-            title='Fan-Out',
-            targets=[{
-              expr: 'sum(rate(ws_messages_total{service_name="risk-it",direction="outbound"}[1m])) / sum(rate(event_bus_events_total{service_name="risk-it",event_type="move_executed"}[1m]))',
-              legendFormat: 'msgs/move',
-              refId: 'A',
-            }],
-            unit='short',
-            color=colors.fixedColor(colors.ws),
-          ),
-          w=12, h=8,
-          description='Normal: ~4x (one broadcast per player per move). Watch for: > 10x indicates broadcast storms. Check next: Errors for delivery failures.',
         ),
 
         // WS Errors
