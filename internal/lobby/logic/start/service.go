@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/data/sqlc"
 	"github.com/jackc/pgx/v5/pgtype"

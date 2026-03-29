@@ -4,9 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/attack"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/game/data/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/board"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/move/attack/dice"
@@ -43,8 +44,8 @@ func input() ctx.GameContext {
 	gameID := int64(1)
 	userID := "giovanni"
 
-	userContext := ctx.WithUserID(
-		ctx.WithSpan(context.Background(), noop.Span{}),
+	userContext := kernelctx.WithUserID(
+		kernelctx.WithSpan(context.Background(), noop.Span{}),
 		userID,
 	)
 

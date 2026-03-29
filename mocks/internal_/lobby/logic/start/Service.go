@@ -5,7 +5,7 @@
 package start
 
 import (
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/data/sqlc"
 	mock "github.com/stretchr/testify/mock"
 )

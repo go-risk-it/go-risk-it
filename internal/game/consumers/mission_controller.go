@@ -2,8 +2,8 @@ package consumers
 
 import (
 	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/mission"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 )
 
 // MissionController translates between messaging DTOs and the mission logic

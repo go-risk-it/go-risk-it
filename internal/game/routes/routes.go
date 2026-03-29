@@ -9,8 +9,9 @@ import (
 
 	gameRequest "github.com/go-risk-it/go-risk-it/internal/game/api/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/game/api/rest/response"
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	gameWs "github.com/go-risk-it/go-risk-it/internal/game/ws"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws"
@@ -58,7 +59,7 @@ func createGame(gameCtrl *GameController) route.PlainHandler {
 			return err
 		}
 
-		userContext, ok := req.Context().(ctx.UserContext)
+		userContext, ok := req.Context().(kernelctx.UserContext)
 		if !ok {
 			return errors.New("invalid user context")
 		}
@@ -81,7 +82,7 @@ func createGame(gameCtrl *GameController) route.PlainHandler {
 
 func getGamesSummary(gameCtrl *GameController) route.PlainHandler {
 	return func(writer http.ResponseWriter, req *http.Request) error {
-		userContext, ok := req.Context().(ctx.UserContext)
+		userContext, ok := req.Context().(kernelctx.UserContext)
 		if !ok {
 			return errors.New("invalid user context")
 		}

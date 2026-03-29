@@ -5,9 +5,10 @@
 package state
 
 import (
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/state"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	ctx0 "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -169,7 +170,7 @@ func (_c *Service_GetGameStateWithQuerier_Call) RunAndReturn(run func(ctx1 ctx.G
 }
 
 // GetUserGames provides a mock function for the type Service
-func (_mock *Service) GetUserGames(ctx1 ctx.UserContext) ([]int64, error) {
+func (_mock *Service) GetUserGames(ctx1 ctx0.UserContext) ([]int64, error) {
 	ret := _mock.Called(ctx1)
 
 	if len(ret) == 0 {
@@ -178,17 +179,17 @@ func (_mock *Service) GetUserGames(ctx1 ctx.UserContext) ([]int64, error) {
 
 	var r0 []int64
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(ctx.UserContext) ([]int64, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(ctx0.UserContext) ([]int64, error)); ok {
 		return returnFunc(ctx1)
 	}
-	if returnFunc, ok := ret.Get(0).(func(ctx.UserContext) []int64); ok {
+	if returnFunc, ok := ret.Get(0).(func(ctx0.UserContext) []int64); ok {
 		r0 = returnFunc(ctx1)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]int64)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(ctx.UserContext) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(ctx0.UserContext) error); ok {
 		r1 = returnFunc(ctx1)
 	} else {
 		r1 = ret.Error(1)
@@ -202,16 +203,16 @@ type Service_GetUserGames_Call struct {
 }
 
 // GetUserGames is a helper method to define mock.On call
-//   - ctx1 ctx.UserContext
+//   - ctx1 ctx0.UserContext
 func (_e *Service_Expecter) GetUserGames(ctx1 interface{}) *Service_GetUserGames_Call {
 	return &Service_GetUserGames_Call{Call: _e.mock.On("GetUserGames", ctx1)}
 }
 
-func (_c *Service_GetUserGames_Call) Run(run func(ctx1 ctx.UserContext)) *Service_GetUserGames_Call {
+func (_c *Service_GetUserGames_Call) Run(run func(ctx1 ctx0.UserContext)) *Service_GetUserGames_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 ctx.UserContext
+		var arg0 ctx0.UserContext
 		if args[0] != nil {
-			arg0 = args[0].(ctx.UserContext)
+			arg0 = args[0].(ctx0.UserContext)
 		}
 		run(
 			arg0,
@@ -225,7 +226,7 @@ func (_c *Service_GetUserGames_Call) Return(int64s []int64, err error) *Service_
 	return _c
 }
 
-func (_c *Service_GetUserGames_Call) RunAndReturn(run func(ctx1 ctx.UserContext) ([]int64, error)) *Service_GetUserGames_Call {
+func (_c *Service_GetUserGames_Call) RunAndReturn(run func(ctx1 ctx0.UserContext) ([]int64, error)) *Service_GetUserGames_Call {
 	_c.Call.Return(run)
 	return _c
 }

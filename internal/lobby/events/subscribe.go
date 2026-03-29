@@ -5,7 +5,7 @@ import (
 	"log/slog"
 
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 )
 
 // OnLobbyEvent registers a typed handler on the bus for lobby events of type E.

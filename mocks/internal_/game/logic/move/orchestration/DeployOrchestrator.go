@@ -5,8 +5,8 @@
 package orchestration
 
 import (
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/deploy"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	mock "github.com/stretchr/testify/mock"
 )
 

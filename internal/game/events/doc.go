@@ -6,7 +6,7 @@
 // of game state transitions. Each implements ToRecord for structured logging.
 //
 // [OnGameEvent] wraps [eventbus.OnEvent] with a context assertion, narrowing
-// the dispatched context to [ctx.GameContext] before invoking the handler.
+// the dispatched context to [GameContext] before invoking the handler.
 // This centralizes the assertion that all game bus consumers need.
 //
 // # Layer

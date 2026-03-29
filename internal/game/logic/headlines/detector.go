@@ -8,12 +8,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/game/events"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/board"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/snapshot"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"go.opentelemetry.io/otel"
 	"go.uber.org/fx"
 )

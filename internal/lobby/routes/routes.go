@@ -7,9 +7,10 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	lobbyRequest "github.com/go-risk-it/go-risk-it/internal/lobby/api/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/api/rest/response"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	lobbyWs "github.com/go-risk-it/go-risk-it/internal/lobby/ws"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
@@ -42,7 +43,7 @@ func createLobby(creationCtrl *CreationController) route.PlainHandler {
 			return err
 		}
 
-		userContext, ok := req.Context().(ctx.UserContext)
+		userContext, ok := req.Context().(kernelctx.UserContext)
 		if !ok {
 			return errors.New("invalid user context")
 		}
@@ -65,7 +66,7 @@ func createLobby(creationCtrl *CreationController) route.PlainHandler {
 
 func getLobbiesSummary(managementCtrl *ManagementController) route.PlainHandler {
 	return func(writer http.ResponseWriter, req *http.Request) error {
-		userContext, ok := req.Context().(ctx.UserContext)
+		userContext, ok := req.Context().(kernelctx.UserContext)
 		if !ok {
 			return errors.New("invalid user context")
 		}

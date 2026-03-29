@@ -6,6 +6,7 @@ package ctx
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	mock "github.com/stretchr/testify/mock"
@@ -275,6 +276,52 @@ func (_c *LobbyContext_LobbyID_Call) Return(n int64) *LobbyContext_LobbyID_Call 
 }
 
 func (_c *LobbyContext_LobbyID_Call) RunAndReturn(run func() int64) *LobbyContext_LobbyID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SlogAttrs provides a mock function for the type LobbyContext
+func (_mock *LobbyContext) SlogAttrs() []slog.Attr {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for SlogAttrs")
+	}
+
+	var r0 []slog.Attr
+	if returnFunc, ok := ret.Get(0).(func() []slog.Attr); ok {
+		r0 = returnFunc()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]slog.Attr)
+		}
+	}
+	return r0
+}
+
+// LobbyContext_SlogAttrs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SlogAttrs'
+type LobbyContext_SlogAttrs_Call struct {
+	*mock.Call
+}
+
+// SlogAttrs is a helper method to define mock.On call
+func (_e *LobbyContext_Expecter) SlogAttrs() *LobbyContext_SlogAttrs_Call {
+	return &LobbyContext_SlogAttrs_Call{Call: _e.mock.On("SlogAttrs")}
+}
+
+func (_c *LobbyContext_SlogAttrs_Call) Run(run func()) *LobbyContext_SlogAttrs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *LobbyContext_SlogAttrs_Call) Return(attrs []slog.Attr) *LobbyContext_SlogAttrs_Call {
+	_c.Call.Return(attrs)
+	return _c
+}
+
+func (_c *LobbyContext_SlogAttrs_Call) RunAndReturn(run func() []slog.Attr) *LobbyContext_SlogAttrs_Call {
 	_c.Call.Return(run)
 	return _c
 }

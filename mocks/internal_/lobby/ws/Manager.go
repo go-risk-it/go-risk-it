@@ -7,7 +7,7 @@ package ws
 import (
 	"encoding/json"
 
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	"github.com/lesismal/nbio/nbhttp/websocket"
 	mock "github.com/stretchr/testify/mock"
 )

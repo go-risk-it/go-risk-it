@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/game/events"
@@ -15,7 +16,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/region"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/timing"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	dbutil "github.com/go-risk-it/go-risk-it/internal/kernel/data"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -23,12 +24,12 @@ import (
 
 type Service interface {
 	CreateGame(
-		ctx ctx.UserContext,
+		ctx kernelctx.UserContext,
 		regions []string,
 		players []player.Player,
 	) (int64, error)
 	CreateGameWithQuerier(
-		ctx ctx.UserContext,
+		ctx kernelctx.UserContext,
 		querier db.Querier,
 		regions []string,
 		players []player.Player,
@@ -74,7 +75,7 @@ func NewService(
 }
 
 func (s *service) CreateGame(
-	ctx ctx.UserContext,
+	ctx kernelctx.UserContext,
 	regions []string,
 	players []player.Player,
 ) (int64, error) {
@@ -100,7 +101,7 @@ func (s *service) CreateGame(
 }
 
 func (s *service) CreateGameWithQuerier(
-	userCtx ctx.UserContext,
+	userCtx kernelctx.UserContext,
 	querier db.Querier,
 	regions []string,
 	players []player.Player,

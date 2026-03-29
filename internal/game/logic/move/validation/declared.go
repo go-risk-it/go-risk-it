@@ -3,7 +3,7 @@ package validation
 import (
 	"log/slog"
 
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
 )
 

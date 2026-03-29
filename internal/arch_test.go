@@ -278,6 +278,53 @@ func TestArch_DataModulesIsolated(t *testing.T) {
 	)
 }
 
+// Rule 5e: game/ctx/ may only be imported by game/** and testing/** packages.
+func TestArch_GameCtxImportIsolation(t *testing.T) {
+	t.Parallel()
+
+	pkgs := loadPackages(t, "./internal/...")
+
+	for _, pkg := range pkgs {
+		short := strings.TrimPrefix(pkg.ImportPath, modulePrefix)
+
+		// Allow: game/**, testing/**
+		if strings.HasPrefix(short, "game/") || strings.HasPrefix(short, "testing/") {
+			continue
+		}
+
+		// Kernel test files (external test packages) are allowed to import game/ctx
+		// for testing the Detachable/LogEnricher contracts.
+		if strings.HasPrefix(short, "kernel/") {
+			continue
+		}
+
+		assertNoImports(t, []goPackage{pkg}, modulePrefix+"game/ctx")
+	}
+}
+
+// Rule 5f: lobby/ctx/ may only be imported by lobby/** and testing/** packages.
+func TestArch_LobbyCtxImportIsolation(t *testing.T) {
+	t.Parallel()
+
+	pkgs := loadPackages(t, "./internal/...")
+
+	for _, pkg := range pkgs {
+		short := strings.TrimPrefix(pkg.ImportPath, modulePrefix)
+
+		// Allow: lobby/**, testing/**
+		if strings.HasPrefix(short, "lobby/") || strings.HasPrefix(short, "testing/") {
+			continue
+		}
+
+		// Kernel test files are allowed for testing contracts.
+		if strings.HasPrefix(short, "kernel/") {
+			continue
+		}
+
+		assertNoImports(t, []goPackage{pkg}, modulePrefix+"lobby/ctx")
+	}
+}
+
 // containsFile checks if a package has a specific file in its GoFiles list.
 func containsFile(pkg goPackage, name string) bool {
 	return slices.Contains(pkg.GoFiles, name)
@@ -678,6 +725,7 @@ var expectedLayer = map[string]string{
 
 	// game domain
 	"game/commands":            "API",
+	"game/ctx":                 "Game-domain",
 	"game/data/db":             "Data",
 	"game/events":              "Events-domain",
 	"game/routes":              "Web",
@@ -691,6 +739,7 @@ var expectedLayer = map[string]string{
 
 	// lobby domain
 	"lobby/consumers": "Web",
+	"lobby/ctx":       "Lobby-domain",
 	"lobby/routes":    "Web",
 	"lobby/ws":        "Web",
 
@@ -720,6 +769,8 @@ func layerFromPrefix(suffix string) string {
 		return "API"
 	case strings.HasPrefix(suffix, "game/commands"):
 		return "API"
+	case strings.HasPrefix(suffix, "game/ctx"):
+		return "Game-domain"
 	case strings.HasPrefix(suffix, "game/data/"):
 		return "Data"
 	case strings.HasPrefix(suffix, "game/events"):
@@ -735,6 +786,8 @@ func layerFromPrefix(suffix string) string {
 		return "Logic"
 	case strings.HasPrefix(suffix, "lobby/api/"):
 		return "API"
+	case strings.HasPrefix(suffix, "lobby/ctx"):
+		return "Lobby-domain"
 	case strings.HasPrefix(suffix, "lobby/data/"):
 		return "Data"
 	case strings.HasPrefix(suffix, "lobby/events"):

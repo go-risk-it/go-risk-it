@@ -6,6 +6,7 @@ package management
 
 import (
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	ctx0 "github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/logic/management"
 	mock "github.com/stretchr/testify/mock"
@@ -169,7 +170,7 @@ func (_c *Service_GetUserLobbiesWithQuerier_Call) RunAndReturn(run func(ctx1 ctx
 }
 
 // JoinLobby provides a mock function for the type Service
-func (_mock *Service) JoinLobby(ctx1 ctx.LobbyContext, name string) error {
+func (_mock *Service) JoinLobby(ctx1 ctx0.LobbyContext, name string) error {
 	ret := _mock.Called(ctx1, name)
 
 	if len(ret) == 0 {
@@ -177,7 +178,7 @@ func (_mock *Service) JoinLobby(ctx1 ctx.LobbyContext, name string) error {
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(ctx.LobbyContext, string) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(ctx0.LobbyContext, string) error); ok {
 		r0 = returnFunc(ctx1, name)
 	} else {
 		r0 = ret.Error(0)
@@ -191,17 +192,17 @@ type Service_JoinLobby_Call struct {
 }
 
 // JoinLobby is a helper method to define mock.On call
-//   - ctx1 ctx.LobbyContext
+//   - ctx1 ctx0.LobbyContext
 //   - name string
 func (_e *Service_Expecter) JoinLobby(ctx1 interface{}, name interface{}) *Service_JoinLobby_Call {
 	return &Service_JoinLobby_Call{Call: _e.mock.On("JoinLobby", ctx1, name)}
 }
 
-func (_c *Service_JoinLobby_Call) Run(run func(ctx1 ctx.LobbyContext, name string)) *Service_JoinLobby_Call {
+func (_c *Service_JoinLobby_Call) Run(run func(ctx1 ctx0.LobbyContext, name string)) *Service_JoinLobby_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 ctx.LobbyContext
+		var arg0 ctx0.LobbyContext
 		if args[0] != nil {
-			arg0 = args[0].(ctx.LobbyContext)
+			arg0 = args[0].(ctx0.LobbyContext)
 		}
 		var arg1 string
 		if args[1] != nil {
@@ -220,13 +221,13 @@ func (_c *Service_JoinLobby_Call) Return(err error) *Service_JoinLobby_Call {
 	return _c
 }
 
-func (_c *Service_JoinLobby_Call) RunAndReturn(run func(ctx1 ctx.LobbyContext, name string) error) *Service_JoinLobby_Call {
+func (_c *Service_JoinLobby_Call) RunAndReturn(run func(ctx1 ctx0.LobbyContext, name string) error) *Service_JoinLobby_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // JoinLobbyWithQuerier provides a mock function for the type Service
-func (_mock *Service) JoinLobbyWithQuerier(ctx1 ctx.LobbyContext, querier db.Querier, name string) error {
+func (_mock *Service) JoinLobbyWithQuerier(ctx1 ctx0.LobbyContext, querier db.Querier, name string) error {
 	ret := _mock.Called(ctx1, querier, name)
 
 	if len(ret) == 0 {
@@ -234,7 +235,7 @@ func (_mock *Service) JoinLobbyWithQuerier(ctx1 ctx.LobbyContext, querier db.Que
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(ctx.LobbyContext, db.Querier, string) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(ctx0.LobbyContext, db.Querier, string) error); ok {
 		r0 = returnFunc(ctx1, querier, name)
 	} else {
 		r0 = ret.Error(0)
@@ -248,18 +249,18 @@ type Service_JoinLobbyWithQuerier_Call struct {
 }
 
 // JoinLobbyWithQuerier is a helper method to define mock.On call
-//   - ctx1 ctx.LobbyContext
+//   - ctx1 ctx0.LobbyContext
 //   - querier db.Querier
 //   - name string
 func (_e *Service_Expecter) JoinLobbyWithQuerier(ctx1 interface{}, querier interface{}, name interface{}) *Service_JoinLobbyWithQuerier_Call {
 	return &Service_JoinLobbyWithQuerier_Call{Call: _e.mock.On("JoinLobbyWithQuerier", ctx1, querier, name)}
 }
 
-func (_c *Service_JoinLobbyWithQuerier_Call) Run(run func(ctx1 ctx.LobbyContext, querier db.Querier, name string)) *Service_JoinLobbyWithQuerier_Call {
+func (_c *Service_JoinLobbyWithQuerier_Call) Run(run func(ctx1 ctx0.LobbyContext, querier db.Querier, name string)) *Service_JoinLobbyWithQuerier_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 ctx.LobbyContext
+		var arg0 ctx0.LobbyContext
 		if args[0] != nil {
-			arg0 = args[0].(ctx.LobbyContext)
+			arg0 = args[0].(ctx0.LobbyContext)
 		}
 		var arg1 db.Querier
 		if args[1] != nil {
@@ -283,7 +284,7 @@ func (_c *Service_JoinLobbyWithQuerier_Call) Return(err error) *Service_JoinLobb
 	return _c
 }
 
-func (_c *Service_JoinLobbyWithQuerier_Call) RunAndReturn(run func(ctx1 ctx.LobbyContext, querier db.Querier, name string) error) *Service_JoinLobbyWithQuerier_Call {
+func (_c *Service_JoinLobbyWithQuerier_Call) RunAndReturn(run func(ctx1 ctx0.LobbyContext, querier db.Querier, name string) error) *Service_JoinLobbyWithQuerier_Call {
 	_c.Call.Return(run)
 	return _c
 }

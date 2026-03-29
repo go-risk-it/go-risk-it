@@ -8,8 +8,9 @@ import (
 	"testing/synctest"
 
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	lobbyevt "github.com/go-risk-it/go-risk-it/internal/lobby/events"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/ws"
 	mockbus "github.com/go-risk-it/go-risk-it/mocks/internal_/kernel/bus"
@@ -30,8 +31,8 @@ func testMetrics(t *testing.T) *metrics.InfraMetrics {
 }
 
 func lobbyContext(lobbyID int64) ctx.LobbyContext {
-	userContext := ctx.WithUserID(
-		ctx.WithSpan(
+	userContext := kernelctx.WithUserID(
+		kernelctx.WithSpan(
 			context.Background(),
 			noop.Span{},
 		),

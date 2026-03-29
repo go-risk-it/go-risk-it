@@ -4,17 +4,18 @@ import (
 	"context"
 	"testing"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/validation"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
 
 func gameContext(userID string) ctx.GameContext {
-	userContext := ctx.WithUserID(
-		ctx.WithSpan(context.Background(), noop.Span{}),
+	userContext := kernelctx.WithUserID(
+		kernelctx.WithSpan(context.Background(), noop.Span{}),
 		userID,
 	)
 

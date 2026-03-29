@@ -3,7 +3,7 @@ package consumers
 import (
 	"encoding/json"
 
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 )
 
 // Writer sends messages to connected players. Used by event consumers that

@@ -6,8 +6,8 @@ import (
 
 	game "github.com/go-risk-it/go-risk-it/internal/game/api"
 	"github.com/go-risk-it/go-risk-it/internal/game/api/rest/request"
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/advancement"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 )
 
 type AdvancementController struct {

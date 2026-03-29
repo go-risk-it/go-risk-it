@@ -5,7 +5,9 @@ import (
 	"log/slog"
 	"testing"
 
+	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	lobbyclx "github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
@@ -27,7 +29,7 @@ func TestGameContext_SlogAttrs_ComposesUserAndGame(t *testing.T) {
 
 	traceCtx := ctx.WithSpan(context.Background(), noop.Span{})
 	userCtx := ctx.WithUserID(traceCtx, "player-1")
-	gameCtx := ctx.WithGameID(userCtx, 42)
+	gameCtx := gamectx.WithGameID(userCtx, 42)
 
 	attrs := gameCtx.SlogAttrs()
 
@@ -43,7 +45,7 @@ func TestLobbyContext_SlogAttrs_ComposesUserAndLobby(t *testing.T) {
 
 	traceCtx := ctx.WithSpan(context.Background(), noop.Span{})
 	userCtx := ctx.WithUserID(traceCtx, "host-1")
-	lobbyCtx := ctx.WithLobbyID(userCtx, 99)
+	lobbyCtx := lobbyclx.WithLobbyID(userCtx, 99)
 
 	attrs := lobbyCtx.SlogAttrs()
 

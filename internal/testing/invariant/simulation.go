@@ -5,8 +5,8 @@ package invariant
 import (
 	"testing"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 )
 
 // SimulationConfig controls a game simulation run.

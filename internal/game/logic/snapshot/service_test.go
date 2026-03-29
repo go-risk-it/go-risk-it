@@ -4,9 +4,10 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/snapshot"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/game/data/db"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
@@ -19,8 +20,8 @@ func gameContext(t *testing.T) ctx.GameContext {
 	t.Helper()
 
 	return ctx.WithGameID(
-		ctx.WithUserID(
-			ctx.WithSpan(t.Context(), noop.Span{}),
+		kernelctx.WithUserID(
+			kernelctx.WithSpan(t.Context(), noop.Span{}),
 			"test-user",
 		),
 		testGameID,

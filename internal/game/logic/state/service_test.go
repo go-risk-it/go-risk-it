@@ -3,9 +3,10 @@ package state_test
 import (
 	"testing"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/state"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/game/data/db"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/mock"
@@ -25,8 +26,8 @@ func TestService_GetGameState(t *testing.T) {
 	// Set up test data
 	gameID := int64(1)
 	ctx := ctx.WithGameID(
-		ctx.WithUserID(
-			ctx.WithSpan(t.Context(), noop.Span{}),
+		kernelctx.WithUserID(
+			kernelctx.WithSpan(t.Context(), noop.Span{}),
 			"francesco",
 		),
 		gameID,

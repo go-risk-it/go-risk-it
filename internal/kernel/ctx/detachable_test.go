@@ -5,23 +5,25 @@ import (
 	"testing"
 	"time"
 
+	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	lobbyclx "github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
 
-func newGameContext(parent context.Context, userID string, gameID int64) ctx.GameContext {
+func newGameContext(parent context.Context, userID string, gameID int64) gamectx.GameContext {
 	traceCtx := ctx.WithSpan(parent, noop.Span{})
 	userCtx := ctx.WithUserID(traceCtx, userID)
 
-	return ctx.WithGameID(userCtx, gameID)
+	return gamectx.WithGameID(userCtx, gameID)
 }
 
-func newLobbyContext(parent context.Context, userID string, lobbyID int64) ctx.LobbyContext {
+func newLobbyContext(parent context.Context, userID string, lobbyID int64) lobbyclx.LobbyContext {
 	traceCtx := ctx.WithSpan(parent, noop.Span{})
 	userCtx := ctx.WithUserID(traceCtx, userID)
 
-	return ctx.WithLobbyID(userCtx, lobbyID)
+	return lobbyclx.WithLobbyID(userCtx, lobbyID)
 }
 
 func TestGameContext_DetachOnto_PreservesMetadata(t *testing.T) {
@@ -31,7 +33,7 @@ func TestGameContext_DetachOnto_PreservesMetadata(t *testing.T) {
 
 	detached := gameCtx.DetachOnto(context.Background())
 
-	gc, ok := detached.(ctx.GameContext)
+	gc, ok := detached.(gamectx.GameContext)
 	require.True(t, ok, "detached context must be a GameContext")
 	require.Equal(t, int64(99), gc.GameID())
 	require.Equal(t, "player-1", gc.UserID())
@@ -44,7 +46,7 @@ func TestLobbyContext_DetachOnto_PreservesMetadata(t *testing.T) {
 
 	detached := lobbyCtx.DetachOnto(context.Background())
 
-	lc, ok := detached.(ctx.LobbyContext)
+	lc, ok := detached.(lobbyclx.LobbyContext)
 	require.True(t, ok, "detached context must be a LobbyContext")
 	require.Equal(t, int64(42), lc.LobbyID())
 	require.Equal(t, "host-user", lc.UserID())

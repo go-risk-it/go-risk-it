@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/mission/checker"
 	"github.com/go-risk-it/go-risk-it/internal/game/rand"
 	"github.com/go-risk-it/go-risk-it/internal/game/tracing"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 

@@ -3,8 +3,8 @@ package consumers
 import (
 	"log/slog"
 
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/api/messaging"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/logic/state"
 )
 

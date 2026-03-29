@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/game/events"
 	gamemetrics "github.com/go-risk-it/go-risk-it/internal/game/logic/metrics"
@@ -17,7 +18,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/state"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/timing"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
-	gamectx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	mockdb "github.com/go-risk-it/go-risk-it/mocks/internal_/game/data/db"
 	mockmission "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/mission"
@@ -39,8 +40,8 @@ const (
 )
 
 func testCtx() gamectx.GameContext {
-	traceCtx := gamectx.WithSpan(context.Background(), tracenoop.Span{})
-	userCtx := gamectx.WithUserID(traceCtx, testUserID)
+	traceCtx := kernelctx.WithSpan(context.Background(), tracenoop.Span{})
+	userCtx := kernelctx.WithUserID(traceCtx, testUserID)
 
 	return gamectx.WithGameID(userCtx, testGameID)
 }

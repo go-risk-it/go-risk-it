@@ -7,9 +7,9 @@ import (
 
 	game "github.com/go-risk-it/go-risk-it/internal/game/api"
 	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/orchestration/logging"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 )
 
 // MoveLogController translates between sqlc move log rows and messaging DTOs.

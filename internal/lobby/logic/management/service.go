@@ -5,9 +5,10 @@ import (
 	"log/slog"
 
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	dbutil "github.com/go-risk-it/go-risk-it/internal/kernel/data"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/data/sqlc"
 	lobbyevt "github.com/go-risk-it/go-risk-it/internal/lobby/events"
@@ -22,8 +23,8 @@ type UserLobbies struct {
 type Service interface {
 	JoinLobby(ctx ctx.LobbyContext, name string) error
 	JoinLobbyWithQuerier(ctx ctx.LobbyContext, querier db.Querier, name string) error
-	GetUserLobbies(ctx ctx.UserContext) (*UserLobbies, error)
-	GetUserLobbiesWithQuerier(ctx ctx.UserContext, querier db.Querier) (*UserLobbies, error)
+	GetUserLobbies(ctx kernelctx.UserContext) (*UserLobbies, error)
+	GetUserLobbiesWithQuerier(ctx kernelctx.UserContext, querier db.Querier) (*UserLobbies, error)
 }
 
 type service struct {
@@ -84,13 +85,13 @@ func (s *service) JoinLobbyWithQuerier(
 }
 
 func (s *service) GetUserLobbies(
-	ctx ctx.UserContext,
+	ctx kernelctx.UserContext,
 ) (*UserLobbies, error) {
 	return s.GetUserLobbiesWithQuerier(ctx, s.querier)
 }
 
 func (s *service) GetUserLobbiesWithQuerier(
-	ctx ctx.UserContext,
+	ctx kernelctx.UserContext,
 	querier db.Querier,
 ) (*UserLobbies, error) {
 	slog.InfoContext(ctx, "getting user lobbies")

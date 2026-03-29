@@ -7,9 +7,11 @@ import (
 	"testing"
 	"time"
 
+	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
+	lobbyclx "github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -321,14 +323,14 @@ func TestDetachContext_GameContext(t *testing.T) {
 
 	traceCtx := ctx.WithSpan(context.Background(), noop.Span{})
 	userCtx := ctx.WithUserID(traceCtx, "user-123")
-	gameCtx := ctx.WithGameID(userCtx, 42)
+	gameCtx := gamectx.WithGameID(userCtx, 42)
 
 	evt := newTestEvent(42, "test.event")
 	detached, cancel := eventbus.DetachContextForTest(gameCtx, evt, 5*time.Second)
 	defer cancel()
 
 	// Must preserve GameID and UserID through the detached context.
-	gameContext, ok := detached.(ctx.GameContext)
+	gameContext, ok := detached.(gamectx.GameContext)
 	require.True(t, ok, "expected GameContext, got %T", detached)
 	require.Equal(t, int64(42), gameContext.GameID())
 	require.Equal(t, "user-123", gameContext.UserID())
@@ -344,14 +346,14 @@ func TestDetachContext_LobbyContext(t *testing.T) {
 
 	traceCtx := ctx.WithSpan(context.Background(), noop.Span{})
 	userCtx := ctx.WithUserID(traceCtx, "user-456")
-	lobbyCtx := ctx.WithLobbyID(userCtx, 77)
+	lobbyCtx := lobbyclx.WithLobbyID(userCtx, 77)
 
 	evt := newTestEvent(77, "test.event")
 	detached, cancel := eventbus.DetachContextForTest(lobbyCtx, evt, 5*time.Second)
 	defer cancel()
 
 	// Must preserve LobbyID and UserID through the detached context.
-	lobbyContext, ok := detached.(ctx.LobbyContext)
+	lobbyContext, ok := detached.(lobbyclx.LobbyContext)
 	require.True(t, ok, "expected LobbyContext, got %T", detached)
 	require.Equal(t, int64(77), lobbyContext.LobbyID())
 	require.Equal(t, "user-456", lobbyContext.UserID())
@@ -377,11 +379,11 @@ func TestDetachContext_PlainContext(t *testing.T) {
 	require.WithinDuration(t, time.Now().Add(5*time.Second), deadline, 1*time.Second)
 
 	// Should NOT be a GameContext.
-	_, isGame := detached.(ctx.GameContext)
+	_, isGame := detached.(gamectx.GameContext)
 	require.False(t, isGame, "plain context should not become GameContext")
 
 	// Should NOT be a LobbyContext.
-	_, isLobby := detached.(ctx.LobbyContext)
+	_, isLobby := detached.(lobbyclx.LobbyContext)
 	require.False(t, isLobby, "plain context should not become LobbyContext")
 }
 
@@ -669,7 +671,7 @@ func TestBus_EmitLinkedSpanTopology(
 	// Build a GameContext rooted in the HTTP span context.
 	traceCtx := ctx.WithSpan(httpCtx, httpSpan)
 	userCtx := ctx.WithUserID(traceCtx, "player-1")
-	gameCtx := ctx.WithGameID(userCtx, 99)
+	gameCtx := gamectx.WithGameID(userCtx, 99)
 
 	bus := eventbus.NewBusForTest()
 
@@ -734,7 +736,7 @@ func TestBus_EmitLinkedSpanTopology(
 		"handler context must NOT carry the HTTP parent's TraceID")
 
 	// Verify the context is still a GameContext with preserved domain metadata.
-	handlerGameCtx, ok := got.handlerCtx.(ctx.GameContext)
+	handlerGameCtx, ok := got.handlerCtx.(gamectx.GameContext)
 	require.True(t, ok, "detached context must be a GameContext, got %T", got.handlerCtx)
 	require.Equal(t, int64(99), handlerGameCtx.GameID())
 	require.Equal(t, "player-1", handlerGameCtx.UserID())

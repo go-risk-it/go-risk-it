@@ -3,7 +3,7 @@ package routes
 import (
 	"net/http"
 
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 )
 

@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/player"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/state"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -105,7 +106,7 @@ func (s *service) getNextTurn(
 }
 
 func (s *service) insertPhase(
-	ctx ctx.UserContext,
+	ctx kernelctx.UserContext,
 	querier db.Querier,
 	gameID int64,
 	phaseType sqlc.GamePhaseType,
@@ -128,7 +129,7 @@ func (s *service) insertPhase(
 }
 
 func (s *service) setGamePhase(
-	ctx ctx.UserContext,
+	ctx kernelctx.UserContext,
 	querier db.Querier,
 	gameID int64,
 	phaseID int64,

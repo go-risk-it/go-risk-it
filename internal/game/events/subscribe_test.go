@@ -5,9 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/game/events"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/bus"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
@@ -29,8 +30,8 @@ func (s *spyBus) Emit(context.Context, bus.Event) {}
 func (s *spyBus) Close(context.Context) error     { return nil }
 
 func newTestGameContext(gameID int64) ctx.GameContext {
-	traceCtx := ctx.WithSpan(context.Background(), noop.Span{})
-	userCtx := ctx.WithUserID(traceCtx, "test-user")
+	traceCtx := kernelctx.WithSpan(context.Background(), noop.Span{})
+	userCtx := kernelctx.WithUserID(traceCtx, "test-user")
 
 	return ctx.WithGameID(userCtx, gameID)
 }

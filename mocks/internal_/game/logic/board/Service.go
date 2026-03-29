@@ -7,9 +7,9 @@ package board
 import (
 	"context"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/board"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	mock "github.com/stretchr/testify/mock"
 )
 

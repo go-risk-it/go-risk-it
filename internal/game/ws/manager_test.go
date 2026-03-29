@@ -7,10 +7,11 @@ import (
 	"testing"
 	"testing/synctest"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/state"
 	"github.com/go-risk-it/go-risk-it/internal/game/ws"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	playerws "github.com/go-risk-it/go-risk-it/internal/web/ws"
 	mockplayer "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/player"
@@ -36,8 +37,8 @@ func testMetrics(t *testing.T) *metrics.InfraMetrics {
 }
 
 func gameContext(gameID int64) ctx.GameContext {
-	userContext := ctx.WithUserID(
-		ctx.WithSpan(
+	userContext := kernelctx.WithUserID(
+		kernelctx.WithSpan(
 			context.Background(),
 			noop.Span{},
 		),
@@ -48,8 +49,8 @@ func gameContext(gameID int64) ctx.GameContext {
 }
 
 func defaultGameContext() ctx.GameContext {
-	userContext := ctx.WithUserID(
-		ctx.WithSpan(
+	userContext := kernelctx.WithUserID(
+		kernelctx.WithSpan(
 			context.Background(),
 			noop.Span{},
 		),
@@ -304,12 +305,12 @@ func TestManager_PlayerCount(t *testing.T) {
 	assert.Equal(t, 0, playerConns.PlayerCount())
 
 	// Connect two players with different user IDs.
-	userCtx1 := ctx.WithUserID(
-		ctx.WithSpan(context.Background(), noop.Span{}),
+	userCtx1 := kernelctx.WithUserID(
+		kernelctx.WithSpan(context.Background(), noop.Span{}),
 		"user-1",
 	)
-	userCtx2 := ctx.WithUserID(
-		ctx.WithSpan(context.Background(), noop.Span{}),
+	userCtx2 := kernelctx.WithUserID(
+		kernelctx.WithSpan(context.Background(), noop.Span{}),
 		"user-2",
 	)
 

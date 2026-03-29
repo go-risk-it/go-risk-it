@@ -4,7 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/stretchr/testify/require"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
@@ -36,8 +37,8 @@ func TestWithBase_SpanFromBase(t *testing.T) {
 		"test setup: original and child spans must differ")
 
 	// Build a GameContext carrying the original span.
-	traceCtx := ctx.WithSpan(context.Background(), originalSpan)
-	userCtx := ctx.WithUserID(traceCtx, "test-user")
+	traceCtx := kernelctx.WithSpan(context.Background(), originalSpan)
+	userCtx := kernelctx.WithUserID(traceCtx, "test-user")
 	gameCtx := ctx.WithGameID(userCtx, 42)
 
 	// Verify precondition: GameContext initially has the original span.
@@ -71,8 +72,8 @@ func TestWithBase_PreservesNoopSpanFromBase(t *testing.T) {
 	t.Cleanup(func() { originalSpan.End() })
 
 	// Build a GameContext with a real span.
-	traceCtx := ctx.WithSpan(context.Background(), originalSpan)
-	userCtx := ctx.WithUserID(traceCtx, "test-user")
+	traceCtx := kernelctx.WithSpan(context.Background(), originalSpan)
+	userCtx := kernelctx.WithUserID(traceCtx, "test-user")
 	gameCtx := ctx.WithGameID(userCtx, 7)
 
 	// WithBase with a plain context (no span embedded) should yield a noop span.
@@ -88,8 +89,8 @@ func TestWithBase_PropagatesCancellation(t *testing.T) {
 
 	base, cancel := context.WithCancel(context.Background())
 
-	traceCtx := ctx.WithSpan(context.Background(), noop.Span{})
-	userCtx := ctx.WithUserID(traceCtx, "test-user")
+	traceCtx := kernelctx.WithSpan(context.Background(), noop.Span{})
+	userCtx := kernelctx.WithUserID(traceCtx, "test-user")
 	gameCtx := ctx.WithGameID(userCtx, 42)
 
 	rebased := gameCtx.WithBase(base)
@@ -104,8 +105,8 @@ func TestWithBase_PropagatesCancellation(t *testing.T) {
 func TestWithBase_PreservesDomainFields(t *testing.T) {
 	t.Parallel()
 
-	traceCtx := ctx.WithSpan(context.Background(), noop.Span{})
-	userCtx := ctx.WithUserID(traceCtx, "user-abc")
+	traceCtx := kernelctx.WithSpan(context.Background(), noop.Span{})
+	userCtx := kernelctx.WithUserID(traceCtx, "user-abc")
 	gameCtx := ctx.WithGameID(userCtx, 99)
 
 	rebased := gameCtx.WithBase(context.Background())

@@ -4,10 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/deploy"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/state"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/game/data/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/phase"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/region"
@@ -35,8 +36,8 @@ func input() (string, int64, int64, ctx.GameContext) {
 	regionReference := "greenland"
 	currentTroops := 0
 	desiredTroops := 5
-	userContext := ctx.WithUserID(
-		ctx.WithSpan(context.Background(), noop.Span{}),
+	userContext := kernelctx.WithUserID(
+		kernelctx.WithSpan(context.Background(), noop.Span{}),
 		userID,
 	)
 

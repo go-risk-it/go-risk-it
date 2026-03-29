@@ -9,8 +9,8 @@ import (
 	"time"
 
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	lobbyevt "github.com/go-risk-it/go-risk-it/internal/lobby/events"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 	"go.opentelemetry.io/otel"

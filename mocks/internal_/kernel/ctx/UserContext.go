@@ -5,6 +5,7 @@
 package ctx
 
 import (
+	"log/slog"
 	"time"
 
 	mock "github.com/stretchr/testify/mock"
@@ -177,6 +178,52 @@ func (_c *UserContext_Err_Call) Return(err error) *UserContext_Err_Call {
 }
 
 func (_c *UserContext_Err_Call) RunAndReturn(run func() error) *UserContext_Err_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SlogAttrs provides a mock function for the type UserContext
+func (_mock *UserContext) SlogAttrs() []slog.Attr {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for SlogAttrs")
+	}
+
+	var r0 []slog.Attr
+	if returnFunc, ok := ret.Get(0).(func() []slog.Attr); ok {
+		r0 = returnFunc()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]slog.Attr)
+		}
+	}
+	return r0
+}
+
+// UserContext_SlogAttrs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SlogAttrs'
+type UserContext_SlogAttrs_Call struct {
+	*mock.Call
+}
+
+// SlogAttrs is a helper method to define mock.On call
+func (_e *UserContext_Expecter) SlogAttrs() *UserContext_SlogAttrs_Call {
+	return &UserContext_SlogAttrs_Call{Call: _e.mock.On("SlogAttrs")}
+}
+
+func (_c *UserContext_SlogAttrs_Call) Run(run func()) *UserContext_SlogAttrs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *UserContext_SlogAttrs_Call) Return(attrs []slog.Attr) *UserContext_SlogAttrs_Call {
+	_c.Call.Return(attrs)
+	return _c
+}
+
+func (_c *UserContext_SlogAttrs_Call) RunAndReturn(run func() []slog.Attr) *UserContext_SlogAttrs_Call {
 	_c.Call.Return(run)
 	return _c
 }

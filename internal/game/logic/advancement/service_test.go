@@ -5,11 +5,12 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/advancement"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/state"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
 	mockdb "github.com/go-risk-it/go-risk-it/mocks/internal_/game/data/db"
 	mockvalidation "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/move/orchestration/validation"
@@ -58,8 +59,8 @@ func gameContext() ctx.GameContext {
 	userID := "Giovanni"
 	gameID := int64(1)
 
-	userContext := ctx.WithUserID(
-		ctx.WithSpan(context.Background(), noop.Span{}),
+	userContext := kernelctx.WithUserID(
+		kernelctx.WithSpan(context.Background(), noop.Span{}),
 		userID,
 	)
 

@@ -6,7 +6,8 @@ import (
 	"testing"
 
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/data/sqlc"
 	lobbyevt "github.com/go-risk-it/go-risk-it/internal/lobby/events"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/logic/management"
@@ -30,15 +31,15 @@ func setup(t *testing.T) (
 	return querier, bus, service
 }
 
-func userContext() ctx.UserContext {
+func userContext() kernelctx.UserContext {
 	userID := "giovanni"
 
-	traceCtx := ctx.WithSpan(
+	traceCtx := kernelctx.WithSpan(
 		context.Background(),
 		noop.Span{},
 	)
 
-	return ctx.WithUserID(traceCtx, userID)
+	return kernelctx.WithUserID(traceCtx, userID)
 }
 
 func lobbyContext() ctx.LobbyContext {
@@ -158,14 +159,14 @@ func TestServiceImpl_GetUserLobbiesWithQuerier_Failures(t *testing.T) {
 
 	type testCase struct {
 		name          string
-		setupMocks    func(*db.Querier, ctx.UserContext)
+		setupMocks    func(*db.Querier, kernelctx.UserContext)
 		expectedError string
 	}
 
 	tests := []testCase{
 		{
 			name: "When GetOwnedLobbies fails",
-			setupMocks: func(querier *db.Querier, uctx ctx.UserContext) {
+			setupMocks: func(querier *db.Querier, uctx kernelctx.UserContext) {
 				querier.
 					EXPECT().
 					GetOwnedLobbies(uctx, "giovanni").
@@ -175,7 +176,7 @@ func TestServiceImpl_GetUserLobbiesWithQuerier_Failures(t *testing.T) {
 		},
 		{
 			name: "When GetJoinedLobbies fails",
-			setupMocks: func(querier *db.Querier, uctx ctx.UserContext) {
+			setupMocks: func(querier *db.Querier, uctx kernelctx.UserContext) {
 				querier.
 					EXPECT().
 					GetOwnedLobbies(uctx, "giovanni").
@@ -189,7 +190,7 @@ func TestServiceImpl_GetUserLobbiesWithQuerier_Failures(t *testing.T) {
 		},
 		{
 			name: "When GetJoinableLobbies fails",
-			setupMocks: func(querier *db.Querier, uctx ctx.UserContext) {
+			setupMocks: func(querier *db.Querier, uctx kernelctx.UserContext) {
 				querier.
 					EXPECT().
 					GetOwnedLobbies(uctx, "giovanni").

@@ -37,6 +37,8 @@ linters:
         - empty
         - generic
         - github\.com/go-risk-it/go-risk-it/internal/kernel/ctx\..*
+        - github\.com/go-risk-it/go-risk-it/internal/game/ctx\..*
+        - github\.com/go-risk-it/go-risk-it/internal/lobby/ctx\..*
         - github\.com/go-risk-it/go-risk-it/internal/kernel/data.*\.Querier
         - github\.com/go-risk-it/go-risk-it/internal/data/.*/db\.Querier
         - github\.com/jackc/pgx/v5\..*

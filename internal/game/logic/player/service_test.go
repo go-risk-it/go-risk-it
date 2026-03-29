@@ -4,9 +4,10 @@ import (
 	"errors"
 	"testing"
 
+	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/player"
-	ctx2 "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/game/data/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/state"
 	"github.com/stretchr/testify/require"
@@ -30,8 +31,8 @@ func TestServiceImpl_CreatePlayers_WithValidData(t *testing.T) {
 
 	// Set up test data
 	gameID := int64(1)
-	ctx := ctx2.WithGameID(ctx2.WithUserID(
-		ctx2.WithSpan(
+	ctx := gamectx.WithGameID(kernelctx.WithUserID(
+		kernelctx.WithSpan(
 			t.Context(),
 			noop.Span{}),
 		"5a4fde41-4a68-4625-b42b-a9f5f938b394",
@@ -111,8 +112,8 @@ func TestServiceImpl_CreatePlayers_InsertPlayersError(t *testing.T) {
 
 	// Set up test data
 	gameID := int64(1)
-	ctx := ctx2.WithGameID(ctx2.WithUserID(
-		ctx2.WithSpan(
+	ctx := gamectx.WithGameID(kernelctx.WithUserID(
+		kernelctx.WithSpan(
 			t.Context(),
 			noop.Span{}),
 		"5a4fde41-4a68-4625-b42b-a9f5f938b394",
@@ -165,8 +166,8 @@ func TestServiceImpl_CreatePlayers_GetPlayersByGameError(t *testing.T) {
 
 	// Set up test data
 	gameID := int64(1)
-	ctx := ctx2.WithGameID(ctx2.WithUserID(
-		ctx2.WithSpan(
+	ctx := gamectx.WithGameID(kernelctx.WithUserID(
+		kernelctx.WithSpan(
 			t.Context(),
 			noop.Span{}),
 		"5a4fde41-4a68-4625-b42b-a9f5f938b394",

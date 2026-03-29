@@ -5,7 +5,7 @@
 // emitted when lobby membership changes or a player's WebSocket connects.
 //
 // [OnLobbyEvent] wraps [eventbus.OnEvent] with a context assertion, narrowing
-// the dispatched context to [ctx.LobbyContext] before invoking the handler.
+// the dispatched context to [LobbyContext] before invoking the handler.
 // This centralizes the assertion that all lobby bus consumers need.
 //
 // # Layer

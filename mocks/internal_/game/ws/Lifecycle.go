@@ -5,7 +5,7 @@
 package ws
 
 import (
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	mock "github.com/stretchr/testify/mock"
 )
 

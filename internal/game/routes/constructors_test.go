@@ -6,8 +6,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/routes"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 	"github.com/stretchr/testify/assert"
@@ -62,8 +63,8 @@ func TestGame_InvalidID_ReturnsValidationError(t *testing.T) {
 	t.Parallel()
 
 	spanCtx := newTracedContext(t)
-	traceCtx := ctx.WithSpan(spanCtx, noop.Span{})
-	userCtx := ctx.WithUserID(traceCtx, "user-123")
+	traceCtx := kernelctx.WithSpan(spanCtx, noop.Span{})
+	userCtx := kernelctx.WithUserID(traceCtx, "user-123")
 
 	gameRoute := routes.Game(
 		"POST /api/v1/games/{id}/moves",
@@ -115,8 +116,8 @@ func TestGame_HandlerError_MapsToHTTPResponse(t *testing.T) {
 	t.Parallel()
 
 	spanCtx := newTracedContext(t)
-	traceCtx := ctx.WithSpan(spanCtx, noop.Span{})
-	userCtx := ctx.WithUserID(traceCtx, "user-123")
+	traceCtx := kernelctx.WithSpan(spanCtx, noop.Span{})
+	userCtx := kernelctx.WithUserID(traceCtx, "user-123")
 
 	gameRoute := routes.Game(
 		"POST /api/v1/games/{id}/advancements",

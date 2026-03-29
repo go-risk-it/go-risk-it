@@ -5,7 +5,8 @@ import (
 	"testing"
 
 	"github.com/go-risk-it/go-risk-it/internal/kernel/bus"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	lobbyevt "github.com/go-risk-it/go-risk-it/internal/lobby/events"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
@@ -85,8 +86,8 @@ func TestOnLobbyEvent_LobbyContextPassed(t *testing.T) {
 	})
 
 	// Build a real LobbyContext.
-	traceCtx := ctx.WithSpan(context.Background(), noop.Span{})
-	userCtx := ctx.WithUserID(traceCtx, "user-42")
+	traceCtx := kernelctx.WithSpan(context.Background(), noop.Span{})
+	userCtx := kernelctx.WithUserID(traceCtx, "user-42")
 	lobbyCtx := ctx.WithLobbyID(userCtx, 99)
 
 	event := lobbyevt.NewLobbyStateChanged(99, "user-42")
@@ -112,8 +113,8 @@ func TestOnLobbyEvent_TypeMismatch_Skips(t *testing.T) {
 	})
 
 	// Dispatch with the correct LobbyContext but a different event type.
-	traceCtx := ctx.WithSpan(context.Background(), noop.Span{})
-	userCtx := ctx.WithUserID(traceCtx, "user-42")
+	traceCtx := kernelctx.WithSpan(context.Background(), noop.Span{})
+	userCtx := kernelctx.WithUserID(traceCtx, "user-42")
 	lobbyCtx := ctx.WithLobbyID(userCtx, 99)
 
 	wrongEvent := lobbyevt.NewLobbyPlayerConnected(99, "user-42")

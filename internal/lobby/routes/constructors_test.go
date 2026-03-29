@@ -6,7 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/routes"
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 	"github.com/stretchr/testify/assert"
@@ -56,8 +57,8 @@ func TestLobby_InvalidID_ReturnsValidationError(t *testing.T) {
 	t.Parallel()
 
 	spanCtx := newTracedContext(t)
-	traceCtx := ctx.WithSpan(spanCtx, noop.Span{})
-	userCtx := ctx.WithUserID(traceCtx, "user-123")
+	traceCtx := kernelctx.WithSpan(spanCtx, noop.Span{})
+	userCtx := kernelctx.WithUserID(traceCtx, "user-123")
 
 	lobbyRoute := routes.Lobby(
 		"POST /api/v1/lobbies/{id}/join",

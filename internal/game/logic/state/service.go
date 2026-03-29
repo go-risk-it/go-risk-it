@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/tracing"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 )
 
 type Game struct {
@@ -20,7 +21,7 @@ type Game struct {
 type Service interface {
 	GetGameState(ctx ctx.GameContext) (*Game, error)
 	GetGameStateWithQuerier(ctx ctx.GameContext, querier db.Querier) (*Game, error)
-	GetUserGames(ctx ctx.UserContext) ([]int64, error)
+	GetUserGames(ctx kernelctx.UserContext) ([]int64, error)
 }
 
 type service struct {
@@ -65,7 +66,7 @@ func (s *service) GetGameStateWithQuerier(ctx ctx.GameContext, querier db.Querie
 	}, nil
 }
 
-func (s *service) GetUserGames(ctx ctx.UserContext) ([]int64, error) {
+func (s *service) GetUserGames(ctx kernelctx.UserContext) ([]int64, error) {
 	slog.InfoContext(ctx, "getting user games")
 
 	userGames, err := s.querier.GetUserGames(ctx, ctx.UserID())

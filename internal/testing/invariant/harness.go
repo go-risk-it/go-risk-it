@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	gamedb "github.com/go-risk-it/go-risk-it/internal/game/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	game "github.com/go-risk-it/go-risk-it/internal/game/logic"
@@ -23,7 +24,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/player"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/state"
 	"github.com/go-risk-it/go-risk-it/internal/game/rand"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -170,8 +171,8 @@ func (h *Harness) GameCtx(
 	userID string,
 ) ctx.GameContext {
 	span := noop.Span{}
-	traceCtx := ctx.WithSpan(context.Background(), span)
-	userCtx := ctx.WithUserID(traceCtx, userID)
+	traceCtx := kernelctx.WithSpan(context.Background(), span)
+	userCtx := kernelctx.WithUserID(traceCtx, userID)
 
 	return ctx.WithGameID(userCtx, gameID)
 }
@@ -185,11 +186,11 @@ func (h *Harness) logCtx() context.Context {
 	return context.Background()
 }
 
-func (h *Harness) userCtx(userID string) ctx.UserContext {
+func (h *Harness) userCtx(userID string) kernelctx.UserContext {
 	span := noop.Span{}
-	traceCtx := ctx.WithSpan(context.Background(), span)
+	traceCtx := kernelctx.WithSpan(context.Background(), span)
 
-	return ctx.WithUserID(traceCtx, userID)
+	return kernelctx.WithUserID(traceCtx, userID)
 }
 
 func setupDatabase() (*pgxpool.Pool, error) {

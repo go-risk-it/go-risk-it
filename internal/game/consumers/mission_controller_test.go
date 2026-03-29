@@ -6,19 +6,20 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
 	"github.com/go-risk-it/go-risk-it/internal/game/consumers"
+	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/mission"
-	ctx2 "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	missionMock "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/mission"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
 
-func missionGameContext(t *testing.T) ctx2.GameContext {
+func missionGameContext(t *testing.T) gamectx.GameContext {
 	t.Helper()
 
-	return ctx2.WithGameID(
-		ctx2.WithUserID(
-			ctx2.WithSpan(t.Context(), noop.Span{}),
+	return gamectx.WithGameID(
+		kernelctx.WithUserID(
+			kernelctx.WithSpan(t.Context(), noop.Span{}),
 			"testuser",
 		),
 		42,

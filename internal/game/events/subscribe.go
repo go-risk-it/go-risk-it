@@ -4,8 +4,8 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 )
 
 // OnGameEvent registers a typed handler on the bus for game events of type E.

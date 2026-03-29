@@ -9,12 +9,13 @@ import (
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/consumers/converter"
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/game/events"
 	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/logic/config"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/snapshot"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 	"go.opentelemetry.io/otel"
@@ -248,7 +249,7 @@ func (p *GameStatePublisher) publishPrivateStates(gameCtx ctx.GameContext) {
 		}
 
 		playerCtx := ctx.WithGameID(
-			ctx.WithUserID(ctx.WithSpan(gameCtx, gameCtx.Span()), userID),
+			kernelctx.WithUserID(kernelctx.WithSpan(gameCtx, gameCtx.Span()), userID),
 			gameCtx.GameID(),
 		)
 

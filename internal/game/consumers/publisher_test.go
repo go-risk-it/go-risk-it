@@ -8,13 +8,14 @@ import (
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/consumers"
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/game/events"
 	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/logic/config"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/mission"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/snapshot"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	mockConsumers "github.com/go-risk-it/go-risk-it/mocks/internal_/game/consumers"
 	mockMission "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/mission"
 	mockLogging "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/move/orchestration/logging"
@@ -42,7 +43,7 @@ const (
 
 func testGameContext() ctx.GameContext {
 	return ctx.WithGameID(
-		ctx.WithUserID(ctx.WithSpan(context.Background(), noop.Span{}), testUserID),
+		kernelctx.WithUserID(kernelctx.WithSpan(context.Background(), noop.Span{}), testUserID),
 		testGameID,
 	)
 }

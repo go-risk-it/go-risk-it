@@ -6,12 +6,12 @@ import (
 	"math/rand/v2"
 	"testing"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/attack"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/cards"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/conquer"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/deploy"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 )
 
 // Generator produces valid moves for each game phase.

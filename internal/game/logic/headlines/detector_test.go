@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/game/events"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/board"
@@ -15,7 +16,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/attack"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/snapshot"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	mockboard "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/board"
 	mocksnapshot "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/snapshot"
 	"github.com/stretchr/testify/mock"
@@ -144,7 +145,7 @@ func eventsOfType[E eventbus.Event](bus *reentrantBus) []E {
 // gameCtx creates a GameContext for the given gameID with testAttacker as userID.
 func gameCtx(gameID int64) ctx.GameContext {
 	return ctx.WithGameID(
-		ctx.WithUserID(ctx.WithSpan(context.Background(), noop.Span{}), testAttacker),
+		kernelctx.WithUserID(kernelctx.WithSpan(context.Background(), noop.Span{}), testAttacker),
 		gameID,
 	)
 }

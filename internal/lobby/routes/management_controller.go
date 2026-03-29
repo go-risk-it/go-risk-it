@@ -3,9 +3,10 @@ package routes
 import (
 	"fmt"
 
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/api/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/api/rest/response"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/logic/management"
 )
@@ -29,7 +30,9 @@ func (c *ManagementController) JoinLobby(
 	return c.managementService.JoinLobby(ctx, request.ParticipantName)
 }
 
-func (c *ManagementController) GetUserLobbies(ctx ctx.UserContext) (response.Lobbies, error) {
+func (c *ManagementController) GetUserLobbies(
+	ctx kernelctx.UserContext,
+) (response.Lobbies, error) {
 	userLobbies, err := c.managementService.GetUserLobbies(ctx)
 	if err != nil {
 		return response.Lobbies{}, fmt.Errorf("failed to get available lobbies: %w", err)

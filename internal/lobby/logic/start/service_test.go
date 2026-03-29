@@ -5,7 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/logic/start"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/lobby/data/db"
@@ -26,11 +27,11 @@ func setup(t *testing.T) (*db.Querier, start.Service) {
 func lobbyContext() ctx.LobbyContext {
 	userID := "giovanni"
 
-	traceCtx := ctx.WithSpan(
+	traceCtx := kernelctx.WithSpan(
 		context.Background(),
 		noop.Span{},
 	)
-	userCtx := ctx.WithUserID(traceCtx, userID)
+	userCtx := kernelctx.WithUserID(traceCtx, userID)
 
 	return ctx.WithLobbyID(userCtx, int64(42))
 }

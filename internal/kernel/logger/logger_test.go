@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/game/events"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/headlines"
@@ -311,7 +312,7 @@ func TestRegister_LogsTraceIDFromLinkedSpan(
 	// Build a GameContext carrying the parent span so DetachOnto copies domain metadata.
 	traceCtx := ctx.WithSpan(parentCtx, parentSpan)
 	userCtx := ctx.WithUserID(traceCtx, "player1")
-	gameCtx := ctx.WithGameID(userCtx, 42)
+	gameCtx := gamectx.WithGameID(userCtx, 42)
 
 	// Create a ContextHandler-wrapped JSONHandler writing to a buffer.
 	// ContextHandler extracts domain fields (userID, gameID); trace context

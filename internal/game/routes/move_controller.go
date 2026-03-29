@@ -4,13 +4,13 @@ import (
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/api/rest/request"
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/attack"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/cards"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/conquer"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/deploy"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/orchestration"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/reinforce"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 )
 
 type MoveController struct {

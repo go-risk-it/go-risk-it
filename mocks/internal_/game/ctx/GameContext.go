@@ -6,9 +6,10 @@ package ctx
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	mock "github.com/stretchr/testify/mock"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -276,6 +277,52 @@ func (_c *GameContext_GameID_Call) Return(n int64) *GameContext_GameID_Call {
 }
 
 func (_c *GameContext_GameID_Call) RunAndReturn(run func() int64) *GameContext_GameID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SlogAttrs provides a mock function for the type GameContext
+func (_mock *GameContext) SlogAttrs() []slog.Attr {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for SlogAttrs")
+	}
+
+	var r0 []slog.Attr
+	if returnFunc, ok := ret.Get(0).(func() []slog.Attr); ok {
+		r0 = returnFunc()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]slog.Attr)
+		}
+	}
+	return r0
+}
+
+// GameContext_SlogAttrs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SlogAttrs'
+type GameContext_SlogAttrs_Call struct {
+	*mock.Call
+}
+
+// SlogAttrs is a helper method to define mock.On call
+func (_e *GameContext_Expecter) SlogAttrs() *GameContext_SlogAttrs_Call {
+	return &GameContext_SlogAttrs_Call{Call: _e.mock.On("SlogAttrs")}
+}
+
+func (_c *GameContext_SlogAttrs_Call) Run(run func()) *GameContext_SlogAttrs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *GameContext_SlogAttrs_Call) Return(attrs []slog.Attr) *GameContext_SlogAttrs_Call {
+	_c.Call.Return(attrs)
+	return _c
+}
+
+func (_c *GameContext_SlogAttrs_Call) RunAndReturn(run func() []slog.Attr) *GameContext_SlogAttrs_Call {
 	_c.Call.Return(run)
 	return _c
 }

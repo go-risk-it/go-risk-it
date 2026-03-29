@@ -7,9 +7,10 @@ import (
 	"testing"
 
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/api/messaging"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/consumers"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	lobbyevt "github.com/go-risk-it/go-risk-it/internal/lobby/events"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/logic/state"
 	mockConsumers "github.com/go-risk-it/go-risk-it/mocks/internal_/lobby/consumers"
@@ -34,7 +35,7 @@ const (
 
 func testLobbyContext() ctx.LobbyContext {
 	return ctx.WithLobbyID(
-		ctx.WithUserID(ctx.WithSpan(context.Background(), noop.Span{}), testUserID),
+		kernelctx.WithUserID(kernelctx.WithSpan(context.Background(), noop.Span{}), testUserID),
 		testLobbyID,
 	)
 }

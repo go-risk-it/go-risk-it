@@ -4,13 +4,14 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/creation"
 	gamemetrics "github.com/go-risk-it/go-risk-it/internal/game/logic/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/player"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/timing"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/game/data/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/card"
@@ -56,8 +57,8 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 		{UserID: "fc497971-de4d-49c2-842a-4af62ec9e858", Name: "Giovanni"},
 		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "Gabriele"},
 	}
-	context := ctx.WithUserID(
-		ctx.WithSpan(t.Context(), tracenoop.Span{}),
+	context := kernelctx.WithUserID(
+		kernelctx.WithSpan(t.Context(), tracenoop.Span{}),
 		"dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
 	)
 
@@ -167,8 +168,8 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 	)
 
 	// Set up test data
-	ctx := ctx.WithUserID(
-		ctx.WithSpan(t.Context(), tracenoop.Span{}),
+	ctx := kernelctx.WithUserID(
+		kernelctx.WithSpan(t.Context(), tracenoop.Span{}),
 		"dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
 	)
 	users := []player.Player{
@@ -215,8 +216,8 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 	)
 
 	// Set up test data
-	context := ctx.WithUserID(
-		ctx.WithSpan(t.Context(), tracenoop.Span{}),
+	context := kernelctx.WithUserID(
+		kernelctx.WithSpan(t.Context(), tracenoop.Span{}),
 		"dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
 	)
 	users := []player.Player{
@@ -260,8 +261,8 @@ func TestServiceImpl_CreateGameWithQuerier_NoEventEmitted(t *testing.T) {
 		{UserID: "fc497971-de4d-49c2-842a-4af62ec9e858", Name: "Giovanni"},
 		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "Gabriele"},
 	}
-	context := ctx.WithUserID(
-		ctx.WithSpan(t.Context(), tracenoop.Span{}),
+	context := kernelctx.WithUserID(
+		kernelctx.WithSpan(t.Context(), tracenoop.Span{}),
 		"dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
 	)
 
@@ -360,8 +361,8 @@ func TestServiceImpl_CreateGameWithQuerier_Error_NoEventEmitted(t *testing.T) {
 		timing.NewGameTiming(),
 	)
 
-	userCtx := ctx.WithUserID(
-		ctx.WithSpan(t.Context(), tracenoop.Span{}),
+	userCtx := kernelctx.WithUserID(
+		kernelctx.WithSpan(t.Context(), tracenoop.Span{}),
 		"dc2dabc6-ca5b-41af-8cb4-8eb768f13258",
 	)
 	users := []player.Player{

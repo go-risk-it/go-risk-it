@@ -7,8 +7,10 @@ import (
 	stdslog "log/slog"
 	"testing"
 
+	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	riskslog "github.com/go-risk-it/go-risk-it/internal/kernel/slog"
+	lobbyclx "github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	"github.com/stretchr/testify/require"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
@@ -124,7 +126,7 @@ func TestGameContext(t *testing.T) {
 	_, rwSpan := newTestSpan(t)
 	traceCtx := ctx.WithSpan(context.Background(), rwSpan)
 	userCtx := ctx.WithUserID(traceCtx, "user-456")
-	gameCtx := ctx.WithGameID(userCtx, 42)
+	gameCtx := gamectx.WithGameID(userCtx, 42)
 
 	logger.InfoContext(gameCtx, "game message")
 
@@ -146,7 +148,7 @@ func TestLobbyContext(t *testing.T) {
 	_, rwSpan := newTestSpan(t)
 	traceCtx := ctx.WithSpan(context.Background(), rwSpan)
 	userCtx := ctx.WithUserID(traceCtx, "user-789")
-	lobbyCtx := ctx.WithLobbyID(userCtx, 99)
+	lobbyCtx := lobbyclx.WithLobbyID(userCtx, 99)
 
 	logger.InfoContext(lobbyCtx, "lobby message")
 
