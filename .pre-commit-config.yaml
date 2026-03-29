@@ -29,6 +29,12 @@ repos:
         language: script
         pass_filenames: false
         always_run: true
+      - id: diagrams-freshness
+        name: architecture diagram freshness
+        entry: make diagrams-check
+        language: system
+        pass_filenames: false
+        files: '^internal/.*\.go$|^cmd/archdiagram/'
       - id: jsonnet-lint
         name: jsonnet lint
         entry: bash -c 'for f in "$@"; do jsonnet-lint -J grafana/lib "$f"; done'
