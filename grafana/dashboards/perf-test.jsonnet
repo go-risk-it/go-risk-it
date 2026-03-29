@@ -3,6 +3,7 @@
 // Regenerate: make dashboards
 local common = import 'common.libsonnet';
 local colors = import 'colors.libsonnet';
+local dashboard = import 'dashboard.libsonnet';
 local links = import 'links.libsonnet';
 local ooda = import 'ooda.libsonnet';
 local thresholds = import 'thresholds.libsonnet';
@@ -18,36 +19,19 @@ local activeGamesRightAxis = {
   ],
 };
 
-{
-  uid: 'perf-test',
-  title: 'Perf Test (Client-Side)',
-  description: 'Load test client metrics from the perf-test harness',
-  schemaVersion: 39,
-  version: 1,
-  timezone: 'browser',
-  editable: true,
-  graphTooltip: 1,
-  time: { from: 'now-15m', to: 'now' },
-  refresh: '5s',
-  templating: { list: [] },
-  tags: ['perf-test', 'risk-it', 'load-test'],
-
-  annotations: {
+dashboard.new(
+  uid='perf-test',
+  title='Perf Test (Client-Side)',
+  description='Load test client metrics from the perf-test harness',
+  tags=['perf-test', 'risk-it', 'load-test'],
+  refresh='5s',
+  graphTooltip=1,
+  annotations={
     list: [
-      {
-        builtIn: 1,
-        datasource: { type: 'grafana', uid: '-- Grafana --' },
-        enable: true,
-        hide: false,
-        iconColor: 'rgba(0, 211, 255, 1)',
-        name: 'Perf Test Phases',
-        type: 'dashboard',
-        target: { matchAny: true, tags: ['perf-test'], type: 'tags' },
-      },
+      dashboard.perfTestAnnotation,
     ],
   },
-
-  panels: [
+  panels=[
     // ── Observe — Am I OK? ───────────────────────────────────────────
     ooda.observeRow() + { gridPos: { h: 1, w: 24, x: 0, y: 0 } },
 
@@ -174,18 +158,10 @@ local activeGamesRightAxis = {
       ),
       unit='s',
       color=colors.fixedColor(colors.client),
-    ) + {
+    ) + common.withSloThreshold(thresholds.e2eP95) + {
       id: 5,
       description: 'End-to-end move latency percentiles measured by the client. SLO threshold overlay at 500ms. Normal: P95 < 500ms, P99 < 1s. Watch for: P95 crossing the threshold line (SLO breach). Check next: REST Latency by Action to identify which move type is slowest.',
       gridPos: { h: 8, w: 12, x: 12, y: 16 },
-      fieldConfig+: {
-        defaults+: {
-          thresholds: thresholds.e2eP95,
-          custom+: {
-            thresholdsStyle: { mode: 'line+area' },
-          },
-        },
-      },
     },
 
     // Panel 6: WS Delivery Latency P50/P95/P99 (SLO threshold overlay)
@@ -198,16 +174,12 @@ local activeGamesRightAxis = {
       ),
       unit='s',
       color=colors.fixedColor(colors.ws),
-    ) + {
+    ) + common.withSloThreshold(thresholds.wsDeliveryP95) + {
       id: 6,
       description: 'WebSocket state delivery latency percentiles. SLO threshold overlay at 200ms. Normal: P95 < 200ms. Watch for: P95 crossing the threshold line (WS delivery SLO breach). Check next: WebSocket dashboard for connection and broadcast details.',
       gridPos: { h: 8, w: 12, x: 0, y: 16 },
       fieldConfig+: {
         defaults+: {
-          thresholds: thresholds.wsDeliveryP95,
-          custom+: {
-            thresholdsStyle: { mode: 'line+area' },
-          },
           links: [links.toDashboard('WebSocket Detail', links.dashboardUids.websocket)],
         },
       },
@@ -383,4 +355,4 @@ local activeGamesRightAxis = {
       gridPos: { h: 8, w: 8, x: 16, y: 42 },
     },
   ],
-}
+)

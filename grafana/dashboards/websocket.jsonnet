@@ -3,23 +3,15 @@
 // Regenerate: make dashboards
 local common = import 'common.libsonnet';
 local colors = import 'colors.libsonnet';
+local dashboard = import 'dashboard.libsonnet';
 local links = import 'links.libsonnet';
 local ooda = import 'ooda.libsonnet';
 local thresholds = import 'thresholds.libsonnet';
 
-{
-  uid: 'websocket',
-  title: 'WebSocket',
-  schemaVersion: 39,
-  version: 1,
-  timezone: 'browser',
-  editable: true,
-  time: { from: 'now-15m', to: 'now' },
-  refresh: '10s',
-  templating: { list: [] },
-  annotations: { list: [] },
-
-  panels: [
+dashboard.new(
+  uid='websocket',
+  title='WebSocket',
+  panels=[
     // ── Observe — Am I OK? ──────────────────────────────────────────
     ooda.observeRow() + { gridPos: { h: 1, w: 24, x: 0, y: 0 } },
 
@@ -57,16 +49,12 @@ local thresholds = import 'thresholds.libsonnet';
       ),
       unit='s',
       color=colors.fixedColor(colors.ws),
-    ) + {
+    ) + common.withSloThreshold(thresholds.wsDeliveryP95) + {
       id: 3,
       description: 'Normal: p95 < 200ms (green SLO line). Watch for: p95 crossing 200ms or p99 diverging sharply from p95 (tail latency). Check next: fan-out panel below to distinguish slow writes from high connection counts.',
       gridPos: { h: 8, w: 12, x: 0, y: 10 },
       fieldConfig+: {
         defaults+: {
-          thresholds: thresholds.wsDeliveryP95,
-          custom+: {
-            thresholdsStyle: { mode: 'line+area' },
-          },
           links: [links.toDashboard('Command Center', links.dashboardUids.perfTestCommandCenter)],
         },
       },
@@ -138,27 +126,13 @@ local thresholds = import 'thresholds.libsonnet';
     },
 
     // Panel 6: WebSocket Broadcast Logs (Loki)
-    {
+    common.logPanel(
+      title='WebSocket Broadcast Logs',
+      expr='{service_name="risk-it"} |= "broadcast" or |= "websocket" or |= "ws"',
+    ) + {
       id: 6,
-      title: 'WebSocket Broadcast Logs',
       description: 'Normal: Broadcast operations. Watch for: Error-level entries, panic recoveries.',
-      type: 'logs',
-      datasource: { type: 'loki', uid: 'loki' },
-      targets: [{
-        refId: 'A',
-        expr: '{service_name="risk-it"} |= "broadcast" or |= "websocket" or |= "ws"',
-      }],
       gridPos: { h: 8, w: 12, x: 12, y: 28 },
-      options: {
-        showTime: true,
-        showLabels: false,
-        showCommonLabels: false,
-        wrapLogMessage: true,
-        prettifyLogMessage: false,
-        enableLogDetails: true,
-        sortOrder: 'Descending',
-        dedupStrategy: 'none',
-      },
     },
   ],
-}
+)

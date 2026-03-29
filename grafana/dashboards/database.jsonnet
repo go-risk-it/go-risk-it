@@ -3,25 +3,17 @@
 // Regenerate: make dashboards
 local common = import 'common.libsonnet';
 local colors = import 'colors.libsonnet';
+local dashboard = import 'dashboard.libsonnet';
 local links = import 'links.libsonnet';
 local thresholds = import 'thresholds.libsonnet';
 local ooda = import 'ooda.libsonnet';
 
-{
-  uid: 'database',
-  title: 'Database',
-  description: 'Database connection pool and query metrics',
-  schemaVersion: 39,
-  version: 1,
-  tags: ['database', 'risk-it', 'pool'],
-  timezone: 'browser',
-  editable: true,
-  time: { from: 'now-15m', to: 'now' },
-  refresh: '10s',
-  templating: { list: [] },
-  annotations: { list: [] },
-
-  panels: [
+dashboard.new(
+  uid='database',
+  title='Database',
+  description='Database connection pool and query metrics',
+  tags=['database', 'risk-it', 'pool'],
+  panels=[
     // ── Observe — Am I OK? ─────────────────────────────────────────────
     ooda.observeRow() + { gridPos: { h: 1, w: 24, x: 0, y: 0 } },
 
@@ -95,16 +87,12 @@ local ooda = import 'ooda.libsonnet';
       ),
       unit='s',
       color=colors.fixedColor(colors.db),
-    ) + {
+    ) + common.withSloThreshold(thresholds.dbTxnP95) + {
       id: 4,
       description: 'Normal: p95 < 50ms (green SLO line). Watch for: p95 crossing 50ms or p99 > 100ms (red) — likely lock contention or complex queries. Check next: server-golden-signals HTTP latency to see if DB slowness is the dominant contributor.',
       gridPos: { h: 8, w: 12, x: 0, y: 10 },
       fieldConfig+: {
         defaults+: {
-          thresholds: thresholds.dbTxnP95,
-          custom+: {
-            thresholdsStyle: { mode: 'line+area' },
-          },
           links: [links.toDashboard('Server Golden Signals', links.dashboardUids.serverGoldenSignals)],
         },
       },
@@ -162,18 +150,10 @@ local ooda = import 'ooda.libsonnet';
       ],
       unit='s',
       color=colors.fixedColor(colors.db),
-    ) + {
+    ) + common.withSloThreshold(thresholds.dbAcquireTime) + {
       id: 6,
       description: 'Normal: < 10ms (green SLO line). Watch for: spikes above 100ms (red) mean requests are waiting for connections — pool is undersized or transactions are held too long. Check next: pool saturation panel for empty acquire correlation.',
       gridPos: { h: 8, w: 8, x: 0, y: 19 },
-      fieldConfig+: {
-        defaults+: {
-          thresholds: thresholds.dbAcquireTime,
-          custom+: {
-            thresholdsStyle: { mode: 'line+area' },
-          },
-        },
-      },
     },
 
     // Panel 7: Pool Saturation (timeseries, right-axis override for utilization %)
@@ -331,4 +311,4 @@ local ooda = import 'ooda.libsonnet';
       gridPos: { h: 8, w: 12, x: 12, y: 36 },
     },
   ],
-}
+)

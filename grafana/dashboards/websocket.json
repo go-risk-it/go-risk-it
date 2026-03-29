@@ -418,7 +418,7 @@
             "options": {
                 "dedupStrategy": "none",
                 "enableLogDetails": true,
-                "prettifyLogMessage": false,
+                "prettifyLogMessage": true,
                 "showCommonLabels": false,
                 "showLabels": false,
                 "showTime": true,
@@ -437,6 +437,7 @@
     ],
     "refresh": "10s",
     "schemaVersion": 39,
+    "tags": [],
     "templating": {
         "list": []
     },

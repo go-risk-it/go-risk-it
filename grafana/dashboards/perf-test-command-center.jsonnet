@@ -3,24 +3,19 @@
 // Regenerate: make dashboards
 local common = import 'common.libsonnet';
 local colors = import 'colors.libsonnet';
+local dashboard = import 'dashboard.libsonnet';
 local links = import 'links.libsonnet';
 local thresholds = import 'thresholds.libsonnet';
 local ooda = import 'ooda.libsonnet';
 
-{
-  uid: 'perf-test-command-center',
-  title: 'Perf Test Command Center',
-  description: 'Unified perf test dashboard: SLO status, latency attribution, saturation, leak detection, and test status',
-  schemaVersion: 39,
-  version: 1,
-  timezone: 'browser',
-  editable: true,
-  graphTooltip: 1,
-  tags: ['perf-test', 'command-center', 'risk-it'],
-  time: { from: 'now-15m', to: 'now' },
-  refresh: '5s',
-
-  templating: {
+dashboard.new(
+  uid='perf-test-command-center',
+  title='Perf Test Command Center',
+  description='Unified perf test dashboard: SLO status, latency attribution, saturation, leak detection, and test status',
+  tags=['perf-test', 'command-center', 'risk-it'],
+  refresh='5s',
+  graphTooltip=1,
+  templating={
     list: [
       {
         name: 'players_per_game',
@@ -38,23 +33,12 @@ local ooda = import 'ooda.libsonnet';
       },
     ],
   },
-
-  annotations: {
+  annotations={
     list: [
-      {
-        builtIn: 1,
-        datasource: { type: 'grafana', uid: '-- Grafana --' },
-        enable: true,
-        hide: false,
-        iconColor: 'rgba(0, 211, 255, 1)',
-        name: 'Perf Test Phases',
-        type: 'dashboard',
-        target: { matchAny: true, tags: ['perf-test'], type: 'tags' },
-      },
+      dashboard.perfTestAnnotation,
     ],
   },
-
-  panels: [
+  panels=[
     // ── Row 100: Observe — Am I OK? ────────────────────────────────
     // SLO stat tiles (y=1) + Test Status panels (y=5)
     ooda.observeRow() + { gridPos: { h: 1, w: 24, x: 0, y: 0 } },
@@ -241,74 +225,9 @@ local ooda = import 'ooda.libsonnet';
     // Panel 10: Latency Attribution (p95)
     common.timeseriesPanel(
       title='Latency Attribution (p95)',
-      targets=[
-        {
-          refId: 'A',
-          expr: 'histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
-          legendFormat: 'HTTP Total',
-          exemplar: true,
-        },
-        {
-          refId: 'B',
-          expr: 'histogram_quantile(0.95, sum(rate(db_transaction_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
-          legendFormat: 'DB Transaction',
-          exemplar: true,
-        },
-        {
-          refId: 'C',
-          expr: 'histogram_quantile(0.95, sum(rate(game_phase_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
-          legendFormat: 'Game Logic',
-          exemplar: true,
-        },
-        {
-          refId: 'D',
-          expr: 'histogram_quantile(0.95, sum(rate(ws_broadcast_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
-          legendFormat: 'WS Broadcast',
-          exemplar: true,
-        },
-        {
-          refId: 'E',
-          expr: 'histogram_quantile(0.95, sum(rate(event_handler_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
-          legendFormat: 'Event Handler (post-response)',
-          exemplar: true,
-        },
-      ],
+      targets=common.lifecycleTargets,
       unit='s',
-      overrides=[
-        {
-          matcher: { id: 'byName', options: 'HTTP Total' },
-          properties: [
-            { id: 'color', value: { mode: 'fixed', fixedColor: colors.http } },
-            { id: 'custom.lineWidth', value: 3 },
-          ],
-        },
-        {
-          matcher: { id: 'byName', options: 'DB Transaction' },
-          properties: [
-            { id: 'color', value: { mode: 'fixed', fixedColor: colors.db } },
-          ],
-        },
-        {
-          matcher: { id: 'byName', options: 'Game Logic' },
-          properties: [
-            { id: 'color', value: { mode: 'fixed', fixedColor: colors.gameLogic } },
-          ],
-        },
-        {
-          matcher: { id: 'byName', options: 'WS Broadcast' },
-          properties: [
-            { id: 'color', value: { mode: 'fixed', fixedColor: colors.ws } },
-          ],
-        },
-        {
-          matcher: { id: 'byName', options: 'Event Handler (post-response)' },
-          properties: [
-            { id: 'color', value: { mode: 'fixed', fixedColor: colors.eventBus } },
-            { id: 'custom.lineStyle', value: { fill: 'dash', dash: [10, 10] } },
-            { id: 'custom.fillOpacity', value: 0 },
-          ],
-        },
-      ],
+      overrides=common.lifecycleOverrides,
     ) + {
       id: 10,
       description: 'P95 latency for each server boundary overlaid: HTTP total, DB transaction, game logic, WS broadcast, event handler (dashed, async post-response). Normal: DB + game logic + WS sum to roughly HTTP total; event handler runs independently after response. Watch for: one boundary dominating (e.g. DB > 70% of HTTP) or event handler exceeding HTTP total. Check next: Database dashboard if DB dominates, WebSocket dashboard if WS dominates, Request Lifecycle for event handler breakdown.',
@@ -593,4 +512,4 @@ local ooda = import 'ooda.libsonnet';
       },
     },
   ],
-}
+)

@@ -3,6 +3,7 @@
 // Regenerate: make dashboards
 local common = import 'common.libsonnet';
 local colors = import 'colors.libsonnet';
+local dashboard = import 'dashboard.libsonnet';
 local links = import 'links.libsonnet';
 local thresholds = import 'thresholds.libsonnet';
 local ooda = import 'ooda.libsonnet';
@@ -21,39 +22,21 @@ local gameIdVar = {
   current: { value: '' },
 };
 
-{
-  uid: 'request-lifecycle',
-  title: 'Request Lifecycle',
-  description: 'Full request lifecycle: HTTP ingress through game logic, DB transaction, WS broadcast, and async event handling',
-  schemaVersion: 39,
-  version: 1,
-  timezone: 'browser',
-  editable: true,
-  graphTooltip: 1,
-  tags: ['risk-it', 'lifecycle'],
-  time: { from: 'now-15m', to: 'now' },
-  refresh: '10s',
-
-  templating: {
+dashboard.new(
+  uid='request-lifecycle',
+  title='Request Lifecycle',
+  description='Full request lifecycle: HTTP ingress through game logic, DB transaction, WS broadcast, and async event handling',
+  tags=['risk-it', 'lifecycle'],
+  graphTooltip=1,
+  templating={
     list: [traceIdVar, gameIdVar],
   },
-
-  annotations: {
+  annotations={
     list: [
-      {
-        builtIn: 1,
-        datasource: { type: 'grafana', uid: '-- Grafana --' },
-        enable: true,
-        hide: false,
-        iconColor: 'rgba(0, 211, 255, 1)',
-        name: 'Perf Test Phases',
-        type: 'dashboard',
-        target: { matchAny: true, tags: ['perf-test'], type: 'tags' },
-      },
+      dashboard.perfTestAnnotation,
     ],
   },
-
-  panels: [
+  panels=[
     // ── Observe — Am I OK? ──────────────────────────────────────────
     ooda.observeRow() + { gridPos: { h: 1, w: 24, x: 0, y: 0 } },
 
@@ -62,74 +45,9 @@ local gameIdVar = {
     // Event Handler (dashed, post-response async work).
     common.timeseriesPanel(
       title='Full Lifecycle Timing (p95)',
-      targets=[
-        {
-          refId: 'A',
-          expr: 'histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
-          legendFormat: 'HTTP Total',
-          exemplar: true,
-        },
-        {
-          refId: 'B',
-          expr: 'histogram_quantile(0.95, sum(rate(db_transaction_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
-          legendFormat: 'DB Transaction',
-          exemplar: true,
-        },
-        {
-          refId: 'C',
-          expr: 'histogram_quantile(0.95, sum(rate(game_phase_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
-          legendFormat: 'Game Logic',
-          exemplar: true,
-        },
-        {
-          refId: 'D',
-          expr: 'histogram_quantile(0.95, sum(rate(ws_broadcast_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
-          legendFormat: 'WS Broadcast',
-          exemplar: true,
-        },
-        {
-          refId: 'E',
-          expr: 'histogram_quantile(0.95, sum(rate(event_handler_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
-          legendFormat: 'Event Handler (post-response)',
-          exemplar: true,
-        },
-      ],
+      targets=common.lifecycleTargets,
       unit='s',
-      overrides=[
-        {
-          matcher: { id: 'byName', options: 'HTTP Total' },
-          properties: [
-            { id: 'color', value: colors.fixedColor(colors.http) },
-            { id: 'custom.lineWidth', value: 3 },
-          ],
-        },
-        {
-          matcher: { id: 'byName', options: 'DB Transaction' },
-          properties: [
-            { id: 'color', value: colors.fixedColor(colors.db) },
-          ],
-        },
-        {
-          matcher: { id: 'byName', options: 'Game Logic' },
-          properties: [
-            { id: 'color', value: colors.fixedColor(colors.gameLogic) },
-          ],
-        },
-        {
-          matcher: { id: 'byName', options: 'WS Broadcast' },
-          properties: [
-            { id: 'color', value: colors.fixedColor(colors.ws) },
-          ],
-        },
-        {
-          matcher: { id: 'byName', options: 'Event Handler (post-response)' },
-          properties: [
-            { id: 'color', value: colors.fixedColor(colors.eventBus) },
-            { id: 'custom.lineStyle', value: { fill: 'dash', dash: [10, 10] } },
-            { id: 'custom.fillOpacity', value: 0 },
-          ],
-        },
-      ],
+      overrides=common.lifecycleOverrides,
     ) + {
       id: 1,
       description: 'P95 latency for each boundary in the request lifecycle overlaid. HTTP Total is the synchronous request; Event Handler is async post-response work (dashed). Normal: DB + Game Logic + WS sum to roughly HTTP Total; Event Handler runs independently after response. Watch for: Event Handler exceeding HTTP Total (async work slower than the request itself). Check next: Event Handler Latency panel for per-consumer breakdown.',
@@ -405,27 +323,15 @@ local gameIdVar = {
     },
 
     // Panel 10: Correlated Logs (Loki entries matching selected trace)
-    {
+    common.logPanel(
+      title='Correlated Logs',
+      expr='{service_name="risk-it"} | trace_id=`${traceId}`',
+      showLabels=true,
+      sortOrder='Ascending',
+    ) + {
       id: 10,
-      title: 'Correlated Logs',
       description: 'Log entries matching the selected trace, color-coded by level. Watch for: Error-level entries (red). Timestamps correlate with waterfall spans above.',
-      type: 'logs',
-      datasource: { type: 'loki', uid: 'loki' },
-      targets: [{
-        refId: 'A',
-        expr: '{service_name="risk-it"} | trace_id=`${traceId}`',
-      }],
       gridPos: { h: 14, w: 24, x: 0, y: 78 },
-      options: {
-        showTime: true,
-        showLabels: true,
-        showCommonLabels: false,
-        wrapLogMessage: true,
-        prettifyLogMessage: true,
-        enableLogDetails: true,
-        sortOrder: 'Ascending',
-        dedupStrategy: 'none',
-      },
     },
   ],
-}
+)

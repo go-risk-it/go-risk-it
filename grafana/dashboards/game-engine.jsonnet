@@ -3,23 +3,15 @@
 // Regenerate: make dashboards
 local common = import 'common.libsonnet';
 local colors = import 'colors.libsonnet';
+local dashboard = import 'dashboard.libsonnet';
 local links = import 'links.libsonnet';
 local thresholds = import 'thresholds.libsonnet';
 local ooda = import 'ooda.libsonnet';
 
-{
-  uid: 'game-engine',
-  title: 'Game Engine',
-  schemaVersion: 39,
-  version: 1,
-  timezone: 'browser',
-  editable: true,
-  time: { from: 'now-15m', to: 'now' },
-  refresh: '10s',
-  templating: { list: [] },
-  annotations: { list: [] },
-
-  panels: [
+dashboard.new(
+  uid='game-engine',
+  title='Game Engine',
+  panels=[
     // ── Observe — Am I OK? ──────────────────────────────────────────
     ooda.observeRow() + { gridPos: { h: 1, w: 24, x: 0, y: 0 } },
 
@@ -180,27 +172,13 @@ local ooda = import 'ooda.libsonnet';
     ooda.actRow() + { gridPos: { h: 1, w: 24, x: 0, y: 35 } },
 
     // Panel 9: Game Event Logs (Loki)
-    {
+    common.logPanel(
+      title='Game Event Logs',
+      expr='{service_name="risk-it"} |= "game"',
+    ) + {
       id: 9,
-      title: 'Game Event Logs',
       description: 'Normal: Game creation, move execution, phase transitions. Watch for: Error-level entries, panic recoveries.',
-      type: 'logs',
-      datasource: { type: 'loki', uid: 'loki' },
-      targets: [{
-        refId: 'A',
-        expr: '{service_name="risk-it"} |= "game"',
-      }],
       gridPos: { h: 8, w: 12, x: 0, y: 36 },
-      options: {
-        showTime: true,
-        showLabels: false,
-        showCommonLabels: false,
-        wrapLogMessage: true,
-        prettifyLogMessage: false,
-        enableLogDetails: true,
-        sortOrder: 'Descending',
-        dedupStrategy: 'none',
-      },
     },
 
     // Panel 6: Total Moves by Phase (bar gauge, palette-classic)
@@ -219,4 +197,4 @@ local ooda = import 'ooda.libsonnet';
       gridPos: { h: 8, w: 12, x: 12, y: 44 },
     },
   ],
-}
+)

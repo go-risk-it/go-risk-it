@@ -263,4 +263,119 @@
       type: 'row',
       collapsed: false,
     },
+
+  // SLO threshold overlay for timeseries panels.
+  // Returns a merge object that adds threshold lines + shaded area.
+  // Usage: panel + common.withSloThreshold(thresholds.e2eP95)
+  withSloThreshold(threshold):: {
+    fieldConfig+: {
+      defaults+: {
+        thresholds: threshold,
+        custom+: {
+          thresholdsStyle: { mode: 'line+area' },
+        },
+      },
+    },
+  },
+
+  // Build a log panel with Loki datasource.
+  // title: string, expr: string (LogQL query),
+  // showLabels: bool (default false), sortOrder: string (default 'Descending'),
+  // prettifyLogMessage: bool (default true)
+  logPanel(title, expr, showLabels=false, sortOrder='Descending', prettifyLogMessage=true)::
+    {
+      title: title,
+      type: 'logs',
+      datasource: { type: 'loki', uid: 'loki' },
+      targets: [{
+        refId: 'A',
+        expr: expr,
+      }],
+      options: {
+        showTime: true,
+        showLabels: showLabels,
+        showCommonLabels: false,
+        wrapLogMessage: true,
+        prettifyLogMessage: prettifyLogMessage,
+        enableLogDetails: true,
+        sortOrder: sortOrder,
+        dedupStrategy: 'none',
+      },
+    },
+
+  // Standard lifecycle latency targets (p95) for the 5 server boundaries.
+  // Used by: perf-test-command-center (Latency Attribution) and
+  // request-lifecycle (Full Lifecycle Timing).
+  lifecycleTargets:: [
+    {
+      refId: 'A',
+      expr: 'histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
+      legendFormat: 'HTTP Total',
+      exemplar: true,
+    },
+    {
+      refId: 'B',
+      expr: 'histogram_quantile(0.95, sum(rate(db_transaction_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
+      legendFormat: 'DB Transaction',
+      exemplar: true,
+    },
+    {
+      refId: 'C',
+      expr: 'histogram_quantile(0.95, sum(rate(game_phase_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
+      legendFormat: 'Game Logic',
+      exemplar: true,
+    },
+    {
+      refId: 'D',
+      expr: 'histogram_quantile(0.95, sum(rate(ws_broadcast_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
+      legendFormat: 'WS Broadcast',
+      exemplar: true,
+    },
+    {
+      refId: 'E',
+      expr: 'histogram_quantile(0.95, sum(rate(event_handler_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
+      legendFormat: 'Event Handler (post-response)',
+      exemplar: true,
+    },
+  ],
+
+  // Standard lifecycle color/style overrides for the 5 server boundaries.
+  // HTTP Total: amber, bold line. DB: blue. Game Logic: green.
+  // WS Broadcast: purple. Event Handler: teal, dashed, no fill (async).
+  local colors = import 'colors.libsonnet',
+  lifecycleOverrides:: [
+    {
+      matcher: { id: 'byName', options: 'HTTP Total' },
+      properties: [
+        { id: 'color', value: colors.fixedColor(colors.http) },
+        { id: 'custom.lineWidth', value: 3 },
+      ],
+    },
+    {
+      matcher: { id: 'byName', options: 'DB Transaction' },
+      properties: [
+        { id: 'color', value: colors.fixedColor(colors.db) },
+      ],
+    },
+    {
+      matcher: { id: 'byName', options: 'Game Logic' },
+      properties: [
+        { id: 'color', value: colors.fixedColor(colors.gameLogic) },
+      ],
+    },
+    {
+      matcher: { id: 'byName', options: 'WS Broadcast' },
+      properties: [
+        { id: 'color', value: colors.fixedColor(colors.ws) },
+      ],
+    },
+    {
+      matcher: { id: 'byName', options: 'Event Handler (post-response)' },
+      properties: [
+        { id: 'color', value: colors.fixedColor(colors.eventBus) },
+        { id: 'custom.lineStyle', value: { fill: 'dash', dash: [10, 10] } },
+        { id: 'custom.fillOpacity', value: 0 },
+      ],
+    },
+  ],
 }

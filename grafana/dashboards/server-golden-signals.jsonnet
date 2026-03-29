@@ -3,25 +3,17 @@
 // Regenerate: make dashboards
 local common = import 'common.libsonnet';
 local colors = import 'colors.libsonnet';
+local dashboard = import 'dashboard.libsonnet';
 local links = import 'links.libsonnet';
 local thresholds = import 'thresholds.libsonnet';
 local ooda = import 'ooda.libsonnet';
 
-{
-  uid: 'server-golden-signals',
-  title: 'Server Golden Signals',
-  description: 'Golden signals for the risk-it Go backend service',
-  schemaVersion: 39,
-  version: 1,
-  timezone: 'browser',
-  editable: true,
-  time: { from: 'now-15m', to: 'now' },
-  refresh: '10s',
-  tags: ['go', 'otel', 'golden-signals'],
-  templating: { list: [] },
-  annotations: { list: [] },
-
-  panels: [
+dashboard.new(
+  uid='server-golden-signals',
+  title='Server Golden Signals',
+  description='Golden signals for the risk-it Go backend service',
+  tags=['go', 'otel', 'golden-signals'],
+  panels=[
     // ── Observe — Am I OK? ──────────────────────────────────────────
     ooda.observeRow() + { gridPos: { h: 1, w: 24, x: 0, y: 0 } },
 
@@ -60,17 +52,15 @@ local ooda = import 'ooda.libsonnet';
       ],
       unit='percent',
       color=colors.fixedColor(colors.errors),
-    ) + {
+    ) + common.withSloThreshold(thresholds.httpError) + {
       id: 9,
       description: 'Normal: < 1% error rate (green). Watch for: sustained > 5% (red) indicates systemic failures — distinguish 4xx (client validation) from 5xx (server bugs). Check next: database for connection/transaction errors if 5xx-heavy.',
       gridPos: { h: 8, w: 12, x: 12, y: 1 },
       fieldConfig+: {
         defaults+: {
           min: 0,
-          thresholds: thresholds.httpError,
           custom+: {
             fillOpacity: 15,
-            thresholdsStyle: { mode: 'line+area' },
           },
           links: [links.toDashboard('Game Engine', links.dashboardUids.gameEngine)],
         },
@@ -89,16 +79,12 @@ local ooda = import 'ooda.libsonnet';
       ),
       unit='s',
       color=colors.fixedColor(colors.http),
-    ) + {
+    ) + common.withSloThreshold(thresholds.e2eP95) + {
       id: 3,
       description: 'Normal: p95 < 500ms (green SLO line). Watch for: p95 crossing 500ms or p99 > 1s (red) — latency is user-visible at this point. Check next: database transaction duration to determine if DB is the latency bottleneck.',
       gridPos: { h: 8, w: 12, x: 0, y: 10 },
       fieldConfig+: {
         defaults+: {
-          thresholds: thresholds.e2eP95,
-          custom+: {
-            thresholdsStyle: { mode: 'line+area' },
-          },
           links: [links.toDashboard('Database', links.dashboardUids.database)],
         },
       },
@@ -252,4 +238,4 @@ local ooda = import 'ooda.libsonnet';
       gridPos: { h: 8, w: 12, x: 12, y: 36 },
     },
   ],
-}
+)
