@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/events"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/events/game"
+	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/headlines"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack"
@@ -36,35 +36,35 @@ const (
 var fixedTime = time.Date(2026, 3, 27, 14, 0, 0, 0, time.UTC)
 
 // reentrantBus is a synchronous Bus implementation that supports re-entrant Emit
-// calls. Unlike events.TestBus, it does NOT hold a lock during handler dispatch,
+// calls. Unlike eventbus.TestBus, it does NOT hold a lock during handler dispatch,
 // so handlers can safely call Emit on the same bus. This is needed because the
 // headline detector emits derived events from within a handler.
 type reentrantBus struct {
 	mu     sync.Mutex
-	events []events.Event
-	allH   []events.Handler
-	typedH map[string][]events.Handler
+	events []eventbus.Event
+	allH   []eventbus.Handler
+	typedH map[string][]eventbus.Handler
 }
 
-var _ events.Bus = (*reentrantBus)(nil)
+var _ eventbus.Bus = (*reentrantBus)(nil)
 
 func newReentrantBus() *reentrantBus {
 	return &reentrantBus{
-		typedH: make(map[string][]events.Handler),
+		typedH: make(map[string][]eventbus.Handler),
 	}
 }
 
-func (b *reentrantBus) Emit(ctx context.Context, event events.Event) {
+func (b *reentrantBus) Emit(ctx context.Context, event eventbus.Event) {
 	if event == nil {
 		panic("events: Emit called with nil event")
 	}
 
 	// Snapshot handlers under lock, then dispatch without lock held.
 	b.mu.Lock()
-	allHandlers := make([]events.Handler, len(b.allH))
+	allHandlers := make([]eventbus.Handler, len(b.allH))
 	copy(allHandlers, b.allH)
 
-	typedHandlers := make([]events.Handler, len(b.typedH[event.EventType()]))
+	typedHandlers := make([]eventbus.Handler, len(b.typedH[event.EventType()]))
 	copy(typedHandlers, b.typedH[event.EventType()])
 	b.mu.Unlock()
 
@@ -81,7 +81,7 @@ func (b *reentrantBus) Emit(ctx context.Context, event events.Event) {
 	b.mu.Unlock()
 }
 
-func (b *reentrantBus) OnAll(handler events.Handler) {
+func (b *reentrantBus) OnAll(handler eventbus.Handler) {
 	if handler == nil {
 		panic("events: OnAll called with nil handler")
 	}
@@ -92,7 +92,7 @@ func (b *reentrantBus) OnAll(handler events.Handler) {
 	b.allH = append(b.allH, handler)
 }
 
-func (b *reentrantBus) OnType(eventType string, handler events.Handler) {
+func (b *reentrantBus) OnType(eventType string, handler eventbus.Handler) {
 	if eventType == "" {
 		panic("events: OnType called with empty eventType")
 	}
@@ -109,11 +109,11 @@ func (b *reentrantBus) OnType(eventType string, handler events.Handler) {
 
 func (b *reentrantBus) Close(_ context.Context) error { return nil }
 
-func (b *reentrantBus) allEvents() []events.Event {
+func (b *reentrantBus) allEvents() []eventbus.Event {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	result := make([]events.Event, len(b.events))
+	result := make([]eventbus.Event, len(b.events))
 	copy(result, b.events)
 
 	return result
@@ -126,7 +126,7 @@ func (b *reentrantBus) reset() {
 	b.events = nil
 }
 
-func eventsOfType[E events.Event](bus *reentrantBus) []E {
+func eventsOfType[E eventbus.Event](bus *reentrantBus) []E {
 	bus.mu.Lock()
 	defer bus.mu.Unlock()
 

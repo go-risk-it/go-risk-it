@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/config"
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/config"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/middleware"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"

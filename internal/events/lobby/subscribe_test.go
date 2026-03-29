@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/events"
 	lobbyevt "github.com/go-risk-it/go-risk-it/internal/events/lobby"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/bus"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
@@ -15,17 +15,17 @@ import (
 // without async dispatch complexity.
 type spyBus struct {
 	registeredType    string
-	registeredHandler events.Handler
+	registeredHandler bus.Handler
 }
 
-func (s *spyBus) OnType(eventType string, handler events.Handler) {
+func (s *spyBus) OnType(eventType string, handler bus.Handler) {
 	s.registeredType = eventType
 	s.registeredHandler = handler
 }
 
-func (s *spyBus) OnAll(events.Handler)               {}
-func (s *spyBus) Emit(context.Context, events.Event) {}
-func (s *spyBus) Close(context.Context) error        { return nil }
+func (s *spyBus) OnAll(bus.Handler)               {}
+func (s *spyBus) Emit(context.Context, bus.Event) {}
+func (s *spyBus) Close(context.Context) error     { return nil }
 
 func TestOnLobbyEvent_RegistersCorrectType(t *testing.T) {
 	t.Parallel()

@@ -5,10 +5,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/events"
-	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
+	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/advancement"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	mockdb "github.com/go-risk-it/go-risk-it/mocks/internal_/data/game/db"
@@ -31,7 +31,7 @@ func setup(t *testing.T) (
 	*mockstate.Service,
 	*mockmoveservice.Service[testMove, testResult],
 	*mockvalidation.Service,
-	*events.TestBus,
+	*eventbus.TestBus,
 	advancement.Service[testMove, testResult],
 ) {
 	t.Helper()
@@ -40,7 +40,7 @@ func setup(t *testing.T) (
 	gameState := mockstate.NewService(t)
 	moveService := mockmoveservice.NewService[testMove, testResult](t)
 	validationService := mockvalidation.NewService(t)
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 
 	service := advancement.NewService[testMove, testResult](
 		gameState,

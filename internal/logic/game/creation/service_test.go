@@ -4,13 +4,13 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/events"
+	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/creation"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/timing"
-	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/game/db"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/card"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/mission"
@@ -116,7 +116,7 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 	// Initialize the state
 	service := creation.NewService(
 		mockQuerier,
-		events.NewTestBus(),
+		eventbus.NewTestBus(),
 		cardServiceMock,
 		missionServiceMock,
 		playerServiceMock,
@@ -145,7 +145,7 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 	// Initialize the state under test
 	service := creation.NewService(
 		querier,
-		events.NewTestBus(),
+		eventbus.NewTestBus(),
 		cardService,
 		missionService,
 		playerService,
@@ -192,7 +192,7 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 	// Initialize the state under test
 	service := creation.NewService(
 		querier,
-		events.NewTestBus(),
+		eventbus.NewTestBus(),
 		cardService,
 		missionService,
 		playerService,
@@ -304,7 +304,7 @@ func TestServiceImpl_CreateGameWithQuerier_NoEventEmitted(t *testing.T) {
 		CreateCards(gameContext, mockQuerier).
 		Return(nil)
 
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	service := creation.NewService(
 		mockQuerier,
 		bus,
@@ -332,7 +332,7 @@ func TestServiceImpl_CreateGameWithQuerier_Error_NoEventEmitted(t *testing.T) {
 	t.Parallel()
 
 	querier := db.NewQuerier(t)
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 
 	service := creation.NewService(
 		querier,

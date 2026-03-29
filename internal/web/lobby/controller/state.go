@@ -4,7 +4,7 @@ import (
 	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/lobby/messaging"
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/lobby/state"
 )
 

@@ -20,7 +20,7 @@ const (
 	GameCardTypeJOLLY     GameCardType = "JOLLY"
 )
 
-func (e *GameCardType) Scan(src interface{}) error {
+func (e *GameCardType) Scan(src any) error {
 	switch s := src.(type) {
 	case []byte:
 		*e = GameCardType(s)
@@ -29,6 +29,7 @@ func (e *GameCardType) Scan(src interface{}) error {
 	default:
 		return fmt.Errorf("unsupported scan type for GameCardType: %T", src)
 	}
+
 	return nil
 }
 
@@ -38,12 +39,14 @@ type NullGameCardType struct {
 }
 
 // Scan implements the Scanner interface.
-func (ns *NullGameCardType) Scan(value interface{}) error {
+func (ns *NullGameCardType) Scan(value any) error {
 	if value == nil {
 		ns.GameCardType, ns.Valid = "", false
+
 		return nil
 	}
 	ns.Valid = true
+
 	return ns.GameCardType.Scan(value)
 }
 
@@ -52,6 +55,7 @@ func (ns NullGameCardType) Value() (driver.Value, error) {
 	if !ns.Valid {
 		return nil, nil
 	}
+
 	return string(ns.GameCardType), nil
 }
 
@@ -65,7 +69,7 @@ const (
 	GameMissionTypeELIMINATEPLAYER              GameMissionType = "ELIMINATE_PLAYER"
 )
 
-func (e *GameMissionType) Scan(src interface{}) error {
+func (e *GameMissionType) Scan(src any) error {
 	switch s := src.(type) {
 	case []byte:
 		*e = GameMissionType(s)
@@ -74,6 +78,7 @@ func (e *GameMissionType) Scan(src interface{}) error {
 	default:
 		return fmt.Errorf("unsupported scan type for GameMissionType: %T", src)
 	}
+
 	return nil
 }
 
@@ -83,12 +88,14 @@ type NullGameMissionType struct {
 }
 
 // Scan implements the Scanner interface.
-func (ns *NullGameMissionType) Scan(value interface{}) error {
+func (ns *NullGameMissionType) Scan(value any) error {
 	if value == nil {
 		ns.GameMissionType, ns.Valid = "", false
+
 		return nil
 	}
 	ns.Valid = true
+
 	return ns.GameMissionType.Scan(value)
 }
 
@@ -97,6 +104,7 @@ func (ns NullGameMissionType) Value() (driver.Value, error) {
 	if !ns.Valid {
 		return nil, nil
 	}
+
 	return string(ns.GameMissionType), nil
 }
 
@@ -110,7 +118,7 @@ const (
 	GamePhaseTypeREINFORCE GamePhaseType = "REINFORCE"
 )
 
-func (e *GamePhaseType) Scan(src interface{}) error {
+func (e *GamePhaseType) Scan(src any) error {
 	switch s := src.(type) {
 	case []byte:
 		*e = GamePhaseType(s)
@@ -119,6 +127,7 @@ func (e *GamePhaseType) Scan(src interface{}) error {
 	default:
 		return fmt.Errorf("unsupported scan type for GamePhaseType: %T", src)
 	}
+
 	return nil
 }
 
@@ -128,12 +137,14 @@ type NullGamePhaseType struct {
 }
 
 // Scan implements the Scanner interface.
-func (ns *NullGamePhaseType) Scan(value interface{}) error {
+func (ns *NullGamePhaseType) Scan(value any) error {
 	if value == nil {
 		ns.GamePhaseType, ns.Valid = "", false
+
 		return nil
 	}
 	ns.Valid = true
+
 	return ns.GamePhaseType.Scan(value)
 }
 
@@ -142,6 +153,7 @@ func (ns NullGamePhaseType) Value() (driver.Value, error) {
 	if !ns.Valid {
 		return nil, nil
 	}
+
 	return string(ns.GamePhaseType), nil
 }
 

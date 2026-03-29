@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/events"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	"go.uber.org/fx"
 )
 
@@ -13,7 +13,7 @@ import (
 type Params struct {
 	fx.In
 
-	Bus    events.Bus
+	Bus    bus.Bus
 	Logger *slog.Logger `optional:"true"`
 }
 
@@ -28,7 +28,7 @@ func Register(params Params) {
 		log = slog.Default()
 	}
 
-	params.Bus.OnAll(func(ctx context.Context, event events.Event) {
+	params.Bus.OnAll(func(ctx context.Context, event bus.Event) {
 		record := event.ToRecord()
 
 		payloadAttrs := make([]any, 0, len(record)*2)

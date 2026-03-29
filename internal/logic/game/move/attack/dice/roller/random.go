@@ -1,7 +1,7 @@
 package roller
 
 import (
-	"github.com/go-risk-it/go-risk-it/internal/rand"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/rand"
 )
 
 type Random struct {

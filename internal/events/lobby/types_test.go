@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/events"
 	lobbyevt "github.com/go-risk-it/go-risk-it/internal/events/lobby"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -14,9 +14,9 @@ var (
 	_ lobbyevt.LobbyEvent = (*lobbyevt.LobbyStateChanged)(nil)
 	_ lobbyevt.LobbyEvent = (*lobbyevt.LobbyPlayerConnected)(nil)
 
-	// LobbyEvent embeds events.Event, so both must also satisfy Event.
-	_ events.Event = (*lobbyevt.LobbyStateChanged)(nil)
-	_ events.Event = (*lobbyevt.LobbyPlayerConnected)(nil)
+	// LobbyEvent embeds bus.Event, so both must also satisfy Event.
+	_ bus.Event = (*lobbyevt.LobbyStateChanged)(nil)
+	_ bus.Event = (*lobbyevt.LobbyPlayerConnected)(nil)
 )
 
 func TestEventTypes_NilPointerSafety(t *testing.T) {

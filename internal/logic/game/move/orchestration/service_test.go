@@ -5,10 +5,11 @@ import (
 	"errors"
 	"testing"
 
-	gamectx "github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/events"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/events/game"
+	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
+	gamectx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/cards"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/conquer"
@@ -17,7 +18,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/reinforce"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/timing"
-	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	mockdb "github.com/go-risk-it/go-risk-it/mocks/internal_/data/game/db"
 	mockmission "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/mission"
 	mocklogging "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/move/orchestration/logging"
@@ -159,7 +159,7 @@ func TestOrchestrateMove_DeployEmitsMoveExecuted(t *testing.T) {
 	loggingSvc := mocklogging.NewService(t)
 	missionSvc := mockmission.NewService(t)
 	validationSvc := mockvalidation.NewService(t)
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	metricsInst := testMetrics(t)
 	gameTiming := timing.NewGameTiming()
 
@@ -192,7 +192,7 @@ func TestOrchestrateMove_DeployEmitsMoveExecuted(t *testing.T) {
 	allEvents := bus.Events()
 	require.Len(t, allEvents, 1, "deploy with no phase change should emit exactly 1 event")
 
-	moveEvents := events.EventsOfType[*gameevt.MoveExecuted](bus)
+	moveEvents := eventbus.EventsOfType[*gameevt.MoveExecuted](bus)
 	require.Len(t, moveEvents, 1)
 	require.Equal(t, sqlc.GamePhaseTypeDEPLOY, moveEvents[0].ActionType)
 	require.Equal(t, sqlc.GamePhaseTypeDEPLOY, moveEvents[0].TargetPhase)
@@ -213,7 +213,7 @@ func TestOrchestrateMove_AttackEmitsMoveExecutedWithResult(t *testing.T) {
 	loggingSvc := mocklogging.NewService(t)
 	missionSvc := mockmission.NewService(t)
 	validationSvc := mockvalidation.NewService(t)
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	metricsInst := testMetrics(t)
 	gameTiming := timing.NewGameTiming()
 
@@ -253,7 +253,7 @@ func TestOrchestrateMove_AttackEmitsMoveExecutedWithResult(t *testing.T) {
 	err := orch.OrchestrateMove(ctx, move)
 	require.NoError(t, err)
 
-	moveEvents := events.EventsOfType[*gameevt.MoveExecuted](bus)
+	moveEvents := eventbus.EventsOfType[*gameevt.MoveExecuted](bus)
 	require.Len(t, moveEvents, 1)
 	require.Equal(t, sqlc.GamePhaseTypeATTACK, moveEvents[0].ActionType)
 	require.NotNil(t, moveEvents[0].AttackResult)
@@ -273,7 +273,7 @@ func TestOrchestrateMove_PhaseTransitionEmitsBothEvents(t *testing.T) {
 	loggingSvc := mocklogging.NewService(t)
 	missionSvc := mockmission.NewService(t)
 	validationSvc := mockvalidation.NewService(t)
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	metricsInst := testMetrics(t)
 	gameTiming := timing.NewGameTiming()
 
@@ -305,13 +305,13 @@ func TestOrchestrateMove_PhaseTransitionEmitsBothEvents(t *testing.T) {
 	allEvents := bus.Events()
 	require.Len(t, allEvents, 2, "phase transition should emit MoveExecuted + PhaseTransitioned")
 
-	moveEvents := events.EventsOfType[*gameevt.MoveExecuted](bus)
+	moveEvents := eventbus.EventsOfType[*gameevt.MoveExecuted](bus)
 	require.Len(t, moveEvents, 1)
 	require.Equal(t, sqlc.GamePhaseTypeDEPLOY, moveEvents[0].ActionType)
 	require.Equal(t, sqlc.GamePhaseTypeATTACK, moveEvents[0].TargetPhase)
 	require.False(t, moveEvents[0].GameOver)
 
-	phaseEvents := events.EventsOfType[*gameevt.PhaseTransitioned](bus)
+	phaseEvents := eventbus.EventsOfType[*gameevt.PhaseTransitioned](bus)
 	require.Len(t, phaseEvents, 1)
 	require.Equal(t, sqlc.GamePhaseTypeDEPLOY, phaseEvents[0].FromPhase)
 	require.Equal(t, sqlc.GamePhaseTypeATTACK, phaseEvents[0].ToPhase)
@@ -332,7 +332,7 @@ func TestOrchestrateMove_GameCompletionEmitsAllEvents(t *testing.T) {
 	loggingSvc := mocklogging.NewService(t)
 	missionSvc := mockmission.NewService(t)
 	validationSvc := mockvalidation.NewService(t)
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	metricsInst := testMetrics(t)
 	gameTiming := timing.NewGameTiming()
 
@@ -371,12 +371,12 @@ func TestOrchestrateMove_GameCompletionEmitsAllEvents(t *testing.T) {
 	allEvents := bus.Events()
 	require.Len(t, allEvents, 2, "game completion should emit MoveExecuted + GameCompleted")
 
-	moveEvents := events.EventsOfType[*gameevt.MoveExecuted](bus)
+	moveEvents := eventbus.EventsOfType[*gameevt.MoveExecuted](bus)
 	require.Len(t, moveEvents, 1)
 	require.True(t, moveEvents[0].GameOver)
 	require.Equal(t, sqlc.GamePhaseTypeREINFORCE, moveEvents[0].TargetPhase)
 
-	completedEvents := events.EventsOfType[*gameevt.GameCompleted](bus)
+	completedEvents := eventbus.EventsOfType[*gameevt.GameCompleted](bus)
 	require.Len(t, completedEvents, 1)
 	require.Equal(t, testGameID, completedEvents[0].GameID())
 	require.Equal(t, testTurn, completedEvents[0].Turn)
@@ -396,7 +396,7 @@ func TestOrchestrateMove_ErrorDoesNotEmit(t *testing.T) {
 	loggingSvc := mocklogging.NewService(t)
 	missionSvc := mockmission.NewService(t)
 	validationSvc := mockvalidation.NewService(t)
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	metricsInst := testMetrics(t)
 	gameTiming := timing.NewGameTiming()
 
@@ -434,7 +434,7 @@ func TestOrchestrateMove_CardsEmitsWithCardsResult(t *testing.T) {
 	loggingSvc := mocklogging.NewService(t)
 	missionSvc := mockmission.NewService(t)
 	validationSvc := mockvalidation.NewService(t)
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	metricsInst := testMetrics(t)
 	gameTiming := timing.NewGameTiming()
 
@@ -469,7 +469,7 @@ func TestOrchestrateMove_CardsEmitsWithCardsResult(t *testing.T) {
 	err := orch.OrchestrateMove(ctx, move)
 	require.NoError(t, err)
 
-	moveEvents := events.EventsOfType[*gameevt.MoveExecuted](bus)
+	moveEvents := eventbus.EventsOfType[*gameevt.MoveExecuted](bus)
 	require.Len(t, moveEvents, 1)
 	require.Equal(t, sqlc.GamePhaseTypeCARDS, moveEvents[0].ActionType)
 	require.Nil(t, moveEvents[0].AttackResult)
@@ -485,13 +485,13 @@ func TestExtractResults_AllPhases(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		setupAndRun  func(t *testing.T) *events.TestBus
+		setupAndRun  func(t *testing.T) *eventbus.TestBus
 		expectAttack bool
 		expectCards  bool
 	}{
 		{
 			name: "DEPLOY produces nil results",
-			setupAndRun: func(t *testing.T) *events.TestBus {
+			setupAndRun: func(t *testing.T) *eventbus.TestBus {
 				t.Helper()
 
 				return runOrchestration[deploy.Move, struct{}](
@@ -505,7 +505,7 @@ func TestExtractResults_AllPhases(t *testing.T) {
 		},
 		{
 			name: "ATTACK produces AttackResult",
-			setupAndRun: func(t *testing.T) *events.TestBus {
+			setupAndRun: func(t *testing.T) *eventbus.TestBus {
 				t.Helper()
 
 				return runOrchestration[attack.Move, *attack.MoveResult](
@@ -524,7 +524,7 @@ func TestExtractResults_AllPhases(t *testing.T) {
 		},
 		{
 			name: "CONQUER produces nil results",
-			setupAndRun: func(t *testing.T) *events.TestBus {
+			setupAndRun: func(t *testing.T) *eventbus.TestBus {
 				t.Helper()
 
 				return runOrchestration[conquer.Move, struct{}](
@@ -538,7 +538,7 @@ func TestExtractResults_AllPhases(t *testing.T) {
 		},
 		{
 			name: "REINFORCE produces nil results",
-			setupAndRun: func(t *testing.T) *events.TestBus {
+			setupAndRun: func(t *testing.T) *eventbus.TestBus {
 				t.Helper()
 
 				return runOrchestration[reinforce.Move, struct{}](
@@ -559,7 +559,7 @@ func TestExtractResults_AllPhases(t *testing.T) {
 		},
 		{
 			name: "CARDS produces CardsResult",
-			setupAndRun: func(t *testing.T) *events.TestBus {
+			setupAndRun: func(t *testing.T) *eventbus.TestBus {
 				t.Helper()
 
 				return runOrchestration[cards.Move, *cards.MoveResult](
@@ -578,7 +578,7 @@ func TestExtractResults_AllPhases(t *testing.T) {
 			t.Parallel()
 
 			bus := test.setupAndRun(t)
-			moveEvents := events.EventsOfType[*gameevt.MoveExecuted](bus)
+			moveEvents := eventbus.EventsOfType[*gameevt.MoveExecuted](bus)
 			require.Len(t, moveEvents, 1)
 
 			if test.expectAttack {
@@ -603,7 +603,7 @@ func runOrchestration[T, R any](
 	phase sqlc.GamePhaseType,
 	move T,
 	result R,
-) *events.TestBus {
+) *eventbus.TestBus {
 	t.Helper()
 
 	ctx := testCtx()
@@ -613,7 +613,7 @@ func runOrchestration[T, R any](
 	loggingSvc := mocklogging.NewService(t)
 	missionSvc := mockmission.NewService(t)
 	validationSvc := mockvalidation.NewService(t)
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	metricsInst := testMetrics(t)
 	gameTiming := timing.NewGameTiming()
 

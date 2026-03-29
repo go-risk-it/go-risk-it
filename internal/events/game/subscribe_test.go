@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/events"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/events/game"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/bus"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
@@ -16,17 +16,17 @@ import (
 // without async dispatch complexity. Mirrors the pattern from events/typed_test.go.
 type spyBus struct {
 	registeredType    string
-	registeredHandler events.Handler
+	registeredHandler bus.Handler
 }
 
-func (s *spyBus) OnType(eventType string, handler events.Handler) {
+func (s *spyBus) OnType(eventType string, handler bus.Handler) {
 	s.registeredType = eventType
 	s.registeredHandler = handler
 }
 
-func (s *spyBus) OnAll(events.Handler)               {}
-func (s *spyBus) Emit(context.Context, events.Event) {}
-func (s *spyBus) Close(context.Context) error        { return nil }
+func (s *spyBus) OnAll(bus.Handler)               {}
+func (s *spyBus) Emit(context.Context, bus.Event) {}
+func (s *spyBus) Close(context.Context) error     { return nil }
 
 func newTestGameContext(gameID int64) ctx.GameContext {
 	traceCtx := ctx.WithSpan(context.Background(), noop.Span{})

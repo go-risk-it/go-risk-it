@@ -152,19 +152,32 @@ func TestArch_LogicGameAndLobbyIsolated(t *testing.T) {
 	assertNoImports(t, lobbyPkgs, modulePrefix+"logic/game/")
 }
 
-// Rule 4b: events/ root and events/logger are infrastructure — they must never import logic/ or web/.
+// Rule 4b: events/logger is infrastructure — it must never import logic/ or web/.
 // Sub-packages events/game/ and events/lobby/ carry domain payloads and may import logic/ types.
 func TestArch_EventsRootIsolation(t *testing.T) {
 	t.Parallel()
 
-	rootPkgs := loadPackages(t, "./internal/events")
 	loggerPkgs := loadPackages(t, "./internal/events/logger")
 
-	infraPkgs := slices.Concat(rootPkgs, loggerPkgs)
-
-	assertNoImports(t, infraPkgs,
+	assertNoImports(t, loggerPkgs,
 		modulePrefix+"logic/",
 		modulePrefix+"web/",
+	)
+}
+
+// Rule 4c: kernel/ must never import game/lobby domain packages.
+func TestArch_KernelNeverImportsDomain(t *testing.T) {
+	t.Parallel()
+
+	pkgs := loadPackages(t, "./internal/kernel/...")
+
+	assertNoImports(t, pkgs,
+		modulePrefix+"logic/",
+		modulePrefix+"web/",
+		modulePrefix+"data/game/",
+		modulePrefix+"data/lobby/",
+		modulePrefix+"events/game/",
+		modulePrefix+"events/lobby/",
 	)
 }
 
@@ -243,15 +256,15 @@ func TestArch_APIOnlyImportsAPI(t *testing.T) {
 	}
 }
 
-// Rule 8: infrastructure packages (config/, metrics/, rand/) have no internal imports.
-// slog/ is excepted — it legitimately imports config + ctx.
+// Rule 8: infrastructure packages (kernel/config/, kernel/metrics/, kernel/rand/) have no internal imports.
+// kernel/slog/ is excepted — it legitimately imports config + ctx.
 func TestArch_InfrastructureIsolation(t *testing.T) {
 	t.Parallel()
 
 	infraPatterns := []string{
-		"./internal/config/...",
-		"./internal/metrics/...",
-		"./internal/rand/...",
+		"./internal/kernel/config/...",
+		"./internal/kernel/metrics/...",
+		"./internal/kernel/rand/...",
 	}
 
 	for _, pattern := range infraPatterns {
@@ -539,34 +552,32 @@ var expectedLayer = map[string]string{
 	"api/lobby/rest/request":  "API",
 	"api/lobby/rest/response": "API",
 
-	// infrastructure
-	"config":             "Infrastructure",
-	"metrics":            "Infrastructure",
-	"rand":               "Infrastructure",
-	"slog":               "Infrastructure",
-	"tracing":            "Infrastructure",
-	"upgradablerw_mutex": "Infrastructure",
-
-	// ctx
-	"ctx": "Ctx",
+	// kernel
+	"kernel":                    "Kernel",
+	"kernel/bus":                "Kernel",
+	"kernel/config":             "Kernel",
+	"kernel/ctx":                "Kernel",
+	"kernel/data":               "Kernel",
+	"kernel/data/migration":     "Kernel",
+	"kernel/data/pool":          "Kernel",
+	"kernel/errors":             "Kernel",
+	"kernel/metrics":            "Kernel",
+	"kernel/otelsetup":          "Kernel",
+	"kernel/rand":               "Kernel",
+	"kernel/slog":               "Kernel",
+	"kernel/tracing":            "Kernel",
+	"kernel/upgradablerw_mutex": "Kernel",
 
 	// data
-	"data/db":        "Data",
-	"data/game/db":   "Data",
-	"data/lobby/db":  "Data",
-	"data/migration": "Data",
-	"data/pool":      "Data",
+	"data/game/db":  "Data",
+	"data/lobby/db": "Data",
 
 	// events
-	"events":        "Events",
 	"events/logger": "Events",
 
 	// events-domain
 	"events/game":  "Events-domain",
 	"events/lobby": "Events-domain",
-
-	// shared
-	"logic/errors": "Shared",
 
 	// test
 	"testing/invariant": "Test",
@@ -585,6 +596,8 @@ func layerFromPrefix(suffix string) string {
 	switch {
 	case strings.HasPrefix(suffix, "api/"):
 		return "API"
+	case strings.HasPrefix(suffix, "kernel/"):
+		return "Kernel"
 	case strings.HasPrefix(suffix, "data/"):
 		return "Data"
 	case strings.HasPrefix(suffix, "events/game") || strings.HasPrefix(suffix, "events/lobby"):
@@ -613,6 +626,7 @@ func packageSuffix(importPath string) string {
 //nolint:gochecknoglobals // test-only set used by doc.go validation rules
 var wiringRoots = map[string]bool{
 	"":                        true, // internal root
+	"kernel":                  true,
 	"logic":                   true,
 	"logic/game":              true,
 	"logic/game/move":         true,

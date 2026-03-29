@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/config"
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/events"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/events/game"
+	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/config"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
@@ -167,18 +167,18 @@ type spyBus struct {
 	calls []string // event types registered via OnType
 }
 
-var _ events.Bus = (*spyBus)(nil)
+var _ eventbus.Bus = (*spyBus)(nil)
 
-func (s *spyBus) OnType(eventType string, _ events.Handler) {
+func (s *spyBus) OnType(eventType string, _ eventbus.Handler) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	s.calls = append(s.calls, eventType)
 }
 
-func (s *spyBus) OnAll(events.Handler)               {}
-func (s *spyBus) Emit(context.Context, events.Event) {}
-func (s *spyBus) Close(context.Context) error        { return nil }
+func (s *spyBus) OnAll(eventbus.Handler)               {}
+func (s *spyBus) Emit(context.Context, eventbus.Event) {}
+func (s *spyBus) Close(context.Context) error          { return nil }
 
 func (s *spyBus) registrationCount() int {
 	s.mu.Lock()
@@ -278,7 +278,7 @@ func TestHandleMoveExecuted_BroadcastOrdering(t *testing.T) {
 		Times(4) // 2 messages (card + mission) * 2 players
 
 	// Use the TestBus to dispatch synchronously through the registered handler.
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	pub.Register(bus)
 	bus.Emit(gameCtx, event)
 
@@ -364,7 +364,7 @@ func TestHandleMoveExecuted_CrossCategoryOrdering(t *testing.T) {
 		Return().
 		Times(4)
 
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	pub.Register(bus)
 	bus.Emit(gameCtx, event)
 
@@ -426,7 +426,7 @@ func TestHandleMoveExecuted_PanicInPublicState_DoesNotBlockOtherOps(t *testing.T
 		Return().
 		Times(1) // Only the move history broadcast (public state panicked)
 
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	pub.Register(bus)
 
 	// Should not panic — safeOp catches it.
@@ -472,7 +472,7 @@ func TestHandleMoveExecuted_PanicInPrivateState_DoesNotBlockMoveLog(t *testing.T
 		Return().
 		Times(4) // 3 public + 1 move log
 
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	pub.Register(bus)
 
 	require.NotPanics(t, func() {
@@ -501,7 +501,7 @@ func TestHandleGameCompleted_CallsRemoveGame(t *testing.T) {
 		Return().
 		Once()
 
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	pub.Register(bus)
 	bus.Emit(gameCtx, event)
 }
@@ -559,7 +559,7 @@ func TestHandlePlayerConnected_UsesWriteMessage(t *testing.T) {
 		Return().
 		Times(6) // 3 public + 2 private + 1 move history
 
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	pub.Register(bus)
 	bus.Emit(gameCtx, event)
 
@@ -627,7 +627,7 @@ func TestHandlePlayerConnected_Ordering(t *testing.T) {
 		Return().
 		Times(6)
 
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	pub.Register(bus)
 	bus.Emit(gameCtx, event)
 
@@ -688,7 +688,7 @@ func TestHandlePlayerConnected_PanicInPublicState_DoesNotBlockOtherOps(t *testin
 		Return().
 		Times(3)
 
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	pub.Register(bus)
 
 	require.NotPanics(t, func() {
@@ -715,7 +715,7 @@ func TestHandleGameCompleted_PanicRecovery(t *testing.T) {
 		}).
 		Return()
 
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	pub.Register(bus)
 
 	require.NotPanics(t, func() {
@@ -775,7 +775,7 @@ func TestHandleMoveExecuted_WithMissionResolution(t *testing.T) {
 		Return().
 		Times(2)
 
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	pub.Register(bus)
 	bus.Emit(gameCtx, event)
 }
@@ -821,7 +821,7 @@ func TestHandlePlayerConnected_NoBroadcastCalls(t *testing.T) {
 	// Broadcast should NOT be called — if it is, the mock will fail
 	// because there is no expectation set for it.
 
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	pub.Register(bus)
 	bus.Emit(gameCtx, event)
 }
@@ -885,7 +885,7 @@ func TestHandleMoveExecuted_CreatesPublicStateSpan(
 		Times(4) // 2 messages * 2 players
 
 	// TestBus dispatches synchronously — spans are recorded before assertion.
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	pub.Register(bus)
 	bus.Emit(gameCtx, event)
 
@@ -942,7 +942,7 @@ func TestHandleMoveExecuted_PublicStateSpan_RecordsError(
 		Return().
 		Times(1) // only move history (public state errored)
 
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	pub.Register(bus)
 	bus.Emit(gameCtx, event)
 

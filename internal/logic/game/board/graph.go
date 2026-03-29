@@ -7,7 +7,7 @@ import (
 	"maps"
 	"slices"
 
-	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
 )
 
 type Graph interface {

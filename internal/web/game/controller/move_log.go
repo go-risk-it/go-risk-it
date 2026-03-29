@@ -7,8 +7,8 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game"
 	"github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/logging"
 )
 

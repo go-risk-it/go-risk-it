@@ -18,7 +18,7 @@
 //   - [mission.Service] for assigning missions to players
 //   - [player.Service] for creating player records
 //   - [region.Service] for creating and assigning regions
-//   - [events.Bus] for emitting GameCreated events after commit
+//   - [eventbus.Bus] for emitting GameCreated events after commit
 //   - [metrics.Metrics] for recording game creation counts
 //   - [timing.GameTiming] for tracking game start times
 package creation

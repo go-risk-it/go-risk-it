@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/lobby/messaging"
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/events"
 	lobbyevt "github.com/go-risk-it/go-risk-it/internal/events/lobby"
+	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/lobby/state"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby/publisher"
@@ -105,18 +105,18 @@ type spyBus struct {
 	calls []string
 }
 
-var _ events.Bus = (*spyBus)(nil)
+var _ eventbus.Bus = (*spyBus)(nil)
 
-func (s *spyBus) OnType(eventType string, _ events.Handler) {
+func (s *spyBus) OnType(eventType string, _ eventbus.Handler) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	s.calls = append(s.calls, eventType)
 }
 
-func (s *spyBus) OnAll(events.Handler)               {}
-func (s *spyBus) Emit(context.Context, events.Event) {}
-func (s *spyBus) Close(context.Context) error        { return nil }
+func (s *spyBus) OnAll(eventbus.Handler)               {}
+func (s *spyBus) Emit(context.Context, eventbus.Event) {}
+func (s *spyBus) Close(context.Context) error          { return nil }
 
 func (s *spyBus) registrationCount() int {
 	s.mu.Lock()
@@ -186,7 +186,7 @@ func TestOnStateChanged_BroadcastsLobbyState(t *testing.T) {
 		Return().
 		Once()
 
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	pub.Register(bus)
 	bus.Emit(lobbyCtx, lobbyevt.NewLobbyStateChanged(testLobbyID, testUserID))
 
@@ -228,7 +228,7 @@ func TestOnPlayerConnected_WritesLobbyState(t *testing.T) {
 		Return().
 		Once()
 
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	pub.Register(bus)
 	bus.Emit(lobbyCtx, lobbyevt.NewLobbyPlayerConnected(testLobbyID, testUserID))
 
@@ -268,7 +268,7 @@ func TestOnPlayerConnected_NoBroadcastCalls(t *testing.T) {
 	// Broadcast should NOT be called — if it is, the mock will fail
 	// because there is no expectation set for it.
 
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	pub.Register(bus)
 	bus.Emit(lobbyCtx, lobbyevt.NewLobbyPlayerConnected(testLobbyID, testUserID))
 }
@@ -297,7 +297,7 @@ func TestOnStateChanged_PanicInStateFetch_DoesNotCrash(t *testing.T) {
 	// Broadcast should NOT be called since the fetch panicked.
 	// No expectation set on writer.Broadcast — mock will fail if called.
 
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	pub.Register(bus)
 
 	require.NotPanics(t, func() {
@@ -326,7 +326,7 @@ func TestOnPlayerConnected_PanicInStateFetch_DoesNotCrash(t *testing.T) {
 
 	// WriteMessage should NOT be called since the fetch panicked.
 
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	pub.Register(bus)
 
 	require.NotPanics(t, func() {
@@ -388,7 +388,7 @@ func TestOnStateChanged_CreatesSpan(t *testing.T) {
 		Return().
 		Once()
 
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	pub.Register(bus)
 	bus.Emit(lobbyCtx, lobbyevt.NewLobbyStateChanged(testLobbyID, testUserID))
 

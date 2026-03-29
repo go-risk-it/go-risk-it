@@ -3,8 +3,8 @@ package validation
 import (
 	"log/slog"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
 )
 
 // CheckDeclaredTroops validates that the declared troop counts match actual region troops.

@@ -21,14 +21,16 @@ func (r *iteratorForInsertCards) Next() bool {
 	}
 	if !r.skippedFirstNextCall {
 		r.skippedFirstNextCall = true
+
 		return true
 	}
 	r.rows = r.rows[1:]
+
 	return len(r.rows) > 0
 }
 
-func (r iteratorForInsertCards) Values() ([]interface{}, error) {
-	return []interface{}{
+func (r iteratorForInsertCards) Values() ([]any, error) {
+	return []any{
 		r.rows[0].RegionID,
 		r.rows[0].GameID,
 		r.rows[0].CardType,
@@ -55,14 +57,16 @@ func (r *iteratorForInsertPlayers) Next() bool {
 	}
 	if !r.skippedFirstNextCall {
 		r.skippedFirstNextCall = true
+
 		return true
 	}
 	r.rows = r.rows[1:]
+
 	return len(r.rows) > 0
 }
 
-func (r iteratorForInsertPlayers) Values() ([]interface{}, error) {
-	return []interface{}{
+func (r iteratorForInsertPlayers) Values() ([]any, error) {
+	return []any{
 		r.rows[0].GameID,
 		r.rows[0].UserID,
 		r.rows[0].Name,
@@ -90,14 +94,16 @@ func (r *iteratorForInsertRegions) Next() bool {
 	}
 	if !r.skippedFirstNextCall {
 		r.skippedFirstNextCall = true
+
 		return true
 	}
 	r.rows = r.rows[1:]
+
 	return len(r.rows) > 0
 }
 
-func (r iteratorForInsertRegions) Values() ([]interface{}, error) {
-	return []interface{}{
+func (r iteratorForInsertRegions) Values() ([]any, error) {
+	return []any{
 		r.rows[0].ExternalReference,
 		r.rows[0].PlayerID,
 		r.rows[0].Troops,

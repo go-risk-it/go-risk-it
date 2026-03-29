@@ -4,15 +4,15 @@ import (
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/events"
+	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/cards"
 )
 
-// GameEvent is the interface for game-scoped domain events. It embeds events.Event
+// GameEvent is the interface for game-scoped domain events. It embeds eventbus.Event
 // and adds a GameID() accessor for game-specific scope identification.
 type GameEvent interface {
-	events.Event
+	eventbus.Event
 	GameID() int64
 }
 

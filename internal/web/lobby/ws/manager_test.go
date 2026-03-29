@@ -7,12 +7,12 @@ import (
 	"testing"
 	"testing/synctest"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/events"
 	lobbyevt "github.com/go-risk-it/go-risk-it/internal/events/lobby"
-	"github.com/go-risk-it/go-risk-it/internal/metrics"
+	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby/ws"
-	mockevents "github.com/go-risk-it/go-risk-it/mocks/internal_/events"
+	mockbus "github.com/go-risk-it/go-risk-it/mocks/internal_/kernel/bus"
 	"github.com/lesismal/nbio/nbhttp/websocket"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -61,13 +61,13 @@ func testWebsocketConn(t *testing.T) *websocket.Conn {
 func TestManagerImpl_ConnectPlayer_EmitsLobbyPlayerConnected(t *testing.T) {
 	t.Parallel()
 
-	bus := mockevents.NewBus(t)
+	bus := mockbus.NewBus(t)
 	manager := ws.NewManager(bus, testMetrics(t))
 
 	lobbyCtx := lobbyContext(int64(42))
 
 	bus.EXPECT().
-		Emit(lobbyCtx, mock.MatchedBy(func(e events.Event) bool {
+		Emit(lobbyCtx, mock.MatchedBy(func(e eventbus.Event) bool {
 			evt, ok := e.(*lobbyevt.LobbyPlayerConnected)
 
 			return ok && evt.LobbyID() == int64(42) && evt.UserID() == "test-user"
@@ -80,7 +80,7 @@ func TestManagerImpl_ConnectPlayer_EmitsLobbyPlayerConnected(t *testing.T) {
 func TestManagerImpl_Broadcast_ConcurrentSameLobby(t *testing.T) {
 	t.Parallel()
 	synctest.Test(t, func(t *testing.T) {
-		bus := events.NewTestBus()
+		bus := eventbus.NewTestBus()
 		manager := ws.NewManager(bus, testMetrics(t))
 
 		const numGoroutines = 100
@@ -104,7 +104,7 @@ func TestManagerImpl_Broadcast_ConcurrentSameLobby(t *testing.T) {
 func TestManagerImpl_Broadcast_ConcurrentDifferentLobbies(t *testing.T) {
 	t.Parallel()
 	synctest.Test(t, func(t *testing.T) {
-		bus := events.NewTestBus()
+		bus := eventbus.NewTestBus()
 		manager := ws.NewManager(bus, testMetrics(t))
 
 		const numGoroutines = 100
@@ -124,7 +124,7 @@ func TestManagerImpl_Broadcast_ConcurrentDifferentLobbies(t *testing.T) {
 func TestManagerImpl_Broadcast_MixedConcurrent(t *testing.T) {
 	t.Parallel()
 	synctest.Test(t, func(t *testing.T) {
-		bus := events.NewTestBus()
+		bus := eventbus.NewTestBus()
 		manager := ws.NewManager(bus, testMetrics(t))
 
 		const (

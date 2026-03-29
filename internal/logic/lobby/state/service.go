@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/db"
-	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
 )
 
 type Participant struct {

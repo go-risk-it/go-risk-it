@@ -9,7 +9,7 @@ import (
 
 	gameRequest "github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/response"
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	gameWs "github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"

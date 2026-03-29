@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	dbutil "github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/metrics"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	dbutil "github.com/go-risk-it/go-risk-it/internal/kernel/data"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 

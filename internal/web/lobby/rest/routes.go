@@ -9,7 +9,7 @@ import (
 
 	lobbyRequest "github.com/go-risk-it/go-risk-it/internal/api/lobby/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/api/lobby/rest/response"
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby/controller"
 	lobbyWs "github.com/go-risk-it/go-risk-it/internal/web/lobby/ws"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"

@@ -6,8 +6,8 @@ import (
 	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/lobby/start"
 )
 

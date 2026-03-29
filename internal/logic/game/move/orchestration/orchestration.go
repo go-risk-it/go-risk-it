@@ -2,7 +2,8 @@ package orchestration
 
 import (
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
-	"github.com/go-risk-it/go-risk-it/internal/events"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/bus"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/cards"
@@ -14,7 +15,6 @@ import (
 	moveservice "github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/timing"
-	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"go.uber.org/fx"
 )
 
@@ -27,7 +27,7 @@ type OrchestratorDeps struct {
 	LoggingService    logging.Service
 	MissionService    mission.Service
 	ValidationService validation.Service
-	Bus               events.Bus
+	Bus               bus.Bus
 	Metrics           *metrics.Metrics
 	GameTiming        *timing.GameTiming
 }

@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	dbutil "github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/events"
 	lobbyevt "github.com/go-risk-it/go-risk-it/internal/events/lobby"
-	"github.com/go-risk-it/go-risk-it/internal/metrics"
+	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	dbutil "github.com/go-risk-it/go-risk-it/internal/kernel/data"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 )
 
 type UserLobbies struct {
@@ -28,7 +28,7 @@ type Service interface {
 
 type service struct {
 	querier db.Querier
-	bus     events.Bus
+	bus     eventbus.Bus
 	metrics *metrics.Metrics
 }
 
@@ -36,7 +36,7 @@ var _ Service = (*service)(nil)
 
 func NewService(
 	querier db.Querier,
-	bus events.Bus,
+	bus eventbus.Bus,
 	m *metrics.Metrics,
 ) Service {
 	return &service{

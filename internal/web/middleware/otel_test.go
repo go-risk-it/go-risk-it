@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/metrics"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/web/middleware"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	"github.com/stretchr/testify/assert"

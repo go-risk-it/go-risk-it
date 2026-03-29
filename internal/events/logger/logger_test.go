@@ -8,15 +8,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/events"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/events/game"
 	"github.com/go-risk-it/go-risk-it/internal/events/logger"
+	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	riskslog "github.com/go-risk-it/go-risk-it/internal/kernel/slog"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/headlines"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/cards"
-	riskslog "github.com/go-risk-it/go-risk-it/internal/slog"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -45,7 +45,7 @@ type parsedLog struct {
 
 // emitAndParse registers the logger handler, emits the event through a TestBus,
 // and returns the parsed JSON log line.
-func emitAndParse(t *testing.T, event events.Event) parsedLog {
+func emitAndParse(t *testing.T, event eventbus.Event) parsedLog {
 	t.Helper()
 
 	var buf bytes.Buffer
@@ -54,7 +54,7 @@ func emitAndParse(t *testing.T, event events.Event) parsedLog {
 		Level: slog.LevelInfo,
 	})
 
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	logger.Register(logger.Params{
 		Bus:    bus,
 		Logger: slog.New(handler),
@@ -74,7 +74,7 @@ func TestRegister_LogsAllEventTypes(t *testing.T) {
 
 	tests := []struct {
 		name              string
-		event             events.Event
+		event             eventbus.Event
 		expectedGameID    int64
 		expectedEventType string
 		expectedPayload   map[string]any
@@ -321,7 +321,7 @@ func TestRegister_LogsTraceIDFromLinkedSpan(
 	contextHandler := riskslog.NewContextHandler(jsonHandler, slog.LevelInfo)
 
 	// Use the real async bus which runs detachContext + startLinkedSpan.
-	bus := events.NewBus(nopLifecycle{}, nil)
+	bus := eventbus.NewBus(nopLifecycle{}, nil)
 
 	logger.Register(logger.Params{
 		Bus:    bus,
@@ -331,7 +331,7 @@ func TestRegister_LogsTraceIDFromLinkedSpan(
 	// Register a second OnAll handler to signal when handlers complete.
 	// The signal fires after the logger handler (OnAll dispatch is sequential).
 	done := make(chan struct{}, 1)
-	bus.OnAll(func(_ context.Context, _ events.Event) {
+	bus.OnAll(func(_ context.Context, _ eventbus.Event) {
 		done <- struct{}{}
 	})
 

@@ -8,13 +8,13 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/config"
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/events"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/events/game"
+	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/config"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/snapshot"
-	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/converter"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/ws"
@@ -73,7 +73,7 @@ func NewGameStatePublisher(
 }
 
 // Register subscribes the publisher's handlers to game events on the bus.
-func (p *GameStatePublisher) Register(bus events.Bus) {
+func (p *GameStatePublisher) Register(bus eventbus.Bus) {
 	gameevt.OnGameEvent[*gameevt.MoveExecuted](bus, p.handleMoveExecuted)
 	gameevt.OnGameEvent[*gameevt.PhaseTransitioned](bus, p.handlePhaseTransitioned)
 	gameevt.OnGameEvent[*gameevt.GameCompleted](bus, p.handleGameCompleted)

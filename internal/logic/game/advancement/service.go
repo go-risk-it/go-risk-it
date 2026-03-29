@@ -5,18 +5,18 @@ import (
 	"log/slog"
 	"time"
 
-	gamectx "github.com/go-risk-it/go-risk-it/internal/ctx"
-	dbutil "github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/events"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/events/game"
-	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
+	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
+	gamectx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	dbutil "github.com/go-risk-it/go-risk-it/internal/kernel/data"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/tracing"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/orchestration/validation"
 	moveservice "github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
-	"github.com/go-risk-it/go-risk-it/internal/metrics"
-	"github.com/go-risk-it/go-risk-it/internal/tracing"
 	"github.com/jackc/pgx/v5"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -41,7 +41,7 @@ type service[T, R any] struct {
 	gameState         state.Service
 	moveService       moveservice.Service[T, R]
 	validationService validation.Service
-	bus               events.Bus
+	bus               eventbus.Bus
 	metrics           *metrics.Metrics
 }
 
@@ -50,7 +50,7 @@ func NewService[T, R any](
 	querier db.Querier,
 	moveService moveservice.Service[T, R],
 	validationService validation.Service,
-	bus events.Bus,
+	bus eventbus.Bus,
 	metrics *metrics.Metrics,
 ) Service[T, R] {
 	return &service[T, R]{

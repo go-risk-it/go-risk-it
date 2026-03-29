@@ -7,9 +7,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/metrics"
-	upgradablerwmutex "github.com/go-risk-it/go-risk-it/internal/upgradablerw_mutex"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
+	upgradablerwmutex "github.com/go-risk-it/go-risk-it/internal/kernel/upgradablerw_mutex"
 	"github.com/lesismal/nbio/nbhttp/websocket"
 	"go.opentelemetry.io/otel"
 )

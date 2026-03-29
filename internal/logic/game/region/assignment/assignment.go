@@ -3,9 +3,9 @@ package assignment
 import (
 	"fmt"
 
-	"github.com/go-risk-it/go-risk-it/internal/config"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/rand"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/config"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/rand"
 )
 
 type RegionAssignment map[string]sqlc.GamePlayer

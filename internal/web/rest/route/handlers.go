@@ -3,7 +3,7 @@ package route
 import (
 	"net/http"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 )
 
 // PlainHandler handles requests with standard http types, returning errors.

@@ -3,9 +3,9 @@ package dice
 import (
 	"fmt"
 
-	"github.com/go-risk-it/go-risk-it/internal/config"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/config"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/rand"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/attack/dice/roller"
-	"github.com/go-risk-it/go-risk-it/internal/rand"
 )
 
 type Service interface {

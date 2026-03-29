@@ -3,9 +3,9 @@ package validation
 import (
 	"log/slog"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
 )
 
 // CheckSourceOwnedByPlayer validates that the source region is owned by the current player.

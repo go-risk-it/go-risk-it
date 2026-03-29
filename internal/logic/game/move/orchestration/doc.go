@@ -31,6 +31,6 @@
 //   - [logging.Service] for persisting move log entries
 //   - [mission.Service] for checking win conditions after each move
 //   - [validation.Service] for pre-move game state validation
-//   - [events.Bus] for emitting post-commit domain events
+//   - [eventbus.Bus] for emitting post-commit domain events
 //   - [metrics.Metrics] for recording move counts, durations, and game lifecycle
 package orchestration

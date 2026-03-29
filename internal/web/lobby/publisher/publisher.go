@@ -8,10 +8,10 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/events"
 	lobbyevt "github.com/go-risk-it/go-risk-it/internal/events/lobby"
-	"github.com/go-risk-it/go-risk-it/internal/metrics"
+	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby/ws"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
@@ -48,7 +48,7 @@ func NewLobbyStatePublisher(
 }
 
 // Register subscribes the publisher's handlers to lobby events on the bus.
-func (p *LobbyStatePublisher) Register(bus events.Bus) {
+func (p *LobbyStatePublisher) Register(bus eventbus.Bus) {
 	lobbyevt.OnLobbyEvent(bus, p.onStateChanged)
 	lobbyevt.OnLobbyEvent(bus, p.onPlayerConnected)
 }

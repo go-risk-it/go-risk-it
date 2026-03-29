@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
 )
 
 func extractID(r *http.Request) (int64, error) {

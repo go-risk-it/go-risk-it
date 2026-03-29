@@ -24,6 +24,7 @@ type AssignGameWinnerParams struct {
 
 func (q *Queries) AssignGameWinner(ctx context.Context, arg AssignGameWinnerParams) error {
 	_, err := q.db.Exec(ctx, assignGameWinner, arg.WinnerPlayerID, arg.GameID)
+
 	return err
 }
 
@@ -37,6 +38,7 @@ func (q *Queries) CountCardsByGame(ctx context.Context, gameID int64) (int64, er
 	row := q.db.QueryRow(ctx, countCardsByGame, gameID)
 	var count int64
 	err := row.Scan(&count)
+
 	return count, err
 }
 
@@ -81,6 +83,7 @@ func (q *Queries) CreateMoveLog(ctx context.Context, arg CreateMoveLogParams) (G
 		&i.Result,
 		&i.Created,
 	)
+
 	return i, err
 }
 
@@ -101,6 +104,7 @@ type DecreaseDeployableTroopsParams struct {
 
 func (q *Queries) DecreaseDeployableTroops(ctx context.Context, arg DecreaseDeployableTroopsParams) error {
 	_, err := q.db.Exec(ctx, decreaseDeployableTroops, arg.ID, arg.DeployableTroops)
+
 	return err
 }
 
@@ -116,6 +120,7 @@ WHERE mission_id in (SELECT m.id
 
 func (q *Queries) DeleteSpuriousEliminatePlayerMissions(ctx context.Context, gameID int64) error {
 	_, err := q.db.Exec(ctx, deleteSpuriousEliminatePlayerMissions, gameID)
+
 	return err
 }
 
@@ -133,6 +138,7 @@ type DrawCardParams struct {
 
 func (q *Queries) DrawCard(ctx context.Context, arg DrawCardParams) error {
 	_, err := q.db.Exec(ctx, drawCard, arg.ID, arg.UserID, arg.GameID)
+
 	return err
 }
 
@@ -175,6 +181,7 @@ func (q *Queries) GetAllCardsForGame(ctx context.Context, gameID int64) ([]GetAl
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+
 	return items, nil
 }
 
@@ -204,6 +211,7 @@ func (q *Queries) GetAllMissionsForGame(ctx context.Context, gameID int64) ([]Ga
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+
 	return items, nil
 }
 
@@ -238,6 +246,7 @@ func (q *Queries) GetAvailableCards(ctx context.Context, id int64) ([]GameCard, 
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+
 	return items, nil
 }
 
@@ -279,6 +288,7 @@ func (q *Queries) GetCardsForPlayer(ctx context.Context, arg GetCardsForPlayerPa
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+
 	return items, nil
 }
 
@@ -304,6 +314,7 @@ func (q *Queries) GetConquerPhaseState(ctx context.Context, id int64) (GetConque
 	row := q.db.QueryRow(ctx, getConquerPhaseState, id)
 	var i GetConquerPhaseStateRow
 	err := row.Scan(&i.SourceRegion, &i.TargetRegion, &i.MinimumTroops)
+
 	return i, err
 }
 
@@ -318,6 +329,7 @@ func (q *Queries) GetCurrentPhase(ctx context.Context, id int64) (GamePhaseType,
 	row := q.db.QueryRow(ctx, getCurrentPhase, id)
 	var type_ GamePhaseType
 	err := row.Scan(&type_)
+
 	return type_, err
 }
 
@@ -342,6 +354,7 @@ func (q *Queries) GetCurrentPlayer(ctx context.Context, gameID int64) (GamePlaye
 		&i.UserID,
 		&i.TurnIndex,
 	)
+
 	return i, err
 }
 
@@ -357,6 +370,7 @@ func (q *Queries) GetDeployableTroops(ctx context.Context, id int64) (int64, err
 	row := q.db.QueryRow(ctx, getDeployableTroops, id)
 	var deployable_troops int64
 	err := row.Scan(&deployable_troops)
+
 	return deployable_troops, err
 }
 
@@ -370,6 +384,7 @@ func (q *Queries) GetEliminatePlayerMission(ctx context.Context, missionID int64
 	row := q.db.QueryRow(ctx, getEliminatePlayerMission, missionID)
 	var i GameEliminatePlayerMission
 	err := row.Scan(&i.MissionID, &i.TargetPlayerID)
+
 	return i, err
 }
 
@@ -397,6 +412,7 @@ func (q *Queries) GetGame(ctx context.Context, id int64) (GetGameRow, error) {
 		&i.Turn,
 		&i.WinnerUserID,
 	)
+
 	return i, err
 }
 
@@ -417,6 +433,7 @@ func (q *Queries) GetMission(ctx context.Context, arg GetMissionParams) (GameMis
 	row := q.db.QueryRow(ctx, getMission, arg.GameID, arg.UserID)
 	var i GameMission
 	err := row.Scan(&i.ID, &i.PlayerID, &i.Type)
+
 	return i, err
 }
 
@@ -465,6 +482,7 @@ func (q *Queries) GetMoveLogs(ctx context.Context, arg GetMoveLogsParams) ([]Get
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+
 	return items, nil
 }
 
@@ -490,6 +508,7 @@ func (q *Queries) GetNextPlayer(ctx context.Context, gameID int64) (GamePlayer, 
 		&i.UserID,
 		&i.TurnIndex,
 	)
+
 	return i, err
 }
 
@@ -515,6 +534,7 @@ func (q *Queries) GetPlayerAtTurnIndex(ctx context.Context, arg GetPlayerAtTurnI
 		&i.UserID,
 		&i.TurnIndex,
 	)
+
 	return i, err
 }
 
@@ -534,6 +554,7 @@ func (q *Queries) GetPlayerByUserId(ctx context.Context, userID string) (GamePla
 		&i.UserID,
 		&i.TurnIndex,
 	)
+
 	return i, err
 }
 
@@ -548,6 +569,7 @@ func (q *Queries) GetPlayerToEliminate(ctx context.Context, missionID int64) (st
 	row := q.db.QueryRow(ctx, getPlayerToEliminate, missionID)
 	var user_id string
 	err := row.Scan(&user_id)
+
 	return user_id, err
 }
 
@@ -580,6 +602,7 @@ func (q *Queries) GetPlayersByGame(ctx context.Context, gameID int64) ([]GamePla
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+
 	return items, nil
 }
 
@@ -624,6 +647,7 @@ func (q *Queries) GetPlayersState(ctx context.Context, gameID int64) ([]GetPlaye
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+
 	return items, nil
 }
 
@@ -664,6 +688,7 @@ func (q *Queries) GetRegionsByGame(ctx context.Context, id int64) ([]GetRegionsB
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+
 	return items, nil
 }
 
@@ -696,6 +721,7 @@ func (q *Queries) GetRegionsByPlayer(ctx context.Context, id int64) ([]GameRegio
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+
 	return items, nil
 }
 
@@ -709,6 +735,7 @@ func (q *Queries) GetTwoContinentsMission(ctx context.Context, missionID int64) 
 	row := q.db.QueryRow(ctx, getTwoContinentsMission, missionID)
 	var i GameTwoContinentsMission
 	err := row.Scan(&i.MissionID, &i.Continent1, &i.Continent2)
+
 	return i, err
 }
 
@@ -722,6 +749,7 @@ func (q *Queries) GetTwoContinentsPlusOneMission(ctx context.Context, missionID 
 	row := q.db.QueryRow(ctx, getTwoContinentsPlusOneMission, missionID)
 	var i GameTwoContinentsPlusOneMission
 	err := row.Scan(&i.MissionID, &i.Continent1, &i.Continent2)
+
 	return i, err
 }
 
@@ -750,6 +778,7 @@ func (q *Queries) GetUserGames(ctx context.Context, userID string) ([]int64, err
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+
 	return items, nil
 }
 
@@ -766,6 +795,7 @@ type GrantRegionTroopsParams struct {
 
 func (q *Queries) GrantRegionTroops(ctx context.Context, arg GrantRegionTroopsParams) error {
 	_, err := q.db.Exec(ctx, grantRegionTroops, arg.Troops, arg.Regions)
+
 	return err
 }
 
@@ -788,6 +818,7 @@ func (q *Queries) HasConqueredInTurn(ctx context.Context, arg HasConqueredInTurn
 	row := q.db.QueryRow(ctx, hasConqueredInTurn, arg.ID, arg.Turn)
 	var exists bool
 	err := row.Scan(&exists)
+
 	return exists, err
 }
 
@@ -804,6 +835,7 @@ type IncreaseRegionTroopsParams struct {
 
 func (q *Queries) IncreaseRegionTroops(ctx context.Context, arg IncreaseRegionTroopsParams) error {
 	_, err := q.db.Exec(ctx, increaseRegionTroops, arg.ID, arg.Troops)
+
 	return err
 }
 
@@ -856,6 +888,7 @@ func (q *Queries) InsertConquerPhase(ctx context.Context, arg InsertConquerPhase
 		&i.TargetRegionID,
 		&i.MinimumTroops,
 	)
+
 	return i, err
 }
 
@@ -873,6 +906,7 @@ func (q *Queries) InsertDeployPhase(ctx context.Context, arg InsertDeployPhasePa
 	row := q.db.QueryRow(ctx, insertDeployPhase, arg.PhaseID, arg.DeployableTroops)
 	var i GameDeployPhase
 	err := row.Scan(&i.ID, &i.PhaseID, &i.DeployableTroops)
+
 	return i, err
 }
 
@@ -888,6 +922,7 @@ type InsertEliminatePlayerMissionParams struct {
 
 func (q *Queries) InsertEliminatePlayerMission(ctx context.Context, arg InsertEliminatePlayerMissionParams) error {
 	_, err := q.db.Exec(ctx, insertEliminatePlayerMission, arg.MissionID, arg.TargetPlayerID)
+
 	return err
 }
 
@@ -901,6 +936,7 @@ func (q *Queries) InsertGame(ctx context.Context) (GameGame, error) {
 	row := q.db.QueryRow(ctx, insertGame)
 	var i GameGame
 	err := row.Scan(&i.ID, &i.CurrentPhaseID, &i.WinnerPlayerID)
+
 	return i, err
 }
 
@@ -919,6 +955,7 @@ func (q *Queries) InsertMission(ctx context.Context, arg InsertMissionParams) (i
 	row := q.db.QueryRow(ctx, insertMission, arg.PlayerID, arg.Type)
 	var id int64
 	err := row.Scan(&id)
+
 	return id, err
 }
 
@@ -942,6 +979,7 @@ func (q *Queries) InsertPhase(ctx context.Context, arg InsertPhaseParams) (GameP
 		&i.Type,
 		&i.Turn,
 	)
+
 	return i, err
 }
 
@@ -971,6 +1009,7 @@ type InsertTwoContinentsMissionParams struct {
 
 func (q *Queries) InsertTwoContinentsMission(ctx context.Context, arg InsertTwoContinentsMissionParams) error {
 	_, err := q.db.Exec(ctx, insertTwoContinentsMission, arg.MissionID, arg.Continent1, arg.Continent2)
+
 	return err
 }
 
@@ -987,6 +1026,7 @@ type InsertTwoContinentsPlusOneMissionParams struct {
 
 func (q *Queries) InsertTwoContinentsPlusOneMission(ctx context.Context, arg InsertTwoContinentsPlusOneMissionParams) error {
 	_, err := q.db.Exec(ctx, insertTwoContinentsPlusOneMission, arg.MissionID, arg.Continent1, arg.Continent2)
+
 	return err
 }
 
@@ -1010,6 +1050,7 @@ type ReassignMissionsParams struct {
 
 func (q *Queries) ReassignMissions(ctx context.Context, arg ReassignMissionsParams) error {
 	_, err := q.db.Exec(ctx, reassignMissions, arg.GameID, arg.UserID, arg.EliminatedPlayerID)
+
 	return err
 }
 
@@ -1026,6 +1067,7 @@ type SetGamePhaseParams struct {
 
 func (q *Queries) SetGamePhase(ctx context.Context, arg SetGamePhaseParams) error {
 	_, err := q.db.Exec(ctx, setGamePhase, arg.ID, arg.CurrentPhaseID)
+
 	return err
 }
 
@@ -1043,6 +1085,7 @@ type TransferCardsOwnershipParams struct {
 
 func (q *Queries) TransferCardsOwnership(ctx context.Context, arg TransferCardsOwnershipParams) error {
 	_, err := q.db.Exec(ctx, transferCardsOwnership, arg.GameID, arg.To, arg.From)
+
 	return err
 }
 
@@ -1054,6 +1097,7 @@ WHERE id = ANY ($1::bigint[])
 
 func (q *Queries) UnlinkCardsFromOwner(ctx context.Context, cards []int64) error {
 	_, err := q.db.Exec(ctx, unlinkCardsFromOwner, cards)
+
 	return err
 }
 
@@ -1077,5 +1121,6 @@ func (q *Queries) UpdateRegionOwner(ctx context.Context, arg UpdateRegionOwnerPa
 	row := q.db.QueryRow(ctx, updateRegionOwner, arg.GameID, arg.NewOwnerUserID, arg.ConqueredRegionID)
 	var old_player_id int64
 	err := row.Scan(&old_player_id)
+
 	return old_player_id, err
 }

@@ -1,8 +1,8 @@
 package game
 
 import (
-	"github.com/go-risk-it/go-risk-it/internal/events"
 	"github.com/go-risk-it/go-risk-it/internal/events/logger"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/advancement"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/card"
@@ -24,7 +24,7 @@ var Module = fx.Options(
 	board.Module,
 	card.Module,
 	creation.Module,
-	events.Module,
+	bus.Module,
 	headlines.Module,
 	logger.Module,
 	mission.Module,

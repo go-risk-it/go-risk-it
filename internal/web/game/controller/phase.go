@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game"
 	"github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/conquer"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/deploy"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"

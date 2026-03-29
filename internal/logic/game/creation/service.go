@@ -5,18 +5,18 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	dbutil "github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/events"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/events/game"
+	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	dbutil "github.com/go-risk-it/go-risk-it/internal/kernel/data"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/card"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/timing"
-	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -36,7 +36,7 @@ type Service interface {
 
 type service struct {
 	querier        db.Querier
-	bus            events.Bus
+	bus            eventbus.Bus
 	cardService    card.Service
 	missionService mission.Service
 	playerService  player.Service
@@ -49,7 +49,7 @@ var _ Service = (*service)(nil)
 
 func NewService(
 	querier db.Querier,
-	bus events.Bus,
+	bus eventbus.Bus,
 	cardService card.Service,
 	missionService mission.Service,
 	playerService player.Service,

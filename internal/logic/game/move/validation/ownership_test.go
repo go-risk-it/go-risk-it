@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/move/validation"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"

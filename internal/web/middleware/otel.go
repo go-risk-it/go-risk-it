@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/metrics"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"

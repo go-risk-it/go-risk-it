@@ -3,9 +3,9 @@ package snapshot
 import (
 	"fmt"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 )
 
 // PublicSnapshot contains all publicly visible game state aggregated from

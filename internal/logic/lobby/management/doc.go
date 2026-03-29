@@ -17,7 +17,7 @@
 //
 // # Dependencies
 //
-//   - [events.Bus] for emitting LobbyStateChanged events after a join
+//   - [eventbus.Bus] for emitting LobbyStateChanged events after a join
 //   - [db.Querier] for lobby database operations
 //   - [metrics.Metrics] for recording transaction metrics
 package management

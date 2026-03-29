@@ -7,13 +7,13 @@ import (
 	"testing"
 	"testing/synctest"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
-	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 	playerws "github.com/go-risk-it/go-risk-it/internal/web/ws"
-	mockevents "github.com/go-risk-it/go-risk-it/mocks/internal_/events"
+	mockbus "github.com/go-risk-it/go-risk-it/mocks/internal_/kernel/bus"
 	mockplayer "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/player"
 	mockstate "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/state"
 	"github.com/lesismal/nbio/nbhttp/websocket"
@@ -73,12 +73,12 @@ func testWSConn(t *testing.T) *websocket.Conn {
 func connectableManager(
 	t *testing.T,
 	metr *metrics.Metrics,
-) (ws.Manager, *mockstate.Service, *mockplayer.Service, *mockevents.Bus) {
+) (ws.Manager, *mockstate.Service, *mockplayer.Service, *mockbus.Bus) {
 	t.Helper()
 
 	stateSvc := mockstate.NewService(t)
 	playerSvc := mockplayer.NewService(t)
-	bus := mockevents.NewBus(t)
+	bus := mockbus.NewBus(t)
 
 	manager := ws.NewManager(stateSvc, playerSvc, bus, metr)
 
@@ -90,7 +90,7 @@ func connectableManager(
 func expectConnectPlayer(
 	stateSvc *mockstate.Service,
 	playerSvc *mockplayer.Service,
-	bus *mockevents.Bus,
+	bus *mockbus.Bus,
 ) {
 	stateSvc.EXPECT().
 		GetGameState(mock.Anything).

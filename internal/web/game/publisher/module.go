@@ -1,10 +1,10 @@
 package publisher
 
 import (
-	"github.com/go-risk-it/go-risk-it/internal/config"
-	"github.com/go-risk-it/go-risk-it/internal/events"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/bus"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/config"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/snapshot"
-	"github.com/go-risk-it/go-risk-it/internal/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 	"go.uber.org/fx"
@@ -14,7 +14,7 @@ import (
 type Params struct {
 	fx.In
 
-	Bus               events.Bus
+	Bus               bus.Bus
 	ConnectionManager ws.Manager
 	SnapshotService   snapshot.Service
 	MissionController *controller.MissionController

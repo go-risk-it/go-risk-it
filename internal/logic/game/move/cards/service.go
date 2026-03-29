@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/rand"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	moveservice "github.com/go-risk-it/go-risk-it/internal/logic/game/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/phase"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/region"
-	"github.com/go-risk-it/go-risk-it/internal/rand"
 )
 
 const DefaultTroopGrant = 2

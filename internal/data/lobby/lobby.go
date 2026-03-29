@@ -1,11 +1,11 @@
 package lobby
 
 import (
-	"github.com/go-risk-it/go-risk-it/internal/config"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/data/migration"
-	poolfactory "github.com/go-risk-it/go-risk-it/internal/data/pool"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/config"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/data/migration"
+	poolfactory "github.com/go-risk-it/go-risk-it/internal/kernel/data/pool"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/fx"
 )

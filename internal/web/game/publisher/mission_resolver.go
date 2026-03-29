@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/converter"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"

@@ -3,13 +3,13 @@ package lobby
 import (
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/events"
+	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 )
 
-// LobbyEvent is the interface for lobby-scoped domain events. It embeds events.Event
+// LobbyEvent is the interface for lobby-scoped domain events. It embeds eventbus.Event
 // and adds a LobbyID() accessor for lobby-specific scope identification.
 type LobbyEvent interface {
-	events.Event
+	eventbus.Event
 	LobbyID() int64
 }
 

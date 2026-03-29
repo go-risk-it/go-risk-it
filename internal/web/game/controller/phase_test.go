@@ -6,8 +6,8 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game"
 	"github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
-	ctx2 "github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
+	ctx2 "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/state"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	conquerMock "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/move/conquer"

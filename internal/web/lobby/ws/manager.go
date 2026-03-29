@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"log/slog"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/events"
 	lobbyevt "github.com/go-risk-it/go-risk-it/internal/events/lobby"
-	"github.com/go-risk-it/go-risk-it/internal/metrics"
-	upgradablerwmutex "github.com/go-risk-it/go-risk-it/internal/upgradablerw_mutex"
+	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
+	upgradablerwmutex "github.com/go-risk-it/go-risk-it/internal/kernel/upgradablerw_mutex"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws"
 	"github.com/lesismal/nbio/nbhttp/websocket"
 )
@@ -17,12 +17,12 @@ type manager struct {
 	mu upgradablerwmutex.UpgradableRWMutex
 
 	lobbyConnections map[int64]*ws.PlayerConnections
-	bus              events.Bus
+	bus              eventbus.Bus
 	metrics          *metrics.Metrics
 }
 
 func NewManager(
-	bus events.Bus,
+	bus eventbus.Bus,
 	metrics *metrics.Metrics,
 ) Manager {
 	return &manager{

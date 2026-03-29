@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/api/game/rest/response"
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/creation"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/player"

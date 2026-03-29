@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/game/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/events"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/events/game"
+	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/board"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/snapshot"
 	"go.opentelemetry.io/otel"
@@ -32,7 +32,7 @@ type detector struct {
 	mu         sync.RWMutex
 	games      map[int64]*gameOwnership
 	continents board.Continents // lazily loaded from board service
-	bus        events.Bus
+	bus        eventbus.Bus
 	snapshot   snapshot.Service
 	board      board.Service
 	logger     *slog.Logger
@@ -42,7 +42,7 @@ type detector struct {
 type DetectorParams struct {
 	fx.In
 
-	Bus      events.Bus
+	Bus      eventbus.Bus
 	Snapshot snapshot.Service
 	Board    board.Service
 	Logger   *slog.Logger `optional:"true"`
@@ -221,7 +221,7 @@ func (d *detector) detectHeadlines(
 	ownership *gameOwnership,
 	event *gameevt.MoveExecuted,
 	attackerUserID string,
-) []events.Event {
+) []eventbus.Event {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
@@ -234,7 +234,7 @@ func (d *detector) detectHeadlines(
 	gameID := event.GameID()
 	turn := event.Turn
 
-	var derived []events.Event
+	var derived []eventbus.Event
 
 	// PlayerEliminated if defender has no regions left
 	if ownership.playerRegionCount[defenderUserID] == 0 {

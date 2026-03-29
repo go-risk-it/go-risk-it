@@ -5,10 +5,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/events"
 	lobbyevt "github.com/go-risk-it/go-risk-it/internal/events/lobby"
+	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/lobby/management"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/data/lobby/db"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -18,13 +18,13 @@ import (
 
 func setup(t *testing.T) (
 	*db.Querier,
-	*events.TestBus,
+	*eventbus.TestBus,
 	management.Service,
 ) {
 	t.Helper()
 
 	querier := db.NewQuerier(t)
-	bus := events.NewTestBus()
+	bus := eventbus.NewTestBus()
 	service := management.NewService(querier, bus, nil)
 
 	return querier, bus, service
@@ -112,7 +112,7 @@ func TestServiceImpl_JoinLobby_EmitsLobbyStateChanged(t *testing.T) {
 
 	// JoinLobbyWithQuerier does NOT emit (it's called inside a transaction).
 	// Verify no events leaked from the interior method.
-	emitted := events.EventsOfType[*lobbyevt.LobbyStateChanged](bus)
+	emitted := eventbus.EventsOfType[*lobbyevt.LobbyStateChanged](bus)
 	require.Empty(t, emitted, "JoinLobbyWithQuerier must not emit events")
 }
 

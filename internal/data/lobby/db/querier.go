@@ -3,8 +3,8 @@ package db
 import (
 	"context"
 
-	"github.com/go-risk-it/go-risk-it/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/data/lobby/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/data"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -19,23 +19,23 @@ type DB interface {
 
 type Querier interface {
 	sqlc.Querier
-	db.Transactable[Querier]
+	data.Transactable[Querier]
 }
 
 var (
-	_ Querier                  = (*Queries)(nil)
-	_ db.Transactable[Querier] = (*Queries)(nil)
+	_ Querier                    = (*Queries)(nil)
+	_ data.Transactable[Querier] = (*Queries)(nil)
 )
 
 type Queries struct {
 	*sqlc.Queries
-	db.TxSupport
+	data.TxSupport
 }
 
 func New(d DB) Querier {
 	return &Queries{
 		Queries:   sqlc.New(d),
-		TxSupport: db.TxSupport{DB: d},
+		TxSupport: data.TxSupport{DB: d},
 	}
 }
 

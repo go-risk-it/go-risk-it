@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
 )
 
 // ErrorResponse is the standard JSON error envelope for API responses.

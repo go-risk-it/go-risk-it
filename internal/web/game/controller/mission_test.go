@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-risk-it/go-risk-it/internal/api/game/messaging"
-	ctx2 "github.com/go-risk-it/go-risk-it/internal/ctx"
+	ctx2 "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/logic/game/mission"
 	missionController "github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	missionMock "github.com/go-risk-it/go-risk-it/mocks/internal_/logic/game/mission"

@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/ctx"
-	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 	"github.com/stretchr/testify/assert"
