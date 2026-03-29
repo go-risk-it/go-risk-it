@@ -777,6 +777,16 @@
                             "targetBlank": true,
                             "title": "System Health",
                             "url": "/d/system-health?from=${__from}&to=${__to}"
+                        },
+                        {
+                            "targetBlank": true,
+                            "title": "System Health",
+                            "url": "/d/system-health?from=${__from}&to=${__to}"
+                        },
+                        {
+                            "targetBlank": true,
+                            "title": "System Health",
+                            "url": "/d/system-health?from=${__from}&to=${__to}"
                         }
                     ],
                     "unit": "s"
@@ -1375,6 +1385,11 @@
                         }
                     },
                     "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "System Health",
+                            "url": "/d/system-health?from=${__from}&to=${__to}"
+                        },
                         {
                             "targetBlank": true,
                             "title": "System Health",

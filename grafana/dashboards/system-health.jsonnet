@@ -2,15 +2,13 @@
 // Source of truth: grafana/dashboards/system-health.jsonnet
 // Regenerate: make dashboards
 local colors = import 'colors.libsonnet';
+local common = import 'common.libsonnet';
 local dashboard = import 'dashboard.libsonnet';
 local layout = import 'layout.libsonnet';
 local links = import 'links.libsonnet';
 local modifiers = import 'modifiers.libsonnet';
 local panels = import 'panels.libsonnet';
-local targets = import 'targets.libsonnet';
 local thresholds = import 'thresholds.libsonnet';
-
-local svc = targets.serviceName;
 
 // Template variable for trace investigation.
 local traceIdVar = {
@@ -26,6 +24,15 @@ local observeLinks = [
   links.toDashboard('Perf Test', links.dashboardUids.perfTest),
 ];
 
+// Helper: add data links to a panel.
+local withLinks(panel, dataLinks) = panel + {
+  fieldConfig+: {
+    defaults+: {
+      links: dataLinks,
+    },
+  },
+};
+
 dashboard.new(
   uid='system-health',
   title='System Health',
@@ -40,109 +47,130 @@ dashboard.new(
     observe=[
       // Row 1: 4x w=6 stat panels with background color
       layout.panel(
-        panels.statPanel(
-          title='HTTP Latency p95',
-          targets=[targets.target(
-            'histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name="%s"}[1m])) by (le))' % svc,
-            'p95',
-            'A',
-          )],
-          thresholds=thresholds.e2eP95,
-          unit='s',
-          colorMode='background',
-        ) + modifiers.withLinks(observeLinks),
+        withLinks(
+          panels.statPanel(
+            title='HTTP Latency p95',
+            targets=[{
+              expr: 'histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
+              legendFormat: 'p95',
+              refId: 'A',
+            }],
+            thresholds=thresholds.e2eP95,
+            unit='s',
+            colorMode='background',
+          ),
+          observeLinks,
+        ),
         w=6, h=6,
         description='Normal: < 500ms p95 (green). Watch for: sustained yellow (> 500ms) or red (> 1s). Check next: Lifecycle Timing in Orient for breakdown.',
       ),
 
       layout.panel(
-        panels.statPanel(
-          title='DB Transaction p95',
-          targets=[targets.target(
-            'histogram_quantile(0.95, sum(rate(db_transaction_duration_seconds_bucket{service_name="%s"}[1m])) by (le))' % svc,
-            'p95',
-            'A',
-          )],
-          thresholds=thresholds.dbTxnP95,
-          unit='s',
-          colorMode='background',
-        ) + modifiers.withLinks(observeLinks),
+        withLinks(
+          panels.statPanel(
+            title='DB Transaction p95',
+            targets=[{
+              expr: 'histogram_quantile(0.95, sum(rate(db_transaction_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le))',
+              legendFormat: 'p95',
+              refId: 'A',
+            }],
+            thresholds=thresholds.dbTxnP95,
+            unit='s',
+            colorMode='background',
+          ),
+          observeLinks,
+        ),
         w=6, h=6,
         description='Normal: < 50ms p95 (green). Watch for: yellow (> 50ms) signals pool pressure, red (> 100ms) signals contention. Check next: Database collapsed row in Orient.',
       ),
 
       layout.panel(
-        panels.statPanel(
-          title='HTTP Error Rate %',
-          targets=[targets.target(
-            'sum(rate(http_server_requests_total{service_name="%s",http_status_code=~"[45].."}[1m])) / sum(rate(http_server_requests_total{service_name="%s"}[1m])) * 100' % [svc, svc],
-            'error %',
-            'A',
-          )],
-          thresholds=thresholds.httpError,
-          unit='percent',
-          colorMode='background',
-        ) + modifiers.withLinks(observeLinks),
+        withLinks(
+          panels.statPanel(
+            title='HTTP Error Rate %',
+            targets=[{
+              expr: 'sum(rate(http_server_requests_total{service_name="risk-it",http_status_code=~"[45].."}[1m])) / sum(rate(http_server_requests_total{service_name="risk-it"}[1m])) * 100',
+              legendFormat: 'error %',
+              refId: 'A',
+            }],
+            thresholds=thresholds.httpError,
+            unit='percent',
+            colorMode='background',
+          ),
+          observeLinks,
+        ),
         w=6, h=6,
         description='Normal: < 1% errors (green). Watch for: yellow (> 1%) may be transient; red (> 5%) indicates systematic failures. Check next: HTTP Error Rate timeseries in Server & HTTP.',
       ),
 
       layout.panel(
-        panels.statPanel(
-          title='Pool Utilization',
-          targets=[targets.target(
-            'db_pool_active{service_name="%s"} / db_pool_total{service_name="%s"} * 100' % [svc, svc],
-            'utilization',
-            'A',
-          )],
-          thresholds=thresholds.poolUtil,
-          unit='percent',
-          colorMode='background',
-        ) + modifiers.withLinks(observeLinks),
+        withLinks(
+          panels.statPanel(
+            title='Pool Utilization',
+            targets=[{
+              expr: 'db_pool_active{service_name="risk-it"} / db_pool_total{service_name="risk-it"} * 100',
+              legendFormat: 'utilization',
+              refId: 'A',
+            }],
+            thresholds=thresholds.poolUtil,
+            unit='percent',
+            colorMode='background',
+          ),
+          observeLinks,
+        ),
         w=6, h=6,
         description='Normal: < 60% utilization (green). Watch for: yellow (> 60%) under moderate load, red (> 80%) approaching saturation. Check next: Pool Usage timeseries in Database collapsed row.',
       ),
 
       // Row 2: 3x w=8 stat panels
       layout.panel(
-        panels.statPanel(
-          title='Canceled Acquires',
-          targets=[targets.target(
-            'rate(db_pool_canceled_acquires_total{service_name="%s"}[1m])' % svc,
-            'canceled/s',
-            'A',
-          )],
-          thresholds=thresholds.canceledAcquires,
-        ) + modifiers.withLinks(observeLinks),
+        withLinks(
+          panels.statPanel(
+            title='Canceled Acquires',
+            targets=[{
+              expr: 'rate(db_pool_canceled_acquires_total{service_name="risk-it"}[1m])',
+              legendFormat: 'canceled/s',
+              refId: 'A',
+            }],
+            thresholds=thresholds.canceledAcquires,
+          ),
+          observeLinks,
+        ),
         w=8, h=6,
         description='Normal: 0 canceled acquires (green). Watch for: any non-zero rate (red) means requests timing out waiting for DB connections. Check next: Pool Utilization and Acquire Time in Database row.',
       ),
 
       layout.panel(
-        panels.statPanel(
-          title='Cache Hit Rate',
-          targets=[targets.target(
-            'pg_stat_database_blks_hit_total{datname=~"postgres"} / (pg_stat_database_blks_hit_total{datname=~"postgres"} + pg_stat_database_blks_read_total{datname=~"postgres"}) * 100',
-            'hit %',
-            'A',
-          )],
-          thresholds=thresholds.cacheHit,
-          unit='percent',
-        ) + modifiers.withLinks(observeLinks),
+        withLinks(
+          panels.statPanel(
+            title='Cache Hit Rate',
+            targets=[{
+              expr: 'pg_stat_database_blks_hit_total{datname=~"postgres"} / (pg_stat_database_blks_hit_total{datname=~"postgres"} + pg_stat_database_blks_read_total{datname=~"postgres"}) * 100',
+              legendFormat: 'hit %',
+              refId: 'A',
+            }],
+            thresholds=thresholds.cacheHit,
+            unit='percent',
+          ),
+          observeLinks,
+        ),
         w=8, h=6,
         description='Normal: > 99% cache hit rate (green). Watch for: yellow (< 99%) indicates working set exceeds shared_buffers; red (< 90%) severe miss rate. Check next: Postgres Internals collapsed row.',
       ),
 
       layout.panel(
-        panels.statPanel(
-          title='WS Connections',
-          targets=[targets.target(
-            'ws_connections_active{service_name="%s"}' % svc,
-            'active',
-            'A',
-          )],
-          thresholds=thresholds.wsConnections,
-        ) + modifiers.withLinks(observeLinks),
+        withLinks(
+          panels.statPanel(
+            title='WS Connections',
+            targets=[{
+              expr: 'ws_connections_active{service_name="risk-it"}',
+              legendFormat: 'active',
+              refId: 'A',
+            }],
+            thresholds=thresholds.wsConnections,
+          ),
+          observeLinks,
+        ),
         w=8, h=6,
         description='Normal: < 100 connections (green). Watch for: yellow (> 100) under moderate load; red (> 500) may indicate leak. Check next: WebSocket collapsed row for broadcast health.',
       ),
@@ -156,9 +184,9 @@ dashboard.new(
       layout.panel(
         panels.timeseriesPanel(
           title='Lifecycle Timing (p95)',
-          targets=targets.lifecycleTargets,
+          targets=panels.lifecycleTargets,
           unit='s',
-          overrides=targets.lifecycleOverrides,
+          overrides=panels.lifecycleOverrides,
         ),
         w=24, h=10,
         description='Normal: HTTP Total < 500ms, DB < 50ms, Game Logic < 200ms, WS < 100ms. Watch for: any boundary diverging from baseline. Check next: collapsed rows below for per-boundary detail.',
@@ -183,7 +211,7 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='Txn Duration P50/P95/P99',
-            targets=targets.histogramQuantileTargetsWithExemplars(
+            targets=panels.histogramQuantileTargetsWithExemplars(
               'db_transaction_duration_seconds_bucket',
               [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']],
             ),
@@ -199,9 +227,9 @@ dashboard.new(
           panels.timeseriesPanel(
             title='Pool Usage',
             targets=[
-              targets.target('db_pool_active{service_name="%s"}' % svc, 'Active', 'A'),
-              targets.target('db_pool_idle{service_name="%s"}' % svc, 'Idle', 'B'),
-              targets.target('db_pool_total{service_name="%s"}' % svc, 'Total', 'C'),
+              { expr: 'db_pool_active{service_name="risk-it"}', legendFormat: 'Active', refId: 'A' },
+              { expr: 'db_pool_idle{service_name="risk-it"}', legendFormat: 'Idle', refId: 'B' },
+              { expr: 'db_pool_total{service_name="risk-it"}', legendFormat: 'Total', refId: 'C' },
             ],
             unit='short',
             color=colors.fixedColor(colors.db),
@@ -214,7 +242,7 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='Acquire Time P50/P95/P99',
-            targets=targets.histogramQuantileTargets(
+            targets=panels.histogramQuantileTargets(
               'db_pool_acquire_duration_seconds_bucket',
               [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']],
             ),
@@ -229,11 +257,11 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='Pool Saturation',
-            targets=[targets.target(
-              'db_pool_active{service_name="%s"} / db_pool_total{service_name="%s"} * 100' % [svc, svc],
-              'utilization %',
-              'A',
-            )],
+            targets=[{
+              expr: 'db_pool_active{service_name="risk-it"} / db_pool_total{service_name="risk-it"} * 100',
+              legendFormat: 'utilization %',
+              refId: 'A',
+            }],
             unit='percent',
           ) + modifiers.withSloThreshold(thresholds.poolUtil),
           w=12, h=8,
@@ -244,11 +272,11 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='Acquire Rate',
-            targets=[targets.target(
-              'rate(db_pool_acquire_count_total{service_name="%s"}[1m])' % svc,
-              'acquires/s',
-              'A',
-            )],
+            targets=[{
+              expr: 'rate(db_pool_acquire_count_total{service_name="risk-it"}[1m])',
+              legendFormat: 'acquires/s',
+              refId: 'A',
+            }],
             unit='ops',
             color=colors.fixedColor(colors.db),
           ),
@@ -260,11 +288,11 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='Rollbacks',
-            targets=[targets.target(
-              'rate(pg_stat_database_xact_rollback_total{datname=~"postgres"}[1m])',
-              'rollbacks/s',
-              'A',
-            )],
+            targets=[{
+              expr: 'rate(pg_stat_database_xact_rollback_total{datname=~"postgres"}[1m])',
+              legendFormat: 'rollbacks/s',
+              refId: 'A',
+            }],
             unit='ops',
             color=colors.fixedColor(colors.errors),
           ),
@@ -277,7 +305,7 @@ dashboard.new(
           panels.timeseriesPanel(
             title='PG Connections',
             targets=[
-              targets.target('pg_stat_database_numbackends{datname=~"postgres"}', 'backends', 'A'),
+              { expr: 'pg_stat_database_numbackends{datname=~"postgres"}', legendFormat: 'backends', refId: 'A' },
             ],
             unit='short',
             color=colors.fixedColor(colors.db),
@@ -291,8 +319,8 @@ dashboard.new(
           panels.timeseriesPanel(
             title='PG Txns/sec',
             targets=[
-              targets.target('rate(pg_stat_database_xact_commit_total{datname=~"postgres"}[1m])', 'commits/s', 'A'),
-              targets.target('rate(pg_stat_database_xact_rollback_total{datname=~"postgres"}[1m])', 'rollbacks/s', 'B'),
+              { expr: 'rate(pg_stat_database_xact_commit_total{datname=~"postgres"}[1m])', legendFormat: 'commits/s', refId: 'A' },
+              { expr: 'rate(pg_stat_database_xact_rollback_total{datname=~"postgres"}[1m])', legendFormat: 'rollbacks/s', refId: 'B' },
             ],
             unit='ops',
           ),
@@ -305,10 +333,10 @@ dashboard.new(
           panels.timeseriesPanel(
             title='PG Rows',
             targets=[
-              targets.target('rate(pg_stat_database_tup_returned_total{datname=~"postgres"}[1m])', 'returned/s', 'A'),
-              targets.target('rate(pg_stat_database_tup_fetched_total{datname=~"postgres"}[1m])', 'fetched/s', 'B'),
-              targets.target('rate(pg_stat_database_tup_inserted_total{datname=~"postgres"}[1m])', 'inserted/s', 'C'),
-              targets.target('rate(pg_stat_database_tup_updated_total{datname=~"postgres"}[1m])', 'updated/s', 'D'),
+              { expr: 'rate(pg_stat_database_tup_returned_total{datname=~"postgres"}[1m])', legendFormat: 'returned/s', refId: 'A' },
+              { expr: 'rate(pg_stat_database_tup_fetched_total{datname=~"postgres"}[1m])', legendFormat: 'fetched/s', refId: 'B' },
+              { expr: 'rate(pg_stat_database_tup_inserted_total{datname=~"postgres"}[1m])', legendFormat: 'inserted/s', refId: 'C' },
+              { expr: 'rate(pg_stat_database_tup_updated_total{datname=~"postgres"}[1m])', legendFormat: 'updated/s', refId: 'D' },
             ],
             unit='ops',
           ),
@@ -323,11 +351,11 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='HTTP Request Rate',
-            targets=[targets.target(
-              'sum(rate(http_server_requests_total{service_name="%s"}[1m]))' % svc,
-              'req/s',
-              'A',
-            )],
+            targets=[{
+              expr: 'sum(rate(http_server_requests_total{service_name="risk-it"}[1m]))',
+              legendFormat: 'req/s',
+              refId: 'A',
+            }],
             unit='reqps',
             color=colors.fixedColor(colors.http),
           ),
@@ -339,11 +367,11 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='HTTP Error Rate %',
-            targets=[targets.target(
-              'sum(rate(http_server_requests_total{service_name="%s",http_status_code=~"[45].."}[1m])) / sum(rate(http_server_requests_total{service_name="%s"}[1m])) * 100' % [svc, svc],
-              'error %',
-              'A',
-            )],
+            targets=[{
+              expr: 'sum(rate(http_server_requests_total{service_name="risk-it",http_status_code=~"[45].."}[1m])) / sum(rate(http_server_requests_total{service_name="risk-it"}[1m])) * 100',
+              legendFormat: 'error %',
+              refId: 'A',
+            }],
             unit='percent',
             color=colors.fixedColor(colors.errors),
           ) + modifiers.withSloThreshold(thresholds.httpError),
@@ -355,7 +383,7 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='HTTP Latency P50/P95/P99',
-            targets=targets.histogramQuantileTargetsWithExemplars(
+            targets=panels.histogramQuantileTargetsWithExemplars(
               'http_server_request_duration_seconds_bucket',
               [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']],
             ),
@@ -370,11 +398,11 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='HTTP Rate by Route',
-            targets=[targets.target(
-              'sum(rate(http_server_requests_total{service_name="%s"}[1m])) by (http_route)' % svc,
-              '{{http_route}}',
-              'A',
-            )],
+            targets=[{
+              expr: 'sum(rate(http_server_requests_total{service_name="risk-it"}[1m])) by (http_route)',
+              legendFormat: '{{http_route}}',
+              refId: 'A',
+            }],
             unit='reqps',
             color=colors.fixedColor(colors.http),
           ),
@@ -386,11 +414,11 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='Process CPU',
-            targets=[targets.target(
-              'rate(process_cpu_seconds_total{service_name="%s"}[1m])' % svc,
-              'CPU cores',
-              'A',
-            )],
+            targets=[{
+              expr: 'rate(process_cpu_seconds_total{service_name="risk-it"}[1m])',
+              legendFormat: 'CPU cores',
+              refId: 'A',
+            }],
             unit='short',
             color=colors.fixedColor(colors.gameLogic),
           ),
@@ -402,11 +430,11 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='Scheduler Latency',
-            targets=[targets.target(
-              'histogram_quantile(0.95, sum(rate(runtime_go_sched_latency_bucket{service_name="%s"}[1m])) by (le))' % svc,
-              'p95',
-              'A',
-            )],
+            targets=[{
+              expr: 'histogram_quantile(0.95, sum(rate(runtime_go_sched_latency_bucket{service_name="risk-it"}[1m])) by (le))',
+              legendFormat: 'p95',
+              refId: 'A',
+            }],
             unit='s',
           ),
           w=8, h=8,
@@ -417,11 +445,11 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='Goroutines',
-            targets=[targets.target(
-              'runtime_go_goroutines{service_name="%s"}' % svc,
-              'goroutines',
-              'A',
-            )],
+            targets=[{
+              expr: 'runtime_go_goroutines{service_name="risk-it"}',
+              legendFormat: 'goroutines',
+              refId: 'A',
+            }],
             unit='short',
             color=colors.fixedColor(colors.gameLogic),
           ),
@@ -434,8 +462,8 @@ dashboard.new(
           panels.timeseriesPanel(
             title='Heap Memory',
             targets=[
-              targets.target('runtime_go_mem_heap_alloc{service_name="%s"}' % svc, 'Alloc', 'A'),
-              targets.target('runtime_go_mem_heap_sys{service_name="%s"}' % svc, 'Sys', 'B'),
+              { expr: 'runtime_go_mem_heap_alloc{service_name="risk-it"}', legendFormat: 'Alloc', refId: 'A' },
+              { expr: 'runtime_go_mem_heap_sys{service_name="risk-it"}', legendFormat: 'Sys', refId: 'B' },
             ],
             unit='bytes',
           ),
@@ -448,8 +476,8 @@ dashboard.new(
           panels.timeseriesPanel(
             title='GC Goal',
             targets=[
-              targets.target('runtime_go_gc_gogc{service_name="%s"}' % svc, 'GOGC', 'A'),
-              targets.target('runtime_go_gc_gomemlimit{service_name="%s"}' % svc, 'GOMEMLIMIT', 'B'),
+              { expr: 'runtime_go_gc_gogc{service_name="risk-it"}', legendFormat: 'GOGC', refId: 'A' },
+              { expr: 'runtime_go_gc_gomemlimit{service_name="risk-it"}', legendFormat: 'GOMEMLIMIT', refId: 'B' },
             ],
             unit='bytes',
           ),
@@ -461,11 +489,11 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='Process Memory',
-            targets=[targets.target(
-              'process_resident_memory_bytes{service_name="%s"}' % svc,
-              'RSS',
-              'A',
-            )],
+            targets=[{
+              expr: 'process_resident_memory_bytes{service_name="risk-it"}',
+              legendFormat: 'RSS',
+              refId: 'A',
+            }],
             unit='bytes',
           ),
           w=8, h=8,
@@ -479,7 +507,7 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='Broadcast Latency P50/P95/P99',
-            targets=targets.histogramQuantileTargetsWithExemplars(
+            targets=panels.histogramQuantileTargetsWithExemplars(
               'ws_broadcast_duration_seconds_bucket',
               [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']],
             ),
@@ -494,11 +522,11 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='Messages Rate',
-            targets=[targets.target(
-              'sum(rate(ws_messages_total{service_name="%s"}[1m])) by (direction)' % svc,
-              '{{direction}}',
-              'A',
-            )],
+            targets=[{
+              expr: 'sum(rate(ws_messages_total{service_name="risk-it"}[1m])) by (direction)',
+              legendFormat: '{{direction}}',
+              refId: 'A',
+            }],
             unit='ops',
             color=colors.fixedColor(colors.ws),
           ),
@@ -510,11 +538,11 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='Fan-Out',
-            targets=[targets.target(
-              'sum(rate(ws_messages_total{service_name="%s",direction="outbound"}[1m])) / sum(rate(event_bus_events_total{service_name="%s",event_type="move_executed"}[1m]))' % [svc, svc],
-              'msgs/move',
-              'A',
-            )],
+            targets=[{
+              expr: 'sum(rate(ws_messages_total{service_name="risk-it",direction="outbound"}[1m])) / sum(rate(event_bus_events_total{service_name="risk-it",event_type="move_executed"}[1m]))',
+              legendFormat: 'msgs/move',
+              refId: 'A',
+            }],
             unit='short',
             color=colors.fixedColor(colors.ws),
           ),
@@ -526,11 +554,11 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='WS Errors',
-            targets=[targets.target(
-              'sum(rate(ws_errors_total{service_name="%s"}[1m]))' % svc,
-              'errors/s',
-              'A',
-            )],
+            targets=[{
+              expr: 'sum(rate(ws_errors_total{service_name="risk-it"}[1m]))',
+              legendFormat: 'errors/s',
+              refId: 'A',
+            }],
             unit='ops',
             color=colors.fixedColor(colors.errors),
           ),
@@ -548,11 +576,11 @@ dashboard.new(
       layout.panel(
         panels.timeseriesPanel(
           title='Fan-out Amplification',
-          targets=[targets.target(
-            'sum(rate(ws_messages_total{service_name="%s",direction="outbound"}[1m])) / sum(rate(event_bus_events_total{service_name="%s",event_type="move_executed"}[1m]))' % [svc, svc],
-            'msgs/move',
-            'A',
-          )],
+          targets=[{
+            expr: 'sum(rate(ws_messages_total{service_name="risk-it",direction="outbound"}[1m])) / sum(rate(event_bus_events_total{service_name="risk-it",event_type="move_executed"}[1m]))',
+            legendFormat: 'msgs/move',
+            refId: 'A',
+          }],
           unit='short',
           color=colors.fixedColor(colors.ws),
         ) + modifiers.withSloThreshold(thresholds.ccFanOut),
@@ -564,11 +592,11 @@ dashboard.new(
       layout.panel(
         panels.timeseriesPanel(
           title='DB Latency Share',
-          targets=[targets.target(
-            'histogram_quantile(0.95, sum(rate(db_transaction_duration_seconds_bucket{service_name="%s"}[1m])) by (le)) / histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name="%s"}[1m])) by (le)) * 100' % [svc, svc],
-            'DB % of HTTP p95',
-            'A',
-          )],
+          targets=[{
+            expr: 'histogram_quantile(0.95, sum(rate(db_transaction_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le)) / histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le)) * 100',
+            legendFormat: 'DB % of HTTP p95',
+            refId: 'A',
+          }],
           unit='percent',
           color=colors.fixedColor(colors.db),
         ) + modifiers.withSloThreshold(thresholds.ccDbLatencyShare),
@@ -581,8 +609,8 @@ dashboard.new(
         panels.timeseriesPanel(
           title='Process Memory',
           targets=[
-            targets.target('process_resident_memory_bytes{service_name="%s"}' % svc, 'RSS', 'A'),
-            targets.target('runtime_go_mem_heap_alloc{service_name="%s"}' % svc, 'Heap Alloc', 'B'),
+            { expr: 'process_resident_memory_bytes{service_name="risk-it"}', legendFormat: 'RSS', refId: 'A' },
+            { expr: 'runtime_go_mem_heap_alloc{service_name="risk-it"}', legendFormat: 'Heap Alloc', refId: 'B' },
           ],
           unit='bytes',
         ),
@@ -598,11 +626,11 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='Lock Contention',
-            targets=[targets.target(
-              'sum(pg_locks_count) by (mode)',
-              '{{mode}}',
-              'A',
-            )],
+            targets=[{
+              expr: 'sum(pg_locks_count) by (mode)',
+              legendFormat: '{{mode}}',
+              refId: 'A',
+            }],
             unit='short',
           ) + modifiers.withStackedArea(30, 'hue') + modifiers.withSeriesColors(colors.lockModes),
           w=24, h=10,
@@ -613,11 +641,11 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='Deadlocks',
-            targets=[targets.target(
-              'rate(pg_stat_database_deadlocks_total{datname=~"postgres"}[1m])',
-              'deadlocks/s',
-              'A',
-            )],
+            targets=[{
+              expr: 'rate(pg_stat_database_deadlocks_total{datname=~"postgres"}[1m])',
+              legendFormat: 'deadlocks/s',
+              refId: 'A',
+            }],
             unit='ops',
             color=colors.fixedColor(colors.errors),
           ),
@@ -629,11 +657,11 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='Dead Tuples',
-            targets=[targets.target(
-              'sum(pg_stat_user_tables_n_dead_tup) by (relname)',
-              '{{relname}}',
-              'A',
-            )],
+            targets=[{
+              expr: 'sum(pg_stat_user_tables_n_dead_tup) by (relname)',
+              legendFormat: '{{relname}}',
+              refId: 'A',
+            }],
             unit='short',
           ),
           w=12, h=8,
@@ -645,8 +673,8 @@ dashboard.new(
           panels.timeseriesPanel(
             title='Table Scans',
             targets=[
-              targets.target('rate(pg_stat_user_tables_seq_scan_total[1m])', 'seq scans/s', 'A'),
-              targets.target('rate(pg_stat_user_tables_idx_scan_total[1m])', 'idx scans/s', 'B'),
+              { expr: 'rate(pg_stat_user_tables_seq_scan_total[1m])', legendFormat: 'seq scans/s', refId: 'A' },
+              { expr: 'rate(pg_stat_user_tables_idx_scan_total[1m])', legendFormat: 'idx scans/s', refId: 'B' },
             ],
             unit='ops',
           ) + modifiers.withDashedSeries(['seq scans/s']),
@@ -658,11 +686,11 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='Table Sizes',
-            targets=[targets.target(
-              'sum(pg_stat_user_tables_size) by (relname)',
-              '{{relname}}',
-              'A',
-            )],
+            targets=[{
+              expr: 'sum(pg_stat_user_tables_size) by (relname)',
+              legendFormat: '{{relname}}',
+              refId: 'A',
+            }],
             unit='bytes',
           ),
           w=12, h=8,
@@ -673,11 +701,11 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='WAL',
-            targets=[targets.target(
-              'rate(pg_stat_wal_wal_bytes_total[1m])',
-              'WAL bytes/s',
-              'A',
-            )],
+            targets=[{
+              expr: 'rate(pg_stat_wal_wal_bytes_total[1m])',
+              legendFormat: 'WAL bytes/s',
+              refId: 'A',
+            }],
             unit='Bps',
             color=colors.fixedColor(colors.db),
           ),
@@ -689,11 +717,11 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='Per-Table Cache Hit',
-            targets=[targets.target(
-              'pg_stat_user_tables_heap_blks_hit_total / (pg_stat_user_tables_heap_blks_hit_total + pg_stat_user_tables_heap_blks_read_total) * 100',
-              '{{relname}}',
-              'A',
-            )],
+            targets=[{
+              expr: 'pg_stat_user_tables_heap_blks_hit_total / (pg_stat_user_tables_heap_blks_hit_total + pg_stat_user_tables_heap_blks_read_total) * 100',
+              legendFormat: '{{relname}}',
+              refId: 'A',
+            }],
             unit='percent',
           ),
           w=24, h=8,
@@ -707,9 +735,12 @@ dashboard.new(
         layout.panel(
           panels.heatmapPanel(
             title='Query Latency Heatmap',
-            targets=[targets.heatmapTarget(
-              'sum(rate(db_transaction_duration_seconds_bucket{service_name="%s"}[1m])) by (le)' % svc,
-            )],
+            targets=[{
+              expr: 'sum(rate(db_transaction_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le)',
+              format: 'heatmap',
+              legendFormat: '{{le}}',
+              refId: 'A',
+            }],
             unit='s',
             colorScheme='Spectral',
             colorFill='dark-red',
@@ -722,11 +753,11 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='Top Queries by Call Rate',
-            targets=[targets.target(
-              'topk(10, sum(rate(pg_stat_statements_calls_total[1m])) by (query))',
-              '{{query}}',
-              'A',
-            )],
+            targets=[{
+              expr: 'topk(10, sum(rate(pg_stat_statements_calls_total[1m])) by (query))',
+              legendFormat: '{{query}}',
+              refId: 'A',
+            }],
             unit='ops',
           ),
           w=12, h=8,
@@ -737,11 +768,11 @@ dashboard.new(
         layout.panel(
           panels.timeseriesPanel(
             title='Top Queries by Latency',
-            targets=[targets.target(
-              'topk(10, sum(rate(pg_stat_statements_total_exec_time_total[1m])) by (query) / sum(rate(pg_stat_statements_calls_total[1m])) by (query))',
-              '{{query}}',
-              'A',
-            )],
+            targets=[{
+              expr: 'topk(10, sum(rate(pg_stat_statements_total_exec_time_total[1m])) by (query) / sum(rate(pg_stat_statements_calls_total[1m])) by (query))',
+              legendFormat: '{{query}}',
+              refId: 'A',
+            }],
             unit='s',
           ),
           w=12, h=8,
@@ -798,7 +829,7 @@ dashboard.new(
       layout.panel(
         panels.logPanel(
           title='WS Broadcast Logs',
-          expr='{service_name="%s"} |= "broadcast" |= "ws"' % svc,
+          expr='{service_name="risk-it"} |= "broadcast" |= "ws"',
         ),
         w=24, h=8,
         description='Normal: broadcast log entries for each move. Watch for: error-level entries or timeouts. Check next: Trace Investigation collapsed row for correlated traces.',
@@ -828,7 +859,7 @@ dashboard.new(
         layout.panel(
           panels.logPanel(
             title='Correlated Logs',
-            expr='{service_name="%s"} | trace_id=`${traceId}`' % svc,
+            expr='{service_name="risk-it"} | trace_id=`${traceId}`',
             showLabels=true,
           ),
           w=24, h=14,
