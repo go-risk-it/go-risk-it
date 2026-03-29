@@ -26,7 +26,7 @@ func TestLayerFromPrefix_ExplicitMappings(t *testing.T) {
 		{"events", "Events"},
 		{"events/logger", "Events"},
 		{"events/game", "Events-domain"},
-		{"events/lobby", "Events-domain"},
+		{"lobby/events", "Events-domain"},
 		{"logic/errors", "Shared"},
 		{"api/game", "API"},
 		{"api/game/messaging", "API"},
@@ -53,14 +53,14 @@ func TestLayerFromPrefix_PrefixFallbacks(t *testing.T) {
 		suffix string
 		want   string
 	}{
-		{"api/lobby/rest/response", "API"},
+		{"lobby/api/rest/response", "API"},
 		{"data/game/sqlc", "Data"},
 		{"logic/game/board", "Logic"},
 		{"logic/game/move/orchestration", "Logic"},
 		{"web/game/controller", "Web"},
 		{"web/lobby/ws", "Web"},
 		{"events/game/some/sub", "Events-domain"},
-		{"events/lobby/deep", "Events-domain"},
+		{"lobby/events/deep", "Events-domain"},
 	}
 
 	for _, testCase := range cases {
@@ -93,12 +93,12 @@ func TestSubsystemFromSuffix_ExplicitMappings(t *testing.T) {
 	}{
 		// Web Layer
 		{"web/game/controller", "game_handlers"},
-		{"web/game/converter", "game_handlers"},
-		{"web/game/publisher", "game_handlers"},
 		{"web/game/rest", "game_handlers"},
 		{"web/game/ws", "game_handlers"},
+		{"game/consumers", "game_handlers"},
+		{"game/consumers/converter", "game_handlers"},
 		{"web/lobby/controller", "lobby_handlers"},
-		{"web/lobby/publisher", "lobby_handlers"},
+		{"lobby/consumers", "lobby_handlers"},
 		{"web/lobby/rest", "lobby_handlers"},
 		{"web/lobby/ws", "lobby_handlers"},
 		{"web/middleware", "middleware"},
@@ -127,10 +127,10 @@ func TestSubsystemFromSuffix_ExplicitMappings(t *testing.T) {
 		{"logic/game/state", "game_services"},
 		{"logic/game/creation", "game_services"},
 		{"logic/game/headlines", "game_services"},
-		{"logic/lobby/creation", "lobby_logic"},
-		{"logic/lobby/management", "lobby_logic"},
-		{"logic/lobby/start", "lobby_logic"},
-		{"logic/lobby/state", "lobby_logic"},
+		{"lobby/logic/creation", "lobby_logic"},
+		{"lobby/logic/management", "lobby_logic"},
+		{"lobby/logic/start", "lobby_logic"},
+		{"lobby/logic/state", "lobby_logic"},
 
 		// Shared
 		{"logic/errors", "domain_errors"},
@@ -139,11 +139,11 @@ func TestSubsystemFromSuffix_ExplicitMappings(t *testing.T) {
 		{"events", "event_bus"},
 		{"events/logger", "event_bus"},
 		{"events/game", "game_events"},
-		{"events/lobby", "lobby_events"},
+		{"lobby/events", "lobby_events"},
 
 		// Data
 		{"data/game/db", "game_data"},
-		{"data/lobby/db", "lobby_data"},
+		{"lobby/data/db", "lobby_data"},
 		{"data/db", "database"},
 		{"data/pool", "database"},
 		{"data/migration", "database"},
@@ -160,7 +160,7 @@ func TestSubsystemFromSuffix_ExplicitMappings(t *testing.T) {
 		// API
 		{"api/game", "api_dtos"},
 		{"api/game/messaging", "api_dtos"},
-		{"api/lobby/rest/request", "api_dtos"},
+		{"lobby/api/rest/request", "api_dtos"},
 
 		// Test
 		{"testing/invariant", "testing"},
@@ -199,12 +199,12 @@ func TestSubsystemFromSuffix_Fallbacks(t *testing.T) {
 		{"web/newmiddleware", "middleware"},
 		{"logic/game/move/newmove", "move_pipeline"},
 		{"logic/game/newservice", "game_services"},
-		{"logic/lobby/newfeature", "lobby_logic"},
+		{"lobby/logic/newfeature", "lobby_logic"},
 		{"events/game/sub", "game_events"},
-		{"events/lobby/sub", "lobby_events"},
+		{"lobby/events/sub", "lobby_events"},
 		{"events/newpkg", "event_bus"},
 		{"data/game/newpkg", "game_data"},
-		{"data/lobby/newpkg", "lobby_data"},
+		{"lobby/data/newpkg", "lobby_data"},
 		{"data/newpkg", "database"},
 		{"testing/newpkg", "testing"},
 	}
@@ -251,7 +251,7 @@ func TestIsExcluded(t *testing.T) {
 		{"web/game", true},
 		// generated packages
 		{"data/game/sqlc", true},
-		{"data/lobby/sqlc", true},
+		{"lobby/data/sqlc", true},
 		{"something/mocks", true},
 		// real packages
 		{"config", false},

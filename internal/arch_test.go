@@ -112,11 +112,16 @@ func assertNoRawImports(t *testing.T, pkgs []goPackage, forbidden ...string) {
 func TestArch_LogicNeverImportsWebOrAPI(t *testing.T) {
 	t.Parallel()
 
-	pkgs := loadPackages(t, "./internal/logic/...")
+	lobbyPkgs := loadPackages(t, "./internal/lobby/logic/...")
+	gamePkgs := loadPackages(t, "./internal/game/logic/...")
+	lobbyPkgs = append(lobbyPkgs, gamePkgs...)
+	pkgs := lobbyPkgs
 
 	assertNoImports(t, pkgs,
 		modulePrefix+"web/",
 		modulePrefix+"api/",
+		modulePrefix+"game/api/",
+		modulePrefix+"lobby/api/",
 	)
 }
 
@@ -124,7 +129,10 @@ func TestArch_LogicNeverImportsWebOrAPI(t *testing.T) {
 func TestArch_LogicNeverImportsNetHTTP(t *testing.T) {
 	t.Parallel()
 
-	pkgs := loadPackages(t, "./internal/logic/...")
+	lobbyPkgs := loadPackages(t, "./internal/lobby/logic/...")
+	gamePkgs := loadPackages(t, "./internal/game/logic/...")
+	lobbyPkgs = append(lobbyPkgs, gamePkgs...)
+	pkgs := lobbyPkgs
 
 	assertNoRawImports(t, pkgs, "net/http")
 }
@@ -133,50 +141,188 @@ func TestArch_LogicNeverImportsNetHTTP(t *testing.T) {
 func TestArch_DataNeverImportsLogicOrWeb(t *testing.T) {
 	t.Parallel()
 
-	pkgs := loadPackages(t, "./internal/data/...")
+	lobbyPkgs := loadPackages(t, "./internal/lobby/data/...")
+	gamePkgs := loadPackages(t, "./internal/game/data/...")
+	lobbyPkgs = append(lobbyPkgs, gamePkgs...)
+	pkgs := lobbyPkgs
 
 	assertNoImports(t, pkgs,
 		modulePrefix+"logic/",
+		modulePrefix+"game/logic/",
+		modulePrefix+"lobby/logic/",
 		modulePrefix+"web/",
 	)
 }
 
-// Rule 4: logic/game/ and logic/lobby/ are mutually isolated.
+// Rule 4: game/logic/ and lobby/logic/ are mutually isolated.
 func TestArch_LogicGameAndLobbyIsolated(t *testing.T) {
 	t.Parallel()
 
-	gamePkgs := loadPackages(t, "./internal/logic/game/...")
-	assertNoImports(t, gamePkgs, modulePrefix+"logic/lobby/")
+	gamePkgs := loadPackages(t, "./internal/game/logic/...")
+	assertNoImports(t, gamePkgs,
+		modulePrefix+"lobby/logic/",
+		modulePrefix+"logic/lobby/",
+	)
 
-	lobbyPkgs := loadPackages(t, "./internal/logic/lobby/...")
-	assertNoImports(t, lobbyPkgs, modulePrefix+"logic/game/")
-}
-
-// Rule 4b: events/ root and events/logger are infrastructure — they must never import logic/ or web/.
-// Sub-packages events/game/ and events/lobby/ carry domain payloads and may import logic/ types.
-func TestArch_EventsRootIsolation(t *testing.T) {
-	t.Parallel()
-
-	rootPkgs := loadPackages(t, "./internal/events")
-	loggerPkgs := loadPackages(t, "./internal/events/logger")
-
-	infraPkgs := slices.Concat(rootPkgs, loggerPkgs)
-
-	assertNoImports(t, infraPkgs,
-		modulePrefix+"logic/",
-		modulePrefix+"web/",
+	lobbyPkgs := loadPackages(t, "./internal/lobby/logic/...")
+	assertNoImports(t, lobbyPkgs,
+		modulePrefix+"game/logic/",
+		modulePrefix+"logic/game/",
 	)
 }
 
-// Rule 5: web/game/ and web/lobby/ are mutually isolated.
-func TestArch_WebGameAndLobbyIsolated(t *testing.T) {
+// Rule 4b: kernel/ must never import game or lobby domain packages.
+// Exception: kernel/router/ may import game/commands/ (the cross-module command contract).
+func TestArch_KernelNeverImportsDomain(t *testing.T) {
 	t.Parallel()
 
-	gamePkgs := loadPackages(t, "./internal/web/game/...")
-	assertNoImports(t, gamePkgs, modulePrefix+"web/lobby/")
+	pkgs := loadPackages(t, "./internal/kernel/...")
 
-	lobbyPkgs := loadPackages(t, "./internal/web/lobby/...")
-	assertNoImports(t, lobbyPkgs, modulePrefix+"web/game/")
+	for _, pkg := range pkgs {
+		isRouter := strings.HasSuffix(pkg.ImportPath, "kernel/router")
+		for _, imp := range internalImports(pkg) {
+			// kernel/router is allowed to import game/commands
+			if isRouter && strings.HasPrefix(imp, modulePrefix+"game/commands") {
+				continue
+			}
+
+			if hasPrefix(imp,
+				modulePrefix+"logic/",
+				modulePrefix+"web/",
+				modulePrefix+"game/",
+				modulePrefix+"lobby/",
+				modulePrefix+"data/game/",
+				modulePrefix+"data/lobby/",
+				modulePrefix+"events/game/",
+				modulePrefix+"events/lobby/",
+			) {
+				t.Errorf("%s imports forbidden package %s", pkg.ImportPath, imp)
+			}
+		}
+	}
+}
+
+// Rule 5: game/** and lobby/** are fully isolated — neither module may import the other.
+// Exception: lobby/ may import game/commands/ (the cross-module command contract DTOs).
+func TestArch_GameAndLobbyModulesIsolated(t *testing.T) {
+	t.Parallel()
+
+	gamePkgs := loadPackages(t, "./internal/game/...")
+	assertNoImports(t, gamePkgs,
+		modulePrefix+"lobby/",
+	)
+
+	lobbyPkgs := loadPackages(t, "./internal/lobby/...")
+	for _, pkg := range lobbyPkgs {
+		for _, imp := range internalImports(pkg) {
+			// lobby/ may import game/commands (the command contract)
+			if strings.HasPrefix(imp, modulePrefix+"game/commands") {
+				continue
+			}
+
+			if hasPrefix(imp, modulePrefix+"game/") {
+				t.Errorf("%s imports forbidden package %s", pkg.ImportPath, imp)
+			}
+		}
+	}
+}
+
+// Rule 5b: web/ must not import game/ or lobby/ module packages.
+func TestArch_WebNeverImportsModules(t *testing.T) {
+	t.Parallel()
+
+	pkgs := loadPackages(t, "./internal/web/...")
+
+	assertNoImports(t, pkgs,
+		modulePrefix+"game/",
+		modulePrefix+"lobby/",
+	)
+}
+
+// Rule 5c: kernel/router/ is the only kernel package allowed to import from modules,
+// and only game/commands/ (the cross-module command contract).
+func TestArch_RouterImportRestriction(t *testing.T) {
+	t.Parallel()
+
+	pkgs := loadPackages(t, "./internal/kernel/router/...")
+
+	for _, pkg := range pkgs {
+		for _, imp := range internalImports(pkg) {
+			if strings.HasPrefix(imp, modulePrefix+"game/commands") {
+				continue // allowed
+			}
+
+			if hasPrefix(imp,
+				modulePrefix+"game/",
+				modulePrefix+"lobby/",
+			) {
+				t.Errorf("%s imports forbidden module package %s (only game/commands allowed)",
+					pkg.ImportPath, imp)
+			}
+		}
+	}
+}
+
+// Rule 5d: game/data/ and lobby/data/ are mutually isolated.
+func TestArch_DataModulesIsolated(t *testing.T) {
+	t.Parallel()
+
+	gameDataPkgs := loadPackages(t, "./internal/game/data/...")
+	assertNoImports(t, gameDataPkgs,
+		modulePrefix+"lobby/data/",
+	)
+
+	lobbyDataPkgs := loadPackages(t, "./internal/lobby/data/...")
+	assertNoImports(t, lobbyDataPkgs,
+		modulePrefix+"game/data/",
+	)
+}
+
+// Rule 5e: game/ctx/ may only be imported by game/** and testing/** packages.
+func TestArch_GameCtxImportIsolation(t *testing.T) {
+	t.Parallel()
+
+	pkgs := loadPackages(t, "./internal/...")
+
+	for _, pkg := range pkgs {
+		short := strings.TrimPrefix(pkg.ImportPath, modulePrefix)
+
+		// Allow: game/**, testing/**
+		if strings.HasPrefix(short, "game/") || strings.HasPrefix(short, "testing/") {
+			continue
+		}
+
+		// Kernel test files (external test packages) are allowed to import game/ctx
+		// for testing the Detachable/LogEnricher contracts.
+		if strings.HasPrefix(short, "kernel/") {
+			continue
+		}
+
+		assertNoImports(t, []goPackage{pkg}, modulePrefix+"game/ctx")
+	}
+}
+
+// Rule 5f: lobby/ctx/ may only be imported by lobby/** and testing/** packages.
+func TestArch_LobbyCtxImportIsolation(t *testing.T) {
+	t.Parallel()
+
+	pkgs := loadPackages(t, "./internal/...")
+
+	for _, pkg := range pkgs {
+		short := strings.TrimPrefix(pkg.ImportPath, modulePrefix)
+
+		// Allow: lobby/**, testing/**
+		if strings.HasPrefix(short, "lobby/") || strings.HasPrefix(short, "testing/") {
+			continue
+		}
+
+		// Kernel test files are allowed for testing contracts.
+		if strings.HasPrefix(short, "kernel/") {
+			continue
+		}
+
+		assertNoImports(t, []goPackage{pkg}, modulePrefix+"lobby/ctx")
+	}
 }
 
 // containsFile checks if a package has a specific file in its GoFiles list.
@@ -215,7 +361,10 @@ func assertHasExportedInterface(t *testing.T, pkg goPackage) {
 func TestArch_LogicServicesDefineExportedInterface(t *testing.T) {
 	t.Parallel()
 
-	pkgs := loadPackages(t, "./internal/logic/...")
+	lobbyPkgs := loadPackages(t, "./internal/lobby/logic/...")
+	gamePkgs := loadPackages(t, "./internal/game/logic/...")
+	lobbyPkgs = append(lobbyPkgs, gamePkgs...)
+	pkgs := lobbyPkgs
 
 	for _, pkg := range pkgs {
 		if !containsFile(pkg, "service.go") {
@@ -232,26 +381,32 @@ func TestArch_LogicServicesDefineExportedInterface(t *testing.T) {
 func TestArch_APIOnlyImportsAPI(t *testing.T) {
 	t.Parallel()
 
-	pkgs := loadPackages(t, "./internal/api/...")
+	lobbyPkgs := loadPackages(t, "./internal/lobby/api/...")
+	gamePkgs := loadPackages(t, "./internal/game/api/...")
+	lobbyPkgs = append(lobbyPkgs, gamePkgs...)
+	pkgs := lobbyPkgs
 
 	for _, pkg := range pkgs {
 		for _, imp := range internalImports(pkg) {
-			if !hasPrefix(imp, modulePrefix+"api/") {
+			short := strings.TrimPrefix(imp, modulePrefix)
+			if !strings.HasPrefix(short, "api/") &&
+				!strings.HasPrefix(short, "game/api") &&
+				!strings.HasPrefix(short, "lobby/api") {
 				t.Errorf("%s imports non-api package %s", pkg.ImportPath, imp)
 			}
 		}
 	}
 }
 
-// Rule 8: infrastructure packages (config/, metrics/, rand/) have no internal imports.
-// slog/ is excepted — it legitimately imports config + ctx.
+// Rule 8: infrastructure packages (kernel/config/, kernel/metrics/, kernel/rand/) have no internal imports.
+// kernel/slog/ is excepted — it legitimately imports config + ctx.
 func TestArch_InfrastructureIsolation(t *testing.T) {
 	t.Parallel()
 
 	infraPatterns := []string{
-		"./internal/config/...",
-		"./internal/metrics/...",
-		"./internal/rand/...",
+		"./internal/kernel/config/...",
+		"./internal/kernel/metrics/...",
+		"./internal/game/rand/...",
 	}
 
 	for _, pattern := range infraPatterns {
@@ -287,7 +442,10 @@ func TestArch_TestOnlyNeverImportedByProduction(t *testing.T) {
 func TestArch_DataNeverImportsNetHTTP(t *testing.T) {
 	t.Parallel()
 
-	pkgs := loadPackages(t, "./internal/data/...")
+	lobbyPkgs := loadPackages(t, "./internal/lobby/data/...")
+	gamePkgs := loadPackages(t, "./internal/game/data/...")
+	lobbyPkgs = append(lobbyPkgs, gamePkgs...)
+	pkgs := lobbyPkgs
 
 	assertNoRawImports(t, pkgs, "net/http")
 }
@@ -302,12 +460,20 @@ func TestArch_WebNeverImportsDataQuerier(t *testing.T) {
 	for _, pkg := range pkgs {
 		for _, imp := range internalImports(pkg) {
 			dataPart := strings.TrimPrefix(imp, modulePrefix+"data/")
-			if dataPart == imp {
-				continue // not a data/ import
+			if dataPart != imp && strings.Contains(dataPart, "/db") {
+				t.Errorf("%s imports data querier %s (web must go through logic)",
+					pkg.ImportPath, imp)
 			}
 
-			if strings.Contains(dataPart, "/db") {
-				t.Errorf("%s imports data querier %s (web must go through logic)",
+			gameDataPart := strings.TrimPrefix(imp, modulePrefix+"game/data/")
+			if gameDataPart != imp && strings.Contains(gameDataPart, "/db") {
+				t.Errorf("%s imports game data querier %s (web must go through logic)",
+					pkg.ImportPath, imp)
+			}
+
+			lobbyDataPart := strings.TrimPrefix(imp, modulePrefix+"lobby/data/")
+			if lobbyDataPart != imp && strings.Contains(lobbyDataPart, "/db") {
+				t.Errorf("%s imports lobby data querier %s (web must go through logic)",
 					pkg.ImportPath, imp)
 			}
 		}
@@ -338,10 +504,11 @@ func TestArch_NoOldMathRand(t *testing.T) {
 
 // archBaseline defines the metric ceilings for package quality ratcheting.
 type archBaseline struct {
-	MaxExportsPerPackage int `json:"maxExportsPerPackage"`
-	MaxFanOut            int `json:"maxFanOut"`
-	MaxFilesPerPackage   int `json:"maxFilesPerPackage"`
-	MinDocGoCount        int `json:"minDocGoCount"`
+	MaxExportsPerPackage     int `json:"maxExportsPerPackage"`
+	MaxFanOut                int `json:"maxFanOut"`
+	MaxFilesPerPackage       int `json:"maxFilesPerPackage"`
+	MinDocGoCount            int `json:"minDocGoCount"`
+	KernelMaxProductionFiles int `json:"kernelMaxProductionFiles"`
 }
 
 func loadBaseline(t *testing.T) archBaseline {
@@ -530,43 +697,58 @@ func TestArch_ReportHeadroom(t *testing.T) {
 //
 //nolint:gochecknoglobals // test-only mapping used by doc.go validation rules
 var expectedLayer = map[string]string{
-	// api
-	"api/game":                "API",
-	"api/game/messaging":      "API",
-	"api/game/rest/request":   "API",
-	"api/game/rest/response":  "API",
-	"api/lobby/messaging":     "API",
-	"api/lobby/rest/request":  "API",
-	"api/lobby/rest/response": "API",
+	// game/api
+	"game/api":               "API",
+	"game/api/messaging":     "API",
+	"game/api/rest/request":  "API",
+	"game/api/rest/response": "API",
 
-	// infrastructure
-	"config":             "Infrastructure",
-	"metrics":            "Infrastructure",
-	"rand":               "Infrastructure",
-	"slog":               "Infrastructure",
-	"tracing":            "Infrastructure",
-	"upgradablerw_mutex": "Infrastructure",
+	// api (lobby)
+	"lobby/api/messaging":     "API",
+	"lobby/api/rest/request":  "API",
+	"lobby/api/rest/response": "API",
 
-	// ctx
-	"ctx": "Ctx",
+	// kernel
+	"kernel":                    "Kernel",
+	"kernel/bus":                "Kernel",
+	"kernel/config":             "Kernel",
+	"kernel/ctx":                "Kernel",
+	"kernel/data":               "Kernel",
+	"kernel/data/migration":     "Kernel",
+	"kernel/data/pool":          "Kernel",
+	"kernel/errors":             "Kernel",
+	"kernel/metrics":            "Kernel",
+	"kernel/otelsetup":          "Kernel",
+	"kernel/router":             "Kernel",
+	"kernel/slog":               "Kernel",
+	"kernel/upgradablerw_mutex": "Kernel",
 
-	// data
-	"data/db":        "Data",
-	"data/game/db":   "Data",
-	"data/lobby/db":  "Data",
-	"data/migration": "Data",
-	"data/pool":      "Data",
+	// game domain
+	"game/commands":            "API",
+	"game/ctx":                 "Game-domain",
+	"game/data/db":             "Data",
+	"game/events":              "Events-domain",
+	"game/routes":              "Web",
+	"game/ws":                  "Web",
+	"game/tracing":             "Logic",
+	"game/rand":                "Logic",
+	"game/logic/config":        "Logic",
+	"game/logic/metrics":       "Logic",
+	"game/consumers":           "Web",
+	"game/consumers/converter": "Web",
+
+	// lobby domain
+	"lobby/consumers": "Web",
+	"lobby/ctx":       "Lobby-domain",
+	"lobby/routes":    "Web",
+	"lobby/ws":        "Web",
+
+	// data (lobby)
+	"lobby/data/db": "Data",
 
 	// events
-	"events":        "Events",
 	"events/logger": "Events",
-
-	// events-domain
-	"events/game":  "Events-domain",
-	"events/lobby": "Events-domain",
-
-	// shared
-	"logic/errors": "Shared",
+	"lobby/events":  "Events-domain",
 
 	// test
 	"testing/invariant": "Test",
@@ -576,18 +758,55 @@ var expectedLayer = map[string]string{
 // layerFromPrefix derives the expected layer for a package suffix using prefix matching.
 // It first checks the explicit mapping, then falls back to prefix-based rules.
 //
-//nolint:cyclop // prefix matching requires branching per layer
+//nolint:cyclop,goconst // prefix matching requires branching per layer; string constants are clearer inline
 func layerFromPrefix(suffix string) string {
 	if layer, ok := expectedLayer[suffix]; ok {
 		return layer
 	}
 
 	switch {
+	case strings.HasPrefix(suffix, "game/api/"):
+		return "API"
+	case strings.HasPrefix(suffix, "game/commands"):
+		return "API"
+	case strings.HasPrefix(suffix, "game/ctx"):
+		return "Game-domain"
+	case strings.HasPrefix(suffix, "game/data/"):
+		return "Data"
+	case strings.HasPrefix(suffix, "game/events"):
+		return "Events-domain"
+	case strings.HasPrefix(suffix, "game/routes"):
+		return "Web"
+	case strings.HasPrefix(suffix, "game/ws"):
+		return "Web"
+	case strings.HasPrefix(suffix, "game/consumers"):
+		return "Web"
+	case strings.HasPrefix(suffix, "game/logic/") || strings.HasPrefix(suffix, "game/tracing") ||
+		strings.HasPrefix(suffix, "game/rand"):
+		return "Logic"
+	case strings.HasPrefix(suffix, "lobby/api/"):
+		return "API"
+	case strings.HasPrefix(suffix, "lobby/ctx"):
+		return "Lobby-domain"
+	case strings.HasPrefix(suffix, "lobby/data/"):
+		return "Data"
+	case strings.HasPrefix(suffix, "lobby/events"):
+		return "Events-domain"
+	case strings.HasPrefix(suffix, "lobby/logic/"):
+		return "Logic"
+	case strings.HasPrefix(suffix, "lobby/consumers"):
+		return "Web"
+	case strings.HasPrefix(suffix, "lobby/ws"):
+		return "Web"
+	case strings.HasPrefix(suffix, "lobby/routes"):
+		return "Web"
 	case strings.HasPrefix(suffix, "api/"):
 		return "API"
+	case strings.HasPrefix(suffix, "kernel/"):
+		return "Kernel"
 	case strings.HasPrefix(suffix, "data/"):
 		return "Data"
-	case strings.HasPrefix(suffix, "events/game") || strings.HasPrefix(suffix, "events/lobby"):
+	case strings.HasPrefix(suffix, "events/lobby"):
 		return "Events-domain"
 	case strings.HasPrefix(suffix, "events/"):
 		return "Events"
@@ -613,17 +832,18 @@ func packageSuffix(importPath string) string {
 //nolint:gochecknoglobals // test-only set used by doc.go validation rules
 var wiringRoots = map[string]bool{
 	"":                        true, // internal root
+	"kernel":                  true,
 	"logic":                   true,
-	"logic/game":              true,
-	"logic/game/move":         true,
-	"logic/game/move/service": true,
-	"logic/lobby":             true,
+	"game/logic":              true,
+	"game/logic/move":         true,
+	"game/logic/move/service": true,
+	"game/data":               true,
+	"lobby/logic":             true,
 	"data":                    true,
-	"data/game":               true,
-	"data/lobby":              true,
+	"lobby/data":              true,
 	"web":                     true,
-	"web/game":                true,
-	"web/lobby":               true,
+	"game":                    true,
+	"lobby":                   true,
 }
 
 // isWiringRoot returns true for known fx.Module aggregation packages.
@@ -914,4 +1134,133 @@ func TestArch_DocGoLayer(t *testing.T) {
 				pkg.ImportPath, text, expected)
 		}
 	}
+}
+
+// ─── Phase 5: Kernel Ratchets ───
+
+// Rule 21: kernel production file count must not exceed the ceiling.
+func TestArch_KernelProductionFileCeiling(t *testing.T) {
+	t.Parallel()
+
+	baseline := loadBaseline(t)
+	pkgs := loadPackages(t, "./internal/kernel/...")
+
+	fileCount := 0
+
+	for _, pkg := range pkgs {
+		for _, goFile := range pkg.GoFiles {
+			if strings.HasSuffix(goFile, "_test.go") || goFile == "doc.go" {
+				continue
+			}
+
+			fileCount++
+		}
+	}
+
+	if fileCount > baseline.KernelMaxProductionFiles {
+		t.Errorf("kernel has %d production files (ceiling: %d) — ratchet exceeded",
+			fileCount, baseline.KernelMaxProductionFiles)
+	}
+
+	t.Logf("kernel production files: %d (ceiling: %d, headroom: %d)",
+		fileCount, baseline.KernelMaxProductionFiles, baseline.KernelMaxProductionFiles-fileCount)
+}
+
+// kernelMultiConsumerAllowlist lists kernel sub-packages that are allowed to have
+// fewer than 2 consumer groups. These are infrastructure packages consumed only at
+// the composition root or by a single module that has no peer yet.
+//
+//nolint:gochecknoglobals // test-only set
+var kernelMultiConsumerAllowlist = map[string]bool{
+	"kernel/slog":      true, // consumed only by app composition root
+	"kernel/logger":    true, // consumed only by game/logic (event logger)
+	"kernel/otelsetup": true, // consumed only by web.Module composition root
+	"kernel/router":    true, // one command type so far, lobby is only module consumer
+}
+
+// consumerGroup classifies an import path into its top-level consumer group.
+func consumerGroup(importPath string) string {
+	suffix := strings.TrimPrefix(importPath, modulePrefix)
+
+	switch {
+	case strings.HasPrefix(suffix, "game/"):
+		return "game"
+	case strings.HasPrefix(suffix, "lobby/"):
+		return "lobby"
+	case strings.HasPrefix(suffix, "web/"):
+		return "web"
+	default:
+		return "other"
+	}
+}
+
+// Rule 22: every kernel sub-package must be consumed by >=2 distinct groups
+// (game/, lobby/, web/) or be in the allowlist.
+func TestArch_KernelPackagesHaveMultipleConsumers(
+	t *testing.T,
+) {
+	t.Parallel()
+
+	allPkgs := loadPackages(t, "./internal/...")
+	kernelPkgs := loadPackages(t, "./internal/kernel/...")
+
+	kernelSet := buildKernelSet(kernelPkgs)
+	consumers := countConsumerGroups(allPkgs, kernelSet)
+
+	for kpkg, groups := range consumers {
+		suffix := packageSuffix(kpkg)
+		if kernelMultiConsumerAllowlist[suffix] {
+			continue
+		}
+
+		if len(groups) < 2 {
+			groupNames := make([]string, 0, len(groups))
+			for g := range groups {
+				groupNames = append(groupNames, g)
+			}
+
+			t.Errorf("%s consumed by only %d group(s) %v — needs >=2 or add to allowlist",
+				kpkg, len(groups), groupNames)
+		}
+	}
+}
+
+func buildKernelSet(kernelPkgs []goPackage) map[string]bool {
+	kernelSet := make(map[string]bool)
+
+	for _, kpkg := range kernelPkgs {
+		suffix := packageSuffix(kpkg.ImportPath)
+		if suffix == "kernel" {
+			continue // wiring root
+		}
+
+		kernelSet[kpkg.ImportPath] = true
+	}
+
+	return kernelSet
+}
+
+func countConsumerGroups(
+	allPkgs []goPackage,
+	kernelSet map[string]bool,
+) map[string]map[string]bool {
+	consumers := make(map[string]map[string]bool)
+	for k := range kernelSet {
+		consumers[k] = make(map[string]bool)
+	}
+
+	for _, pkg := range allPkgs {
+		group := consumerGroup(pkg.ImportPath)
+		if group == "other" {
+			continue
+		}
+
+		for _, imp := range pkg.Imports {
+			if kernelSet[imp] {
+				consumers[imp][group] = true
+			}
+		}
+	}
+
+	return consumers
 }

@@ -11,8 +11,7 @@ testing expectations, and the package's role in the dependency graph.
 | Layer | Description | Import constraints |
 |-------|-------------|-------------------|
 | `api` | Data transfer objects (request/response/messaging types) | May only import other `api/` packages |
-| `config` | Application configuration | Leaf package — no internal imports |
-| `ctx` | Request context types | Leaf-like — minimal internal imports |
+| `kernel` | Shared infrastructure (config, ctx, data, errors, bus, metrics) | Never imports game/ or lobby/ |
 | `data` | Database access and persistence | Never imports `logic/` or `web/` |
 | `events` | Event bus infrastructure | Never imports `logic/` or `web/` |
 | `events-domain` | Domain event payload types | May import `logic/` types for payloads |
@@ -41,20 +40,21 @@ Single-file packages whose sole purpose is fx.Module aggregation:
 
 | Package | File |
 |---------|------|
+| `kernel` | `kernel.go` |
 | `logic` | `logic.go` |
-| `logic/game` | `game.go` |
-| `logic/game/move` | `move.go` (only has `service.go`, but 1 GoFile = wiring) |
-| `logic/lobby` | `lobby.go` |
+| `game/logic` | `game.go` |
+| `game/logic/move` | `move.go` |
+| `game/logic/move/service` | `service.go` |
+| `game/data` | `game.go` |
+| `lobby/logic` | `logic.go` |
+| `lobby/data` | `lobby.go` |
 | `data` | `data.go` |
-| `data/game` | `game.go` |
-| `data/lobby` | `lobby.go` |
 | `web` | `web.go` |
-| `logic/game/move/service` | `service.go` |
-| `web/game` | `game.go` |
-| `web/lobby` | `lobby.go` |
+| `game` | `game.go` |
+| `lobby` | `lobby.go` |
 
 Detection rule: `len(GoFiles) == 1` AND the single file is named after the
-last path segment (e.g., `logic/game/game.go`).
+last path segment (e.g., `game/logic/game.go`).
 
 ### Full-tier packages
 
@@ -69,27 +69,27 @@ Required doc.go sections:
 
 | Package | Layer | GoFiles |
 |---------|-------|---------|
-| `logic/game/advancement` | logic | 3 |
-| `logic/game/board` | logic | 6 |
-| `logic/game/card` | logic | 3 |
-| `logic/game/creation` | logic | 3 |
-| `logic/game/mission` | logic | 4 |
-| `logic/game/move/attack` | logic | 5 |
-| `logic/game/move/attack/dice` | logic | 3 |
-| `logic/game/move/cards` | logic | 5 |
-| `logic/game/move/conquer` | logic | 5 |
-| `logic/game/move/deploy` | logic | 5 |
-| `logic/game/move/orchestration` | logic | 3 |
-| `logic/game/move/reinforce` | logic | 5 |
-| `logic/game/phase` | logic | 4 |
-| `logic/game/player` | logic | 4 |
-| `logic/game/region` | logic | 3 |
-| `logic/game/snapshot` | logic | 3 |
-| `logic/game/state` | logic | 3 |
-| `logic/lobby/creation` | logic | 3 |
-| `logic/lobby/management` | logic | 3 |
-| `logic/lobby/start` | logic | 3 |
-| `logic/lobby/state` | logic | 3 |
+| `game/logic/advancement` | logic | 3 |
+| `game/logic/board` | logic | 6 |
+| `game/logic/card` | logic | 3 |
+| `game/logic/creation` | logic | 3 |
+| `game/logic/mission` | logic | 4 |
+| `game/logic/move/attack` | logic | 5 |
+| `game/logic/move/attack/dice` | logic | 3 |
+| `game/logic/move/cards` | logic | 5 |
+| `game/logic/move/conquer` | logic | 5 |
+| `game/logic/move/deploy` | logic | 5 |
+| `game/logic/move/orchestration` | logic | 3 |
+| `game/logic/move/reinforce` | logic | 5 |
+| `game/logic/phase` | logic | 4 |
+| `game/logic/player` | logic | 4 |
+| `game/logic/region` | logic | 3 |
+| `game/logic/snapshot` | logic | 3 |
+| `game/logic/state` | logic | 3 |
+| `lobby/logic/creation` | logic | 3 |
+| `lobby/logic/management` | logic | 3 |
+| `lobby/logic/start` | logic | 3 |
+| `lobby/logic/state` | logic | 3 |
 | `testonly` | test | 6 |
 
 ### Lightweight-tier packages
@@ -100,61 +100,62 @@ All other non-excluded packages. Required doc.go sections:
 
 | Package | Layer |
 |---------|-------|
-| `api/game` | api |
-| `api/game/messaging` | api |
-| `api/game/rest/request` | api |
-| `api/game/rest/response` | api |
-| `api/lobby/messaging` | api |
-| `api/lobby/rest/request` | api |
-| `api/lobby/rest/response` | api |
-| `config` | infrastructure |
-| `ctx` | ctx |
-| `data/db` | data |
-| `data/game/db` | data |
-| `data/lobby/db` | data |
-| `data/migration` | data |
-| `data/pool` | data |
-| `events` | events |
-| `events/game` | events-domain |
-| `events/lobby` | events-domain |
-| `events/logger` | events |
-| `logic/errors` | shared |
-| `logic/game/headlines` | logic |
-| `logic/game/mission/checker` | logic |
-| `logic/game/move/attack/dice/roller` | logic |
-| `logic/game/move/orchestration/logging` | logic |
-| `logic/game/move/orchestration/validation` | logic |
-| `logic/game/move/validation` | logic |
-| `logic/game/region/assignment` | logic |
-| `logic/game/timing` | logic |
-| `metrics` | infrastructure |
-| `rand` | infrastructure |
-| `slog` | infrastructure |
-| `testing/invariant` | test |
-| `tracing` | infrastructure |
-| `upgradablerw_mutex` | infrastructure |
-| `web/game/controller` | web |
-| `web/game/converter` | web |
-| `web/game/publisher` | web |
-| `web/game/rest` | web |
-| `web/game/ws` | web |
-| `web/lobby/controller` | web |
-| `web/lobby/publisher` | web |
-| `web/lobby/rest` | web |
-| `web/lobby/ws` | web |
+| `game/api` | api |
+| `game/api/messaging` | api |
+| `game/api/rest/request` | api |
+| `game/api/rest/response` | api |
+| `lobby/api/messaging` | api |
+| `lobby/api/rest/request` | api |
+| `lobby/api/rest/response` | api |
+| `kernel/bus` | kernel |
+| `kernel/config` | kernel |
+| `kernel/ctx` | kernel |
+| `kernel/data` | kernel |
+| `kernel/data/migration` | kernel |
+| `kernel/data/pool` | kernel |
+| `kernel/errors` | kernel |
+| `kernel/logger` | kernel |
+| `kernel/metrics` | kernel |
+| `kernel/otelsetup` | kernel |
+| `kernel/slog` | kernel |
+| `kernel/upgradablerw_mutex` | kernel |
+| `game/data/db` | data |
+| `lobby/data/db` | data |
+| `game/events` | events-domain |
+| `lobby/events` | events-domain |
+| `game/logic/config` | logic |
+| `game/logic/headlines` | logic |
+| `game/logic/metrics` | logic |
+| `game/logic/mission/checker` | logic |
+| `game/logic/move/attack/dice/roller` | logic |
+| `game/logic/move/orchestration/logging` | logic |
+| `game/logic/move/orchestration/validation` | logic |
+| `game/logic/move/validation` | logic |
+| `game/logic/region/assignment` | logic |
+| `game/logic/timing` | logic |
+| `game/rand` | logic |
+| `game/tracing` | logic |
+| `game/consumers` | web |
+| `game/consumers/converter` | web |
+| `game/routes` | web |
+| `game/ws` | web |
+| `lobby/consumers` | web |
+| `lobby/routes` | web |
+| `lobby/ws` | web |
 | `web/middleware` | web |
 | `web/mux` | web |
 | `web/nbio` | web |
-| `web/otel` | web |
 | `web/rest` | web |
 | `web/rest/health` | web |
 | `web/rest/route` | web |
 | `web/rest/utils` | web |
 | `web/ws` | web |
 | `web/ws/message` | web |
+| `testing/invariant` | test |
+| `testonly` | test |
 
 Note: Packages with `service.go` and 2 or fewer non-test GoFiles are
-classified as lightweight. The `logic/game/move/service` package has only
+classified as lightweight. The `game/logic/move/service` package has only
 1 file and is classified as a wiring root.
 
 ## Templates
@@ -212,21 +213,20 @@ Given a package `P` with import path `github.com/go-risk-it/go-risk-it/internal/
 
 ## Layer Assignment Algorithm
 
-The layer is determined by the package path prefix:
+The layer is determined by the package path prefix. Explicit mappings are
+checked first (see `expectedLayer` in arch_test.go), then prefix-based rules:
 
 ```
-1. starts with "api/" → api
-2. == "config" → infrastructure
-3. == "ctx" → ctx
-4. starts with "data/" → data
-5. == "events" or == "events/logger" → events
-6. starts with "events/" (game/lobby) → events-domain
-7. == "logic/errors" → shared
-8. starts with "logic/" → logic
-9. == "metrics" or == "rand" or == "slog" or == "tracing"
-   or == "upgradablerw_mutex" → infrastructure
-10. starts with "testing/" or == "testonly" → test
-11. starts with "web/" → web
+1. starts with "game/api/" or "lobby/api/" → api
+2. starts with "kernel/" → kernel
+3. starts with "game/data/" or "lobby/data/" → data
+4. starts with "game/events" or "lobby/events" → events-domain
+5. starts with "game/logic/" or "lobby/logic/" → logic
+6. starts with "game/consumers" or "lobby/consumers" → web
+7. starts with "data/" → data
+8. starts with "web/" → web
+9. starts with "testing/" or == "testonly" → test
+10. == "logic" → wiring
 ```
 
 ## Validation Rules (enforced by arch_test.go)

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/config"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/config"
 	"github.com/lesismal/nbio/nbhttp/websocket"
 )
 

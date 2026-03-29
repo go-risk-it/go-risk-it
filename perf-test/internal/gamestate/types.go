@@ -46,7 +46,7 @@ type ConquerPhaseState struct {
 	MinTroopsToMove   int64  `json:"minTroopsToMove"`
 }
 
-// BoardState matches internal/api/game/messaging/board_state.go.
+// BoardState matches internal/game/api/messaging/board_state.go.
 type BoardState struct {
 	Regions []Region `json:"regions"`
 }
@@ -57,7 +57,7 @@ type Region struct {
 	Troops  int64  `json:"troops"`
 }
 
-// PlayersState matches internal/api/game/messaging/players_state.go.
+// PlayersState matches internal/game/api/messaging/players_state.go.
 type PlayersState struct {
 	Players []Player `json:"players"`
 }
@@ -85,7 +85,7 @@ type Player struct {
 	ConnectionStatus ConnectionStatus `json:"connectionStatus"`
 }
 
-// CardState matches internal/api/game/messaging/card_state.go.
+// CardState matches internal/game/api/messaging/card_state.go.
 type CardState struct {
 	Cards []Card `json:"cards"`
 }
@@ -105,7 +105,7 @@ type Card struct {
 	Region string   `json:"region"`
 }
 
-// MoveHistory matches internal/api/game/messaging/move_performed.go.
+// MoveHistory matches internal/game/api/messaging/move_performed.go.
 type MoveHistory struct {
 	Moves []MovePerformed `json:"moves"`
 }

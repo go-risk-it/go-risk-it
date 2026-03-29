@@ -1,0 +1,29 @@
+database:
+  host: ${DATABASE_HOST}
+  port: ${DATABASE_PORT}
+  name: ${DATABASE_NAME}
+  user: ${DATABASE_USER}
+  password: ${DATABASE_PASSWORD}
+  disable_ssl: true
+  max_conns: 50
+  min_conns: 10
+  max_conn_idle_time: 5m
+
+jwt:
+  secret: ${JWT_SECRET}
+
+game:
+  dice:
+    roll_strategy: attacker_always_wins
+  regionassignment:
+    assignment_strategy: sequential
+  history:
+    size: 999
+
+otel:
+  enabled: true
+
+server:
+  allowed_origins:
+    - "http://localhost:5173"
+    - "http://localhost:4173"

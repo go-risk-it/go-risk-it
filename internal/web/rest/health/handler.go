@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/config"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/config"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	"github.com/hellofresh/health-go/v5"
 	"github.com/hellofresh/health-go/v5/checks/postgres"

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/go-risk-it/go-risk-it/internal/config"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/config"
 )
 
 type CorsMiddleware struct {

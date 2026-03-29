@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	domainerrors "github.com/go-risk-it/go-risk-it/internal/logic/errors"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"

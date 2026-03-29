@@ -21,9 +21,9 @@ FROM golang:1.26-alpine@sha256:2389ebfa5b7f43eeafbd6be0c3700cc46690ef842ad962f6c
 ENV ENVIRONMENT=prod
 
 WORKDIR /src
-COPY --from=builder /src/internal/config .
-COPY --from=builder /src/internal/data/game/sqlc/migrations ./migrations/game
-COPY --from=builder /src/internal/data/lobby/sqlc/migrations ./migrations/lobby
+COPY --from=builder /src/internal/kernel/config .
+COPY --from=builder /src/internal/game/data/sqlc/migrations ./migrations/game
+COPY --from=builder /src/internal/lobby/data/sqlc/migrations ./migrations/lobby
 COPY --from=builder /src/map.json .
 COPY --from=builder /src/risk-it-server .
 
