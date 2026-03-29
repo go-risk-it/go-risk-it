@@ -3,11 +3,11 @@ package controller
 import (
 	"fmt"
 
-	"github.com/go-risk-it/go-risk-it/internal/api/lobby/rest/request"
-	"github.com/go-risk-it/go-risk-it/internal/api/lobby/rest/response"
-	"github.com/go-risk-it/go-risk-it/internal/data/lobby/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/logic/lobby/management"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/api/rest/request"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/api/rest/response"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/logic/management"
 )
 
 type ManagementController struct {

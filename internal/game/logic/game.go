@@ -1,7 +1,6 @@
 package game
 
 import (
-	"github.com/go-risk-it/go-risk-it/internal/events/logger"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/advancement"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/board"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/card"
@@ -18,6 +17,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/state"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/timing"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/bus"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/logger"
 	"go.uber.org/fx"
 )
 

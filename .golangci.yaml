@@ -42,9 +42,10 @@ linters:
         - github\.com/jackc/pgx/v5\..*
         - go\.opentelemetry\.io/otel/.*
         - github\.com/go-risk-it/go-risk-it/internal/kernel/bus\..*
-        - github\.com/go-risk-it/go-risk-it/internal/logic/.*
         - github\.com/go-risk-it/go-risk-it/internal/game/logic/.*
         - github\.com/go-risk-it/go-risk-it/internal/game/data/db\.Querier
+        - github\.com/go-risk-it/go-risk-it/internal/lobby/logic/.*
+        - github\.com/go-risk-it/go-risk-it/internal/lobby/data/db\.Querier
         - github\.com/go-risk-it/go-risk-it/internal/testonly\..*
         - github\.com/go-risk-it/go-risk-it/internal/web/.*
         - github\.com/go-risk-it/go-risk-it/internal/game/rand\.RNG

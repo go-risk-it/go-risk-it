@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/go-risk-it/go-risk-it/internal/data/lobby/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/api/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/logic/lobby/start"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/logic/start"
 )
 
 type GameCreator interface {

@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"log/slog"
 
-	lobbyevt "github.com/go-risk-it/go-risk-it/internal/events/lobby"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	upgradablerwmutex "github.com/go-risk-it/go-risk-it/internal/kernel/upgradablerw_mutex"
+	lobbyevt "github.com/go-risk-it/go-risk-it/internal/lobby/events"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws"
 	"github.com/lesismal/nbio/nbhttp/websocket"
 )

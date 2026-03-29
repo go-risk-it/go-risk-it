@@ -7,9 +7,9 @@ import (
 	"log/slog"
 	"net/http"
 
-	lobbyRequest "github.com/go-risk-it/go-risk-it/internal/api/lobby/rest/request"
-	"github.com/go-risk-it/go-risk-it/internal/api/lobby/rest/response"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	lobbyRequest "github.com/go-risk-it/go-risk-it/internal/lobby/api/rest/request"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/api/rest/response"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby/controller"
 	lobbyWs "github.com/go-risk-it/go-risk-it/internal/web/lobby/ws"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"

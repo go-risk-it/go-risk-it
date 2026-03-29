@@ -3,9 +3,9 @@ package controller
 import (
 	"log/slog"
 
-	"github.com/go-risk-it/go-risk-it/internal/api/lobby/messaging"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/logic/lobby/state"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/api/messaging"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/logic/state"
 )
 
 type StateController struct {

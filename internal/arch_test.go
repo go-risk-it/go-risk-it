@@ -112,7 +112,7 @@ func assertNoRawImports(t *testing.T, pkgs []goPackage, forbidden ...string) {
 func TestArch_LogicNeverImportsWebOrAPI(t *testing.T) {
 	t.Parallel()
 
-	lobbyPkgs := loadPackages(t, "./internal/logic/...")
+	lobbyPkgs := loadPackages(t, "./internal/lobby/logic/...")
 	gamePkgs := loadPackages(t, "./internal/game/logic/...")
 	lobbyPkgs = append(lobbyPkgs, gamePkgs...)
 	pkgs := lobbyPkgs
@@ -121,6 +121,7 @@ func TestArch_LogicNeverImportsWebOrAPI(t *testing.T) {
 		modulePrefix+"web/",
 		modulePrefix+"api/",
 		modulePrefix+"game/api/",
+		modulePrefix+"lobby/api/",
 	)
 }
 
@@ -128,7 +129,7 @@ func TestArch_LogicNeverImportsWebOrAPI(t *testing.T) {
 func TestArch_LogicNeverImportsNetHTTP(t *testing.T) {
 	t.Parallel()
 
-	lobbyPkgs := loadPackages(t, "./internal/logic/...")
+	lobbyPkgs := loadPackages(t, "./internal/lobby/logic/...")
 	gamePkgs := loadPackages(t, "./internal/game/logic/...")
 	lobbyPkgs = append(lobbyPkgs, gamePkgs...)
 	pkgs := lobbyPkgs
@@ -140,7 +141,7 @@ func TestArch_LogicNeverImportsNetHTTP(t *testing.T) {
 func TestArch_DataNeverImportsLogicOrWeb(t *testing.T) {
 	t.Parallel()
 
-	lobbyPkgs := loadPackages(t, "./internal/data/...")
+	lobbyPkgs := loadPackages(t, "./internal/lobby/data/...")
 	gamePkgs := loadPackages(t, "./internal/game/data/...")
 	lobbyPkgs = append(lobbyPkgs, gamePkgs...)
 	pkgs := lobbyPkgs
@@ -148,38 +149,31 @@ func TestArch_DataNeverImportsLogicOrWeb(t *testing.T) {
 	assertNoImports(t, pkgs,
 		modulePrefix+"logic/",
 		modulePrefix+"game/logic/",
+		modulePrefix+"lobby/logic/",
 		modulePrefix+"web/",
 	)
 }
 
-// Rule 4: game/logic/ and logic/lobby/ are mutually isolated.
+// Rule 4: game/logic/ and lobby/logic/ are mutually isolated.
 func TestArch_LogicGameAndLobbyIsolated(t *testing.T) {
 	t.Parallel()
 
 	gamePkgs := loadPackages(t, "./internal/game/logic/...")
-	assertNoImports(t, gamePkgs, modulePrefix+"logic/lobby/")
+	assertNoImports(t, gamePkgs,
+		modulePrefix+"lobby/logic/",
+		modulePrefix+"logic/lobby/",
+	)
 
-	lobbyPkgs := loadPackages(t, "./internal/logic/lobby/...")
+	lobbyPkgs := loadPackages(t, "./internal/lobby/logic/...")
 	assertNoImports(t, lobbyPkgs,
 		modulePrefix+"game/logic/",
 		modulePrefix+"logic/game/",
 	)
 }
 
-// Rule 4b: events/logger is infrastructure — it must never import logic/ or web/.
-// Sub-packages events/game/ and events/lobby/ carry domain payloads and may import logic/ types.
-func TestArch_EventsRootIsolation(t *testing.T) {
-	t.Parallel()
-
-	loggerPkgs := loadPackages(t, "./internal/events/logger")
-
-	assertNoImports(t, loggerPkgs,
-		modulePrefix+"logic/",
-		modulePrefix+"web/",
-	)
-}
-
-// Rule 4c: kernel/ must never import game or lobby domain packages.
+// Rule 4b: kernel/ must never import game or lobby domain packages.
+// (Previously this also covered events/logger separately — now logger lives
+// in kernel/ so the single kernel/... assertion covers it.)
 func TestArch_KernelNeverImportsDomain(t *testing.T) {
 	t.Parallel()
 
@@ -189,6 +183,7 @@ func TestArch_KernelNeverImportsDomain(t *testing.T) {
 		modulePrefix+"logic/",
 		modulePrefix+"web/",
 		modulePrefix+"game/",
+		modulePrefix+"lobby/",
 		modulePrefix+"data/game/",
 		modulePrefix+"data/lobby/",
 		modulePrefix+"events/game/",
@@ -243,7 +238,7 @@ func assertHasExportedInterface(t *testing.T, pkg goPackage) {
 func TestArch_LogicServicesDefineExportedInterface(t *testing.T) {
 	t.Parallel()
 
-	lobbyPkgs := loadPackages(t, "./internal/logic/...")
+	lobbyPkgs := loadPackages(t, "./internal/lobby/logic/...")
 	gamePkgs := loadPackages(t, "./internal/game/logic/...")
 	lobbyPkgs = append(lobbyPkgs, gamePkgs...)
 	pkgs := lobbyPkgs
@@ -263,7 +258,7 @@ func TestArch_LogicServicesDefineExportedInterface(t *testing.T) {
 func TestArch_APIOnlyImportsAPI(t *testing.T) {
 	t.Parallel()
 
-	lobbyPkgs := loadPackages(t, "./internal/api/...")
+	lobbyPkgs := loadPackages(t, "./internal/lobby/api/...")
 	gamePkgs := loadPackages(t, "./internal/game/api/...")
 	lobbyPkgs = append(lobbyPkgs, gamePkgs...)
 	pkgs := lobbyPkgs
@@ -271,7 +266,9 @@ func TestArch_APIOnlyImportsAPI(t *testing.T) {
 	for _, pkg := range pkgs {
 		for _, imp := range internalImports(pkg) {
 			short := strings.TrimPrefix(imp, modulePrefix)
-			if !strings.HasPrefix(short, "api/") && !strings.HasPrefix(short, "game/api") {
+			if !strings.HasPrefix(short, "api/") &&
+				!strings.HasPrefix(short, "game/api") &&
+				!strings.HasPrefix(short, "lobby/api") {
 				t.Errorf("%s imports non-api package %s", pkg.ImportPath, imp)
 			}
 		}
@@ -322,7 +319,7 @@ func TestArch_TestOnlyNeverImportedByProduction(t *testing.T) {
 func TestArch_DataNeverImportsNetHTTP(t *testing.T) {
 	t.Parallel()
 
-	lobbyPkgs := loadPackages(t, "./internal/data/...")
+	lobbyPkgs := loadPackages(t, "./internal/lobby/data/...")
 	gamePkgs := loadPackages(t, "./internal/game/data/...")
 	lobbyPkgs = append(lobbyPkgs, gamePkgs...)
 	pkgs := lobbyPkgs
@@ -348,6 +345,12 @@ func TestArch_WebNeverImportsDataQuerier(t *testing.T) {
 			gameDataPart := strings.TrimPrefix(imp, modulePrefix+"game/data/")
 			if gameDataPart != imp && strings.Contains(gameDataPart, "/db") {
 				t.Errorf("%s imports game data querier %s (web must go through logic)",
+					pkg.ImportPath, imp)
+			}
+
+			lobbyDataPart := strings.TrimPrefix(imp, modulePrefix+"lobby/data/")
+			if lobbyDataPart != imp && strings.Contains(lobbyDataPart, "/db") {
+				t.Errorf("%s imports lobby data querier %s (web must go through logic)",
 					pkg.ImportPath, imp)
 			}
 		}
@@ -577,9 +580,9 @@ var expectedLayer = map[string]string{
 	"game/api/rest/response": "API",
 
 	// api (lobby)
-	"api/lobby/messaging":     "API",
-	"api/lobby/rest/request":  "API",
-	"api/lobby/rest/response": "API",
+	"lobby/api/messaging":     "API",
+	"lobby/api/rest/request":  "API",
+	"lobby/api/rest/response": "API",
 
 	// kernel
 	"kernel":                    "Kernel",
@@ -605,12 +608,15 @@ var expectedLayer = map[string]string{
 	"game/consumers":           "Web",
 	"game/consumers/converter": "Web",
 
+	// lobby domain
+	"lobby/consumers": "Web",
+
 	// data (lobby)
-	"data/lobby/db": "Data",
+	"lobby/data/db": "Data",
 
 	// events
 	"events/logger": "Events",
-	"events/lobby":  "Events-domain",
+	"lobby/events":  "Events-domain",
 
 	// test
 	"testing/invariant": "Test",
@@ -620,7 +626,7 @@ var expectedLayer = map[string]string{
 // layerFromPrefix derives the expected layer for a package suffix using prefix matching.
 // It first checks the explicit mapping, then falls back to prefix-based rules.
 //
-//nolint:cyclop // prefix matching requires branching per layer
+//nolint:cyclop,goconst // prefix matching requires branching per layer; string constants are clearer inline
 func layerFromPrefix(suffix string) string {
 	if layer, ok := expectedLayer[suffix]; ok {
 		return layer
@@ -636,6 +642,16 @@ func layerFromPrefix(suffix string) string {
 	case strings.HasPrefix(suffix, "game/logic/") || strings.HasPrefix(suffix, "game/tracing") ||
 		strings.HasPrefix(suffix, "game/rand"):
 		return "Logic"
+	case strings.HasPrefix(suffix, "lobby/api/"):
+		return "API"
+	case strings.HasPrefix(suffix, "lobby/data/"):
+		return "Data"
+	case strings.HasPrefix(suffix, "lobby/events"):
+		return "Events-domain"
+	case strings.HasPrefix(suffix, "lobby/logic/"):
+		return "Logic"
+	case strings.HasPrefix(suffix, "lobby/consumers"):
+		return "Web"
 	case strings.HasPrefix(suffix, "api/"):
 		return "API"
 	case strings.HasPrefix(suffix, "kernel/"):
@@ -674,9 +690,9 @@ var wiringRoots = map[string]bool{
 	"game/logic/move":         true,
 	"game/logic/move/service": true,
 	"game/data":               true,
-	"logic/lobby":             true,
+	"lobby/logic":             true,
 	"data":                    true,
-	"data/lobby":              true,
+	"lobby/data":              true,
 	"web":                     true,
 	"web/game":                true,
 	"web/lobby":               true,

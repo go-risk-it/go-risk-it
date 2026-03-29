@@ -63,10 +63,10 @@ var wiringRoots = map[string]bool{
 	"logic/game":              true,
 	"logic/game/move":         true,
 	"logic/game/move/service": true,
-	"logic/lobby":             true,
+	"lobby/logic":             true,
 	"data":                    true,
 	"data/game":               true,
-	"data/lobby":              true,
+	"lobby/data":              true,
 	"web":                     true,
 	"web/game":                true,
 	"web/lobby":               true,
@@ -95,7 +95,7 @@ var subsystemMap = map[string]string{
 
 	// Web Layer — Lobby Handlers
 	"web/lobby/controller": "lobby_handlers",
-	"web/lobby/publisher":  "lobby_handlers",
+	"lobby/consumers":      "lobby_handlers",
 	"web/lobby/rest":       "lobby_handlers",
 	"web/lobby/ws":         "lobby_handlers",
 
@@ -145,10 +145,10 @@ var subsystemMap = map[string]string{
 	"logic/game/headlines":         "game_services",
 
 	// Logic Layer — Lobby
-	"logic/lobby/creation":   "lobby_logic",
-	"logic/lobby/management": "lobby_logic",
-	"logic/lobby/start":      "lobby_logic",
-	"logic/lobby/state":      "lobby_logic",
+	"lobby/logic/creation":   "lobby_logic",
+	"lobby/logic/management": "lobby_logic",
+	"lobby/logic/start":      "lobby_logic",
+	"lobby/logic/state":      "lobby_logic",
 
 	// Shared — Domain Errors
 	"logic/errors": "domain_errors",
@@ -161,13 +161,13 @@ var subsystemMap = map[string]string{
 	"events/game": "game_events",
 
 	// Events — Lobby Events
-	"events/lobby": "lobby_events",
+	"lobby/events": "lobby_events",
 
 	// Data Layer — Game Data
 	"data/game/db": "game_data",
 
 	// Data Layer — Lobby Data
-	"data/lobby/db": "lobby_data",
+	"lobby/data/db": "lobby_data",
 
 	// Data Layer — Database
 	"data/db":        "database",
@@ -192,9 +192,9 @@ var subsystemMap = map[string]string{
 	"api/game/messaging":      "api_dtos",
 	"api/game/rest/request":   "api_dtos",
 	"api/game/rest/response":  "api_dtos",
-	"api/lobby/messaging":     "api_dtos",
-	"api/lobby/rest/request":  "api_dtos",
-	"api/lobby/rest/response": "api_dtos",
+	"lobby/api/messaging":     "api_dtos",
+	"lobby/api/rest/request":  "api_dtos",
+	"lobby/api/rest/response": "api_dtos",
 
 	// Testing
 	"testing/invariant": "testing",
@@ -251,9 +251,9 @@ var explicitLayerMap = map[string]string{
 	"api/game/messaging":      "API",
 	"api/game/rest/request":   "API",
 	"api/game/rest/response":  "API",
-	"api/lobby/messaging":     "API",
-	"api/lobby/rest/request":  "API",
-	"api/lobby/rest/response": "API",
+	"lobby/api/messaging":     "API",
+	"lobby/api/rest/request":  "API",
+	"lobby/api/rest/response": "API",
 
 	"config":             "Infrastructure",
 	"metrics":            "Infrastructure",
@@ -266,7 +266,7 @@ var explicitLayerMap = map[string]string{
 
 	"data/db":        "Data",
 	"data/game/db":   "Data",
-	"data/lobby/db":  "Data",
+	"lobby/data/db":  "Data",
 	"data/migration": "Data",
 	"data/pool":      "Data",
 
@@ -274,10 +274,11 @@ var explicitLayerMap = map[string]string{
 	"events/logger": "Events",
 
 	"events/game":  "Events-domain",
-	"events/lobby": "Events-domain",
+	"lobby/events": "Events-domain",
 
 	"game/consumers":           "Web",
 	"game/consumers/converter": "Web",
+	"lobby/consumers":          "Web",
 
 	"logic/errors": "Shared",
 
@@ -302,6 +303,16 @@ func layerFromPrefixFallback(suffix string) string {
 	switch {
 	case strings.HasPrefix(suffix, "api/"):
 		return "API"
+	case strings.HasPrefix(suffix, "lobby/api/"):
+		return "API"
+	case strings.HasPrefix(suffix, "lobby/data/"):
+		return "Data"
+	case strings.HasPrefix(suffix, "lobby/events"):
+		return "Events-domain"
+	case strings.HasPrefix(suffix, "lobby/logic/"):
+		return "Logic"
+	case strings.HasPrefix(suffix, "lobby/consumers"):
+		return "Web"
 	case strings.HasPrefix(suffix, "data/"):
 		return "Data"
 	case strings.HasPrefix(suffix, "events/game") || strings.HasPrefix(suffix, "events/lobby"):
@@ -331,11 +342,15 @@ func subsystemFromSuffix(suffix string) string {
 
 // subsystemFromSuffixFallback uses prefix matching for packages not in the explicit map.
 //
-//nolint:cyclop // switch covers all subsystem prefix patterns
+//nolint:cyclop,funlen // switch covers all subsystem prefix patterns
 func subsystemFromSuffixFallback(suffix string) string {
 	switch {
 	case strings.HasPrefix(suffix, "api/"):
 		return "api_dtos"
+	case strings.HasPrefix(suffix, "lobby/api/"):
+		return "api_dtos"
+	case strings.HasPrefix(suffix, "lobby/consumers"):
+		return "lobby_handlers"
 	case strings.HasPrefix(suffix, "web/game/"):
 		return "game_handlers"
 	case strings.HasPrefix(suffix, "web/lobby/"):
@@ -352,17 +367,23 @@ func subsystemFromSuffixFallback(suffix string) string {
 		return "game_services"
 	case strings.HasPrefix(suffix, "logic/lobby/"):
 		return "lobby_logic"
+	case strings.HasPrefix(suffix, "lobby/logic/"):
+		return "lobby_logic"
 	case strings.HasPrefix(suffix, "logic/"):
 		return "domain_errors"
 	case strings.HasPrefix(suffix, "events/game"):
 		return "game_events"
 	case strings.HasPrefix(suffix, "events/lobby"):
 		return "lobby_events"
+	case strings.HasPrefix(suffix, "lobby/events"):
+		return "lobby_events"
 	case strings.HasPrefix(suffix, "events/"):
 		return "event_bus"
 	case strings.HasPrefix(suffix, "data/game/"):
 		return "game_data"
 	case strings.HasPrefix(suffix, "data/lobby/"):
+		return "lobby_data"
+	case strings.HasPrefix(suffix, "lobby/data/"):
 		return "lobby_data"
 	case strings.HasPrefix(suffix, "data/"):
 		return "database"

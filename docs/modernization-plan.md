@@ -113,9 +113,9 @@ Attack and deploy have tests; conquer and reinforce don't.
 No tests for any lobby service.
 
 **Create:**
-- `internal/logic/lobby/creation/service_test.go`
-- `internal/logic/lobby/management/service_test.go`
-- `internal/logic/lobby/start/service_test.go`
+- `internal/lobby/logic/creation/service_test.go`
+- `internal/lobby/logic/management/service_test.go`
+- `internal/lobby/logic/start/service_test.go`
 
 ### 3.5 CI coverage threshold
 CI already generates coverage and publishes a badge. Add a threshold gate:

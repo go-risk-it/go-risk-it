@@ -7,10 +7,10 @@ import (
 	"testing"
 	"testing/synctest"
 
-	lobbyevt "github.com/go-risk-it/go-risk-it/internal/events/lobby"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
+	lobbyevt "github.com/go-risk-it/go-risk-it/internal/lobby/events"
 	"github.com/go-risk-it/go-risk-it/internal/web/lobby/ws"
 	mockbus "github.com/go-risk-it/go-risk-it/mocks/internal_/kernel/bus"
 	"github.com/lesismal/nbio/nbhttp/websocket"
