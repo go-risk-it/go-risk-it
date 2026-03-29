@@ -596,12 +596,14 @@ var expectedLayer = map[string]string{
 	"kernel/upgradablerw_mutex": "Kernel",
 
 	// game domain
-	"game/data/db":       "Data",
-	"game/events":        "Events-domain",
-	"game/tracing":       "Logic",
-	"game/rand":          "Logic",
-	"game/logic/config":  "Logic",
-	"game/logic/metrics": "Logic",
+	"game/data/db":             "Data",
+	"game/events":              "Events-domain",
+	"game/tracing":             "Logic",
+	"game/rand":                "Logic",
+	"game/logic/config":        "Logic",
+	"game/logic/metrics":       "Logic",
+	"game/consumers":           "Web",
+	"game/consumers/converter": "Web",
 
 	// data (lobby)
 	"data/lobby/db": "Data",

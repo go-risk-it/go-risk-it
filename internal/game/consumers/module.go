@@ -1,4 +1,4 @@
-package publisher
+package consumers
 
 import (
 	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/logic/config"
@@ -6,7 +6,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
-	"github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 	"go.uber.org/fx"
 )
 
@@ -15,7 +14,9 @@ type Params struct {
 	fx.In
 
 	Bus               bus.Bus
-	ConnectionManager ws.Manager
+	Writer            Writer
+	Presence          Presence
+	Lifecycle         Lifecycle
 	SnapshotService   snapshot.Service
 	MissionController *controller.MissionController
 	MoveLogController *controller.MoveLogController
@@ -25,9 +26,9 @@ type Params struct {
 
 func newGameStatePublisher(params Params) *GameStatePublisher {
 	return NewGameStatePublisher(
-		params.ConnectionManager,
-		params.ConnectionManager,
-		params.ConnectionManager,
+		params.Writer,
+		params.Presence,
+		params.Lifecycle,
 		params.SnapshotService,
 		params.MissionController,
 		params.MoveLogController,

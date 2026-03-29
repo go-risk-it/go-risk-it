@@ -1,14 +1,14 @@
-package publisher_test
+package consumers_test
 
 import (
 	"context"
 	"encoding/json"
 	"testing"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/consumers"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/mission"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
-	"github.com/go-risk-it/go-risk-it/internal/web/game/publisher"
 	mockMission "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/mission"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -27,7 +27,7 @@ func TestBuildMissionResolver_TwoContinents(t *testing.T) {
 			Continent2: "Asia",
 		}, nil)
 
-	resolver := publisher.BuildMissionResolver(missionCtrl)
+	resolver := consumers.BuildMissionResolver(missionCtrl)
 	gameCtx := testGameContext()
 
 	raw, err := resolver(gameCtx, sqlc.GameMissionTypeTWOCONTINENTS, 10)
@@ -59,7 +59,7 @@ func TestBuildMissionResolver_TwoContinentsPlusOne(t *testing.T) {
 			Continent2: "SouthAmerica",
 		}, nil)
 
-	resolver := publisher.BuildMissionResolver(missionCtrl)
+	resolver := consumers.BuildMissionResolver(missionCtrl)
 	gameCtx := testGameContext()
 
 	raw, err := resolver(gameCtx, sqlc.GameMissionTypeTWOCONTINENTSPLUSONE, 50)
@@ -88,7 +88,7 @@ func TestBuildMissionResolver_EliminatePlayer(t *testing.T) {
 		GetEliminatePlayerMission(mock.Anything, int64(20)).
 		Return("target-user", nil)
 
-	resolver := publisher.BuildMissionResolver(missionCtrl)
+	resolver := consumers.BuildMissionResolver(missionCtrl)
 	gameCtx := testGameContext()
 
 	raw, err := resolver(gameCtx, sqlc.GameMissionTypeELIMINATEPLAYER, 20)
@@ -113,7 +113,7 @@ func TestBuildMissionResolver_EighteenTerritories(t *testing.T) {
 	missionCtrl := controller.NewMissionController(missionSvc)
 
 	// Static mission — service is not called.
-	resolver := publisher.BuildMissionResolver(missionCtrl)
+	resolver := consumers.BuildMissionResolver(missionCtrl)
 	gameCtx := testGameContext()
 
 	raw, err := resolver(gameCtx, sqlc.GameMissionTypeEIGHTEENTERRITORIESTWOTROOPS, 30)
@@ -134,7 +134,7 @@ func TestBuildMissionResolver_TwentyFourTerritories(t *testing.T) {
 	missionCtrl := controller.NewMissionController(missionSvc)
 
 	// Static mission — service is not called.
-	resolver := publisher.BuildMissionResolver(missionCtrl)
+	resolver := consumers.BuildMissionResolver(missionCtrl)
 	gameCtx := testGameContext()
 
 	raw, err := resolver(gameCtx, sqlc.GameMissionTypeTWENTYFOURTERRITORIES, 40)
@@ -154,7 +154,7 @@ func TestBuildMissionResolver_UnknownType(t *testing.T) {
 	missionSvc := mockMission.NewService(t)
 	missionCtrl := controller.NewMissionController(missionSvc)
 
-	resolver := publisher.BuildMissionResolver(missionCtrl)
+	resolver := consumers.BuildMissionResolver(missionCtrl)
 	gameCtx := testGameContext()
 
 	_, err := resolver(gameCtx, "INVENTED_TYPE", 99)
@@ -168,7 +168,7 @@ func TestBuildMissionResolver_NonGameContext(t *testing.T) {
 	missionSvc := mockMission.NewService(t)
 	missionCtrl := controller.NewMissionController(missionSvc)
 
-	resolver := publisher.BuildMissionResolver(missionCtrl)
+	resolver := consumers.BuildMissionResolver(missionCtrl)
 
 	_, err := resolver(context.Background(), sqlc.GameMissionTypeTWOCONTINENTS, 10)
 	require.Error(t, err)

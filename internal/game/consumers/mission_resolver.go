@@ -1,4 +1,4 @@
-package publisher
+package consumers
 
 import (
 	"context"
@@ -6,10 +6,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/consumers/converter"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
-	"github.com/go-risk-it/go-risk-it/internal/web/game/converter"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 )
 

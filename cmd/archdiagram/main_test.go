@@ -93,10 +93,10 @@ func TestSubsystemFromSuffix_ExplicitMappings(t *testing.T) {
 	}{
 		// Web Layer
 		{"web/game/controller", "game_handlers"},
-		{"web/game/converter", "game_handlers"},
-		{"web/game/publisher", "game_handlers"},
 		{"web/game/rest", "game_handlers"},
 		{"web/game/ws", "game_handlers"},
+		{"game/consumers", "game_handlers"},
+		{"game/consumers/converter", "game_handlers"},
 		{"web/lobby/controller", "lobby_handlers"},
 		{"web/lobby/publisher", "lobby_handlers"},
 		{"web/lobby/rest", "lobby_handlers"},

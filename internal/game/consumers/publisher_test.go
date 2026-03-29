@@ -1,4 +1,4 @@
-package publisher_test
+package consumers_test
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/consumers"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/game/events"
 	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/logic/config"
@@ -15,11 +16,10 @@ import (
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
-	"github.com/go-risk-it/go-risk-it/internal/web/game/publisher"
+	mockConsumers "github.com/go-risk-it/go-risk-it/mocks/internal_/game/consumers"
 	mockMission "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/mission"
 	mockLogging "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/move/orchestration/logging"
 	mockSnapshot "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/snapshot"
-	mockWS "github.com/go-risk-it/go-risk-it/mocks/internal_/web/game/ws"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -112,9 +112,9 @@ func testMoveExecutedEvent() *gameevt.MoveExecuted {
 
 // deps bundles all mock dependencies so each test can pick what it needs.
 type deps struct {
-	writer     *mockWS.Writer
-	presence   *mockWS.Presence
-	lifecycle  *mockWS.Lifecycle
+	writer     *mockConsumers.Writer
+	presence   *mockConsumers.Presence
+	lifecycle  *mockConsumers.Lifecycle
 	snapSvc    *mockSnapshot.Service
 	missionSvc *mockMission.Service
 	loggingSvc *mockLogging.Service
@@ -124,17 +124,17 @@ func newDeps(t *testing.T) *deps {
 	t.Helper()
 
 	return &deps{
-		writer:     mockWS.NewWriter(t),
-		presence:   mockWS.NewPresence(t),
-		lifecycle:  mockWS.NewLifecycle(t),
+		writer:     mockConsumers.NewWriter(t),
+		presence:   mockConsumers.NewPresence(t),
+		lifecycle:  mockConsumers.NewLifecycle(t),
 		snapSvc:    mockSnapshot.NewService(t),
 		missionSvc: mockMission.NewService(t),
 		loggingSvc: mockLogging.NewService(t),
 	}
 }
 
-func (d *deps) newPublisher() *publisher.GameStatePublisher {
-	return publisher.NewGameStatePublisher(
+func (d *deps) newPublisher() *consumers.GameStatePublisher {
+	return consumers.NewGameStatePublisher(
 		d.writer,
 		d.presence,
 		d.lifecycle,

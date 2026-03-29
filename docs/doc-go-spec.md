@@ -134,8 +134,8 @@ All other non-excluded packages. Required doc.go sections:
 | `tracing` | infrastructure |
 | `upgradablerw_mutex` | infrastructure |
 | `web/game/controller` | web |
-| `web/game/converter` | web |
-| `web/game/publisher` | web |
+| `game/consumers` | web |
+| `game/consumers/converter` | web |
 | `web/game/rest` | web |
 | `web/game/ws` | web |
 | `web/lobby/controller` | web |

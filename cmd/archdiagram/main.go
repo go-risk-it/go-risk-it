@@ -86,10 +86,12 @@ type subsystem struct {
 var subsystemMap = map[string]string{
 	// Web Layer — Game Handlers
 	"web/game/controller": "game_handlers",
-	"web/game/converter":  "game_handlers",
-	"web/game/publisher":  "game_handlers",
 	"web/game/rest":       "game_handlers",
 	"web/game/ws":         "game_handlers",
+
+	// Game Consumers (event handlers → WS delivery)
+	"game/consumers":           "game_handlers",
+	"game/consumers/converter": "game_handlers",
 
 	// Web Layer — Lobby Handlers
 	"web/lobby/controller": "lobby_handlers",
@@ -273,6 +275,9 @@ var explicitLayerMap = map[string]string{
 
 	"events/game":  "Events-domain",
 	"events/lobby": "Events-domain",
+
+	"game/consumers":           "Web",
+	"game/consumers/converter": "Web",
 
 	"logic/errors": "Shared",
 

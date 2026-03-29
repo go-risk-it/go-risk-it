@@ -1,4 +1,4 @@
-package publisher
+package consumers
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/consumers/converter"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/game/events"
 	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/logic/config"
@@ -16,8 +17,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
-	"github.com/go-risk-it/go-risk-it/internal/web/game/converter"
-	"github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -38,9 +37,9 @@ const publisherTracerName = "go-risk-it-publisher"
 // recovery — a panic in one sub-operation does not prevent the others from
 // executing.
 type GameStatePublisher struct {
-	writer            ws.Writer
-	presence          ws.Presence
-	lifecycle         ws.Lifecycle
+	writer            Writer
+	presence          Presence
+	lifecycle         Lifecycle
 	snapshotService   snapshot.Service
 	missionController *controller.MissionController
 	moveLogController *controller.MoveLogController
@@ -51,9 +50,9 @@ type GameStatePublisher struct {
 // NewGameStatePublisher creates a publisher with narrow WS dependencies and
 // domain services. Panics if historyConfig.Size <= 0.
 func NewGameStatePublisher(
-	writer ws.Writer,
-	presence ws.Presence,
-	lifecycle ws.Lifecycle,
+	writer Writer,
+	presence Presence,
+	lifecycle Lifecycle,
 	snapshotService snapshot.Service,
 	missionController *controller.MissionController,
 	moveLogController *controller.MoveLogController,
@@ -196,7 +195,7 @@ func safeOp(
 func fetchAndPublishPublicState(
 	gameCtx ctx.GameContext,
 	snapshotService snapshot.Service,
-	presence ws.Presence,
+	presence Presence,
 	dispatch messageDispatcher,
 ) {
 	snap, err := snapshotService.GetPublicSnapshot(gameCtx)
