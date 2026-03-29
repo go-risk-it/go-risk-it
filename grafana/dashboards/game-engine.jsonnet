@@ -1,200 +1,481 @@
 // Game Engine dashboard — generated from Jsonnet.
 // Source of truth: grafana/dashboards/game-engine.jsonnet
 // Regenerate: make dashboards
-local common = import 'common.libsonnet';
 local colors = import 'colors.libsonnet';
+local common = import 'common.libsonnet';
 local dashboard = import 'dashboard.libsonnet';
+local layout = import 'layout.libsonnet';
 local links = import 'links.libsonnet';
+local modifiers = import 'modifiers.libsonnet';
+local panels = import 'panels.libsonnet';
 local thresholds = import 'thresholds.libsonnet';
-local ooda = import 'ooda.libsonnet';
+
+// Template variable for game-scoped log filtering.
+local gameIdVar = {
+  name: 'gameId',
+  type: 'textbox',
+  label: 'Game ID',
+  current: { value: '' },
+};
+
+// Shared data links to cross-dashboard navigation.
+local crossLinks = [
+  links.toDashboard('System Health', links.dashboardUids.systemHealth),
+  links.toDashboard('Perf Test', links.dashboardUids.perfTest),
+];
+
+// Helper: per-phase histogram quantile targets for game_phase_duration_seconds_bucket.
+local phaseLatencyTargets(phase) = [
+  {
+    expr: 'histogram_quantile(%s, sum(rate(game_phase_duration_seconds_bucket{service_name="risk-it",phase="%s"}[1m])) by (le))' % [q[0], phase],
+    legendFormat: q[1],
+    refId: std.char(65 + i),
+  }
+  for i in std.range(0, 2)
+  for q in [[['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']][i]]
+];
 
 dashboard.new(
   uid='game-engine',
   title='Game Engine',
-  panels=[
-    // ── Observe — Am I OK? ──────────────────────────────────────────
-    ooda.observeRow() + { gridPos: { h: 1, w: 24, x: 0, y: 0 } },
+  description='Game engine observability: game lifecycle, phase timing, event bus health, and move analytics',
+  tags=['risk-it', 'game-engine'],
+  templating={ list: [gameIdVar] },
+  panels=layout.ooda(
 
-    // Panel 1: Active Games (stat)
-    common.statPanel(
-      title='Active Games',
-      targets=[
-        {
-          expr: 'game_active{service_name="risk-it"}',
-          legendFormat: 'Active Games',
-          refId: 'A',
+    // ════════════════════════════════════════════════════════════════
+    // OBSERVE — Am I OK? (3 panels)
+    // ════════════════════════════════════════════════════════════════
+    observe=[
+      // Active Games (stat) — migrated from P1
+      layout.panel(
+        panels.statPanel(
+          title='Active Games',
+          targets=[{
+            expr: 'game_active{service_name="risk-it"}',
+            legendFormat: 'Active Games',
+            refId: 'A',
+          }],
+          thresholds=thresholds.activeGames,
+        ) + {
+          fieldConfig+: {
+            defaults+: {
+              links: [links.toDashboard('Perf Test', links.dashboardUids.perfTest)],
+            },
+          },
         },
-      ],
-      thresholds=thresholds.activeGames,
-    ) + {
-      id: 1,
-      description: 'Normal: < 50 active games (green). Watch for: sustained > 100 (red) may indicate games not finishing or accumulating due to stuck phases. Check next: games created/finished rate for flow balance.',
-      gridPos: { h: 8, w: 12, x: 0, y: 1 },
-      fieldConfig+: {
-        defaults+: {
-          links: [links.toDashboard('Command Center', links.dashboardUids.perfTestCommandCenter)],
-        },
-      },
-    },
-
-    // Panel 2: Games Created/Finished Rate (timeseries, fixed green)
-    common.timeseriesPanel(
-      title='Games Created/Finished Rate',
-      targets=[
-        {
-          expr: 'rate(game_created_total{service_name="risk-it"}[1m])',
-          legendFormat: 'Created',
-          refId: 'A',
-        },
-        {
-          expr: 'rate(game_finished_total{service_name="risk-it"}[1m])',
-          legendFormat: 'Finished',
-          refId: 'B',
-        },
-      ],
-      unit='ops',
-      color=colors.fixedColor(colors.gameLogic),
-    ) + {
-      id: 2,
-      description: 'Normal: created and finished rates roughly balanced over time. Watch for: created >> finished means games are accumulating (check for stuck phases); finished >> created means backlog is draining. Check next: active games stat for current count.',
-      gridPos: { h: 8, w: 12, x: 12, y: 1 },
-    },
-
-    // ── Orient — What's the shape? ──────────────────────────────────
-    ooda.orientRow() + { gridPos: { h: 1, w: 24, x: 0, y: 9 } },
-
-    // Panel 5: Phase Duration Heatmap (Oranges scheme)
-    common.heatmapPanel(
-      title='Phase Duration Heatmap',
-      targets=[
-        {
-          expr: 'sum(rate(game_phase_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le)',
-          format: 'heatmap',
-          legendFormat: '{{le}}',
-          refId: 'A',
-        },
-      ],
-      unit='s',
-      colorScheme='Oranges',
-      colorFill='dark-orange',
-    ) + {
-      id: 5,
-      description: 'Normal: dense band in low-seconds range (fast phase transitions). Watch for: heat spreading to higher buckets over time — phases are taking longer, possibly due to slow moves or DB contention. Check next: phase duration P50/P95 for per-phase breakdown.',
-      gridPos: { h: 8, w: 12, x: 0, y: 10 },
-    },
-
-    // Panel 8: Game Duration Heatmap (Blues scheme)
-    common.heatmapPanel(
-      title='Game Duration Heatmap',
-      targets=[
-        {
-          expr: 'sum(rate(game_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le)',
-          format: 'heatmap',
-          legendFormat: '{{le}}',
-          refId: 'A',
-        },
-      ],
-      unit='s',
-      colorScheme='Blues',
-      colorFill='dark-blue',
-    ) + {
-      id: 8,
-      description: 'Normal: concentrated distribution showing consistent game lengths. Watch for: bimodal distribution (fast + very slow games) suggests some games are getting stuck mid-play. Check next: game duration P50/P95 for percentile trends over time.',
-      gridPos: { h: 8, w: 12, x: 12, y: 10 },
-    },
-
-    // Panel 4: Phase Duration P50/P95 (timeseries, palette-classic for per-phase breakdown)
-    common.timeseriesPanel(
-      title='Phase Duration P50/P95',
-      targets=[
-        {
-          expr: 'histogram_quantile(0.5, sum(rate(game_phase_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le, phase))',
-          legendFormat: '{{phase}} P50',
-          refId: 'A',
-        },
-        {
-          expr: 'histogram_quantile(0.95, sum(rate(game_phase_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le, phase))',
-          legendFormat: '{{phase}} P95',
-          refId: 'B',
-        },
-      ],
-      unit='s',
-    ) + {
-      id: 4,
-      description: 'Normal: deploy and attack phases are longest; reinforce is shortest. Watch for: a single phase P95 spiking while others stay flat — isolates which game phase has the bottleneck. Check next: database transaction duration to see if DB latency is the cause.',
-      gridPos: { h: 8, w: 12, x: 0, y: 18 },
-      fieldConfig+: {
-        defaults+: {
-          links: [
-            links.toDashboard('Database', links.dashboardUids.database),
-            links.toDashboard('Request Lifecycle', links.dashboardUids.requestLifecycle),
-          ],
-        },
-      },
-    },
-
-    // ── Decide — Where's the bottleneck? ────────────────────────────
-    ooda.decideRow() + { gridPos: { h: 1, w: 24, x: 0, y: 26 } },
-
-    // Panel 3: Moves per Second by Phase (timeseries, palette-classic for dynamic labels)
-    common.timeseriesPanel(
-      title='Moves per Second by Phase',
-      targets=[
-        {
-          expr: 'sum(rate(game_moves_total{service_name="risk-it"}[1m])) by (phase)',
-          legendFormat: '{{phase}}',
-          refId: 'A',
-        },
-      ],
-      unit='ops',
-    ) + {
-      id: 3,
-      description: 'Normal: deploy moves are most frequent, followed by attack, then reinforce/conquer. Watch for: a phase dropping to zero while others continue — that phase may be blocked or erroring. Check next: server-golden-signals HTTP error rate for failed move requests.',
-      gridPos: { h: 8, w: 12, x: 0, y: 27 },
-    },
-
-    // Panel 7: Game Duration P50/P95 (timeseries, fixed green)
-    common.timeseriesPanel(
-      title='Game Duration P50/P95',
-      targets=common.histogramQuantileTargetsWithExemplars(
-        'game_duration_seconds_bucket',
-        [['0.5', 'P50'], ['0.95', 'P95']],
+        w=8, h=8,
+        description='Normal: < 50 active games (green). Watch for: sustained > 100 (red) may indicate stuck phases or games not finishing. Check next: Games Created/Finished Rate for flow balance.',
       ),
-      unit='s',
-      color=colors.fixedColor(colors.gameLogic),
-    ) + {
-      id: 7,
-      description: 'Normal: consistent P50 with P95 within 2-3x of P50. Watch for: P95 growing while P50 stays flat — a subset of games are taking much longer than typical. Check next: phase duration P50/P95 to identify which phase is slow in outlier games.',
-      gridPos: { h: 8, w: 12, x: 12, y: 27 },
-    },
 
-    // ── Act — What's the evidence? ──────────────────────────────────
-    ooda.actRow() + { gridPos: { h: 1, w: 24, x: 0, y: 35 } },
+      // Games Created/Finished Rate (timeseries) — migrated from P2
+      layout.panel(
+        panels.timeseriesPanel(
+          title='Games Created/Finished Rate',
+          targets=[
+            {
+              expr: 'rate(game_created_total{service_name="risk-it"}[1m])',
+              legendFormat: 'Created',
+              refId: 'A',
+            },
+            {
+              expr: 'rate(game_finished_total{service_name="risk-it"}[1m])',
+              legendFormat: 'Finished',
+              refId: 'B',
+            },
+          ],
+          unit='ops',
+          color=colors.fixedColor(colors.gameLogic),
+        ),
+        w=8, h=8,
+        description='Normal: created and finished rates roughly balanced. Watch for: created >> finished means games accumulating (stuck phases). Check next: Active Games stat for current count.',
+      ),
 
-    // Panel 9: Game Event Logs (Loki)
-    common.logPanel(
-      title='Game Event Logs',
-      expr='{service_name="risk-it"} |= "game"',
-    ) + {
-      id: 9,
-      description: 'Normal: Game creation, move execution, phase transitions. Watch for: Error-level entries, panic recoveries.',
-      gridPos: { h: 8, w: 12, x: 0, y: 36 },
-    },
+      // SHOWCASE: Game Event Heartbeat (stacked area, event type colors)
+      layout.panel(
+        panels.timeseriesPanel(
+          title='Game Event Heartbeat',
+          targets=[{
+            expr: 'sum(rate(event_bus_events_total{service_name="risk-it"}[1m])) by (event_type)',
+            legendFormat: '{{event_type}}',
+            refId: 'A',
+          }],
+          unit='ops',
+        ) + modifiers.withStackedArea(25, 'opacity') + modifiers.withSeriesColors(colors.eventTypes),
+        w=8, h=8,
+        description='Normal: move_executed dominates, all 8 event types visible. Watch for: any event type dropping to zero while others continue. Check next: Event Handler Latency in Decide for handler-level bottlenecks.',
+      ),
+    ],
 
-    // Panel 6: Total Moves by Phase (bar gauge, palette-classic)
-    common.barGaugePanel(
-      title='Total Moves by Phase',
-      targets=[
-        {
-          expr: 'sum(game_moves_total{service_name="risk-it"}) by (phase)',
-          legendFormat: '{{phase}}',
-          refId: 'A',
+    // ════════════════════════════════════════════════════════════════
+    // ORIENT — What's the shape? (5 always-visible + 1 collapsed row)
+    // ════════════════════════════════════════════════════════════════
+    orient=[
+      // Phase Duration Heatmap (Oranges) — migrated from P5
+      layout.panel(
+        panels.heatmapPanel(
+          title='Phase Duration Heatmap',
+          targets=[{
+            expr: 'sum(rate(game_phase_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le)',
+            format: 'heatmap',
+            legendFormat: '{{le}}',
+            refId: 'A',
+          }],
+          unit='s',
+          colorScheme='Oranges',
+          colorFill='dark-orange',
+        ),
+        w=12, h=8,
+        description='Normal: dense band in low-seconds range (fast phases). Watch for: heat spreading to higher buckets over time. Check next: Phase Duration P50/P95 for per-phase breakdown.',
+      ),
+
+      // Game Duration Heatmap (Blues) — migrated from P8
+      layout.panel(
+        panels.heatmapPanel(
+          title='Game Duration Heatmap',
+          targets=[{
+            expr: 'sum(rate(game_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le)',
+            format: 'heatmap',
+            legendFormat: '{{le}}',
+            refId: 'A',
+          }],
+          unit='s',
+          colorScheme='Blues',
+          colorFill='dark-blue',
+        ),
+        w=12, h=8,
+        description='Normal: concentrated distribution showing consistent game lengths. Watch for: bimodal distribution (fast + very slow games). Check next: Game Duration P50/P95 in Decide for percentile trends.',
+      ),
+
+      // Phase Duration P50/P95 by phase — migrated from P4
+      layout.panel(
+        panels.timeseriesPanel(
+          title='Phase Duration P50/P95',
+          targets=[
+            {
+              expr: 'histogram_quantile(0.5, sum(rate(game_phase_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le, phase))',
+              legendFormat: '{{phase}} P50',
+              refId: 'A',
+            },
+            {
+              expr: 'histogram_quantile(0.95, sum(rate(game_phase_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le, phase))',
+              legendFormat: '{{phase}} P95',
+              refId: 'B',
+            },
+          ],
+          unit='s',
+        ) + {
+          fieldConfig+: {
+            defaults+: {
+              links: [
+                links.toDashboard('System Health', links.dashboardUids.systemHealth),
+                links.toDashboard('System Health', links.dashboardUids.systemHealth),
+              ],
+            },
+          },
         },
+        w=12, h=8,
+        description='Normal: deploy and attack phases are longest; reinforce is shortest. Watch for: a single phase P95 spiking while others stay flat. Check next: Move Timing collapsed row for per-phase latency bands.',
+      ),
+
+      // Event Cascade Rate (continent captured/lost)
+      layout.panel(
+        panels.timeseriesPanel(
+          title='Event Cascade Rate',
+          targets=[
+            {
+              expr: 'sum(rate(event_bus_events_total{service_name="risk-it",event_type="continent_captured"}[1m]))',
+              legendFormat: 'Captured',
+              refId: 'A',
+            },
+            {
+              expr: 'sum(rate(event_bus_events_total{service_name="risk-it",event_type="continent_lost"}[1m]))',
+              legendFormat: 'Lost',
+              refId: 'B',
+            },
+          ],
+          unit='ops',
+          overrides=[
+            {
+              matcher: { id: 'byName', options: 'Captured' },
+              properties: [
+                { id: 'color', value: colors.fixedColor(colors.http) },
+              ],
+            },
+            {
+              matcher: { id: 'byName', options: 'Lost' },
+              properties: [
+                { id: 'color', value: colors.fixedColor(colors.errors) },
+              ],
+            },
+          ],
+        ),
+        w=12, h=8,
+        description='Normal: captured and lost rates correlated with game activity. Watch for: captured >> lost (map consolidation) or lost spikes (cascade collapses). Check next: Player Elimination Rate for downstream impact.',
+      ),
+
+      // Player Elimination Rate
+      layout.panel(
+        panels.timeseriesPanel(
+          title='Player Elimination Rate',
+          targets=[{
+            expr: 'sum(rate(event_bus_events_total{service_name="risk-it",event_type="player_eliminated"}[1m]))',
+            legendFormat: 'Eliminated',
+            refId: 'A',
+          }],
+          unit='ops',
+          color=colors.fixedColor(colors.errors),
+        ),
+        w=12, h=8,
+        description='Normal: low, steady rate as games progress to endgame. Watch for: sudden spikes (many games ending simultaneously) or zero rate (no games reaching endgame). Check next: Game Duration Heatmap for game length distribution.',
+      ),
+    ],
+
+    orientDepth={
+      // ── Collapsed: Move Timing (5 per-phase latency panels) ──
+      'Move Timing': [
+        // Deploy Phase Latency
+        layout.panel(
+          panels.timeseriesPanel(
+            title='Deploy Phase Latency',
+            targets=phaseLatencyTargets('DEPLOY'),
+            unit='s',
+            color=colors.fixedColor(colors.gameLogic),
+          ),
+          w=12, h=8,
+          description='Normal: p95 < 500ms. Watch for: p95 diverging from p50 (slow outliers). Check next: Database dashboard for transaction contention.',
+        ),
+
+        // Attack Phase Latency
+        layout.panel(
+          panels.timeseriesPanel(
+            title='Attack Phase Latency',
+            targets=phaseLatencyTargets('ATTACK'),
+            unit='s',
+            color=colors.fixedColor(colors.gameLogic),
+          ),
+          w=12, h=8,
+          description='Normal: p95 < 1s (attack involves dice + region updates). Watch for: p99 spikes (complex multi-region attacks). Check next: Conquer Phase Latency for post-attack overhead.',
+        ),
+
+        // Conquer Phase Latency
+        layout.panel(
+          panels.timeseriesPanel(
+            title='Conquer Phase Latency',
+            targets=phaseLatencyTargets('CONQUER'),
+            unit='s',
+            color=colors.fixedColor(colors.gameLogic),
+          ),
+          w=12, h=8,
+          description='Normal: fastest phase (single troop movement). Watch for: p95 > 200ms indicates DB contention on region updates. Check next: Reinforce Phase Latency.',
+        ),
+
+        // Reinforce Phase Latency
+        layout.panel(
+          panels.timeseriesPanel(
+            title='Reinforce Phase Latency',
+            targets=phaseLatencyTargets('REINFORCE'),
+            unit='s',
+            color=colors.fixedColor(colors.gameLogic),
+          ),
+          w=12, h=8,
+          description='Normal: fast, single troop redistribution. Watch for: p95 > 200ms. Check next: Cards Phase Latency.',
+        ),
+
+        // Cards Phase Latency
+        layout.panel(
+          panels.timeseriesPanel(
+            title='Cards Phase Latency',
+            targets=phaseLatencyTargets('CARDS'),
+            unit='s',
+            color=colors.fixedColor(colors.gameLogic),
+          ),
+          w=12, h=8,
+          description='Normal: fast card redemption. Watch for: p95 spikes when many players redeem simultaneously. Check next: Phase Duration P50/P95 for aggregate view.',
+        ),
       ],
-    ) + {
-      id: 6,
-      description: 'Normal: deploy has the highest total, attack second, conquer/reinforce lower. Watch for: unusual ratios — very few conquer moves relative to attack may indicate game logic issues. Check next: moves per second by phase for the rate view.',
-      gridPos: { h: 8, w: 12, x: 12, y: 44 },
     },
-  ],
+
+    // ════════════════════════════════════════════════════════════════
+    // DECIDE — Where's the bottleneck? (4 always-visible + 2 collapsed rows)
+    // ════════════════════════════════════════════════════════════════
+    decide=[
+      // Moves per Second by Phase — migrated from P3
+      layout.panel(
+        panels.timeseriesPanel(
+          title='Moves per Second by Phase',
+          targets=[{
+            expr: 'sum(rate(game_moves_total{service_name="risk-it"}[1m])) by (phase)',
+            legendFormat: '{{phase}}',
+            refId: 'A',
+          }],
+          unit='ops',
+        ) + {
+          fieldConfig+: {
+            defaults+: {
+              links: crossLinks,
+            },
+          },
+        },
+        w=12, h=8,
+        description='Normal: deploy most frequent, then attack, then reinforce/conquer. Watch for: a phase dropping to zero while others continue (phase blocked). Check next: Event Handler Latency for downstream processing speed.',
+      ),
+
+      // Game Duration P50/P95 — migrated from P7
+      layout.panel(
+        panels.timeseriesPanel(
+          title='Game Duration P50/P95',
+          targets=panels.histogramQuantileTargetsWithExemplars(
+            'game_duration_seconds_bucket',
+            [['0.5', 'P50'], ['0.95', 'P95']],
+          ),
+          unit='s',
+          color=colors.fixedColor(colors.gameLogic),
+        ),
+        w=12, h=8,
+        description='Normal: consistent P50 with P95 within 2-3x of P50. Watch for: P95 growing while P50 stays flat (subset of slow games). Check next: Phase Duration P50/P95 in Orient to identify which phase is slow.',
+      ),
+
+      // Event Handler Latency by handler (p95)
+      layout.panel(
+        panels.timeseriesPanel(
+          title='Event Handler Latency p95',
+          targets=[{
+            expr: 'histogram_quantile(0.95, sum(rate(event_handler_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le, handler))',
+            legendFormat: '{{handler}} p95',
+            refId: 'A',
+          }],
+          unit='s',
+          color=colors.fixedColor(colors.eventBus),
+        ) + {
+          fieldConfig+: {
+            defaults+: {
+              links: [links.toDashboard('System Health', links.dashboardUids.systemHealth)],
+            },
+          },
+        },
+        w=12, h=8,
+        description='Normal: all handlers < 100ms p95. Watch for: individual handler p95 > 500ms (slow consumer bottleneck). Check next: Event Dispatch Duration for bus-level overhead.',
+      ),
+
+      // Event Dispatch Duration by event_type (p95)
+      layout.panel(
+        panels.timeseriesPanel(
+          title='Event Dispatch Duration p95',
+          targets=[{
+            expr: 'histogram_quantile(0.95, sum(rate(event_bus_dispatch_duration_seconds_bucket{service_name="risk-it"}[1m])) by (le, event_type))',
+            legendFormat: '{{event_type}} p95',
+            refId: 'A',
+          }],
+          unit='s',
+          color=colors.fixedColor(colors.eventBus),
+        ),
+        w=12, h=8,
+        description='Normal: all event types dispatched < 50ms. Watch for: move_executed dispatch exceeding 100ms (many handlers subscribed). Check next: Event Bus Detail collapsed row for throughput and errors.',
+      ),
+    ],
+
+    decideDepth={
+      // ── Collapsed: Event Bus Detail (3 panels) ──
+      'Event Bus Detail': [
+        // Handler Throughput by event_type
+        layout.panel(
+          panels.timeseriesPanel(
+            title='Handler Throughput',
+            targets=[{
+              expr: 'sum(rate(event_bus_events_total{service_name="risk-it"}[1m])) by (event_type)',
+              legendFormat: '{{event_type}}',
+              refId: 'A',
+            }],
+            unit='ops',
+            color=colors.fixedColor(colors.eventBus),
+          ),
+          w=12, h=8,
+          description='Normal: move_executed dominates throughput. Watch for: unexpected event type surges. Check next: Event Handler Errors.',
+        ),
+
+        // Event Bus Events Total (stat)
+        layout.panel(
+          panels.statPanel(
+            title='Event Bus Events Total',
+            targets=[{
+              expr: 'sum(event_bus_events_total{service_name="risk-it"})',
+              legendFormat: 'total events',
+              refId: 'A',
+            }],
+            thresholds={
+              mode: 'absolute',
+              steps: [{ color: 'green', value: null }],
+            },
+          ),
+          w=12, h=8,
+          description='Normal: growing counter proportional to game activity. Watch for: counter stalling (bus stopped processing). Check next: Handler Throughput for rate view.',
+        ),
+
+        // Event Handler Errors
+        layout.panel(
+          panels.timeseriesPanel(
+            title='Event Handler Errors',
+            targets=[{
+              expr: 'sum(rate(event_handler_errors_total{service_name="risk-it"}[1m])) by (handler)',
+              legendFormat: '{{handler}}',
+              refId: 'A',
+            }],
+            unit='ops',
+            color=colors.fixedColor(colors.errors),
+          ),
+          w=24, h=8,
+          description='Normal: 0 errors. Watch for: any sustained error rate indicates handler panics or logic failures. Check next: Game Event Logs in Act for error details.',
+        ),
+      ],
+
+      // ── Collapsed: Move Routes (2 panels) ──
+      'Move Routes': [
+        // Total Moves by Phase (bar gauge) — migrated from P6
+        layout.panel(
+          panels.barGaugePanel(
+            title='Total Moves by Phase',
+            targets=[{
+              expr: 'sum(game_moves_total{service_name="risk-it"}) by (phase)',
+              legendFormat: '{{phase}}',
+              refId: 'A',
+            }],
+          ),
+          w=12, h=8,
+          description='Normal: deploy highest, attack second, conquer/reinforce lower. Watch for: unusual ratios (few conquer relative to attack). Check next: Moves per Second by Phase for rate view.',
+        ),
+
+        // Game HTTP Route Request Rate
+        layout.panel(
+          panels.timeseriesPanel(
+            title='Game HTTP Route Request Rate',
+            targets=[{
+              expr: 'sum(rate(http_server_requests_total{service_name="risk-it",http_route=~".*games.*"}[1m])) by (http_route)',
+              legendFormat: '{{http_route}}',
+              refId: 'A',
+            }],
+            unit='reqps',
+            color=colors.fixedColor(colors.http),
+          ),
+          w=12, h=8,
+          description='Normal: move endpoints dominate game traffic. Watch for: unexpected routes or disproportionate error rates. Check next: System Health for full HTTP breakdown.',
+        ),
+      ],
+    },
+
+    // ════════════════════════════════════════════════════════════════
+    // ACT — What's the evidence? (1 panel)
+    // ════════════════════════════════════════════════════════════════
+    act=[
+      // Game Event Logs (Loki) — migrated from P9, improved with gameId variable
+      layout.panel(
+        panels.logPanel(
+          title='Game Event Logs',
+          expr='{service_name="risk-it"} |= "game" ${gameId:pipe}',
+        ),
+        w=24, h=8,
+        description='Normal: game creation, move execution, phase transitions. Watch for: error-level entries, panic recoveries. Check next: filter by Game ID using the $gameId variable above.',
+      ),
+    ],
+  ),
 )

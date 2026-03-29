@@ -22,7 +22,7 @@
             }
         ]
     },
-    "description": "Load test client metrics from the perf-test harness",
+    "description": "Load test client metrics + SLO compliance",
     "editable": true,
     "graphTooltip": 1,
     "panels": [
@@ -34,7 +34,7 @@
                 "x": 0,
                 "y": 0
             },
-            "id": 100,
+            "id": 1,
             "title": "Observe \u2014 Am I OK?",
             "type": "row"
         },
@@ -43,7 +43,288 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Number of games currently in progress. Normal: matches configured concurrency. Watch for: stuck at 0 (no games starting) or exceeding target (games not completing). Check next: Game Completion panel for timeout/fatal counts.",
+            "description": "Normal: < 500ms (green). Watch for: crossing 500ms (yellow) or 1s (red) sustained. Check next: E2E Move Latency panel for percentile trend over time.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "System Health",
+                            "url": "/d/system-health?from=${__from}&to=${__to}"
+                        },
+                        {
+                            "targetBlank": true,
+                            "title": "Game Engine",
+                            "url": "/d/game-engine?from=${__from}&to=${__to}"
+                        }
+                    ],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 0.5
+                            },
+                            {
+                                "color": "red",
+                                "value": 1
+                            }
+                        ]
+                    },
+                    "unit": "s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 0,
+                "y": 1
+            },
+            "id": 2,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "E2E p95",
+                    "refId": "A"
+                }
+            ],
+            "title": "E2E p95",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: < 200ms (green). Watch for: crossing 200ms (yellow) or 500ms (red) sustained. Check next: WS Delivery Latency panel for percentile breakdown.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "System Health",
+                            "url": "/d/system-health?from=${__from}&to=${__to}"
+                        }
+                    ],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 0.2
+                            },
+                            {
+                                "color": "red",
+                                "value": 0.5
+                            }
+                        ]
+                    },
+                    "unit": "s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 6,
+                "y": 1
+            },
+            "id": 3,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(perftest_ws_delivery_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "WS Delivery p95",
+                    "refId": "A"
+                }
+            ],
+            "title": "WS Delivery p95",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: < 50ms (green). Watch for: crossing 50ms (yellow) or 100ms (red) sustained. Check next: System Health DB Pool panels for saturation evidence.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "System Health",
+                            "url": "/d/system-health?from=${__from}&to=${__to}"
+                        }
+                    ],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 0.05
+                            },
+                            {
+                                "color": "red",
+                                "value": 0.1
+                            }
+                        ]
+                    },
+                    "unit": "s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 12,
+                "y": 1
+            },
+            "id": 4,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(db_transaction_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                    "legendFormat": "DB Txn p95",
+                    "refId": "A"
+                }
+            ],
+            "title": "DB Txn p95",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: < 1% (green). Watch for: crossing 1% (yellow) or 5% (red) sustained. Check next: Error Breakdown panel for error type categorization.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "System Health",
+                            "url": "/d/system-health?from=${__from}&to=${__to}"
+                        }
+                    ],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 0.01
+                            },
+                            {
+                                "color": "red",
+                                "value": 0.05
+                            }
+                        ]
+                    },
+                    "unit": "percentunit"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 18,
+                "y": 1
+            },
+            "id": 5,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "(sum(rate(http_server_requests_total{service_name=\"risk-it\",http_status_code=~\"5..\"}[1m])) or vector(0)) / sum(rate(http_server_requests_total{service_name=\"risk-it\"}[1m]))",
+                    "legendFormat": "Error Rate",
+                    "refId": "A"
+                }
+            ],
+            "title": "HTTP Error Rate",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: matches configured concurrency. Watch for: stuck at 0 (no games starting) or exceeding target (games not completing). Check next: Completion Rate and Game Completion panels.",
             "fieldConfig": {
                 "defaults": {
                     "thresholds": {
@@ -70,9 +351,9 @@
                 "h": 6,
                 "w": 6,
                 "x": 0,
-                "y": 1
+                "y": 5
             },
-            "id": 1,
+            "id": 6,
             "options": {
                 "colorMode": "value",
                 "graphMode": "area",
@@ -101,7 +382,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Client-side move throughput (30s rate). Normal: proportional to active games. Watch for: sudden drops (server overload) or flat line at zero (test harness stuck). Check next: E2E Move Latency to see if slowdown explains throughput drop.",
+            "description": "Normal: proportional to active games. Watch for: sudden drops (server overload) or flat at zero (test harness stuck). Check next: E2E Move Latency to see if slowdown explains throughput drop.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -134,11 +415,11 @@
             },
             "gridPos": {
                 "h": 6,
-                "w": 9,
+                "w": 6,
                 "x": 6,
-                "y": 1
+                "y": 5
             },
-            "id": 2,
+            "id": 7,
             "options": {
                 "legend": {
                     "calcs": [
@@ -160,7 +441,7 @@
                     "refId": "A"
                 }
             ],
-            "title": "Moves/sec",
+            "title": "Throughput",
             "type": "timeseries"
         },
         {
@@ -168,7 +449,1556 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Cumulative game outcomes: completed, timed out, and fatal. Normal: completed grows steadily, others stay flat. Watch for: timed-out or fatal counts climbing (server cannot finish games in time). Check next: Error Rate by Type for error categorization.",
+            "description": "Normal: > 95% (green). Watch for: dropping below 80% (yellow) means too many timeouts or fatals. Check next: Error Breakdown for error types causing failures.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 0.8
+                            },
+                            {
+                                "color": "green",
+                                "value": 0.95
+                            }
+                        ]
+                    },
+                    "unit": "percentunit"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 6,
+                "x": 12,
+                "y": 5
+            },
+            "id": 8,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "sum(perftest_games_completed_total{service_name=\"perftest\"}) / (sum(perftest_games_completed_total{service_name=\"perftest\"}) + (sum(perftest_games_timed_out_total{service_name=\"perftest\"}) or vector(0)) + (sum(perftest_games_fatal_total{service_name=\"perftest\"}) or vector(0)))",
+                    "legendFormat": "Completion",
+                    "refId": "A"
+                }
+            ],
+            "title": "Completion Rate",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: zero or near-zero. Watch for: any sustained error rate or new error types appearing. Check next: System Health dashboard for server-side error details.",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 30,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "normal"
+                        }
+                    },
+                    "unit": "ops"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 6,
+                "x": 18,
+                "y": 5
+            },
+            "id": 9,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "sum"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "sum(rate(perftest_errors_total{service_name=\"perftest\"}[1m])) by (type)",
+                    "legendFormat": "{{type}}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Error Breakdown",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 11
+            },
+            "id": 10,
+            "title": "Orient \u2014 What\u2019s the shape?",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: dense band below 500ms. Watch for: color spreading into higher buckets (latency distribution widening under load). Check next: Percentile Bands below for exact P50/P95/P99 values.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "scheme",
+                        "schemeName": "YlOrRd"
+                    },
+                    "custom": {
+                        "fillOpacity": 80,
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "scaleDistribution": {
+                            "type": "linear"
+                        }
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 12
+            },
+            "id": 11,
+            "options": {
+                "calculate": false,
+                "cellGap": 1,
+                "color": {
+                    "exponent": 0.5,
+                    "fill": "dark-red",
+                    "mode": "scheme",
+                    "reverse": false,
+                    "scale": "exponential",
+                    "scheme": "YlOrRd",
+                    "steps": 64
+                },
+                "exemplars": {
+                    "color": "rgba(255,0,255,0.7)"
+                },
+                "filterValues": {
+                    "le": 1e-09
+                },
+                "legend": {
+                    "show": true
+                },
+                "rowsFrame": {
+                    "layout": "auto"
+                },
+                "tooltip": {
+                    "mode": "single",
+                    "showColorScale": false,
+                    "yHistogram": false
+                },
+                "yAxis": {
+                    "axisPlacement": "left",
+                    "reverse": false,
+                    "unit": "s"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[$__rate_interval])) by (le)",
+                    "format": "heatmap",
+                    "legendFormat": "{{le}}",
+                    "refId": "A"
+                }
+            ],
+            "title": "E2E Latency Heatmap",
+            "type": "heatmap"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: tight bands with P95 < 500ms. Watch for: bands widening (latency variance increasing) or P99 diverging from P95 (tail latency problem). Check next: Latency Attribution to identify which server boundary causes the spread.",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "s"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "p99"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.fillBelowTo",
+                                "value": "p95"
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 5
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "p95"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.fillBelowTo",
+                                "value": "p50"
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 10
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 20
+            },
+            "id": 12,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.5, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p50",
+                    "refId": "A"
+                },
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p95",
+                    "refId": "B"
+                },
+                {
+                    "expr": "histogram_quantile(0.99, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p99",
+                    "refId": "C"
+                }
+            ],
+            "title": "E2E Latency Percentile Bands",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: DB + game logic + WS sum to roughly HTTP total; event handler runs independently after response. Watch for: one boundary dominating (e.g. DB > 70% of HTTP) or event handler exceeding HTTP total. Check next: Database dashboard if DB dominates, WebSocket dashboard if WS dominates.",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "System Health",
+                            "url": "/d/system-health?from=${__from}&to=${__to}"
+                        },
+                        {
+                            "targetBlank": true,
+                            "title": "System Health",
+                            "url": "/d/system-health?from=${__from}&to=${__to}"
+                        },
+                        {
+                            "targetBlank": true,
+                            "title": "System Health",
+                            "url": "/d/system-health?from=${__from}&to=${__to}"
+                        }
+                    ],
+                    "unit": "s"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "HTTP Total"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#FF9830",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 3
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "DB Transaction"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#3274D9",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Game Logic"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#56A64B",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "WS Broadcast"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#8F3BB8",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Event Handler (post-response)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#00BCD4",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.lineStyle",
+                                "value": {
+                                    "dash": [
+                                        10,
+                                        10
+                                    ],
+                                    "fill": "dash"
+                                }
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 0
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 28
+            },
+            "id": 13,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "exemplar": true,
+                    "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                    "legendFormat": "HTTP Total",
+                    "refId": "A"
+                },
+                {
+                    "exemplar": true,
+                    "expr": "histogram_quantile(0.95, sum(rate(db_transaction_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                    "legendFormat": "DB Transaction",
+                    "refId": "B"
+                },
+                {
+                    "exemplar": true,
+                    "expr": "histogram_quantile(0.95, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                    "legendFormat": "Game Logic",
+                    "refId": "C"
+                },
+                {
+                    "exemplar": true,
+                    "expr": "histogram_quantile(0.95, sum(rate(ws_broadcast_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                    "legendFormat": "WS Broadcast",
+                    "refId": "D"
+                },
+                {
+                    "exemplar": true,
+                    "expr": "histogram_quantile(0.95, sum(rate(event_handler_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                    "legendFormat": "Event Handler (post-response)",
+                    "refId": "E"
+                }
+            ],
+            "title": "Latency Attribution (p95)",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 36
+            },
+            "id": 14,
+            "title": "Decide \u2014 Where\u2019s the bottleneck?",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: P95 < 500ms, P99 < 1s. Watch for: P95 crossing the threshold line (SLO breach). Check next: REST Latency by Action to identify which move type is slowest.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#73BF69",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "line+area"
+                        }
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 0.5
+                            },
+                            {
+                                "color": "red",
+                                "value": 1
+                            }
+                        ]
+                    },
+                    "unit": "s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 37
+            },
+            "id": 15,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "exemplar": true,
+                    "expr": "histogram_quantile(0.5, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p50",
+                    "refId": "A"
+                },
+                {
+                    "exemplar": true,
+                    "expr": "histogram_quantile(0.95, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p95",
+                    "refId": "B"
+                },
+                {
+                    "exemplar": true,
+                    "expr": "histogram_quantile(0.99, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p99",
+                    "refId": "C"
+                }
+            ],
+            "title": "E2E Move Latency (P50/P95/P99)",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: P95 < 200ms. Watch for: P95 crossing the threshold line (WS delivery SLO breach). Check next: WebSocket dashboard for connection and broadcast details.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#8F3BB8",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "line+area"
+                        }
+                    },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "System Health",
+                            "url": "/d/system-health?from=${__from}&to=${__to}"
+                        }
+                    ],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 0.2
+                            },
+                            {
+                                "color": "red",
+                                "value": 0.5
+                            }
+                        ]
+                    },
+                    "unit": "s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 37
+            },
+            "id": 16,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "exemplar": true,
+                    "expr": "histogram_quantile(0.5, sum(rate(perftest_ws_delivery_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p50",
+                    "refId": "A"
+                },
+                {
+                    "exemplar": true,
+                    "expr": "histogram_quantile(0.95, sum(rate(perftest_ws_delivery_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p95",
+                    "refId": "B"
+                },
+                {
+                    "exemplar": true,
+                    "expr": "histogram_quantile(0.99, sum(rate(perftest_ws_delivery_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p99",
+                    "refId": "C"
+                }
+            ],
+            "title": "WS Delivery Latency (P50/P95/P99)",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: all actions < 200ms at P95. Watch for: single action diverging (e.g. attack P95 spiking while others stay flat). Check next: Database dashboard for query-level latency.",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 45
+            },
+            "id": 17,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.5, sum(rate(perftest_rest_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le, action))",
+                    "legendFormat": "{{action}} p50",
+                    "refId": "A"
+                },
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(perftest_rest_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le, action))",
+                    "legendFormat": "{{action}} p95",
+                    "refId": "B"
+                },
+                {
+                    "expr": "histogram_quantile(0.99, sum(rate(perftest_rest_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le, action))",
+                    "legendFormat": "{{action}} p99",
+                    "refId": "C"
+                }
+            ],
+            "title": "REST Latency by Action (P50/P95/P99)",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: low, proportional to concurrency. Watch for: conflicts/s exceeding moves/s (more retries than successes, contention too high). Check next: E2E Latency vs Concurrency to correlate conflict rate with load.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#FF9830",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 15,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "ops"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 45
+            },
+            "id": 18,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "rate(perftest_conflicts_total{service_name=\"perftest\"}[30s])",
+                    "legendFormat": "conflicts/s",
+                    "refId": "A"
+                }
+            ],
+            "title": "Conflicts/sec",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: latency stays flat as concurrency increases. Watch for: inflection point where latency climbs sharply with concurrency (saturation). Check next: Server Latency vs Concurrency to see if server-side shows the same knee.",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "s"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "active games"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.axisPlacement",
+                                "value": "right"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "short"
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 5
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#FF9830",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 53
+            },
+            "id": 19,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "E2E p95",
+                    "refId": "A"
+                },
+                {
+                    "expr": "perftest_games_active{service_name=\"perftest\"}",
+                    "legendFormat": "active games",
+                    "refId": "B"
+                }
+            ],
+            "title": "E2E Latency vs Concurrency",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: HTTP P95 < 100ms regardless of concurrency. Watch for: server latency rising before client E2E does (server is the bottleneck). Check next: Latency Attribution in Orient to identify which server boundary dominates.",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "System Health",
+                            "url": "/d/system-health?from=${__from}&to=${__to}"
+                        },
+                        {
+                            "targetBlank": true,
+                            "title": "System Health",
+                            "url": "/d/system-health?from=${__from}&to=${__to}"
+                        }
+                    ],
+                    "unit": "s"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "active games"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.axisPlacement",
+                                "value": "right"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "short"
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 5
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#FF9830",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 53
+            },
+            "id": 20,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "exemplar": true,
+                    "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                    "legendFormat": "HTTP p95",
+                    "refId": "A"
+                },
+                {
+                    "expr": "perftest_games_active{service_name=\"perftest\"}",
+                    "legendFormat": "active games",
+                    "refId": "B"
+                }
+            ],
+            "title": "Server Latency vs Concurrency",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: effective approximates active. Watch for: growing gap means games are getting stuck (stalled/zombie). Check next: Health Breakdown collapsed row for per-state waterfall.",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "short"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Effective (healthy+slow)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#56A64B",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Active (total)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#73BF69",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.lineStyle",
+                                "value": {
+                                    "dash": [
+                                        10,
+                                        10
+                                    ],
+                                    "fill": "dash"
+                                }
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 0
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 61
+            },
+            "id": 21,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "perftest_health_healthy{service_name=\"perftest\"} + perftest_health_slow{service_name=\"perftest\"}",
+                    "legendFormat": "Effective (healthy+slow)",
+                    "refId": "A"
+                },
+                {
+                    "expr": "perftest_games_active{service_name=\"perftest\"}",
+                    "legendFormat": "Active (total)",
+                    "refId": "B"
+                }
+            ],
+            "title": "Effective Concurrency",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": true,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 69
+            },
+            "id": 22,
+            "panels": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "description": "Normal: deploy and attack phases are longest. Watch for: single phase P95 spiking while others stay flat. Check next: REST Latency by Action for per-action HTTP latency comparison.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "custom": {
+                                "drawStyle": "line",
+                                "fillOpacity": 10,
+                                "lineInterpolation": "smooth",
+                                "lineWidth": 2,
+                                "pointSize": 5,
+                                "showPoints": "never",
+                                "spanNulls": false,
+                                "stacking": {
+                                    "group": "A",
+                                    "mode": "none"
+                                }
+                            },
+                            "unit": "s"
+                        },
+                        "overrides": []
+                    },
+                    "gridPos": {
+                        "h": 8,
+                        "w": 24,
+                        "x": 0,
+                        "y": 70
+                    },
+                    "id": 23,
+                    "options": {
+                        "legend": {
+                            "calcs": [
+                                "mean",
+                                "max"
+                            ],
+                            "displayMode": "table",
+                            "placement": "bottom"
+                        },
+                        "tooltip": {
+                            "mode": "multi",
+                            "sort": "desc"
+                        }
+                    },
+                    "targets": [
+                        {
+                            "expr": "histogram_quantile(0.95, sum(rate(perftest_phase_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le, phase))",
+                            "legendFormat": "{{phase}} p95",
+                            "refId": "A"
+                        }
+                    ],
+                    "title": "Phase Duration by Phase",
+                    "type": "timeseries"
+                }
+            ],
+            "title": "Client Phase Latency",
+            "type": "row"
+        },
+        {
+            "collapsed": true,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 70
+            },
+            "id": 24,
+            "panels": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "description": "Normal: healthy dominates the stack, others near zero. Watch for: slow/stalled/zombie layers growing (games not making progress). Check next: Effective Concurrency panel for the gap metric, System Health for DB pool saturation.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "custom": {
+                                "drawStyle": "line",
+                                "fillOpacity": 40,
+                                "gradientMode": "scheme",
+                                "lineInterpolation": "smooth",
+                                "lineWidth": 1,
+                                "pointSize": 5,
+                                "showPoints": "never",
+                                "spanNulls": false,
+                                "stacking": {
+                                    "group": "A",
+                                    "mode": "normal"
+                                }
+                            },
+                            "unit": "short"
+                        },
+                        "overrides": [
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "healthy"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#56A64B",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "slow"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#FADE2A",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "stalled"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#FF9830",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "zombie"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#E02F44",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "gridPos": {
+                        "h": 10,
+                        "w": 24,
+                        "x": 0,
+                        "y": 71
+                    },
+                    "id": 25,
+                    "options": {
+                        "legend": {
+                            "calcs": [
+                                "mean",
+                                "last"
+                            ],
+                            "displayMode": "table",
+                            "placement": "bottom"
+                        },
+                        "tooltip": {
+                            "mode": "multi",
+                            "sort": "desc"
+                        }
+                    },
+                    "targets": [
+                        {
+                            "expr": "perftest_health_healthy{service_name=\"perftest\"}",
+                            "legendFormat": "healthy",
+                            "refId": "A"
+                        },
+                        {
+                            "expr": "perftest_health_slow{service_name=\"perftest\"}",
+                            "legendFormat": "slow",
+                            "refId": "B"
+                        },
+                        {
+                            "expr": "perftest_health_stalled{service_name=\"perftest\"}",
+                            "legendFormat": "stalled",
+                            "refId": "C"
+                        },
+                        {
+                            "expr": "perftest_health_zombie{service_name=\"perftest\"}",
+                            "legendFormat": "zombie",
+                            "refId": "D"
+                        }
+                    ],
+                    "title": "Health State Waterfall",
+                    "type": "timeseries"
+                }
+            ],
+            "title": "Health Breakdown",
+            "type": "row"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 71
+            },
+            "id": 26,
+            "title": "Act \u2014 What\u2019s the evidence?",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: zero or near-zero. Watch for: any sustained error rate, especially new error types appearing. Check next: Game Completion panel to see if errors cause game failures.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "normal"
+                        }
+                    },
+                    "unit": "ops"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 0,
+                "y": 72
+            },
+            "id": 27,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "sum(rate(perftest_errors_total{service_name=\"perftest\"}[1m])) by (type)",
+                    "legendFormat": "{{type}}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Error Rate by Type",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: consistent across the test run. Watch for: game duration growing over time (server slowing down under sustained load). Check next: Moves per Game to check if duration increase is from more moves or slower moves.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#56A64B",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 8,
+                "y": 72
+            },
+            "id": 28,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "exemplar": true,
+                    "expr": "histogram_quantile(0.5, sum(rate(perftest_game_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p50",
+                    "refId": "A"
+                },
+                {
+                    "exemplar": true,
+                    "expr": "histogram_quantile(0.95, sum(rate(perftest_game_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p95",
+                    "refId": "B"
+                }
+            ],
+            "title": "Game Duration (P50/P95)",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: stable distribution determined by game logic, not server performance. Watch for: sudden changes in move count (game logic bug or strategy change). Check next: Game Duration to correlate move count with total time.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#73BF69",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 16,
+                "y": 72
+            },
+            "id": 29,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "exemplar": true,
+                    "expr": "histogram_quantile(0.5, sum(rate(perftest_game_moves_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p50",
+                    "refId": "A"
+                },
+                {
+                    "exemplar": true,
+                    "expr": "histogram_quantile(0.95, sum(rate(perftest_game_moves_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "legendFormat": "p95",
+                    "refId": "B"
+                }
+            ],
+            "title": "Moves per Game (P50/P95)",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: completed grows steadily, others stay flat. Watch for: timed-out or fatal counts climbing (server cannot finish games in time). Check next: Error Rate by Type for error categorization.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -220,12 +2050,12 @@
                 ]
             },
             "gridPos": {
-                "h": 6,
-                "w": 9,
-                "x": 15,
-                "y": 1
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 80
             },
-            "id": 3,
+            "id": 30,
             "options": {
                 "legend": {
                     "calcs": [
@@ -258,831 +2088,6 @@
             ],
             "title": "Game Completion",
             "type": "timeseries"
-        },
-        {
-            "collapsed": false,
-            "gridPos": {
-                "h": 1,
-                "w": 24,
-                "x": 0,
-                "y": 7
-            },
-            "id": 200,
-            "title": "Orient \u2014 What\u2019s the shape?",
-            "type": "row"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
-            "description": "Heatmap of end-to-end move latency bucket distribution over time. Normal: dense band below 500ms. Watch for: color spreading into higher buckets (latency distribution widening under load). Check next: E2E Move Latency percentile lines for exact P50/P95/P99 values.",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "scheme",
-                        "schemeName": "YlOrRd"
-                    },
-                    "custom": {
-                        "fillOpacity": 80,
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "scaleDistribution": {
-                            "type": "linear"
-                        }
-                    },
-                    "links": [
-                        {
-                            "targetBlank": true,
-                            "title": "Command Center",
-                            "url": "/d/perf-test-command-center?from=${__from}&to=${__to}"
-                        }
-                    ]
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 24,
-                "x": 0,
-                "y": 8
-            },
-            "id": 13,
-            "options": {
-                "calculate": false,
-                "cellGap": 1,
-                "color": {
-                    "exponent": 0.5,
-                    "fill": "dark-red",
-                    "mode": "scheme",
-                    "reverse": false,
-                    "scale": "exponential",
-                    "scheme": "YlOrRd",
-                    "steps": 64
-                },
-                "exemplars": {
-                    "color": "rgba(255,0,255,0.7)"
-                },
-                "filterValues": {
-                    "le": 1e-09
-                },
-                "legend": {
-                    "show": true
-                },
-                "rowsFrame": {
-                    "layout": "auto"
-                },
-                "tooltip": {
-                    "mode": "single",
-                    "showColorScale": false,
-                    "yHistogram": false
-                },
-                "yAxis": {
-                    "axisPlacement": "left",
-                    "reverse": false,
-                    "unit": "s"
-                }
-            },
-            "targets": [
-                {
-                    "expr": "sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[$__rate_interval])) by (le)",
-                    "format": "heatmap",
-                    "legendFormat": "{{le}}",
-                    "refId": "A"
-                }
-            ],
-            "title": "Client E2E Latency Distribution",
-            "type": "heatmap"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
-            "description": "End-to-end move latency percentiles measured by the client. SLO threshold overlay at 500ms. Normal: P95 < 500ms, P99 < 1s. Watch for: P95 crossing the threshold line (SLO breach). Check next: REST Latency by Action to identify which move type is slowest.",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "fixedColor": "#73BF69",
-                        "mode": "fixed"
-                    },
-                    "custom": {
-                        "drawStyle": "line",
-                        "fillOpacity": 10,
-                        "lineInterpolation": "smooth",
-                        "lineWidth": 2,
-                        "pointSize": 5,
-                        "showPoints": "never",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "line+area"
-                        }
-                    },
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "yellow",
-                                "value": 0.5
-                            },
-                            {
-                                "color": "red",
-                                "value": 1
-                            }
-                        ]
-                    },
-                    "unit": "s"
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 12,
-                "y": 16
-            },
-            "id": 5,
-            "options": {
-                "legend": {
-                    "calcs": [
-                        "mean",
-                        "max"
-                    ],
-                    "displayMode": "table",
-                    "placement": "bottom"
-                },
-                "tooltip": {
-                    "mode": "multi",
-                    "sort": "desc"
-                }
-            },
-            "targets": [
-                {
-                    "exemplar": true,
-                    "expr": "histogram_quantile(0.5, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
-                    "legendFormat": "p50",
-                    "refId": "A"
-                },
-                {
-                    "exemplar": true,
-                    "expr": "histogram_quantile(0.95, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
-                    "legendFormat": "p95",
-                    "refId": "B"
-                },
-                {
-                    "exemplar": true,
-                    "expr": "histogram_quantile(0.99, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
-                    "legendFormat": "p99",
-                    "refId": "C"
-                }
-            ],
-            "title": "E2E Move Latency (P50/P95/P99)",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
-            "description": "WebSocket state delivery latency percentiles. SLO threshold overlay at 200ms. Normal: P95 < 200ms. Watch for: P95 crossing the threshold line (WS delivery SLO breach). Check next: WebSocket dashboard for connection and broadcast details.",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "fixedColor": "#8F3BB8",
-                        "mode": "fixed"
-                    },
-                    "custom": {
-                        "drawStyle": "line",
-                        "fillOpacity": 10,
-                        "lineInterpolation": "smooth",
-                        "lineWidth": 2,
-                        "pointSize": 5,
-                        "showPoints": "never",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "line+area"
-                        }
-                    },
-                    "links": [
-                        {
-                            "targetBlank": true,
-                            "title": "WebSocket Detail",
-                            "url": "/d/websocket?from=${__from}&to=${__to}"
-                        }
-                    ],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "yellow",
-                                "value": 0.2
-                            },
-                            {
-                                "color": "red",
-                                "value": 0.5
-                            }
-                        ]
-                    },
-                    "unit": "s"
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 0,
-                "y": 16
-            },
-            "id": 6,
-            "options": {
-                "legend": {
-                    "calcs": [
-                        "mean",
-                        "max"
-                    ],
-                    "displayMode": "table",
-                    "placement": "bottom"
-                },
-                "tooltip": {
-                    "mode": "multi",
-                    "sort": "desc"
-                }
-            },
-            "targets": [
-                {
-                    "exemplar": true,
-                    "expr": "histogram_quantile(0.5, sum(rate(perftest_ws_delivery_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
-                    "legendFormat": "p50",
-                    "refId": "A"
-                },
-                {
-                    "exemplar": true,
-                    "expr": "histogram_quantile(0.95, sum(rate(perftest_ws_delivery_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
-                    "legendFormat": "p95",
-                    "refId": "B"
-                },
-                {
-                    "exemplar": true,
-                    "expr": "histogram_quantile(0.99, sum(rate(perftest_ws_delivery_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
-                    "legendFormat": "p99",
-                    "refId": "C"
-                }
-            ],
-            "title": "WS Delivery Latency (P50/P95/P99)",
-            "type": "timeseries"
-        },
-        {
-            "collapsed": false,
-            "gridPos": {
-                "h": 1,
-                "w": 24,
-                "x": 0,
-                "y": 24
-            },
-            "id": 300,
-            "title": "Decide \u2014 Where\u2019s the bottleneck?",
-            "type": "row"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
-            "description": "REST API latency broken down by move action (deploy, attack, conquer, reinforce, cards) at P50/P95/P99. Normal: all actions < 200ms at P95. Watch for: single action diverging (e.g. attack P95 spiking while others stay flat). Check next: Database dashboard for query-level latency.",
-            "fieldConfig": {
-                "defaults": {
-                    "custom": {
-                        "drawStyle": "line",
-                        "fillOpacity": 10,
-                        "lineInterpolation": "smooth",
-                        "lineWidth": 2,
-                        "pointSize": 5,
-                        "showPoints": "never",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        }
-                    },
-                    "unit": "s"
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 0,
-                "y": 25
-            },
-            "id": 4,
-            "options": {
-                "legend": {
-                    "calcs": [
-                        "mean",
-                        "max"
-                    ],
-                    "displayMode": "table",
-                    "placement": "bottom"
-                },
-                "tooltip": {
-                    "mode": "multi",
-                    "sort": "desc"
-                }
-            },
-            "targets": [
-                {
-                    "expr": "histogram_quantile(0.5, sum(rate(perftest_rest_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le, action))",
-                    "legendFormat": "{{action}} p50",
-                    "refId": "A"
-                },
-                {
-                    "expr": "histogram_quantile(0.95, sum(rate(perftest_rest_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le, action))",
-                    "legendFormat": "{{action}} p95",
-                    "refId": "B"
-                },
-                {
-                    "expr": "histogram_quantile(0.99, sum(rate(perftest_rest_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le, action))",
-                    "legendFormat": "{{action}} p99",
-                    "refId": "C"
-                }
-            ],
-            "title": "REST Latency by Action (P50/P95/P99)",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
-            "description": "Rate of client-side move conflicts (HTTP 409 \u2014 optimistic lock retry). Normal: low, proportional to concurrency. Watch for: conflicts/s exceeding moves/s (more retries than successes, contention too high). Check next: E2E Latency vs Concurrency to correlate conflict rate with load.",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "fixedColor": "#FF9830",
-                        "mode": "fixed"
-                    },
-                    "custom": {
-                        "drawStyle": "line",
-                        "fillOpacity": 15,
-                        "lineInterpolation": "smooth",
-                        "lineWidth": 2,
-                        "pointSize": 5,
-                        "showPoints": "never",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        }
-                    },
-                    "unit": "ops"
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 12,
-                "y": 25
-            },
-            "id": 8,
-            "options": {
-                "legend": {
-                    "calcs": [
-                        "mean",
-                        "max"
-                    ],
-                    "displayMode": "table",
-                    "placement": "bottom"
-                },
-                "tooltip": {
-                    "mode": "multi",
-                    "sort": "desc"
-                }
-            },
-            "targets": [
-                {
-                    "expr": "rate(perftest_conflicts_total{service_name=\"perftest\"}[30s])",
-                    "legendFormat": "conflicts/s",
-                    "refId": "A"
-                }
-            ],
-            "title": "Conflicts/sec",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
-            "description": "E2E P95 latency overlaid with active game count (right axis). Normal: latency stays flat as concurrency increases. Watch for: inflection point where latency climbs sharply with concurrency (saturation). Check next: Server Latency vs Concurrency to see if server-side shows the same knee.",
-            "fieldConfig": {
-                "defaults": {
-                    "custom": {
-                        "drawStyle": "line",
-                        "fillOpacity": 10,
-                        "lineInterpolation": "smooth",
-                        "lineWidth": 2,
-                        "pointSize": 5,
-                        "showPoints": "never",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        }
-                    },
-                    "unit": "s"
-                },
-                "overrides": [
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "active games"
-                        },
-                        "properties": [
-                            {
-                                "id": "custom.axisPlacement",
-                                "value": "right"
-                            },
-                            {
-                                "id": "unit",
-                                "value": "short"
-                            },
-                            {
-                                "id": "custom.fillOpacity",
-                                "value": 5
-                            },
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#FF9830",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    }
-                ]
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 0,
-                "y": 33
-            },
-            "id": 9,
-            "options": {
-                "legend": {
-                    "calcs": [
-                        "mean",
-                        "max"
-                    ],
-                    "displayMode": "table",
-                    "placement": "bottom"
-                },
-                "tooltip": {
-                    "mode": "multi",
-                    "sort": "desc"
-                }
-            },
-            "targets": [
-                {
-                    "expr": "histogram_quantile(0.95, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
-                    "legendFormat": "E2E p95",
-                    "refId": "A"
-                },
-                {
-                    "expr": "perftest_games_active{service_name=\"perftest\"}",
-                    "legendFormat": "active games",
-                    "refId": "B"
-                }
-            ],
-            "title": "E2E Latency vs Concurrency",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
-            "description": "Server-side HTTP P95 overlaid with active game count (right axis). Normal: HTTP P95 < 100ms regardless of concurrency. Watch for: server latency rising before client E2E does (server is the bottleneck). Check next: Command Center Latency Attribution to identify which server boundary (DB, game logic, WS) dominates.",
-            "fieldConfig": {
-                "defaults": {
-                    "custom": {
-                        "drawStyle": "line",
-                        "fillOpacity": 10,
-                        "lineInterpolation": "smooth",
-                        "lineWidth": 2,
-                        "pointSize": 5,
-                        "showPoints": "never",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        }
-                    },
-                    "links": [
-                        {
-                            "targetBlank": true,
-                            "title": "Request Lifecycle",
-                            "url": "/d/request-lifecycle?from=${__from}&to=${__to}"
-                        },
-                        {
-                            "targetBlank": true,
-                            "title": "Command Center",
-                            "url": "/d/perf-test-command-center?from=${__from}&to=${__to}"
-                        }
-                    ],
-                    "unit": "s"
-                },
-                "overrides": [
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "active games"
-                        },
-                        "properties": [
-                            {
-                                "id": "custom.axisPlacement",
-                                "value": "right"
-                            },
-                            {
-                                "id": "unit",
-                                "value": "short"
-                            },
-                            {
-                                "id": "custom.fillOpacity",
-                                "value": 5
-                            },
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#FF9830",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    }
-                ]
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 12,
-                "y": 33
-            },
-            "id": 10,
-            "options": {
-                "legend": {
-                    "calcs": [
-                        "mean",
-                        "max"
-                    ],
-                    "displayMode": "table",
-                    "placement": "bottom"
-                },
-                "tooltip": {
-                    "mode": "multi",
-                    "sort": "desc"
-                }
-            },
-            "targets": [
-                {
-                    "exemplar": true,
-                    "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
-                    "legendFormat": "HTTP p95",
-                    "refId": "A"
-                },
-                {
-                    "expr": "perftest_games_active{service_name=\"perftest\"}",
-                    "legendFormat": "active games",
-                    "refId": "B"
-                }
-            ],
-            "title": "Server Latency vs Concurrency",
-            "type": "timeseries"
-        },
-        {
-            "collapsed": false,
-            "gridPos": {
-                "h": 1,
-                "w": 24,
-                "x": 0,
-                "y": 41
-            },
-            "id": 400,
-            "title": "Act \u2014 What\u2019s the evidence?",
-            "type": "row"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
-            "description": "Client-side errors stacked by type (connection, timeout, HTTP 5xx, etc.). Normal: zero or near-zero. Watch for: any sustained error rate, especially new error types appearing. Check next: Game Completion panel to see if errors cause game failures.",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "drawStyle": "line",
-                        "fillOpacity": 10,
-                        "lineInterpolation": "smooth",
-                        "lineWidth": 2,
-                        "pointSize": 5,
-                        "showPoints": "never",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "normal"
-                        }
-                    },
-                    "unit": "ops"
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 8,
-                "x": 0,
-                "y": 42
-            },
-            "id": 7,
-            "options": {
-                "legend": {
-                    "calcs": [
-                        "mean",
-                        "max"
-                    ],
-                    "displayMode": "table",
-                    "placement": "bottom"
-                },
-                "tooltip": {
-                    "mode": "multi",
-                    "sort": "desc"
-                }
-            },
-            "targets": [
-                {
-                    "expr": "sum(rate(perftest_errors_total{service_name=\"perftest\"}[1m])) by (type)",
-                    "legendFormat": "{{type}}",
-                    "refId": "A"
-                }
-            ],
-            "title": "Error Rate by Type",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
-            "description": "Time to complete a full game at P50 and P95. Normal: consistent across the test run. Watch for: game duration growing over time (server slowing down under sustained load). Check next: Moves per Game to check if duration increase is from more moves or slower moves.",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "fixedColor": "#56A64B",
-                        "mode": "fixed"
-                    },
-                    "custom": {
-                        "drawStyle": "line",
-                        "fillOpacity": 10,
-                        "lineInterpolation": "smooth",
-                        "lineWidth": 2,
-                        "pointSize": 5,
-                        "showPoints": "never",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        }
-                    },
-                    "unit": "s"
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 8,
-                "x": 8,
-                "y": 42
-            },
-            "id": 11,
-            "options": {
-                "legend": {
-                    "calcs": [
-                        "mean",
-                        "max"
-                    ],
-                    "displayMode": "table",
-                    "placement": "bottom"
-                },
-                "tooltip": {
-                    "mode": "multi",
-                    "sort": "desc"
-                }
-            },
-            "targets": [
-                {
-                    "exemplar": true,
-                    "expr": "histogram_quantile(0.5, sum(rate(perftest_game_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
-                    "legendFormat": "p50",
-                    "refId": "A"
-                },
-                {
-                    "exemplar": true,
-                    "expr": "histogram_quantile(0.95, sum(rate(perftest_game_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
-                    "legendFormat": "p95",
-                    "refId": "B"
-                }
-            ],
-            "title": "Game Duration (P50/P95)",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
-            "description": "Number of moves per game at P50 and P95. Normal: stable distribution determined by game logic, not server performance. Watch for: sudden changes in move count (game logic bug or strategy change). Check next: Game Duration to correlate move count with total time.",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "fixedColor": "#73BF69",
-                        "mode": "fixed"
-                    },
-                    "custom": {
-                        "drawStyle": "line",
-                        "fillOpacity": 10,
-                        "lineInterpolation": "smooth",
-                        "lineWidth": 2,
-                        "pointSize": 5,
-                        "showPoints": "never",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        }
-                    },
-                    "unit": "short"
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 8,
-                "x": 16,
-                "y": 42
-            },
-            "id": 12,
-            "options": {
-                "legend": {
-                    "calcs": [
-                        "mean",
-                        "max"
-                    ],
-                    "displayMode": "table",
-                    "placement": "bottom"
-                },
-                "tooltip": {
-                    "mode": "multi",
-                    "sort": "desc"
-                }
-            },
-            "targets": [
-                {
-                    "exemplar": true,
-                    "expr": "histogram_quantile(0.5, sum(rate(perftest_game_moves_bucket{service_name=\"perftest\"}[1m])) by (le))",
-                    "legendFormat": "p50",
-                    "refId": "A"
-                },
-                {
-                    "exemplar": true,
-                    "expr": "histogram_quantile(0.95, sum(rate(perftest_game_moves_bucket{service_name=\"perftest\"}[1m])) by (le))",
-                    "legendFormat": "p95",
-                    "refId": "B"
-                }
-            ],
-            "title": "Moves per Game (P50/P95)",
-            "type": "timeseries"
         }
     ],
     "refresh": "5s",
@@ -1100,7 +2105,7 @@
         "to": "now"
     },
     "timezone": "browser",
-    "title": "Perf Test (Client-Side)",
+    "title": "Perf Test",
     "uid": "perf-test",
     "version": 1
 }

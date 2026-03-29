@@ -2,6 +2,7 @@
     "annotations": {
         "list": []
     },
+    "description": "Game engine observability: game lifecycle, phase timing, event bus health, and move analytics",
     "editable": true,
     "panels": [
         {
@@ -12,7 +13,7 @@
                 "x": 0,
                 "y": 0
             },
-            "id": 100,
+            "id": 1,
             "title": "Observe \u2014 Am I OK?",
             "type": "row"
         },
@@ -21,14 +22,14 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Normal: < 50 active games (green). Watch for: sustained > 100 (red) may indicate games not finishing or accumulating due to stuck phases. Check next: games created/finished rate for flow balance.",
+            "description": "Normal: < 50 active games (green). Watch for: sustained > 100 (red) may indicate stuck phases or games not finishing. Check next: Games Created/Finished Rate for flow balance.",
             "fieldConfig": {
                 "defaults": {
                     "links": [
                         {
                             "targetBlank": true,
-                            "title": "Command Center",
-                            "url": "/d/perf-test-command-center?from=${__from}&to=${__to}"
+                            "title": "Perf Test",
+                            "url": "/d/perf-test?from=${__from}&to=${__to}"
                         }
                     ],
                     "thresholds": {
@@ -53,11 +54,11 @@
             },
             "gridPos": {
                 "h": 8,
-                "w": 12,
+                "w": 8,
                 "x": 0,
                 "y": 1
             },
-            "id": 1,
+            "id": 2,
             "options": {
                 "colorMode": "value",
                 "graphMode": "area",
@@ -86,7 +87,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Normal: created and finished rates roughly balanced over time. Watch for: created >> finished means games are accumulating (check for stuck phases); finished >> created means backlog is draining. Check next: active games stat for current count.",
+            "description": "Normal: created and finished rates roughly balanced. Watch for: created >> finished means games accumulating (stuck phases). Check next: Active Games stat for current count.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -112,11 +113,11 @@
             },
             "gridPos": {
                 "h": 8,
-                "w": 12,
-                "x": 12,
+                "w": 8,
+                "x": 8,
                 "y": 1
             },
-            "id": 2,
+            "id": 3,
             "options": {
                 "legend": {
                     "calcs": [
@@ -147,6 +148,184 @@
             "type": "timeseries"
         },
         {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: move_executed dominates, all 8 event types visible. Watch for: any event type dropping to zero while others continue. Check next: Event Handler Latency in Decide for handler-level bottlenecks.",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 25,
+                        "gradientMode": "opacity",
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "normal"
+                        }
+                    },
+                    "unit": "ops"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "continent_captured"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#FF9830",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "continent_lost"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#FF780A",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "game_completed"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#3274D9",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "game_created"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#73BF69",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "move_executed"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#56A64B",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "phase_transitioned"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#73BF69",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "player_connected"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#8AB8FF",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "player_eliminated"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#E02F44",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 16,
+                "y": 1
+            },
+            "id": 4,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "sum(rate(event_bus_events_total{service_name=\"risk-it\"}[1m])) by (event_type)",
+                    "legendFormat": "{{event_type}}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Game Event Heartbeat",
+            "type": "timeseries"
+        },
+        {
             "collapsed": false,
             "gridPos": {
                 "h": 1,
@@ -154,7 +333,7 @@
                 "x": 0,
                 "y": 9
             },
-            "id": 200,
+            "id": 5,
             "title": "Orient \u2014 What\u2019s the shape?",
             "type": "row"
         },
@@ -163,7 +342,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Normal: dense band in low-seconds range (fast phase transitions). Watch for: heat spreading to higher buckets over time \u2014 phases are taking longer, possibly due to slow moves or DB contention. Check next: phase duration P50/P95 for per-phase breakdown.",
+            "description": "Normal: dense band in low-seconds range (fast phases). Watch for: heat spreading to higher buckets over time. Check next: Phase Duration P50/P95 for per-phase breakdown.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -190,7 +369,7 @@
                 "x": 0,
                 "y": 10
             },
-            "id": 5,
+            "id": 6,
             "options": {
                 "calculate": false,
                 "cellGap": 1,
@@ -242,7 +421,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Normal: concentrated distribution showing consistent game lengths. Watch for: bimodal distribution (fast + very slow games) suggests some games are getting stuck mid-play. Check next: game duration P50/P95 for percentile trends over time.",
+            "description": "Normal: concentrated distribution showing consistent game lengths. Watch for: bimodal distribution (fast + very slow games). Check next: Game Duration P50/P95 in Decide for percentile trends.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -269,7 +448,7 @@
                 "x": 12,
                 "y": 10
             },
-            "id": 8,
+            "id": 7,
             "options": {
                 "calculate": false,
                 "cellGap": 1,
@@ -321,7 +500,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Normal: deploy and attack phases are longest; reinforce is shortest. Watch for: a single phase P95 spiking while others stay flat \u2014 isolates which game phase has the bottleneck. Check next: database transaction duration to see if DB latency is the cause.",
+            "description": "Normal: deploy and attack phases are longest; reinforce is shortest. Watch for: a single phase P95 spiking while others stay flat. Check next: Move Timing collapsed row for per-phase latency bands.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -340,13 +519,13 @@
                     "links": [
                         {
                             "targetBlank": true,
-                            "title": "Database",
-                            "url": "/d/database?from=${__from}&to=${__to}"
+                            "title": "System Health",
+                            "url": "/d/system-health?from=${__from}&to=${__to}"
                         },
                         {
                             "targetBlank": true,
-                            "title": "Request Lifecycle",
-                            "url": "/d/request-lifecycle?from=${__from}&to=${__to}"
+                            "title": "System Health",
+                            "url": "/d/system-health?from=${__from}&to=${__to}"
                         }
                     ],
                     "unit": "s"
@@ -359,7 +538,7 @@
                 "x": 0,
                 "y": 18
             },
-            "id": 4,
+            "id": 8,
             "options": {
                 "legend": {
                     "calcs": [
@@ -390,25 +569,109 @@
             "type": "timeseries"
         },
         {
-            "collapsed": false,
-            "gridPos": {
-                "h": 1,
-                "w": 24,
-                "x": 0,
-                "y": 26
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
             },
-            "id": 300,
-            "title": "Decide \u2014 Where\u2019s the bottleneck?",
-            "type": "row"
+            "description": "Normal: captured and lost rates correlated with game activity. Watch for: captured >> lost (map consolidation) or lost spikes (cascade collapses). Check next: Player Elimination Rate for downstream impact.",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "ops"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Captured"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#FF9830",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Lost"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#E02F44",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 18
+            },
+            "id": 9,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "sum(rate(event_bus_events_total{service_name=\"risk-it\",event_type=\"continent_captured\"}[1m]))",
+                    "legendFormat": "Captured",
+                    "refId": "A"
+                },
+                {
+                    "expr": "sum(rate(event_bus_events_total{service_name=\"risk-it\",event_type=\"continent_lost\"}[1m]))",
+                    "legendFormat": "Lost",
+                    "refId": "B"
+                }
+            ],
+            "title": "Event Cascade Rate",
+            "type": "timeseries"
         },
         {
             "datasource": {
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Normal: deploy moves are most frequent, followed by attack, then reinforce/conquer. Watch for: a phase dropping to zero while others continue \u2014 that phase may be blocked or erroring. Check next: server-golden-signals HTTP error rate for failed move requests.",
+            "description": "Normal: low, steady rate as games progress to endgame. Watch for: sudden spikes (many games ending simultaneously) or zero rate (no games reaching endgame). Check next: Game Duration Heatmap for game length distribution.",
             "fieldConfig": {
                 "defaults": {
+                    "color": {
+                        "fixedColor": "#E02F44",
+                        "mode": "fixed"
+                    },
                     "custom": {
                         "drawStyle": "line",
                         "fillOpacity": 10,
@@ -430,9 +693,453 @@
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 27
+                "y": 26
             },
-            "id": 3,
+            "id": 10,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "sum(rate(event_bus_events_total{service_name=\"risk-it\",event_type=\"player_eliminated\"}[1m]))",
+                    "legendFormat": "Eliminated",
+                    "refId": "A"
+                }
+            ],
+            "title": "Player Elimination Rate",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": true,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 34
+            },
+            "id": 11,
+            "panels": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "description": "Normal: p95 < 500ms. Watch for: p95 diverging from p50 (slow outliers). Check next: Database dashboard for transaction contention.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "color": {
+                                "fixedColor": "#56A64B",
+                                "mode": "fixed"
+                            },
+                            "custom": {
+                                "drawStyle": "line",
+                                "fillOpacity": 10,
+                                "lineInterpolation": "smooth",
+                                "lineWidth": 2,
+                                "pointSize": 5,
+                                "showPoints": "never",
+                                "spanNulls": false,
+                                "stacking": {
+                                    "group": "A",
+                                    "mode": "none"
+                                }
+                            },
+                            "unit": "s"
+                        },
+                        "overrides": []
+                    },
+                    "gridPos": {
+                        "h": 8,
+                        "w": 12,
+                        "x": 0,
+                        "y": 35
+                    },
+                    "id": 12,
+                    "options": {
+                        "legend": {
+                            "calcs": [
+                                "mean",
+                                "max"
+                            ],
+                            "displayMode": "table",
+                            "placement": "bottom"
+                        },
+                        "tooltip": {
+                            "mode": "multi",
+                            "sort": "desc"
+                        }
+                    },
+                    "targets": [
+                        {
+                            "expr": "histogram_quantile(0.5, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"DEPLOY\"}[1m])) by (le))",
+                            "legendFormat": "p50",
+                            "refId": "A"
+                        },
+                        {
+                            "expr": "histogram_quantile(0.95, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"DEPLOY\"}[1m])) by (le))",
+                            "legendFormat": "p95",
+                            "refId": "B"
+                        },
+                        {
+                            "expr": "histogram_quantile(0.99, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"DEPLOY\"}[1m])) by (le))",
+                            "legendFormat": "p99",
+                            "refId": "C"
+                        }
+                    ],
+                    "title": "Deploy Phase Latency",
+                    "type": "timeseries"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "description": "Normal: p95 < 1s (attack involves dice + region updates). Watch for: p99 spikes (complex multi-region attacks). Check next: Conquer Phase Latency for post-attack overhead.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "color": {
+                                "fixedColor": "#56A64B",
+                                "mode": "fixed"
+                            },
+                            "custom": {
+                                "drawStyle": "line",
+                                "fillOpacity": 10,
+                                "lineInterpolation": "smooth",
+                                "lineWidth": 2,
+                                "pointSize": 5,
+                                "showPoints": "never",
+                                "spanNulls": false,
+                                "stacking": {
+                                    "group": "A",
+                                    "mode": "none"
+                                }
+                            },
+                            "unit": "s"
+                        },
+                        "overrides": []
+                    },
+                    "gridPos": {
+                        "h": 8,
+                        "w": 12,
+                        "x": 12,
+                        "y": 35
+                    },
+                    "id": 13,
+                    "options": {
+                        "legend": {
+                            "calcs": [
+                                "mean",
+                                "max"
+                            ],
+                            "displayMode": "table",
+                            "placement": "bottom"
+                        },
+                        "tooltip": {
+                            "mode": "multi",
+                            "sort": "desc"
+                        }
+                    },
+                    "targets": [
+                        {
+                            "expr": "histogram_quantile(0.5, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"ATTACK\"}[1m])) by (le))",
+                            "legendFormat": "p50",
+                            "refId": "A"
+                        },
+                        {
+                            "expr": "histogram_quantile(0.95, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"ATTACK\"}[1m])) by (le))",
+                            "legendFormat": "p95",
+                            "refId": "B"
+                        },
+                        {
+                            "expr": "histogram_quantile(0.99, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"ATTACK\"}[1m])) by (le))",
+                            "legendFormat": "p99",
+                            "refId": "C"
+                        }
+                    ],
+                    "title": "Attack Phase Latency",
+                    "type": "timeseries"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "description": "Normal: fastest phase (single troop movement). Watch for: p95 > 200ms indicates DB contention on region updates. Check next: Reinforce Phase Latency.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "color": {
+                                "fixedColor": "#56A64B",
+                                "mode": "fixed"
+                            },
+                            "custom": {
+                                "drawStyle": "line",
+                                "fillOpacity": 10,
+                                "lineInterpolation": "smooth",
+                                "lineWidth": 2,
+                                "pointSize": 5,
+                                "showPoints": "never",
+                                "spanNulls": false,
+                                "stacking": {
+                                    "group": "A",
+                                    "mode": "none"
+                                }
+                            },
+                            "unit": "s"
+                        },
+                        "overrides": []
+                    },
+                    "gridPos": {
+                        "h": 8,
+                        "w": 12,
+                        "x": 0,
+                        "y": 43
+                    },
+                    "id": 14,
+                    "options": {
+                        "legend": {
+                            "calcs": [
+                                "mean",
+                                "max"
+                            ],
+                            "displayMode": "table",
+                            "placement": "bottom"
+                        },
+                        "tooltip": {
+                            "mode": "multi",
+                            "sort": "desc"
+                        }
+                    },
+                    "targets": [
+                        {
+                            "expr": "histogram_quantile(0.5, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"CONQUER\"}[1m])) by (le))",
+                            "legendFormat": "p50",
+                            "refId": "A"
+                        },
+                        {
+                            "expr": "histogram_quantile(0.95, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"CONQUER\"}[1m])) by (le))",
+                            "legendFormat": "p95",
+                            "refId": "B"
+                        },
+                        {
+                            "expr": "histogram_quantile(0.99, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"CONQUER\"}[1m])) by (le))",
+                            "legendFormat": "p99",
+                            "refId": "C"
+                        }
+                    ],
+                    "title": "Conquer Phase Latency",
+                    "type": "timeseries"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "description": "Normal: fast, single troop redistribution. Watch for: p95 > 200ms. Check next: Cards Phase Latency.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "color": {
+                                "fixedColor": "#56A64B",
+                                "mode": "fixed"
+                            },
+                            "custom": {
+                                "drawStyle": "line",
+                                "fillOpacity": 10,
+                                "lineInterpolation": "smooth",
+                                "lineWidth": 2,
+                                "pointSize": 5,
+                                "showPoints": "never",
+                                "spanNulls": false,
+                                "stacking": {
+                                    "group": "A",
+                                    "mode": "none"
+                                }
+                            },
+                            "unit": "s"
+                        },
+                        "overrides": []
+                    },
+                    "gridPos": {
+                        "h": 8,
+                        "w": 12,
+                        "x": 12,
+                        "y": 43
+                    },
+                    "id": 15,
+                    "options": {
+                        "legend": {
+                            "calcs": [
+                                "mean",
+                                "max"
+                            ],
+                            "displayMode": "table",
+                            "placement": "bottom"
+                        },
+                        "tooltip": {
+                            "mode": "multi",
+                            "sort": "desc"
+                        }
+                    },
+                    "targets": [
+                        {
+                            "expr": "histogram_quantile(0.5, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"REINFORCE\"}[1m])) by (le))",
+                            "legendFormat": "p50",
+                            "refId": "A"
+                        },
+                        {
+                            "expr": "histogram_quantile(0.95, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"REINFORCE\"}[1m])) by (le))",
+                            "legendFormat": "p95",
+                            "refId": "B"
+                        },
+                        {
+                            "expr": "histogram_quantile(0.99, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"REINFORCE\"}[1m])) by (le))",
+                            "legendFormat": "p99",
+                            "refId": "C"
+                        }
+                    ],
+                    "title": "Reinforce Phase Latency",
+                    "type": "timeseries"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "description": "Normal: fast card redemption. Watch for: p95 spikes when many players redeem simultaneously. Check next: Phase Duration P50/P95 for aggregate view.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "color": {
+                                "fixedColor": "#56A64B",
+                                "mode": "fixed"
+                            },
+                            "custom": {
+                                "drawStyle": "line",
+                                "fillOpacity": 10,
+                                "lineInterpolation": "smooth",
+                                "lineWidth": 2,
+                                "pointSize": 5,
+                                "showPoints": "never",
+                                "spanNulls": false,
+                                "stacking": {
+                                    "group": "A",
+                                    "mode": "none"
+                                }
+                            },
+                            "unit": "s"
+                        },
+                        "overrides": []
+                    },
+                    "gridPos": {
+                        "h": 8,
+                        "w": 12,
+                        "x": 0,
+                        "y": 51
+                    },
+                    "id": 16,
+                    "options": {
+                        "legend": {
+                            "calcs": [
+                                "mean",
+                                "max"
+                            ],
+                            "displayMode": "table",
+                            "placement": "bottom"
+                        },
+                        "tooltip": {
+                            "mode": "multi",
+                            "sort": "desc"
+                        }
+                    },
+                    "targets": [
+                        {
+                            "expr": "histogram_quantile(0.5, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"CARDS\"}[1m])) by (le))",
+                            "legendFormat": "p50",
+                            "refId": "A"
+                        },
+                        {
+                            "expr": "histogram_quantile(0.95, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"CARDS\"}[1m])) by (le))",
+                            "legendFormat": "p95",
+                            "refId": "B"
+                        },
+                        {
+                            "expr": "histogram_quantile(0.99, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"CARDS\"}[1m])) by (le))",
+                            "legendFormat": "p99",
+                            "refId": "C"
+                        }
+                    ],
+                    "title": "Cards Phase Latency",
+                    "type": "timeseries"
+                }
+            ],
+            "title": "Move Timing",
+            "type": "row"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 35
+            },
+            "id": 17,
+            "title": "Decide \u2014 Where\u2019s the bottleneck?",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: deploy most frequent, then attack, then reinforce/conquer. Watch for: a phase dropping to zero while others continue (phase blocked). Check next: Event Handler Latency for downstream processing speed.",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "System Health",
+                            "url": "/d/system-health?from=${__from}&to=${__to}"
+                        },
+                        {
+                            "targetBlank": true,
+                            "title": "Perf Test",
+                            "url": "/d/perf-test?from=${__from}&to=${__to}"
+                        }
+                    ],
+                    "unit": "ops"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 36
+            },
+            "id": 18,
             "options": {
                 "legend": {
                     "calcs": [
@@ -462,7 +1169,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Normal: consistent P50 with P95 within 2-3x of P50. Watch for: P95 growing while P50 stays flat \u2014 a subset of games are taking much longer than typical. Check next: phase duration P50/P95 to identify which phase is slow in outlier games.",
+            "description": "Normal: consistent P50 with P95 within 2-3x of P50. Watch for: P95 growing while P50 stays flat (subset of slow games). Check next: Phase Duration P50/P95 in Orient to identify which phase is slow.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -490,9 +1197,9 @@
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 27
+                "y": 36
             },
-            "id": 7,
+            "id": 19,
             "options": {
                 "legend": {
                     "calcs": [
@@ -525,14 +1232,448 @@
             "type": "timeseries"
         },
         {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: all handlers < 100ms p95. Watch for: individual handler p95 > 500ms (slow consumer bottleneck). Check next: Event Dispatch Duration for bus-level overhead.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#00BCD4",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "System Health",
+                            "url": "/d/system-health?from=${__from}&to=${__to}"
+                        }
+                    ],
+                    "unit": "s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 44
+            },
+            "id": 20,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(event_handler_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le, handler))",
+                    "legendFormat": "{{handler}} p95",
+                    "refId": "A"
+                }
+            ],
+            "title": "Event Handler Latency p95",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: all event types dispatched < 50ms. Watch for: move_executed dispatch exceeding 100ms (many handlers subscribed). Check next: Event Bus Detail collapsed row for throughput and errors.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "#00BCD4",
+                        "mode": "fixed"
+                    },
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 44
+            },
+            "id": 21,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(event_bus_dispatch_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le, event_type))",
+                    "legendFormat": "{{event_type}} p95",
+                    "refId": "A"
+                }
+            ],
+            "title": "Event Dispatch Duration p95",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": true,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 52
+            },
+            "id": 22,
+            "panels": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "description": "Normal: move_executed dominates throughput. Watch for: unexpected event type surges. Check next: Event Handler Errors.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "color": {
+                                "fixedColor": "#00BCD4",
+                                "mode": "fixed"
+                            },
+                            "custom": {
+                                "drawStyle": "line",
+                                "fillOpacity": 10,
+                                "lineInterpolation": "smooth",
+                                "lineWidth": 2,
+                                "pointSize": 5,
+                                "showPoints": "never",
+                                "spanNulls": false,
+                                "stacking": {
+                                    "group": "A",
+                                    "mode": "none"
+                                }
+                            },
+                            "unit": "ops"
+                        },
+                        "overrides": []
+                    },
+                    "gridPos": {
+                        "h": 8,
+                        "w": 12,
+                        "x": 0,
+                        "y": 53
+                    },
+                    "id": 23,
+                    "options": {
+                        "legend": {
+                            "calcs": [
+                                "mean",
+                                "max"
+                            ],
+                            "displayMode": "table",
+                            "placement": "bottom"
+                        },
+                        "tooltip": {
+                            "mode": "multi",
+                            "sort": "desc"
+                        }
+                    },
+                    "targets": [
+                        {
+                            "expr": "sum(rate(event_bus_events_total{service_name=\"risk-it\"}[1m])) by (event_type)",
+                            "legendFormat": "{{event_type}}",
+                            "refId": "A"
+                        }
+                    ],
+                    "title": "Handler Throughput",
+                    "type": "timeseries"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "description": "Normal: growing counter proportional to game activity. Watch for: counter stalling (bus stopped processing). Check next: Handler Throughput for rate view.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "thresholds": {
+                                "mode": "absolute",
+                                "steps": [
+                                    {
+                                        "color": "green",
+                                        "value": null
+                                    }
+                                ]
+                            }
+                        },
+                        "overrides": []
+                    },
+                    "gridPos": {
+                        "h": 8,
+                        "w": 12,
+                        "x": 12,
+                        "y": 53
+                    },
+                    "id": 24,
+                    "options": {
+                        "colorMode": "value",
+                        "graphMode": "area",
+                        "justifyMode": "auto",
+                        "reduceOptions": {
+                            "calcs": [
+                                "lastNotNull"
+                            ],
+                            "fields": "",
+                            "values": false
+                        },
+                        "textMode": "auto"
+                    },
+                    "targets": [
+                        {
+                            "expr": "sum(event_bus_events_total{service_name=\"risk-it\"})",
+                            "legendFormat": "total events",
+                            "refId": "A"
+                        }
+                    ],
+                    "title": "Event Bus Events Total",
+                    "type": "stat"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "description": "Normal: 0 errors. Watch for: any sustained error rate indicates handler panics or logic failures. Check next: Game Event Logs in Act for error details.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "color": {
+                                "fixedColor": "#E02F44",
+                                "mode": "fixed"
+                            },
+                            "custom": {
+                                "drawStyle": "line",
+                                "fillOpacity": 10,
+                                "lineInterpolation": "smooth",
+                                "lineWidth": 2,
+                                "pointSize": 5,
+                                "showPoints": "never",
+                                "spanNulls": false,
+                                "stacking": {
+                                    "group": "A",
+                                    "mode": "none"
+                                }
+                            },
+                            "unit": "ops"
+                        },
+                        "overrides": []
+                    },
+                    "gridPos": {
+                        "h": 8,
+                        "w": 24,
+                        "x": 0,
+                        "y": 61
+                    },
+                    "id": 25,
+                    "options": {
+                        "legend": {
+                            "calcs": [
+                                "mean",
+                                "max"
+                            ],
+                            "displayMode": "table",
+                            "placement": "bottom"
+                        },
+                        "tooltip": {
+                            "mode": "multi",
+                            "sort": "desc"
+                        }
+                    },
+                    "targets": [
+                        {
+                            "expr": "sum(rate(event_handler_errors_total{service_name=\"risk-it\"}[1m])) by (handler)",
+                            "legendFormat": "{{handler}}",
+                            "refId": "A"
+                        }
+                    ],
+                    "title": "Event Handler Errors",
+                    "type": "timeseries"
+                }
+            ],
+            "title": "Event Bus Detail",
+            "type": "row"
+        },
+        {
+            "collapsed": true,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 53
+            },
+            "id": 26,
+            "panels": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "description": "Normal: deploy highest, attack second, conquer/reinforce lower. Watch for: unusual ratios (few conquer relative to attack). Check next: Moves per Second by Phase for rate view.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "color": {
+                                "mode": "palette-classic"
+                            }
+                        },
+                        "overrides": []
+                    },
+                    "gridPos": {
+                        "h": 8,
+                        "w": 12,
+                        "x": 0,
+                        "y": 54
+                    },
+                    "id": 27,
+                    "options": {
+                        "displayMode": "gradient",
+                        "maxVizHeight": 300,
+                        "minVizHeight": 16,
+                        "minVizWidth": 8,
+                        "namePlacement": "auto",
+                        "orientation": "horizontal",
+                        "reduceOptions": {
+                            "calcs": [
+                                "lastNotNull"
+                            ],
+                            "fields": "",
+                            "values": false
+                        },
+                        "showUnfilled": true,
+                        "sizing": "auto",
+                        "valueMode": "color"
+                    },
+                    "targets": [
+                        {
+                            "expr": "sum(game_moves_total{service_name=\"risk-it\"}) by (phase)",
+                            "legendFormat": "{{phase}}",
+                            "refId": "A"
+                        }
+                    ],
+                    "title": "Total Moves by Phase",
+                    "type": "bargauge"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "description": "Normal: move endpoints dominate game traffic. Watch for: unexpected routes or disproportionate error rates. Check next: System Health for full HTTP breakdown.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "color": {
+                                "fixedColor": "#FF9830",
+                                "mode": "fixed"
+                            },
+                            "custom": {
+                                "drawStyle": "line",
+                                "fillOpacity": 10,
+                                "lineInterpolation": "smooth",
+                                "lineWidth": 2,
+                                "pointSize": 5,
+                                "showPoints": "never",
+                                "spanNulls": false,
+                                "stacking": {
+                                    "group": "A",
+                                    "mode": "none"
+                                }
+                            },
+                            "unit": "reqps"
+                        },
+                        "overrides": []
+                    },
+                    "gridPos": {
+                        "h": 8,
+                        "w": 12,
+                        "x": 12,
+                        "y": 54
+                    },
+                    "id": 28,
+                    "options": {
+                        "legend": {
+                            "calcs": [
+                                "mean",
+                                "max"
+                            ],
+                            "displayMode": "table",
+                            "placement": "bottom"
+                        },
+                        "tooltip": {
+                            "mode": "multi",
+                            "sort": "desc"
+                        }
+                    },
+                    "targets": [
+                        {
+                            "expr": "sum(rate(http_server_requests_total{service_name=\"risk-it\",http_route=~\".*games.*\"}[1m])) by (http_route)",
+                            "legendFormat": "{{http_route}}",
+                            "refId": "A"
+                        }
+                    ],
+                    "title": "Game HTTP Route Request Rate",
+                    "type": "timeseries"
+                }
+            ],
+            "title": "Move Routes",
+            "type": "row"
+        },
+        {
             "collapsed": false,
             "gridPos": {
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 35
+                "y": 54
             },
-            "id": 400,
+            "id": 29,
             "title": "Act \u2014 What\u2019s the evidence?",
             "type": "row"
         },
@@ -541,14 +1682,14 @@
                 "type": "loki",
                 "uid": "loki"
             },
-            "description": "Normal: Game creation, move execution, phase transitions. Watch for: Error-level entries, panic recoveries.",
+            "description": "Normal: game creation, move execution, phase transitions. Watch for: error-level entries, panic recoveries. Check next: filter by Game ID using the $gameId variable above.",
             "gridPos": {
                 "h": 8,
-                "w": 12,
+                "w": 24,
                 "x": 0,
-                "y": 36
+                "y": 55
             },
-            "id": 9,
+            "id": 30,
             "options": {
                 "dedupStrategy": "none",
                 "enableLogDetails": true,
@@ -561,68 +1702,31 @@
             },
             "targets": [
                 {
-                    "expr": "{service_name=\"risk-it\"} |= \"game\"",
+                    "expr": "{service_name=\"risk-it\"} |= \"game\" ${gameId:pipe}",
                     "refId": "A"
                 }
             ],
             "title": "Game Event Logs",
             "type": "logs"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
-            "description": "Normal: deploy has the highest total, attack second, conquer/reinforce lower. Watch for: unusual ratios \u2014 very few conquer moves relative to attack may indicate game logic issues. Check next: moves per second by phase for the rate view.",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    }
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 12,
-                "y": 44
-            },
-            "id": 6,
-            "options": {
-                "displayMode": "gradient",
-                "maxVizHeight": 300,
-                "minVizHeight": 16,
-                "minVizWidth": 8,
-                "namePlacement": "auto",
-                "orientation": "horizontal",
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ],
-                    "fields": "",
-                    "values": false
-                },
-                "showUnfilled": true,
-                "sizing": "auto",
-                "valueMode": "color"
-            },
-            "targets": [
-                {
-                    "expr": "sum(game_moves_total{service_name=\"risk-it\"}) by (phase)",
-                    "legendFormat": "{{phase}}",
-                    "refId": "A"
-                }
-            ],
-            "title": "Total Moves by Phase",
-            "type": "bargauge"
         }
     ],
     "refresh": "10s",
     "schemaVersion": 39,
-    "tags": [],
+    "tags": [
+        "risk-it",
+        "game-engine"
+    ],
     "templating": {
-        "list": []
+        "list": [
+            {
+                "current": {
+                    "value": ""
+                },
+                "label": "Game ID",
+                "name": "gameId",
+                "type": "textbox"
+            }
+        ]
     },
     "time": {
         "from": "now-15m",
