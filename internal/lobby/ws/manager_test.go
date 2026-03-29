@@ -11,7 +11,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	lobbyevt "github.com/go-risk-it/go-risk-it/internal/lobby/events"
-	"github.com/go-risk-it/go-risk-it/internal/web/lobby/ws"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/ws"
 	mockbus "github.com/go-risk-it/go-risk-it/mocks/internal_/kernel/bus"
 	"github.com/lesismal/nbio/nbhttp/websocket"
 	"github.com/stretchr/testify/mock"

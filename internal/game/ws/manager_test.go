@@ -9,9 +9,9 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/state"
+	"github.com/go-risk-it/go-risk-it/internal/game/ws"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
-	"github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 	playerws "github.com/go-risk-it/go-risk-it/internal/web/ws"
 	mockplayer "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/player"
 	mockstate "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/state"

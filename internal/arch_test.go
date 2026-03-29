@@ -202,15 +202,80 @@ func TestArch_KernelNeverImportsDomain(t *testing.T) {
 	}
 }
 
-// Rule 5: web/game/ and web/lobby/ are mutually isolated.
-func TestArch_WebGameAndLobbyIsolated(t *testing.T) {
+// Rule 5: game/** and lobby/** are fully isolated — neither module may import the other.
+// Exception: lobby/ may import game/commands/ (the cross-module command contract DTOs).
+func TestArch_GameAndLobbyModulesIsolated(t *testing.T) {
 	t.Parallel()
 
-	gamePkgs := loadPackages(t, "./internal/web/game/...")
-	assertNoImports(t, gamePkgs, modulePrefix+"web/lobby/")
+	gamePkgs := loadPackages(t, "./internal/game/...")
+	assertNoImports(t, gamePkgs,
+		modulePrefix+"lobby/",
+	)
 
-	lobbyPkgs := loadPackages(t, "./internal/web/lobby/...")
-	assertNoImports(t, lobbyPkgs, modulePrefix+"web/game/")
+	lobbyPkgs := loadPackages(t, "./internal/lobby/...")
+	for _, pkg := range lobbyPkgs {
+		for _, imp := range internalImports(pkg) {
+			// lobby/ may import game/commands (the command contract)
+			if strings.HasPrefix(imp, modulePrefix+"game/commands") {
+				continue
+			}
+
+			if hasPrefix(imp, modulePrefix+"game/") {
+				t.Errorf("%s imports forbidden package %s", pkg.ImportPath, imp)
+			}
+		}
+	}
+}
+
+// Rule 5b: web/ must not import game/ or lobby/ module packages.
+func TestArch_WebNeverImportsModules(t *testing.T) {
+	t.Parallel()
+
+	pkgs := loadPackages(t, "./internal/web/...")
+
+	assertNoImports(t, pkgs,
+		modulePrefix+"game/",
+		modulePrefix+"lobby/",
+	)
+}
+
+// Rule 5c: kernel/router/ is the only kernel package allowed to import from modules,
+// and only game/commands/ (the cross-module command contract).
+func TestArch_RouterImportRestriction(t *testing.T) {
+	t.Parallel()
+
+	pkgs := loadPackages(t, "./internal/kernel/router/...")
+
+	for _, pkg := range pkgs {
+		for _, imp := range internalImports(pkg) {
+			if strings.HasPrefix(imp, modulePrefix+"game/commands") {
+				continue // allowed
+			}
+
+			if hasPrefix(imp,
+				modulePrefix+"game/",
+				modulePrefix+"lobby/",
+			) {
+				t.Errorf("%s imports forbidden module package %s (only game/commands allowed)",
+					pkg.ImportPath, imp)
+			}
+		}
+	}
+}
+
+// Rule 5d: game/data/ and lobby/data/ are mutually isolated.
+func TestArch_DataModulesIsolated(t *testing.T) {
+	t.Parallel()
+
+	gameDataPkgs := loadPackages(t, "./internal/game/data/...")
+	assertNoImports(t, gameDataPkgs,
+		modulePrefix+"lobby/data/",
+	)
+
+	lobbyDataPkgs := loadPackages(t, "./internal/lobby/data/...")
+	assertNoImports(t, lobbyDataPkgs,
+		modulePrefix+"game/data/",
+	)
 }
 
 // containsFile checks if a package has a specific file in its GoFiles list.
@@ -392,10 +457,11 @@ func TestArch_NoOldMathRand(t *testing.T) {
 
 // archBaseline defines the metric ceilings for package quality ratcheting.
 type archBaseline struct {
-	MaxExportsPerPackage int `json:"maxExportsPerPackage"`
-	MaxFanOut            int `json:"maxFanOut"`
-	MaxFilesPerPackage   int `json:"maxFilesPerPackage"`
-	MinDocGoCount        int `json:"minDocGoCount"`
+	MaxExportsPerPackage     int `json:"maxExportsPerPackage"`
+	MaxFanOut                int `json:"maxFanOut"`
+	MaxFilesPerPackage       int `json:"maxFilesPerPackage"`
+	MinDocGoCount            int `json:"minDocGoCount"`
+	KernelMaxProductionFiles int `json:"kernelMaxProductionFiles"`
 }
 
 func loadBaseline(t *testing.T) archBaseline {
@@ -615,6 +681,7 @@ var expectedLayer = map[string]string{
 	"game/data/db":             "Data",
 	"game/events":              "Events-domain",
 	"game/routes":              "Web",
+	"game/ws":                  "Web",
 	"game/tracing":             "Logic",
 	"game/rand":                "Logic",
 	"game/logic/config":        "Logic",
@@ -625,6 +692,7 @@ var expectedLayer = map[string]string{
 	// lobby domain
 	"lobby/consumers": "Web",
 	"lobby/routes":    "Web",
+	"lobby/ws":        "Web",
 
 	// data (lobby)
 	"lobby/data/db": "Data",
@@ -658,6 +726,8 @@ func layerFromPrefix(suffix string) string {
 		return "Events-domain"
 	case strings.HasPrefix(suffix, "game/routes"):
 		return "Web"
+	case strings.HasPrefix(suffix, "game/ws"):
+		return "Web"
 	case strings.HasPrefix(suffix, "game/consumers"):
 		return "Web"
 	case strings.HasPrefix(suffix, "game/logic/") || strings.HasPrefix(suffix, "game/tracing") ||
@@ -672,6 +742,8 @@ func layerFromPrefix(suffix string) string {
 	case strings.HasPrefix(suffix, "lobby/logic/"):
 		return "Logic"
 	case strings.HasPrefix(suffix, "lobby/consumers"):
+		return "Web"
+	case strings.HasPrefix(suffix, "lobby/ws"):
 		return "Web"
 	case strings.HasPrefix(suffix, "lobby/routes"):
 		return "Web"
@@ -717,8 +789,8 @@ var wiringRoots = map[string]bool{
 	"data":                    true,
 	"lobby/data":              true,
 	"web":                     true,
-	"web/game":                true,
-	"web/lobby":               true,
+	"game":                    true,
+	"lobby":                   true,
 }
 
 // isWiringRoot returns true for known fx.Module aggregation packages.
@@ -1009,4 +1081,133 @@ func TestArch_DocGoLayer(t *testing.T) {
 				pkg.ImportPath, text, expected)
 		}
 	}
+}
+
+// ─── Phase 5: Kernel Ratchets ───
+
+// Rule 21: kernel production file count must not exceed the ceiling.
+func TestArch_KernelProductionFileCeiling(t *testing.T) {
+	t.Parallel()
+
+	baseline := loadBaseline(t)
+	pkgs := loadPackages(t, "./internal/kernel/...")
+
+	fileCount := 0
+
+	for _, pkg := range pkgs {
+		for _, goFile := range pkg.GoFiles {
+			if strings.HasSuffix(goFile, "_test.go") || goFile == "doc.go" {
+				continue
+			}
+
+			fileCount++
+		}
+	}
+
+	if fileCount > baseline.KernelMaxProductionFiles {
+		t.Errorf("kernel has %d production files (ceiling: %d) — ratchet exceeded",
+			fileCount, baseline.KernelMaxProductionFiles)
+	}
+
+	t.Logf("kernel production files: %d (ceiling: %d, headroom: %d)",
+		fileCount, baseline.KernelMaxProductionFiles, baseline.KernelMaxProductionFiles-fileCount)
+}
+
+// kernelMultiConsumerAllowlist lists kernel sub-packages that are allowed to have
+// fewer than 2 consumer groups. These are infrastructure packages consumed only at
+// the composition root or by a single module that has no peer yet.
+//
+//nolint:gochecknoglobals // test-only set
+var kernelMultiConsumerAllowlist = map[string]bool{
+	"kernel/slog":      true, // consumed only by app composition root
+	"kernel/logger":    true, // consumed only by game/logic (event logger)
+	"kernel/otelsetup": true, // consumed only by web.Module composition root
+	"kernel/router":    true, // one command type so far, lobby is only module consumer
+}
+
+// consumerGroup classifies an import path into its top-level consumer group.
+func consumerGroup(importPath string) string {
+	suffix := strings.TrimPrefix(importPath, modulePrefix)
+
+	switch {
+	case strings.HasPrefix(suffix, "game/"):
+		return "game"
+	case strings.HasPrefix(suffix, "lobby/"):
+		return "lobby"
+	case strings.HasPrefix(suffix, "web/"):
+		return "web"
+	default:
+		return "other"
+	}
+}
+
+// Rule 22: every kernel sub-package must be consumed by >=2 distinct groups
+// (game/, lobby/, web/) or be in the allowlist.
+func TestArch_KernelPackagesHaveMultipleConsumers(
+	t *testing.T,
+) {
+	t.Parallel()
+
+	allPkgs := loadPackages(t, "./internal/...")
+	kernelPkgs := loadPackages(t, "./internal/kernel/...")
+
+	kernelSet := buildKernelSet(kernelPkgs)
+	consumers := countConsumerGroups(allPkgs, kernelSet)
+
+	for kpkg, groups := range consumers {
+		suffix := packageSuffix(kpkg)
+		if kernelMultiConsumerAllowlist[suffix] {
+			continue
+		}
+
+		if len(groups) < 2 {
+			groupNames := make([]string, 0, len(groups))
+			for g := range groups {
+				groupNames = append(groupNames, g)
+			}
+
+			t.Errorf("%s consumed by only %d group(s) %v — needs >=2 or add to allowlist",
+				kpkg, len(groups), groupNames)
+		}
+	}
+}
+
+func buildKernelSet(kernelPkgs []goPackage) map[string]bool {
+	kernelSet := make(map[string]bool)
+
+	for _, kpkg := range kernelPkgs {
+		suffix := packageSuffix(kpkg.ImportPath)
+		if suffix == "kernel" {
+			continue // wiring root
+		}
+
+		kernelSet[kpkg.ImportPath] = true
+	}
+
+	return kernelSet
+}
+
+func countConsumerGroups(
+	allPkgs []goPackage,
+	kernelSet map[string]bool,
+) map[string]map[string]bool {
+	consumers := make(map[string]map[string]bool)
+	for k := range kernelSet {
+		consumers[k] = make(map[string]bool)
+	}
+
+	for _, pkg := range allPkgs {
+		group := consumerGroup(pkg.ImportPath)
+		if group == "other" {
+			continue
+		}
+
+		for _, imp := range pkg.Imports {
+			if kernelSet[imp] {
+				consumers[imp][group] = true
+			}
+		}
+	}
+
+	return consumers
 }

@@ -47,6 +47,8 @@ linters:
         - github\.com/go-risk-it/go-risk-it/internal/lobby/logic/.*
         - github\.com/go-risk-it/go-risk-it/internal/lobby/data/db\.Querier
         - github\.com/go-risk-it/go-risk-it/internal/testonly\..*
+        - github\.com/go-risk-it/go-risk-it/internal/game/ws\..*
+        - github\.com/go-risk-it/go-risk-it/internal/lobby/ws\..*
         - github\.com/go-risk-it/go-risk-it/internal/web/.*
         - github\.com/go-risk-it/go-risk-it/internal/game/rand\.RNG
     lll:

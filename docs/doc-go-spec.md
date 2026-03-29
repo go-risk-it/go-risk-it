@@ -50,8 +50,8 @@ Single-file packages whose sole purpose is fx.Module aggregation:
 | `lobby/data` | `lobby.go` |
 | `data` | `data.go` |
 | `web` | `web.go` |
-| `web/game` | `game.go` |
-| `web/lobby` | `lobby.go` |
+| `game` | `game.go` |
+| `lobby` | `lobby.go` |
 
 Detection rule: `len(GoFiles) == 1` AND the single file is named after the
 last path segment (e.g., `game/logic/game.go`).
@@ -137,13 +137,11 @@ All other non-excluded packages. Required doc.go sections:
 | `game/tracing` | logic |
 | `game/consumers` | web |
 | `game/consumers/converter` | web |
+| `game/routes` | web |
+| `game/ws` | web |
 | `lobby/consumers` | web |
-| `web/game/controller` | web |
-| `web/game/rest` | web |
-| `web/game/ws` | web |
-| `web/lobby/controller` | web |
-| `web/lobby/rest` | web |
-| `web/lobby/ws` | web |
+| `lobby/routes` | web |
+| `lobby/ws` | web |
 | `web/middleware` | web |
 | `web/mux` | web |
 | `web/nbio` | web |

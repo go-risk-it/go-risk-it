@@ -3,8 +3,6 @@ package web
 import (
 	"github.com/go-risk-it/go-risk-it/internal/kernel/otelsetup"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/router"
-	"github.com/go-risk-it/go-risk-it/internal/web/game"
-	"github.com/go-risk-it/go-risk-it/internal/web/lobby"
 	"github.com/go-risk-it/go-risk-it/internal/web/middleware"
 	"github.com/go-risk-it/go-risk-it/internal/web/mux"
 	"github.com/go-risk-it/go-risk-it/internal/web/nbio"
@@ -14,8 +12,6 @@ import (
 )
 
 var Module = fx.Options(
-	game.Module,
-	lobby.Module,
 	middleware.Module,
 	mux.Module,
 	nbio.Module,

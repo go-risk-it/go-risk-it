@@ -9,8 +9,8 @@ import (
 
 	gameRequest "github.com/go-risk-it/go-risk-it/internal/game/api/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/game/api/rest/response"
+	gameWs "github.com/go-risk-it/go-risk-it/internal/game/ws"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
-	gameWs "github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws"
