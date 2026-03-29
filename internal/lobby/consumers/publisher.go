@@ -12,7 +12,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	lobbyevt "github.com/go-risk-it/go-risk-it/internal/lobby/events"
-	"github.com/go-risk-it/go-risk-it/internal/web/lobby/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -28,7 +27,7 @@ const lobbyPublisherTracerName = "go-risk-it-lobby-publisher"
 // lifecycle and context detachment.
 type LobbyStatePublisher struct {
 	writer          Writer
-	stateController *controller.StateController
+	stateController *StateController
 	metrics         *metrics.InfraMetrics
 }
 
@@ -36,7 +35,7 @@ type LobbyStatePublisher struct {
 // dependencies.
 func NewLobbyStatePublisher(
 	writer Writer,
-	stateController *controller.StateController,
+	stateController *StateController,
 	met *metrics.InfraMetrics,
 ) *LobbyStatePublisher {
 	return &LobbyStatePublisher{

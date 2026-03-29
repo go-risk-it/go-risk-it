@@ -1,4 +1,4 @@
-package rest
+package routes
 
 import (
 	"encoding/json"
@@ -10,7 +10,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	lobbyRequest "github.com/go-risk-it/go-risk-it/internal/lobby/api/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/api/rest/response"
-	"github.com/go-risk-it/go-risk-it/internal/web/lobby/controller"
 	lobbyWs "github.com/go-risk-it/go-risk-it/internal/web/lobby/ws"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
@@ -18,9 +17,9 @@ import (
 )
 
 func ProvideRoutes(
-	creationCtrl *controller.CreationController,
-	managementCtrl *controller.ManagementController,
-	startCtrl *controller.StartController,
+	creationCtrl *CreationController,
+	managementCtrl *ManagementController,
+	startCtrl *StartController,
 	lobbyConnectionManager lobbyWs.Manager,
 	upgrader ws.Upgrader,
 ) []*route.Route {
@@ -36,7 +35,7 @@ func ProvideRoutes(
 	}
 }
 
-func createLobby(creationCtrl *controller.CreationController) route.PlainHandler {
+func createLobby(creationCtrl *CreationController) route.PlainHandler {
 	return func(writer http.ResponseWriter, req *http.Request) error {
 		createLobbyRequest, err := restutils.DecodeRequest[lobbyRequest.CreateLobby](writer, req)
 		if err != nil {
@@ -64,7 +63,7 @@ func createLobby(creationCtrl *controller.CreationController) route.PlainHandler
 	}
 }
 
-func getLobbiesSummary(managementCtrl *controller.ManagementController) route.PlainHandler {
+func getLobbiesSummary(managementCtrl *ManagementController) route.PlainHandler {
 	return func(writer http.ResponseWriter, req *http.Request) error {
 		userContext, ok := req.Context().(ctx.UserContext)
 		if !ok {
@@ -87,7 +86,7 @@ func getLobbiesSummary(managementCtrl *controller.ManagementController) route.Pl
 	}
 }
 
-func joinLobby(managementCtrl *controller.ManagementController) route.LobbyHandler {
+func joinLobby(managementCtrl *ManagementController) route.LobbyHandler {
 	return func(writer http.ResponseWriter, req *http.Request, lobbyCtx ctx.LobbyContext) error {
 		joinLobbyRequest, err := restutils.DecodeRequest[lobbyRequest.JoinLobby](writer, req)
 		if err != nil {
@@ -104,7 +103,7 @@ func joinLobby(managementCtrl *controller.ManagementController) route.LobbyHandl
 	}
 }
 
-func startGame(startCtrl *controller.StartController) route.LobbyHandler {
+func startGame(startCtrl *StartController) route.LobbyHandler {
 	return func(_ http.ResponseWriter, _ *http.Request, lc ctx.LobbyContext) error {
 		return startCtrl.StartGame(lc)
 	}

@@ -5,7 +5,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
-	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	"go.uber.org/fx"
 )
 
@@ -18,8 +17,8 @@ type Params struct {
 	Presence          Presence
 	Lifecycle         Lifecycle
 	SnapshotService   snapshot.Service
-	MissionController *controller.MissionController
-	MoveLogController *controller.MoveLogController
+	MissionController *MissionController
+	MoveLogController *MoveLogController
 	HistoryConfig     gameconfig.HistoryConfig
 	Metrics           *metrics.InfraMetrics
 }
@@ -42,6 +41,10 @@ func register(params Params, publisher *GameStatePublisher) {
 }
 
 var Module = fx.Options(
-	fx.Provide(newGameStatePublisher),
+	fx.Provide(
+		NewMissionController,
+		NewMoveLogController,
+		newGameStatePublisher,
+	),
 	fx.Invoke(register),
 )

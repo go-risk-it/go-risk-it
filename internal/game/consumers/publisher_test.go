@@ -15,7 +15,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/snapshot"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	mockConsumers "github.com/go-risk-it/go-risk-it/mocks/internal_/game/consumers"
 	mockMission "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/mission"
 	mockLogging "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/move/orchestration/logging"
@@ -139,8 +138,8 @@ func (d *deps) newPublisher() *consumers.GameStatePublisher {
 		d.presence,
 		d.lifecycle,
 		d.snapSvc,
-		controller.NewMissionController(d.missionSvc),
-		controller.NewMoveLogController(d.loggingSvc),
+		consumers.NewMissionController(d.missionSvc),
+		consumers.NewMoveLogController(d.loggingSvc),
 		gameconfig.HistoryConfig{Size: historySize},
 		nil, // metrics — nil is safe, safeOp guards with nil check
 	)

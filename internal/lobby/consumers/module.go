@@ -3,7 +3,6 @@ package consumers
 import (
 	"github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
-	"github.com/go-risk-it/go-risk-it/internal/web/lobby/controller"
 	"go.uber.org/fx"
 )
 
@@ -13,7 +12,7 @@ type Params struct {
 
 	Bus             bus.Bus
 	Writer          Writer
-	StateController *controller.StateController
+	StateController *StateController
 	Metrics         *metrics.InfraMetrics
 }
 
@@ -30,6 +29,9 @@ func register(params Params, publisher *LobbyStatePublisher) {
 }
 
 var Module = fx.Options(
-	fx.Provide(newLobbyStatePublisher),
+	fx.Provide(
+		NewStateController,
+		newLobbyStatePublisher,
+	),
 	fx.Invoke(register),
 )

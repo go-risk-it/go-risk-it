@@ -1,4 +1,4 @@
-package controller
+package consumers
 
 import (
 	"log/slog"
@@ -8,10 +8,14 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/lobby/logic/state"
 )
 
+// StateController translates between lobby state service results and messaging
+// DTOs. It lives in consumers because its only caller is the publisher in this
+// package.
 type StateController struct {
 	stateService state.Service
 }
 
+// NewStateController creates a StateController backed by the state service.
 func NewStateController(
 	stateService state.Service,
 ) *StateController {
@@ -20,6 +24,7 @@ func NewStateController(
 	}
 }
 
+// GetLobbyState fetches the current lobby state and converts it to a messaging DTO.
 func (s *StateController) GetLobbyState(ctx ctx.LobbyContext) (messaging.LobbyState, error) {
 	lobby, err := s.stateService.GetLobbyState(ctx)
 	if err != nil {

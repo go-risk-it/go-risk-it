@@ -1,4 +1,4 @@
-package controller
+package consumers
 
 import (
 	"errors"
@@ -12,14 +12,19 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 )
 
+// MoveLogController translates between sqlc move log rows and messaging DTOs.
+// It lives in consumers because its only callers are the publisher handlers
+// in this package.
 type MoveLogController struct {
 	loggingService logging.Service
 }
 
+// NewMoveLogController creates a MoveLogController backed by the logging service.
 func NewMoveLogController(loggingService logging.Service) *MoveLogController {
 	return &MoveLogController{loggingService: loggingService}
 }
 
+// GetMoveLogs fetches recent move logs and converts them to messaging DTOs.
 func (c *MoveLogController) GetMoveLogs(
 	ctx ctx.GameContext,
 	limit int64,
@@ -47,6 +52,7 @@ func (c *MoveLogController) GetMoveLogs(
 	}, nil
 }
 
+// ConvertMoveLogs converts raw sqlc move log rows into messaging DTOs.
 func (c *MoveLogController) ConvertMoveLogs(
 	ctx ctx.GameContext,
 	sqlcLogs []sqlc.GameMoveLog,

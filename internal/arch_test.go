@@ -172,23 +172,34 @@ func TestArch_LogicGameAndLobbyIsolated(t *testing.T) {
 }
 
 // Rule 4b: kernel/ must never import game or lobby domain packages.
-// (Previously this also covered events/logger separately — now logger lives
-// in kernel/ so the single kernel/... assertion covers it.)
+// Exception: kernel/router/ may import game/commands/ (the cross-module command contract).
 func TestArch_KernelNeverImportsDomain(t *testing.T) {
 	t.Parallel()
 
 	pkgs := loadPackages(t, "./internal/kernel/...")
 
-	assertNoImports(t, pkgs,
-		modulePrefix+"logic/",
-		modulePrefix+"web/",
-		modulePrefix+"game/",
-		modulePrefix+"lobby/",
-		modulePrefix+"data/game/",
-		modulePrefix+"data/lobby/",
-		modulePrefix+"events/game/",
-		modulePrefix+"events/lobby/",
-	)
+	for _, pkg := range pkgs {
+		isRouter := strings.HasSuffix(pkg.ImportPath, "kernel/router")
+		for _, imp := range internalImports(pkg) {
+			// kernel/router is allowed to import game/commands
+			if isRouter && strings.HasPrefix(imp, modulePrefix+"game/commands") {
+				continue
+			}
+
+			if hasPrefix(imp,
+				modulePrefix+"logic/",
+				modulePrefix+"web/",
+				modulePrefix+"game/",
+				modulePrefix+"lobby/",
+				modulePrefix+"data/game/",
+				modulePrefix+"data/lobby/",
+				modulePrefix+"events/game/",
+				modulePrefix+"events/lobby/",
+			) {
+				t.Errorf("%s imports forbidden package %s", pkg.ImportPath, imp)
+			}
+		}
+	}
 }
 
 // Rule 5: web/game/ and web/lobby/ are mutually isolated.
@@ -595,12 +606,15 @@ var expectedLayer = map[string]string{
 	"kernel/errors":             "Kernel",
 	"kernel/metrics":            "Kernel",
 	"kernel/otelsetup":          "Kernel",
+	"kernel/router":             "Kernel",
 	"kernel/slog":               "Kernel",
 	"kernel/upgradablerw_mutex": "Kernel",
 
 	// game domain
+	"game/commands":            "API",
 	"game/data/db":             "Data",
 	"game/events":              "Events-domain",
+	"game/routes":              "Web",
 	"game/tracing":             "Logic",
 	"game/rand":                "Logic",
 	"game/logic/config":        "Logic",
@@ -610,6 +624,7 @@ var expectedLayer = map[string]string{
 
 	// lobby domain
 	"lobby/consumers": "Web",
+	"lobby/routes":    "Web",
 
 	// data (lobby)
 	"lobby/data/db": "Data",
@@ -635,10 +650,16 @@ func layerFromPrefix(suffix string) string {
 	switch {
 	case strings.HasPrefix(suffix, "game/api/"):
 		return "API"
+	case strings.HasPrefix(suffix, "game/commands"):
+		return "API"
 	case strings.HasPrefix(suffix, "game/data/"):
 		return "Data"
 	case strings.HasPrefix(suffix, "game/events"):
 		return "Events-domain"
+	case strings.HasPrefix(suffix, "game/routes"):
+		return "Web"
+	case strings.HasPrefix(suffix, "game/consumers"):
+		return "Web"
 	case strings.HasPrefix(suffix, "game/logic/") || strings.HasPrefix(suffix, "game/tracing") ||
 		strings.HasPrefix(suffix, "game/rand"):
 		return "Logic"
@@ -651,6 +672,8 @@ func layerFromPrefix(suffix string) string {
 	case strings.HasPrefix(suffix, "lobby/logic/"):
 		return "Logic"
 	case strings.HasPrefix(suffix, "lobby/consumers"):
+		return "Web"
+	case strings.HasPrefix(suffix, "lobby/routes"):
 		return "Web"
 	case strings.HasPrefix(suffix, "api/"):
 		return "API"

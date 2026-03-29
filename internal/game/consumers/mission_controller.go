@@ -1,4 +1,4 @@
-package controller
+package consumers
 
 import (
 	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
@@ -6,10 +6,14 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 )
 
+// MissionController translates between messaging DTOs and the mission logic
+// service. It lives in consumers because its only callers are the publisher
+// and mission resolver — both in this package.
 type MissionController struct {
 	missionService mission.Service
 }
 
+// NewMissionController creates a MissionController backed by the mission service.
 func NewMissionController(missionService mission.Service) *MissionController {
 	return &MissionController{
 		missionService: missionService,

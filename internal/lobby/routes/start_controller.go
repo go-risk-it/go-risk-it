@@ -1,31 +1,31 @@
-package controller
+package routes
 
 import (
 	"errors"
 	"fmt"
 	"log/slog"
 
-	"github.com/go-risk-it/go-risk-it/internal/game/api/rest/request"
+	"github.com/go-risk-it/go-risk-it/internal/game/commands"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/router"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/logic/start"
 )
 
-type GameCreator interface {
-	CreateGame(ctx ctx.UserContext, request request.CreateGame) (int64, error)
-}
-
+// StartController orchestrates game start by dispatching a CreateGame command
+// through the kernel router. This decouples the lobby module from the game
+// module — the router is the only cross-module dispatch point.
 type StartController struct {
-	gameCreator  GameCreator
+	router       *router.Router
 	startService start.Service
 }
 
 func NewStartController(
-	gameCreator GameCreator,
+	router *router.Router,
 	startService start.Service,
 ) *StartController {
 	return &StartController{
-		gameCreator:  gameCreator,
+		router:       router,
 		startService: startService,
 	}
 }
@@ -45,31 +45,36 @@ func (c *StartController) StartGame(ctx ctx.LobbyContext) error {
 		return fmt.Errorf("failed to get lobby players: %w", err)
 	}
 
-	gameID, err := c.gameCreator.CreateGame(ctx, buildCreateGameRequest(lobbyPlayers))
+	result, err := c.router.Route(ctx, buildCreateGameCommand(lobbyPlayers))
 	if err != nil {
 		return fmt.Errorf("failed to create game: %w", err)
 	}
 
-	if err := c.startService.MarkLobbyAsStarted(ctx, gameID); err != nil {
+	createGameResult, ok := result.(commands.CreateGameResult)
+	if !ok {
+		return fmt.Errorf("unexpected result type from router: %T", result)
+	}
+
+	if err := c.startService.MarkLobbyAsStarted(ctx, createGameResult.GameID); err != nil {
 		return fmt.Errorf("failed to mark lobby as started: %w", err)
 	}
 
-	slog.InfoContext(ctx, "lobby started", "game_id", gameID)
+	slog.InfoContext(ctx, "lobby started", "game_id", createGameResult.GameID)
 
 	return nil
 }
 
-func buildCreateGameRequest(players []sqlc.GetLobbyPlayersRow) request.CreateGame {
-	res := request.CreateGame{
-		Players: make([]request.Player, len(players)),
+func buildCreateGameCommand(players []sqlc.GetLobbyPlayersRow) commands.CreateGame {
+	cmd := commands.CreateGame{
+		Players: make([]commands.Player, len(players)),
 	}
 
 	for idx, player := range players {
-		res.Players[idx] = request.Player{
+		cmd.Players[idx] = commands.Player{
 			Name:   player.Name,
 			UserID: player.UserID,
 		}
 	}
 
-	return res
+	return cmd
 }

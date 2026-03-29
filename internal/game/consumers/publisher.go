@@ -16,7 +16,6 @@ import (
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
-	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -41,8 +40,8 @@ type GameStatePublisher struct {
 	presence          Presence
 	lifecycle         Lifecycle
 	snapshotService   snapshot.Service
-	missionController *controller.MissionController
-	moveLogController *controller.MoveLogController
+	missionController *MissionController
+	moveLogController *MoveLogController
 	historyConfig     gameconfig.HistoryConfig
 	metrics           *metrics.InfraMetrics
 }
@@ -54,8 +53,8 @@ func NewGameStatePublisher(
 	presence Presence,
 	lifecycle Lifecycle,
 	snapshotService snapshot.Service,
-	missionController *controller.MissionController,
-	moveLogController *controller.MoveLogController,
+	missionController *MissionController,
+	moveLogController *MoveLogController,
 	historyConfig gameconfig.HistoryConfig,
 	met *metrics.InfraMetrics,
 ) *GameStatePublisher {

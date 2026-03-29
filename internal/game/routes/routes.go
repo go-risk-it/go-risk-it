@@ -1,4 +1,4 @@
-package rest
+package routes
 
 import (
 	"encoding/json"
@@ -10,7 +10,6 @@ import (
 	gameRequest "github.com/go-risk-it/go-risk-it/internal/game/api/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/game/api/rest/response"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	gameWs "github.com/go-risk-it/go-risk-it/internal/web/game/ws"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
@@ -18,9 +17,9 @@ import (
 )
 
 func ProvideRoutes(
-	gameCtrl *controller.GameController,
-	advCtrl *controller.AdvancementController,
-	moveCtrl *controller.MoveController,
+	gameCtrl *GameController,
+	advCtrl *AdvancementController,
+	moveCtrl *MoveController,
 	gameConnectionManager gameWs.Manager,
 	upgrader ws.Upgrader,
 ) []*route.Route {
@@ -52,7 +51,7 @@ func ProvideRoutes(
 	}
 }
 
-func createGame(gameCtrl *controller.GameController) route.PlainHandler {
+func createGame(gameCtrl *GameController) route.PlainHandler {
 	return func(writer http.ResponseWriter, req *http.Request) error {
 		createGameRequest, err := restutils.DecodeRequest[gameRequest.CreateGame](writer, req)
 		if err != nil {
@@ -64,7 +63,7 @@ func createGame(gameCtrl *controller.GameController) route.PlainHandler {
 			return errors.New("invalid user context")
 		}
 
-		gameID, err := gameCtrl.CreateGame(userContext, createGameRequest)
+		gameID, err := gameCtrl.CreateGame(userContext, createGameRequest) //nolint:contextcheck
 		if err != nil {
 			return err
 		}
@@ -80,7 +79,7 @@ func createGame(gameCtrl *controller.GameController) route.PlainHandler {
 	}
 }
 
-func getGamesSummary(gameCtrl *controller.GameController) route.PlainHandler {
+func getGamesSummary(gameCtrl *GameController) route.PlainHandler {
 	return func(writer http.ResponseWriter, req *http.Request) error {
 		userContext, ok := req.Context().(ctx.UserContext)
 		if !ok {
@@ -103,7 +102,7 @@ func getGamesSummary(gameCtrl *controller.GameController) route.PlainHandler {
 	}
 }
 
-func advanceGame(advCtrl *controller.AdvancementController) route.GameHandler {
+func advanceGame(advCtrl *AdvancementController) route.GameHandler {
 	return func(writer http.ResponseWriter, req *http.Request, gameCtx ctx.GameContext) error {
 		advancementRequest, err := restutils.DecodeRequest[gameRequest.Advancement](writer, req)
 		if err != nil {

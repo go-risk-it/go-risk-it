@@ -1,4 +1,4 @@
-package controller //nolint:testpackage // testing unexported mapper functions
+package routes //nolint:testpackage // testing unexported mapper functions
 
 import (
 	"testing"

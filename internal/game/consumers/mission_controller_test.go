@@ -1,13 +1,13 @@
-package controller_test
+package consumers_test
 
 import (
 	"errors"
 	"testing"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
+	"github.com/go-risk-it/go-risk-it/internal/game/consumers"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/mission"
 	ctx2 "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
-	missionController "github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	missionMock "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/mission"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
@@ -32,7 +32,7 @@ func TestMissionController_GetTwoContinentsMission(t *testing.T) {
 		t.Parallel()
 
 		svc := missionMock.NewService(t)
-		ctrl := missionController.NewMissionController(svc)
+		ctrl := consumers.NewMissionController(svc)
 		gCtx := missionGameContext(t)
 		missionID := int64(7)
 
@@ -59,7 +59,7 @@ func TestMissionController_GetTwoContinentsMission(t *testing.T) {
 		t.Parallel()
 
 		svc := missionMock.NewService(t)
-		ctrl := missionController.NewMissionController(svc)
+		ctrl := consumers.NewMissionController(svc)
 		gCtx := missionGameContext(t)
 		missionID := int64(7)
 		serviceErr := errors.New("db connection failed")
@@ -82,7 +82,7 @@ func TestMissionController_GetEighteenTerritoriesTwoTroopsMission(t *testing.T) 
 		t.Parallel()
 
 		svc := missionMock.NewService(t)
-		ctrl := missionController.NewMissionController(svc)
+		ctrl := consumers.NewMissionController(svc)
 		gCtx := missionGameContext(t)
 		missionID := int64(99)
 
@@ -105,7 +105,7 @@ func TestMissionController_GetEliminatePlayerMission(t *testing.T) {
 		t.Parallel()
 
 		svc := missionMock.NewService(t)
-		ctrl := missionController.NewMissionController(svc)
+		ctrl := consumers.NewMissionController(svc)
 		gCtx := missionGameContext(t)
 		missionID := int64(13)
 
@@ -128,7 +128,7 @@ func TestMissionController_GetEliminatePlayerMission(t *testing.T) {
 		t.Parallel()
 
 		svc := missionMock.NewService(t)
-		ctrl := missionController.NewMissionController(svc)
+		ctrl := consumers.NewMissionController(svc)
 		gCtx := missionGameContext(t)
 		missionID := int64(13)
 		serviceErr := errors.New("player not found")

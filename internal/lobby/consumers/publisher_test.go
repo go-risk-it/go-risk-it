@@ -12,9 +12,8 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/lobby/consumers"
 	lobbyevt "github.com/go-risk-it/go-risk-it/internal/lobby/events"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/logic/state"
-	"github.com/go-risk-it/go-risk-it/internal/web/lobby/controller"
+	mockConsumers "github.com/go-risk-it/go-risk-it/mocks/internal_/lobby/consumers"
 	mockState "github.com/go-risk-it/go-risk-it/mocks/internal_/lobby/logic/state"
-	mockWS "github.com/go-risk-it/go-risk-it/mocks/internal_/web/lobby/ws"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -53,7 +52,7 @@ func testLobby() *state.Lobby {
 
 // deps bundles all mock dependencies so each test can pick what it needs.
 type deps struct {
-	writer   *mockWS.Writer
+	writer   *mockConsumers.Writer
 	stateSvc *mockState.Service
 }
 
@@ -61,13 +60,13 @@ func newDeps(t *testing.T) *deps {
 	t.Helper()
 
 	return &deps{
-		writer:   mockWS.NewWriter(t),
+		writer:   mockConsumers.NewWriter(t),
 		stateSvc: mockState.NewService(t),
 	}
 }
 
 func (d *deps) newPublisher() *consumers.LobbyStatePublisher {
-	stateCtrl := controller.NewStateController(d.stateSvc)
+	stateCtrl := consumers.NewStateController(d.stateSvc)
 
 	return consumers.NewLobbyStatePublisher(d.writer, stateCtrl, nil)
 }

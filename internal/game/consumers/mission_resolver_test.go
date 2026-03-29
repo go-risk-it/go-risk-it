@@ -8,7 +8,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/consumers"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/mission"
-	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	mockMission "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/mission"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -18,7 +17,7 @@ func TestBuildMissionResolver_TwoContinents(t *testing.T) {
 	t.Parallel()
 
 	missionSvc := mockMission.NewService(t)
-	missionCtrl := controller.NewMissionController(missionSvc)
+	missionCtrl := consumers.NewMissionController(missionSvc)
 
 	missionSvc.EXPECT().
 		GetTwoContinentsMission(mock.Anything, int64(10)).
@@ -50,7 +49,7 @@ func TestBuildMissionResolver_TwoContinentsPlusOne(t *testing.T) {
 	t.Parallel()
 
 	missionSvc := mockMission.NewService(t)
-	missionCtrl := controller.NewMissionController(missionSvc)
+	missionCtrl := consumers.NewMissionController(missionSvc)
 
 	missionSvc.EXPECT().
 		GetTwoContinentsPlusOneMission(mock.Anything, int64(50)).
@@ -82,7 +81,7 @@ func TestBuildMissionResolver_EliminatePlayer(t *testing.T) {
 	t.Parallel()
 
 	missionSvc := mockMission.NewService(t)
-	missionCtrl := controller.NewMissionController(missionSvc)
+	missionCtrl := consumers.NewMissionController(missionSvc)
 
 	missionSvc.EXPECT().
 		GetEliminatePlayerMission(mock.Anything, int64(20)).
@@ -110,7 +109,7 @@ func TestBuildMissionResolver_EighteenTerritories(t *testing.T) {
 	t.Parallel()
 
 	missionSvc := mockMission.NewService(t)
-	missionCtrl := controller.NewMissionController(missionSvc)
+	missionCtrl := consumers.NewMissionController(missionSvc)
 
 	// Static mission — service is not called.
 	resolver := consumers.BuildMissionResolver(missionCtrl)
@@ -131,7 +130,7 @@ func TestBuildMissionResolver_TwentyFourTerritories(t *testing.T) {
 	t.Parallel()
 
 	missionSvc := mockMission.NewService(t)
-	missionCtrl := controller.NewMissionController(missionSvc)
+	missionCtrl := consumers.NewMissionController(missionSvc)
 
 	// Static mission — service is not called.
 	resolver := consumers.BuildMissionResolver(missionCtrl)
@@ -152,7 +151,7 @@ func TestBuildMissionResolver_UnknownType(t *testing.T) {
 	t.Parallel()
 
 	missionSvc := mockMission.NewService(t)
-	missionCtrl := controller.NewMissionController(missionSvc)
+	missionCtrl := consumers.NewMissionController(missionSvc)
 
 	resolver := consumers.BuildMissionResolver(missionCtrl)
 	gameCtx := testGameContext()
@@ -166,7 +165,7 @@ func TestBuildMissionResolver_NonGameContext(t *testing.T) {
 	t.Parallel()
 
 	missionSvc := mockMission.NewService(t)
-	missionCtrl := controller.NewMissionController(missionSvc)
+	missionCtrl := consumers.NewMissionController(missionSvc)
 
 	resolver := consumers.BuildMissionResolver(missionCtrl)
 

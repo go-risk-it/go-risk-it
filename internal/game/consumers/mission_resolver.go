@@ -9,7 +9,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/consumers/converter"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/web/game/controller"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 )
 
@@ -17,7 +16,7 @@ import (
 // to the correct MissionController method based on mission type, wrapping
 // the typed result into a json.RawMessage envelope.
 func BuildMissionResolver(
-	missionController *controller.MissionController,
+	missionController *MissionController,
 ) converter.MissionResolver {
 	return func(
 		c context.Context,
@@ -35,7 +34,7 @@ func BuildMissionResolver(
 
 func resolveMission(
 	gameCtx ctx.GameContext,
-	missionCtrl *controller.MissionController,
+	missionCtrl *MissionController,
 	missionType sqlc.GameMissionType,
 	missionID int64,
 ) (json.RawMessage, error) {

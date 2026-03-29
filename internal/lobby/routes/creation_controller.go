@@ -1,4 +1,4 @@
-package controller
+package routes
 
 import (
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"

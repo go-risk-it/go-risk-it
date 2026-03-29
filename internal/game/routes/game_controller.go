@@ -1,10 +1,13 @@
-package controller
+package routes
 
 import (
+	"context"
+	"errors"
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/api/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/game/api/rest/response"
+	"github.com/go-risk-it/go-risk-it/internal/game/commands"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/board"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/creation"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/player"
@@ -12,6 +15,9 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 )
 
+// GameController handles game creation and game summary queries.
+// It implements [commands.Handler] so the kernel router can dispatch
+// cross-module CreateGame commands from the lobby.
 type GameController struct {
 	boardService    board.Service
 	creationService creation.Service
@@ -30,6 +36,40 @@ func NewGameController(
 	}
 }
 
+// HandleCreateGame implements commands.Handler for cross-module dispatch.
+//
+//nolint:contextcheck // cross-module boundary narrows context
+func (c *GameController) HandleCreateGame(
+	rawCtx context.Context,
+	cmd commands.CreateGame,
+) (commands.CreateGameResult, error) {
+	userCtx, ok := rawCtx.(ctx.UserContext)
+	if !ok {
+		return commands.CreateGameResult{}, errors.New("HandleCreateGame requires UserContext")
+	}
+
+	regions, err := c.boardService.GetBoardRegions(userCtx)
+	if err != nil {
+		return commands.CreateGameResult{}, fmt.Errorf("failed to get board regions: %w", err)
+	}
+
+	players := make([]player.Player, len(cmd.Players))
+	for i, p := range cmd.Players {
+		players[i] = player.Player{
+			UserID: p.UserID,
+			Name:   p.Name,
+		}
+	}
+
+	gameID, err := c.creationService.CreateGame(userCtx, regions, players)
+	if err != nil {
+		return commands.CreateGameResult{}, fmt.Errorf("failed to create game: %w", err)
+	}
+
+	return commands.CreateGameResult{GameID: gameID}, nil
+}
+
+// CreateGame handles the HTTP-facing game creation request (used by routes).
 func (c *GameController) CreateGame(
 	ctx ctx.UserContext, req request.CreateGame,
 ) (int64, error) {
@@ -54,6 +94,7 @@ func (c *GameController) CreateGame(
 	return gameID, nil
 }
 
+// GetUserGames returns a summary of the user's games.
 func (c *GameController) GetUserGames(ctx ctx.UserContext) (response.Games, error) {
 	userGames, err := c.gameService.GetUserGames(ctx)
 	if err != nil {
@@ -72,3 +113,6 @@ func (c *GameController) GetUserGames(ctx ctx.UserContext) (response.Games, erro
 		Games: result,
 	}, nil
 }
+
+// Verify interface compliance.
+var _ commands.Handler = (*GameController)(nil)
