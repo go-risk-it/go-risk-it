@@ -3,8 +3,7 @@ package dice
 import (
 	"fmt"
 
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/config"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/attack/dice/roller"
+	"github.com/go-risk-it/go-risk-it/internal/game/config"
 	"github.com/go-risk-it/go-risk-it/internal/game/rand"
 )
 
@@ -14,8 +13,8 @@ type Service interface {
 }
 
 type service struct {
-	attackingRoller roller.Roller
-	defendingRoller roller.Roller
+	attackingRoller Roller
+	defendingRoller Roller
 }
 
 var _ Service = (*service)(nil)
@@ -28,11 +27,11 @@ func (s *service) RollDefendingDices(n int) []int {
 	return roll(n, s.defendingRoller)
 }
 
-func roll(dices int, roller roller.Roller) []int {
+func roll(dices int, r Roller) []int {
 	result := make([]int, 0, dices)
 
 	for range dices {
-		result = append(result, roller.Roll())
+		result = append(result, r.Roll())
 	}
 
 	return result
@@ -53,14 +52,14 @@ func New(diceConfig config.DiceConfig, rng rand.RNG) (Service, error) {
 func getDiceRollers(
 	diceConfig config.DiceConfig,
 	rng rand.RNG,
-) (roller.Roller, roller.Roller, error) {
+) (Roller, Roller, error) {
 	switch diceConfig.RollStrategy {
 	case "attacker_always_wins":
-		return roller.WithSequence([]int{6}), roller.WithSequence([]int{1}), nil
+		return WithSequence([]int{6}), WithSequence([]int{1}), nil
 	case "attacker_always_loses":
-		return roller.WithSequence([]int{1}), roller.WithSequence([]int{6}), nil
+		return WithSequence([]int{1}), WithSequence([]int{6}), nil
 	case "random":
-		return roller.WithRandomSource(rng), roller.WithRandomSource(rng), nil
+		return WithRandomSource(rng), WithRandomSource(rng), nil
 	default:
 		return nil, nil, fmt.Errorf("unknown roll strategy: %s", diceConfig.RollStrategy)
 	}

@@ -2,7 +2,6 @@ package web
 
 import (
 	"github.com/go-risk-it/go-risk-it/internal/kernel/otelsetup"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/router"
 	"github.com/go-risk-it/go-risk-it/internal/web/middleware"
 	"github.com/go-risk-it/go-risk-it/internal/web/mux"
 	"github.com/go-risk-it/go-risk-it/internal/web/nbio"
@@ -17,6 +16,5 @@ var Module = fx.Options(
 	nbio.Module,
 	otelsetup.Module,
 	rest.Module,
-	router.Module,
 	ws.Module,
 )

@@ -11,7 +11,7 @@ import (
 	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/game/events"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/headlines"
+	"github.com/go-risk-it/go-risk-it/internal/game/headlines"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/attack"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/cards"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"

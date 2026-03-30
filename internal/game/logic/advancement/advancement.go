@@ -4,7 +4,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/attack"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/cards"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/orchestration/validation"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/orchestration"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/reinforce"
 	moveservice "github.com/go-risk-it/go-risk-it/internal/game/logic/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/state"
@@ -23,7 +23,7 @@ func NewAttackAdvancer(
 	gameState state.Service,
 	querier db.Querier,
 	moveService moveservice.Service[attack.Move, *attack.MoveResult],
-	validationService validation.Service,
+	validationService orchestration.ValidationService,
 	bus eventbus.Bus,
 	metrics *metrics.InfraMetrics,
 ) AttackAdvancer {
@@ -41,7 +41,7 @@ func NewCardsAdvancer(
 	gameState state.Service,
 	querier db.Querier,
 	moveService moveservice.Service[cards.Move, *cards.MoveResult],
-	validationService validation.Service,
+	validationService orchestration.ValidationService,
 	bus eventbus.Bus,
 	metrics *metrics.InfraMetrics,
 ) CardsAdvancer {
@@ -59,7 +59,7 @@ func NewReinforceAdvancer(
 	gameState state.Service,
 	querier db.Querier,
 	moveService moveservice.Service[reinforce.Move, struct{}],
-	validationService validation.Service,
+	validationService orchestration.ValidationService,
 	bus eventbus.Bus,
 	metrics *metrics.InfraMetrics,
 ) ReinforceAdvancer {

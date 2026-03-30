@@ -172,20 +172,13 @@ func TestArch_LogicGameAndLobbyIsolated(t *testing.T) {
 }
 
 // Rule 4b: kernel/ must never import game or lobby domain packages.
-// Exception: kernel/router/ may import game/commands/ (the cross-module command contract).
 func TestArch_KernelNeverImportsDomain(t *testing.T) {
 	t.Parallel()
 
 	pkgs := loadPackages(t, "./internal/kernel/...")
 
 	for _, pkg := range pkgs {
-		isRouter := strings.HasSuffix(pkg.ImportPath, "kernel/router")
 		for _, imp := range internalImports(pkg) {
-			// kernel/router is allowed to import game/commands
-			if isRouter && strings.HasPrefix(imp, modulePrefix+"game/commands") {
-				continue
-			}
-
 			if hasPrefix(imp,
 				modulePrefix+"logic/",
 				modulePrefix+"web/",
@@ -237,30 +230,6 @@ func TestArch_WebNeverImportsModules(t *testing.T) {
 		modulePrefix+"game/",
 		modulePrefix+"lobby/",
 	)
-}
-
-// Rule 5c: kernel/router/ is the only kernel package allowed to import from modules,
-// and only game/commands/ (the cross-module command contract).
-func TestArch_RouterImportRestriction(t *testing.T) {
-	t.Parallel()
-
-	pkgs := loadPackages(t, "./internal/kernel/router/...")
-
-	for _, pkg := range pkgs {
-		for _, imp := range internalImports(pkg) {
-			if strings.HasPrefix(imp, modulePrefix+"game/commands") {
-				continue // allowed
-			}
-
-			if hasPrefix(imp,
-				modulePrefix+"game/",
-				modulePrefix+"lobby/",
-			) {
-				t.Errorf("%s imports forbidden module package %s (only game/commands allowed)",
-					pkg.ImportPath, imp)
-			}
-		}
-	}
 }
 
 // Rule 5d: game/data/ and lobby/data/ are mutually isolated.
@@ -719,7 +688,6 @@ var expectedLayer = map[string]string{
 	"kernel/errors":             "Kernel",
 	"kernel/metrics":            "Kernel",
 	"kernel/otelsetup":          "Kernel",
-	"kernel/router":             "Kernel",
 	"kernel/slog":               "Kernel",
 	"kernel/upgradablerw_mutex": "Kernel",
 
@@ -732,8 +700,10 @@ var expectedLayer = map[string]string{
 	"game/ws":                  "Web",
 	"game/tracing":             "Logic",
 	"game/rand":                "Logic",
-	"game/logic/config":        "Logic",
+	"game/config":              "Game-support",
+	"game/headlines":           "Game-support",
 	"game/logic/metrics":       "Logic",
+	"game/snapshot":            "Game-support",
 	"game/publisher":           "Web",
 	"game/publisher/converter": "Web",
 
@@ -758,7 +728,7 @@ var expectedLayer = map[string]string{
 // layerFromPrefix derives the expected layer for a package suffix using prefix matching.
 // It first checks the explicit mapping, then falls back to prefix-based rules.
 //
-//nolint:cyclop,goconst // prefix matching requires branching per layer; string constants are clearer inline
+//nolint:cyclop,gocyclo,goconst // prefix matching requires branching per layer; string constants are clearer inline
 func layerFromPrefix(suffix string) string {
 	if layer, ok := expectedLayer[suffix]; ok {
 		return layer
@@ -781,6 +751,12 @@ func layerFromPrefix(suffix string) string {
 		return "Web"
 	case strings.HasPrefix(suffix, "game/publisher"):
 		return "Web"
+	case strings.HasPrefix(suffix, "game/config"):
+		return "Game-support"
+	case strings.HasPrefix(suffix, "game/headlines"):
+		return "Game-support"
+	case strings.HasPrefix(suffix, "game/snapshot"):
+		return "Game-support"
 	case strings.HasPrefix(suffix, "game/logic/") || strings.HasPrefix(suffix, "game/tracing") ||
 		strings.HasPrefix(suffix, "game/rand"):
 		return "Logic"
@@ -833,13 +809,11 @@ func packageSuffix(importPath string) string {
 var wiringRoots = map[string]bool{
 	"":                        true, // internal root
 	"kernel":                  true,
-	"logic":                   true,
 	"game/logic":              true,
 	"game/logic/move":         true,
 	"game/logic/move/service": true,
 	"game/data":               true,
 	"lobby/logic":             true,
-	"data":                    true,
 	"lobby/data":              true,
 	"web":                     true,
 	"game":                    true,
@@ -1175,7 +1149,6 @@ var kernelMultiConsumerAllowlist = map[string]bool{
 	"kernel/slog":               true, // consumed only by app composition root
 	"kernel/logger":             true, // consumed only by game/logic (event logger)
 	"kernel/otelsetup":          true, // consumed only by web.Module composition root
-	"kernel/router":             true, // one command type so far, lobby is only module consumer
 	"kernel/upgradablerw_mutex": true, // consolidated into web/ws.ScopeMap + web/ws.PlayerConnections
 }
 
@@ -1264,4 +1237,33 @@ func countConsumerGroups(
 	}
 
 	return consumers
+}
+
+// ─── Phase 7: Game-Support Layer Rules ───
+
+// Rule 23: game/config and game/snapshot must never import game/logic/.
+// (game/headlines is excluded — it legitimately imports game/logic/board.)
+func TestArch_GameSupportNeverImportsGameLogic(t *testing.T) {
+	t.Parallel()
+
+	configPkgs := loadPackages(t, "./internal/game/config/...")
+	snapshotPkgs := loadPackages(t, "./internal/game/snapshot/...")
+	configPkgs = append(configPkgs, snapshotPkgs...)
+
+	assertNoImports(t, configPkgs, modulePrefix+"game/logic/")
+}
+
+// Rule 24: every game-support service package defines at least one exported interface.
+func TestArch_GameSupportServicesDefineExportedInterface(t *testing.T) {
+	t.Parallel()
+
+	pkgs := loadPackages(t, "./internal/game/snapshot/...")
+
+	for _, pkg := range pkgs {
+		if !containsFile(pkg, "service.go") {
+			continue
+		}
+
+		assertHasExportedInterface(t, pkg)
+	}
 }

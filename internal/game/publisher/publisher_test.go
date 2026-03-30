@@ -7,19 +7,19 @@ import (
 	"testing"
 	"time"
 
+	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/config"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/game/events"
-	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/logic/config"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/mission"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/snapshot"
 	consumers "github.com/go-risk-it/go-risk-it/internal/game/publisher"
+	"github.com/go-risk-it/go-risk-it/internal/game/snapshot"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	mockMission "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/mission"
-	mockLogging "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/move/orchestration/logging"
-	mockSnapshot "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/snapshot"
+	mockLogging "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/move/orchestration"
 	mockConsumers "github.com/go-risk-it/go-risk-it/mocks/internal_/game/publisher"
+	mockSnapshot "github.com/go-risk-it/go-risk-it/mocks/internal_/game/snapshot"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -117,7 +117,7 @@ type deps struct {
 	lifecycle  *mockConsumers.Lifecycle
 	snapSvc    *mockSnapshot.Service
 	missionSvc *mockMission.Service
-	loggingSvc *mockLogging.Service
+	loggingSvc *mockLogging.LoggingService
 }
 
 func newDeps(t *testing.T) *deps {
@@ -129,7 +129,7 @@ func newDeps(t *testing.T) *deps {
 		lifecycle:  mockConsumers.NewLifecycle(t),
 		snapSvc:    mockSnapshot.NewService(t),
 		missionSvc: mockMission.NewService(t),
-		loggingSvc: mockLogging.NewService(t),
+		loggingSvc: mockLogging.NewLoggingService(t),
 	}
 }
 

@@ -8,12 +8,9 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/cards"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/conquer"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/deploy"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/orchestration/logging"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/orchestration/validation"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/reinforce"
 	moveservice "github.com/go-risk-it/go-risk-it/internal/game/logic/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/state"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/timing"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"go.uber.org/fx"
@@ -25,13 +22,54 @@ type OrchestratorDeps struct {
 
 	Querier           db.Querier
 	GameService       state.Service
-	LoggingService    logging.Service
+	LoggingService    LoggingService
 	MissionService    mission.Service
-	ValidationService validation.Service
+	ValidationService ValidationService
 	Bus               bus.Bus
 	InfraMetrics      *metrics.InfraMetrics
 	GameMetrics       *gamemetrics.GameMetrics
-	GameTiming        *timing.GameTiming
+	GameTiming        *gamemetrics.GameTiming
+}
+
+type orchestrator[T, R any] struct {
+	querier           db.Querier
+	service           moveservice.Service[T, R]
+	gameService       state.Service
+	loggingService    LoggingService
+	missionService    mission.Service
+	validationService ValidationService
+	bus               bus.Bus
+	infraMetrics      *metrics.InfraMetrics
+	gameMetrics       *gamemetrics.GameMetrics
+	gameTiming        *gamemetrics.GameTiming
+}
+
+var _ Orchestrator[any, any] = (*orchestrator[any, any])(nil)
+
+func NewOrchestrator[T, R any](
+	querier db.Querier,
+	service moveservice.Service[T, R],
+	gameService state.Service,
+	loggingService LoggingService,
+	missionService mission.Service,
+	validationService ValidationService,
+	bus bus.Bus,
+	infraMetrics *metrics.InfraMetrics,
+	gameMetrics *gamemetrics.GameMetrics,
+	gameTiming *gamemetrics.GameTiming,
+) Orchestrator[T, R] {
+	return &orchestrator[T, R]{
+		querier:           querier,
+		service:           service,
+		gameService:       gameService,
+		loggingService:    loggingService,
+		missionService:    missionService,
+		validationService: validationService,
+		bus:               bus,
+		infraMetrics:      infraMetrics,
+		gameMetrics:       gameMetrics,
+		gameTiming:        gameTiming,
+	}
 }
 
 type DeployOrchestrator = Orchestrator[deploy.Move, struct{}]
@@ -104,7 +142,7 @@ var Module = fx.Options(
 		NewConquerOrchestrator,
 		NewReinforceOrchestrator,
 		NewCardsOrchestrator,
-		validation.New,
-		logging.New,
+		NewValidationService,
+		NewLoggingService,
 	),
 )

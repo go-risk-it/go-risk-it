@@ -3,8 +3,8 @@ package assignment
 import (
 	"fmt"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/config"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/config"
 	"github.com/go-risk-it/go-risk-it/internal/game/rand"
 )
 

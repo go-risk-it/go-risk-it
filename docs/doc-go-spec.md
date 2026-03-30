@@ -84,7 +84,7 @@ Required doc.go sections:
 | `game/logic/phase` | logic | 4 |
 | `game/logic/player` | logic | 4 |
 | `game/logic/region` | logic | 3 |
-| `game/logic/snapshot` | logic | 3 |
+| `game/snapshot` | game-support | 3 |
 | `game/logic/state` | logic | 3 |
 | `lobby/logic/creation` | logic | 3 |
 | `lobby/logic/management` | logic | 3 |
@@ -124,12 +124,10 @@ All other non-excluded packages. Required doc.go sections:
 | `game/events` | events-domain |
 | `lobby/events` | events-domain |
 | `game/logic/config` | logic |
-| `game/logic/headlines` | logic |
+| `game/headlines` | game-support |
 | `game/logic/metrics` | logic |
 | `game/logic/mission/checker` | logic |
 | `game/logic/move/attack/dice/roller` | logic |
-| `game/logic/move/orchestration/logging` | logic |
-| `game/logic/move/orchestration/validation` | logic |
 | `game/logic/move/validation` | logic |
 | `game/logic/region/assignment` | logic |
 | `game/logic/timing` | logic |

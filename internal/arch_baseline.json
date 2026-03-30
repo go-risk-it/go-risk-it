@@ -2,6 +2,6 @@
   "maxExportsPerPackage": 55,
   "maxFanOut": 25,
   "maxFilesPerPackage": 12,
-  "minDocGoCount": 76,
-  "kernelMaxProductionFiles": 30
+  "minDocGoCount": 71,
+  "kernelMaxProductionFiles": 28
 }

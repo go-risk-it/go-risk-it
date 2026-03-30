@@ -11,4 +11,5 @@ var Module = fx.Options(
 
 		return NewGameMetrics(meter)
 	}),
+	fx.Provide(NewGameTiming),
 )

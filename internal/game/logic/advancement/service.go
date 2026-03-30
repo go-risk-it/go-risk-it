@@ -9,7 +9,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/game/events"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/orchestration/validation"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/orchestration"
 	moveservice "github.com/go-risk-it/go-risk-it/internal/game/logic/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/state"
 	"github.com/go-risk-it/go-risk-it/internal/game/tracing"
@@ -40,7 +40,7 @@ type service[T, R any] struct {
 	querier           db.Querier
 	gameState         state.Service
 	moveService       moveservice.Service[T, R]
-	validationService validation.Service
+	validationService orchestration.ValidationService
 	bus               eventbus.Bus
 	metrics           *metrics.InfraMetrics
 }
@@ -49,7 +49,7 @@ func NewService[T, R any](
 	gameState state.Service,
 	querier db.Querier,
 	moveService moveservice.Service[T, R],
-	validationService validation.Service,
+	validationService orchestration.ValidationService,
 	bus eventbus.Bus,
 	metrics *metrics.InfraMetrics,
 ) Service[T, R] {

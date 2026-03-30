@@ -13,7 +13,7 @@ import (
 	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
 	mockdb "github.com/go-risk-it/go-risk-it/mocks/internal_/game/data/db"
-	mockvalidation "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/move/orchestration/validation"
+	mockvalidation "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/move/orchestration"
 	mockmoveservice "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/move/service"
 	mockstate "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/state"
 	"github.com/stretchr/testify/mock"
@@ -31,7 +31,7 @@ func setup(t *testing.T) (
 	*mockdb.Querier,
 	*mockstate.Service,
 	*mockmoveservice.Service[testMove, testResult],
-	*mockvalidation.Service,
+	*mockvalidation.ValidationService,
 	*eventbus.TestBus,
 	advancement.Service[testMove, testResult],
 ) {
@@ -40,7 +40,7 @@ func setup(t *testing.T) (
 	querier := mockdb.NewQuerier(t)
 	gameState := mockstate.NewService(t)
 	moveService := mockmoveservice.NewService[testMove, testResult](t)
-	validationService := mockvalidation.NewService(t)
+	validationService := mockvalidation.NewValidationService(t)
 	bus := eventbus.NewTestBus()
 
 	service := advancement.NewService[testMove, testResult](

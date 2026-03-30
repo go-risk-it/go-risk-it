@@ -116,17 +116,14 @@ var subsystemMap = map[string]string{
 	"web/ws/message": "websocket",
 
 	// Logic Layer — Move Pipeline
-	"logic/game/move/orchestration":            "move_pipeline",
-	"logic/game/move/orchestration/logging":    "move_pipeline",
-	"logic/game/move/orchestration/validation": "move_pipeline",
-	"logic/game/move/attack":                   "move_pipeline",
-	"logic/game/move/attack/dice":              "move_pipeline",
-	"logic/game/move/attack/dice/roller":       "move_pipeline",
-	"logic/game/move/deploy":                   "move_pipeline",
-	"logic/game/move/conquer":                  "move_pipeline",
-	"logic/game/move/reinforce":                "move_pipeline",
-	"logic/game/move/cards":                    "move_pipeline",
-	"logic/game/move/validation":               "move_pipeline",
+	"logic/game/move/orchestration": "move_pipeline",
+	"logic/game/move/attack":        "move_pipeline",
+	"logic/game/move/attack/dice":   "move_pipeline",
+	"logic/game/move/deploy":        "move_pipeline",
+	"logic/game/move/conquer":       "move_pipeline",
+	"logic/game/move/reinforce":     "move_pipeline",
+	"logic/game/move/cards":         "move_pipeline",
+	"logic/game/move/validation":    "move_pipeline",
 
 	// Logic Layer — Game Services
 	"logic/game/board":             "game_services",

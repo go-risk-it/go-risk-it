@@ -1,8 +1,8 @@
 package consumers
 
 import (
-	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/logic/config"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/snapshot"
+	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/config"
+	"github.com/go-risk-it/go-risk-it/internal/game/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"go.uber.org/fx"
