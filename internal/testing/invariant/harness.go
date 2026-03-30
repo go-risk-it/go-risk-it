@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/config"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	gamedb "github.com/go-risk-it/go-risk-it/internal/game/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
@@ -107,6 +108,7 @@ func buildFxApp(
 		fx.Provide(func() sqlc.DBTX { return dbPool }),
 		fx.Provide(gamedb.New),
 		game.Module,
+		gameconfig.Module,
 		fx.Supply(testKoanf),
 		rand.Module,
 		fx.Supply(testMetrics),
