@@ -1,13 +1,19 @@
 package game
 
 import (
+	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/config"
+	"github.com/go-risk-it/go-risk-it/internal/game/headlines"
 	consumers "github.com/go-risk-it/go-risk-it/internal/game/publisher"
 	"github.com/go-risk-it/go-risk-it/internal/game/routes"
+	"github.com/go-risk-it/go-risk-it/internal/game/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/game/ws"
 	"go.uber.org/fx"
 )
 
 var Module = fx.Options(
+	gameconfig.Module,
+	headlines.Module,
+	snapshot.Module,
 	routes.Module,
 	ws.Module,
 	// Adapt ws.Manager to publisher-local interfaces via duck typing.

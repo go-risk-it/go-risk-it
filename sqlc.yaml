@@ -11,11 +11,11 @@ sql:
       - "internal/game/logic/move/deploy"
       - "internal/game/logic/move/conquer"
       - "internal/game/logic/move/reinforce"
-      - "internal/game/logic/move/orchestration/logging"
+      - "internal/game/logic/move/orchestration"
       - "internal/game/logic/phase"
       - "internal/game/logic/player"
       - "internal/game/logic/region"
-      - "internal/game/logic/snapshot"
+      - "internal/game/snapshot"
       - "internal/game/logic/state"
     schema: "internal/game/data/sqlc/migrations"
     gen:

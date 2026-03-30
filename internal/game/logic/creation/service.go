@@ -14,7 +14,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/mission"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/player"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/region"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/timing"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	dbutil "github.com/go-risk-it/go-risk-it/internal/kernel/data"
@@ -45,7 +44,7 @@ type service struct {
 	regionService  region.Service
 	infraMetrics   *metrics.InfraMetrics
 	gameMetrics    *gamemetrics.GameMetrics
-	gameTiming     *timing.GameTiming
+	gameTiming     *gamemetrics.GameTiming
 }
 
 var _ Service = (*service)(nil)
@@ -59,7 +58,7 @@ func NewService(
 	regionService region.Service,
 	infraMetrics *metrics.InfraMetrics,
 	gameMetrics *gamemetrics.GameMetrics,
-	gameTiming *timing.GameTiming,
+	gameTiming *gamemetrics.GameTiming,
 ) Service {
 	return &service{
 		querier:        querier,

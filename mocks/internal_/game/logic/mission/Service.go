@@ -102,66 +102,6 @@ func (_c *Service_CreateMissions_Call) RunAndReturn(run func(ctx1 ctx.GameContex
 	return _c
 }
 
-// GetBaseMission provides a mock function for the type Service
-func (_mock *Service) GetBaseMission(ctx1 ctx.GameContext) (sqlc.GameMission, error) {
-	ret := _mock.Called(ctx1)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetBaseMission")
-	}
-
-	var r0 sqlc.GameMission
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext) (sqlc.GameMission, error)); ok {
-		return returnFunc(ctx1)
-	}
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext) sqlc.GameMission); ok {
-		r0 = returnFunc(ctx1)
-	} else {
-		r0 = ret.Get(0).(sqlc.GameMission)
-	}
-	if returnFunc, ok := ret.Get(1).(func(ctx.GameContext) error); ok {
-		r1 = returnFunc(ctx1)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Service_GetBaseMission_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetBaseMission'
-type Service_GetBaseMission_Call struct {
-	*mock.Call
-}
-
-// GetBaseMission is a helper method to define mock.On call
-//   - ctx1 ctx.GameContext
-func (_e *Service_Expecter) GetBaseMission(ctx1 interface{}) *Service_GetBaseMission_Call {
-	return &Service_GetBaseMission_Call{Call: _e.mock.On("GetBaseMission", ctx1)}
-}
-
-func (_c *Service_GetBaseMission_Call) Run(run func(ctx1 ctx.GameContext)) *Service_GetBaseMission_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 ctx.GameContext
-		if args[0] != nil {
-			arg0 = args[0].(ctx.GameContext)
-		}
-		run(
-			arg0,
-		)
-	})
-	return _c
-}
-
-func (_c *Service_GetBaseMission_Call) Return(gameMission sqlc.GameMission, err error) *Service_GetBaseMission_Call {
-	_c.Call.Return(gameMission, err)
-	return _c
-}
-
-func (_c *Service_GetBaseMission_Call) RunAndReturn(run func(ctx1 ctx.GameContext) (sqlc.GameMission, error)) *Service_GetBaseMission_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // GetEliminatePlayerMission provides a mock function for the type Service
 func (_mock *Service) GetEliminatePlayerMission(ctx1 ctx.GameContext, missionID int64) (string, error) {
 	ret := _mock.Called(ctx1, missionID)

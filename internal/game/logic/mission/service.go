@@ -23,7 +23,6 @@ type Service interface {
 	IsMissionAccomplished(ctx ctx.GameContext, querier db.Querier) (bool, error)
 	ReassignMissions(ctx ctx.GameContext, querier db.Querier, eliminatedPlayerID int64) error
 
-	GetBaseMission(ctx ctx.GameContext) (sqlc.GameMission, error)
 	GetTwoContinentsMission(
 		ctx ctx.GameContext,
 		missionID int64,
@@ -56,18 +55,6 @@ func New(
 		querier:         querier,
 		checkerRegistry: checkerRegistry,
 	}
-}
-
-func (s *service) GetBaseMission(ctx ctx.GameContext) (sqlc.GameMission, error) {
-	baseMission, err := s.querier.GetMission(ctx, sqlc.GetMissionParams{
-		GameID: ctx.GameID(),
-		UserID: ctx.UserID(),
-	})
-	if err != nil {
-		return sqlc.GameMission{}, fmt.Errorf("failed to get mission: %w", err)
-	}
-
-	return baseMission, nil
 }
 
 func (s *service) GetTwoContinentsMission(

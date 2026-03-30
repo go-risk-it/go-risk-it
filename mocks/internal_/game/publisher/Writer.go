@@ -2,7 +2,7 @@
 // github.com/vektra/mockery
 // template: testify
 
-package publisher
+package consumers
 
 import (
 	"encoding/json"

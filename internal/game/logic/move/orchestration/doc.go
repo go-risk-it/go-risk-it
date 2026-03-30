@@ -24,13 +24,17 @@
 // [ReinforceOrchestrator], and [CardsOrchestrator] are type aliases that
 // bind Orchestrator to concrete move and result types.
 //
+// [LoggingService] persists move log entries as JSON and provides retrieval
+// of recent move history.
+//
+// [ValidationService] performs generic pre-move checks: verifying the game is
+// not over, the player is in the game, and it is the player's turn.
+//
 // # Dependencies
 //
 //   - [service.Service] for move-specific perform, walk, and advance logic
 //   - [state.Service] for reading current game state within the transaction
-//   - [logging.Service] for persisting move log entries
 //   - [mission.Service] for checking win conditions after each move
-//   - [validation.Service] for pre-move game state validation
 //   - [eventbus.Bus] for emitting post-commit domain events
 //   - [metrics.Metrics] for recording move counts, durations, and game lifecycle
 package orchestration

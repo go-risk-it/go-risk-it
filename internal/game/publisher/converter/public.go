@@ -8,7 +8,7 @@ import (
 	game "github.com/go-risk-it/go-risk-it/internal/game/api"
 	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/snapshot"
+	"github.com/go-risk-it/go-risk-it/internal/game/snapshot"
 )
 
 // ConvertPublicSnapshot transforms a PublicSnapshot into typed DTOs for the

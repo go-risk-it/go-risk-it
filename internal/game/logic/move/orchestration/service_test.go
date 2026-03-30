@@ -16,14 +16,12 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/orchestration"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/reinforce"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/state"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/timing"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	mockdb "github.com/go-risk-it/go-risk-it/mocks/internal_/game/data/db"
 	mockmission "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/mission"
-	mocklogging "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/move/orchestration/logging"
-	mockvalidation "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/move/orchestration/validation"
+	mockorchestration "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/move/orchestration"
 	mockservice "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/move/service"
 	mockstate "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/state"
 	"github.com/jackc/pgx/v5"
@@ -93,9 +91,9 @@ func setupHappyPath[T, R any](
 	t *testing.T,
 	txQuerier *mockdb.Querier,
 	gameStateSvc *mockstate.Service,
-	validationSvc *mockvalidation.Service,
+	validationSvc *mockorchestration.ValidationService,
 	svc *mockservice.Service[T, R],
-	loggingSvc *mocklogging.Service,
+	loggingSvc *mockorchestration.LoggingService,
 	missionSvc *mockmission.Service,
 	move T,
 	performResult R,
@@ -162,12 +160,12 @@ func TestOrchestrateMove_DeployEmitsMoveExecuted(t *testing.T) {
 	querier := mockdb.NewQuerier(t)
 	svc := mockservice.NewService[deploy.Move, struct{}](t)
 	gameStateSvc := mockstate.NewService(t)
-	loggingSvc := mocklogging.NewService(t)
+	loggingSvc := mockorchestration.NewLoggingService(t)
 	missionSvc := mockmission.NewService(t)
-	validationSvc := mockvalidation.NewService(t)
+	validationSvc := mockorchestration.NewValidationService(t)
 	bus := eventbus.NewTestBus()
 	infraM, gameM := testMetrics(t)
-	gameTiming := timing.NewGameTiming()
+	gameTiming := gamemetrics.NewGameTiming()
 
 	txQuerier := setupTransaction(t, querier)
 
@@ -216,12 +214,12 @@ func TestOrchestrateMove_AttackEmitsMoveExecutedWithResult(t *testing.T) {
 	querier := mockdb.NewQuerier(t)
 	svc := mockservice.NewService[attack.Move, *attack.MoveResult](t)
 	gameStateSvc := mockstate.NewService(t)
-	loggingSvc := mocklogging.NewService(t)
+	loggingSvc := mockorchestration.NewLoggingService(t)
 	missionSvc := mockmission.NewService(t)
-	validationSvc := mockvalidation.NewService(t)
+	validationSvc := mockorchestration.NewValidationService(t)
 	bus := eventbus.NewTestBus()
 	infraM, gameM := testMetrics(t)
-	gameTiming := timing.NewGameTiming()
+	gameTiming := gamemetrics.NewGameTiming()
 
 	txQuerier := setupTransaction(t, querier)
 
@@ -276,12 +274,12 @@ func TestOrchestrateMove_PhaseTransitionEmitsBothEvents(t *testing.T) {
 	querier := mockdb.NewQuerier(t)
 	svc := mockservice.NewService[deploy.Move, struct{}](t)
 	gameStateSvc := mockstate.NewService(t)
-	loggingSvc := mocklogging.NewService(t)
+	loggingSvc := mockorchestration.NewLoggingService(t)
 	missionSvc := mockmission.NewService(t)
-	validationSvc := mockvalidation.NewService(t)
+	validationSvc := mockorchestration.NewValidationService(t)
 	bus := eventbus.NewTestBus()
 	infraM, gameM := testMetrics(t)
-	gameTiming := timing.NewGameTiming()
+	gameTiming := gamemetrics.NewGameTiming()
 
 	txQuerier := setupTransaction(t, querier)
 
@@ -335,12 +333,12 @@ func TestOrchestrateMove_GameCompletionEmitsAllEvents(t *testing.T) {
 	querier := mockdb.NewQuerier(t)
 	svc := mockservice.NewService[reinforce.Move, struct{}](t)
 	gameStateSvc := mockstate.NewService(t)
-	loggingSvc := mocklogging.NewService(t)
+	loggingSvc := mockorchestration.NewLoggingService(t)
 	missionSvc := mockmission.NewService(t)
-	validationSvc := mockvalidation.NewService(t)
+	validationSvc := mockorchestration.NewValidationService(t)
 	bus := eventbus.NewTestBus()
 	infraM, gameM := testMetrics(t)
-	gameTiming := timing.NewGameTiming()
+	gameTiming := gamemetrics.NewGameTiming()
 
 	txQuerier := setupTransaction(t, querier)
 
@@ -399,12 +397,12 @@ func TestOrchestrateMove_ErrorDoesNotEmit(t *testing.T) {
 	querier := mockdb.NewQuerier(t)
 	svc := mockservice.NewService[deploy.Move, struct{}](t)
 	gameStateSvc := mockstate.NewService(t)
-	loggingSvc := mocklogging.NewService(t)
+	loggingSvc := mockorchestration.NewLoggingService(t)
 	missionSvc := mockmission.NewService(t)
-	validationSvc := mockvalidation.NewService(t)
+	validationSvc := mockorchestration.NewValidationService(t)
 	bus := eventbus.NewTestBus()
 	infraM, gameM := testMetrics(t)
-	gameTiming := timing.NewGameTiming()
+	gameTiming := gamemetrics.NewGameTiming()
 
 	// Setup failing transaction: BeginTx returns error
 	querier.EXPECT().
@@ -437,12 +435,12 @@ func TestOrchestrateMove_CardsEmitsWithCardsResult(t *testing.T) {
 	querier := mockdb.NewQuerier(t)
 	svc := mockservice.NewService[cards.Move, *cards.MoveResult](t)
 	gameStateSvc := mockstate.NewService(t)
-	loggingSvc := mocklogging.NewService(t)
+	loggingSvc := mockorchestration.NewLoggingService(t)
 	missionSvc := mockmission.NewService(t)
-	validationSvc := mockvalidation.NewService(t)
+	validationSvc := mockorchestration.NewValidationService(t)
 	bus := eventbus.NewTestBus()
 	infraM, gameM := testMetrics(t)
-	gameTiming := timing.NewGameTiming()
+	gameTiming := gamemetrics.NewGameTiming()
 
 	txQuerier := setupTransaction(t, querier)
 
@@ -616,12 +614,12 @@ func runOrchestration[T, R any](
 	querier := mockdb.NewQuerier(t)
 	svc := mockservice.NewService[T, R](t)
 	gameStateSvc := mockstate.NewService(t)
-	loggingSvc := mocklogging.NewService(t)
+	loggingSvc := mockorchestration.NewLoggingService(t)
 	missionSvc := mockmission.NewService(t)
-	validationSvc := mockvalidation.NewService(t)
+	validationSvc := mockorchestration.NewValidationService(t)
 	bus := eventbus.NewTestBus()
 	infraM, gameM := testMetrics(t)
-	gameTiming := timing.NewGameTiming()
+	gameTiming := gamemetrics.NewGameTiming()
 
 	txQuerier := setupTransaction(t, querier)
 

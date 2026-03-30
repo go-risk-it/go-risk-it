@@ -9,7 +9,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/creation"
 	gamemetrics "github.com/go-risk-it/go-risk-it/internal/game/logic/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/player"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/timing"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
@@ -134,7 +133,7 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 		regionServiceMock,
 		testInfraMetrics(t),
 		testGameMetrics(t),
-		timing.NewGameTiming(),
+		gamemetrics.NewGameTiming(),
 	)
 
 	gameID, err := service.CreateGameWithQuerier(context, mockQuerier, regions, users)
@@ -164,7 +163,7 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 		regionService,
 		testInfraMetrics(t),
 		testGameMetrics(t),
-		timing.NewGameTiming(),
+		gamemetrics.NewGameTiming(),
 	)
 
 	// Set up test data
@@ -212,7 +211,7 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 		regionService,
 		testInfraMetrics(t),
 		testGameMetrics(t),
-		timing.NewGameTiming(),
+		gamemetrics.NewGameTiming(),
 	)
 
 	// Set up test data
@@ -328,7 +327,7 @@ func TestServiceImpl_CreateGameWithQuerier_NoEventEmitted(t *testing.T) {
 		regionServiceMock,
 		testInfraMetrics(t),
 		testGameMetrics(t),
-		timing.NewGameTiming(),
+		gamemetrics.NewGameTiming(),
 	)
 
 	result, err := service.CreateGameWithQuerier(context, mockQuerier, regions, users)
@@ -358,7 +357,7 @@ func TestServiceImpl_CreateGameWithQuerier_Error_NoEventEmitted(t *testing.T) {
 		region.NewService(t),
 		testInfraMetrics(t),
 		testGameMetrics(t),
-		timing.NewGameTiming(),
+		gamemetrics.NewGameTiming(),
 	)
 
 	userCtx := kernelctx.WithUserID(

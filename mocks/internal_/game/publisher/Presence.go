@@ -2,7 +2,7 @@
 // github.com/vektra/mockery
 // template: testify
 
-package publisher
+package consumers
 
 import (
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"

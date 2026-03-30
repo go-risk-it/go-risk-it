@@ -12,9 +12,12 @@
 // [Service] is the primary interface providing RollAttackingDices and
 // RollDefendingDices methods for combat resolution.
 //
+// [Roller] is the pluggable single-die roll interface with implementations:
+// [Random] for production use (uniform 1-6) and [Sequence] for deterministic
+// testing.
+//
 // # Dependencies
 //
 //   - [config.DiceConfig] for selecting the roll strategy at startup
-//   - [roller.Roller] for the pluggable roll implementation (random or fixed)
 //   - [rand.RNG] for the random dice source in production mode
 package dice
