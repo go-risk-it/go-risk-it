@@ -80,11 +80,9 @@ type OutputConfig struct {
 
 // StaircaseFlags holds staircase-specific CLI flags.
 type StaircaseFlags struct {
-	Steps             string // raw comma-separated, parsed later
-	HoldDuration      time.Duration
-	StopOnBreach      bool
-	WarmupCompletions int
-	WarmupDuration    int
+	Steps        string // raw comma-separated, parsed later
+	HoldDuration time.Duration
+	StopOnBreach bool
 }
 
 // AdaptiveFlags holds adaptive-specific CLI flags.
@@ -236,18 +234,6 @@ func registerFlags(fs *flag.FlagSet) *Config {
 		"stop-on-breach",
 		true,
 		"Stop staircase on first SLO breach",
-	)
-	fs.IntVar(
-		&cfg.Run.Staircase.WarmupCompletions,
-		"warmup-completions",
-		0,
-		"Games to complete before recording histograms per step (0 = disabled)",
-	)
-	fs.IntVar(
-		&cfg.Run.Staircase.WarmupDuration,
-		"warmup-duration",
-		0,
-		"Seconds to wait before recording histograms per step (0 = disabled)",
 	)
 
 	// Adaptive flags.

@@ -964,7 +964,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "description": "Normal: < 1ms acquire time. Watch for: p95 > 10ms (pool exhaustion starting). Check next: Canceled Acquires in Observe.",
+                    "description": "Normal: < 1ms average acquire time. Watch for: sustained > 10ms (pool exhaustion starting). Check next: Canceled Acquires in Observe.",
                     "fieldConfig": {
                         "defaults": {
                             "color": {
@@ -1011,22 +1011,12 @@
                     },
                     "targets": [
                         {
-                            "expr": "histogram_quantile(0.5, sum(rate(db_pool_acquire_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
-                            "legendFormat": "p50",
+                            "expr": "db_pool_acquire_duration_seconds{service_name=\"risk-it\"}",
+                            "legendFormat": "avg acquire time",
                             "refId": "A"
-                        },
-                        {
-                            "expr": "histogram_quantile(0.95, sum(rate(db_pool_acquire_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
-                            "legendFormat": "p95",
-                            "refId": "B"
-                        },
-                        {
-                            "expr": "histogram_quantile(0.99, sum(rate(db_pool_acquire_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
-                            "legendFormat": "p99",
-                            "refId": "C"
                         }
                     ],
-                    "title": "Acquire Time P50/P95/P99",
+                    "title": "Acquire Time (avg)",
                     "type": "timeseries"
                 },
                 {
@@ -1157,7 +1147,7 @@
                     },
                     "targets": [
                         {
-                            "expr": "rate(db_pool_acquire_count_total{service_name=\"risk-it\"}[1m])",
+                            "expr": "rate(db_pool_acquires_total{service_name=\"risk-it\"}[1m])",
                             "legendFormat": "acquires/s",
                             "refId": "A"
                         }
@@ -1756,7 +1746,7 @@
                     },
                     "targets": [
                         {
-                            "expr": "rate(process_cpu_seconds_total{service_name=\"risk-it\"}[1m])",
+                            "expr": "rate(process_cpu_time_seconds_total{service_name=\"risk-it\"}[1m])",
                             "legendFormat": "CPU cores",
                             "refId": "A"
                         }
@@ -1812,7 +1802,7 @@
                     },
                     "targets": [
                         {
-                            "expr": "histogram_quantile(0.95, sum(rate(runtime_go_sched_latency_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                            "expr": "histogram_quantile(0.95, sum(rate(go_schedule_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
                             "legendFormat": "p95",
                             "refId": "A"
                         }
@@ -1872,7 +1862,7 @@
                     },
                     "targets": [
                         {
-                            "expr": "runtime_go_goroutines{service_name=\"risk-it\"}",
+                            "expr": "go_goroutine_count{service_name=\"risk-it\"}",
                             "legendFormat": "goroutines",
                             "refId": "A"
                         }
@@ -1885,7 +1875,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "description": "Normal: alloc well below sys, sawtooth GC pattern. Watch for: alloc approaching sys (heap pressure). Check next: GC Goal for tuning.",
+                    "description": "Normal: allocated tracks used with sawtooth GC pattern. Watch for: used growing without release (heap pressure). Check next: GC Goal for tuning.",
                     "fieldConfig": {
                         "defaults": {
                             "custom": {
@@ -1928,13 +1918,13 @@
                     },
                     "targets": [
                         {
-                            "expr": "runtime_go_mem_heap_alloc{service_name=\"risk-it\"}",
-                            "legendFormat": "Alloc",
+                            "expr": "go_memory_allocated_bytes_total{service_name=\"risk-it\"}",
+                            "legendFormat": "Allocated",
                             "refId": "A"
                         },
                         {
-                            "expr": "runtime_go_mem_heap_sys{service_name=\"risk-it\"}",
-                            "legendFormat": "Sys",
+                            "expr": "go_memory_used_bytes{service_name=\"risk-it\"}",
+                            "legendFormat": "Used",
                             "refId": "B"
                         }
                     ],
@@ -1946,7 +1936,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "description": "Normal: stable GC goal values. Watch for: GOMEMLIMIT being hit (OOM risk). Check next: Process Memory for total footprint.",
+                    "description": "Normal: GOGC at 100%, GOMEMLIMIT stable or absent. Watch for: GOMEMLIMIT being approached by heap usage (OOM risk). Check next: Runtime Memory for total footprint.",
                     "fieldConfig": {
                         "defaults": {
                             "custom": {
@@ -1962,7 +1952,7 @@
                                     "mode": "none"
                                 }
                             },
-                            "unit": "bytes"
+                            "unit": "short"
                         },
                         "overrides": []
                     },
@@ -1989,12 +1979,12 @@
                     },
                     "targets": [
                         {
-                            "expr": "runtime_go_gc_gogc{service_name=\"risk-it\"}",
-                            "legendFormat": "GOGC",
+                            "expr": "go_config_gogc_percent{service_name=\"risk-it\"}",
+                            "legendFormat": "GOGC %",
                             "refId": "A"
                         },
                         {
-                            "expr": "runtime_go_gc_gomemlimit{service_name=\"risk-it\"}",
+                            "expr": "go_memory_limit_bytes{service_name=\"risk-it\"}",
                             "legendFormat": "GOMEMLIMIT",
                             "refId": "B"
                         }
@@ -2007,7 +1997,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "description": "Normal: stable RSS proportional to heap + stack. Watch for: monotonic growth (memory leak). Check next: Goroutines for stack memory contributors.",
+                    "description": "Normal: stable memory proportional to heap + stack. Watch for: monotonic growth (memory leak). Check next: Goroutines for stack memory contributors.",
                     "fieldConfig": {
                         "defaults": {
                             "custom": {
@@ -2050,12 +2040,12 @@
                     },
                     "targets": [
                         {
-                            "expr": "process_resident_memory_bytes{service_name=\"risk-it\"}",
-                            "legendFormat": "RSS",
+                            "expr": "go_memory_used_bytes{service_name=\"risk-it\"}",
+                            "legendFormat": "Used",
                             "refId": "A"
                         }
                     ],
-                    "title": "Process Memory",
+                    "title": "Runtime Memory",
                     "type": "timeseries"
                 }
             ],
@@ -2150,7 +2140,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "description": "Normal: outbound >> inbound (server pushes state). Watch for: inbound spikes (clients retrying). Check next: Fan-Out for amplification ratio.",
+                    "description": "Normal: steady sent rate proportional to active games. Watch for: rate dropping to zero while games are active (broadcast failures). Check next: Fan-Out for amplification ratio.",
                     "fieldConfig": {
                         "defaults": {
                             "color": {
@@ -2197,8 +2187,8 @@
                     },
                     "targets": [
                         {
-                            "expr": "sum(rate(ws_messages_total{service_name=\"risk-it\"}[1m])) by (direction)",
-                            "legendFormat": "{{direction}}",
+                            "expr": "sum(rate(ws_messages_sent_total{service_name=\"risk-it\"}[1m]))",
+                            "legendFormat": "sent/s",
                             "refId": "A"
                         }
                     ],
@@ -2257,7 +2247,7 @@
                     },
                     "targets": [
                         {
-                            "expr": "sum(rate(ws_messages_total{service_name=\"risk-it\",direction=\"outbound\"}[1m])) / sum(rate(event_bus_events_total{service_name=\"risk-it\",event_type=\"move_executed\"}[1m]))",
+                            "expr": "sum(rate(ws_messages_sent_total{service_name=\"risk-it\"}[1m])) / sum(rate(event_bus_events_total{service_name=\"risk-it\",event_type=\"move_executed\"}[1m]))",
                             "legendFormat": "msgs/move",
                             "refId": "A"
                         }
@@ -2317,7 +2307,7 @@
                     },
                     "targets": [
                         {
-                            "expr": "sum(rate(ws_errors_total{service_name=\"risk-it\"}[1m]))",
+                            "expr": "sum(rate(ws_broadcast_errors_total{service_name=\"risk-it\"}[1m]))",
                             "legendFormat": "errors/s",
                             "refId": "A"
                         }
@@ -2413,7 +2403,7 @@
             },
             "targets": [
                 {
-                    "expr": "sum(rate(ws_messages_total{service_name=\"risk-it\",direction=\"outbound\"}[1m])) / sum(rate(event_bus_events_total{service_name=\"risk-it\",event_type=\"move_executed\"}[1m]))",
+                    "expr": "sum(rate(ws_messages_sent_total{service_name=\"risk-it\"}[1m])) / sum(rate(event_bus_events_total{service_name=\"risk-it\",event_type=\"move_executed\"}[1m]))",
                     "legendFormat": "msgs/move",
                     "refId": "A"
                 }
@@ -2506,7 +2496,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Normal: RSS tracks heap alloc with stable overhead. Watch for: RSS growing while heap is flat (off-heap leak). Check next: Goroutines in Server & HTTP row.",
+            "description": "Normal: used memory tracks allocated with stable overhead. Watch for: used growing without GC reclaiming (heap leak). Check next: Goroutines in Server & HTTP row.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -2549,17 +2539,17 @@
             },
             "targets": [
                 {
-                    "expr": "process_resident_memory_bytes{service_name=\"risk-it\"}",
-                    "legendFormat": "RSS",
+                    "expr": "go_memory_used_bytes{service_name=\"risk-it\"}",
+                    "legendFormat": "Used",
                     "refId": "A"
                 },
                 {
-                    "expr": "runtime_go_mem_heap_alloc{service_name=\"risk-it\"}",
-                    "legendFormat": "Heap Alloc",
+                    "expr": "go_memory_allocated_bytes_total{service_name=\"risk-it\"}",
+                    "legendFormat": "Allocated",
                     "refId": "B"
                 }
             ],
-            "title": "Process Memory",
+            "title": "Runtime Memory",
             "type": "timeseries"
         },
         {
@@ -2871,7 +2861,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "description": "Normal: idx scans >> seq scans. Watch for: seq scan rate (dashed) approaching idx scan rate (missing index). Check next: Table Sizes for table growth.",
+                    "description": "Normal: idx scans >> seq scans. Watch for: seq scan rate (dashed) approaching idx scan rate (missing index). Check next: Live Tuples for table growth.",
                     "fieldConfig": {
                         "defaults": {
                             "custom": {
@@ -2955,7 +2945,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "description": "Normal: stable sizes proportional to game count. Watch for: rapid growth on single table (data accumulation). Check next: WAL for write amplification.",
+                    "description": "Normal: stable row counts proportional to game count. Watch for: rapid growth on single table (data accumulation). Check next: WAL for write amplification.",
                     "fieldConfig": {
                         "defaults": {
                             "custom": {
@@ -2971,7 +2961,7 @@
                                     "mode": "none"
                                 }
                             },
-                            "unit": "bytes"
+                            "unit": "short"
                         },
                         "overrides": []
                     },
@@ -2998,12 +2988,12 @@
                     },
                     "targets": [
                         {
-                            "expr": "sum(pg_stat_user_tables_size) by (relname)",
+                            "expr": "sum(pg_stat_user_tables_n_live_tup) by (relname)",
                             "legendFormat": "{{relname}}",
                             "refId": "A"
                         }
                     ],
-                    "title": "Table Sizes",
+                    "title": "Live Tuples",
                     "type": "timeseries"
                 },
                 {
@@ -3011,7 +3001,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "description": "Normal: proportional to write throughput. Watch for: WAL spikes not correlated with game activity. Check next: Per-Table Cache Hit for buffer efficiency.",
+                    "description": "Normal: stable WAL size within configured retention. Watch for: WAL size growing unbounded (archiving or replication lag). Check next: Per-Table Cache Hit for buffer efficiency.",
                     "fieldConfig": {
                         "defaults": {
                             "color": {
@@ -3031,7 +3021,7 @@
                                     "mode": "none"
                                 }
                             },
-                            "unit": "Bps"
+                            "unit": "bytes"
                         },
                         "overrides": []
                     },
@@ -3058,12 +3048,12 @@
                     },
                     "targets": [
                         {
-                            "expr": "rate(pg_stat_wal_wal_bytes_total[1m])",
-                            "legendFormat": "WAL bytes/s",
+                            "expr": "pg_wal_size_bytes",
+                            "legendFormat": "WAL size",
                             "refId": "A"
                         }
                     ],
-                    "title": "WAL",
+                    "title": "WAL Size",
                     "type": "timeseries"
                 },
                 {
@@ -3071,7 +3061,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "description": "Normal: > 99% per table. Watch for: individual tables dropping below 95% (hot table exceeding cache). Check next: Table Sizes for growth correlation.",
+                    "description": "Normal: > 99% per table. Watch for: individual tables dropping below 95% (hot table exceeding cache). Check next: Live Tuples for growth correlation.",
                     "fieldConfig": {
                         "defaults": {
                             "custom": {
@@ -3114,7 +3104,7 @@
                     },
                     "targets": [
                         {
-                            "expr": "pg_stat_user_tables_heap_blks_hit_total / (pg_stat_user_tables_heap_blks_hit_total + pg_stat_user_tables_heap_blks_read_total) * 100",
+                            "expr": "pg_statio_user_tables_heap_blks_hit_total / (pg_statio_user_tables_heap_blks_hit_total + pg_statio_user_tables_heap_blks_read_total) * 100",
                             "legendFormat": "{{relname}}",
                             "refId": "A"
                         }
@@ -3141,7 +3131,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "description": "Normal: dense band at low latencies (< 10ms). Watch for: heat spreading to higher buckets over time. Check next: Top Queries by Call Rate for hottest queries.",
+                    "description": "Normal: dense band at low latencies (< 10ms). Watch for: heat spreading to higher buckets over time. Check next: Postgres Internals for lock and vacuum state.",
                     "fieldConfig": {
                         "defaults": {
                             "color": {
@@ -3214,118 +3204,6 @@
                     ],
                     "title": "Query Latency Heatmap",
                     "type": "heatmap"
-                },
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "prometheus"
-                    },
-                    "description": "Normal: game state queries dominate. Watch for: unexpected queries in top 10. Check next: Top Queries by Latency for slow query identification.",
-                    "fieldConfig": {
-                        "defaults": {
-                            "custom": {
-                                "drawStyle": "line",
-                                "fillOpacity": 10,
-                                "lineInterpolation": "smooth",
-                                "lineWidth": 2,
-                                "pointSize": 5,
-                                "showPoints": "never",
-                                "spanNulls": false,
-                                "stacking": {
-                                    "group": "A",
-                                    "mode": "none"
-                                }
-                            },
-                            "unit": "ops"
-                        },
-                        "overrides": []
-                    },
-                    "gridPos": {
-                        "h": 8,
-                        "w": 12,
-                        "x": 0,
-                        "y": 56
-                    },
-                    "id": 52,
-                    "options": {
-                        "legend": {
-                            "calcs": [
-                                "mean",
-                                "max"
-                            ],
-                            "displayMode": "table",
-                            "placement": "bottom"
-                        },
-                        "tooltip": {
-                            "mode": "multi",
-                            "sort": "desc"
-                        }
-                    },
-                    "targets": [
-                        {
-                            "expr": "topk(10, sum(rate(pg_stat_statements_calls_total[1m])) by (query))",
-                            "legendFormat": "{{query}}",
-                            "refId": "A"
-                        }
-                    ],
-                    "title": "Top Queries by Call Rate",
-                    "type": "timeseries"
-                },
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "prometheus"
-                    },
-                    "description": "Normal: all queries < 10ms avg. Watch for: any query > 50ms avg (missing index or lock contention). Check next: Postgres Internals for lock and vacuum state.",
-                    "fieldConfig": {
-                        "defaults": {
-                            "custom": {
-                                "drawStyle": "line",
-                                "fillOpacity": 10,
-                                "lineInterpolation": "smooth",
-                                "lineWidth": 2,
-                                "pointSize": 5,
-                                "showPoints": "never",
-                                "spanNulls": false,
-                                "stacking": {
-                                    "group": "A",
-                                    "mode": "none"
-                                }
-                            },
-                            "unit": "s"
-                        },
-                        "overrides": []
-                    },
-                    "gridPos": {
-                        "h": 8,
-                        "w": 12,
-                        "x": 12,
-                        "y": 56
-                    },
-                    "id": 53,
-                    "options": {
-                        "legend": {
-                            "calcs": [
-                                "mean",
-                                "max"
-                            ],
-                            "displayMode": "table",
-                            "placement": "bottom"
-                        },
-                        "tooltip": {
-                            "mode": "multi",
-                            "sort": "desc"
-                        }
-                    },
-                    "targets": [
-                        {
-                            "expr": "topk(10, sum(rate(pg_stat_statements_total_exec_time_total[1m])) by (query) / sum(rate(pg_stat_statements_calls_total[1m])) by (query))",
-                            "legendFormat": "{{query}}",
-                            "refId": "A"
-                        }
-                    ],
-                    "title": "Top Queries by Latency",
-                    "type": "timeseries"
                 }
             ],
             "title": "Query Performance",
@@ -3339,7 +3217,7 @@
                 "x": 0,
                 "y": 46
             },
-            "id": 54,
+            "id": 52,
             "title": "Act \u2014 What\u2019s the evidence?",
             "type": "row"
         },
@@ -3373,7 +3251,7 @@
                 "x": 0,
                 "y": 47
             },
-            "id": 55,
+            "id": 53,
             "options": {
                 "footer": {
                     "show": false
@@ -3418,7 +3296,7 @@
                 "x": 0,
                 "y": 57
             },
-            "id": 56,
+            "id": 54,
             "options": {
                 "dedupStrategy": "none",
                 "enableLogDetails": true,
@@ -3446,7 +3324,7 @@
                 "x": 0,
                 "y": 65
             },
-            "id": 57,
+            "id": 55,
             "panels": [
                 {
                     "datasource": {
@@ -3460,7 +3338,7 @@
                         "x": 0,
                         "y": 66
                     },
-                    "id": 58,
+                    "id": 56,
                     "targets": [
                         {
                             "query": "${traceId}",
@@ -3483,7 +3361,7 @@
                         "x": 0,
                         "y": 90
                     },
-                    "id": 59,
+                    "id": 57,
                     "options": {
                         "dedupStrategy": "none",
                         "enableLogDetails": true,

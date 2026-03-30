@@ -19,12 +19,10 @@ type AdaptiveConfig struct {
 
 	// Fields below are consumed by StepExecutorConfig at construction time.
 	// RunAdaptive does not use them directly.
-	HoldDuration      time.Duration
-	NumPlayers        int
-	GameTimeout       time.Duration
-	StaggerDelay      time.Duration
-	WarmUpCompletions int
-	WarmUpDurationSec int
+	HoldDuration time.Duration
+	NumPlayers   int
+	GameTimeout  time.Duration
+	StaggerDelay time.Duration
 }
 
 // AdaptiveResult holds the outcome of an adaptive staircase run.

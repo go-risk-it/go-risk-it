@@ -31,35 +31,22 @@ func (a *App) runStaircase(ctx context.Context) error {
 		}
 
 		staircaseCfg = &orchestrator.StaircaseConfig{
-			Steps:             steps,
-			HoldDuration:      a.cfg.Run.Staircase.HoldDuration,
-			NumPlayers:        orchestrator.DefaultNumPlayers,
-			GameTimeout:       orchestrator.DefaultGameTimeout,
-			StopOnBreach:      a.cfg.Run.Staircase.StopOnBreach,
-			StaggerDelay:      orchestrator.DefaultStaggerDelay,
-			SLOs:              baseline.DefaultSLOs(),
-			WarmUpCompletions: a.cfg.Run.Staircase.WarmupCompletions,
-			WarmUpDurationSec: a.cfg.Run.Staircase.WarmupDuration,
+			Steps:        steps,
+			HoldDuration: a.cfg.Run.Staircase.HoldDuration,
+			NumPlayers:   orchestrator.DefaultNumPlayers,
+			GameTimeout:  orchestrator.DefaultGameTimeout,
+			StopOnBreach: a.cfg.Run.Staircase.StopOnBreach,
+			StaggerDelay: orchestrator.DefaultStaggerDelay,
+			SLOs:         baseline.DefaultSLOs(),
 		}
-	}
-
-	// CLI warm-up flags override preset values.
-	if a.cfg.Run.Staircase.WarmupCompletions > 0 {
-		staircaseCfg.WarmUpCompletions = a.cfg.Run.Staircase.WarmupCompletions
-	}
-
-	if a.cfg.Run.Staircase.WarmupDuration > 0 {
-		staircaseCfg.WarmUpDurationSec = a.cfg.Run.Staircase.WarmupDuration
 	}
 
 	// Build step executor.
 	execCfg := orchestrator.StepExecutorConfig{
-		NumPlayers:        staircaseCfg.NumPlayers,
-		GameTimeout:       staircaseCfg.GameTimeout,
-		StaggerDelay:      staircaseCfg.StaggerDelay,
-		HoldDuration:      staircaseCfg.HoldDuration,
-		WarmUpCompletions: staircaseCfg.WarmUpCompletions,
-		WarmUpDurationSec: staircaseCfg.WarmUpDurationSec,
+		NumPlayers:   staircaseCfg.NumPlayers,
+		GameTimeout:  staircaseCfg.GameTimeout,
+		StaggerDelay: staircaseCfg.StaggerDelay,
+		HoldDuration: staircaseCfg.HoldDuration,
 	}
 
 	execDeps := a.buildStepExecutorDeps(staircaseCfg.GameTimeout)
@@ -92,13 +79,11 @@ func (a *App) runStaircase(ctx context.Context) error {
 		Timestamp: time.Now(),
 		Branch:    branch,
 		Config: journal.StaircaseParams{
-			Steps:             staircaseCfg.Steps,
-			HoldDurationSec:   staircaseCfg.HoldDuration.Seconds(),
-			NumPlayers:        staircaseCfg.NumPlayers,
-			GameTimeoutSec:    staircaseCfg.GameTimeout.Seconds(),
-			StopOnBreach:      staircaseCfg.StopOnBreach,
-			WarmUpCompletions: staircaseCfg.WarmUpCompletions,
-			WarmUpDurationSec: staircaseCfg.WarmUpDurationSec,
+			Steps:           staircaseCfg.Steps,
+			HoldDurationSec: staircaseCfg.HoldDuration.Seconds(),
+			NumPlayers:      staircaseCfg.NumPlayers,
+			GameTimeoutSec:  staircaseCfg.GameTimeout.Seconds(),
+			StopOnBreach:    staircaseCfg.StopOnBreach,
 		},
 		SLOCeiling:     ceiling,
 		Steps:          stepResults,

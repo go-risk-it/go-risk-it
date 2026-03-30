@@ -40,8 +40,6 @@ func TestConfig_Defaults(t *testing.T) {
 	// Staircase defaults.
 	assert.Equal(t, 60*time.Second, cfg.Run.Staircase.HoldDuration)
 	assert.True(t, cfg.Run.Staircase.StopOnBreach)
-	assert.Equal(t, 0, cfg.Run.Staircase.WarmupCompletions)
-	assert.Equal(t, 0, cfg.Run.Staircase.WarmupDuration)
 
 	// Adaptive defaults.
 	assert.Equal(t, 5, cfg.Run.Adaptive.Increase)

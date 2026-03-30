@@ -11,14 +11,12 @@ import (
 
 // StaircaseParams records the staircase configuration used for a run.
 type StaircaseParams struct {
-	Mode              string  `json:"mode,omitempty"` // "staircase" or "adaptive"
-	Steps             []int   `json:"steps"`
-	HoldDurationSec   float64 `json:"hold_duration_sec"`
-	NumPlayers        int     `json:"num_players"`
-	GameTimeoutSec    float64 `json:"game_timeout_sec"`
-	StopOnBreach      bool    `json:"stop_on_breach"`
-	WarmUpCompletions int     `json:"warm_up_completions,omitempty"`
-	WarmUpDurationSec int     `json:"warm_up_duration_sec,omitempty"`
+	Mode            string  `json:"mode,omitempty"` // "staircase" or "adaptive"
+	Steps           []int   `json:"steps"`
+	HoldDurationSec float64 `json:"hold_duration_sec"`
+	NumPlayers      int     `json:"num_players"`
+	GameTimeoutSec  float64 `json:"game_timeout_sec"`
+	StopOnBreach    bool    `json:"stop_on_breach"`
 }
 
 // StepResult holds metrics and SLO evaluation for a single staircase step.

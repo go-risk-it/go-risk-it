@@ -14,16 +14,14 @@ import (
 // RunStaircase uses Steps and CooldownSec. The remaining fields are consumed
 // by StepExecutorConfig and SLOStopCondition at construction time in the CLI.
 type StaircaseConfig struct {
-	Steps             []int         // target concurrent games per step
-	HoldDuration      time.Duration // how long to hold each step
-	NumPlayers        int
-	GameTimeout       time.Duration
-	StopOnBreach      bool          // stop when SLOs fail
-	StaggerDelay      time.Duration // between initial game launches within a step
-	CooldownSec       int           // seconds between steps (default 5)
-	WarmUpCompletions int           // games to complete before recording histograms (0 = disabled)
-	WarmUpDurationSec int           // seconds to wait before recording histograms (0 = disabled)
-	SLOs              baseline.SLOSet
+	Steps        []int         // target concurrent games per step
+	HoldDuration time.Duration // how long to hold each step
+	NumPlayers   int
+	GameTimeout  time.Duration
+	StopOnBreach bool          // stop when SLOs fail
+	StaggerDelay time.Duration // between initial game launches within a step
+	CooldownSec  int           // seconds between steps (default 5)
+	SLOs         baseline.SLOSet
 }
 
 // RunStaircase executes the staircase: for each step, the executor runs games

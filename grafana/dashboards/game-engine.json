@@ -54,7 +54,7 @@
             },
             "gridPos": {
                 "h": 8,
-                "w": 8,
+                "w": 6,
                 "x": 0,
                 "y": 1
             },
@@ -87,13 +87,165 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
+            "description": "Normal: growing counter proportional to game activity. Watch for: counter stalling (bus stopped processing). Check next: Event Heartbeat for rate view.",
+            "fieldConfig": {
+                "defaults": {
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 6,
+                "x": 6,
+                "y": 1
+            },
+            "id": 3,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "sum(event_bus_events_total{service_name=\"risk-it\"})",
+                    "legendFormat": "total events",
+                    "refId": "A"
+                }
+            ],
+            "title": "Total Events",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: 0 errors (green). Watch for: any non-zero value (red) indicates handler failures. Check next: Event Bus Detail collapsed row for per-handler error breakdown.",
+            "fieldConfig": {
+                "defaults": {
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 0.01
+                            }
+                        ]
+                    },
+                    "unit": "ops"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 6,
+                "x": 12,
+                "y": 1
+            },
+            "id": 4,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "sum(rate(event_handler_errors_total{service_name=\"risk-it\"}[5m]))",
+                    "legendFormat": "errors/s",
+                    "refId": "A"
+                }
+            ],
+            "title": "Handler Error Rate",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: consistent median game duration. Watch for: rising median means games are getting slower. Check next: Game Duration P50/P95 in Decide for trend analysis.",
+            "fieldConfig": {
+                "defaults": {
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 6,
+                "x": 18,
+                "y": 1
+            },
+            "id": 5,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.5, sum(rate(game_duration_seconds_bucket{service_name=\"risk-it\"}[5m])) by (le))",
+                    "legendFormat": "median",
+                    "refId": "A"
+                }
+            ],
+            "title": "Game Duration P50",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
             "description": "Normal: created and finished rates roughly balanced. Watch for: created >> finished means games accumulating (stuck phases). Check next: Active Games stat for current count.",
             "fieldConfig": {
                 "defaults": {
-                    "color": {
-                        "fixedColor": "#56A64B",
-                        "mode": "fixed"
-                    },
                     "custom": {
                         "drawStyle": "line",
                         "fillOpacity": 10,
@@ -109,15 +261,46 @@
                     },
                     "unit": "ops"
                 },
-                "overrides": []
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Created"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#56A64B",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Finished"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#E02F44",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
             },
             "gridPos": {
                 "h": 8,
-                "w": 8,
-                "x": 8,
-                "y": 1
+                "w": 12,
+                "x": 0,
+                "y": 9
             },
-            "id": 3,
+            "id": 6,
             "options": {
                 "legend": {
                     "calcs": [
@@ -296,11 +479,11 @@
             },
             "gridPos": {
                 "h": 8,
-                "w": 8,
-                "x": 16,
-                "y": 1
+                "w": 12,
+                "x": 12,
+                "y": 9
             },
-            "id": 4,
+            "id": 7,
             "options": {
                 "legend": {
                     "calcs": [
@@ -331,9 +514,9 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 9
+                "y": 17
             },
-            "id": 5,
+            "id": 8,
             "title": "Orient \u2014 What\u2019s the shape?",
             "type": "row"
         },
@@ -342,7 +525,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Normal: dense band in low-seconds range (fast phases). Watch for: heat spreading to higher buckets over time. Check next: Phase Duration P50/P95 for per-phase breakdown.",
+            "description": "Normal: dense band in low-seconds range (fast phases). Watch for: heat spreading to higher buckets over time. Check next: Phase Latency P50/P99 for per-phase breakdown.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -367,9 +550,9 @@
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 10
+                "y": 18
             },
-            "id": 6,
+            "id": 9,
             "options": {
                 "calculate": false,
                 "cellGap": 1,
@@ -446,9 +629,9 @@
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 10
+                "y": 18
             },
-            "id": 7,
+            "id": 10,
             "options": {
                 "calculate": false,
                 "cellGap": 1,
@@ -500,7 +683,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Normal: deploy and attack phases are longest; reinforce is shortest. Watch for: a single phase P95 spiking while others stay flat. Check next: Move Timing collapsed row for per-phase latency bands.",
+            "description": "Normal: deploy and attack phases are longest; reinforce is shortest. Watch for: P99 diverging from P50 (tail latency outliers), a single phase spiking while others stay flat. Check next: Game Duration P50/P95 in Decide.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -531,9 +714,9 @@
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 18
+                "y": 26
             },
-            "id": 8,
+            "id": 11,
             "options": {
                 "legend": {
                     "calcs": [
@@ -555,12 +738,12 @@
                     "refId": "A"
                 },
                 {
-                    "expr": "histogram_quantile(0.95, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le, phase))",
-                    "legendFormat": "{{phase}} P95",
+                    "expr": "histogram_quantile(0.99, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le, phase))",
+                    "legendFormat": "{{phase}} P99",
                     "refId": "B"
                 }
             ],
-            "title": "Phase Duration P50/P95",
+            "title": "Phase Latency P50/P99",
             "type": "timeseries"
         },
         {
@@ -568,7 +751,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Normal: captured and lost rates correlated with game activity. Watch for: captured >> lost (map consolidation) or lost spikes (cascade collapses). Check next: Player Elimination Rate for downstream impact.",
+            "description": "Normal: captured and lost rates correlated with game activity; elimination is lower steady rate. Watch for: captured >> lost (map consolidation), sudden elimination spikes (many games ending). Check next: Game Duration Heatmap for game length distribution.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -605,13 +788,28 @@
                     {
                         "matcher": {
                             "id": "byName",
-                            "options": "Lost"
+                            "options": "Eliminated"
                         },
                         "properties": [
                             {
                                 "id": "color",
                                 "value": {
                                     "fixedColor": "#E02F44",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Lost"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#FF780A",
                                     "mode": "fixed"
                                 }
                             }
@@ -623,9 +821,9 @@
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 18
+                "y": 26
             },
-            "id": 9,
+            "id": 12,
             "options": {
                 "legend": {
                     "calcs": [
@@ -650,664 +848,15 @@
                     "expr": "sum(rate(event_bus_events_total{service_name=\"risk-it\",event_type=\"continent_lost\"}[1m]))",
                     "legendFormat": "Lost",
                     "refId": "B"
-                }
-            ],
-            "title": "Event Cascade Rate",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
-            "description": "Normal: low, steady rate as games progress to endgame. Watch for: sudden spikes (many games ending simultaneously) or zero rate (no games reaching endgame). Check next: Game Duration Heatmap for game length distribution.",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "fixedColor": "#E02F44",
-                        "mode": "fixed"
-                    },
-                    "custom": {
-                        "drawStyle": "line",
-                        "fillOpacity": 10,
-                        "lineInterpolation": "smooth",
-                        "lineWidth": 2,
-                        "pointSize": 5,
-                        "showPoints": "never",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        }
-                    },
-                    "unit": "ops"
                 },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 0,
-                "y": 26
-            },
-            "id": 10,
-            "options": {
-                "legend": {
-                    "calcs": [
-                        "mean",
-                        "max"
-                    ],
-                    "displayMode": "table",
-                    "placement": "bottom"
-                },
-                "tooltip": {
-                    "mode": "multi",
-                    "sort": "desc"
-                }
-            },
-            "targets": [
                 {
                     "expr": "sum(rate(event_bus_events_total{service_name=\"risk-it\",event_type=\"player_eliminated\"}[1m]))",
                     "legendFormat": "Eliminated",
-                    "refId": "A"
+                    "refId": "C"
                 }
             ],
-            "title": "Player Elimination Rate",
+            "title": "Headline Event Rates",
             "type": "timeseries"
-        },
-        {
-            "collapsed": true,
-            "gridPos": {
-                "h": 1,
-                "w": 24,
-                "x": 0,
-                "y": 34
-            },
-            "id": 11,
-            "panels": [
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "prometheus"
-                    },
-                    "description": "Normal: p95 < 500ms. Watch for: p95 diverging from p50 (slow outliers). Check next: Database dashboard for transaction contention.",
-                    "fieldConfig": {
-                        "defaults": {
-                            "color": {
-                                "fixedColor": "#56A64B",
-                                "mode": "fixed"
-                            },
-                            "custom": {
-                                "drawStyle": "line",
-                                "fillOpacity": 10,
-                                "lineInterpolation": "smooth",
-                                "lineWidth": 2,
-                                "pointSize": 5,
-                                "showPoints": "never",
-                                "spanNulls": false,
-                                "stacking": {
-                                    "group": "A",
-                                    "mode": "none"
-                                }
-                            },
-                            "unit": "s"
-                        },
-                        "overrides": [
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p50"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#8CCF82",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p95"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#56A64B",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p99"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#3D7A35",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                    "gridPos": {
-                        "h": 8,
-                        "w": 12,
-                        "x": 0,
-                        "y": 35
-                    },
-                    "id": 12,
-                    "options": {
-                        "legend": {
-                            "calcs": [
-                                "mean",
-                                "max"
-                            ],
-                            "displayMode": "table",
-                            "placement": "bottom"
-                        },
-                        "tooltip": {
-                            "mode": "multi",
-                            "sort": "desc"
-                        }
-                    },
-                    "targets": [
-                        {
-                            "expr": "histogram_quantile(0.5, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"DEPLOY\"}[1m])) by (le))",
-                            "legendFormat": "p50",
-                            "refId": "A"
-                        },
-                        {
-                            "expr": "histogram_quantile(0.95, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"DEPLOY\"}[1m])) by (le))",
-                            "legendFormat": "p95",
-                            "refId": "B"
-                        },
-                        {
-                            "expr": "histogram_quantile(0.99, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"DEPLOY\"}[1m])) by (le))",
-                            "legendFormat": "p99",
-                            "refId": "C"
-                        }
-                    ],
-                    "title": "Deploy Phase Latency",
-                    "type": "timeseries"
-                },
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "prometheus"
-                    },
-                    "description": "Normal: p95 < 1s (attack involves dice + region updates). Watch for: p99 spikes (complex multi-region attacks). Check next: Conquer Phase Latency for post-attack overhead.",
-                    "fieldConfig": {
-                        "defaults": {
-                            "color": {
-                                "fixedColor": "#56A64B",
-                                "mode": "fixed"
-                            },
-                            "custom": {
-                                "drawStyle": "line",
-                                "fillOpacity": 10,
-                                "lineInterpolation": "smooth",
-                                "lineWidth": 2,
-                                "pointSize": 5,
-                                "showPoints": "never",
-                                "spanNulls": false,
-                                "stacking": {
-                                    "group": "A",
-                                    "mode": "none"
-                                }
-                            },
-                            "unit": "s"
-                        },
-                        "overrides": [
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p50"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#8CCF82",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p95"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#56A64B",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p99"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#3D7A35",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                    "gridPos": {
-                        "h": 8,
-                        "w": 12,
-                        "x": 12,
-                        "y": 35
-                    },
-                    "id": 13,
-                    "options": {
-                        "legend": {
-                            "calcs": [
-                                "mean",
-                                "max"
-                            ],
-                            "displayMode": "table",
-                            "placement": "bottom"
-                        },
-                        "tooltip": {
-                            "mode": "multi",
-                            "sort": "desc"
-                        }
-                    },
-                    "targets": [
-                        {
-                            "expr": "histogram_quantile(0.5, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"ATTACK\"}[1m])) by (le))",
-                            "legendFormat": "p50",
-                            "refId": "A"
-                        },
-                        {
-                            "expr": "histogram_quantile(0.95, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"ATTACK\"}[1m])) by (le))",
-                            "legendFormat": "p95",
-                            "refId": "B"
-                        },
-                        {
-                            "expr": "histogram_quantile(0.99, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"ATTACK\"}[1m])) by (le))",
-                            "legendFormat": "p99",
-                            "refId": "C"
-                        }
-                    ],
-                    "title": "Attack Phase Latency",
-                    "type": "timeseries"
-                },
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "prometheus"
-                    },
-                    "description": "Normal: fastest phase (single troop movement). Watch for: p95 > 200ms indicates DB contention on region updates. Check next: Reinforce Phase Latency.",
-                    "fieldConfig": {
-                        "defaults": {
-                            "color": {
-                                "fixedColor": "#56A64B",
-                                "mode": "fixed"
-                            },
-                            "custom": {
-                                "drawStyle": "line",
-                                "fillOpacity": 10,
-                                "lineInterpolation": "smooth",
-                                "lineWidth": 2,
-                                "pointSize": 5,
-                                "showPoints": "never",
-                                "spanNulls": false,
-                                "stacking": {
-                                    "group": "A",
-                                    "mode": "none"
-                                }
-                            },
-                            "unit": "s"
-                        },
-                        "overrides": [
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p50"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#8CCF82",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p95"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#56A64B",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p99"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#3D7A35",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                    "gridPos": {
-                        "h": 8,
-                        "w": 12,
-                        "x": 0,
-                        "y": 43
-                    },
-                    "id": 14,
-                    "options": {
-                        "legend": {
-                            "calcs": [
-                                "mean",
-                                "max"
-                            ],
-                            "displayMode": "table",
-                            "placement": "bottom"
-                        },
-                        "tooltip": {
-                            "mode": "multi",
-                            "sort": "desc"
-                        }
-                    },
-                    "targets": [
-                        {
-                            "expr": "histogram_quantile(0.5, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"CONQUER\"}[1m])) by (le))",
-                            "legendFormat": "p50",
-                            "refId": "A"
-                        },
-                        {
-                            "expr": "histogram_quantile(0.95, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"CONQUER\"}[1m])) by (le))",
-                            "legendFormat": "p95",
-                            "refId": "B"
-                        },
-                        {
-                            "expr": "histogram_quantile(0.99, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"CONQUER\"}[1m])) by (le))",
-                            "legendFormat": "p99",
-                            "refId": "C"
-                        }
-                    ],
-                    "title": "Conquer Phase Latency",
-                    "type": "timeseries"
-                },
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "prometheus"
-                    },
-                    "description": "Normal: fast, single troop redistribution. Watch for: p95 > 200ms. Check next: Cards Phase Latency.",
-                    "fieldConfig": {
-                        "defaults": {
-                            "color": {
-                                "fixedColor": "#56A64B",
-                                "mode": "fixed"
-                            },
-                            "custom": {
-                                "drawStyle": "line",
-                                "fillOpacity": 10,
-                                "lineInterpolation": "smooth",
-                                "lineWidth": 2,
-                                "pointSize": 5,
-                                "showPoints": "never",
-                                "spanNulls": false,
-                                "stacking": {
-                                    "group": "A",
-                                    "mode": "none"
-                                }
-                            },
-                            "unit": "s"
-                        },
-                        "overrides": [
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p50"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#8CCF82",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p95"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#56A64B",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p99"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#3D7A35",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                    "gridPos": {
-                        "h": 8,
-                        "w": 12,
-                        "x": 12,
-                        "y": 43
-                    },
-                    "id": 15,
-                    "options": {
-                        "legend": {
-                            "calcs": [
-                                "mean",
-                                "max"
-                            ],
-                            "displayMode": "table",
-                            "placement": "bottom"
-                        },
-                        "tooltip": {
-                            "mode": "multi",
-                            "sort": "desc"
-                        }
-                    },
-                    "targets": [
-                        {
-                            "expr": "histogram_quantile(0.5, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"REINFORCE\"}[1m])) by (le))",
-                            "legendFormat": "p50",
-                            "refId": "A"
-                        },
-                        {
-                            "expr": "histogram_quantile(0.95, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"REINFORCE\"}[1m])) by (le))",
-                            "legendFormat": "p95",
-                            "refId": "B"
-                        },
-                        {
-                            "expr": "histogram_quantile(0.99, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"REINFORCE\"}[1m])) by (le))",
-                            "legendFormat": "p99",
-                            "refId": "C"
-                        }
-                    ],
-                    "title": "Reinforce Phase Latency",
-                    "type": "timeseries"
-                },
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "prometheus"
-                    },
-                    "description": "Normal: fast card redemption. Watch for: p95 spikes when many players redeem simultaneously. Check next: Phase Duration P50/P95 for aggregate view.",
-                    "fieldConfig": {
-                        "defaults": {
-                            "color": {
-                                "fixedColor": "#56A64B",
-                                "mode": "fixed"
-                            },
-                            "custom": {
-                                "drawStyle": "line",
-                                "fillOpacity": 10,
-                                "lineInterpolation": "smooth",
-                                "lineWidth": 2,
-                                "pointSize": 5,
-                                "showPoints": "never",
-                                "spanNulls": false,
-                                "stacking": {
-                                    "group": "A",
-                                    "mode": "none"
-                                }
-                            },
-                            "unit": "s"
-                        },
-                        "overrides": [
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p50"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#8CCF82",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p95"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#56A64B",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "p99"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#3D7A35",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                    "gridPos": {
-                        "h": 8,
-                        "w": 12,
-                        "x": 0,
-                        "y": 51
-                    },
-                    "id": 16,
-                    "options": {
-                        "legend": {
-                            "calcs": [
-                                "mean",
-                                "max"
-                            ],
-                            "displayMode": "table",
-                            "placement": "bottom"
-                        },
-                        "tooltip": {
-                            "mode": "multi",
-                            "sort": "desc"
-                        }
-                    },
-                    "targets": [
-                        {
-                            "expr": "histogram_quantile(0.5, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"CARDS\"}[1m])) by (le))",
-                            "legendFormat": "p50",
-                            "refId": "A"
-                        },
-                        {
-                            "expr": "histogram_quantile(0.95, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"CARDS\"}[1m])) by (le))",
-                            "legendFormat": "p95",
-                            "refId": "B"
-                        },
-                        {
-                            "expr": "histogram_quantile(0.99, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\",phase=\"CARDS\"}[1m])) by (le))",
-                            "legendFormat": "p99",
-                            "refId": "C"
-                        }
-                    ],
-                    "title": "Cards Phase Latency",
-                    "type": "timeseries"
-                }
-            ],
-            "title": "Move Timing",
-            "type": "row"
         },
         {
             "collapsed": false,
@@ -1315,9 +864,9 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 35
+                "y": 34
             },
-            "id": 17,
+            "id": 13,
             "title": "Decide \u2014 Where\u2019s the bottleneck?",
             "type": "row"
         },
@@ -1362,9 +911,9 @@
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 36
+                "y": 35
             },
-            "id": 18,
+            "id": 14,
             "options": {
                 "legend": {
                     "calcs": [
@@ -1394,7 +943,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Normal: consistent P50 with P95 within 2-3x of P50. Watch for: P95 growing while P50 stays flat (subset of slow games). Check next: Phase Duration P50/P95 in Orient to identify which phase is slow.",
+            "description": "Normal: consistent P50 with P95 within 2-3x of P50. Watch for: P95 growing while P50 stays flat (subset of slow games). Check next: Phase Latency P50/P99 in Orient to identify which phase is slow.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -1468,9 +1017,9 @@
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 36
+                "y": 35
             },
-            "id": 19,
+            "id": 15,
             "options": {
                 "legend": {
                     "calcs": [
@@ -1510,10 +1059,6 @@
             "description": "Normal: all handlers < 100ms p95. Watch for: individual handler p95 > 500ms (slow consumer bottleneck). Check next: Event Dispatch Duration for bus-level overhead.",
             "fieldConfig": {
                 "defaults": {
-                    "color": {
-                        "fixedColor": "#00BCD4",
-                        "mode": "fixed"
-                    },
                     "custom": {
                         "drawStyle": "line",
                         "fillOpacity": 10,
@@ -1542,9 +1087,9 @@
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 44
+                "y": 43
             },
-            "id": 20,
+            "id": 16,
             "options": {
                 "legend": {
                     "calcs": [
@@ -1577,10 +1122,6 @@
             "description": "Normal: all event types dispatched < 50ms. Watch for: move_executed dispatch exceeding 100ms (many handlers subscribed). Check next: Event Bus Detail collapsed row for throughput and errors.",
             "fieldConfig": {
                 "defaults": {
-                    "color": {
-                        "fixedColor": "#00BCD4",
-                        "mode": "fixed"
-                    },
                     "custom": {
                         "drawStyle": "line",
                         "fillOpacity": 10,
@@ -1596,15 +1137,136 @@
                     },
                     "unit": "s"
                 },
-                "overrides": []
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "continent_captured"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#FF9830",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "continent_lost"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#FF780A",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "game_completed"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#3274D9",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "game_created"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#73BF69",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "move_executed"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#56A64B",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "phase_transitioned"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#73BF69",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "player_connected"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#8AB8FF",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "player_eliminated"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#E02F44",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
             },
             "gridPos": {
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 44
+                "y": 43
             },
-            "id": 21,
+            "id": 17,
             "options": {
                 "legend": {
                     "calcs": [
@@ -1622,7 +1284,7 @@
             "targets": [
                 {
                     "expr": "histogram_quantile(0.95, sum(rate(event_bus_dispatch_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le, event_type))",
-                    "legendFormat": "{{event_type}} p95",
+                    "legendFormat": "{{event_type}}",
                     "refId": "A"
                 }
             ],
@@ -1635,22 +1297,18 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 52
+                "y": 51
             },
-            "id": 22,
+            "id": 18,
             "panels": [
                 {
                     "datasource": {
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "description": "Normal: move_executed dominates throughput. Watch for: unexpected event type surges. Check next: Event Handler Errors.",
+                    "description": "Normal: move_executed dominates throughput. Watch for: unexpected event type surges. Check next: Event Bus Events Total for cumulative count.",
                     "fieldConfig": {
                         "defaults": {
-                            "color": {
-                                "fixedColor": "#00BCD4",
-                                "mode": "fixed"
-                            },
                             "custom": {
                                 "drawStyle": "line",
                                 "fillOpacity": 10,
@@ -1666,15 +1324,136 @@
                             },
                             "unit": "ops"
                         },
-                        "overrides": []
+                        "overrides": [
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "continent_captured"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#FF9830",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "continent_lost"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#FF780A",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "game_completed"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#3274D9",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "game_created"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#73BF69",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "move_executed"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#56A64B",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "phase_transitioned"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#73BF69",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "player_connected"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#8AB8FF",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "player_eliminated"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#E02F44",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
                     },
                     "gridPos": {
                         "h": 8,
                         "w": 12,
                         "x": 0,
-                        "y": 53
+                        "y": 52
                     },
-                    "id": 23,
+                    "id": 19,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -1723,9 +1502,9 @@
                         "h": 8,
                         "w": 12,
                         "x": 12,
-                        "y": 53
+                        "y": 52
                     },
-                    "id": 24,
+                    "id": 20,
                     "options": {
                         "colorMode": "value",
                         "graphMode": "area",
@@ -1748,66 +1527,6 @@
                     ],
                     "title": "Event Bus Events Total",
                     "type": "stat"
-                },
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "prometheus"
-                    },
-                    "description": "Normal: 0 errors. Watch for: any sustained error rate indicates handler panics or logic failures. Check next: Game Event Logs in Act for error details.",
-                    "fieldConfig": {
-                        "defaults": {
-                            "color": {
-                                "fixedColor": "#E02F44",
-                                "mode": "fixed"
-                            },
-                            "custom": {
-                                "drawStyle": "line",
-                                "fillOpacity": 10,
-                                "lineInterpolation": "smooth",
-                                "lineWidth": 2,
-                                "pointSize": 5,
-                                "showPoints": "never",
-                                "spanNulls": false,
-                                "stacking": {
-                                    "group": "A",
-                                    "mode": "none"
-                                }
-                            },
-                            "unit": "ops"
-                        },
-                        "overrides": []
-                    },
-                    "gridPos": {
-                        "h": 8,
-                        "w": 24,
-                        "x": 0,
-                        "y": 61
-                    },
-                    "id": 25,
-                    "options": {
-                        "legend": {
-                            "calcs": [
-                                "mean",
-                                "max"
-                            ],
-                            "displayMode": "table",
-                            "placement": "bottom"
-                        },
-                        "tooltip": {
-                            "mode": "multi",
-                            "sort": "desc"
-                        }
-                    },
-                    "targets": [
-                        {
-                            "expr": "sum(rate(event_handler_errors_total{service_name=\"risk-it\"}[1m])) by (handler)",
-                            "legendFormat": "{{handler}}",
-                            "refId": "A"
-                        }
-                    ],
-                    "title": "Event Handler Errors",
-                    "type": "timeseries"
                 }
             ],
             "title": "Event Bus Detail",
@@ -1819,9 +1538,9 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 53
+                "y": 52
             },
-            "id": 26,
+            "id": 21,
             "panels": [
                 {
                     "datasource": {
@@ -1841,9 +1560,9 @@
                         "h": 8,
                         "w": 12,
                         "x": 0,
-                        "y": 54
+                        "y": 53
                     },
-                    "id": 27,
+                    "id": 22,
                     "options": {
                         "displayMode": "gradient",
                         "maxVizHeight": 300,
@@ -1880,10 +1599,6 @@
                     "description": "Normal: move endpoints dominate game traffic. Watch for: unexpected routes or disproportionate error rates. Check next: System Health for full HTTP breakdown.",
                     "fieldConfig": {
                         "defaults": {
-                            "color": {
-                                "fixedColor": "#FF9830",
-                                "mode": "fixed"
-                            },
                             "custom": {
                                 "drawStyle": "line",
                                 "fillOpacity": 10,
@@ -1905,9 +1620,9 @@
                         "h": 8,
                         "w": 12,
                         "x": 12,
-                        "y": 54
+                        "y": 53
                     },
-                    "id": 28,
+                    "id": 23,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -1942,9 +1657,9 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 54
+                "y": 53
             },
-            "id": 29,
+            "id": 24,
             "title": "Act \u2014 What\u2019s the evidence?",
             "type": "row"
         },
@@ -1958,9 +1673,9 @@
                 "h": 8,
                 "w": 24,
                 "x": 0,
-                "y": 55
+                "y": 54
             },
-            "id": 30,
+            "id": 25,
             "options": {
                 "dedupStrategy": "none",
                 "enableLogDetails": true,
