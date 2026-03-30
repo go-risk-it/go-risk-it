@@ -19,15 +19,18 @@ import (
 
 const defaultHandlerTimeout = 10 * time.Second
 
-// Bus dispatches events to registered handlers. Each event gets one goroutine;
-// handlers run sequentially within that goroutine (OnAll before OnType) with
-// per-handler panic recovery. Close gracefully drains in-flight handlers.
-type Bus interface {
+// Publisher is the write side of the event bus. Packages that produce events
+// (logic services, WS managers, headline detectors) depend on this interface.
+type Publisher interface {
 	// Emit dispatches event to all matching handlers. Handlers run sequentially in a
 	// single goroutine per event (OnAll before OnType). Panics if event is nil. No-op
 	// after Close.
 	Emit(ctx context.Context, event Event)
+}
 
+// Subscriber is the read side of the event bus. Packages that consume events
+// (publishers/broadcasters, loggers, typed subscription helpers) depend on this interface.
+type Subscriber interface {
 	// OnAll registers a handler that receives every emitted event.
 	// Panics if handler is nil.
 	OnAll(handler Handler)
@@ -35,6 +38,14 @@ type Bus interface {
 	// OnType registers a handler that receives only events matching the given type.
 	// Panics if handler is nil or eventType is empty.
 	OnType(eventType string, handler Handler)
+}
+
+// Bus composes Publisher and Subscriber with lifecycle management. Only the FX
+// composition root and test infrastructure should depend on Bus directly — all
+// other packages should depend on Publisher or Subscriber.
+type Bus interface {
+	Publisher
+	Subscriber
 
 	// Close gracefully shuts down the bus. It sets the bus to closed state and waits
 	// for all in-flight handlers to complete. Returns an error wrapping the context's
@@ -53,7 +64,11 @@ type busImpl struct {
 	metrics *metrics.InfraMetrics
 }
 
-var _ Bus = (*busImpl)(nil)
+var (
+	_ Bus        = (*busImpl)(nil)
+	_ Publisher  = (*busImpl)(nil)
+	_ Subscriber = (*busImpl)(nil)
+)
 
 // NewBus creates a new Bus and registers an fx.OnStop hook for graceful shutdown.
 func NewBus(lifecycle fx.Lifecycle, m *metrics.InfraMetrics) Bus {

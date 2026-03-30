@@ -46,12 +46,12 @@ func TestCountArchRules(t *testing.T) {
 	t.Logf("CountArchRules() = %d", count)
 }
 
-func TestCountArchRules_MissingFile(t *testing.T) {
+func TestCountArchRules_MissingDirectory(t *testing.T) {
 	t.Parallel()
 
 	_, err := CountArchRules("/nonexistent/path")
 	if err == nil {
-		t.Error("CountArchRules() expected error for missing file, got nil")
+		t.Error("CountArchRules() expected error for missing directory, got nil")
 	}
 }
 

@@ -23,9 +23,7 @@ func (s *spyBus) OnType(eventType string, handler bus.Handler) {
 	s.registeredHandler = handler
 }
 
-func (s *spyBus) OnAll(bus.Handler)               {}
-func (s *spyBus) Emit(context.Context, bus.Event) {}
-func (s *spyBus) Close(context.Context) error     { return nil }
+func (s *spyBus) OnAll(bus.Handler) {}
 
 func TestOnEvent_RegistersCorrectType(t *testing.T) {
 	t.Parallel()

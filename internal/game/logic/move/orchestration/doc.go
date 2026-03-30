@@ -35,6 +35,6 @@
 //   - [service.Service] for move-specific perform, walk, and advance logic
 //   - [state.Service] for reading current game state within the transaction
 //   - [mission.Service] for checking win conditions after each move
-//   - [eventbus.Bus] for emitting post-commit domain events
+//   - [eventbus.Publisher] for emitting post-commit domain events
 //   - [metrics.Metrics] for recording move counts, durations, and game lifecycle
 package orchestration

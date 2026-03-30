@@ -29,7 +29,7 @@ type Service interface {
 
 type service struct {
 	querier db.Querier
-	bus     eventbus.Bus
+	bus     eventbus.Publisher
 	metrics *metrics.InfraMetrics
 }
 
@@ -37,7 +37,7 @@ var _ Service = (*service)(nil)
 
 func NewService(
 	querier db.Querier,
-	bus eventbus.Bus,
+	bus eventbus.Publisher,
 	m *metrics.InfraMetrics,
 ) Service {
 	return &service{

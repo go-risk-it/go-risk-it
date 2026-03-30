@@ -10,10 +10,10 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
 	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/config"
+	"github.com/go-risk-it/go-risk-it/internal/game/consumers/converter"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/game/events"
-	"github.com/go-risk-it/go-risk-it/internal/game/publisher/converter"
 	"github.com/go-risk-it/go-risk-it/internal/game/snapshot"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
@@ -28,15 +28,15 @@ import (
 // or all players (Broadcast).
 type messageDispatcher func(ctx.GameContext, json.RawMessage)
 
-const publisherTracerName = "go-risk-it-publisher"
+const broadcasterTracerName = "go-risk-it-broadcaster"
 
-// GameStatePublisher consumes game events from the bus and publishes state
+// GameStateBroadcaster consumes game events from the bus and publishes state
 // updates over WebSocket connections. Each handler performs sequential ordered
 // delivery within a single goroutine (the bus dispatches each handler in its
 // own goroutine). Sub-operations are wrapped in safeOp for independent panic
 // recovery -- a panic in one sub-operation does not prevent the others from
 // executing.
-type GameStatePublisher struct {
+type GameStateBroadcaster struct {
 	writer            Writer
 	presence          Presence
 	lifecycle         Lifecycle
@@ -47,9 +47,9 @@ type GameStatePublisher struct {
 	metrics           *metrics.InfraMetrics
 }
 
-// NewGameStatePublisher creates a publisher with narrow WS dependencies and
+// NewGameStateBroadcaster creates a broadcaster with narrow WS dependencies and
 // domain services. Panics if historyConfig.Size <= 0.
-func NewGameStatePublisher(
+func NewGameStateBroadcaster(
 	writer Writer,
 	presence Presence,
 	lifecycle Lifecycle,
@@ -58,12 +58,12 @@ func NewGameStatePublisher(
 	moveLogController *MoveLogController,
 	historyConfig gameconfig.HistoryConfig,
 	met *metrics.InfraMetrics,
-) *GameStatePublisher {
+) *GameStateBroadcaster {
 	if historyConfig.Size <= 0 {
 		panic("HistoryConfig.Size must be > 0")
 	}
 
-	return &GameStatePublisher{
+	return &GameStateBroadcaster{
 		writer:            writer,
 		presence:          presence,
 		lifecycle:         lifecycle,
@@ -75,17 +75,17 @@ func NewGameStatePublisher(
 	}
 }
 
-// Register subscribes the publisher's handlers to game events on the bus.
-func (p *GameStatePublisher) Register(bus eventbus.Bus) {
-	gameevt.OnGameEvent[*gameevt.MoveExecuted](bus, p.handleMoveExecuted)
-	gameevt.OnGameEvent[*gameevt.PhaseTransitioned](bus, p.handlePhaseTransitioned)
-	gameevt.OnGameEvent[*gameevt.GameCompleted](bus, p.handleGameCompleted)
-	gameevt.OnGameEvent[*gameevt.PlayerConnected](bus, p.handlePlayerConnected)
+// Register subscribes the broadcaster's handlers to game events on the bus.
+func (p *GameStateBroadcaster) Register(sub eventbus.Subscriber) {
+	gameevt.OnGameEvent[*gameevt.MoveExecuted](sub, p.handleMoveExecuted)
+	gameevt.OnGameEvent[*gameevt.PhaseTransitioned](sub, p.handlePhaseTransitioned)
+	gameevt.OnGameEvent[*gameevt.GameCompleted](sub, p.handleGameCompleted)
+	gameevt.OnGameEvent[*gameevt.PlayerConnected](sub, p.handlePlayerConnected)
 }
 
 // handleMoveExecuted broadcasts public state, then private states per player,
 // then the move log entry to all connected players.
-func (p *GameStatePublisher) handleMoveExecuted(
+func (p *GameStateBroadcaster) handleMoveExecuted(
 	gameCtx ctx.GameContext,
 	event *gameevt.MoveExecuted,
 ) {
@@ -105,7 +105,7 @@ func (p *GameStatePublisher) handleMoveExecuted(
 // handlePlayerConnected sends full game state to the newly connected player:
 // public state via WriteMessage, then private state for this player, then
 // recent move history.
-func (p *GameStatePublisher) handlePlayerConnected(
+func (p *GameStateBroadcaster) handlePlayerConnected(
 	gameCtx ctx.GameContext,
 	_ *gameevt.PlayerConnected,
 ) {
@@ -126,7 +126,7 @@ func (p *GameStatePublisher) handlePlayerConnected(
 // phase advance (e.g., attack -> reinforce). This is separate from MoveExecuted
 // because the advancement service emits PhaseTransitioned directly without a
 // MoveExecuted event.
-func (p *GameStatePublisher) handlePhaseTransitioned(
+func (p *GameStateBroadcaster) handlePhaseTransitioned(
 	gameCtx ctx.GameContext,
 	_ *gameevt.PhaseTransitioned,
 ) {
@@ -140,7 +140,7 @@ func (p *GameStatePublisher) handlePhaseTransitioned(
 }
 
 // handleGameCompleted cleans up the game's connection tracking.
-func (p *GameStatePublisher) handleGameCompleted(
+func (p *GameStateBroadcaster) handleGameCompleted(
 	gameCtx ctx.GameContext,
 	_ *gameevt.GameCompleted,
 ) {
@@ -160,7 +160,7 @@ func safeOp(
 	action func(),
 ) {
 	ctx, span := otel.GetTracerProvider().
-		Tracer(publisherTracerName).
+		Tracer(broadcasterTracerName).
 		Start(parent, "consumer."+name)
 	defer span.End()
 
@@ -243,7 +243,7 @@ func fetchAndPublishPublicState(
 // publishPrivateStates fetches per-player private snapshots, converts each
 // into typed DTOs, serializes them into WS message envelopes, and writes
 // them to the corresponding player's connection.
-func (p *GameStatePublisher) publishPrivateStates(gameCtx ctx.GameContext) {
+func (p *GameStateBroadcaster) publishPrivateStates(gameCtx ctx.GameContext) {
 	snapshots, err := p.snapshotService.GetPrivateSnapshotsByUser(gameCtx)
 	if err != nil {
 		slog.ErrorContext(gameCtx, "failed to get private snapshots", "error", err)
@@ -293,7 +293,7 @@ func (p *GameStatePublisher) publishPrivateStates(gameCtx ctx.GameContext) {
 
 // publishMoveLog converts the move log from the event and broadcasts it to all
 // connected players.
-func (p *GameStatePublisher) publishMoveLog(
+func (p *GameStateBroadcaster) publishMoveLog(
 	gameCtx ctx.GameContext,
 	event *gameevt.MoveExecuted,
 ) {
@@ -320,7 +320,7 @@ func (p *GameStatePublisher) publishMoveLog(
 // publishPrivateStateToPlayer fetches per-player private snapshots, extracts the
 // connecting player's snapshot, converts it into typed DTOs, serializes them into
 // WS message envelopes, and writes them to the connecting player's connection.
-func (p *GameStatePublisher) publishPrivateStateToPlayer(gameCtx ctx.GameContext) {
+func (p *GameStateBroadcaster) publishPrivateStateToPlayer(gameCtx ctx.GameContext) {
 	snapshots, err := p.snapshotService.GetPrivateSnapshotsByUser(gameCtx)
 	if err != nil {
 		slog.ErrorContext(gameCtx, "failed to get private snapshots", "error", err)
@@ -372,7 +372,7 @@ func (p *GameStatePublisher) publishPrivateStateToPlayer(gameCtx ctx.GameContext
 
 // publishMoveHistory fetches the recent move history and writes it to the
 // connecting player.
-func (p *GameStatePublisher) publishMoveHistory(gameCtx ctx.GameContext) {
+func (p *GameStateBroadcaster) publishMoveHistory(gameCtx ctx.GameContext) {
 	history, err := p.moveLogController.GetMoveLogs(gameCtx, p.historyConfig.Size)
 	if err != nil {
 		slog.ErrorContext(gameCtx, "failed to get move history", "error", err)

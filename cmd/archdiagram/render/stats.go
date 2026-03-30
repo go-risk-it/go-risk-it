@@ -14,7 +14,7 @@ func RenderStats(ruleCount, invariantCount int) string {
 		"- **Living Architecture** -- Every package has a [`doc.go`](docs/doc-go-spec.md) "+
 			"with structured sections (`# Layer`, `# Key Types`, `# Dependencies`). "+
 			"CI validates layer claims against the actual import graph. "+
-			"[%d architecture rules](internal/arch_test.go) enforce boundaries at test time "+
+			"[%d architecture rules](internal/) enforce boundaries at test time "+
 			"-- import constraints, quality ratchets, and documentation coverage.",
 		ruleCount,
 	)

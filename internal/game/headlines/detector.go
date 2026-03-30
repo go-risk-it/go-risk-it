@@ -32,7 +32,8 @@ type detector struct {
 	mu         sync.RWMutex
 	games      map[int64]*gameOwnership
 	continents board.Continents // lazily loaded from board service
-	bus        eventbus.Bus
+	pub        eventbus.Publisher
+	sub        eventbus.Subscriber
 	snapshot   snapshot.Service
 	board      board.Service
 	logger     *slog.Logger
@@ -42,7 +43,8 @@ type detector struct {
 type DetectorParams struct {
 	fx.In
 
-	Bus      eventbus.Bus
+	Pub      eventbus.Publisher
+	Sub      eventbus.Subscriber
 	Snapshot snapshot.Service
 	Board    board.Service
 	Logger   *slog.Logger `optional:"true"`
@@ -57,14 +59,15 @@ func RegisterDetector(params DetectorParams) {
 
 	det := &detector{
 		games:    make(map[int64]*gameOwnership),
-		bus:      params.Bus,
+		pub:      params.Pub,
+		sub:      params.Sub,
 		snapshot: params.Snapshot,
 		board:    params.Board,
 		logger:   log,
 	}
 
-	gameevt.OnGameEvent[*gameevt.MoveExecuted](params.Bus, det.handleMoveExecuted)
-	gameevt.OnGameEvent[*gameevt.GameCompleted](params.Bus, det.handleGameCompleted)
+	gameevt.OnGameEvent[*gameevt.MoveExecuted](params.Sub, det.handleMoveExecuted)
+	gameevt.OnGameEvent[*gameevt.GameCompleted](params.Sub, det.handleGameCompleted)
 }
 
 func (d *detector) handleGameCompleted(_ ctx.GameContext, event *gameevt.GameCompleted) {
@@ -178,7 +181,7 @@ func (d *detector) processConquest(
 	derived := d.detectHeadlines(ownership, event, attackerUserID)
 
 	for _, headline := range derived {
-		d.bus.Emit(eventCtx, headline)
+		d.pub.Emit(eventCtx, headline)
 	}
 }
 

@@ -8,11 +8,11 @@ import (
 	"go.uber.org/fx"
 )
 
-// Params groups the publisher's dependencies for fx injection.
+// Params groups the broadcaster's dependencies for fx injection.
 type Params struct {
 	fx.In
 
-	Bus               bus.Bus
+	Bus               bus.Subscriber
 	Writer            Writer
 	Presence          Presence
 	Lifecycle         Lifecycle
@@ -23,8 +23,8 @@ type Params struct {
 	Metrics           *metrics.InfraMetrics
 }
 
-func newGameStatePublisher(params Params) *GameStatePublisher {
-	return NewGameStatePublisher(
+func newGameStateBroadcaster(params Params) *GameStateBroadcaster {
+	return NewGameStateBroadcaster(
 		params.Writer,
 		params.Presence,
 		params.Lifecycle,
@@ -36,15 +36,15 @@ func newGameStatePublisher(params Params) *GameStatePublisher {
 	)
 }
 
-func register(params Params, publisher *GameStatePublisher) {
-	publisher.Register(params.Bus)
+func register(params Params, broadcaster *GameStateBroadcaster) {
+	broadcaster.Register(params.Bus)
 }
 
 var Module = fx.Options(
 	fx.Provide(
 		NewMissionController,
 		NewMoveLogController,
-		newGameStatePublisher,
+		newGameStateBroadcaster,
 	),
 	fx.Invoke(register),
 )

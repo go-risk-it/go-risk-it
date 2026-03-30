@@ -62,12 +62,12 @@ func testWebsocketConn(t *testing.T) *websocket.Conn {
 func TestManagerImpl_ConnectPlayer_EmitsLobbyPlayerConnected(t *testing.T) {
 	t.Parallel()
 
-	bus := mockbus.NewBus(t)
-	manager := ws.NewManager(bus, testMetrics(t))
+	pub := mockbus.NewPublisher(t)
+	manager := ws.NewManager(pub, testMetrics(t))
 
 	lobbyCtx := lobbyContext(int64(42))
 
-	bus.EXPECT().
+	pub.EXPECT().
 		Emit(lobbyCtx, mock.MatchedBy(func(e eventbus.Event) bool {
 			evt, ok := e.(*lobbyevt.LobbyPlayerConnected)
 

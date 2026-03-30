@@ -47,7 +47,10 @@ type reentrantBus struct {
 	typedH map[string][]eventbus.Handler
 }
 
-var _ eventbus.Bus = (*reentrantBus)(nil)
+var (
+	_ eventbus.Publisher  = (*reentrantBus)(nil)
+	_ eventbus.Subscriber = (*reentrantBus)(nil)
+)
 
 func newReentrantBus() *reentrantBus {
 	return &reentrantBus{
@@ -107,8 +110,6 @@ func (b *reentrantBus) OnType(eventType string, handler eventbus.Handler) {
 
 	b.typedH[eventType] = append(b.typedH[eventType], handler)
 }
-
-func (b *reentrantBus) Close(_ context.Context) error { return nil }
 
 func (b *reentrantBus) allEvents() []eventbus.Event {
 	b.mu.Lock()
@@ -227,7 +228,8 @@ func setupDetector(
 	boardSvc.EXPECT().GetContinents(mock.Anything).Return(continents, nil).Maybe()
 
 	headlines.RegisterDetector(headlines.DetectorParams{
-		Bus:      bus,
+		Pub:      bus,
+		Sub:      bus,
 		Snapshot: snapshotSvc,
 		Board:    boardSvc,
 		Logger:   slog.Default(),

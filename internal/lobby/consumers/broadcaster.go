@@ -19,41 +19,41 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-const lobbyPublisherTracerName = "go-risk-it-lobby-publisher"
+const lobbyBroadcasterTracerName = "go-risk-it-lobby-broadcaster"
 
-// LobbyStatePublisher consumes lobby events from the bus and publishes state
+// LobbyStateBroadcaster consumes lobby events from the bus and publishes state
 // updates over WebSocket connections. It replaces the channel-based fetcher
 // pattern with direct service calls, since the bus already manages goroutine
 // lifecycle and context detachment.
-type LobbyStatePublisher struct {
+type LobbyStateBroadcaster struct {
 	writer          Writer
 	stateController *StateController
 	metrics         *metrics.InfraMetrics
 }
 
-// NewLobbyStatePublisher creates a publisher with narrow WS and controller
+// NewLobbyStateBroadcaster creates a broadcaster with narrow WS and controller
 // dependencies.
-func NewLobbyStatePublisher(
+func NewLobbyStateBroadcaster(
 	writer Writer,
 	stateController *StateController,
 	met *metrics.InfraMetrics,
-) *LobbyStatePublisher {
-	return &LobbyStatePublisher{
+) *LobbyStateBroadcaster {
+	return &LobbyStateBroadcaster{
 		writer:          writer,
 		stateController: stateController,
 		metrics:         met,
 	}
 }
 
-// Register subscribes the publisher's handlers to lobby events on the bus.
-func (p *LobbyStatePublisher) Register(bus eventbus.Bus) {
-	lobbyevt.OnLobbyEvent(bus, p.onStateChanged)
-	lobbyevt.OnLobbyEvent(bus, p.onPlayerConnected)
+// Register subscribes the broadcaster's handlers to lobby events on the bus.
+func (p *LobbyStateBroadcaster) Register(sub eventbus.Subscriber) {
+	lobbyevt.OnLobbyEvent(sub, p.onStateChanged)
+	lobbyevt.OnLobbyEvent(sub, p.onPlayerConnected)
 }
 
 // onStateChanged fetches the current lobby state and broadcasts it to all
 // connected players.
-func (p *LobbyStatePublisher) onStateChanged(
+func (p *LobbyStateBroadcaster) onStateChanged(
 	lobbyCtx ctx.LobbyContext,
 	_ *lobbyevt.LobbyStateChanged,
 ) {
@@ -62,7 +62,7 @@ func (p *LobbyStatePublisher) onStateChanged(
 
 // onPlayerConnected fetches the current lobby state and sends it to the
 // newly connected player.
-func (p *LobbyStatePublisher) onPlayerConnected(
+func (p *LobbyStateBroadcaster) onPlayerConnected(
 	lobbyCtx ctx.LobbyContext,
 	_ *lobbyevt.LobbyPlayerConnected,
 ) {
@@ -77,7 +77,7 @@ type messageDispatcher func(ctx.LobbyContext, json.RawMessage)
 // it using the provided dispatcher. Each sub-operation is wrapped in safeOp for
 // panic recovery -- a panic in message building must not prevent future
 // deliveries.
-func (p *LobbyStatePublisher) fetchAndPublish(
+func (p *LobbyStateBroadcaster) fetchAndPublish(
 	lobbyCtx ctx.LobbyContext,
 	dispatch messageDispatcher,
 ) {
@@ -124,7 +124,7 @@ func safeOp(
 	action func(),
 ) {
 	ctx, span := otel.GetTracerProvider().
-		Tracer(lobbyPublisherTracerName).
+		Tracer(lobbyBroadcasterTracerName).
 		Start(parent, "consumer."+name)
 	defer span.End()
 

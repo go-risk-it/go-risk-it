@@ -8,17 +8,17 @@ import (
 	"time"
 
 	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/config"
+	consumers "github.com/go-risk-it/go-risk-it/internal/game/consumers"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/game/events"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/mission"
-	consumers "github.com/go-risk-it/go-risk-it/internal/game/publisher"
 	"github.com/go-risk-it/go-risk-it/internal/game/snapshot"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	mockConsumers "github.com/go-risk-it/go-risk-it/mocks/internal_/game/consumers"
 	mockMission "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/mission"
 	mockLogging "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/move/orchestration"
-	mockConsumers "github.com/go-risk-it/go-risk-it/mocks/internal_/game/publisher"
 	mockSnapshot "github.com/go-risk-it/go-risk-it/mocks/internal_/game/snapshot"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/assert"
@@ -133,8 +133,8 @@ func newDeps(t *testing.T) *deps {
 	}
 }
 
-func (d *deps) newPublisher() *consumers.GameStatePublisher {
-	return consumers.NewGameStatePublisher(
+func (d *deps) newBroadcaster() *consumers.GameStateBroadcaster {
+	return consumers.NewGameStateBroadcaster(
 		d.writer,
 		d.presence,
 		d.lifecycle,
@@ -167,7 +167,7 @@ type spyBus struct {
 	calls []string // event types registered via OnType
 }
 
-var _ eventbus.Bus = (*spyBus)(nil)
+var _ eventbus.Subscriber = (*spyBus)(nil)
 
 func (s *spyBus) OnType(eventType string, _ eventbus.Handler) {
 	s.mu.Lock()
@@ -176,9 +176,7 @@ func (s *spyBus) OnType(eventType string, _ eventbus.Handler) {
 	s.calls = append(s.calls, eventType)
 }
 
-func (s *spyBus) OnAll(eventbus.Handler)               {}
-func (s *spyBus) Emit(context.Context, eventbus.Event) {}
-func (s *spyBus) Close(context.Context) error          { return nil }
+func (s *spyBus) OnAll(eventbus.Handler) {}
 
 func (s *spyBus) registrationCount() int {
 	s.mu.Lock()
@@ -205,7 +203,7 @@ func TestRegister_CallsOnGameEventExactlyFourTimes(t *testing.T) {
 	t.Parallel()
 
 	d := newDeps(t)
-	pub := d.newPublisher()
+	pub := d.newBroadcaster()
 
 	spy := &spyBus{}
 	pub.Register(spy)
@@ -232,7 +230,7 @@ func TestHandleMoveExecuted_BroadcastOrdering(t *testing.T) {
 	t.Parallel()
 
 	testDeps := newDeps(t)
-	pub := testDeps.newPublisher()
+	pub := testDeps.newBroadcaster()
 	gameCtx := testGameContext()
 	event := testMoveExecutedEvent()
 
@@ -321,7 +319,7 @@ func TestHandleMoveExecuted_CrossCategoryOrdering(t *testing.T) {
 	t.Parallel()
 
 	testDeps := newDeps(t)
-	pub := testDeps.newPublisher()
+	pub := testDeps.newBroadcaster()
 	gameCtx := testGameContext()
 	event := testMoveExecutedEvent()
 
@@ -393,7 +391,7 @@ func TestHandleMoveExecuted_PanicInPublicState_DoesNotBlockOtherOps(t *testing.T
 	t.Parallel()
 
 	testDeps := newDeps(t)
-	pub := testDeps.newPublisher()
+	pub := testDeps.newBroadcaster()
 	gameCtx := testGameContext()
 	event := testMoveExecutedEvent()
 
@@ -446,7 +444,7 @@ func TestHandleMoveExecuted_PanicInPrivateState_DoesNotBlockMoveLog(t *testing.T
 	t.Parallel()
 
 	testDeps := newDeps(t)
-	pub := testDeps.newPublisher()
+	pub := testDeps.newBroadcaster()
 	gameCtx := testGameContext()
 	event := testMoveExecutedEvent()
 
@@ -488,7 +486,7 @@ func TestHandleGameCompleted_CallsRemoveGame(t *testing.T) {
 	t.Parallel()
 
 	testDeps := newDeps(t)
-	pub := testDeps.newPublisher()
+	pub := testDeps.newBroadcaster()
 	gameCtx := testGameContext()
 
 	event := gameevt.NewGameCompleted(testGameID, testUserID, time.Now(), 10)
@@ -514,7 +512,7 @@ func TestHandlePlayerConnected_UsesWriteMessage(t *testing.T) {
 	t.Parallel()
 
 	testDeps := newDeps(t)
-	pub := testDeps.newPublisher()
+	pub := testDeps.newBroadcaster()
 	gameCtx := testGameContext()
 	event := gameevt.NewPlayerConnected(testGameID, testUserID, time.Now())
 
@@ -586,7 +584,7 @@ func TestHandlePlayerConnected_Ordering(t *testing.T) {
 	t.Parallel()
 
 	testDeps := newDeps(t)
-	pub := testDeps.newPublisher()
+	pub := testDeps.newBroadcaster()
 	gameCtx := testGameContext()
 	event := gameevt.NewPlayerConnected(testGameID, testUserID, time.Now())
 
@@ -654,7 +652,7 @@ func TestHandlePlayerConnected_PanicInPublicState_DoesNotBlockOtherOps(t *testin
 	t.Parallel()
 
 	testDeps := newDeps(t)
-	pub := testDeps.newPublisher()
+	pub := testDeps.newBroadcaster()
 	gameCtx := testGameContext()
 	event := gameevt.NewPlayerConnected(testGameID, testUserID, time.Now())
 
@@ -704,7 +702,7 @@ func TestHandleGameCompleted_PanicRecovery(t *testing.T) {
 	t.Parallel()
 
 	d := newDeps(t)
-	pub := d.newPublisher()
+	pub := d.newBroadcaster()
 	gameCtx := testGameContext()
 	event := gameevt.NewGameCompleted(testGameID, testUserID, time.Now(), 10)
 
@@ -731,7 +729,7 @@ func TestHandleMoveExecuted_WithMissionResolution(t *testing.T) {
 	t.Parallel()
 
 	testDeps := newDeps(t)
-	pub := testDeps.newPublisher()
+	pub := testDeps.newBroadcaster()
 	gameCtx := testGameContext()
 	event := testMoveExecutedEvent()
 
@@ -789,7 +787,7 @@ func TestHandlePlayerConnected_NoBroadcastCalls(t *testing.T) {
 	t.Parallel()
 
 	testDeps := newDeps(t)
-	pub := testDeps.newPublisher()
+	pub := testDeps.newBroadcaster()
 	gameCtx := testGameContext()
 	event := gameevt.NewPlayerConnected(testGameID, testUserID, time.Now())
 
@@ -860,7 +858,7 @@ func TestHandleMoveExecuted_CreatesPublicStateSpan(
 	exporter := setupOTelExporter(t)
 
 	testDeps := newDeps(t)
-	pub := testDeps.newPublisher()
+	pub := testDeps.newBroadcaster()
 	gameCtx := testGameContext()
 	event := testMoveExecutedEvent()
 
@@ -918,7 +916,7 @@ func TestHandleMoveExecuted_PublicStateSpan_RecordsError(
 	exporter := setupOTelExporter(t)
 
 	testDeps := newDeps(t)
-	pub := testDeps.newPublisher()
+	pub := testDeps.newBroadcaster()
 	gameCtx := testGameContext()
 	event := testMoveExecutedEvent()
 

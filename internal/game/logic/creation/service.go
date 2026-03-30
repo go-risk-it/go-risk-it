@@ -37,7 +37,7 @@ type Service interface {
 
 type service struct {
 	querier        db.Querier
-	bus            eventbus.Bus
+	bus            eventbus.Publisher
 	cardService    card.Service
 	missionService mission.Service
 	playerService  player.Service
@@ -51,7 +51,7 @@ var _ Service = (*service)(nil)
 
 func NewService(
 	querier db.Querier,
-	bus eventbus.Bus,
+	bus eventbus.Publisher,
 	cardService card.Service,
 	missionService mission.Service,
 	playerService player.Service,

@@ -6,32 +6,32 @@ import (
 	"go.uber.org/fx"
 )
 
-// Params groups the publisher's dependencies for fx injection.
+// Params groups the broadcaster's dependencies for fx injection.
 type Params struct {
 	fx.In
 
-	Bus             bus.Bus
+	Bus             bus.Subscriber
 	Writer          Writer
 	StateController *StateController
 	Metrics         *metrics.InfraMetrics
 }
 
-func newLobbyStatePublisher(params Params) *LobbyStatePublisher {
-	return NewLobbyStatePublisher(
+func newLobbyStateBroadcaster(params Params) *LobbyStateBroadcaster {
+	return NewLobbyStateBroadcaster(
 		params.Writer,
 		params.StateController,
 		params.Metrics,
 	)
 }
 
-func register(params Params, publisher *LobbyStatePublisher) {
-	publisher.Register(params.Bus)
+func register(params Params, broadcaster *LobbyStateBroadcaster) {
+	broadcaster.Register(params.Bus)
 }
 
 var Module = fx.Options(
 	fx.Provide(
 		NewStateController,
-		newLobbyStatePublisher,
+		newLobbyStateBroadcaster,
 	),
 	fx.Invoke(register),
 )

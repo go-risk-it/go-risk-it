@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/consumers/converter"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/game/publisher/converter"
 )
 
 // BuildMissionResolver creates a MissionResolver closure that dispatches

@@ -99,6 +99,7 @@ All other non-excluded packages. Required doc.go sections:
 | `game/api/rest/response` | api |
 | `game/commands` | api |
 | `game/config` | game-support |
+| `game/consumers` | web |
 | `game/ctx` | game-domain |
 | `game/data/db` | data |
 | `game/events` | events-domain |
@@ -108,7 +109,6 @@ All other non-excluded packages. Required doc.go sections:
 | `game/logic/move/orchestration` | logic |
 | `game/logic/move/validation` | logic |
 | `game/logic/region/assignment` | logic |
-| `game/publisher` | web |
 | `game/rand` | logic |
 | `game/routes` | web |
 | `game/tracing` | logic |
@@ -128,10 +128,10 @@ All other non-excluded packages. Required doc.go sections:
 | `lobby/api/messaging` | api |
 | `lobby/api/rest/request` | api |
 | `lobby/api/rest/response` | api |
+| `lobby/consumers` | web |
 | `lobby/ctx` | lobby-domain |
 | `lobby/data/db` | data |
 | `lobby/events` | events-domain |
-| `lobby/publisher` | web |
 | `lobby/routes` | web |
 | `lobby/ws` | web |
 | `testing/invariant` | test |

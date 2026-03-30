@@ -41,7 +41,7 @@ type service[T, R any] struct {
 	gameState         state.Service
 	moveService       moveservice.Service[T, R]
 	validationService orchestration.ValidationService
-	bus               eventbus.Bus
+	bus               eventbus.Publisher
 	metrics           *metrics.InfraMetrics
 }
 
@@ -50,7 +50,7 @@ func NewService[T, R any](
 	querier db.Querier,
 	moveService moveservice.Service[T, R],
 	validationService orchestration.ValidationService,
-	bus eventbus.Bus,
+	bus eventbus.Publisher,
 	metrics *metrics.InfraMetrics,
 ) Service[T, R] {
 	return &service[T, R]{
