@@ -1,0 +1,290 @@
+{
+    "game/api": {
+        "layer": "API",
+        "summary": "Package game defines shared types for the game API surface."
+    },
+    "game/api/messaging": {
+        "layer": "API",
+        "summary": "Package messaging defines the WebSocket message types sent to game clients."
+    },
+    "game/api/rest/request": {
+        "layer": "API",
+        "summary": "Package request defines the JSON request bodies for game REST endpoints."
+    },
+    "game/api/rest/response": {
+        "layer": "API",
+        "summary": "Package response defines the JSON response bodies for game REST endpoints."
+    },
+    "game/commands": {
+        "layer": "API",
+        "summary": "Package commands defines cross-module command types for game operations."
+    },
+    "game/config": {
+        "layer": "Game-support",
+        "summary": "Package config provides game-specific configuration types loaded from the\n\"game\" section of the application YAML. It receives a *koanf.Koanf from\nthe kernel config module and unmarshals the game subsection."
+    },
+    "game/ctx": {
+        "layer": "Game-domain",
+        "summary": "Package ctx defines the game-scoped context type that enriches\n[kernelctx.UserContext] with a game ID. [GameContext] composes user identity,\nOTel tracing, and game-scoped metadata so that every layer of the game module\nhas typed access to the active game. [WithGameID] constructs a GameContext\nfrom an authenticated user context."
+    },
+    "game/data/db": {
+        "layer": "Data",
+        "summary": "Package db composes the sqlc-generated game queries with transaction support."
+    },
+    "game/events": {
+        "layer": "Events-domain",
+        "summary": "Package game defines game-scoped domain events and typed subscription helpers."
+    },
+    "game/headlines": {
+        "layer": "Game-support",
+        "summary": "Package headlines detects and emits derived game events \u2014 player\neliminations, continent captures, and continent losses \u2014 by maintaining\nan in-memory ownership cache that updates incrementally on each\nMoveExecuted event. Derived events are re-emitted through the event bus\nfor downstream consumers (logging, WebSocket broadcast)."
+    },
+    "game/logic/advancement": {
+        "layer": "Logic",
+        "summary": "Package advancement provides voluntary phase advancement for attack,\ncards, and reinforce moves. It wraps a move service's Walk and Advance\nmethods in a RepeatableRead transaction and emits a PhaseTransitioned\nevent after commit."
+    },
+    "game/logic/board": {
+        "layer": "Logic",
+        "summary": "Package board models the Risk game board as a graph of regions and\ncontinents. It lazily loads the board topology from a JSON file and\nprovides adjacency queries (neighbour checks, reachability through\nplayer-owned regions) and continent control calculations."
+    },
+    "game/logic/card": {
+        "layer": "Logic",
+        "summary": "Package card manages the card deck: creation during game setup, querying\na player's hand, and transferring card ownership when a player is\neliminated. Each region is mapped to one card (infantry, artillery, or\ncavalry), plus two jolly cards per game."
+    },
+    "game/logic/creation": {
+        "layer": "Logic",
+        "summary": "Package creation orchestrates full game setup: inserting the game record,\ncreating players, assigning missions and regions, generating the card deck,\nand creating the initial deploy phase. The entire operation runs inside a\nsingle transaction, with post-commit events and metric recording."
+    },
+    "game/logic/metrics": {
+        "layer": "Logic",
+        "summary": "Package metrics provides game-specific OTel metrics ([GameMetrics]) for\ntracking active games, moves, phase durations, and game lifecycle, plus\n[GameTiming] for recording game start times and computing elapsed duration."
+    },
+    "game/logic/mission": {
+        "layer": "Logic",
+        "summary": "Package mission manages game missions: creation, assignment to players,\nwin-condition checking, and reassignment when a player is eliminated.\nFive mission types are supported \u2014 two continents, two continents plus one,\neighteen territories, twenty-four territories, and eliminate player."
+    },
+    "game/logic/mission/checker": {
+        "layer": "Logic",
+        "summary": "Package checker provides the mission-checking framework. Each mission type\nimplements [MissionChecker], and a [Registry] maps mission types to their\ncheckers for dispatch during win-condition evaluation."
+    },
+    "game/logic/move/attack": {
+        "layer": "Logic",
+        "summary": "Package attack implements the attack move: a player sends troops from an\nowned region to an adjacent enemy region. Dice rolls determine casualties,\nand the phase walker decides whether the game transitions to CONQUER (if a\nregion was conquered), REINFORCE (if the player chooses to stop or has no\neligible attackers), or stays in ATTACK."
+    },
+    "game/logic/move/attack/dice": {
+        "layer": "Logic",
+        "summary": "Package dice provides a configurable dice service for attack resolution.\nThe roll strategy (random, attacker_always_wins, attacker_always_loses)\nis determined by configuration, enabling deterministic testing alongside\nproduction randomness."
+    },
+    "game/logic/move/cards": {
+        "layer": "Logic",
+        "summary": "Package cards implements the cards move: a player plays card combinations\nto earn extra deployable troops and optional region troop grants. The\nphase always transitions to DEPLOY after cards are played, and the\nadvancer calculates the total deployable troops (region ownership +\ncontinent bonuses + card combination bonuses)."
+    },
+    "game/logic/move/conquer": {
+        "layer": "Logic",
+        "summary": "Package conquer implements the conquer move: after a successful attack\nreduces a defending region to zero troops, the attacker must move troops\ninto the conquered region. The move validates minimum troop requirements,\ntransfers region ownership, and handles player elimination (card transfer\nand mission reassignment)."
+    },
+    "game/logic/move/deploy": {
+        "layer": "Logic",
+        "summary": "Package deploy implements the deploy move: a player places available\ntroops onto regions they own. Each move validates region ownership,\ndeclared troop counts, and deployable troop availability. The phase\ntransitions to ATTACK once all deployable troops are placed."
+    },
+    "game/logic/move/orchestration": {
+        "layer": "Logic",
+        "summary": "Package orchestration coordinates the execution of game moves through a\ntransactional pipeline: validate, perform, log, check mission, walk phase\ngraph, and advance. Each move runs inside a RepeatableRead transaction,\nand post-commit events (MoveExecuted, PhaseTransitioned, GameCompleted)\nare emitted through the event bus for reactive consumers."
+    },
+    "game/logic/move/reinforce": {
+        "layer": "Logic",
+        "summary": "Package reinforce implements the reinforce move: a player moves troops\nbetween two owned regions that are connected through a path of owned\nterritory. After reinforcement, the phase transitions to CARDS (if the\nnext player has a valid combination) or DEPLOY (otherwise), advancing\nthe turn. If the player conquered a region during the turn, a card is\ndrawn before advancing."
+    },
+    "game/logic/move/validation": {
+        "layer": "Logic",
+        "summary": "Package validation provides composable move validation helpers shared\nacross move types: region ownership checks (source owned, target owned or\nnot owned) and declared troop count verification against actual database\nvalues."
+    },
+    "game/logic/phase": {
+        "layer": "Logic",
+        "summary": "Package phase manages game phase transitions. It defines the phase state\nmachine (CARDS -> DEPLOY -> ATTACK -> CONQUER/REINFORCE and back),\nvalidates transitions, and handles turn advancement when crossing from\nREINFORCE to the next player's turn."
+    },
+    "game/logic/player": {
+        "layer": "Logic",
+        "summary": "Package player manages game players: creation during game setup, querying\nplayer state (region counts, turn order), and determining the current and\nnext active player. Eliminated players (zero regions) are skipped during\nturn rotation."
+    },
+    "game/logic/region": {
+        "layer": "Logic",
+        "summary": "Package region manages game regions: creation with player assignment,\nquerying by game or player, troop updates, and ownership transfers during\nconquest. Region assignment strategy (random or sequential) is injected\nvia the assignment sub-package."
+    },
+    "game/logic/region/assignment": {
+        "layer": "Logic",
+        "summary": "Package assignment provides configurable strategies for distributing\nregions among players during game setup. The strategy (sequential or\nrandom) is determined by configuration."
+    },
+    "game/logic/state": {
+        "layer": "Logic",
+        "summary": "Package state provides the game state service for reading core game\nmetadata: current turn, active phase, winner, and the list of games a\nuser has joined."
+    },
+    "game/publisher": {
+        "layer": "Web",
+        "summary": "Package consumers contains event handlers that react to game bus events\n(MoveExecuted, PhaseTransitioned, GameCompleted, PlayerConnected) and\npublish state updates over WebSocket connections. Consumer-local interfaces\n(Writer, Presence, Lifecycle) decouple this package from the concrete\nWebSocket manager in the web layer \u2014 Go duck typing handles satisfaction."
+    },
+    "game/rand": {
+        "layer": "Logic",
+        "summary": "Package rand provides a seedable random number generator for game mechanics."
+    },
+    "game/routes": {
+        "layer": "Web",
+        "summary": "Package routes defines the HTTP route table and REST controllers for game\noperations."
+    },
+    "game/snapshot": {
+        "layer": "Game-support",
+        "summary": "Package snapshot provides aggregated read models for efficient game state\nretrieval. [Service.GetPublicSnapshot] returns the full public state\n(game metadata, phase, board, players) and\n[Service.GetPrivateSnapshotsByUser] returns per-player private state\n(cards, mission). All queries execute sequentially on a single connection,\navoiding the DB pool starvation caused by parallel fetcher goroutines."
+    },
+    "game/tracing": {
+        "layer": "Logic",
+        "summary": "Package tracing provides helpers for creating OpenTelemetry spans within\nthe game context chain."
+    },
+    "game/ws": {
+        "layer": "Web",
+        "summary": "Package ws manages per-game WebSocket connections."
+    },
+    "kernel": {
+        "layer": "Kernel",
+        "summary": "Package kernel groups domain-agnostic infrastructure packages that\nevery layer may depend on: context types, event bus, configuration,\ndatabase primitives, observability, and randomness."
+    },
+    "kernel/bus": {
+        "layer": "Kernel",
+        "summary": "Package bus provides the domain event bus for decoupled communication."
+    },
+    "kernel/config": {
+        "layer": "Kernel",
+        "summary": "Package config loads application configuration from YAML files and\nenvironment variables using koanf. It reads a YAML file named after\nthe ENVIRONMENT variable (defaulting to \"component-test.yml\"), then\noverlays any matching environment variables."
+    },
+    "kernel/ctx": {
+        "layer": "Kernel",
+        "summary": "Package ctx defines the typed context chain used throughout the server."
+    },
+    "kernel/data": {
+        "layer": "Kernel",
+        "summary": "Package data provides shared database primitives for transaction management."
+    },
+    "kernel/data/migration": {
+        "layer": "Kernel",
+        "summary": "Package migration runs database schema migrations at startup."
+    },
+    "kernel/data/pool": {
+        "layer": "Kernel",
+        "summary": "Package pool creates and manages pgx connection pools."
+    },
+    "kernel/errors": {
+        "layer": "Kernel",
+        "summary": "Package domainerrors defines typed domain errors with category-based HTTP\nstatus mapping. All domain errors implement the [Categorizable] interface,\nallowing error handlers to map errors to appropriate HTTP status codes\n(400, 401, 403, 404, 409) without type-switching on concrete types."
+    },
+    "kernel/logger": {
+        "layer": "Kernel",
+        "summary": "Package logger provides a structured event logging consumer for the event bus."
+    },
+    "kernel/metrics": {
+        "layer": "Kernel",
+        "summary": "Package metrics registers OpenTelemetry instruments for infrastructure\nobservability: HTTP request handling, WebSocket broadcasting, database\ntransactions, and event bus dispatch."
+    },
+    "kernel/otelsetup": {
+        "layer": "Kernel",
+        "summary": "Package otelsetup initializes the OpenTelemetry SDK for tracing and metrics."
+    },
+    "kernel/slog": {
+        "layer": "Kernel",
+        "summary": "Package slog configures structured JSON logging with automatic context enrichment."
+    },
+    "kernel/upgradablerw_mutex": {
+        "layer": "Kernel",
+        "summary": "Package upgradable_rw_mutex provides an [UpgradableRWMutex] that extends\nsync.RWMutex with the ability to atomically upgrade a read lock to a write\nlock without releasing it first."
+    },
+    "lobby/api/messaging": {
+        "layer": "API",
+        "summary": "Package messaging defines the WebSocket message types sent to lobby clients."
+    },
+    "lobby/api/rest/request": {
+        "layer": "API",
+        "summary": "Package request defines the JSON request bodies for lobby REST endpoints."
+    },
+    "lobby/api/rest/response": {
+        "layer": "API",
+        "summary": "Package response defines the JSON response bodies for lobby REST endpoints."
+    },
+    "lobby/ctx": {
+        "layer": "Lobby-domain",
+        "summary": "Package ctx defines the lobby-scoped context type that enriches\n[kernelctx.UserContext] with a lobby ID. [LobbyContext] composes user\nidentity, OTel tracing, and lobby-scoped metadata so that every layer of\nthe lobby module has typed access to the active lobby. [WithLobbyID]\nconstructs a LobbyContext from an authenticated user context."
+    },
+    "lobby/data/db": {
+        "layer": "Data",
+        "summary": "Package db composes the sqlc-generated lobby queries with transaction support."
+    },
+    "lobby/events": {
+        "layer": "Events-domain",
+        "summary": "Package lobby defines lobby-scoped domain events and typed subscription helpers."
+    },
+    "lobby/logic/creation": {
+        "layer": "Logic",
+        "summary": "Package creation handles lobby creation: inserting the lobby record,\nadding the owner as the first participant, and setting the lobby owner\nreference. The operation runs inside a single transaction."
+    },
+    "lobby/logic/management": {
+        "layer": "Logic",
+        "summary": "Package management handles lobby participation: joining a lobby as a new\nparticipant and querying the lobbies visible to a user (owned, joined,\nand joinable). A LobbyStateChanged event is emitted after a successful\njoin for WebSocket broadcast."
+    },
+    "lobby/logic/start": {
+        "layer": "Logic",
+        "summary": "Package start provides lobby start eligibility checks, player listing,\nand marking a lobby as started with a game ID reference. A lobby can be\nstarted only by its owner when the minimum participant count is met."
+    },
+    "lobby/logic/state": {
+        "layer": "Logic",
+        "summary": "Package state provides lobby state queries: fetching the lobby record\nwith its participants. Returns a [Lobby] domain type containing the\nlobby ID and participant list."
+    },
+    "lobby/publisher": {
+        "layer": "Web",
+        "summary": "Package consumers contains event handlers that react to lobby bus events\n(LobbyStateChanged, LobbyPlayerConnected) and publish state updates over\nWebSocket connections. Consumer-local interfaces (Writer) decouple this\npackage from the concrete WebSocket manager in the web layer \u2014 Go duck\ntyping handles satisfaction."
+    },
+    "lobby/routes": {
+        "layer": "Web",
+        "summary": "Package routes defines the HTTP route table and REST controllers for lobby\noperations."
+    },
+    "lobby/ws": {
+        "layer": "Web",
+        "summary": "Package ws manages per-lobby WebSocket connections."
+    },
+    "testing/invariant": {
+        "layer": "Test",
+        "summary": "Package invariant implements a property-based testing framework for the Risk game engine."
+    },
+    "testonly": {
+        "layer": "Test",
+        "summary": "Package testonly exposes REST endpoints for E2E and component test\nscaffolding that must never be compiled into production builds."
+    },
+    "web/middleware": {
+        "layer": "Web",
+        "summary": "Package middleware provides HTTP middleware for the request pipeline."
+    },
+    "web/mux": {
+        "layer": "Web",
+        "summary": "Package mux assembles all routes and middleware into a single http.Handler."
+    },
+    "web/nbio": {
+        "layer": "Web",
+        "summary": "Package nbio configures and manages the nbio HTTP/WebSocket engine."
+    },
+    "web/rest": {
+        "layer": "Web",
+        "summary": "Package rest aggregates infrastructure-level REST routes (health check)\nand contributes them to the mux via fx group injection."
+    },
+    "web/rest/health": {
+        "layer": "Web",
+        "summary": "Package health provides the GET /status endpoint for liveness and\nreadiness checks."
+    },
+    "web/rest/route": {
+        "layer": "Web",
+        "summary": "Package route provides the Route type, module-agnostic route constructors,\nand shared HTTP plumbing for the REST API."
+    },
+    "web/rest/utils": {
+        "layer": "Web",
+        "summary": "Package restutils provides shared HTTP response and request helpers."
+    },
+    "web/ws": {
+        "layer": "Web",
+        "summary": "Package ws provides shared WebSocket infrastructure used by both game\nand lobby connection managers."
+    }
+}

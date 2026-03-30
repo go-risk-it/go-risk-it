@@ -14,25 +14,51 @@ api: API {
   api_dtos: "API DTOs"
 }
 
+kernel: Kernel {
+  style.fill: "#F3E5F5"
+  kernel: "Kernel"
+}
+
 data: Data {
   style.fill: "#FFF3E0"
+  game_data: "Game Data"
   lobby_data: "Lobby Data"
 }
 
 events_domain: Events-domain {
   style.fill: "#FCE4EC"
-  lobby_events: "Lobby Events"
+  game_events: "Events"
+  lobby_events: "Events"
+}
+
+game_domain: Game-domain {
+  style.fill: "#E0F7FA"
+  game_ctx: "Ctx"
+}
+
+game_support: Game-support {
+  style.fill: "#FFF9C4"
+  game_support: "Game Support"
+}
+
+lobby_domain: Lobby-domain {
+  style.fill: "#E0F7FA"
+  lobby_ctx: "Ctx"
 }
 
 logic: Logic {
   style.fill: "#E8F5E9"
-  lobby_logic: "Lobby"
+  game_rand: "Rand"
+  game_services: "Game Services"
+  game_tracing: "Tracing"
+  lobby_logic: "Lobby Logic"
+  move_pipeline: "Move Pipeline"
 }
 
 web: Web {
   style.fill: "#E3F2FD"
-  game_handlers: "Game Handlers"
-  lobby_handlers: "Lobby Handlers"
+  game_publisher: "Game Publisher"
+  lobby_publisher: "Lobby Publisher"
   middleware: "Middleware"
   rest_utils: "REST Utils"
   websocket: "WebSocket"
@@ -44,9 +70,31 @@ test: Test {
 }
 
 # Cross-layer dependencies (layer-to-layer)
+data -> kernel
+events_domain -> game_domain
+events_domain -> kernel
+events_domain -> lobby_domain
+events_domain -> logic
+game_domain -> kernel
+game_support -> data
+game_support -> events_domain
+game_support -> game_domain
+game_support -> kernel
+game_support -> logic
+lobby_domain -> kernel
 logic -> data
 logic -> events_domain
+logic -> game_domain
+logic -> game_support
+logic -> kernel
+logic -> lobby_domain
+test -> data
+test -> kernel
 test -> web
 web -> api
 web -> events_domain
+web -> game_domain
+web -> game_support
+web -> kernel
+web -> lobby_domain
 web -> logic

@@ -108,7 +108,7 @@ jobs:
         rm -rf /tmp/d2.tar.gz /tmp/d2-extract
         d2 --version
     - name: Diagram freshness check
-      run: make diagrams-check
+      run: make docs-check
     - name: Install go-jsonnet
       run: go install github.com/google/go-jsonnet/cmd/jsonnet@v0.22.0
     - name: Dashboard freshness check
