@@ -1172,10 +1172,11 @@ func TestArch_KernelProductionFileCeiling(t *testing.T) {
 //
 //nolint:gochecknoglobals // test-only set
 var kernelMultiConsumerAllowlist = map[string]bool{
-	"kernel/slog":      true, // consumed only by app composition root
-	"kernel/logger":    true, // consumed only by game/logic (event logger)
-	"kernel/otelsetup": true, // consumed only by web.Module composition root
-	"kernel/router":    true, // one command type so far, lobby is only module consumer
+	"kernel/slog":               true, // consumed only by app composition root
+	"kernel/logger":             true, // consumed only by game/logic (event logger)
+	"kernel/otelsetup":          true, // consumed only by web.Module composition root
+	"kernel/router":             true, // one command type so far, lobby is only module consumer
+	"kernel/upgradablerw_mutex": true, // consolidated into web/ws.ScopeMap + web/ws.PlayerConnections
 }
 
 // consumerGroup classifies an import path into its top-level consumer group.
