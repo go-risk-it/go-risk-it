@@ -60,6 +60,15 @@
     ],
   },
 
+  // Handler Error Rate (ops — any errors = red)
+  handlerErrorRate: {
+    mode: 'absolute',
+    steps: [
+      { color: 'green', value: null },
+      { color: 'red', value: 0.01 },
+    ],
+  },
+
   // E2E p95 latency. SLO: < 500ms
   e2eP95: {
     mode: 'absolute',
