@@ -50,6 +50,44 @@ var layers = map[string]*model.LayerInfo{
 	"Test":          {Name: "Test", Color: "#F5F5F5", Order: 9},
 }
 
+// visualContainer defines how a doc.go layer renders in the D2 diagram.
+// The diagram uses fewer, larger containers than the 10-layer enforcement taxonomy.
+type visualContainer struct {
+	Name  string // display name (with emoji prefix)
+	Color string // fill color (hex)
+	Order int    // sort order for container placement
+}
+
+// layerToVisual maps doc.go layer names to visual container names.
+// Multiple layers can consolidate into one visual container.
+// Empty string means excluded from diagram.
+//
+//nolint:gochecknoglobals // package-level visual container mapping
+var layerToVisual = map[string]string{
+	"API":           "API",
+	"Kernel":        "Kernel",
+	"Data":          "Data",
+	"Events-domain": "Events",
+	"Game-domain":   "Logic",
+	"Game-support":  "Logic",
+	"Lobby-domain":  "Logic",
+	"Logic":         "Logic",
+	"Web":           "Web",
+	"Test":          "",
+}
+
+// visualContainers defines the 6 visual containers for the D2 diagram.
+//
+//nolint:gochecknoglobals // package-level visual container definition
+var visualContainers = map[string]*visualContainer{
+	"API":    {Name: "📋 API", Color: "#E8EAF6", Order: 0},
+	"Web":    {Name: "🌐 Web", Color: "#E3F2FD", Order: 1},
+	"Events": {Name: "📡 Events", Color: "#FCE4EC", Order: 2},
+	"Logic":  {Name: "⚙️ Logic", Color: "#E8F5E9", Order: 3},
+	"Data":   {Name: "💾 Data", Color: "#FFF3E0", Order: 4},
+	"Kernel": {Name: "🔧 Kernel", Color: "#F3E5F5", Order: 5},
+}
+
 // loadPackages runs `go list -json` and returns parsed packages.
 func loadPackages(ctx context.Context, pattern string) ([]model.GoPackage, error) {
 	cmd := exec.CommandContext(ctx, "go", "list", "-json", pattern)
@@ -150,10 +188,36 @@ func majorityLayer(m *model.ArchModel, suffixes []string) string {
 	return bestLayer
 }
 
-// layerContainerID returns the D2 container ID for a layer name.
+// detectModule determines whether a subsystem belongs to the game module,
+// lobby module, or is shared infrastructure.
+func detectModule(sub *model.SubsystemInfo) string {
+	allGame, allLobby := true, true
+
+	for _, suffix := range sub.Packages {
+		if !strings.HasPrefix(suffix, "game/") {
+			allGame = false
+		}
+
+		if !strings.HasPrefix(suffix, "lobby/") {
+			allLobby = false
+		}
+	}
+
+	if allGame {
+		return "game"
+	}
+
+	if allLobby {
+		return "lobby"
+	}
+
+	return ""
+}
+
+// containerID returns the D2 container ID for a container name.
 // Converts to lowercase and replaces hyphens with underscores.
-func layerContainerID(layerName string) string {
-	return strings.ReplaceAll(strings.ToLower(layerName), "-", "_")
+func containerID(name string) string {
+	return strings.ReplaceAll(strings.ToLower(name), "-", "_")
 }
 
 // generateD2 produces the D2 diagram source string from the architecture model.
@@ -175,76 +239,203 @@ func generateD2(archModel *model.ArchModel) string {
 	return buf.String()
 }
 
-// writeLayerContainers emits D2 container blocks with subsystem nodes.
+// subsystemPlacement holds a subsystem and its detected module for grouping.
+type subsystemPlacement struct {
+	Subsystem *model.SubsystemInfo
+	Module    string // "game", "lobby", or "" (shared)
+}
+
+// writeLayerContainers emits D2 container blocks with subsystem nodes,
+// consolidating the 10 enforcement layers into 6 visual containers.
+// Containers with both game and lobby subsystems get nested sub-containers.
 func writeLayerContainers(buf *strings.Builder, archModel *model.ArchModel) {
-	// Group subsystems by layer
-	byLayer := make(map[string][]*model.SubsystemInfo)
+	// Group subsystems by visual container.
+	byVisual := make(map[string][]subsystemPlacement)
+
 	for _, sub := range archModel.Subsystems {
-		byLayer[sub.Layer] = append(byLayer[sub.Layer], sub)
-	}
-
-	// Sort layers by order
-	sortedLayers := make([]string, 0, len(byLayer))
-	for l := range byLayer {
-		sortedLayers = append(sortedLayers, l)
-	}
-
-	sort.Slice(sortedLayers, func(i, j int) bool {
-		layerI, okI := archModel.Layers[sortedLayers[i]]
-		layerJ, okJ := archModel.Layers[sortedLayers[j]]
-
-		if !okI || !okJ {
-			return sortedLayers[i] < sortedLayers[j]
+		visualName := layerToVisual[sub.Layer]
+		if visualName == "" {
+			continue
 		}
 
-		return layerI.Order < layerJ.Order
+		byVisual[visualName] = append(byVisual[visualName], subsystemPlacement{
+			Subsystem: sub,
+			Module:    detectModule(sub),
+		})
+	}
+
+	// Sort visual containers by order.
+	sortedContainers := make([]string, 0, len(byVisual))
+	for name := range byVisual {
+		sortedContainers = append(sortedContainers, name)
+	}
+
+	sort.Slice(sortedContainers, func(i, j int) bool {
+		containerI, okI := visualContainers[sortedContainers[i]]
+		containerJ, okJ := visualContainers[sortedContainers[j]]
+
+		if !okI || !okJ {
+			return sortedContainers[i] < sortedContainers[j]
+		}
+
+		return containerI.Order < containerJ.Order
 	})
 
-	for _, layerKey := range sortedLayers {
-		info, ok := archModel.Layers[layerKey]
+	for _, visualName := range sortedContainers {
+		info, ok := visualContainers[visualName]
 		if !ok {
 			continue
 		}
 
-		layerSubs := byLayer[layerKey]
-
-		sort.Slice(layerSubs, func(i, j int) bool {
-			return layerSubs[i].ID < layerSubs[j].ID
-		})
-
-		containerID := layerContainerID(layerKey)
-
-		fmt.Fprintf(buf, "%s: %s {\n", containerID, info.Name)
-		fmt.Fprintf(buf, "  style.fill: %q\n", info.Color)
-
-		for _, sub := range layerSubs {
-			fmt.Fprintf(buf, "  %s: %q\n", sub.ID, sub.Label)
-		}
-
-		buf.WriteString("}\n\n")
+		placements := byVisual[visualName]
+		writeVisualContainer(buf, info, visualName, placements)
 	}
 }
 
-// writeCrossLayerEdges emits sorted D2 edge declarations at the layer level.
-func writeCrossLayerEdges(buf *strings.Builder, archModel *model.ArchModel) {
-	edges := make([]model.Edge, len(archModel.Edges))
-	copy(edges, archModel.Edges)
+// writeVisualContainer emits a single D2 container block. If the container has
+// subsystems from multiple modules (game + lobby), it creates nested
+// sub-containers. Otherwise it emits flat subsystem nodes.
+func writeVisualContainer(
+	buf *strings.Builder,
+	info *visualContainer,
+	visualName string,
+	placements []subsystemPlacement,
+) {
+	visID := containerID(visualName)
 
-	sort.Slice(edges, func(i, j int) bool {
-		if edges[i].From != edges[j].From {
-			return edges[i].From < edges[j].From
-		}
+	fmt.Fprintf(buf, "%s: %q {\n", visID, info.Name)
+	fmt.Fprintf(buf, "  style.fill: %q\n", info.Color)
 
-		return edges[i].To < edges[j].To
-	})
+	hasGame, hasLobby := detectModulePresence(placements)
+	needsNesting := hasGame && hasLobby
 
-	if len(edges) > 0 {
-		buf.WriteString("# Cross-layer dependencies (layer-to-layer)\n")
+	if needsNesting {
+		writeNestedSubContainers(buf, placements)
+	} else {
+		writeFlatSubsystems(buf, placements)
 	}
 
-	for _, e := range edges {
-		fromContainer := layerContainerID(e.From)
-		toContainer := layerContainerID(e.To)
+	buf.WriteString("}\n\n")
+}
+
+// detectModulePresence checks whether placements contain game and/or lobby modules.
+func detectModulePresence(placements []subsystemPlacement) (bool, bool) {
+	var gamePresent, lobbyPresent bool
+
+	for _, placement := range placements {
+		switch placement.Module {
+		case "game":
+			gamePresent = true
+		case "lobby":
+			lobbyPresent = true
+		}
+	}
+
+	return gamePresent, lobbyPresent
+}
+
+// writeNestedSubContainers emits game, lobby, and optionally shared
+// sub-containers within a visual container.
+func writeNestedSubContainers(buf *strings.Builder, placements []subsystemPlacement) {
+	grouped := map[string][]subsystemPlacement{
+		"game":   {},
+		"lobby":  {},
+		"shared": {},
+	}
+
+	for _, placement := range placements {
+		key := placement.Module
+		if key == "" {
+			key = "shared"
+		}
+
+		grouped[key] = append(grouped[key], placement)
+	}
+
+	// Emit sub-containers in fixed order: Game, Lobby, Shared.
+	subContainerOrder := []struct {
+		key   string
+		label string
+	}{
+		{"game", "Game"},
+		{"lobby", "Lobby"},
+		{"shared", "Shared"},
+	}
+
+	for _, subContainer := range subContainerOrder {
+		subs := grouped[subContainer.key]
+		if len(subs) == 0 {
+			continue
+		}
+
+		sort.Slice(subs, func(i, j int) bool {
+			return subs[i].Subsystem.ID < subs[j].Subsystem.ID
+		})
+
+		fmt.Fprintf(buf, "  %s: %q {\n", subContainer.key, subContainer.label)
+
+		for _, placement := range subs {
+			fmt.Fprintf(buf, "    %s: %q\n", placement.Subsystem.ID, placement.Subsystem.Label)
+		}
+
+		buf.WriteString("  }\n")
+	}
+}
+
+// writeFlatSubsystems emits subsystem nodes directly within a container (no nesting).
+func writeFlatSubsystems(buf *strings.Builder, placements []subsystemPlacement) {
+	sort.Slice(placements, func(i, j int) bool {
+		return placements[i].Subsystem.ID < placements[j].Subsystem.ID
+	})
+
+	for _, placement := range placements {
+		fmt.Fprintf(buf, "  %s: %q\n", placement.Subsystem.ID, placement.Subsystem.Label)
+	}
+}
+
+// writeCrossLayerEdges emits sorted, deduplicated D2 edge declarations
+// at the visual container level. Edges where either end maps to an excluded
+// container (Test) are dropped.
+func writeCrossLayerEdges(buf *strings.Builder, archModel *model.ArchModel) {
+	// Map edges through layerToVisual and deduplicate.
+	seen := make(map[model.Edge]bool)
+
+	var visualEdges []model.Edge
+
+	for _, edge := range archModel.Edges {
+		fromVisual := layerToVisual[edge.From]
+		toVisual := layerToVisual[edge.To]
+
+		if fromVisual == "" || toVisual == "" {
+			continue
+		}
+
+		if fromVisual == toVisual {
+			continue
+		}
+
+		mapped := model.Edge{From: fromVisual, To: toVisual}
+		if !seen[mapped] {
+			seen[mapped] = true
+			visualEdges = append(visualEdges, mapped)
+		}
+	}
+
+	sort.Slice(visualEdges, func(i, j int) bool {
+		if visualEdges[i].From != visualEdges[j].From {
+			return visualEdges[i].From < visualEdges[j].From
+		}
+
+		return visualEdges[i].To < visualEdges[j].To
+	})
+
+	if len(visualEdges) > 0 {
+		buf.WriteString("# Cross-layer dependencies (container-to-container)\n")
+	}
+
+	for _, edge := range visualEdges {
+		fromContainer := containerID(edge.From)
+		toContainer := containerID(edge.To)
 
 		fmt.Fprintf(buf, "%s -> %s\n", fromContainer, toContainer)
 	}
