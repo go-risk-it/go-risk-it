@@ -93,8 +93,8 @@ func TestGoldenFile(t *testing.T) {
 func TestParseMissing(t *testing.T) {
 	t.Parallel()
 
-	// game/publisher/converter has no doc.go per the acceptance criteria
-	dir := filepath.Join(internalDir(t), "game", "publisher", "converter")
+	// game/consumers/converter has no doc.go per the acceptance criteria
+	dir := filepath.Join(internalDir(t), "game", "consumers", "converter")
 
 	layer, summary, err := docparser.ParseLayerAndSummary(dir)
 	if err != nil {

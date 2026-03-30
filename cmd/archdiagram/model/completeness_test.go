@@ -35,7 +35,7 @@ var completenessLayers = map[string]*model.LayerInfo{
 //
 //nolint:gochecknoglobals // test-only exclusion set
 var packagesWithoutDocGo = map[string]bool{
-	"game/publisher/converter": true,
+	"game/consumers/converter": true,
 }
 
 // loadLivePackages runs `go list -json ./internal/...` against the real codebase

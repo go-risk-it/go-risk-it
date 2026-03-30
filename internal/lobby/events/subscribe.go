@@ -16,8 +16,8 @@ import (
 // If the dispatched context is not a LobbyContext (which should not happen in
 // production when emitters use the correct context), the handler logs an error
 // and returns as a no-op.
-func OnLobbyEvent[E LobbyEvent](bus eventbus.Bus, handler func(ctx.LobbyContext, E)) {
-	eventbus.OnEvent[E](bus, func(rawCtx context.Context, event E) {
+func OnLobbyEvent[E LobbyEvent](sub eventbus.Subscriber, handler func(ctx.LobbyContext, E)) {
+	eventbus.OnEvent[E](sub, func(rawCtx context.Context, event E) {
 		lobbyCtx, ok := rawCtx.(ctx.LobbyContext)
 		if !ok {
 			slog.ErrorContext(

@@ -90,8 +90,8 @@ graph TD
 
     subgraph layer_web["Web Layer"]
         direction LR
-        pkg_game_publisher["Game Publisher"]
-        pkg_lobby_publisher["Lobby Publisher"]
+        pkg_game_consumers["Game Consumers"]
+        pkg_lobby_consumers["Lobby Consumers"]
         pkg_middleware["Middleware"]
         pkg_rest_utils["REST Utils"]
         pkg_websocket["WebSocket"]
@@ -183,11 +183,11 @@ app.Module
 │   ├── snapshot.Module     # Game state snapshots
 │   ├── routes.Module       # Game REST + WS route handlers
 │   ├── ws.Module           # Game WS connection manager
-│   └── publisher.Module    # Game event → WS broadcast consumers
-├── lobby.Module            # Lobby web layer (routes + WS + publisher)
+│   └── consumers.Module    # Game event → WS broadcast consumers
+├── lobby.Module            # Lobby web layer (routes + WS + consumers)
 │   ├── routes.Module       # Lobby REST + WS route handlers
 │   ├── ws.Module           # Lobby WS connection manager
-│   └── publisher.Module    # Lobby event → WS broadcast consumers
+│   └── consumers.Module    # Lobby event → WS broadcast consumers
 └── rand.Module             # Random number generation
 ```
 

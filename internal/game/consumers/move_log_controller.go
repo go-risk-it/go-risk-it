@@ -6,14 +6,14 @@ import (
 	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
+	"github.com/go-risk-it/go-risk-it/internal/game/consumers/converter"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/orchestration"
-	"github.com/go-risk-it/go-risk-it/internal/game/publisher/converter"
 )
 
 // MoveLogController translates between sqlc move log rows and messaging DTOs.
-// It lives in consumers because its only callers are the publisher handlers
+// It lives in consumers because its only callers are the broadcaster handlers
 // in this package.
 type MoveLogController struct {
 	loggingService orchestration.LoggingService

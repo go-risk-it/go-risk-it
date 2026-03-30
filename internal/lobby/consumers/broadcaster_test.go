@@ -9,12 +9,12 @@ import (
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/api/messaging"
+	consumers "github.com/go-risk-it/go-risk-it/internal/lobby/consumers"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	lobbyevt "github.com/go-risk-it/go-risk-it/internal/lobby/events"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/logic/state"
-	consumers "github.com/go-risk-it/go-risk-it/internal/lobby/publisher"
+	mockConsumers "github.com/go-risk-it/go-risk-it/mocks/internal_/lobby/consumers"
 	mockState "github.com/go-risk-it/go-risk-it/mocks/internal_/lobby/logic/state"
-	mockConsumers "github.com/go-risk-it/go-risk-it/mocks/internal_/lobby/publisher"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -66,10 +66,10 @@ func newDeps(t *testing.T) *deps {
 	}
 }
 
-func (d *deps) newPublisher() *consumers.LobbyStatePublisher {
+func (d *deps) newBroadcaster() *consumers.LobbyStateBroadcaster {
 	stateCtrl := consumers.NewStateController(d.stateSvc)
 
-	return consumers.NewLobbyStatePublisher(d.writer, stateCtrl, nil)
+	return consumers.NewLobbyStateBroadcaster(d.writer, stateCtrl, nil)
 }
 
 // wsMessageType extracts the "type" field from a serialized WS message envelope.
@@ -105,7 +105,7 @@ type spyBus struct {
 	calls []string
 }
 
-var _ eventbus.Bus = (*spyBus)(nil)
+var _ eventbus.Subscriber = (*spyBus)(nil)
 
 func (s *spyBus) OnType(eventType string, _ eventbus.Handler) {
 	s.mu.Lock()
@@ -114,9 +114,7 @@ func (s *spyBus) OnType(eventType string, _ eventbus.Handler) {
 	s.calls = append(s.calls, eventType)
 }
 
-func (s *spyBus) OnAll(eventbus.Handler)               {}
-func (s *spyBus) Emit(context.Context, eventbus.Event) {}
-func (s *spyBus) Close(context.Context) error          { return nil }
+func (s *spyBus) OnAll(eventbus.Handler) {}
 
 func (s *spyBus) registrationCount() int {
 	s.mu.Lock()
@@ -143,7 +141,7 @@ func TestRegister_CallsOnLobbyEventExactlyTwice(t *testing.T) {
 	t.Parallel()
 
 	d := newDeps(t)
-	pub := d.newPublisher()
+	pub := d.newBroadcaster()
 
 	spy := &spyBus{}
 	pub.Register(spy)
@@ -168,7 +166,7 @@ func TestOnStateChanged_BroadcastsLobbyState(t *testing.T) {
 	t.Parallel()
 
 	testDeps := newDeps(t)
-	pub := testDeps.newPublisher()
+	pub := testDeps.newBroadcaster()
 
 	lobbyCtx := testLobbyContext()
 
@@ -210,7 +208,7 @@ func TestOnPlayerConnected_WritesLobbyState(t *testing.T) {
 	t.Parallel()
 
 	testDeps := newDeps(t)
-	pub := testDeps.newPublisher()
+	pub := testDeps.newBroadcaster()
 
 	lobbyCtx := testLobbyContext()
 
@@ -251,7 +249,7 @@ func TestOnPlayerConnected_NoBroadcastCalls(t *testing.T) {
 	t.Parallel()
 
 	testDeps := newDeps(t)
-	pub := testDeps.newPublisher()
+	pub := testDeps.newBroadcaster()
 
 	lobbyCtx := testLobbyContext()
 
@@ -281,12 +279,12 @@ func TestOnStateChanged_PanicInStateFetch_DoesNotCrash(t *testing.T) {
 	t.Parallel()
 
 	testDeps := newDeps(t)
-	pub := testDeps.newPublisher()
+	pub := testDeps.newBroadcaster()
 
 	lobbyCtx := testLobbyContext()
 
 	// State service panics — propagates through the real StateController
-	// and is caught by safeOp in the publisher.
+	// and is caught by safeOp in the broadcaster.
 	testDeps.stateSvc.EXPECT().
 		GetLobbyState(mock.Anything).
 		Run(func(_ ctx.LobbyContext) {
@@ -313,7 +311,7 @@ func TestOnPlayerConnected_PanicInStateFetch_DoesNotCrash(t *testing.T) {
 	t.Parallel()
 
 	d := newDeps(t)
-	pub := d.newPublisher()
+	pub := d.newBroadcaster()
 
 	lobbyCtx := testLobbyContext()
 
@@ -376,7 +374,7 @@ func TestOnStateChanged_CreatesSpan(t *testing.T) {
 	exporter := setupOTelExporter(t)
 
 	testDeps := newDeps(t)
-	pub := testDeps.newPublisher()
+	pub := testDeps.newBroadcaster()
 	lobbyCtx := testLobbyContext()
 
 	testDeps.stateSvc.EXPECT().

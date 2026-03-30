@@ -110,10 +110,10 @@ func TestGroupPackages_Overrides(t *testing.T) {
 		wantLabel string
 	}{
 		{
-			name:      "game/publisher routes to game_publisher",
-			suffix:    "game/publisher",
-			wantSubID: "game_publisher",
-			wantLabel: "Game Publisher",
+			name:      "game/consumers routes to game_consumers",
+			suffix:    "game/consumers",
+			wantSubID: "game_consumers",
+			wantLabel: "Game Consumers",
 		},
 		{
 			name:      "game/config routes to game_support",
@@ -182,10 +182,10 @@ func TestGroupPackages_Overrides(t *testing.T) {
 			wantLabel: "WebSocket",
 		},
 		{
-			name:      "lobby/publisher routes to lobby_publisher",
-			suffix:    "lobby/publisher",
-			wantSubID: "lobby_publisher",
-			wantLabel: "Lobby Publisher",
+			name:      "lobby/consumers routes to lobby_consumers",
+			suffix:    "lobby/consumers",
+			wantSubID: "lobby_consumers",
+			wantLabel: "Lobby Consumers",
 		},
 		{
 			name:      "testonly routes to testing",
@@ -436,8 +436,8 @@ func TestGroupPackages_AllPackagesAssigned(t *testing.T) {
 		"game/headlines",
 		"game/logic/board",
 		"game/logic/move/attack",
-		"game/publisher",
-		"game/publisher/converter",
+		"game/consumers",
+		"game/consumers/converter",
 		"game/routes",
 		"game/snapshot",
 		"game/ws",
@@ -447,7 +447,7 @@ func TestGroupPackages_AllPackagesAssigned(t *testing.T) {
 		"lobby/data/db",
 		"lobby/events",
 		"lobby/logic/creation",
-		"lobby/publisher",
+		"lobby/consumers",
 		"lobby/routes",
 		"lobby/ws",
 		"testing/invariant",
@@ -488,7 +488,7 @@ func TestGroupPackages_SubsystemIDsAreD2Safe(t *testing.T) {
 	archModel := makeModel(
 		"lobby/ctx",         // standalone
 		"game/logic/board",  // root match
-		"game/publisher",    // override
+		"game/consumers",    // override
 		"web/middleware",    // override
 		"kernel/config",     // override → kernel_config
 		"game/logic/move/x", // longest-prefix

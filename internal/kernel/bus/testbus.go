@@ -17,7 +17,11 @@ type TestBus struct {
 	typedH map[string][]Handler
 }
 
-var _ Bus = (*TestBus)(nil)
+var (
+	_ Bus        = (*TestBus)(nil)
+	_ Publisher  = (*TestBus)(nil)
+	_ Subscriber = (*TestBus)(nil)
+)
 
 // NewTestBus creates a new TestBus ready for use in tests.
 func NewTestBus() *TestBus {

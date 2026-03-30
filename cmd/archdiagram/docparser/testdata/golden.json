@@ -119,7 +119,7 @@
         "layer": "Logic",
         "summary": "Package state provides the game state service for reading core game\nmetadata: current turn, active phase, winner, and the list of games a\nuser has joined."
     },
-    "game/publisher": {
+    "game/consumers": {
         "layer": "Web",
         "summary": "Package consumers contains event handlers that react to game bus events\n(MoveExecuted, PhaseTransitioned, GameCompleted, PlayerConnected) and\npublish state updates over WebSocket connections. Consumer-local interfaces\n(Writer, Presence, Lifecycle) decouple this package from the concrete\nWebSocket manager in the web layer \u2014 Go duck typing handles satisfaction."
     },
@@ -235,7 +235,7 @@
         "layer": "Logic",
         "summary": "Package state provides lobby state queries: fetching the lobby record\nwith its participants. Returns a [Lobby] domain type containing the\nlobby ID and participant list."
     },
-    "lobby/publisher": {
+    "lobby/consumers": {
         "layer": "Web",
         "summary": "Package consumers contains event handlers that react to lobby bus events\n(LobbyStateChanged, LobbyPlayerConnected) and publish state updates over\nWebSocket connections. Consumer-local interfaces (Writer) decouple this\npackage from the concrete WebSocket manager in the web layer \u2014 Go duck\ntyping handles satisfaction."
     },

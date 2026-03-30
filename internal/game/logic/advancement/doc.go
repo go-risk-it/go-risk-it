@@ -20,6 +20,6 @@
 //   - [state.Service] for reading current game state within the transaction
 //   - [service.Service] for move-specific walk and advance logic
 //   - [validation.Service] for pre-advance game state validation
-//   - [eventbus.Bus] for emitting PhaseTransitioned events after commit
+//   - [eventbus.Publisher] for emitting PhaseTransitioned events after commit
 //   - [metrics.Metrics] for recording advance operation metrics
 package advancement

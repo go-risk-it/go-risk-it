@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
+	"github.com/go-risk-it/go-risk-it/internal/game/consumers/converter"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/game/publisher/converter"
 	"github.com/go-risk-it/go-risk-it/internal/game/snapshot"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
@@ -38,7 +38,7 @@ func TestConvertPublicSnapshot_DeployPhase(t *testing.T) {
 	result, err := converter.ConvertPublicSnapshot(snap, []string{"user-1"})
 	require.NoError(t, err)
 
-	// Verify gameState is non-nil (polymorphic any — tested via JSON in publisher tests)
+	// Verify gameState is non-nil (polymorphic any — tested via JSON in broadcaster tests)
 	require.NotNil(t, result.GameState)
 
 	// Verify boardState

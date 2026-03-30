@@ -25,7 +25,7 @@ type OrchestratorDeps struct {
 	LoggingService    LoggingService
 	MissionService    mission.Service
 	ValidationService ValidationService
-	Bus               bus.Bus
+	Bus               bus.Publisher
 	InfraMetrics      *metrics.InfraMetrics
 	GameMetrics       *gamemetrics.GameMetrics
 	GameTiming        *gamemetrics.GameTiming
@@ -38,7 +38,7 @@ type orchestrator[T, R any] struct {
 	loggingService    LoggingService
 	missionService    mission.Service
 	validationService ValidationService
-	bus               bus.Bus
+	bus               bus.Publisher
 	infraMetrics      *metrics.InfraMetrics
 	gameMetrics       *gamemetrics.GameMetrics
 	gameTiming        *gamemetrics.GameTiming
@@ -53,7 +53,7 @@ func NewOrchestrator[T, R any](
 	loggingService LoggingService,
 	missionService mission.Service,
 	validationService ValidationService,
-	bus bus.Bus,
+	bus bus.Publisher,
 	infraMetrics *metrics.InfraMetrics,
 	gameMetrics *gamemetrics.GameMetrics,
 	gameTiming *gamemetrics.GameTiming,

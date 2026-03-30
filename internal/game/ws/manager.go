@@ -15,12 +15,12 @@ import (
 
 type manager struct {
 	connections *ws.ScopeMap[int64]
-	bus         eventbus.Bus
+	bus         eventbus.Publisher
 	metrics     *metrics.InfraMetrics
 }
 
 func NewManager(
-	bus eventbus.Bus,
+	bus eventbus.Publisher,
 	metrics *metrics.InfraMetrics,
 ) Manager {
 	return &manager{

@@ -7,7 +7,7 @@ import (
 )
 
 // MissionController translates between messaging DTOs and the mission logic
-// service. It lives in consumers because its only callers are the publisher
+// service. It lives in consumers because its only callers are the broadcaster
 // and mission resolver — both in this package.
 type MissionController struct {
 	missionService mission.Service

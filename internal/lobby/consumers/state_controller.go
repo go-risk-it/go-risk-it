@@ -9,7 +9,7 @@ import (
 )
 
 // StateController translates between lobby state service results and messaging
-// DTOs. It lives in consumers because its only caller is the publisher in this
+// DTOs. It lives in consumers because its only caller is the broadcaster in this
 // package.
 type StateController struct {
 	stateService state.Service

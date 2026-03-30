@@ -1,7 +1,7 @@
 package lobby
 
 import (
-	consumers "github.com/go-risk-it/go-risk-it/internal/lobby/publisher"
+	consumers "github.com/go-risk-it/go-risk-it/internal/lobby/consumers"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/routes"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/ws"
 	"go.uber.org/fx"

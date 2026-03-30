@@ -560,6 +560,28 @@ func TestNewBus_FxLifecycle(t *testing.T) {
 	require.NoError(t, app.Stop(stopCtx))
 }
 
+func TestNewBus_FxSubInterfaces(t *testing.T) {
+	t.Parallel()
+
+	var (
+		pub eventbus.Publisher
+		sub eventbus.Subscriber
+		bus eventbus.Bus
+	)
+
+	app := fx.New(
+		eventbus.Module,
+		fx.Supply((*metrics.InfraMetrics)(nil)),
+		fx.Populate(&pub, &sub, &bus),
+		fx.NopLogger,
+	)
+
+	require.NoError(t, app.Err())
+	require.NotNil(t, pub)
+	require.NotNil(t, sub)
+	require.NotNil(t, bus)
+}
+
 func TestBus_SequentialDispatch(t *testing.T) {
 	t.Parallel()
 

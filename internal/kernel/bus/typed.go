@@ -9,11 +9,11 @@ import "context"
 //
 // The wrapped handler performs a type assertion from Event to E. If the assertion
 // fails (which should not happen when used with OnType routing), the handler is a no-op.
-func OnEvent[E Event](bus Bus, handler func(context.Context, E)) {
+func OnEvent[E Event](sub Subscriber, handler func(context.Context, E)) {
 	var zero E
 	eventType := zero.EventType()
 
-	bus.OnType(eventType, func(ctx context.Context, event Event) {
+	sub.OnType(eventType, func(ctx context.Context, event Event) {
 		typed, ok := event.(E)
 		if !ok {
 			return

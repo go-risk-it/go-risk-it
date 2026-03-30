@@ -51,8 +51,8 @@ graph LR
 
     subgraph Web["🌐 Web"]
         direction TB
-        gamepublisher["Game Publisher"]
-        lobbypublisher["Lobby Publisher"]
+        gameconsumers["Game Consumers"]
+        lobbyconsumers["Lobby Consumers"]
         middleware["Middleware"]
         restutils["REST Utils"]
         websocket["WebSocket"]
@@ -80,13 +80,13 @@ graph LR
     gameservices --> lobbyctx
     testing --> gamedata
     testing --> kernelbus
-    testing --> gamepublisher
-    gamepublisher --> apidtos
-    gamepublisher --> gameevents
-    gamepublisher --> gamesupport
-    gamepublisher --> kernelbus
-    gamepublisher --> lobbyctx
-    gamepublisher --> gameservices
+    testing --> gameconsumers
+    gameconsumers --> apidtos
+    gameconsumers --> gameevents
+    gameconsumers --> gamesupport
+    gameconsumers --> kernelbus
+    gameconsumers --> lobbyctx
+    gameconsumers --> gameservices
 
     %% Styling
     style API fill:#E8EAF6,stroke:#3949AB,color:#000

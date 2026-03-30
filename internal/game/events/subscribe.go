@@ -12,8 +12,8 @@ import (
 // It wraps eventbus.OnEvent[E] with a context assertion: if the dispatched context
 // is not a ctx.GameContext, the handler logs an error and returns (no-op).
 // This centralizes the context assertion that all game bus consumers need.
-func OnGameEvent[E GameEvent](bus eventbus.Bus, handler func(ctx.GameContext, E)) {
-	eventbus.OnEvent[E](bus, func(rawCtx context.Context, event E) {
+func OnGameEvent[E GameEvent](sub eventbus.Subscriber, handler func(ctx.GameContext, E)) {
+	eventbus.OnEvent[E](sub, func(rawCtx context.Context, event E) {
 		gameCtx, ok := rawCtx.(ctx.GameContext)
 		if !ok {
 			slog.ErrorContext(rawCtx, "OnGameEvent: context is not GameContext, skipping handler",

@@ -13,7 +13,7 @@ import (
 type Params struct {
 	fx.In
 
-	Bus    bus.Bus
+	Bus    bus.Subscriber
 	Logger *slog.Logger `optional:"true"`
 }
 

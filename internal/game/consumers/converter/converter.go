@@ -11,7 +11,7 @@ import (
 
 // MissionResolver fetches mission details for a given mission type and ID,
 // returning the result as a typed DTO ready for serialization at the dispatch
-// boundary. The caller (publisher) provides the real implementation backed by
+// boundary. The caller (broadcaster) provides the real implementation backed by
 // MissionController; tests provide a stub.
 type MissionResolver func(
 	ctx context.Context,
@@ -20,7 +20,7 @@ type MissionResolver func(
 ) (any, error)
 
 // PublicMessages holds the typed DTOs for the public broadcast path.
-// The publisher serializes these into WS message envelopes at dispatch time.
+// The broadcaster serializes these into WS message envelopes at dispatch time.
 type PublicMessages struct {
 	GameState   any
 	BoardState  messaging.BoardState
@@ -28,7 +28,7 @@ type PublicMessages struct {
 }
 
 // PrivateMessages holds the typed DTOs for a single player's private write path.
-// The publisher serializes these into WS message envelopes at dispatch time.
+// The broadcaster serializes these into WS message envelopes at dispatch time.
 type PrivateMessages struct {
 	CardState    messaging.CardState
 	MissionState any

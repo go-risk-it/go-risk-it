@@ -65,17 +65,17 @@ func testWSConn(t *testing.T) *websocket.Conn {
 	return websocket.NewServerConn(&websocket.Upgrader{}, c, "", false, false)
 }
 
-// connectableManager creates a Manager with a mock bus that allows ConnectPlayer.
+// connectableManager creates a Manager with a mock bus publisher that allows ConnectPlayer.
 func connectableManager(
 	t *testing.T,
 	metr *metrics.InfraMetrics,
-) (ws.Manager, *mockbus.Bus) {
+) (ws.Manager, *mockbus.Publisher) {
 	t.Helper()
 
-	bus := mockbus.NewBus(t)
-	manager := ws.NewManager(bus, metr)
+	pub := mockbus.NewPublisher(t)
+	manager := ws.NewManager(pub, metr)
 
-	return manager, bus
+	return manager, pub
 }
 
 // --- Existing concurrency tests ---

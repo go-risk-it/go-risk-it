@@ -25,9 +25,7 @@ func (s *spyBus) OnType(eventType string, handler bus.Handler) {
 	s.registeredHandler = handler
 }
 
-func (s *spyBus) OnAll(bus.Handler)               {}
-func (s *spyBus) Emit(context.Context, bus.Event) {}
-func (s *spyBus) Close(context.Context) error     { return nil }
+func (s *spyBus) OnAll(bus.Handler) {}
 
 func newTestGameContext(gameID int64) ctx.GameContext {
 	traceCtx := kernelctx.WithSpan(context.Background(), noop.Span{})

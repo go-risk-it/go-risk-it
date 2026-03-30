@@ -412,7 +412,7 @@ func TestIsExcluded(t *testing.T) {
 		// real packages
 		{"kernel/config", false},
 		{"game/logic/board", false},
-		{"game/publisher", false},
+		{"game/consumers", false},
 		{"game/events", false},
 	}
 

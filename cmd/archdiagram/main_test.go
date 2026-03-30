@@ -285,17 +285,17 @@ func TestLayerOrdering(t *testing.T) {
 				Layer:    "Logic",
 				Packages: []string{"lobby/logic/management"},
 			},
-			"game_publisher": {
-				ID:       "game_publisher",
-				Label:    "Game Publisher",
+			"game_consumers": {
+				ID:       "game_consumers",
+				Label:    "Game Consumers",
 				Layer:    "Web",
-				Packages: []string{"game/publisher"},
+				Packages: []string{"game/consumers"},
 			},
-			"lobby_publisher": {
-				ID:       "lobby_publisher",
-				Label:    "Lobby Publisher",
+			"lobby_consumers": {
+				ID:       "lobby_consumers",
+				Label:    "Lobby Consumers",
 				Layer:    "Web",
-				Packages: []string{"lobby/publisher"},
+				Packages: []string{"lobby/consumers"},
 			},
 		},
 		Layers: layers,
@@ -577,7 +577,7 @@ func TestDetectModule(t *testing.T) {
 		},
 		{
 			name:     "all lobby packages",
-			packages: []string{"lobby/logic/management", "lobby/publisher"},
+			packages: []string{"lobby/logic/management", "lobby/consumers"},
 			want:     "lobby",
 		},
 		{
@@ -770,17 +770,17 @@ func TestVisualContainerNesting_SharedSubContainer(t *testing.T) {
 	archModel := &model.ArchModel{
 		Packages: map[string]*model.PackageInfo{},
 		Subsystems: map[string]*model.SubsystemInfo{
-			"game_publisher": {
-				ID:       "game_publisher",
-				Label:    "Game Publisher",
+			"game_consumers": {
+				ID:       "game_consumers",
+				Label:    "Game Consumers",
 				Layer:    "Web",
-				Packages: []string{"game/publisher", "game/routes", "game/ws"},
+				Packages: []string{"game/consumers", "game/routes", "game/ws"},
 			},
-			"lobby_publisher": {
-				ID:       "lobby_publisher",
-				Label:    "Lobby Publisher",
+			"lobby_consumers": {
+				ID:       "lobby_consumers",
+				Label:    "Lobby Consumers",
 				Layer:    "Web",
-				Packages: []string{"lobby/publisher", "lobby/routes", "lobby/ws"},
+				Packages: []string{"lobby/consumers", "lobby/routes", "lobby/ws"},
 			},
 			"middleware": {
 				ID:       "middleware",

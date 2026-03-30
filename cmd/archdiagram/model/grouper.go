@@ -14,7 +14,7 @@ var SubsystemRoots = map[string]string{
 	"game/data":       "game_data",
 	"game/logic":      "game_services",
 	"game/logic/move": "move_pipeline", // longest-prefix wins over game/logic
-	"game/publisher":  "game_publisher",
+	"game/consumers":  "game_consumers",
 	"kernel/data":     "kernel_data",
 	"lobby/api":       "api_dtos",
 	"lobby/data":      "lobby_data",
@@ -28,15 +28,15 @@ var SubsystemRoots = map[string]string{
 // directory prefix's natural grouping.
 //
 // Edge cases documented:
-//   - game/publisher → game_publisher (not a root child — publisher is a top-level game module)
+//   - game/consumers → game_consumers (not a root child — consumers is a top-level game module)
 //   - game/config, game/headlines, game/snapshot → game_support (cross-cutting game modules)
 //   - game/ctx, game/rand, game/tracing → game_services (tiny game packages consolidated)
 //   - game/commands → api_dtos (command DTOs live alongside API types)
-//   - game/routes, game/ws → game_publisher (web-facing game infra)
+//   - game/routes, game/ws → game_consumers (web-facing game infra)
 //   - kernel/* → kernel_{bus,config,ctx,errors,observability,utils} (meaningful sub-subsystems)
 //   - web/middleware, web/mux, web/nbio → middleware (web infra, not matched by web/rest root)
 //   - web/ws → websocket (shared WS infrastructure, distinct from game/ws or lobby/ws)
-//   - lobby/publisher, lobby/routes, lobby/ws → lobby_publisher (web-facing lobby infra)
+//   - lobby/consumers, lobby/routes, lobby/ws → lobby_consumers (web-facing lobby infra)
 //   - testonly → testing (top-level test helper, no "testing" prefix)
 //
 //nolint:gochecknoglobals // package-level lookup table for subsystem overrides
@@ -48,8 +48,8 @@ var SubsystemOverrides = map[string]string{
 	"game/rand":                 "game_services",
 	"game/snapshot":             "game_support",
 	"game/tracing":              "game_services",
-	"game/routes":               "game_publisher",
-	"game/ws":                   "game_publisher",
+	"game/routes":               "game_consumers",
+	"game/ws":                   "game_consumers",
 	"kernel/bus":                "kernel_bus",
 	"kernel/config":             "kernel_config",
 	"kernel/ctx":                "kernel_ctx",
@@ -59,9 +59,9 @@ var SubsystemOverrides = map[string]string{
 	"kernel/otelsetup":          "kernel_observability",
 	"kernel/slog":               "kernel_observability",
 	"kernel/upgradablerw_mutex": "kernel_utils",
-	"lobby/publisher":           "lobby_publisher",
-	"lobby/routes":              "lobby_publisher",
-	"lobby/ws":                  "lobby_publisher",
+	"lobby/consumers":           "lobby_consumers",
+	"lobby/routes":              "lobby_consumers",
+	"lobby/ws":                  "lobby_consumers",
 	"web/middleware":            "middleware",
 	"web/mux":                   "middleware",
 	"web/nbio":                  "middleware",
@@ -77,7 +77,7 @@ var SubsystemOverrides = map[string]string{
 var SubsystemLabels = map[string]string{
 	"api_dtos":             "API DTOs",
 	"game_data":            "Game Data",
-	"game_publisher":       "Game Publisher",
+	"game_consumers":       "Game Consumers",
 	"game_services":        "Game Services",
 	"game_support":         "Game Support",
 	"kernel_bus":           "Event Bus",
@@ -89,7 +89,7 @@ var SubsystemLabels = map[string]string{
 	"kernel_utils":         "Utils",
 	"lobby_data":           "Lobby Data",
 	"lobby_logic":          "Lobby Logic",
-	"lobby_publisher":      "Lobby Publisher",
+	"lobby_consumers":      "Lobby Consumers",
 	"middleware":           "Middleware",
 	"move_pipeline":        "Move Pipeline",
 	"rest_utils":           "REST Utils",

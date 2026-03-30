@@ -12,18 +12,34 @@ import (
 // rulePattern matches "// Rule " comment lines in arch_test.go.
 var rulePattern = regexp.MustCompile(`(?m)^// Rule `)
 
-// CountArchRules counts architecture rules by finding "// Rule " comments in arch_test.go.
+// CountArchRules counts architecture rules by finding "// Rule " comments
+// in all arch_*_test.go files under internal/.
 func CountArchRules(repoRoot string) (int, error) {
-	path := filepath.Join(repoRoot, "internal", "arch_test.go")
+	dir := filepath.Join(repoRoot, "internal")
 
-	data, err := os.ReadFile(path)
+	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return 0, fmt.Errorf("reading arch_test.go: %w", err)
+		return 0, fmt.Errorf("reading internal/ directory: %w", err)
 	}
 
-	matches := rulePattern.FindAll(data, -1)
+	total := 0
 
-	return len(matches), nil
+	for _, entry := range entries {
+		name := entry.Name()
+		if !strings.HasPrefix(name, "arch_") || !strings.HasSuffix(name, "_test.go") {
+			continue
+		}
+
+		data, err := os.ReadFile(filepath.Join(dir, name))
+		if err != nil {
+			return 0, fmt.Errorf("reading %s: %w", name, err)
+		}
+
+		matches := rulePattern.FindAll(data, -1)
+		total += len(matches)
+	}
+
+	return total, nil
 }
 
 // invariantEntryPattern matches "{" entries within the AllInvariants slice literal.

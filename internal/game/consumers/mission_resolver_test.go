@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
+	consumers "github.com/go-risk-it/go-risk-it/internal/game/consumers"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/mission"
-	consumers "github.com/go-risk-it/go-risk-it/internal/game/publisher"
 	mockMission "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/mission"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"

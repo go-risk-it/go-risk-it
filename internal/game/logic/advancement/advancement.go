@@ -24,7 +24,7 @@ func NewAttackAdvancer(
 	querier db.Querier,
 	moveService moveservice.Service[attack.Move, *attack.MoveResult],
 	validationService orchestration.ValidationService,
-	bus eventbus.Bus,
+	bus eventbus.Publisher,
 	metrics *metrics.InfraMetrics,
 ) AttackAdvancer {
 	return NewService[attack.Move, *attack.MoveResult](
@@ -42,7 +42,7 @@ func NewCardsAdvancer(
 	querier db.Querier,
 	moveService moveservice.Service[cards.Move, *cards.MoveResult],
 	validationService orchestration.ValidationService,
-	bus eventbus.Bus,
+	bus eventbus.Publisher,
 	metrics *metrics.InfraMetrics,
 ) CardsAdvancer {
 	return NewService[cards.Move, *cards.MoveResult](
@@ -60,7 +60,7 @@ func NewReinforceAdvancer(
 	querier db.Querier,
 	moveService moveservice.Service[reinforce.Move, struct{}],
 	validationService orchestration.ValidationService,
-	bus eventbus.Bus,
+	bus eventbus.Publisher,
 	metrics *metrics.InfraMetrics,
 ) ReinforceAdvancer {
 	return NewService[reinforce.Move, struct{}](
