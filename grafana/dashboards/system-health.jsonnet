@@ -213,16 +213,17 @@ dashboard.new(
         // Acquire Time
         layout.panel(
           panels.timeseriesPanel(
-            title='Acquire Time P50/P95/P99',
-            targets=targets.histogramQuantileTargets(
-              'db_pool_acquire_duration_seconds_bucket',
-              [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']],
-            ),
+            title='Acquire Time (avg)',
+            targets=[targets.target(
+              'db_pool_acquire_duration_seconds{service_name="%s"}' % svc,
+              'avg acquire time',
+              'A',
+            )],
             unit='s',
             color=colors.fixedColor(colors.db),
           ),
           w=12, h=8,
-          description='Normal: < 1ms acquire time. Watch for: p95 > 10ms (pool exhaustion starting). Check next: Canceled Acquires in Observe.',
+          description='Normal: < 1ms average acquire time. Watch for: sustained > 10ms (pool exhaustion starting). Check next: Canceled Acquires in Observe.',
         ),
 
         // Pool Saturation
@@ -245,7 +246,7 @@ dashboard.new(
           panels.timeseriesPanel(
             title='Acquire Rate',
             targets=[targets.target(
-              'rate(db_pool_acquire_count_total{service_name="%s"}[1m])' % svc,
+              'rate(db_pool_acquires_total{service_name="%s"}[1m])' % svc,
               'acquires/s',
               'A',
             )],
@@ -387,7 +388,7 @@ dashboard.new(
           panels.timeseriesPanel(
             title='Process CPU',
             targets=[targets.target(
-              'rate(process_cpu_seconds_total{service_name="%s"}[1m])' % svc,
+              'rate(process_cpu_time_seconds_total{service_name="%s"}[1m])' % svc,
               'CPU cores',
               'A',
             )],
@@ -403,7 +404,7 @@ dashboard.new(
           panels.timeseriesPanel(
             title='Scheduler Latency',
             targets=[targets.target(
-              'histogram_quantile(0.95, sum(rate(runtime_go_sched_latency_bucket{service_name="%s"}[1m])) by (le))' % svc,
+              'histogram_quantile(0.95, sum(rate(go_schedule_duration_seconds_bucket{service_name="%s"}[1m])) by (le))' % svc,
               'p95',
               'A',
             )],
@@ -418,7 +419,7 @@ dashboard.new(
           panels.timeseriesPanel(
             title='Goroutines',
             targets=[targets.target(
-              'runtime_go_goroutines{service_name="%s"}' % svc,
+              'go_goroutine_count{service_name="%s"}' % svc,
               'goroutines',
               'A',
             )],
@@ -434,13 +435,13 @@ dashboard.new(
           panels.timeseriesPanel(
             title='Heap Memory',
             targets=[
-              targets.target('runtime_go_mem_heap_alloc{service_name="%s"}' % svc, 'Alloc', 'A'),
-              targets.target('runtime_go_mem_heap_sys{service_name="%s"}' % svc, 'Sys', 'B'),
+              targets.target('go_memory_allocated_bytes_total{service_name="%s"}' % svc, 'Allocated', 'A'),
+              targets.target('go_memory_used_bytes{service_name="%s"}' % svc, 'Used', 'B'),
             ],
             unit='bytes',
           ),
           w=8, h=8,
-          description='Normal: alloc well below sys, sawtooth GC pattern. Watch for: alloc approaching sys (heap pressure). Check next: GC Goal for tuning.',
+          description='Normal: allocated tracks used with sawtooth GC pattern. Watch for: used growing without release (heap pressure). Check next: GC Goal for tuning.',
         ),
 
         // GC Goal
@@ -448,28 +449,28 @@ dashboard.new(
           panels.timeseriesPanel(
             title='GC Goal',
             targets=[
-              targets.target('runtime_go_gc_gogc{service_name="%s"}' % svc, 'GOGC', 'A'),
-              targets.target('runtime_go_gc_gomemlimit{service_name="%s"}' % svc, 'GOMEMLIMIT', 'B'),
+              targets.target('go_config_gogc_percent{service_name="%s"}' % svc, 'GOGC %', 'A'),
+              targets.target('go_memory_limit_bytes{service_name="%s"}' % svc, 'GOMEMLIMIT', 'B'),
             ],
-            unit='bytes',
+            unit='short',
           ),
           w=8, h=8,
-          description='Normal: stable GC goal values. Watch for: GOMEMLIMIT being hit (OOM risk). Check next: Process Memory for total footprint.',
+          description='Normal: GOGC at 100%, GOMEMLIMIT stable or absent. Watch for: GOMEMLIMIT being approached by heap usage (OOM risk). Check next: Runtime Memory for total footprint.',
         ),
 
-        // Process Memory
+        // Runtime Memory
         layout.panel(
           panels.timeseriesPanel(
-            title='Process Memory',
+            title='Runtime Memory',
             targets=[targets.target(
-              'process_resident_memory_bytes{service_name="%s"}' % svc,
-              'RSS',
+              'go_memory_used_bytes{service_name="%s"}' % svc,
+              'Used',
               'A',
             )],
             unit='bytes',
           ),
           w=8, h=8,
-          description='Normal: stable RSS proportional to heap + stack. Watch for: monotonic growth (memory leak). Check next: Goroutines for stack memory contributors.',
+          description='Normal: stable memory proportional to heap + stack. Watch for: monotonic growth (memory leak). Check next: Goroutines for stack memory contributors.',
         ),
       ],
 
@@ -495,15 +496,15 @@ dashboard.new(
           panels.timeseriesPanel(
             title='Messages Rate',
             targets=[targets.target(
-              'sum(rate(ws_messages_total{service_name="%s"}[1m])) by (direction)' % svc,
-              '{{direction}}',
+              'sum(rate(ws_messages_sent_total{service_name="%s"}[1m]))' % svc,
+              'sent/s',
               'A',
             )],
             unit='ops',
             color=colors.fixedColor(colors.ws),
           ),
           w=12, h=8,
-          description='Normal: outbound >> inbound (server pushes state). Watch for: inbound spikes (clients retrying). Check next: Fan-Out for amplification ratio.',
+          description='Normal: steady sent rate proportional to active games. Watch for: rate dropping to zero while games are active (broadcast failures). Check next: Fan-Out for amplification ratio.',
         ),
 
         // Fan-Out
@@ -511,7 +512,7 @@ dashboard.new(
           panels.timeseriesPanel(
             title='Fan-Out',
             targets=[targets.target(
-              'sum(rate(ws_messages_total{service_name="%s",direction="outbound"}[1m])) / sum(rate(event_bus_events_total{service_name="%s",event_type="move_executed"}[1m]))' % [svc, svc],
+              'sum(rate(ws_messages_sent_total{service_name="%s"}[1m])) / sum(rate(event_bus_events_total{service_name="%s",event_type="move_executed"}[1m]))' % [svc, svc],
               'msgs/move',
               'A',
             )],
@@ -527,7 +528,7 @@ dashboard.new(
           panels.timeseriesPanel(
             title='WS Errors',
             targets=[targets.target(
-              'sum(rate(ws_errors_total{service_name="%s"}[1m]))' % svc,
+              'sum(rate(ws_broadcast_errors_total{service_name="%s"}[1m]))' % svc,
               'errors/s',
               'A',
             )],
@@ -549,7 +550,7 @@ dashboard.new(
         panels.timeseriesPanel(
           title='Fan-out Amplification',
           targets=[targets.target(
-            'sum(rate(ws_messages_total{service_name="%s",direction="outbound"}[1m])) / sum(rate(event_bus_events_total{service_name="%s",event_type="move_executed"}[1m]))' % [svc, svc],
+            'sum(rate(ws_messages_sent_total{service_name="%s"}[1m])) / sum(rate(event_bus_events_total{service_name="%s",event_type="move_executed"}[1m]))' % [svc, svc],
             'msgs/move',
             'A',
           )],
@@ -576,18 +577,18 @@ dashboard.new(
         description='Normal: 30-50% (DB is a fraction of total latency). Watch for: > 70% (SLO yellow) means DB dominates request time. Check next: Postgres Internals collapsed row.',
       ),
 
-      // Process Memory
+      // Runtime Memory
       layout.panel(
         panels.timeseriesPanel(
-          title='Process Memory',
+          title='Runtime Memory',
           targets=[
-            targets.target('process_resident_memory_bytes{service_name="%s"}' % svc, 'RSS', 'A'),
-            targets.target('runtime_go_mem_heap_alloc{service_name="%s"}' % svc, 'Heap Alloc', 'B'),
+            targets.target('go_memory_used_bytes{service_name="%s"}' % svc, 'Used', 'A'),
+            targets.target('go_memory_allocated_bytes_total{service_name="%s"}' % svc, 'Allocated', 'B'),
           ],
           unit='bytes',
         ),
         w=8, h=8,
-        description='Normal: RSS tracks heap alloc with stable overhead. Watch for: RSS growing while heap is flat (off-heap leak). Check next: Goroutines in Server & HTTP row.',
+        description='Normal: used memory tracks allocated with stable overhead. Watch for: used growing without GC reclaiming (heap leak). Check next: Goroutines in Server & HTTP row.',
       ),
     ],
 
@@ -651,38 +652,38 @@ dashboard.new(
             unit='ops',
           ) + modifiers.withDashedSeries(['seq scans/s']),
           w=12, h=8,
-          description='Normal: idx scans >> seq scans. Watch for: seq scan rate (dashed) approaching idx scan rate (missing index). Check next: Table Sizes for table growth.',
+          description='Normal: idx scans >> seq scans. Watch for: seq scan rate (dashed) approaching idx scan rate (missing index). Check next: Live Tuples for table growth.',
         ),
 
-        // Table Sizes
+        // Live Tuples
         layout.panel(
           panels.timeseriesPanel(
-            title='Table Sizes',
+            title='Live Tuples',
             targets=[targets.target(
-              'sum(pg_stat_user_tables_size) by (relname)',
+              'sum(pg_stat_user_tables_n_live_tup) by (relname)',
               '{{relname}}',
               'A',
             )],
-            unit='bytes',
+            unit='short',
           ),
           w=12, h=8,
-          description='Normal: stable sizes proportional to game count. Watch for: rapid growth on single table (data accumulation). Check next: WAL for write amplification.',
+          description='Normal: stable row counts proportional to game count. Watch for: rapid growth on single table (data accumulation). Check next: WAL for write amplification.',
         ),
 
         // WAL
         layout.panel(
           panels.timeseriesPanel(
-            title='WAL',
+            title='WAL Size',
             targets=[targets.target(
-              'rate(pg_stat_wal_wal_bytes_total[1m])',
-              'WAL bytes/s',
+              'pg_wal_size_bytes',
+              'WAL size',
               'A',
             )],
-            unit='Bps',
+            unit='bytes',
             color=colors.fixedColor(colors.db),
           ),
           w=12, h=8,
-          description='Normal: proportional to write throughput. Watch for: WAL spikes not correlated with game activity. Check next: Per-Table Cache Hit for buffer efficiency.',
+          description='Normal: stable WAL size within configured retention. Watch for: WAL size growing unbounded (archiving or replication lag). Check next: Per-Table Cache Hit for buffer efficiency.',
         ),
 
         // Per-Table Cache Hit
@@ -690,18 +691,18 @@ dashboard.new(
           panels.timeseriesPanel(
             title='Per-Table Cache Hit',
             targets=[targets.target(
-              'pg_stat_user_tables_heap_blks_hit_total / (pg_stat_user_tables_heap_blks_hit_total + pg_stat_user_tables_heap_blks_read_total) * 100',
+              'pg_statio_user_tables_heap_blks_hit_total / (pg_statio_user_tables_heap_blks_hit_total + pg_statio_user_tables_heap_blks_read_total) * 100',
               '{{relname}}',
               'A',
             )],
             unit='percent',
           ),
           w=24, h=8,
-          description='Normal: > 99% per table. Watch for: individual tables dropping below 95% (hot table exceeding cache). Check next: Table Sizes for growth correlation.',
+          description='Normal: > 99% per table. Watch for: individual tables dropping below 95% (hot table exceeding cache). Check next: Live Tuples for growth correlation.',
         ),
       ],
 
-      // ── Collapsed: Query Performance (~3 panels) ──
+      // ── Collapsed: Query Performance (~1 panel) ──
       'Query Performance': [
         // Query Latency Heatmap
         layout.panel(
@@ -715,37 +716,7 @@ dashboard.new(
             colorFill='dark-red',
           ),
           w=24, h=10,
-          description='Normal: dense band at low latencies (< 10ms). Watch for: heat spreading to higher buckets over time. Check next: Top Queries by Call Rate for hottest queries.',
-        ),
-
-        // Top Queries by Call Rate
-        layout.panel(
-          panels.timeseriesPanel(
-            title='Top Queries by Call Rate',
-            targets=[targets.target(
-              'topk(10, sum(rate(pg_stat_statements_calls_total[1m])) by (query))',
-              '{{query}}',
-              'A',
-            )],
-            unit='ops',
-          ),
-          w=12, h=8,
-          description='Normal: game state queries dominate. Watch for: unexpected queries in top 10. Check next: Top Queries by Latency for slow query identification.',
-        ),
-
-        // Top Queries by Latency
-        layout.panel(
-          panels.timeseriesPanel(
-            title='Top Queries by Latency',
-            targets=[targets.target(
-              'topk(10, sum(rate(pg_stat_statements_total_exec_time_total[1m])) by (query) / sum(rate(pg_stat_statements_calls_total[1m])) by (query))',
-              '{{query}}',
-              'A',
-            )],
-            unit='s',
-          ),
-          w=12, h=8,
-          description='Normal: all queries < 10ms avg. Watch for: any query > 50ms avg (missing index or lock contention). Check next: Postgres Internals for lock and vacuum state.',
+          description='Normal: dense band at low latencies (< 10ms). Watch for: heat spreading to higher buckets over time. Check next: Postgres Internals for lock and vacuum state.',
         ),
       ],
     },

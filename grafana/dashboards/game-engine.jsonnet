@@ -274,7 +274,7 @@ dashboard.new(
     ],
 
     decideDepth={
-      // ── Collapsed: Event Bus Detail (3 panels) ──
+      // ── Collapsed: Event Bus Detail (2 panels) ──
       'Event Bus Detail': [
         // Handler Throughput by event_type
         layout.panel(
@@ -288,7 +288,7 @@ dashboard.new(
             color=colors.fixedColor(colors.eventBus),
           ),
           w=12, h=8,
-          description='Normal: move_executed dominates throughput. Watch for: unexpected event type surges. Check next: Event Handler Errors.',
+          description='Normal: move_executed dominates throughput. Watch for: unexpected event type surges. Check next: Event Bus Events Total for cumulative count.',
         ),
 
         // Event Bus Events Total (stat)
@@ -306,21 +306,6 @@ dashboard.new(
           ),
           w=12, h=8,
           description='Normal: growing counter proportional to game activity. Watch for: counter stalling (bus stopped processing). Check next: Handler Throughput for rate view.',
-        ),
-
-        // Event Handler Errors
-        layout.panel(
-          panels.timeseriesPanel(
-            title='Event Handler Errors',
-            targets=[targets.target(
-              'sum(rate(event_handler_errors_total{service_name="%s"}[1m])) by (handler)' % svc,
-              '{{handler}}',
-            )],
-            unit='ops',
-            color=colors.fixedColor(colors.errors),
-          ),
-          w=24, h=8,
-          description='Normal: 0 errors. Watch for: any sustained error rate indicates handler panics or logic failures. Check next: Game Event Logs in Act for error details.',
         ),
       ],
 

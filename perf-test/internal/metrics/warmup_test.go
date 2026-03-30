@@ -5,14 +5,11 @@ import (
 	"time"
 )
 
-func TestCollector_WarmUp_HistogramsGated(t *testing.T) {
+func TestCollector_WarmUp_HistogramsGatedBeforeMarkDone(t *testing.T) {
 	c := NewCollector(1 * time.Minute)
-	c.ConfigureWarmUp(WarmUpConfig{
-		MinCompletions: 2,
-		MinDuration:    0, // only completions trigger
-	})
+	c.ConfigureWarmUp()
 
-	// Record before warm-up completes — histogram should not count.
+	// Record before warm-up is marked done — histograms should not count.
 	c.RecordE2E(50 * time.Millisecond)
 	c.RecordREST("deploy", 30*time.Millisecond)
 	c.RecordWSDelivery(10 * time.Millisecond)
@@ -44,30 +41,52 @@ func TestCollector_WarmUp_HistogramsGated(t *testing.T) {
 	if snap.WarmUpComplete {
 		t.Error("warm-up should not be complete yet")
 	}
+}
 
-	// Complete 2 games — warm-up satisfied.
-	c.RecordGameComplete(1*time.Second, 10)
-	c.RecordGameComplete(1*time.Second, 10)
+func TestCollector_WarmUp_HistogramsRecordAfterMarkDone(t *testing.T) {
+	c := NewCollector(1 * time.Minute)
+	c.ConfigureWarmUp()
 
-	// Record after warm-up completes — histogram should count.
+	// Mark warm-up done.
+	c.MarkWarmUpDone()
+
+	// Record after warm-up completes — histograms should count.
 	c.RecordE2E(50 * time.Millisecond)
+	c.RecordREST("deploy", 30*time.Millisecond)
+	c.RecordWSDelivery(10 * time.Millisecond)
+	c.RecordPhaseLatency("attack", 20*time.Millisecond)
 
-	snap = c.Snapshot()
+	snap := c.Snapshot()
 	if snap.E2EMove.Count != 1 {
 		t.Errorf("E2E histogram should record after warm-up, got count=%d", snap.E2EMove.Count)
 	}
 
+	if snap.RESTLatency["deploy"].Count != 1 {
+		t.Errorf(
+			"REST should record after warm-up, got count=%d",
+			snap.RESTLatency["deploy"].Count,
+		)
+	}
+
+	if snap.WSDelivery.Count != 1 {
+		t.Errorf("WS should record after warm-up, got count=%d", snap.WSDelivery.Count)
+	}
+
+	if snap.PhaseLatency["attack"].Count != 1 {
+		t.Errorf(
+			"Phase should record after warm-up, got count=%d",
+			snap.PhaseLatency["attack"].Count,
+		)
+	}
+
 	if !snap.WarmUpComplete {
-		t.Error("warm-up should be complete after 2 game completions")
+		t.Error("warm-up should be complete after MarkWarmUpDone")
 	}
 }
 
 func TestCollector_WarmUp_CountersAlwaysRecorded(t *testing.T) {
 	c := NewCollector(1 * time.Minute)
-	c.ConfigureWarmUp(WarmUpConfig{
-		MinCompletions: 100, // high bar — never reached
-		MinDuration:    1 * time.Hour,
-	})
+	c.ConfigureWarmUp()
 
 	// Counters should increment even during warm-up.
 	c.RecordMove()
@@ -136,68 +155,44 @@ func TestCollector_WarmUp_CountersAlwaysRecorded(t *testing.T) {
 	}
 }
 
-func TestCollector_WarmUp_DurationTrigger(t *testing.T) {
+func TestCollector_WarmUp_GameCompleteDoesNotOpenGate(t *testing.T) {
 	c := NewCollector(1 * time.Minute)
-	c.ConfigureWarmUp(WarmUpConfig{
-		MinCompletions: 0, // no completion trigger
-		MinDuration:    50 * time.Millisecond,
-	})
+	c.ConfigureWarmUp()
 
-	// Complete a game immediately — duration not met yet.
-	c.RecordGameComplete(1*time.Second, 5)
+	// Complete many games — gate should remain closed (only MarkWarmUpDone opens it).
+	for range 100 {
+		c.RecordGameComplete(1*time.Second, 10)
+	}
 
-	// Record before duration elapses — should be gated.
 	c.RecordE2E(50 * time.Millisecond)
 
 	snap := c.Snapshot()
 	if snap.E2EMove.Count != 0 {
-		t.Errorf("E2E should be gated before duration trigger, got count=%d", snap.E2EMove.Count)
+		t.Errorf("E2E should still be gated (only MarkWarmUpDone opens gate), got count=%d",
+			snap.E2EMove.Count)
 	}
 
-	// Wait for duration trigger.
-	time.Sleep(60 * time.Millisecond)
-
-	// Another game complete triggers the check.
-	c.RecordGameComplete(1*time.Second, 5)
-
-	// Now recording should work.
-	c.RecordE2E(50 * time.Millisecond)
-
-	snap = c.Snapshot()
-	if snap.E2EMove.Count != 1 {
-		t.Errorf("E2E should record after duration trigger, got count=%d", snap.E2EMove.Count)
+	if snap.WarmUpComplete {
+		t.Error("warm-up should not be complete without MarkWarmUpDone")
 	}
 }
 
-func TestCollector_WarmUp_BothRequired(t *testing.T) {
+func TestCollector_WarmUp_MarkDoneIdempotent(t *testing.T) {
 	c := NewCollector(1 * time.Minute)
-	c.ConfigureWarmUp(WarmUpConfig{
-		MinCompletions: 2,
-		MinDuration:    50 * time.Millisecond,
-	})
+	c.ConfigureWarmUp()
 
-	// Satisfy completions but not duration.
-	c.RecordGameComplete(1*time.Second, 5)
-	c.RecordGameComplete(1*time.Second, 5)
+	c.MarkWarmUpDone()
+	c.MarkWarmUpDone() // second call should be harmless
 
 	c.RecordE2E(50 * time.Millisecond)
 
 	snap := c.Snapshot()
-	if snap.E2EMove.Count != 0 {
-		t.Errorf("E2E should be gated when only completions met, got count=%d", snap.E2EMove.Count)
+	if snap.E2EMove.Count != 1 {
+		t.Errorf("E2E should record after warm-up, got count=%d", snap.E2EMove.Count)
 	}
 
-	// Wait for duration.
-	time.Sleep(60 * time.Millisecond)
-
-	// Need another game complete to trigger the check after duration is met.
-	c.RecordGameComplete(1*time.Second, 5)
-
-	c.RecordE2E(50 * time.Millisecond)
-
-	snap = c.Snapshot()
-	if snap.E2EMove.Count != 1 {
-		t.Errorf("E2E should record when both triggers met, got count=%d", snap.E2EMove.Count)
+	if !snap.WarmUpComplete {
+		t.Error("WarmUpComplete should be true")
 	}
 }
 

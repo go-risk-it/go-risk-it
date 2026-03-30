@@ -104,11 +104,9 @@ type Collector struct {
 	startTime   time.Time
 	moveBuckets []atomic.Int64
 
-	// Warm-up filtering: gate histogram recording until both triggers are met.
-	warmUpConfig      *WarmUpConfig
-	warmUpDone        atomic.Bool
-	warmUpCompletions atomic.Int64
-	warmUpStart       time.Time
+	// Warm-up filtering: gate histogram recording until MarkWarmUpDone is called.
+	warmUpConfigured bool
+	warmUpDone       atomic.Bool
 }
 
 // NewCollector creates a new metrics collector with initialized histograms.
@@ -329,8 +327,6 @@ func (c *Collector) RecordError() {
 // RecordGameComplete increments the games completed counter and records game-level metrics.
 func (c *Collector) RecordGameComplete(duration time.Duration, moves int) {
 	c.gamesCompleted.Add(1)
-	c.warmUpCompletions.Add(1)
-	c.checkWarmUpCompletion()
 
 	if c.otel != nil {
 		c.otel.gamesCompleted.Add(context.Background(), 1)
@@ -491,7 +487,6 @@ func (c *Collector) Snapshot() *Snapshot {
 		ChaosEvents:            chaosEvents,
 		ThroughputBuckets:      throughputBuckets,
 		WarmUpComplete:         c.isWarmUpDone(),
-		WarmUpDurationSec:      c.warmUpDurationSec(),
 	}
 }
 
@@ -530,8 +525,7 @@ type Snapshot struct {
 	ThroughputBuckets []ThroughputBucket
 
 	// Warm-up status.
-	WarmUpComplete    bool
-	WarmUpDurationSec float64
+	WarmUpComplete bool
 }
 
 // HistogramSnapshot holds percentile values from an HDR histogram.

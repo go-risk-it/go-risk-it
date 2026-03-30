@@ -1644,7 +1644,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "description": "Normal: move_executed dominates throughput. Watch for: unexpected event type surges. Check next: Event Handler Errors.",
+                    "description": "Normal: move_executed dominates throughput. Watch for: unexpected event type surges. Check next: Event Bus Events Total for cumulative count.",
                     "fieldConfig": {
                         "defaults": {
                             "color": {
@@ -1748,66 +1748,6 @@
                     ],
                     "title": "Event Bus Events Total",
                     "type": "stat"
-                },
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "prometheus"
-                    },
-                    "description": "Normal: 0 errors. Watch for: any sustained error rate indicates handler panics or logic failures. Check next: Game Event Logs in Act for error details.",
-                    "fieldConfig": {
-                        "defaults": {
-                            "color": {
-                                "fixedColor": "#E02F44",
-                                "mode": "fixed"
-                            },
-                            "custom": {
-                                "drawStyle": "line",
-                                "fillOpacity": 10,
-                                "lineInterpolation": "smooth",
-                                "lineWidth": 2,
-                                "pointSize": 5,
-                                "showPoints": "never",
-                                "spanNulls": false,
-                                "stacking": {
-                                    "group": "A",
-                                    "mode": "none"
-                                }
-                            },
-                            "unit": "ops"
-                        },
-                        "overrides": []
-                    },
-                    "gridPos": {
-                        "h": 8,
-                        "w": 24,
-                        "x": 0,
-                        "y": 61
-                    },
-                    "id": 25,
-                    "options": {
-                        "legend": {
-                            "calcs": [
-                                "mean",
-                                "max"
-                            ],
-                            "displayMode": "table",
-                            "placement": "bottom"
-                        },
-                        "tooltip": {
-                            "mode": "multi",
-                            "sort": "desc"
-                        }
-                    },
-                    "targets": [
-                        {
-                            "expr": "sum(rate(event_handler_errors_total{service_name=\"risk-it\"}[1m])) by (handler)",
-                            "legendFormat": "{{handler}}",
-                            "refId": "A"
-                        }
-                    ],
-                    "title": "Event Handler Errors",
-                    "type": "timeseries"
                 }
             ],
             "title": "Event Bus Detail",
@@ -1821,7 +1761,7 @@
                 "x": 0,
                 "y": 53
             },
-            "id": 26,
+            "id": 25,
             "panels": [
                 {
                     "datasource": {
@@ -1843,7 +1783,7 @@
                         "x": 0,
                         "y": 54
                     },
-                    "id": 27,
+                    "id": 26,
                     "options": {
                         "displayMode": "gradient",
                         "maxVizHeight": 300,
@@ -1907,7 +1847,7 @@
                         "x": 12,
                         "y": 54
                     },
-                    "id": 28,
+                    "id": 27,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -1944,7 +1884,7 @@
                 "x": 0,
                 "y": 54
             },
-            "id": 29,
+            "id": 28,
             "title": "Act \u2014 What\u2019s the evidence?",
             "type": "row"
         },
@@ -1960,7 +1900,7 @@
                 "x": 0,
                 "y": 55
             },
-            "id": 30,
+            "id": 29,
             "options": {
                 "dedupStrategy": "none",
                 "enableLogDetails": true,

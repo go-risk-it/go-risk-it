@@ -136,3 +136,15 @@ func TestDefaultStepExecutor_MultipleSteps(t *testing.T) {
 		assert.Equal(t, (i+1)*2, output.TargetGames)
 	}
 }
+
+func TestDefaultStepExecutor_WarmUpComplete(t *testing.T) {
+	t.Parallel()
+
+	executor := makeTestExecutor(t, 1)
+
+	output, err := executor.Execute(context.Background(), 2, 0)
+	require.NoError(t, err)
+	require.NotNil(t, output.Snapshot)
+	assert.True(t, output.Snapshot.WarmUpComplete,
+		"WarmUpComplete should be true after pool reaches ready state")
+}

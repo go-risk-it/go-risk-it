@@ -21,8 +21,6 @@ type StepExecutorConfig struct {
 	GameTimeout        time.Duration
 	StaggerDelay       time.Duration
 	HoldDuration       time.Duration
-	WarmUpCompletions  int
-	WarmUpDurationSec  int
 	HealthPollInterval time.Duration // 0 = defaultHealthPollInterval (5s)
 }
 
@@ -73,7 +71,7 @@ func (e *DefaultStepExecutor) Execute(
 
 	// Fresh collector per step for clean per-step percentiles.
 	collector := e.deps.NewCollector(e.cfg.HoldDuration)
-	e.configureWarmUp(collector, targetGames)
+	collector.ConfigureWarmUp()
 
 	if e.deps.OTelExporter != nil {
 		collector.SetOTelExporter(e.deps.OTelExporter)
@@ -86,23 +84,6 @@ func (e *DefaultStepExecutor) Execute(
 	output := e.runStep(ctx, targetGames, indexOffset, stepIndex, runFunc, collector, tracker)
 
 	return &output, nil
-}
-
-// configureWarmUp sets up time-based warm-up filtering on the collector.
-func (e *DefaultStepExecutor) configureWarmUp(collector *metrics.Collector, targetGames int) {
-	if e.cfg.WarmUpCompletions <= 0 && e.cfg.WarmUpDurationSec <= 0 {
-		return
-	}
-
-	minDuration := time.Duration(targetGames) * e.cfg.StaggerDelay
-	if cfgDur := time.Duration(e.cfg.WarmUpDurationSec) * time.Second; cfgDur > minDuration {
-		minDuration = cfgDur
-	}
-
-	collector.ConfigureWarmUp(metrics.WarmUpConfig{
-		MinCompletions: int64(e.cfg.WarmUpCompletions),
-		MinDuration:    minDuration,
-	})
 }
 
 // runStep executes a single step: pool up, hold, snapshot, drain.
@@ -133,6 +114,8 @@ func (e *DefaultStepExecutor) runStep(
 	// Wait for pool to reach target concurrency.
 	select {
 	case <-pool.Ready():
+		collector.MarkWarmUpDone()
+
 		log.Printf(
 			"[step %d/%d] pool ready (%d games active)",
 			stepIndex, e.totalSteps, targetGames,
