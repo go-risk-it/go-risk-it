@@ -123,14 +123,12 @@ All other non-excluded packages. Required doc.go sections:
 | `lobby/data/db` | data |
 | `game/events` | events-domain |
 | `lobby/events` | events-domain |
-| `game/logic/config` | logic |
+| `game/config` | game-support |
 | `game/headlines` | game-support |
 | `game/logic/metrics` | logic |
 | `game/logic/mission/checker` | logic |
-| `game/logic/move/attack/dice/roller` | logic |
 | `game/logic/move/validation` | logic |
 | `game/logic/region/assignment` | logic |
-| `game/logic/timing` | logic |
 | `game/rand` | logic |
 | `game/tracing` | logic |
 | `game/publisher` | web |
