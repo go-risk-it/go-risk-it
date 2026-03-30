@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
@@ -29,4 +30,13 @@ func userContext(t *testing.T) ctx.UserContext {
 	tc := ctx.WithSpan(t.Context(), noop.Span{})
 
 	return ctx.WithUserID(tc, "user-123")
+}
+
+func testGameContext() gamectx.GameContext {
+	uc := ctx.WithUserID(
+		ctx.WithSpan(context.Background(), noop.Span{}),
+		"user-123",
+	)
+
+	return gamectx.WithGameID(uc, 42)
 }

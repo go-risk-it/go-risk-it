@@ -8,16 +8,16 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/game/consumers/converter"
+	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/game/events"
 	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/logic/config"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/snapshot"
+	"github.com/go-risk-it/go-risk-it/internal/game/publisher/converter"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
-	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -34,7 +34,7 @@ const publisherTracerName = "go-risk-it-publisher"
 // updates over WebSocket connections. Each handler performs sequential ordered
 // delivery within a single goroutine (the bus dispatches each handler in its
 // own goroutine). Sub-operations are wrapped in safeOp for independent panic
-// recovery — a panic in one sub-operation does not prevent the others from
+// recovery -- a panic in one sub-operation does not prevent the others from
 // executing.
 type GameStatePublisher struct {
 	writer            Writer
@@ -123,7 +123,7 @@ func (p *GameStatePublisher) handlePlayerConnected(
 }
 
 // handlePhaseTransitioned broadcasts updated public and private state after a
-// phase advance (e.g., attack → reinforce). This is separate from MoveExecuted
+// phase advance (e.g., attack -> reinforce). This is separate from MoveExecuted
 // because the advancement service emits PhaseTransitioned directly without a
 // MoveExecuted event.
 func (p *GameStatePublisher) handlePhaseTransitioned(
@@ -151,7 +151,7 @@ func (p *GameStatePublisher) handleGameCompleted(
 
 // safeOp runs action with a child span and duration metric recording. On panic
 // it records the error on the span and logs the recovered value and stack trace.
-// This is a sequential wrapper (not a goroutine) — the bus already owns
+// This is a sequential wrapper (not a goroutine) -- the bus already owns
 // goroutine lifecycle.
 func safeOp(
 	parent context.Context,
@@ -189,9 +189,9 @@ func safeOp(
 	action()
 }
 
-// fetchAndPublishPublicState fetches the public snapshot, converts it into WS
-// messages, and dispatches each using the provided dispatcher. The parent safeOp
-// provides the child span (consumer.fetchAndPublishPublicState).
+// fetchAndPublishPublicState fetches the public snapshot, converts it into typed
+// DTOs, serializes them into WS message envelopes, and dispatches each using the
+// provided dispatcher.
 func fetchAndPublishPublicState(
 	gameCtx ctx.GameContext,
 	snapshotService snapshot.Service,
@@ -214,17 +214,35 @@ func fetchAndPublishPublicState(
 		return
 	}
 
-	for _, msg := range []json.RawMessage{
-		msgs.GameState,
-		msgs.BoardState,
-		msgs.PlayerState,
+	for _, item := range []struct {
+		msgType messaging.Type
+		payload any
+	}{
+		{messaging.GameStateType, msgs.GameState},
+		{messaging.BoardStateType, msgs.BoardState},
+		{messaging.PlayerStateType, msgs.PlayerState},
 	} {
+		msg, err := messaging.BuildMessage(item.msgType, item.payload)
+		if err != nil {
+			slog.ErrorContext(
+				gameCtx,
+				"failed to build message",
+				"type",
+				item.msgType,
+				"error",
+				err,
+			)
+
+			return
+		}
+
 		dispatch(gameCtx, msg)
 	}
 }
 
 // publishPrivateStates fetches per-player private snapshots, converts each
-// into WS messages, and writes them to the corresponding player's connection.
+// into typed DTOs, serializes them into WS message envelopes, and writes
+// them to the corresponding player's connection.
 func (p *GameStatePublisher) publishPrivateStates(gameCtx ctx.GameContext) {
 	snapshots, err := p.snapshotService.GetPrivateSnapshotsByUser(gameCtx)
 	if err != nil {
@@ -253,10 +271,21 @@ func (p *GameStatePublisher) publishPrivateStates(gameCtx ctx.GameContext) {
 			gameCtx.GameID(),
 		)
 
-		for _, msg := range []json.RawMessage{
-			msgs.CardState,
-			msgs.MissionState,
+		for _, item := range []struct {
+			msgType messaging.Type
+			payload any
+		}{
+			{messaging.CardStateType, msgs.CardState},
+			{messaging.MissionStateType, msgs.MissionState},
 		} {
+			msg, err := messaging.BuildMessage(item.msgType, item.payload)
+			if err != nil {
+				slog.ErrorContext(playerCtx, "failed to build private message",
+					"type", item.msgType, "error", err)
+
+				continue
+			}
+
 			p.writer.WriteMessage(playerCtx, msg)
 		}
 	}
@@ -278,7 +307,7 @@ func (p *GameStatePublisher) publishMoveLog(
 		return
 	}
 
-	msg, err := message.BuildMessage(message.MoveHistory, history)
+	msg, err := messaging.BuildMessage(messaging.MoveHistoryType, history)
 	if err != nil {
 		slog.ErrorContext(gameCtx, "failed to build move history message", "error", err)
 
@@ -289,8 +318,8 @@ func (p *GameStatePublisher) publishMoveLog(
 }
 
 // publishPrivateStateToPlayer fetches per-player private snapshots, extracts the
-// connecting player's snapshot, converts it into WS messages, and writes them to
-// the connecting player's connection.
+// connecting player's snapshot, converts it into typed DTOs, serializes them into
+// WS message envelopes, and writes them to the connecting player's connection.
 func (p *GameStatePublisher) publishPrivateStateToPlayer(gameCtx ctx.GameContext) {
 	snapshots, err := p.snapshotService.GetPrivateSnapshotsByUser(gameCtx)
 	if err != nil {
@@ -322,10 +351,21 @@ func (p *GameStatePublisher) publishPrivateStateToPlayer(gameCtx ctx.GameContext
 		return
 	}
 
-	for _, msg := range []json.RawMessage{
-		msgs.CardState,
-		msgs.MissionState,
+	for _, item := range []struct {
+		msgType messaging.Type
+		payload any
+	}{
+		{messaging.CardStateType, msgs.CardState},
+		{messaging.MissionStateType, msgs.MissionState},
 	} {
+		msg, err := messaging.BuildMessage(item.msgType, item.payload)
+		if err != nil {
+			slog.ErrorContext(gameCtx, "failed to build private message",
+				"type", item.msgType, "error", err)
+
+			continue
+		}
+
 		p.writer.WriteMessage(gameCtx, msg)
 	}
 }
@@ -340,7 +380,7 @@ func (p *GameStatePublisher) publishMoveHistory(gameCtx ctx.GameContext) {
 		return
 	}
 
-	msg, err := message.BuildMessage(message.MoveHistory, history)
+	msg, err := messaging.BuildMessage(messaging.MoveHistoryType, history)
 	if err != nil {
 		slog.ErrorContext(gameCtx, "failed to build move history message", "error", err)
 

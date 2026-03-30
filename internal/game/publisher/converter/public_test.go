@@ -1,12 +1,12 @@
 package converter_test
 
 import (
-	"encoding/json"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/game/consumers/converter"
+	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/snapshot"
+	"github.com/go-risk-it/go-risk-it/internal/game/publisher/converter"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 )
@@ -38,65 +38,29 @@ func TestConvertPublicSnapshot_DeployPhase(t *testing.T) {
 	result, err := converter.ConvertPublicSnapshot(snap, []string{"user-1"})
 	require.NoError(t, err)
 
-	// Verify gameState message
-	gameMsg := unmarshalMessage(t, result.GameState)
-	require.Equal(t, "gameState", gameMsg.Type)
+	// Verify gameState is non-nil (polymorphic any — tested via JSON in publisher tests)
+	require.NotNil(t, result.GameState)
 
-	var gameData map[string]any
-	require.NoError(t, json.Unmarshal(gameMsg.Payload, &gameData))
-	require.InDelta(t, float64(42), gameData["id"], 0)
-	require.InDelta(t, float64(1), gameData["turn"], 0)
-	require.Empty(t, gameData["winnerUserId"])
+	// Verify boardState
+	require.Len(t, result.BoardState.Regions, 2)
+	require.Equal(t, "alaska", result.BoardState.Regions[0].ID)
+	require.Equal(t, "user-1", result.BoardState.Regions[0].OwnerID)
+	require.Equal(t, int64(3), result.BoardState.Regions[0].Troops)
+	require.Equal(t, "brazil", result.BoardState.Regions[1].ID)
+	require.Equal(t, "user-2", result.BoardState.Regions[1].OwnerID)
+	require.Equal(t, int64(5), result.BoardState.Regions[1].Troops)
 
-	phase, ok := gameData["phase"].(map[string]any) //nolint:varnamelen
-	require.True(t, ok)
-	require.Equal(t, "deploy", phase["type"])
+	// Verify playerState
+	require.Len(t, result.PlayerState.Players, 2)
+	require.Equal(t, "user-1", result.PlayerState.Players[0].UserID)
+	require.Equal(t, "Alice", result.PlayerState.Players[0].Name)
+	require.Equal(t, int64(0), result.PlayerState.Players[0].Index)
+	require.Equal(t, int64(2), result.PlayerState.Players[0].CardCount)
+	require.Equal(t, messaging.Alive, result.PlayerState.Players[0].Status)
+	require.Equal(t, messaging.Connected, result.PlayerState.Players[0].ConnectionStatus)
 
-	phaseState, ok := phase["state"].(map[string]any)
-	require.True(t, ok)
-	require.InDelta(t, float64(7), phaseState["deployableTroops"], 0)
-
-	// Verify boardState message
-	boardMsg := unmarshalMessage(t, result.BoardState)
-	require.Equal(t, "boardState", boardMsg.Type)
-
-	var boardData map[string]any
-	require.NoError(t, json.Unmarshal(boardMsg.Payload, &boardData))
-
-	regions, ok := boardData["regions"].([]any)
-	require.True(t, ok)
-	require.Len(t, regions, 2)
-
-	region0, ok := regions[0].(map[string]any)
-	require.True(t, ok)
-	require.Equal(t, "alaska", region0["id"])
-	require.Equal(t, "user-1", region0["ownerId"])
-	require.InDelta(t, float64(3), region0["troops"], 0)
-
-	// Verify playerState message
-	playerMsg := unmarshalMessage(t, result.PlayerState)
-	require.Equal(t, "playerState", playerMsg.Type)
-
-	var playerData map[string]any
-	require.NoError(t, json.Unmarshal(playerMsg.Payload, &playerData))
-
-	players, ok := playerData["players"].([]any)
-	require.True(t, ok)
-	require.Len(t, players, 2)
-
-	player0, ok := players[0].(map[string]any)
-	require.True(t, ok)
-	require.Equal(t, "user-1", player0["userId"])
-	require.Equal(t, "Alice", player0["name"])
-	require.InDelta(t, float64(0), player0["index"], 0)
-	require.InDelta(t, float64(2), player0["cardCount"], 0)
-	require.Equal(t, "alive", player0["status"])
-	require.Equal(t, "connected", player0["connectionStatus"])
-
-	player1, ok := players[1].(map[string]any)
-	require.True(t, ok)
-	require.Equal(t, "user-2", player1["userId"])
-	require.Equal(t, "disconnected", player1["connectionStatus"])
+	require.Equal(t, "user-2", result.PlayerState.Players[1].UserID)
+	require.Equal(t, messaging.Disconnected, result.PlayerState.Players[1].ConnectionStatus)
 }
 
 func TestConvertPublicSnapshot_AttackPhase(t *testing.T) {
@@ -118,19 +82,7 @@ func TestConvertPublicSnapshot_AttackPhase(t *testing.T) {
 
 	result, err := converter.ConvertPublicSnapshot(snap, nil)
 	require.NoError(t, err)
-
-	gameMsg := unmarshalMessage(t, result.GameState)
-	var gameData map[string]any
-	require.NoError(t, json.Unmarshal(gameMsg.Payload, &gameData))
-
-	phase, ok := gameData["phase"].(map[string]any) //nolint:varnamelen
-	require.True(t, ok)
-	require.Equal(t, "attack", phase["type"])
-
-	// EmptyState serializes as {}
-	phaseState, ok := phase["state"].(map[string]any)
-	require.True(t, ok)
-	require.Empty(t, phaseState)
+	require.NotNil(t, result.GameState)
 }
 
 func TestConvertPublicSnapshot_ConquerPhase(t *testing.T) {
@@ -157,20 +109,7 @@ func TestConvertPublicSnapshot_ConquerPhase(t *testing.T) {
 
 	result, err := converter.ConvertPublicSnapshot(snap, nil)
 	require.NoError(t, err)
-
-	gameMsg := unmarshalMessage(t, result.GameState)
-	var gameData map[string]any
-	require.NoError(t, json.Unmarshal(gameMsg.Payload, &gameData))
-
-	phase, ok := gameData["phase"].(map[string]any)
-	require.True(t, ok)
-	require.Equal(t, "conquer", phase["type"])
-
-	phaseState, ok := phase["state"].(map[string]any)
-	require.True(t, ok)
-	require.Equal(t, "alaska", phaseState["attackingRegionId"])
-	require.Equal(t, "kamchatka", phaseState["defendingRegionId"])
-	require.InDelta(t, float64(2), phaseState["minTroopsToMove"], 0)
+	require.NotNil(t, result.GameState)
 }
 
 func TestConvertPublicSnapshot_ReinforcePhase(t *testing.T) {
@@ -192,14 +131,7 @@ func TestConvertPublicSnapshot_ReinforcePhase(t *testing.T) {
 
 	result, err := converter.ConvertPublicSnapshot(snap, nil)
 	require.NoError(t, err)
-
-	gameMsg := unmarshalMessage(t, result.GameState)
-	var gameData map[string]any
-	require.NoError(t, json.Unmarshal(gameMsg.Payload, &gameData))
-
-	phase, ok := gameData["phase"].(map[string]any)
-	require.True(t, ok)
-	require.Equal(t, "reinforce", phase["type"])
+	require.NotNil(t, result.GameState)
 }
 
 func TestConvertPublicSnapshot_CardsPhase(t *testing.T) {
@@ -221,14 +153,7 @@ func TestConvertPublicSnapshot_CardsPhase(t *testing.T) {
 
 	result, err := converter.ConvertPublicSnapshot(snap, nil)
 	require.NoError(t, err)
-
-	gameMsg := unmarshalMessage(t, result.GameState)
-	var gameData map[string]any
-	require.NoError(t, json.Unmarshal(gameMsg.Payload, &gameData))
-
-	phase, ok := gameData["phase"].(map[string]any)
-	require.True(t, ok)
-	require.Equal(t, "cards", phase["type"])
+	require.NotNil(t, result.GameState)
 }
 
 func TestConvertPublicSnapshot_WinnerUserID(t *testing.T) {
@@ -250,11 +175,7 @@ func TestConvertPublicSnapshot_WinnerUserID(t *testing.T) {
 
 	result, err := converter.ConvertPublicSnapshot(snap, nil)
 	require.NoError(t, err)
-
-	gameMsg := unmarshalMessage(t, result.GameState)
-	var gameData map[string]any
-	require.NoError(t, json.Unmarshal(gameMsg.Payload, &gameData))
-	require.Equal(t, "winner-user", gameData["winnerUserId"])
+	require.NotNil(t, result.GameState)
 }
 
 func TestConvertPublicSnapshot_NullWinnerUserID(t *testing.T) {
@@ -276,11 +197,7 @@ func TestConvertPublicSnapshot_NullWinnerUserID(t *testing.T) {
 
 	result, err := converter.ConvertPublicSnapshot(snap, nil)
 	require.NoError(t, err)
-
-	gameMsg := unmarshalMessage(t, result.GameState)
-	var gameData map[string]any
-	require.NoError(t, json.Unmarshal(gameMsg.Payload, &gameData))
-	require.Empty(t, gameData["winnerUserId"])
+	require.NotNil(t, result.GameState)
 }
 
 func TestConvertPublicSnapshot_DeadPlayer(t *testing.T) {
@@ -305,16 +222,9 @@ func TestConvertPublicSnapshot_DeadPlayer(t *testing.T) {
 	result, err := converter.ConvertPublicSnapshot(snap, []string{"dead-user"})
 	require.NoError(t, err)
 
-	playerMsg := unmarshalMessage(t, result.PlayerState)
-	var playerData map[string]any
-	require.NoError(t, json.Unmarshal(playerMsg.Payload, &playerData))
-
-	players, ok := playerData["players"].([]any)
-	require.True(t, ok)
-	player0, ok := players[0].(map[string]any)
-	require.True(t, ok)
-	require.Equal(t, "dead", player0["status"])
-	require.Equal(t, "connected", player0["connectionStatus"])
+	require.Len(t, result.PlayerState.Players, 1)
+	require.Equal(t, messaging.Dead, result.PlayerState.Players[0].Status)
+	require.Equal(t, messaging.Connected, result.PlayerState.Players[0].ConnectionStatus)
 }
 
 func TestConvertPublicSnapshot_DeployPhaseNilState(t *testing.T) {
@@ -361,19 +271,4 @@ func TestConvertPublicSnapshot_ConquerPhaseNilState(t *testing.T) {
 	_, err := converter.ConvertPublicSnapshot(snap, nil)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "conquer phase state is nil")
-}
-
-// messageEnvelope is used to parse the outer WS message envelope.
-type messageEnvelope struct {
-	Type    string          `json:"type"`
-	Payload json.RawMessage `json:"data"`
-}
-
-func unmarshalMessage(t *testing.T, raw json.RawMessage) messageEnvelope {
-	t.Helper()
-
-	var msg messageEnvelope
-	require.NoError(t, json.Unmarshal(raw, &msg))
-
-	return msg
 }

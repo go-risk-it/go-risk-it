@@ -10,9 +10,9 @@ import (
 
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/api/messaging"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	lobbyevt "github.com/go-risk-it/go-risk-it/internal/lobby/events"
-	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -75,7 +75,7 @@ type messageDispatcher func(ctx.LobbyContext, json.RawMessage)
 
 // fetchAndPublish fetches the lobby state, builds a WS message, and dispatches
 // it using the provided dispatcher. Each sub-operation is wrapped in safeOp for
-// panic recovery — a panic in message building must not prevent future
+// panic recovery -- a panic in message building must not prevent future
 // deliveries.
 func (p *LobbyStatePublisher) fetchAndPublish(
 	lobbyCtx ctx.LobbyContext,
@@ -93,7 +93,7 @@ func (p *LobbyStatePublisher) fetchAndPublish(
 			return
 		}
 
-		built, err := message.BuildMessage(message.LobbyState, lobbyState)
+		built, err := messaging.BuildMessage(messaging.LobbyStateType, lobbyState)
 		if err != nil {
 			slog.ErrorContext(lobbyCtx, "failed to build lobby state message", "error", err)
 
@@ -115,7 +115,7 @@ func (p *LobbyStatePublisher) fetchAndPublish(
 
 // safeOp runs action with a child span and duration metric recording. On panic
 // it records the error on the span and logs the recovered value and stack trace.
-// This is a sequential wrapper (not a goroutine) — the bus already owns
+// This is a sequential wrapper (not a goroutine) -- the bus already owns
 // goroutine lifecycle.
 func safeOp(
 	parent context.Context,

@@ -89,13 +89,13 @@ var subsystemMap = map[string]string{
 	"web/game/rest":       "game_handlers",
 	"web/game/ws":         "game_handlers",
 
-	// Game Consumers (event handlers → WS delivery)
-	"game/consumers":           "game_handlers",
-	"game/consumers/converter": "game_handlers",
+	// Game Publisher (event handlers → WS delivery)
+	"game/publisher":           "game_handlers",
+	"game/publisher/converter": "game_handlers",
 
 	// Web Layer — Lobby Handlers
 	"web/lobby/controller": "lobby_handlers",
-	"lobby/consumers":      "lobby_handlers",
+	"lobby/publisher":      "lobby_handlers",
 	"web/lobby/rest":       "lobby_handlers",
 	"web/lobby/ws":         "lobby_handlers",
 
@@ -276,9 +276,9 @@ var explicitLayerMap = map[string]string{
 	"events/game":  "Events-domain",
 	"lobby/events": "Events-domain",
 
-	"game/consumers":           "Web",
-	"game/consumers/converter": "Web",
-	"lobby/consumers":          "Web",
+	"game/publisher":           "Web",
+	"game/publisher/converter": "Web",
+	"lobby/publisher":          "Web",
 
 	"logic/errors": "Shared",
 
@@ -311,7 +311,7 @@ func layerFromPrefixFallback(suffix string) string {
 		return "Events-domain"
 	case strings.HasPrefix(suffix, "lobby/logic/"):
 		return "Logic"
-	case strings.HasPrefix(suffix, "lobby/consumers"):
+	case strings.HasPrefix(suffix, "lobby/publisher"):
 		return "Web"
 	case strings.HasPrefix(suffix, "data/"):
 		return "Data"
@@ -349,7 +349,7 @@ func subsystemFromSuffixFallback(suffix string) string {
 		return "api_dtos"
 	case strings.HasPrefix(suffix, "lobby/api/"):
 		return "api_dtos"
-	case strings.HasPrefix(suffix, "lobby/consumers"):
+	case strings.HasPrefix(suffix, "lobby/publisher"):
 		return "lobby_handlers"
 	case strings.HasPrefix(suffix, "web/game/"):
 		return "game_handlers"

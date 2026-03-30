@@ -2,19 +2,17 @@ package consumers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 
-	"github.com/go-risk-it/go-risk-it/internal/game/consumers/converter"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
+	"github.com/go-risk-it/go-risk-it/internal/game/publisher/converter"
 )
 
 // BuildMissionResolver creates a MissionResolver closure that dispatches
-// to the correct MissionController method based on mission type, wrapping
-// the typed result into a json.RawMessage envelope.
+// to the correct MissionController method based on mission type, returning
+// the typed DTO for serialization at the dispatch boundary.
 func BuildMissionResolver(
 	missionController *MissionController,
 ) converter.MissionResolver {
@@ -22,7 +20,7 @@ func BuildMissionResolver(
 		c context.Context,
 		missionType sqlc.GameMissionType,
 		missionID int64,
-	) (json.RawMessage, error) {
+	) (any, error) {
 		gameCtx, ok := c.(ctx.GameContext)
 		if !ok {
 			return nil, errors.New("mission resolver requires GameContext")
@@ -37,22 +35,22 @@ func resolveMission(
 	missionCtrl *MissionController,
 	missionType sqlc.GameMissionType,
 	missionID int64,
-) (json.RawMessage, error) {
+) (any, error) {
 	switch missionType {
 	case sqlc.GameMissionTypeTWOCONTINENTS:
-		return fetchAndBuildMission(missionCtrl.GetTwoContinentsMission, gameCtx, missionID)
+		return fetchMission(missionCtrl.GetTwoContinentsMission, gameCtx, missionID)
 	case sqlc.GameMissionTypeTWOCONTINENTSPLUSONE:
-		return fetchAndBuildMission(missionCtrl.GetTwoContinentsPlusOneMission, gameCtx, missionID)
+		return fetchMission(missionCtrl.GetTwoContinentsPlusOneMission, gameCtx, missionID)
 	case sqlc.GameMissionTypeELIMINATEPLAYER:
-		return fetchAndBuildMission(missionCtrl.GetEliminatePlayerMission, gameCtx, missionID)
+		return fetchMission(missionCtrl.GetEliminatePlayerMission, gameCtx, missionID)
 	case sqlc.GameMissionTypeEIGHTEENTERRITORIESTWOTROOPS:
-		return fetchAndBuildMission(
+		return fetchMission(
 			missionCtrl.GetEighteenTerritoriesTwoTroopsMission,
 			gameCtx,
 			missionID,
 		)
 	case sqlc.GameMissionTypeTWENTYFOURTERRITORIES:
-		return fetchAndBuildMission(
+		return fetchMission(
 			missionCtrl.GetTwentyFourTerritoriesMission,
 			gameCtx,
 			missionID,
@@ -62,15 +60,15 @@ func resolveMission(
 	}
 }
 
-func fetchAndBuildMission[T any](
+func fetchMission[T any](
 	fetch func(ctx.GameContext, int64) (T, error),
 	gameCtx ctx.GameContext,
 	missionID int64,
-) (json.RawMessage, error) {
+) (any, error) {
 	state, err := fetch(gameCtx, missionID)
 	if err != nil {
 		return nil, fmt.Errorf("fetching mission: %w", err)
 	}
 
-	return message.BuildMessage(message.MissionState, state)
+	return state, nil
 }

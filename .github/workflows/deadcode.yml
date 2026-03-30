@@ -22,7 +22,7 @@ jobs:
     - name: Run deadcode
       run: |
         deadcode -filter=github.com/go-risk-it/go-risk-it/internal ./... 2>&1 | \
-          grep -v "NewForTest\|NewWebSocketForTest\|NewNotFoundError\|NewUnauthorizedError\|NewTestBus\|TestBus\.\|EventsOfType" | \
+          grep -v "NewForTest\|NewWebSocketForTest\|NewNotFoundError\|NewUnauthorizedError\|NewTestBus\|TestBus\.\|EventsOfType\|SafeOp" | \
           tee /tmp/deadcode-output.txt
         if [ -s /tmp/deadcode-output.txt ]; then
           echo "::warning::Dead code found (see output above)"

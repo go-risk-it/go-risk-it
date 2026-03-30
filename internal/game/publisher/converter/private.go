@@ -2,50 +2,48 @@ package converter
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/snapshot"
-	"github.com/go-risk-it/go-risk-it/internal/web/ws/message"
 )
 
-// ConvertPrivateSnapshot transforms a PrivateSnapshot into pre-serialized WS
-// messages for a single player: cardState and missionState.
+// ConvertPrivateSnapshot transforms a PrivateSnapshot into typed DTOs for a
+// single player: cardState and missionState.
 //
 // The missionResolver is called to fetch mission details (continent names,
 // target player) that are not part of the snapshot. This keeps the converter
-// testable — tests provide a stub, the signal handler provides the real
+// testable -- tests provide a stub, the signal handler provides the real
 // implementation backed by MissionController.
 func ConvertPrivateSnapshot(
 	ctx context.Context,
 	snap *snapshot.PrivateSnapshot,
 	missionResolver MissionResolver,
 ) (*PrivateMessages, error) {
-	cardMsg, err := buildCardStateMessage(snap.Cards)
+	cardState, err := buildCardState(snap.Cards)
 	if err != nil {
-		return nil, fmt.Errorf("building card state message: %w", err)
+		return nil, fmt.Errorf("building card state: %w", err)
 	}
 
-	missionMsg, err := missionResolver(ctx, snap.MissionType, snap.MissionID)
+	missionState, err := missionResolver(ctx, snap.MissionType, snap.MissionID)
 	if err != nil {
 		return nil, fmt.Errorf("resolving mission state: %w", err)
 	}
 
 	return &PrivateMessages{
-		CardState:    cardMsg,
-		MissionState: missionMsg,
+		CardState:    cardState,
+		MissionState: missionState,
 	}, nil
 }
 
-func buildCardStateMessage(cards []sqlc.GetCardsForPlayerRow) (json.RawMessage, error) {
+func buildCardState(cards []sqlc.GetCardsForPlayerRow) (messaging.CardState, error) {
 	convertedCards, err := convertCards(cards)
 	if err != nil {
-		return nil, err
+		return messaging.CardState{}, err
 	}
 
-	return message.BuildMessage(message.CardState, messaging.CardState{Cards: convertedCards})
+	return messaging.CardState{Cards: convertedCards}, nil
 }
 
 func convertCards(cards []sqlc.GetCardsForPlayerRow) ([]messaging.Card, error) {

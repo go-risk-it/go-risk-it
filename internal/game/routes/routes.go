@@ -10,6 +10,8 @@ import (
 	gameRequest "github.com/go-risk-it/go-risk-it/internal/game/api/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/game/api/rest/response"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/player"
+	"github.com/go-risk-it/go-risk-it/internal/game/logic/state"
 	gameWs "github.com/go-risk-it/go-risk-it/internal/game/ws"
 	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
@@ -21,8 +23,10 @@ func ProvideRoutes(
 	gameCtrl *GameController,
 	advCtrl *AdvancementController,
 	moveCtrl *MoveController,
-	gameConnectionManager gameWs.Manager,
+	gameConnectionManager gameWs.Gateway,
 	upgrader ws.Upgrader,
+	gameStateService state.Service,
+	playerService player.Service,
 ) []*route.Route {
 	return []*route.Route{
 		route.Authed("POST /api/v1/games", createGame(gameCtrl)),
@@ -48,7 +52,9 @@ func ProvideRoutes(
 			"POST /api/v1/games/{id}/moves/cards",
 			moveHandler[gameRequest.CardsMove](moveCtrl.PerformCardsMove),
 		),
-		GameWS("GET /api/v1/games/{id}/ws", connectGameWS(gameConnectionManager, upgrader)),
+		GameWS("GET /api/v1/games/{id}/ws", connectGameWS(
+			gameConnectionManager, upgrader, gameStateService, playerService,
+		)),
 	}
 }
 
@@ -140,10 +146,16 @@ func moveHandler[T any](
 }
 
 func connectGameWS(
-	gameConnectionManager gameWs.Manager,
+	gameConnectionManager gameWs.Gateway,
 	upgrader ws.Upgrader,
+	gameStateService state.Service,
+	playerService player.Service,
 ) GameHandler {
 	return func(writer http.ResponseWriter, request *http.Request, gameCtx ctx.GameContext) error {
+		if err := ValidateGameWSConnection(gameCtx, gameStateService, playerService); err != nil {
+			return err
+		}
+
 		conn, err := upgrader.Upgrade(writer, request, nil)
 		if err != nil {
 			return fmt.Errorf("unable to upgrade websocket connection: %w", err)
