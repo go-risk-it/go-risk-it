@@ -88,6 +88,27 @@ var visualContainers = map[string]*visualContainer{
 	"Kernel": {Name: "🔧 Kernel", Color: "#F3E5F5", Order: 5},
 }
 
+// containerStrokes maps visual container names to their darker stroke colors.
+//
+//nolint:gochecknoglobals // package-level stroke color definition
+var containerStrokes = map[string]string{
+	"API":    "#283593",
+	"Web":    "#1565C0",
+	"Events": "#AD1457",
+	"Logic":  "#2E7D32",
+	"Data":   "#E65100",
+	"Kernel": "#6A1B9A",
+}
+
+// subContainerFills maps sub-container module types to their fill colors.
+//
+//nolint:gochecknoglobals // package-level sub-container color definition
+var subContainerFills = map[string]string{
+	"game":   "#BBDEFB",
+	"lobby":  "#C8E6C9",
+	"shared": "#F5F5F5",
+}
+
 // loadPackages runs `go list -json` and returns parsed packages.
 func loadPackages(ctx context.Context, pattern string) ([]model.GoPackage, error) {
 	cmd := exec.CommandContext(ctx, "go", "list", "-json", pattern)
@@ -231,7 +252,7 @@ func generateD2(archModel *model.ArchModel) string {
 	buf.WriteString("  style.font-size: 28\n")
 	buf.WriteString("  style.underline: true\n")
 	buf.WriteString("}\n\n")
-	buf.WriteString("direction: right\n\n")
+	buf.WriteString("direction: down\n\n")
 
 	writeLayerContainers(&buf, archModel)
 	writeCrossLayerEdges(&buf, archModel)
@@ -306,6 +327,12 @@ func writeVisualContainer(
 	fmt.Fprintf(buf, "%s: %q {\n", visID, info.Name)
 	fmt.Fprintf(buf, "  style.fill: %q\n", info.Color)
 
+	if stroke, ok := containerStrokes[visualName]; ok {
+		fmt.Fprintf(buf, "  style.stroke: %q\n", stroke)
+	}
+
+	buf.WriteString("  style.border-radius: 12\n")
+
 	hasGame, hasLobby := detectModulePresence(placements)
 	needsNesting := hasGame && hasLobby
 
@@ -374,8 +401,16 @@ func writeNestedSubContainers(buf *strings.Builder, placements []subsystemPlacem
 
 		fmt.Fprintf(buf, "  %s: %q {\n", subContainer.key, subContainer.label)
 
+		if fill, ok := subContainerFills[subContainer.key]; ok {
+			fmt.Fprintf(buf, "    style.fill: %q\n", fill)
+		}
+
+		buf.WriteString("    style.border-radius: 8\n")
+
 		for _, placement := range subs {
-			fmt.Fprintf(buf, "    %s: %q\n", placement.Subsystem.ID, placement.Subsystem.Label)
+			fmt.Fprintf(buf, "    %s: %q {\n", placement.Subsystem.ID, placement.Subsystem.Label)
+			buf.WriteString("      style.border-radius: 6\n")
+			buf.WriteString("    }\n")
 		}
 
 		buf.WriteString("  }\n")
@@ -389,7 +424,9 @@ func writeFlatSubsystems(buf *strings.Builder, placements []subsystemPlacement) 
 	})
 
 	for _, placement := range placements {
-		fmt.Fprintf(buf, "  %s: %q\n", placement.Subsystem.ID, placement.Subsystem.Label)
+		fmt.Fprintf(buf, "  %s: %q {\n", placement.Subsystem.ID, placement.Subsystem.Label)
+		buf.WriteString("    style.border-radius: 6\n")
+		buf.WriteString("  }\n")
 	}
 }
 
@@ -449,7 +486,7 @@ func renderSVG(ctx context.Context, d2Bin, d2Path, svgPath string) error {
 		ctx,
 		d2Bin,
 		"--layout",
-		"dagre",
+		"elk",
 		"--theme",
 		"0",
 		d2Path,

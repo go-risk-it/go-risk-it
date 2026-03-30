@@ -11,7 +11,13 @@ graph LR
 
     subgraph Kernel["🔧 Kernel"]
         direction TB
-        kernel["Kernel"]
+        kernelbus["Event Bus"]
+        kernelconfig["Config"]
+        kernelctx["Context"]
+        kerneldata["Data"]
+        kernelerrors["Errors"]
+        kernelobservability["Observability"]
+        kernelutils["Utils"]
     end
 
     subgraph Data["💾 Data"]
@@ -26,11 +32,6 @@ graph LR
         lobbyevents["Events"]
     end
 
-    subgraph Gamedomain["🎮 Game-domain"]
-        direction TB
-        gamectx["Ctx"]
-    end
-
     subgraph Gamesupport["🎮 Game-support"]
         direction TB
         gamesupport["Game Support"]
@@ -43,9 +44,7 @@ graph LR
 
     subgraph Logic["⚙️ Logic"]
         direction TB
-        gamerand["Rand"]
         gameservices["Game Services"]
-        gametracing["Tracing"]
         lobbylogic["Lobby Logic"]
         movepipeline["Move Pipeline"]
     end
@@ -65,40 +64,34 @@ graph LR
     end
 
     %% Cross-layer dependencies
-    gamedata --> kernel
-    gameevents --> gamectx
-    gameevents --> kernel
+    gamedata --> kernelbus
+    gameevents --> kernelbus
     gameevents --> lobbyctx
-    gameevents --> gamerand
-    gamectx --> kernel
+    gameevents --> gameservices
     gamesupport --> gamedata
     gamesupport --> gameevents
-    gamesupport --> gamectx
-    gamesupport --> kernel
-    gamesupport --> gamerand
-    lobbyctx --> kernel
-    gamerand --> gamedata
-    gamerand --> gameevents
-    gamerand --> gamectx
-    gamerand --> gamesupport
-    gamerand --> kernel
-    gamerand --> lobbyctx
+    gamesupport --> kernelbus
+    gamesupport --> gameservices
+    lobbyctx --> kernelbus
+    gameservices --> gamedata
+    gameservices --> gameevents
+    gameservices --> gamesupport
+    gameservices --> kernelbus
+    gameservices --> lobbyctx
     testing --> gamedata
-    testing --> kernel
+    testing --> kernelbus
     testing --> gamepublisher
     gamepublisher --> apidtos
     gamepublisher --> gameevents
-    gamepublisher --> gamectx
     gamepublisher --> gamesupport
-    gamepublisher --> kernel
+    gamepublisher --> kernelbus
     gamepublisher --> lobbyctx
-    gamepublisher --> gamerand
+    gamepublisher --> gameservices
 
     %% Styling
     style API fill:#E8EAF6,stroke:#3949AB,color:#000
     style Data fill:#FFF3E0,stroke:#E65100,color:#000
     style Eventsdomain fill:#FCE4EC,stroke:#C62828,color:#000
-    style Gamedomain fill:#E0F7FA,stroke:#00838F,color:#000
     style Gamesupport fill:#FFF9C4,stroke:#F9A825,color:#000
     style Kernel fill:#F3E5F5,stroke:#6A1B9A,color:#000
     style Lobbydomain fill:#E0F7FA,stroke:#00838F,color:#000

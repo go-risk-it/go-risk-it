@@ -183,7 +183,7 @@ func TestGenerateD2(t *testing.T) {
 	d2Output := generateD2(archModel)
 
 	assertD2Contains(t, d2Output, "title: go-risk-it Architecture", "title")
-	assertD2Contains(t, d2Output, "direction: right", "direction")
+	assertD2Contains(t, d2Output, "direction: down", "direction")
 	assertD2Contains(t, d2Output, `logic: "⚙️ Logic"`, "Logic visual container with emoji")
 	assertD2Contains(t, d2Output, `data: "💾 Data"`, "Data visual container with emoji")
 	assertD2Contains(t, d2Output, `game: "Game"`, "Game sub-container")
@@ -191,6 +191,11 @@ func TestGenerateD2(t *testing.T) {
 	assertD2Contains(t, d2Output, `game_services: "Game Services"`, "game_services node")
 	assertD2Contains(t, d2Output, `database: "Database"`, "database node")
 	assertD2Contains(t, d2Output, "logic -> data", "cross-layer edge")
+	assertD2Contains(t, d2Output, "style.border-radius: 12", "top-level border-radius")
+	assertD2Contains(t, d2Output, "style.border-radius: 8", "sub-container border-radius")
+	assertD2Contains(t, d2Output, "style.border-radius: 6", "leaf node border-radius")
+	assertD2Contains(t, d2Output, `style.stroke: "#2E7D32"`, "Logic stroke color")
+	assertD2Contains(t, d2Output, `style.fill: "#BBDEFB"`, "Game sub-container fill")
 	assertD2NotContains(t, d2Output, "test:", "Test container")
 	assertD2NotContains(t, d2Output, `\n`, "multi-line labels")
 
@@ -424,8 +429,8 @@ func TestGenerateD2_SubsystemsSortedWithinLayer(t *testing.T) {
 
 	d2Output := generateD2(archModel)
 
-	alphaPos := strings.Index(d2Output, `alpha: "Alpha"`)
-	zebraPos := strings.Index(d2Output, `zebra: "Zebra"`)
+	alphaPos := strings.Index(d2Output, `alpha: "Alpha" {`)
+	zebraPos := strings.Index(d2Output, `zebra: "Zebra" {`)
 
 	if alphaPos < 0 || zebraPos < 0 {
 		t.Fatalf("missing subsystem nodes:\n%s", d2Output)
@@ -695,7 +700,7 @@ func TestVisualContainerNesting(t *testing.T) {
 
 	// game_services should be inside the game sub-container.
 	gameBlockStart := strings.Index(d2Output, `game: "Game" {`)
-	gameServicesPos := strings.Index(d2Output, `game_services: "Game Services"`)
+	gameServicesPos := strings.Index(d2Output, `game_services: "Game Services" {`)
 
 	if gameBlockStart < 0 || gameServicesPos < 0 {
 		t.Fatal("missing game block or game_services node")
@@ -708,7 +713,7 @@ func TestVisualContainerNesting(t *testing.T) {
 
 	// lobby_logic should be inside the lobby sub-container.
 	lobbyBlockStart := strings.Index(d2Output, `lobby: "Lobby" {`)
-	lobbyLogicPos := strings.Index(d2Output, `lobby_logic: "Lobby Logic"`)
+	lobbyLogicPos := strings.Index(d2Output, `lobby_logic: "Lobby Logic" {`)
 
 	if lobbyBlockStart < 0 || lobbyLogicPos < 0 {
 		t.Fatal("missing lobby block or lobby_logic node")
@@ -745,8 +750,8 @@ func TestVisualContainerNesting_FlatWhenSingleModule(t *testing.T) {
 		t.Logf("D2 output:\n%s", d2Output)
 	}
 
-	if !strings.Contains(d2Output, `kernel: "Kernel"`) {
-		t.Error("expected kernel subsystem node")
+	if !strings.Contains(d2Output, `kernel: "Kernel" {`) {
+		t.Error("expected kernel subsystem node with block")
 		t.Logf("D2 output:\n%s", d2Output)
 	}
 
@@ -805,7 +810,7 @@ func TestVisualContainerNesting_SharedSubContainer(t *testing.T) {
 		t.Logf("D2 output:\n%s", d2Output)
 	}
 
-	if !strings.Contains(d2Output, `middleware: "Middleware"`) {
+	if !strings.Contains(d2Output, `middleware: "Middleware" {`) {
 		t.Error("expected middleware node inside Shared sub-container")
 		t.Logf("D2 output:\n%s", d2Output)
 	}

@@ -122,16 +122,52 @@ func TestGroupPackages_Overrides(t *testing.T) {
 			wantLabel: "Game Support",
 		},
 		{
+			name:      "game/ctx routes to game_services",
+			suffix:    "game/ctx",
+			wantSubID: "game_services",
+			wantLabel: "Game Services",
+		},
+		{
 			name:      "game/headlines routes to game_support",
 			suffix:    "game/headlines",
 			wantSubID: "game_support",
 			wantLabel: "Game Support",
 		},
 		{
+			name:      "game/rand routes to game_services",
+			suffix:    "game/rand",
+			wantSubID: "game_services",
+			wantLabel: "Game Services",
+		},
+		{
 			name:      "game/snapshot routes to game_support",
 			suffix:    "game/snapshot",
 			wantSubID: "game_support",
 			wantLabel: "Game Support",
+		},
+		{
+			name:      "game/tracing routes to game_services",
+			suffix:    "game/tracing",
+			wantSubID: "game_services",
+			wantLabel: "Game Services",
+		},
+		{
+			name:      "kernel/bus routes to kernel_bus",
+			suffix:    "kernel/bus",
+			wantSubID: "kernel_bus",
+			wantLabel: "Event Bus",
+		},
+		{
+			name:      "kernel/config routes to kernel_config",
+			suffix:    "kernel/config",
+			wantSubID: "kernel_config",
+			wantLabel: "Config",
+		},
+		{
+			name:      "kernel/logger routes to kernel_observability",
+			suffix:    "kernel/logger",
+			wantSubID: "kernel_observability",
+			wantLabel: "Observability",
 		},
 		{
 			name:      "web/middleware routes to middleware",
@@ -329,20 +365,20 @@ func TestGroupPackages_StandalonePackages(t *testing.T) {
 	t.Parallel()
 
 	// Packages not matching any root or override become standalone subsystems.
-	// game/ctx has no root ("game" is not a root) and no override.
-	archModel := makeModel("game/ctx")
+	// lobby/ctx has no root ("lobby" is not a root for this prefix) and no override.
+	archModel := makeModel("lobby/ctx")
 
 	GroupPackages(archModel)
 
 	// Standalone: suffix slashes→underscores as ID, last segment title-cased as label.
-	sub, ok := archModel.Subsystems["game_ctx"]
+	sub, ok := archModel.Subsystems["lobby_ctx"]
 	if !ok {
-		t.Fatalf("expected standalone subsystem game_ctx, got: %v",
+		t.Fatalf("expected standalone subsystem lobby_ctx, got: %v",
 			subsystemIDs(archModel))
 	}
 
-	if !slices.Contains(sub.Packages, "game/ctx") {
-		t.Errorf("expected game/ctx in game_ctx packages")
+	if !slices.Contains(sub.Packages, "lobby/ctx") {
+		t.Errorf("expected lobby/ctx in lobby_ctx packages")
 	}
 
 	if sub.Label != "Ctx" {
@@ -353,21 +389,19 @@ func TestGroupPackages_StandalonePackages(t *testing.T) {
 func TestGroupPackages_MultipleStandalonesMerge(t *testing.T) {
 	t.Parallel()
 
-	// Two packages under game/tracing — if "game/tracing" doesn't match a root,
-	// both should become standalone under game_tracing.
-	// But actually game/tracing is a single package, no children.
-	// Let's test with game/ctx and lobby/ctx — these are different standalones.
-	archModel := makeModel("game/ctx", "lobby/ctx")
+	// game/ctx is now overridden to game_services, but lobby/ctx is still standalone.
+	// Test that two different standalone packages get separate subsystems.
+	archModel := makeModel("lobby/ctx", "lobby/events")
 
 	GroupPackages(archModel)
 
-	if _, ok := archModel.Subsystems["game_ctx"]; !ok {
-		t.Errorf("expected game_ctx standalone, got: %v",
+	if _, ok := archModel.Subsystems["lobby_ctx"]; !ok {
+		t.Errorf("expected lobby_ctx standalone, got: %v",
 			subsystemIDs(archModel))
 	}
 
-	if _, ok := archModel.Subsystems["lobby_ctx"]; !ok {
-		t.Errorf("expected lobby_ctx standalone, got: %v",
+	if _, ok := archModel.Subsystems["lobby_events"]; !ok {
+		t.Errorf("expected lobby_events standalone, got: %v",
 			subsystemIDs(archModel))
 	}
 }
@@ -452,11 +486,11 @@ func TestGroupPackages_SubsystemIDsAreD2Safe(t *testing.T) {
 
 	// D2 identifiers cannot contain slashes. Verify all IDs use underscores.
 	archModel := makeModel(
-		"game/ctx",          // standalone
+		"lobby/ctx",         // standalone
 		"game/logic/board",  // root match
 		"game/publisher",    // override
 		"web/middleware",    // override
-		"kernel/config",     // root match
+		"kernel/config",     // override → kernel_config
 		"game/logic/move/x", // longest-prefix
 	)
 
@@ -499,7 +533,7 @@ func TestGroupPackages_PackagesSorted(t *testing.T) {
 func TestGroupPackages_KernelPackages(t *testing.T) {
 	t.Parallel()
 
-	// All kernel/* packages should land in the kernel subsystem.
+	// Kernel packages now split into meaningful sub-subsystems via overrides.
 	archModel := makeModel(
 		"kernel/config",
 		"kernel/bus",
@@ -510,17 +544,47 @@ func TestGroupPackages_KernelPackages(t *testing.T) {
 
 	GroupPackages(archModel)
 
-	sub := archModel.Subsystems["kernel"]
-	if sub == nil {
-		t.Fatal("expected kernel subsystem")
+	// kernel/config → kernel_config
+	configSub := archModel.Subsystems["kernel_config"]
+	if configSub == nil {
+		t.Fatal("expected kernel_config subsystem")
 	}
 
-	if len(sub.Packages) != 5 {
-		t.Errorf("expected 5 packages in kernel, got %d: %v", len(sub.Packages), sub.Packages)
+	if !slices.Contains(configSub.Packages, "kernel/config") {
+		t.Errorf("expected kernel/config in kernel_config, got: %v", configSub.Packages)
 	}
 
-	if sub.Label != "Kernel" {
-		t.Errorf("label = %q, want %q", sub.Label, "Kernel")
+	if configSub.Label != "Config" {
+		t.Errorf("kernel_config label = %q, want %q", configSub.Label, "Config")
+	}
+
+	// kernel/bus → kernel_bus
+	busSub := archModel.Subsystems["kernel_bus"]
+	if busSub == nil {
+		t.Fatal("expected kernel_bus subsystem")
+	}
+
+	if !slices.Contains(busSub.Packages, "kernel/bus") {
+		t.Errorf("expected kernel/bus in kernel_bus, got: %v", busSub.Packages)
+	}
+
+	if busSub.Label != "Event Bus" {
+		t.Errorf("kernel_bus label = %q, want %q", busSub.Label, "Event Bus")
+	}
+
+	// kernel/metrics, kernel/slog, kernel/logger → kernel_observability
+	obsSub := archModel.Subsystems["kernel_observability"]
+	if obsSub == nil {
+		t.Fatal("expected kernel_observability subsystem")
+	}
+
+	if len(obsSub.Packages) != 3 {
+		t.Errorf("expected 3 packages in kernel_observability, got %d: %v",
+			len(obsSub.Packages), obsSub.Packages)
+	}
+
+	if obsSub.Label != "Observability" {
+		t.Errorf("kernel_observability label = %q, want %q", obsSub.Label, "Observability")
 	}
 }
 

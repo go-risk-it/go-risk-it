@@ -7,67 +7,144 @@ title: go-risk-it Architecture {
   style.underline: true
 }
 
-direction: right
+direction: down
 
 api: "📋 API" {
   style.fill: "#E8EAF6"
-  api_dtos: "API DTOs"
+  style.stroke: "#283593"
+  style.border-radius: 12
+  api_dtos: "API DTOs" {
+    style.border-radius: 6
+  }
 }
 
 web: "🌐 Web" {
   style.fill: "#E3F2FD"
+  style.stroke: "#1565C0"
+  style.border-radius: 12
   game: "Game" {
-    game_publisher: "Game Publisher"
+    style.fill: "#BBDEFB"
+    style.border-radius: 8
+    game_publisher: "Game Publisher" {
+      style.border-radius: 6
+    }
   }
   lobby: "Lobby" {
-    lobby_publisher: "Lobby Publisher"
+    style.fill: "#C8E6C9"
+    style.border-radius: 8
+    lobby_publisher: "Lobby Publisher" {
+      style.border-radius: 6
+    }
   }
   shared: "Shared" {
-    middleware: "Middleware"
-    rest_utils: "REST Utils"
-    websocket: "WebSocket"
+    style.fill: "#F5F5F5"
+    style.border-radius: 8
+    middleware: "Middleware" {
+      style.border-radius: 6
+    }
+    rest_utils: "REST Utils" {
+      style.border-radius: 6
+    }
+    websocket: "WebSocket" {
+      style.border-radius: 6
+    }
   }
 }
 
 events: "📡 Events" {
   style.fill: "#FCE4EC"
+  style.stroke: "#AD1457"
+  style.border-radius: 12
   game: "Game" {
-    game_events: "Events"
+    style.fill: "#BBDEFB"
+    style.border-radius: 8
+    game_events: "Events" {
+      style.border-radius: 6
+    }
   }
   lobby: "Lobby" {
-    lobby_events: "Events"
+    style.fill: "#C8E6C9"
+    style.border-radius: 8
+    lobby_events: "Events" {
+      style.border-radius: 6
+    }
   }
 }
 
 logic: "⚙️ Logic" {
   style.fill: "#E8F5E9"
+  style.stroke: "#2E7D32"
+  style.border-radius: 12
   game: "Game" {
-    game_ctx: "Ctx"
-    game_rand: "Rand"
-    game_services: "Game Services"
-    game_support: "Game Support"
-    game_tracing: "Tracing"
-    move_pipeline: "Move Pipeline"
+    style.fill: "#BBDEFB"
+    style.border-radius: 8
+    game_services: "Game Services" {
+      style.border-radius: 6
+    }
+    game_support: "Game Support" {
+      style.border-radius: 6
+    }
+    move_pipeline: "Move Pipeline" {
+      style.border-radius: 6
+    }
   }
   lobby: "Lobby" {
-    lobby_ctx: "Ctx"
-    lobby_logic: "Lobby Logic"
+    style.fill: "#C8E6C9"
+    style.border-radius: 8
+    lobby_ctx: "Ctx" {
+      style.border-radius: 6
+    }
+    lobby_logic: "Lobby Logic" {
+      style.border-radius: 6
+    }
   }
 }
 
 data: "💾 Data" {
   style.fill: "#FFF3E0"
+  style.stroke: "#E65100"
+  style.border-radius: 12
   game: "Game" {
-    game_data: "Game Data"
+    style.fill: "#BBDEFB"
+    style.border-radius: 8
+    game_data: "Game Data" {
+      style.border-radius: 6
+    }
   }
   lobby: "Lobby" {
-    lobby_data: "Lobby Data"
+    style.fill: "#C8E6C9"
+    style.border-radius: 8
+    lobby_data: "Lobby Data" {
+      style.border-radius: 6
+    }
   }
 }
 
 kernel: "🔧 Kernel" {
   style.fill: "#F3E5F5"
-  kernel: "Kernel"
+  style.stroke: "#6A1B9A"
+  style.border-radius: 12
+  kernel_bus: "Event Bus" {
+    style.border-radius: 6
+  }
+  kernel_config: "Config" {
+    style.border-radius: 6
+  }
+  kernel_ctx: "Context" {
+    style.border-radius: 6
+  }
+  kernel_data: "Data" {
+    style.border-radius: 6
+  }
+  kernel_errors: "Errors" {
+    style.border-radius: 6
+  }
+  kernel_observability: "Observability" {
+    style.border-radius: 6
+  }
+  kernel_utils: "Utils" {
+    style.border-radius: 6
+  }
 }
 
 # Cross-layer dependencies (container-to-container)

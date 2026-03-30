@@ -50,7 +50,13 @@ graph TD
 
     subgraph layer_kernel["Kernel Layer"]
         direction LR
-        pkg_kernel["Kernel"]
+        pkg_kernel_bus["Event Bus"]
+        pkg_kernel_config["Config"]
+        pkg_kernel_ctx["Context"]
+        pkg_kernel_data["Data"]
+        pkg_kernel_errors["Errors"]
+        pkg_kernel_observability["Observability"]
+        pkg_kernel_utils["Utils"]
     end
 
     subgraph layer_data["Data Layer"]
@@ -65,11 +71,6 @@ graph TD
         pkg_lobby_events["Events"]
     end
 
-    subgraph layer_game_domain["Game-domain Layer"]
-        direction LR
-        pkg_game_ctx["Ctx"]
-    end
-
     subgraph layer_game_support["Game-support Layer"]
         direction LR
         pkg_game_support["Game Support"]
@@ -82,9 +83,7 @@ graph TD
 
     subgraph layer_logic["Logic Layer"]
         direction LR
-        pkg_game_rand["Rand"]
         pkg_game_services["Game Services"]
-        pkg_game_tracing["Tracing"]
         pkg_lobby_logic["Lobby Logic"]
         pkg_move_pipeline["Move Pipeline"]
     end

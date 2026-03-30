@@ -15,7 +15,7 @@ var SubsystemRoots = map[string]string{
 	"game/logic":      "game_services",
 	"game/logic/move": "move_pipeline", // longest-prefix wins over game/logic
 	"game/publisher":  "game_publisher",
-	"kernel":          "kernel",
+	"kernel/data":     "kernel_data",
 	"lobby/api":       "api_dtos",
 	"lobby/data":      "lobby_data",
 	"lobby/logic":     "lobby_logic",
@@ -30,8 +30,10 @@ var SubsystemRoots = map[string]string{
 // Edge cases documented:
 //   - game/publisher → game_publisher (not a root child — publisher is a top-level game module)
 //   - game/config, game/headlines, game/snapshot → game_support (cross-cutting game modules)
+//   - game/ctx, game/rand, game/tracing → game_services (tiny game packages consolidated)
 //   - game/commands → api_dtos (command DTOs live alongside API types)
 //   - game/routes, game/ws → game_publisher (web-facing game infra)
+//   - kernel/* → kernel_{bus,config,ctx,errors,observability,utils} (meaningful sub-subsystems)
 //   - web/middleware, web/mux, web/nbio → middleware (web infra, not matched by web/rest root)
 //   - web/ws → websocket (shared WS infrastructure, distinct from game/ws or lobby/ws)
 //   - lobby/publisher, lobby/routes, lobby/ws → lobby_publisher (web-facing lobby infra)
@@ -39,20 +41,32 @@ var SubsystemRoots = map[string]string{
 //
 //nolint:gochecknoglobals // package-level lookup table for subsystem overrides
 var SubsystemOverrides = map[string]string{
-	"game/commands":   "api_dtos",
-	"game/config":     "game_support",
-	"game/headlines":  "game_support",
-	"game/snapshot":   "game_support",
-	"game/routes":     "game_publisher",
-	"game/ws":         "game_publisher",
-	"lobby/publisher": "lobby_publisher",
-	"lobby/routes":    "lobby_publisher",
-	"lobby/ws":        "lobby_publisher",
-	"web/middleware":  "middleware",
-	"web/mux":         "middleware",
-	"web/nbio":        "middleware",
-	"web/ws":          "websocket",
-	"testonly":        "testing",
+	"game/commands":             "api_dtos",
+	"game/config":               "game_support",
+	"game/ctx":                  "game_services",
+	"game/headlines":            "game_support",
+	"game/rand":                 "game_services",
+	"game/snapshot":             "game_support",
+	"game/tracing":              "game_services",
+	"game/routes":               "game_publisher",
+	"game/ws":                   "game_publisher",
+	"kernel/bus":                "kernel_bus",
+	"kernel/config":             "kernel_config",
+	"kernel/ctx":                "kernel_ctx",
+	"kernel/errors":             "kernel_errors",
+	"kernel/logger":             "kernel_observability",
+	"kernel/metrics":            "kernel_observability",
+	"kernel/otelsetup":          "kernel_observability",
+	"kernel/slog":               "kernel_observability",
+	"kernel/upgradablerw_mutex": "kernel_utils",
+	"lobby/publisher":           "lobby_publisher",
+	"lobby/routes":              "lobby_publisher",
+	"lobby/ws":                  "lobby_publisher",
+	"web/middleware":            "middleware",
+	"web/mux":                   "middleware",
+	"web/nbio":                  "middleware",
+	"web/ws":                    "websocket",
+	"testonly":                  "testing",
 }
 
 // SubsystemLabels maps subsystem IDs to human-readable display labels.
@@ -61,20 +75,26 @@ var SubsystemOverrides = map[string]string{
 //
 //nolint:gochecknoglobals // package-level lookup table for subsystem labels
 var SubsystemLabels = map[string]string{
-	"api_dtos":        "API DTOs",
-	"game_data":       "Game Data",
-	"game_publisher":  "Game Publisher",
-	"game_services":   "Game Services",
-	"game_support":    "Game Support",
-	"kernel":          "Kernel",
-	"lobby_data":      "Lobby Data",
-	"lobby_logic":     "Lobby Logic",
-	"lobby_publisher": "Lobby Publisher",
-	"middleware":      "Middleware",
-	"move_pipeline":   "Move Pipeline",
-	"rest_utils":      "REST Utils",
-	"testing":         "Testing",
-	"websocket":       "WebSocket",
+	"api_dtos":             "API DTOs",
+	"game_data":            "Game Data",
+	"game_publisher":       "Game Publisher",
+	"game_services":        "Game Services",
+	"game_support":         "Game Support",
+	"kernel_bus":           "Event Bus",
+	"kernel_config":        "Config",
+	"kernel_ctx":           "Context",
+	"kernel_data":          "Data",
+	"kernel_errors":        "Errors",
+	"kernel_observability": "Observability",
+	"kernel_utils":         "Utils",
+	"lobby_data":           "Lobby Data",
+	"lobby_logic":          "Lobby Logic",
+	"lobby_publisher":      "Lobby Publisher",
+	"middleware":           "Middleware",
+	"move_pipeline":        "Move Pipeline",
+	"rest_utils":           "REST Utils",
+	"testing":              "Testing",
+	"websocket":            "WebSocket",
 }
 
 // sortedRoots holds SubsystemRoots keys sorted longest-first for prefix matching.
