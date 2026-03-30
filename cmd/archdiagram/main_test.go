@@ -1,463 +1,251 @@
 package main
 
 import (
+	"sort"
 	"strings"
 	"testing"
+
+	"github.com/go-risk-it/go-risk-it/cmd/archdiagram/model"
 )
 
-func TestLayerFromPrefix_ExplicitMappings(t *testing.T) {
+const layerLogic = "Logic"
+
+func TestSetSubsystemLayers(t *testing.T) {
 	t.Parallel()
 
-	cases := []struct {
-		suffix string
-		want   string
-	}{
-		{"config", "Infrastructure"},
-		{"metrics", "Infrastructure"},
-		{"rand", "Infrastructure"},
-		{"slog", "Infrastructure"},
-		{"tracing", "Infrastructure"},
-		{"upgradablerw_mutex", "Infrastructure"},
-		{"ctx", "Ctx"},
-		{"data/db", "Data"},
-		{"data/game/db", "Data"},
-		{"data/pool", "Data"},
-		{"data/migration", "Data"},
-		{"events", "Events"},
-		{"events/logger", "Events"},
-		{"events/game", "Events-domain"},
-		{"lobby/events", "Events-domain"},
-		{"logic/errors", "Shared"},
-		{"api/game", "API"},
-		{"api/game/messaging", "API"},
-		{"testing/invariant", "Test"},
-		{"testonly", "Test"},
+	archModel := &model.ArchModel{
+		Packages: map[string]*model.PackageInfo{
+			"game/logic/board": {Suffix: "game/logic/board", Layer: layerLogic},
+			"game/logic/card":  {Suffix: "game/logic/card", Layer: layerLogic},
+			"game/logic/phase": {Suffix: "game/logic/phase", Layer: layerLogic},
+			"web/game/rest":    {Suffix: "web/game/rest", Layer: "Web"},
+		},
+		Subsystems: map[string]*model.SubsystemInfo{
+			"game_services": {
+				ID:       "game_services",
+				Label:    "Game Services",
+				Packages: []string{"game/logic/board", "game/logic/card", "game/logic/phase"},
+			},
+			"game_handlers": {
+				ID:       "game_handlers",
+				Label:    "Game Handlers",
+				Packages: []string{"web/game/rest"},
+			},
+		},
+		Layers: map[string]*model.LayerInfo{
+			layerLogic: {Name: layerLogic, Color: "#E8F5E9", Order: 0},
+			"Web":      {Name: "Web", Color: "#E3F2FD", Order: 1},
+		},
 	}
 
-	for _, testCase := range cases {
-		t.Run(testCase.suffix, func(t *testing.T) {
-			t.Parallel()
+	setSubsystemLayers(archModel)
 
-			got := layerFromPrefix(testCase.suffix)
-			if got != testCase.want {
-				t.Errorf("layerFromPrefix(%q) = %q, want %q", testCase.suffix, got, testCase.want)
-			}
-		})
+	if archModel.Subsystems["game_services"].Layer != layerLogic {
+		t.Errorf("game_services layer = %q, want %q",
+			archModel.Subsystems["game_services"].Layer, layerLogic)
+	}
+
+	if archModel.Subsystems["game_handlers"].Layer != "Web" {
+		t.Errorf("game_handlers layer = %q, want %q",
+			archModel.Subsystems["game_handlers"].Layer, "Web")
 	}
 }
 
-func TestLayerFromPrefix_PrefixFallbacks(t *testing.T) {
+func TestSetSubsystemLayers_MajorityVote(t *testing.T) {
 	t.Parallel()
 
-	cases := []struct {
-		suffix string
-		want   string
-	}{
-		{"lobby/api/rest/response", "API"},
-		{"data/game/sqlc", "Data"},
-		{"logic/game/board", "Logic"},
-		{"logic/game/move/orchestration", "Logic"},
-		{"web/game/controller", "Web"},
-		{"web/lobby/ws", "Web"},
-		{"events/game/some/sub", "Events-domain"},
-		{"lobby/events/deep", "Events-domain"},
+	// Subsystem with 2 Logic and 1 Web package — Logic wins.
+	archModel := &model.ArchModel{
+		Packages: map[string]*model.PackageInfo{
+			"a": {Suffix: "a", Layer: layerLogic},
+			"b": {Suffix: "b", Layer: layerLogic},
+			"c": {Suffix: "c", Layer: "Web"},
+		},
+		Subsystems: map[string]*model.SubsystemInfo{
+			"mixed": {
+				ID:       "mixed",
+				Label:    "Mixed",
+				Packages: []string{"a", "b", "c"},
+			},
+		},
+		Layers: map[string]*model.LayerInfo{
+			layerLogic: {Name: layerLogic, Color: "#E8F5E9", Order: 0},
+			"Web":      {Name: "Web", Color: "#E3F2FD", Order: 1},
+		},
 	}
 
-	for _, testCase := range cases {
-		t.Run(testCase.suffix, func(t *testing.T) {
-			t.Parallel()
+	setSubsystemLayers(archModel)
 
-			got := layerFromPrefix(testCase.suffix)
-			if got != testCase.want {
-				t.Errorf("layerFromPrefix(%q) = %q, want %q", testCase.suffix, got, testCase.want)
-			}
-		})
+	if archModel.Subsystems["mixed"].Layer != layerLogic {
+		t.Errorf("mixed layer = %q, want %q",
+			archModel.Subsystems["mixed"].Layer, layerLogic)
 	}
 }
 
-func TestLayerFromPrefix_UnknownReturnsEmpty(t *testing.T) {
+func TestSetSubsystemLayers_TieBreaksAlphabetically(t *testing.T) {
 	t.Parallel()
 
-	got := layerFromPrefix("something/unknown")
-	if got != "" {
-		t.Errorf("layerFromPrefix(unknown) = %q, want empty", got)
+	// 1 Logic, 1 Web — alphabetically "Logic" < "Web" so Logic wins.
+	archModel := &model.ArchModel{
+		Packages: map[string]*model.PackageInfo{
+			"x": {Suffix: "x", Layer: "Web"},
+			"y": {Suffix: "y", Layer: layerLogic},
+		},
+		Subsystems: map[string]*model.SubsystemInfo{
+			"tied": {
+				ID:       "tied",
+				Label:    "Tied",
+				Packages: []string{"x", "y"},
+			},
+		},
+		Layers: map[string]*model.LayerInfo{
+			layerLogic: {Name: layerLogic, Color: "#E8F5E9", Order: 0},
+			"Web":      {Name: "Web", Color: "#E3F2FD", Order: 1},
+		},
+	}
+
+	setSubsystemLayers(archModel)
+
+	if archModel.Subsystems["tied"].Layer != layerLogic {
+		t.Errorf("tied layer = %q, want %q",
+			archModel.Subsystems["tied"].Layer, layerLogic)
 	}
 }
 
-func TestSubsystemFromSuffix_ExplicitMappings(t *testing.T) {
+func TestBuildSuffixToDirMap(t *testing.T) {
 	t.Parallel()
 
-	cases := []struct {
-		suffix string
-		want   string
-	}{
-		// Web Layer
-		{"web/game/controller", "game_handlers"},
-		{"web/game/rest", "game_handlers"},
-		{"web/game/ws", "game_handlers"},
-		{"game/publisher", "game_handlers"},
-		{"game/publisher/converter", "game_handlers"},
-		{"web/lobby/controller", "lobby_handlers"},
-		{"lobby/publisher", "lobby_handlers"},
-		{"web/lobby/rest", "lobby_handlers"},
-		{"web/lobby/ws", "lobby_handlers"},
-		{"web/middleware", "middleware"},
-		{"web/mux", "middleware"},
-		{"web/nbio", "middleware"},
-		{"web/otel", "middleware"},
-		{"web/rest", "rest_utils"},
-		{"web/rest/health", "rest_utils"},
-		{"web/rest/route", "rest_utils"},
-		{"web/rest/utils", "rest_utils"},
-		{"web/ws", "websocket"},
-		{"web/ws/message", "websocket"},
-
-		// Logic Layer
-		{"logic/game/move/orchestration", "move_pipeline"},
-		{"logic/game/move/attack", "move_pipeline"},
-		{"logic/game/move/deploy", "move_pipeline"},
-		{"logic/game/move/conquer", "move_pipeline"},
-		{"logic/game/move/reinforce", "move_pipeline"},
-		{"logic/game/move/cards", "move_pipeline"},
-		{"logic/game/move/validation", "move_pipeline"},
-		{"logic/game/board", "game_services"},
-		{"logic/game/phase", "game_services"},
-		{"logic/game/player", "game_services"},
-		{"logic/game/snapshot", "game_services"},
-		{"logic/game/state", "game_services"},
-		{"logic/game/creation", "game_services"},
-		{"logic/game/headlines", "game_services"},
-		{"lobby/logic/creation", "lobby_logic"},
-		{"lobby/logic/management", "lobby_logic"},
-		{"lobby/logic/start", "lobby_logic"},
-		{"lobby/logic/state", "lobby_logic"},
-
-		// Shared
-		{"logic/errors", "domain_errors"},
-
-		// Events
-		{"events", "event_bus"},
-		{"events/logger", "event_bus"},
-		{"events/game", "game_events"},
-		{"lobby/events", "lobby_events"},
-
-		// Data
-		{"data/game/db", "game_data"},
-		{"lobby/data/db", "lobby_data"},
-		{"data/db", "database"},
-		{"data/pool", "database"},
-		{"data/migration", "database"},
-
-		// Infrastructure
-		{"config", "observability"},
-		{"metrics", "observability"},
-		{"tracing", "observability"},
-		{"slog", "observability"},
-		{"ctx", "context"},
-		{"rand", "utilities"},
-		{"upgradablerw_mutex", "utilities"},
-
-		// API
-		{"api/game", "api_dtos"},
-		{"api/game/messaging", "api_dtos"},
-		{"lobby/api/rest/request", "api_dtos"},
-
-		// Test
-		{"testing/invariant", "testing"},
-		{"testonly", "testing"},
+	pkgs := []model.GoPackage{
+		{
+			ImportPath: model.ModulePrefix + "game/logic/board",
+			Dir:        "/src/internal/game/logic/board",
+		},
+		{ImportPath: model.ModulePrefix + "config", Dir: "/src/internal/config"},
+		{ImportPath: "fmt"}, // external — no module prefix
+		{
+			ImportPath: "github.com/other/module/internal/pkg",
+			Dir:        "/other",
+		}, // external — no module prefix
 	}
 
-	for _, testCase := range cases {
-		t.Run(testCase.suffix, func(t *testing.T) {
-			t.Parallel()
+	got := buildSuffixToDirMap(pkgs)
 
-			got := subsystemFromSuffix(testCase.suffix)
-			if got != testCase.want {
-				t.Errorf(
-					"subsystemFromSuffix(%q) = %q, want %q",
-					testCase.suffix,
-					got,
-					testCase.want,
-				)
-			}
-		})
+	if len(got) != 2 {
+		t.Errorf("expected 2 entries, got %d", len(got))
+	}
+
+	if got["game/logic/board"] != "/src/internal/game/logic/board" {
+		t.Errorf("game/logic/board = %q, want %q",
+			got["game/logic/board"], "/src/internal/game/logic/board")
+	}
+
+	if got["config"] != "/src/internal/config" {
+		t.Errorf("config = %q, want %q", got["config"], "/src/internal/config")
 	}
 }
 
-func TestSubsystemFromSuffix_Fallbacks(t *testing.T) {
+func TestGenerateD2(t *testing.T) {
 	t.Parallel()
 
-	cases := []struct {
-		suffix string
-		want   string
-	}{
-		{"api/future/new", "api_dtos"},
-		{"web/game/newpkg", "game_handlers"},
-		{"web/lobby/newpkg", "lobby_handlers"},
-		{"web/ws/newpkg", "websocket"},
-		{"web/rest/newpkg", "rest_utils"},
-		{"web/newmiddleware", "middleware"},
-		{"logic/game/move/newmove", "move_pipeline"},
-		{"logic/game/newservice", "game_services"},
-		{"lobby/logic/newfeature", "lobby_logic"},
-		{"events/game/sub", "game_events"},
-		{"lobby/events/sub", "lobby_events"},
-		{"events/newpkg", "event_bus"},
-		{"data/game/newpkg", "game_data"},
-		{"lobby/data/newpkg", "lobby_data"},
-		{"data/newpkg", "database"},
-		{"testing/newpkg", "testing"},
+	archModel := &model.ArchModel{
+		Packages: map[string]*model.PackageInfo{
+			"game/logic/board": {
+				Suffix: "game/logic/board",
+				Layer:  "Logic",
+			},
+		},
+		Subsystems: map[string]*model.SubsystemInfo{
+			"game_services": {
+				ID:       "game_services",
+				Label:    "Game Services",
+				Layer:    "Logic",
+				Packages: []string{"game/logic/board"},
+			},
+			"lobby_logic": {
+				ID:       "lobby_logic",
+				Label:    "Lobby Logic",
+				Layer:    "Logic",
+				Packages: []string{"lobby/logic/management"},
+			},
+			"database": {
+				ID:       "database",
+				Label:    "Database",
+				Layer:    "Data",
+				Packages: []string{"data/db"},
+			},
+		},
+		Layers: layers,
+		Edges: []model.Edge{
+			{From: "Logic", To: "Data"},
+		},
 	}
 
-	for _, testCase := range cases {
-		t.Run(testCase.suffix, func(t *testing.T) {
-			t.Parallel()
+	d2Output := generateD2(archModel)
 
-			got := subsystemFromSuffix(testCase.suffix)
-			if got != testCase.want {
-				t.Errorf(
-					"subsystemFromSuffix(%q) = %q, want %q",
-					testCase.suffix,
-					got,
-					testCase.want,
-				)
-			}
-		})
+	assertD2Contains(t, d2Output, "title: go-risk-it Architecture", "title")
+	assertD2Contains(t, d2Output, "direction: down", "direction")
+	assertD2Contains(t, d2Output, `logic: "⚙️ Logic"`, "Logic visual container with emoji")
+	assertD2Contains(t, d2Output, `data: "💾 Data"`, "Data visual container with emoji")
+	assertD2Contains(t, d2Output, `game: "Game"`, "Game sub-container")
+	assertD2Contains(t, d2Output, `lobby: "Lobby"`, "Lobby sub-container")
+	assertD2Contains(t, d2Output, `game_services: "Game Services"`, "game_services node")
+	assertD2Contains(t, d2Output, `database: "Database"`, "database node")
+	assertD2Contains(t, d2Output, "logic -> data", "cross-layer edge")
+	assertD2Contains(t, d2Output, "style.border-radius: 12", "top-level border-radius")
+	assertD2Contains(t, d2Output, "style.border-radius: 8", "sub-container border-radius")
+	assertD2Contains(t, d2Output, "style.border-radius: 6", "leaf node border-radius")
+	assertD2Contains(t, d2Output, `style.stroke: "#2E7D32"`, "Logic stroke color")
+	assertD2Contains(t, d2Output, `style.fill: "#BBDEFB"`, "Game sub-container fill")
+	assertD2NotContains(t, d2Output, "test:", "Test container")
+	assertD2NotContains(t, d2Output, `\n`, "multi-line labels")
+
+	for _, excluded := range []string{"Game-domain", "Lobby-domain", "Game-support", "Events-domain"} {
+		assertD2NotContains(t, d2Output, excluded, excluded+" container")
 	}
 }
 
-func TestSubsystemFromSuffix_UnknownReturnsEmpty(t *testing.T) {
-	t.Parallel()
+func assertD2Contains(t *testing.T, d2Output, expected, description string) {
+	t.Helper()
 
-	got := subsystemFromSuffix("something/unknown")
-	if got != "" {
-		t.Errorf("subsystemFromSuffix(unknown) = %q, want empty", got)
-	}
-}
-
-func TestIsExcluded(t *testing.T) {
-	t.Parallel()
-
-	cases := []struct {
-		suffix string
-		want   bool
-	}{
-		// wiring roots
-		{"", true},
-		{"logic", true},
-		{"logic/game", true},
-		{"data", true},
-		{"web", true},
-		{"web/game", true},
-		// generated packages
-		{"data/game/sqlc", true},
-		{"lobby/data/sqlc", true},
-		{"something/mocks", true},
-		// real packages
-		{"config", false},
-		{"logic/game/board", false},
-		{"web/game/controller", false},
-		{"events", false},
-	}
-
-	for _, testCase := range cases {
-		t.Run(testCase.suffix, func(t *testing.T) {
-			t.Parallel()
-
-			got := isExcluded(testCase.suffix)
-			if got != testCase.want {
-				t.Errorf("isExcluded(%q) = %v, want %v", testCase.suffix, got, testCase.want)
-			}
-		})
-	}
-}
-
-func TestNodeID(t *testing.T) {
-	t.Parallel()
-
-	cases := []struct {
-		suffix string
-		want   string
-	}{
-		{"config", "config"},
-		{"logic/game/board", "logic.game.board"},
-		{"web/game/controller", "web.game.controller"},
-		{"upgradablerw_mutex", "upgradablerw_mutex"},
-	}
-
-	for _, testCase := range cases {
-		t.Run(testCase.suffix, func(t *testing.T) {
-			t.Parallel()
-
-			got := nodeID(testCase.suffix)
-			if got != testCase.want {
-				t.Errorf("nodeID(%q) = %q, want %q", testCase.suffix, got, testCase.want)
-			}
-		})
-	}
-}
-
-func TestShortName(t *testing.T) {
-	t.Parallel()
-
-	cases := []struct {
-		suffix string
-		want   string
-	}{
-		{"config", "config"},
-		{"logic/game/board", "board"},
-		{"web/game/ws", "ws"},
-		{"api/game/rest/request", "request"},
-	}
-
-	for _, testCase := range cases {
-		t.Run(testCase.suffix, func(t *testing.T) {
-			t.Parallel()
-
-			got := shortName(testCase.suffix)
-			if got != testCase.want {
-				t.Errorf("shortName(%q) = %q, want %q", testCase.suffix, got, testCase.want)
-			}
-		})
-	}
-}
-
-func TestGenerateD2_SubsystemNodes(t *testing.T) {
-	t.Parallel()
-
-	subs := []subsystem{
-		{ID: "observability", Label: "Observability", Layer: "Infrastructure"},
-		{ID: "move_pipeline", Label: "Move Pipeline", Layer: "Logic"},
-		{ID: "database", Label: "Database", Layer: "Data"},
-	}
-
-	inputEdges := []edge{
-		{From: "Logic", To: "Data"},
-	}
-
-	d2Output := generateD2(subs, inputEdges)
-
-	// Check title
-	if !strings.Contains(d2Output, "title: go-risk-it Architecture") {
-		t.Error("expected title in D2 output")
-		t.Logf("D2 output:\n%s", d2Output)
-	}
-
-	// Check that the layer-level cross-layer edge exists
-	if !strings.Contains(d2Output, "logic -> data") {
-		t.Error("expected layer-level edge logic -> data in D2 output")
-		t.Logf("D2 output:\n%s", d2Output)
-	}
-
-	// Check layer containers exist
-	if !strings.Contains(d2Output, "infrastructure: Infrastructure {") {
-		t.Error("expected Infrastructure container")
-	}
-
-	if !strings.Contains(d2Output, "logic: Logic {") {
-		t.Error("expected Logic container")
-	}
-
-	if !strings.Contains(d2Output, "data: Data {") {
-		t.Error("expected Data container")
-	}
-
-	// Check subsystem nodes inside containers
-	if !strings.Contains(d2Output, `observability: "Observability"`) {
-		t.Error("expected observability subsystem node")
-		t.Logf("D2 output:\n%s", d2Output)
-	}
-
-	if !strings.Contains(d2Output, `move_pipeline: "Move Pipeline"`) {
-		t.Error("expected move_pipeline subsystem node")
-		t.Logf("D2 output:\n%s", d2Output)
-	}
-
-	if !strings.Contains(d2Output, `database: "Database"`) {
-		t.Error("expected database subsystem node")
-		t.Logf("D2 output:\n%s", d2Output)
-	}
-
-	// Verify NO individual package nodes (old format with \n descriptions)
-	if strings.Contains(d2Output, "\\n") {
-		t.Error("expected no multi-line package labels (old format), but found \\n in output")
+	if !strings.Contains(d2Output, expected) {
+		t.Errorf("expected %s in D2 output", description)
 		t.Logf("D2 output:\n%s", d2Output)
 	}
 }
 
-func TestGenerateD2_IntraLayerEdgesOmitted(t *testing.T) {
-	t.Parallel()
+func assertD2NotContains(t *testing.T, d2Output, unexpected, description string) {
+	t.Helper()
 
-	// Verify that edges between same-layer packages are not included
-	fromSuffix := "logic/game/board"
-	toSuffix := "logic/game/phase"
-
-	fromLayer := layerFromPrefix(fromSuffix)
-	toLayer := layerFromPrefix(toSuffix)
-
-	if fromLayer != toLayer {
-		t.Fatalf("test setup error: expected same layer, got %q and %q", fromLayer, toLayer)
+	if strings.Contains(d2Output, unexpected) {
+		t.Errorf("expected no %s in D2 output", description)
+		t.Logf("D2 output:\n%s", d2Output)
 	}
 }
 
-func TestContainerIDForSuffix(t *testing.T) {
+func TestContainerID(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
-		suffix string
-		want   string
+		name string
+		want string
 	}{
-		{"config", "infrastructure"},
-		{"logic/game/board", "logic"},
-		{"events/game", "events_domain"},
-		{"web/game/controller", "web"},
-		{"ctx", "ctx"},
-		{"logic/errors", "shared"},
-	}
-
-	for _, testCase := range cases {
-		t.Run(testCase.suffix, func(t *testing.T) {
-			t.Parallel()
-
-			got := containerIDForSuffix(testCase.suffix)
-			if got != testCase.want {
-				t.Errorf(
-					"containerIDForSuffix(%q) = %q, want %q",
-					testCase.suffix,
-					got,
-					testCase.want,
-				)
-			}
-		})
-	}
-}
-
-func TestLayerContainerID(t *testing.T) {
-	t.Parallel()
-
-	cases := []struct {
-		layer string
-		want  string
-	}{
-		{"Infrastructure", "infrastructure"},
 		{"Logic", "logic"},
-		{"Events-domain", "events_domain"},
 		{"Web", "web"},
-		{"Ctx", "ctx"},
-		{"Shared", "shared"},
+		{"Events", "events"},
+		{"Kernel", "kernel"},
 		{"Data", "data"},
 		{"API", "api"},
 	}
 
 	for _, testCase := range cases {
-		t.Run(testCase.layer, func(t *testing.T) {
+		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := layerContainerID(testCase.layer)
+			got := containerID(testCase.name)
 			if got != testCase.want {
 				t.Errorf(
-					"layerContainerID(%q) = %q, want %q",
-					testCase.layer,
+					"containerID(%q) = %q, want %q",
+					testCase.name,
 					got,
 					testCase.want,
 				)
@@ -466,33 +254,564 @@ func TestLayerContainerID(t *testing.T) {
 	}
 }
 
-func TestAllSubsystemMapEntriesHaveDefinitions(t *testing.T) {
+func TestLayerOrdering(t *testing.T) {
 	t.Parallel()
 
-	for suffix, subID := range subsystemMap {
-		if _, ok := subsystemDefs[subID]; !ok {
-			t.Errorf("subsystemMap[%q] = %q, but no subsystemDefs entry exists", suffix, subID)
+	// Verify visual containers are emitted in order by checking D2 output.
+	archModel := &model.ArchModel{
+		Packages: map[string]*model.PackageInfo{},
+		Subsystems: map[string]*model.SubsystemInfo{
+			"api_dtos": {
+				ID:       "api_dtos",
+				Label:    "API DTOs",
+				Layer:    "API",
+				Packages: []string{"game/api"},
+			},
+			"kernel": {
+				ID:       "kernel",
+				Label:    "Kernel",
+				Layer:    "Kernel",
+				Packages: []string{"kernel/config"},
+			},
+			"game_services": {
+				ID:       "game_services",
+				Label:    "Game Services",
+				Layer:    "Logic",
+				Packages: []string{"game/logic/board"},
+			},
+			"lobby_logic": {
+				ID:       "lobby_logic",
+				Label:    "Lobby Logic",
+				Layer:    "Logic",
+				Packages: []string{"lobby/logic/management"},
+			},
+			"game_publisher": {
+				ID:       "game_publisher",
+				Label:    "Game Publisher",
+				Layer:    "Web",
+				Packages: []string{"game/publisher"},
+			},
+			"lobby_publisher": {
+				ID:       "lobby_publisher",
+				Label:    "Lobby Publisher",
+				Layer:    "Web",
+				Packages: []string{"lobby/publisher"},
+			},
+		},
+		Layers: layers,
+	}
+
+	d2Output := generateD2(archModel)
+
+	// Find positions of visual containers in output.
+	apiPos := strings.Index(d2Output, `api: "📋 API"`)
+	webPos := strings.Index(d2Output, `web: "🌐 Web"`)
+	logicPos := strings.Index(d2Output, `logic: "⚙️ Logic"`)
+	kernelPos := strings.Index(d2Output, `kernel: "🔧 Kernel"`)
+
+	if apiPos < 0 || webPos < 0 || logicPos < 0 || kernelPos < 0 {
+		t.Fatalf("missing visual containers in output:\n%s", d2Output)
+	}
+
+	if apiPos >= webPos {
+		t.Errorf("API (pos %d) should appear before Web (pos %d)", apiPos, webPos)
+	}
+
+	if webPos >= logicPos {
+		t.Errorf("Web (pos %d) should appear before Logic (pos %d)", webPos, logicPos)
+	}
+
+	if logicPos >= kernelPos {
+		t.Errorf("Logic (pos %d) should appear before Kernel (pos %d)", logicPos, kernelPos)
+	}
+}
+
+func TestLayersMap(t *testing.T) {
+	t.Parallel()
+
+	// Verify we have exactly 10 layers with unique orders.
+	if len(layers) != 10 {
+		t.Errorf("expected 10 layers, got %d", len(layers))
+	}
+
+	orders := make(map[int]string)
+
+	for name, info := range layers {
+		if prev, ok := orders[info.Order]; ok {
+			t.Errorf("duplicate order %d: %q and %q", info.Order, prev, name)
+		}
+
+		orders[info.Order] = name
+
+		if info.Name != name {
+			t.Errorf("layer %q has Name %q (should match key)", name, info.Name)
+		}
+	}
+
+	// Verify orders are 0..9
+	for i := range 10 {
+		if _, ok := orders[i]; !ok {
+			t.Errorf("missing layer with order %d", i)
 		}
 	}
 }
 
-func TestAllSubsystemMapEntriesHaveLayerMappings(t *testing.T) {
+func TestMakeClassifier_NoDir(t *testing.T) {
 	t.Parallel()
 
-	for suffix := range subsystemMap {
-		layer := layerFromPrefix(suffix)
-		if layer == "" {
-			t.Errorf("subsystemMap entry %q has no layer mapping", suffix)
-		}
+	// When a suffix has no entry in the dir map, classifier returns empty.
+	classify := makeClassifier(map[string]string{})
+
+	layer, summary := classify("nonexistent/package")
+
+	if layer != "" {
+		t.Errorf("expected empty layer, got %q", layer)
+	}
+
+	if summary != "" {
+		t.Errorf("expected empty summary, got %q", summary)
 	}
 }
 
-func TestSubsystemDefsLayersAreValid(t *testing.T) {
+func TestGenerateD2_NoEdges(t *testing.T) {
 	t.Parallel()
 
-	for id, def := range subsystemDefs {
-		if _, ok := layers[def.Layer]; !ok {
-			t.Errorf("subsystemDefs[%q] has layer %q which is not in layers map", id, def.Layer)
+	archModel := &model.ArchModel{
+		Packages: map[string]*model.PackageInfo{},
+		Subsystems: map[string]*model.SubsystemInfo{
+			"kernel": {
+				ID:       "kernel",
+				Label:    "Kernel",
+				Layer:    "Kernel",
+				Packages: []string{"kernel/config"},
+			},
+		},
+		Layers: map[string]*model.LayerInfo{
+			"Kernel": {Name: "Kernel", Color: "#F3E5F5", Order: 1},
+		},
+	}
+
+	d2Output := generateD2(archModel)
+
+	if strings.Contains(d2Output, "Cross-layer dependencies") {
+		t.Error("expected no cross-layer dependencies comment when no edges")
+	}
+
+	if !strings.Contains(d2Output, `kernel: "🔧 Kernel"`) {
+		t.Error("expected Kernel visual container")
+		t.Logf("D2 output:\n%s", d2Output)
+	}
+}
+
+func TestGenerateD2_SubsystemsSortedWithinLayer(t *testing.T) {
+	t.Parallel()
+
+	archModel := &model.ArchModel{
+		Packages: map[string]*model.PackageInfo{},
+		Subsystems: map[string]*model.SubsystemInfo{
+			"zebra": {
+				ID:       "zebra",
+				Label:    "Zebra",
+				Layer:    "Logic",
+				Packages: []string{"game/logic/zebra"},
+			},
+			"alpha": {
+				ID:       "alpha",
+				Label:    "Alpha",
+				Layer:    "Logic",
+				Packages: []string{"game/logic/alpha"},
+			},
+		},
+		Layers: map[string]*model.LayerInfo{
+			"Logic": {Name: "Logic", Color: "#E8F5E9", Order: 0},
+		},
+	}
+
+	d2Output := generateD2(archModel)
+
+	alphaPos := strings.Index(d2Output, `alpha: "Alpha" {`)
+	zebraPos := strings.Index(d2Output, `zebra: "Zebra" {`)
+
+	if alphaPos < 0 || zebraPos < 0 {
+		t.Fatalf("missing subsystem nodes:\n%s", d2Output)
+	}
+
+	if alphaPos >= zebraPos {
+		t.Errorf("alpha (pos %d) should appear before zebra (pos %d)", alphaPos, zebraPos)
+	}
+}
+
+func TestGenerateD2_EdgesSorted(t *testing.T) {
+	t.Parallel()
+
+	archModel := &model.ArchModel{
+		Packages:   map[string]*model.PackageInfo{},
+		Subsystems: map[string]*model.SubsystemInfo{},
+		Layers: map[string]*model.LayerInfo{
+			"Web":   {Name: "Web", Color: "#E3F2FD", Order: 0},
+			"Logic": {Name: "Logic", Color: "#E8F5E9", Order: 1},
+			"Data":  {Name: "Data", Color: "#FFF3E0", Order: 2},
+		},
+		Edges: []model.Edge{
+			{From: "Web", To: "Logic"},
+			{From: "Logic", To: "Data"},
+			{From: "Web", To: "Data"},
+		},
+	}
+
+	d2Output := generateD2(archModel)
+
+	lines := strings.Split(d2Output, "\n")
+
+	var edgeLines []string
+
+	for _, line := range lines {
+		if strings.Contains(line, " -> ") {
+			edgeLines = append(edgeLines, line)
 		}
+	}
+
+	if !sort.StringsAreSorted(edgeLines) {
+		t.Errorf("edges not sorted: %v", edgeLines)
+	}
+}
+
+func TestGenerateD2_TestLayerExcluded(t *testing.T) {
+	t.Parallel()
+
+	archModel := &model.ArchModel{
+		Packages: map[string]*model.PackageInfo{},
+		Subsystems: map[string]*model.SubsystemInfo{
+			"testing": {
+				ID:       "testing",
+				Label:    "Testing",
+				Layer:    "Test",
+				Packages: []string{"testonly"},
+			},
+			"kernel": {
+				ID:       "kernel",
+				Label:    "Kernel",
+				Layer:    "Kernel",
+				Packages: []string{"kernel/config"},
+			},
+		},
+		Layers: layers,
+		Edges: []model.Edge{
+			{From: "Test", To: "Kernel"},
+		},
+	}
+
+	d2Output := generateD2(archModel)
+
+	// Test container should not appear.
+	if strings.Contains(d2Output, `"Testing"`) {
+		t.Error("expected no Testing subsystem in D2 output")
+		t.Logf("D2 output:\n%s", d2Output)
+	}
+
+	// Edge from Test should be dropped.
+	if strings.Contains(d2Output, "test ->") {
+		t.Error("expected no edges from Test container")
+		t.Logf("D2 output:\n%s", d2Output)
+	}
+}
+
+func TestGenerateD2_EdgeDeduplication(t *testing.T) {
+	t.Parallel()
+
+	// Game-domain -> Kernel and Logic -> Kernel both map to Logic -> Kernel
+	// after visual mapping. Should produce only one edge.
+	archModel := &model.ArchModel{
+		Packages:   map[string]*model.PackageInfo{},
+		Subsystems: map[string]*model.SubsystemInfo{},
+		Layers:     layers,
+		Edges: []model.Edge{
+			{From: "Game-domain", To: "Kernel"},
+			{From: "Logic", To: "Kernel"},
+		},
+	}
+
+	d2Output := generateD2(archModel)
+
+	edgeCount := strings.Count(d2Output, "logic -> kernel")
+	if edgeCount != 1 {
+		t.Errorf("expected 1 logic -> kernel edge, got %d", edgeCount)
+		t.Logf("D2 output:\n%s", d2Output)
+	}
+}
+
+func TestGenerateD2_SameVisualEdgeDropped(t *testing.T) {
+	t.Parallel()
+
+	// Game-domain -> Logic maps to Logic -> Logic (same visual).
+	// Should produce no edge.
+	archModel := &model.ArchModel{
+		Packages:   map[string]*model.PackageInfo{},
+		Subsystems: map[string]*model.SubsystemInfo{},
+		Layers:     layers,
+		Edges: []model.Edge{
+			{From: "Game-domain", To: "Logic"},
+		},
+	}
+
+	d2Output := generateD2(archModel)
+
+	if strings.Contains(d2Output, "->") {
+		t.Error("expected no edges when source and target map to same visual container")
+		t.Logf("D2 output:\n%s", d2Output)
+	}
+}
+
+func TestDetectModule(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name     string
+		packages []string
+		want     string
+	}{
+		{
+			name:     "all game packages",
+			packages: []string{"game/logic/board", "game/logic/card"},
+			want:     "game",
+		},
+		{
+			name:     "all lobby packages",
+			packages: []string{"lobby/logic/management", "lobby/publisher"},
+			want:     "lobby",
+		},
+		{
+			name:     "mixed game and lobby",
+			packages: []string{"game/api", "lobby/api"},
+			want:     "",
+		},
+		{
+			name:     "shared infrastructure",
+			packages: []string{"kernel/config", "kernel/ctx"},
+			want:     "",
+		},
+		{
+			name:     "single game package",
+			packages: []string{"game/ctx"},
+			want:     "game",
+		},
+		{
+			name:     "single lobby package",
+			packages: []string{"lobby/ctx"},
+			want:     "lobby",
+		},
+	}
+
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			sub := &model.SubsystemInfo{
+				ID:       "test_sub",
+				Label:    "Test Sub",
+				Packages: testCase.packages,
+			}
+
+			got := detectModule(sub)
+			if got != testCase.want {
+				t.Errorf("detectModule(%v) = %q, want %q",
+					testCase.packages, got, testCase.want)
+			}
+		})
+	}
+}
+
+func TestVisualContainerMapping(t *testing.T) {
+	t.Parallel()
+
+	// Every enforcement layer must map to a visual container or "".
+	for layerName := range layers {
+		visualName, ok := layerToVisual[layerName]
+		if !ok {
+			t.Errorf("layer %q has no entry in layerToVisual", layerName)
+
+			continue
+		}
+
+		if visualName == "" {
+			// Excluded (e.g., Test) — valid.
+			continue
+		}
+
+		if _, ok := visualContainers[visualName]; !ok {
+			t.Errorf("layer %q maps to visual %q which is not in visualContainers",
+				layerName, visualName)
+		}
+	}
+
+	// Verify we have exactly 6 visual containers.
+	if len(visualContainers) != 6 {
+		t.Errorf("expected 6 visual containers, got %d", len(visualContainers))
+	}
+
+	// Verify unique orders.
+	orders := make(map[int]string)
+
+	for name, info := range visualContainers {
+		if prev, ok := orders[info.Order]; ok {
+			t.Errorf("duplicate visual container order %d: %q and %q",
+				info.Order, prev, name)
+		}
+
+		orders[info.Order] = name
+	}
+}
+
+func TestVisualContainerNesting(t *testing.T) {
+	t.Parallel()
+
+	// Build a model where Logic has both game and lobby subsystems.
+	archModel := &model.ArchModel{
+		Packages: map[string]*model.PackageInfo{},
+		Subsystems: map[string]*model.SubsystemInfo{
+			"game_services": {
+				ID:       "game_services",
+				Label:    "Game Services",
+				Layer:    "Logic",
+				Packages: []string{"game/logic/board", "game/logic/card"},
+			},
+			"lobby_logic": {
+				ID:       "lobby_logic",
+				Label:    "Lobby Logic",
+				Layer:    "Logic",
+				Packages: []string{"lobby/logic/management"},
+			},
+		},
+		Layers: layers,
+	}
+
+	d2Output := generateD2(archModel)
+
+	// Logic container should have nested game and lobby sub-containers.
+	if !strings.Contains(d2Output, `game: "Game" {`) {
+		t.Error("expected Game sub-container in Logic")
+		t.Logf("D2 output:\n%s", d2Output)
+	}
+
+	if !strings.Contains(d2Output, `lobby: "Lobby" {`) {
+		t.Error("expected Lobby sub-container in Logic")
+		t.Logf("D2 output:\n%s", d2Output)
+	}
+
+	// game_services should be inside the game sub-container.
+	gameBlockStart := strings.Index(d2Output, `game: "Game" {`)
+	gameServicesPos := strings.Index(d2Output, `game_services: "Game Services" {`)
+
+	if gameBlockStart < 0 || gameServicesPos < 0 {
+		t.Fatal("missing game block or game_services node")
+	}
+
+	if gameServicesPos <= gameBlockStart {
+		t.Errorf("game_services (pos %d) should appear after Game block (pos %d)",
+			gameServicesPos, gameBlockStart)
+	}
+
+	// lobby_logic should be inside the lobby sub-container.
+	lobbyBlockStart := strings.Index(d2Output, `lobby: "Lobby" {`)
+	lobbyLogicPos := strings.Index(d2Output, `lobby_logic: "Lobby Logic" {`)
+
+	if lobbyBlockStart < 0 || lobbyLogicPos < 0 {
+		t.Fatal("missing lobby block or lobby_logic node")
+	}
+
+	if lobbyLogicPos <= lobbyBlockStart {
+		t.Errorf("lobby_logic (pos %d) should appear after Lobby block (pos %d)",
+			lobbyLogicPos, lobbyBlockStart)
+	}
+}
+
+func TestVisualContainerNesting_FlatWhenSingleModule(t *testing.T) {
+	t.Parallel()
+
+	// Kernel has only shared subsystems — should be flat (no nesting).
+	archModel := &model.ArchModel{
+		Packages: map[string]*model.PackageInfo{},
+		Subsystems: map[string]*model.SubsystemInfo{
+			"kernel": {
+				ID:       "kernel",
+				Label:    "Kernel",
+				Layer:    "Kernel",
+				Packages: []string{"kernel/config", "kernel/ctx"},
+			},
+		},
+		Layers: layers,
+	}
+
+	d2Output := generateD2(archModel)
+
+	// Should have the Kernel container with flat subsystem.
+	if !strings.Contains(d2Output, `kernel: "🔧 Kernel"`) {
+		t.Error("expected Kernel visual container")
+		t.Logf("D2 output:\n%s", d2Output)
+	}
+
+	if !strings.Contains(d2Output, `kernel: "Kernel" {`) {
+		t.Error("expected kernel subsystem node with block")
+		t.Logf("D2 output:\n%s", d2Output)
+	}
+
+	// Should NOT have Game/Lobby sub-containers.
+	// Count occurrences of "Game" in braces to distinguish from subsystem labels.
+	if strings.Contains(d2Output, `"Game" {`) {
+		t.Error("expected no Game sub-container for Kernel-only container")
+		t.Logf("D2 output:\n%s", d2Output)
+	}
+}
+
+func TestVisualContainerNesting_SharedSubContainer(t *testing.T) {
+	t.Parallel()
+
+	// Web has game, lobby, AND shared subsystems — shared ones get a sub-container.
+	archModel := &model.ArchModel{
+		Packages: map[string]*model.PackageInfo{},
+		Subsystems: map[string]*model.SubsystemInfo{
+			"game_publisher": {
+				ID:       "game_publisher",
+				Label:    "Game Publisher",
+				Layer:    "Web",
+				Packages: []string{"game/publisher", "game/routes", "game/ws"},
+			},
+			"lobby_publisher": {
+				ID:       "lobby_publisher",
+				Label:    "Lobby Publisher",
+				Layer:    "Web",
+				Packages: []string{"lobby/publisher", "lobby/routes", "lobby/ws"},
+			},
+			"middleware": {
+				ID:       "middleware",
+				Label:    "Middleware",
+				Layer:    "Web",
+				Packages: []string{"web/middleware", "web/mux", "web/nbio"},
+			},
+		},
+		Layers: layers,
+	}
+
+	d2Output := generateD2(archModel)
+
+	// Should have nested sub-containers including Shared.
+	if !strings.Contains(d2Output, `game: "Game" {`) {
+		t.Error("expected Game sub-container in Web")
+		t.Logf("D2 output:\n%s", d2Output)
+	}
+
+	if !strings.Contains(d2Output, `lobby: "Lobby" {`) {
+		t.Error("expected Lobby sub-container in Web")
+		t.Logf("D2 output:\n%s", d2Output)
+	}
+
+	if !strings.Contains(d2Output, `shared: "Shared" {`) {
+		t.Error("expected Shared sub-container in Web")
+		t.Logf("D2 output:\n%s", d2Output)
+	}
+
+	if !strings.Contains(d2Output, `middleware: "Middleware" {`) {
+		t.Error("expected middleware node inside Shared sub-container")
+		t.Logf("D2 output:\n%s", d2Output)
 	}
 }

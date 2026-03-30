@@ -73,18 +73,40 @@ dashboards-check: ## Verify generated dashboard JSON matches committed files
 new-package: ## Scaffold a new package with doc.go (usage: make new-package PKG=internal/logic/game/foo LAYER=Logic)
 	@scripts/new-package.sh $(PKG) $(LAYER)
 
-# Architecture diagram generation (requires: d2 CLI — brew install d2)
-diagrams: ## Generate architecture diagram from internal packages
+# Architecture documentation generation (requires: d2 CLI — brew install d2)
+docs: ## Generate architecture docs (D2 diagram + Mermaid + tree + tables)
 	@go run ./cmd/archdiagram/
 
-diagrams-check: ## Verify architecture diagram source is up to date
-	@echo "Checking architecture diagram is up to date..."
+docs-check: ## Verify all generated architecture docs are up to date
+	@echo "Checking architecture docs are up to date..."
 	@tmpdir=$$(mktemp -d); \
-	go run ./cmd/archdiagram/ -output "$$tmpdir" 2>/dev/null; \
-	if ! diff -q "docs/architecture-diagram.d2" "$$tmpdir/architecture-diagram.d2" > /dev/null 2>&1; then \
-		echo "FAIL: docs/architecture-diagram.d2 is out of date. Run 'make diagrams' to regenerate."; \
+	cp docs/architecture-diagram.d2 "$$tmpdir/architecture-diagram.d2" 2>/dev/null || true; \
+	cp docs/architecture.md "$$tmpdir/architecture.md"; \
+	cp docs/architecture-components.md "$$tmpdir/architecture-components.md"; \
+	cp docs/doc-go-spec.md "$$tmpdir/doc-go-spec.md"; \
+	cp README.md "$$tmpdir/README.md"; \
+	go run ./cmd/archdiagram/ 2>/dev/null; \
+	fail=0; \
+	for f in docs/architecture-diagram.d2 docs/architecture.md docs/architecture-components.md docs/doc-go-spec.md README.md; do \
+		base=$$(basename "$$f"); \
+		if ! diff -q "$$f" "$$tmpdir/$$base" > /dev/null 2>&1; then \
+			echo "FAIL: $$f is out of date."; \
+			fail=1; \
+		fi; \
+	done; \
+	if [ "$$fail" = "1" ]; then \
+		echo "Run 'make docs' to regenerate."; \
+		for f in docs/architecture-diagram.d2 docs/architecture.md docs/architecture-components.md docs/doc-go-spec.md README.md; do \
+			base=$$(basename "$$f"); \
+			cp "$$tmpdir/$$base" "$$f" 2>/dev/null || true; \
+		done; \
 		rm -rf "$$tmpdir"; \
 		exit 1; \
 	fi; \
 	rm -rf "$$tmpdir"; \
-	echo "OK: architecture diagram is up to date."
+	echo "OK: all architecture docs are up to date."
+
+# Backward compatibility aliases
+diagrams: docs ## Alias for 'make docs'
+
+diagrams-check: docs-check ## Alias for 'make docs-check'

@@ -1,8 +1,13 @@
-// Package main generates an architecture diagram from the go-risk-it internal packages.
+// Package main generates architecture documentation from the go-risk-it internal packages.
 //
-// It reads all internal packages via `go list -json`, groups them into ~20 subsystem
-// nodes within architectural layer containers, and produces a D2 diagram with
-// cross-layer dependency edges. It then shells out to the `d2` CLI to render the SVG.
+// It reads all internal packages via `go list -json`, classifies them by parsing
+// their doc.go files using the docparser package, groups them into subsystem
+// nodes within architectural layer containers via the model package, and produces:
+//
+//   - A D2 diagram with cross-layer dependency edges
+//   - Mermaid component and package architecture diagrams injected into docs/
+//   - A project structure tree injected into README.md
+//   - Package classification tables injected into docs/doc-go-spec.md
 //
 // Usage:
 //
@@ -21,428 +26,91 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/go-risk-it/go-risk-it/cmd/archdiagram/docparser"
+	"github.com/go-risk-it/go-risk-it/cmd/archdiagram/inject"
+	"github.com/go-risk-it/go-risk-it/cmd/archdiagram/model"
+	"github.com/go-risk-it/go-risk-it/cmd/archdiagram/render"
 )
 
-const modulePrefix = "github.com/go-risk-it/go-risk-it/internal/"
-
-// goPackage is the subset of `go list -json` fields we need.
-type goPackage struct {
-	ImportPath string   `json:"ImportPath"` //nolint:tagliatelle // matches go list -json output
-	Imports    []string `json:"Imports"`    //nolint:tagliatelle // matches go list -json output
-	Dir        string   `json:"Dir"`        //nolint:tagliatelle // matches go list -json output
-	GoFiles    []string `json:"GoFiles"`    //nolint:tagliatelle // matches go list -json output
-}
-
-// layerInfo describes a layer's display properties for the D2 diagram.
-type layerInfo struct {
-	Name  string // display name in the container
-	Color string // fill color (hex)
-	Order int    // sort order for consistent output
-}
-
 // layers defines the architectural layers and their visual properties.
-// Colors are from the spec; order determines container placement in the D2 source.
-var layers = map[string]layerInfo{
-	"API":            {Name: "API", Color: "#E8EAF6", Order: 0},
-	"Infrastructure": {Name: "Infrastructure", Color: "#F3E5F5", Order: 1},
-	"Ctx":            {Name: "Ctx", Color: "#E0F7FA", Order: 2},
-	"Data":           {Name: "Data", Color: "#FFF3E0", Order: 3},
-	"Events":         {Name: "Events", Color: "#FCE4EC", Order: 4},
-	"Events-domain":  {Name: "Events-domain", Color: "#FCE4EC", Order: 5},
-	"Shared":         {Name: "Shared", Color: "#FFF9C4", Order: 6},
-	"Logic":          {Name: "Logic", Color: "#E8F5E9", Order: 7},
-	"Web":            {Name: "Web", Color: "#E3F2FD", Order: 8},
-	"Test":           {Name: "Test", Color: "#F5F5F5", Order: 9},
-}
-
-// wiringRoots are single-file fx.Module aggregation packages excluded from the diagram.
-// Matches the set in arch_test.go.
-var wiringRoots = map[string]bool{
-	"":                        true,
-	"logic":                   true,
-	"logic/game":              true,
-	"logic/game/move":         true,
-	"logic/game/move/service": true,
-	"lobby/logic":             true,
-	"data":                    true,
-	"data/game":               true,
-	"lobby/data":              true,
-	"web":                     true,
-	"web/game":                true,
-	"web/lobby":               true,
-}
-
-// subsystem holds the display info for a subsystem group in the diagram.
-type subsystem struct {
-	ID    string // D2-safe identifier (e.g., "move_pipeline")
-	Label string // display label (e.g., "Move Pipeline")
-	Layer string // architectural layer key
-}
-
-// subsystemMap maps package suffixes to their subsystem ID.
-// Each subsystem groups several related packages into a single node.
+// Must stay in sync with the doc.go taxonomy and completeness_test.go.
 //
-//nolint:gochecknoglobals // package-level lookup table for subsystem classification
-var subsystemMap = map[string]string{
-	// Web Layer — Game Handlers
-	"web/game/controller": "game_handlers",
-	"web/game/rest":       "game_handlers",
-	"web/game/ws":         "game_handlers",
-
-	// Game Publisher (event handlers → WS delivery)
-	"game/publisher":           "game_handlers",
-	"game/publisher/converter": "game_handlers",
-
-	// Web Layer — Lobby Handlers
-	"web/lobby/controller": "lobby_handlers",
-	"lobby/publisher":      "lobby_handlers",
-	"web/lobby/rest":       "lobby_handlers",
-	"web/lobby/ws":         "lobby_handlers",
-
-	// Web Layer — Middleware
-	"web/middleware": "middleware",
-	"web/mux":        "middleware",
-	"web/nbio":       "middleware",
-	"web/otel":       "middleware",
-
-	// Web Layer — REST Utils
-	"web/rest":        "rest_utils",
-	"web/rest/health": "rest_utils",
-	"web/rest/route":  "rest_utils",
-	"web/rest/utils":  "rest_utils",
-
-	// Web Layer — WebSocket
-	"web/ws":         "websocket",
-	"web/ws/message": "websocket",
-
-	// Logic Layer — Move Pipeline
-	"logic/game/move/orchestration": "move_pipeline",
-	"logic/game/move/attack":        "move_pipeline",
-	"logic/game/move/attack/dice":   "move_pipeline",
-	"logic/game/move/deploy":        "move_pipeline",
-	"logic/game/move/conquer":       "move_pipeline",
-	"logic/game/move/reinforce":     "move_pipeline",
-	"logic/game/move/cards":         "move_pipeline",
-	"logic/game/move/validation":    "move_pipeline",
-
-	// Logic Layer — Game Services
-	"logic/game/board":             "game_services",
-	"logic/game/phase":             "game_services",
-	"logic/game/player":            "game_services",
-	"logic/game/region":            "game_services",
-	"logic/game/region/assignment": "game_services",
-	"logic/game/card":              "game_services",
-	"logic/game/mission":           "game_services",
-	"logic/game/mission/checker":   "game_services",
-	"logic/game/snapshot":          "game_services",
-	"logic/game/state":             "game_services",
-	"logic/game/creation":          "game_services",
-	"logic/game/advancement":       "game_services",
-	"logic/game/timing":            "game_services",
-	"logic/game/headlines":         "game_services",
-
-	// Logic Layer — Lobby
-	"lobby/logic/creation":   "lobby_logic",
-	"lobby/logic/management": "lobby_logic",
-	"lobby/logic/start":      "lobby_logic",
-	"lobby/logic/state":      "lobby_logic",
-
-	// Shared — Domain Errors
-	"logic/errors": "domain_errors",
-
-	// Events — Event Bus
-	"events":        "event_bus",
-	"events/logger": "event_bus",
-
-	// Events — Game Events
-	"events/game": "game_events",
-
-	// Events — Lobby Events
-	"lobby/events": "lobby_events",
-
-	// Data Layer — Game Data
-	"data/game/db": "game_data",
-
-	// Data Layer — Lobby Data
-	"lobby/data/db": "lobby_data",
-
-	// Data Layer — Database
-	"data/db":        "database",
-	"data/pool":      "database",
-	"data/migration": "database",
-
-	// Infrastructure — Observability
-	"config":  "observability",
-	"metrics": "observability",
-	"tracing": "observability",
-	"slog":    "observability",
-
-	// Infrastructure — Context
-	"ctx": "context",
-
-	// Infrastructure — Utilities
-	"rand":               "utilities",
-	"upgradablerw_mutex": "utilities",
-
-	// API DTOs
-	"api/game":                "api_dtos",
-	"api/game/messaging":      "api_dtos",
-	"api/game/rest/request":   "api_dtos",
-	"api/game/rest/response":  "api_dtos",
-	"lobby/api/messaging":     "api_dtos",
-	"lobby/api/rest/request":  "api_dtos",
-	"lobby/api/rest/response": "api_dtos",
-
-	// Testing
-	"testing/invariant": "testing",
-	"testonly":          "testing",
+//nolint:gochecknoglobals // package-level layer definition for the D2 renderer
+var layers = map[string]*model.LayerInfo{
+	"API":           {Name: "API", Color: "#E8EAF6", Order: 0},
+	"Kernel":        {Name: "Kernel", Color: "#F3E5F5", Order: 1},
+	"Data":          {Name: "Data", Color: "#FFF3E0", Order: 2},
+	"Events-domain": {Name: "Events-domain", Color: "#FCE4EC", Order: 3},
+	"Game-domain":   {Name: "Game-domain", Color: "#E0F7FA", Order: 4},
+	"Game-support":  {Name: "Game-support", Color: "#FFF9C4", Order: 5},
+	"Lobby-domain":  {Name: "Lobby-domain", Color: "#E0F7FA", Order: 6},
+	"Logic":         {Name: "Logic", Color: "#E8F5E9", Order: 7},
+	"Web":           {Name: "Web", Color: "#E3F2FD", Order: 8},
+	"Test":          {Name: "Test", Color: "#F5F5F5", Order: 9},
 }
 
-// subsystemDefs defines the display properties for each subsystem group.
+// visualContainer defines how a doc.go layer renders in the D2 diagram.
+// The diagram uses fewer, larger containers than the 10-layer enforcement taxonomy.
+type visualContainer struct {
+	Name  string // display name (with emoji prefix)
+	Color string // fill color (hex)
+	Order int    // sort order for container placement
+}
+
+// layerToVisual maps doc.go layer names to visual container names.
+// Multiple layers can consolidate into one visual container.
+// Empty string means excluded from diagram.
 //
-//nolint:gochecknoglobals // package-level lookup table for subsystem definitions
-var subsystemDefs = map[string]subsystem{
-	// Web Layer
-	"game_handlers":  {ID: "game_handlers", Label: "Game Handlers", Layer: "Web"},
-	"lobby_handlers": {ID: "lobby_handlers", Label: "Lobby Handlers", Layer: "Web"},
-	"middleware":     {ID: "middleware", Label: "Middleware", Layer: "Web"},
-	"rest_utils":     {ID: "rest_utils", Label: "REST Utils", Layer: "Web"},
-	"websocket":      {ID: "websocket", Label: "WebSocket", Layer: "Web"},
-
-	// Logic Layer
-	"move_pipeline": {ID: "move_pipeline", Label: "Move Pipeline", Layer: "Logic"},
-	"game_services": {ID: "game_services", Label: "Game Services", Layer: "Logic"},
-	"lobby_logic":   {ID: "lobby_logic", Label: "Lobby", Layer: "Logic"},
-
-	// Shared
-	"domain_errors": {ID: "domain_errors", Label: "Domain Errors", Layer: "Shared"},
-
-	// Events
-	"event_bus":    {ID: "event_bus", Label: "Event Bus", Layer: "Events"},
-	"game_events":  {ID: "game_events", Label: "Game Events", Layer: "Events-domain"},
-	"lobby_events": {ID: "lobby_events", Label: "Lobby Events", Layer: "Events-domain"},
-
-	// Data Layer
-	"game_data":  {ID: "game_data", Label: "Game Data", Layer: "Data"},
-	"lobby_data": {ID: "lobby_data", Label: "Lobby Data", Layer: "Data"},
-	"database":   {ID: "database", Label: "Database", Layer: "Data"},
-
-	// Infrastructure
-	"observability": {ID: "observability", Label: "Observability", Layer: "Infrastructure"},
-	"context":       {ID: "context", Label: "Context", Layer: "Ctx"},
-	"utilities":     {ID: "utilities", Label: "Utilities", Layer: "Infrastructure"},
-
-	// API
-	"api_dtos": {ID: "api_dtos", Label: "API DTOs", Layer: "API"},
-
-	// Testing
-	"testing": {ID: "testing", Label: "Testing", Layer: "Test"},
+//nolint:gochecknoglobals // package-level visual container mapping
+var layerToVisual = map[string]string{
+	"API":           "API",
+	"Kernel":        "Kernel",
+	"Data":          "Data",
+	"Events-domain": "Events",
+	"Game-domain":   "Logic",
+	"Game-support":  "Logic",
+	"Lobby-domain":  "Logic",
+	"Logic":         "Logic",
+	"Web":           "Web",
+	"Test":          "",
 }
 
-// explicitLayerMap maps known package suffixes to their layer.
-// Matches arch_test.go's expectedLayer map exactly.
+// visualContainers defines the 6 visual containers for the D2 diagram.
 //
-//nolint:gochecknoglobals // package-level lookup table for layer classification
-var explicitLayerMap = map[string]string{
-	"api/game":                "API",
-	"api/game/messaging":      "API",
-	"api/game/rest/request":   "API",
-	"api/game/rest/response":  "API",
-	"lobby/api/messaging":     "API",
-	"lobby/api/rest/request":  "API",
-	"lobby/api/rest/response": "API",
-
-	"config":             "Infrastructure",
-	"metrics":            "Infrastructure",
-	"rand":               "Infrastructure",
-	"slog":               "Infrastructure",
-	"tracing":            "Infrastructure",
-	"upgradablerw_mutex": "Infrastructure",
-
-	"ctx": "Ctx",
-
-	"data/db":        "Data",
-	"data/game/db":   "Data",
-	"lobby/data/db":  "Data",
-	"data/migration": "Data",
-	"data/pool":      "Data",
-
-	"events":        "Events",
-	"events/logger": "Events",
-
-	"events/game":  "Events-domain",
-	"lobby/events": "Events-domain",
-
-	"game/publisher":           "Web",
-	"game/publisher/converter": "Web",
-	"lobby/publisher":          "Web",
-
-	"logic/errors": "Shared",
-
-	"testing/invariant": "Test",
-	"testonly":          "Test",
+//nolint:gochecknoglobals // package-level visual container definition
+var visualContainers = map[string]*visualContainer{
+	"API":    {Name: "📋 API", Color: "#E8EAF6", Order: 0},
+	"Web":    {Name: "🌐 Web", Color: "#E3F2FD", Order: 1},
+	"Events": {Name: "📡 Events", Color: "#FCE4EC", Order: 2},
+	"Logic":  {Name: "⚙️ Logic", Color: "#E8F5E9", Order: 3},
+	"Data":   {Name: "💾 Data", Color: "#FFF3E0", Order: 4},
+	"Kernel": {Name: "🔧 Kernel", Color: "#F3E5F5", Order: 5},
 }
 
-// layerFromPrefix derives the layer for a package suffix.
-// Mirrors arch_test.go's layerFromPrefix exactly.
-func layerFromPrefix(suffix string) string {
-	if layer, ok := explicitLayerMap[suffix]; ok {
-		return layer
-	}
-
-	return layerFromPrefixFallback(suffix)
-}
-
-// layerFromPrefixFallback uses prefix matching for packages not in the explicit map.
+// containerStrokes maps visual container names to their darker stroke colors.
 //
-//nolint:cyclop // switch mirrors arch_test.go's layerFromPrefix exactly
-func layerFromPrefixFallback(suffix string) string {
-	switch {
-	case strings.HasPrefix(suffix, "api/"):
-		return "API"
-	case strings.HasPrefix(suffix, "lobby/api/"):
-		return "API"
-	case strings.HasPrefix(suffix, "lobby/data/"):
-		return "Data"
-	case strings.HasPrefix(suffix, "lobby/events"):
-		return "Events-domain"
-	case strings.HasPrefix(suffix, "lobby/logic/"):
-		return "Logic"
-	case strings.HasPrefix(suffix, "lobby/publisher"):
-		return "Web"
-	case strings.HasPrefix(suffix, "data/"):
-		return "Data"
-	case strings.HasPrefix(suffix, "events/game") || strings.HasPrefix(suffix, "events/lobby"):
-		return "Events-domain"
-	case strings.HasPrefix(suffix, "events/"):
-		return "Events"
-	case strings.HasPrefix(suffix, "logic/"):
-		return "Logic"
-	case strings.HasPrefix(suffix, "web/"):
-		return "Web"
-	case strings.HasPrefix(suffix, "testing/") || suffix == "testonly":
-		return "Test"
-	default:
-		return ""
-	}
+//nolint:gochecknoglobals // package-level stroke color definition
+var containerStrokes = map[string]string{
+	"API":    "#283593",
+	"Web":    "#1565C0",
+	"Events": "#AD1457",
+	"Logic":  "#2E7D32",
+	"Data":   "#E65100",
+	"Kernel": "#6A1B9A",
 }
 
-// subsystemFromSuffix returns the subsystem ID for a package suffix.
-// Falls back to prefix-based matching if no explicit mapping exists.
-func subsystemFromSuffix(suffix string) string {
-	if sub, ok := subsystemMap[suffix]; ok {
-		return sub
-	}
-
-	return subsystemFromSuffixFallback(suffix)
-}
-
-// subsystemFromSuffixFallback uses prefix matching for packages not in the explicit map.
+// subContainerFills maps sub-container module types to their fill colors.
 //
-//nolint:cyclop,funlen // switch covers all subsystem prefix patterns
-func subsystemFromSuffixFallback(suffix string) string {
-	switch {
-	case strings.HasPrefix(suffix, "api/"):
-		return "api_dtos"
-	case strings.HasPrefix(suffix, "lobby/api/"):
-		return "api_dtos"
-	case strings.HasPrefix(suffix, "lobby/publisher"):
-		return "lobby_handlers"
-	case strings.HasPrefix(suffix, "web/game/"):
-		return "game_handlers"
-	case strings.HasPrefix(suffix, "web/lobby/"):
-		return "lobby_handlers"
-	case strings.HasPrefix(suffix, "web/ws"):
-		return "websocket"
-	case strings.HasPrefix(suffix, "web/rest"):
-		return "rest_utils"
-	case strings.HasPrefix(suffix, "web/"):
-		return "middleware"
-	case strings.HasPrefix(suffix, "logic/game/move/"):
-		return "move_pipeline"
-	case strings.HasPrefix(suffix, "logic/game/"):
-		return "game_services"
-	case strings.HasPrefix(suffix, "logic/lobby/"):
-		return "lobby_logic"
-	case strings.HasPrefix(suffix, "lobby/logic/"):
-		return "lobby_logic"
-	case strings.HasPrefix(suffix, "logic/"):
-		return "domain_errors"
-	case strings.HasPrefix(suffix, "events/game"):
-		return "game_events"
-	case strings.HasPrefix(suffix, "events/lobby"):
-		return "lobby_events"
-	case strings.HasPrefix(suffix, "lobby/events"):
-		return "lobby_events"
-	case strings.HasPrefix(suffix, "events/"):
-		return "event_bus"
-	case strings.HasPrefix(suffix, "data/game/"):
-		return "game_data"
-	case strings.HasPrefix(suffix, "data/lobby/"):
-		return "lobby_data"
-	case strings.HasPrefix(suffix, "lobby/data/"):
-		return "lobby_data"
-	case strings.HasPrefix(suffix, "data/"):
-		return "database"
-	case strings.HasPrefix(suffix, "testing/") || suffix == "testonly":
-		return "testing"
-	default:
-		return ""
-	}
-}
-
-// packageSuffix returns the import path after the module internal prefix.
-func packageSuffix(importPath string) string {
-	return strings.TrimPrefix(importPath, modulePrefix)
-}
-
-// isExcluded returns true for packages that should not appear in the diagram.
-func isExcluded(suffix string) bool {
-	if wiringRoots[suffix] {
-		return true
-	}
-
-	if strings.Contains(suffix, "/sqlc") || strings.Contains(suffix, "/mocks") {
-		return true
-	}
-
-	return false
-}
-
-// nodeID converts a package suffix to a D2-safe node identifier.
-// Slashes become dots, underscores stay.
-func nodeID(suffix string) string {
-	return strings.ReplaceAll(suffix, "/", ".")
-}
-
-// shortName returns the last path segment of a suffix for compact display.
-func shortName(suffix string) string {
-	parts := strings.Split(suffix, "/")
-
-	return parts[len(parts)-1]
-}
-
-// internalImports returns only imports under our module's internal/.
-func internalImports(pkg goPackage) []string {
-	var result []string
-
-	for _, imp := range pkg.Imports {
-		if strings.HasPrefix(imp, modulePrefix) {
-			result = append(result, imp)
-		}
-	}
-
-	return result
-}
-
-// edge represents a dependency between two entities (layers or subsystems).
-type edge struct {
-	From string
-	To   string
+//nolint:gochecknoglobals // package-level sub-container color definition
+var subContainerFills = map[string]string{
+	"game":   "#BBDEFB",
+	"lobby":  "#C8E6C9",
+	"shared": "#F5F5F5",
 }
 
 // loadPackages runs `go list -json` and returns parsed packages.
-func loadPackages(ctx context.Context, pattern string) ([]goPackage, error) {
+func loadPackages(ctx context.Context, pattern string) ([]model.GoPackage, error) {
 	cmd := exec.CommandContext(ctx, "go", "list", "-json", pattern)
 
 	out, err := cmd.Output()
@@ -450,11 +118,11 @@ func loadPackages(ctx context.Context, pattern string) ([]goPackage, error) {
 		return nil, fmt.Errorf("go list failed: %w", err)
 	}
 
-	var pkgs []goPackage
+	var pkgs []model.GoPackage
 
 	dec := json.NewDecoder(strings.NewReader(string(out)))
 	for dec.More() {
-		var pkg goPackage
+		var pkg model.GoPackage
 		if err := dec.Decode(&pkg); err != nil {
 			return nil, fmt.Errorf("failed to decode go list output: %w", err)
 		}
@@ -465,8 +133,116 @@ func loadPackages(ctx context.Context, pattern string) ([]goPackage, error) {
 	return pkgs, nil
 }
 
-// generateD2 produces the D2 diagram source string with subsystem-grouped nodes.
-func generateD2(activeSubsystems []subsystem, crossLayerEdges []edge) string {
+// buildSuffixToDirMap builds a map from package suffix to its filesystem Dir path.
+// Only includes packages under the module's internal/ prefix.
+func buildSuffixToDirMap(pkgs []model.GoPackage) map[string]string {
+	result := make(map[string]string, len(pkgs))
+
+	for _, pkg := range pkgs {
+		if !strings.HasPrefix(pkg.ImportPath, model.ModulePrefix) {
+			continue
+		}
+
+		suffix := model.PackageSuffix(pkg.ImportPath)
+		result[suffix] = pkg.Dir
+	}
+
+	return result
+}
+
+// makeClassifier returns a model.Classifier that reads doc.go files from disk
+// using the docparser package. It resolves package suffixes to filesystem
+// directories using the provided suffix-to-dir map.
+func makeClassifier(suffixToDir map[string]string) model.Classifier {
+	return func(suffix string) (string, string) {
+		dir, ok := suffixToDir[suffix]
+		if !ok {
+			return "", ""
+		}
+
+		layer, summary, err := docparser.ParseLayerAndSummary(dir)
+		if err != nil {
+			log.Printf("WARNING: failed to parse doc.go for %s: %v", suffix, err)
+
+			return "", ""
+		}
+
+		return layer, summary
+	}
+}
+
+// setSubsystemLayers assigns each subsystem's Layer field by majority vote
+// of its member packages' layers. If a subsystem has packages from multiple
+// layers, the most common layer wins. Ties are broken alphabetically for
+// deterministic output.
+func setSubsystemLayers(m *model.ArchModel) {
+	for _, sub := range m.Subsystems {
+		sub.Layer = majorityLayer(m, sub.Packages)
+	}
+}
+
+// majorityLayer returns the most common layer among the given package suffixes.
+// Ties are broken alphabetically for deterministic output.
+func majorityLayer(m *model.ArchModel, suffixes []string) string {
+	counts := make(map[string]int)
+
+	for _, suffix := range suffixes {
+		pkg, ok := m.Packages[suffix]
+		if !ok {
+			continue
+		}
+
+		counts[pkg.Layer]++
+	}
+
+	var bestLayer string
+
+	bestCount := 0
+
+	for layer, count := range counts {
+		if count > bestCount || (count == bestCount && layer < bestLayer) {
+			bestLayer = layer
+			bestCount = count
+		}
+	}
+
+	return bestLayer
+}
+
+// detectModule determines whether a subsystem belongs to the game module,
+// lobby module, or is shared infrastructure.
+func detectModule(sub *model.SubsystemInfo) string {
+	allGame, allLobby := true, true
+
+	for _, suffix := range sub.Packages {
+		if !strings.HasPrefix(suffix, "game/") {
+			allGame = false
+		}
+
+		if !strings.HasPrefix(suffix, "lobby/") {
+			allLobby = false
+		}
+	}
+
+	if allGame {
+		return "game"
+	}
+
+	if allLobby {
+		return "lobby"
+	}
+
+	return ""
+}
+
+// containerID returns the D2 container ID for a container name.
+// Converts to lowercase and replaces hyphens with underscores.
+func containerID(name string) string {
+	return strings.ReplaceAll(strings.ToLower(name), "-", "_")
+}
+
+// generateD2 produces the D2 diagram source string from the architecture model.
+func generateD2(archModel *model.ArchModel) string {
 	var buf strings.Builder
 
 	buf.WriteString("# Architecture diagram — auto-generated by cmd/archdiagram.\n")
@@ -476,165 +252,282 @@ func generateD2(activeSubsystems []subsystem, crossLayerEdges []edge) string {
 	buf.WriteString("  style.font-size: 28\n")
 	buf.WriteString("  style.underline: true\n")
 	buf.WriteString("}\n\n")
-	buf.WriteString("direction: right\n\n")
+	buf.WriteString("direction: down\n\n")
 
-	writeLayerContainers(&buf, activeSubsystems)
-	writeCrossLayerEdges(&buf, crossLayerEdges)
+	writeLayerContainers(&buf, archModel)
+	writeCrossLayerEdges(&buf, archModel)
 
 	return buf.String()
 }
 
-// writeLayerContainers emits D2 container blocks with subsystem nodes.
-func writeLayerContainers(buf *strings.Builder, activeSubsystems []subsystem) {
-	// Group subsystems by layer
-	byLayer := make(map[string][]subsystem)
-	for _, sub := range activeSubsystems {
-		byLayer[sub.Layer] = append(byLayer[sub.Layer], sub)
-	}
+// subsystemPlacement holds a subsystem and its detected module for grouping.
+type subsystemPlacement struct {
+	Subsystem *model.SubsystemInfo
+	Module    string // "game", "lobby", or "" (shared)
+}
 
-	// Sort layers by order
-	sortedLayers := make([]string, 0, len(byLayer))
-	for l := range byLayer {
-		sortedLayers = append(sortedLayers, l)
-	}
+// writeLayerContainers emits D2 container blocks with subsystem nodes,
+// consolidating the 10 enforcement layers into 6 visual containers.
+// Containers with both game and lobby subsystems get nested sub-containers.
+func writeLayerContainers(buf *strings.Builder, archModel *model.ArchModel) {
+	// Group subsystems by visual container.
+	byVisual := make(map[string][]subsystemPlacement)
 
-	sort.Slice(sortedLayers, func(i, j int) bool {
-		return layers[sortedLayers[i]].Order < layers[sortedLayers[j]].Order
-	})
-
-	for _, layerKey := range sortedLayers {
-		info := layers[layerKey]
-		layerSubs := byLayer[layerKey]
-
-		sort.Slice(layerSubs, func(i, j int) bool {
-			return layerSubs[i].ID < layerSubs[j].ID
-		})
-
-		containerID := strings.ReplaceAll(strings.ToLower(layerKey), "-", "_")
-
-		fmt.Fprintf(buf, "%s: %s {\n", containerID, info.Name)
-		fmt.Fprintf(buf, "  style.fill: %q\n", info.Color)
-
-		for _, sub := range layerSubs {
-			fmt.Fprintf(buf, "  %s: %q\n", sub.ID, sub.Label)
+	for _, sub := range archModel.Subsystems {
+		visualName := layerToVisual[sub.Layer]
+		if visualName == "" {
+			continue
 		}
 
-		buf.WriteString("}\n\n")
+		byVisual[visualName] = append(byVisual[visualName], subsystemPlacement{
+			Subsystem: sub,
+			Module:    detectModule(sub),
+		})
+	}
+
+	// Sort visual containers by order.
+	sortedContainers := make([]string, 0, len(byVisual))
+	for name := range byVisual {
+		sortedContainers = append(sortedContainers, name)
+	}
+
+	sort.Slice(sortedContainers, func(i, j int) bool {
+		containerI, okI := visualContainers[sortedContainers[i]]
+		containerJ, okJ := visualContainers[sortedContainers[j]]
+
+		if !okI || !okJ {
+			return sortedContainers[i] < sortedContainers[j]
+		}
+
+		return containerI.Order < containerJ.Order
+	})
+
+	for _, visualName := range sortedContainers {
+		info, ok := visualContainers[visualName]
+		if !ok {
+			continue
+		}
+
+		placements := byVisual[visualName]
+		writeVisualContainer(buf, info, visualName, placements)
 	}
 }
 
-// writeCrossLayerEdges emits sorted D2 edge declarations at the layer level.
-func writeCrossLayerEdges(buf *strings.Builder, edges []edge) {
-	sort.Slice(edges, func(i, j int) bool {
-		if edges[i].From != edges[j].From {
-			return edges[i].From < edges[j].From
-		}
+// writeVisualContainer emits a single D2 container block. If the container has
+// subsystems from multiple modules (game + lobby), it creates nested
+// sub-containers. Otherwise it emits flat subsystem nodes.
+func writeVisualContainer(
+	buf *strings.Builder,
+	info *visualContainer,
+	visualName string,
+	placements []subsystemPlacement,
+) {
+	visID := containerID(visualName)
 
-		return edges[i].To < edges[j].To
-	})
+	fmt.Fprintf(buf, "%s: %q {\n", visID, info.Name)
+	fmt.Fprintf(buf, "  style.fill: %q\n", info.Color)
 
-	if len(edges) > 0 {
-		buf.WriteString("# Cross-layer dependencies (layer-to-layer)\n")
+	if stroke, ok := containerStrokes[visualName]; ok {
+		fmt.Fprintf(buf, "  style.stroke: %q\n", stroke)
 	}
 
-	for _, e := range edges {
-		fromContainer := layerContainerID(e.From)
-		toContainer := layerContainerID(e.To)
+	buf.WriteString("  style.border-radius: 12\n")
+
+	hasGame, hasLobby := detectModulePresence(placements)
+	needsNesting := hasGame && hasLobby
+
+	if needsNesting {
+		writeNestedSubContainers(buf, placements)
+	} else {
+		writeFlatSubsystems(buf, placements)
+	}
+
+	buf.WriteString("}\n\n")
+}
+
+// detectModulePresence checks whether placements contain game and/or lobby modules.
+func detectModulePresence(placements []subsystemPlacement) (bool, bool) {
+	var gamePresent, lobbyPresent bool
+
+	for _, placement := range placements {
+		switch placement.Module {
+		case "game":
+			gamePresent = true
+		case "lobby":
+			lobbyPresent = true
+		}
+	}
+
+	return gamePresent, lobbyPresent
+}
+
+// writeNestedSubContainers emits game, lobby, and optionally shared
+// sub-containers within a visual container.
+func writeNestedSubContainers(buf *strings.Builder, placements []subsystemPlacement) {
+	grouped := map[string][]subsystemPlacement{
+		"game":   {},
+		"lobby":  {},
+		"shared": {},
+	}
+
+	for _, placement := range placements {
+		key := placement.Module
+		if key == "" {
+			key = "shared"
+		}
+
+		grouped[key] = append(grouped[key], placement)
+	}
+
+	// Emit sub-containers in fixed order: Game, Lobby, Shared.
+	subContainerOrder := []struct {
+		key   string
+		label string
+	}{
+		{"game", "Game"},
+		{"lobby", "Lobby"},
+		{"shared", "Shared"},
+	}
+
+	for _, subContainer := range subContainerOrder {
+		subs := grouped[subContainer.key]
+		if len(subs) == 0 {
+			continue
+		}
+
+		sort.Slice(subs, func(i, j int) bool {
+			return subs[i].Subsystem.ID < subs[j].Subsystem.ID
+		})
+
+		fmt.Fprintf(buf, "  %s: %q {\n", subContainer.key, subContainer.label)
+
+		if fill, ok := subContainerFills[subContainer.key]; ok {
+			fmt.Fprintf(buf, "    style.fill: %q\n", fill)
+		}
+
+		buf.WriteString("    style.border-radius: 8\n")
+
+		for _, placement := range subs {
+			fmt.Fprintf(buf, "    %s: %q {\n", placement.Subsystem.ID, placement.Subsystem.Label)
+			buf.WriteString("      style.border-radius: 6\n")
+			buf.WriteString("    }\n")
+		}
+
+		buf.WriteString("  }\n")
+	}
+}
+
+// writeFlatSubsystems emits subsystem nodes directly within a container (no nesting).
+func writeFlatSubsystems(buf *strings.Builder, placements []subsystemPlacement) {
+	sort.Slice(placements, func(i, j int) bool {
+		return placements[i].Subsystem.ID < placements[j].Subsystem.ID
+	})
+
+	for _, placement := range placements {
+		fmt.Fprintf(buf, "  %s: %q {\n", placement.Subsystem.ID, placement.Subsystem.Label)
+		buf.WriteString("    style.border-radius: 6\n")
+		buf.WriteString("  }\n")
+	}
+}
+
+// writeCrossLayerEdges emits sorted, deduplicated D2 edge declarations
+// at the visual container level. Edges where either end maps to an excluded
+// container (Test) are dropped.
+func writeCrossLayerEdges(buf *strings.Builder, archModel *model.ArchModel) {
+	// Map edges through layerToVisual and deduplicate.
+	seen := make(map[model.Edge]bool)
+
+	var visualEdges []model.Edge
+
+	for _, edge := range archModel.Edges {
+		fromVisual := layerToVisual[edge.From]
+		toVisual := layerToVisual[edge.To]
+
+		if fromVisual == "" || toVisual == "" {
+			continue
+		}
+
+		if fromVisual == toVisual {
+			continue
+		}
+
+		mapped := model.Edge{From: fromVisual, To: toVisual}
+		if !seen[mapped] {
+			seen[mapped] = true
+			visualEdges = append(visualEdges, mapped)
+		}
+	}
+
+	sort.Slice(visualEdges, func(i, j int) bool {
+		if visualEdges[i].From != visualEdges[j].From {
+			return visualEdges[i].From < visualEdges[j].From
+		}
+
+		return visualEdges[i].To < visualEdges[j].To
+	})
+
+	if len(visualEdges) > 0 {
+		buf.WriteString("# Cross-layer dependencies (container-to-container)\n")
+	}
+
+	for _, edge := range visualEdges {
+		fromContainer := containerID(edge.From)
+		toContainer := containerID(edge.To)
 
 		fmt.Fprintf(buf, "%s -> %s\n", fromContainer, toContainer)
 	}
 }
 
-// containerIDForSuffix returns the D2 container ID for a package suffix's layer.
-func containerIDForSuffix(suffix string) string {
-	layer := layerFromPrefix(suffix)
+// renderSVG shells out to the d2 CLI to render the SVG.
+func renderSVG(ctx context.Context, d2Bin, d2Path, svgPath string) error {
+	start := time.Now()
 
-	return strings.ReplaceAll(strings.ToLower(layer), "-", "_")
-}
+	cmd := exec.CommandContext(
+		ctx,
+		d2Bin,
+		"--layout",
+		"elk",
+		"--theme",
+		"0",
+		d2Path,
+		svgPath,
+	)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
-// layerContainerID returns the D2 container ID for a layer name.
-func layerContainerID(layerName string) string {
-	return strings.ReplaceAll(strings.ToLower(layerName), "-", "_")
-}
-
-// classifySubsystems determines which subsystems are active based on discovered packages,
-// and returns the suffix-to-layer lookup for edge classification.
-func classifySubsystems(pkgs []goPackage) ([]subsystem, map[string]string) {
-	suffixToLayer := make(map[string]string)
-	activeSubIDs := make(map[string]bool)
-
-	for _, pkg := range pkgs {
-		suffix := packageSuffix(pkg.ImportPath)
-		if isExcluded(suffix) {
-			continue
-		}
-
-		layer := layerFromPrefix(suffix)
-		if layer == "" {
-			log.Printf("WARNING: no layer mapping for %s, skipping", suffix)
-
-			continue
-		}
-
-		suffixToLayer[suffix] = layer
-
-		subID := subsystemFromSuffix(suffix)
-		if subID == "" {
-			log.Printf("WARNING: no subsystem mapping for %s, skipping", suffix)
-
-			continue
-		}
-
-		activeSubIDs[subID] = true
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("d2 rendering failed: %w", err)
 	}
 
-	// Collect active subsystem definitions, preserving definition order
-	var active []subsystem
-	for id := range activeSubIDs {
-		if def, ok := subsystemDefs[id]; ok {
-			active = append(active, def)
-		} else {
-			log.Printf("WARNING: subsystem %q referenced but not defined", id)
-		}
-	}
+	elapsed := time.Since(start)
 
-	return active, suffixToLayer
+	log.Printf("Rendered SVG in %s: %s", elapsed.Round(time.Millisecond), svgPath)
+
+	return nil
 }
 
-// collectCrossLayerEdges finds all imports that cross layer boundaries,
-// deduplicated at the layer level.
-func collectCrossLayerEdges(pkgs []goPackage, suffixToLayer map[string]string) []edge {
-	seen := make(map[edge]bool)
-	var result []edge
+// generateD2Pipeline writes the D2 source and renders the SVG.
+func generateD2Pipeline(
+	ctx context.Context,
+	archModel *model.ArchModel,
+	outputDir, d2Bin string,
+) error {
+	d2Source := generateD2(archModel)
 
-	for _, pkg := range pkgs {
-		fromSuffix := packageSuffix(pkg.ImportPath)
-		fromLayer, ok := suffixToLayer[fromSuffix]
-
-		if !ok {
-			continue
-		}
-
-		for _, imp := range internalImports(pkg) {
-			toSuffix := packageSuffix(imp)
-			toLayer, ok := suffixToLayer[toSuffix]
-
-			if !ok || fromLayer == toLayer {
-				continue
-			}
-
-			layerEdge := edge{
-				From: fromLayer,
-				To:   toLayer,
-			}
-			if !seen[layerEdge] {
-				seen[layerEdge] = true
-				result = append(result, layerEdge)
-			}
-		}
+	if err := os.MkdirAll(outputDir, 0o755); err != nil {
+		return fmt.Errorf("creating output directory: %w", err)
 	}
 
-	return result
+	d2Path := filepath.Join(outputDir, "architecture-diagram.d2")
+	svgPath := filepath.Join(outputDir, "architecture-diagram.svg")
+
+	if err := os.WriteFile(d2Path, []byte(d2Source), 0o600); err != nil {
+		return fmt.Errorf("writing D2 source: %w", err)
+	}
+
+	log.Printf("Wrote D2 source: %s", d2Path)
+
+	return renderSVG(ctx, d2Bin, d2Path, svgPath)
 }
 
 func run() error {
@@ -653,54 +546,116 @@ func run() error {
 
 	log.Printf("Loaded %d packages", len(pkgs))
 
-	activeSubsystems, suffixToLayer := classifySubsystems(pkgs)
-	crossLayerEdges := collectCrossLayerEdges(pkgs, suffixToLayer)
+	suffixToDir := buildSuffixToDirMap(pkgs)
+	classify := makeClassifier(suffixToDir)
+
+	archModel := model.BuildModel(pkgs, classify, layers)
+	model.GroupPackages(archModel)
+	setSubsystemLayers(archModel)
 
 	log.Printf("Diagram: %d subsystem nodes, %d cross-layer edges",
-		len(activeSubsystems), len(crossLayerEdges))
+		len(archModel.Subsystems), len(archModel.Edges))
 
-	d2Source := generateD2(activeSubsystems, crossLayerEdges)
-
-	if err := os.MkdirAll(*outputDir, 0o755); err != nil {
-		return fmt.Errorf("creating output directory: %w", err)
+	// --- D2 diagram pipeline (existing) ---
+	if err := generateD2Pipeline(ctx, archModel, *outputDir, *d2Bin); err != nil {
+		return err
 	}
 
-	d2Path := filepath.Join(*outputDir, "architecture-diagram.d2")
-	svgPath := filepath.Join(*outputDir, "architecture-diagram.svg")
-
-	if err := os.WriteFile(d2Path, []byte(d2Source), 0o600); err != nil {
-		return fmt.Errorf("writing D2 source: %w", err)
+	// --- Count extraction ---
+	ruleCount, err := render.CountArchRules(".")
+	if err != nil {
+		return fmt.Errorf("counting arch rules: %w", err)
 	}
 
-	log.Printf("Wrote D2 source: %s", d2Path)
+	log.Printf("Counted %d architecture rules", ruleCount)
 
-	return renderSVG(ctx, *d2Bin, d2Path, svgPath)
+	invariantCount, err := render.CountInvariants(".")
+	if err != nil {
+		return fmt.Errorf("counting invariants: %w", err)
+	}
+
+	log.Printf("Counted %d game invariants", invariantCount)
+
+	// --- Taxonomy consistency check ---
+	if err := render.CheckTaxonomyConsistency(".", archModel.Layers); err != nil {
+		return fmt.Errorf("taxonomy consistency check failed: %w", err)
+	}
+
+	log.Println("Taxonomy consistency check passed")
+
+	// --- Markdown documentation injection pipeline ---
+	stats := render.RenderStats(ruleCount, invariantCount)
+
+	if err := injectDocs(*outputDir, archModel, pkgs, stats); err != nil {
+		return fmt.Errorf("injecting docs: %w", err)
+	}
+
+	return nil
 }
 
-// renderSVG shells out to the d2 CLI to render the SVG.
-func renderSVG(ctx context.Context, d2Bin, d2Path, svgPath string) error {
-	start := time.Now()
-
-	cmd := exec.CommandContext(
-		ctx,
-		d2Bin,
-		"--layout",
-		"dagre",
-		"--theme",
-		"0",
-		d2Path,
-		svgPath,
-	)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("d2 rendering failed: %w", err)
+// injectDocs renders all markdown outputs and injects them into documentation files.
+// The outputDir is used to resolve doc file paths (docs/ relative to project root).
+// The project root is the parent of outputDir (which defaults to "docs").
+func injectDocs(
+	outputDir string,
+	archModel *model.ArchModel,
+	pkgs []model.GoPackage,
+	stats string,
+) error {
+	// Resolve project root from output dir. outputDir is typically "docs",
+	// so project root is its parent. For absolute paths, use parent directly.
+	projectRoot := filepath.Dir(outputDir)
+	if !filepath.IsAbs(outputDir) {
+		// outputDir is relative (e.g., "docs"), so project root is "."
+		projectRoot = "."
 	}
 
-	elapsed := time.Since(start)
+	// Render all outputs.
+	componentArch := render.RenderComponentArch(archModel)
+	packageArch := render.RenderPackageArch(archModel)
+	projectTree := render.RenderProjectTree(archModel, pkgs)
+	packageTables := render.RenderPackageTables(archModel, pkgs)
 
-	log.Printf("Rendered SVG in %s: %s", elapsed.Round(time.Millisecond), svgPath)
+	// Inject into documentation files.
+	injections := []struct {
+		file    string
+		marker  string
+		content string
+	}{
+		{
+			file:    filepath.Join(projectRoot, "docs", "architecture-components.md"),
+			marker:  "MERMAID_COMPONENT_ARCH",
+			content: componentArch,
+		},
+		{
+			file:    filepath.Join(projectRoot, "docs", "architecture.md"),
+			marker:  "MERMAID_PACKAGE_ARCH",
+			content: packageArch,
+		},
+		{
+			file:    filepath.Join(projectRoot, "README.md"),
+			marker:  "PROJECT_TREE",
+			content: projectTree,
+		},
+		{
+			file:    filepath.Join(projectRoot, "README.md"),
+			marker:  "STATS",
+			content: stats,
+		},
+		{
+			file:    filepath.Join(projectRoot, "docs", "doc-go-spec.md"),
+			marker:  "PACKAGE_TABLES",
+			content: packageTables,
+		},
+	}
+
+	for _, inj := range injections {
+		if err := inject.InjectFile(inj.file, inj.marker, inj.content); err != nil {
+			return fmt.Errorf("injecting %s into %s: %w", inj.marker, inj.file, err)
+		}
+
+		log.Printf("Injected %s into %s", inj.marker, inj.file)
+	}
 
 	return nil
 }
