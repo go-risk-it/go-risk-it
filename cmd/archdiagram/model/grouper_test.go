@@ -77,6 +77,8 @@ func TestGroupPackages_LongestPrefixWins(t *testing.T) {
 	moveSub := archModel.Subsystems["move_pipeline"]
 	if moveSub == nil {
 		t.Fatal("expected subsystem move_pipeline to exist")
+
+		return
 	}
 
 	for _, suffix := range []string{
@@ -286,6 +288,8 @@ func TestGroupPackages_NewMovePackage(t *testing.T) {
 	sub := archModel.Subsystems["move_pipeline"]
 	if sub == nil {
 		t.Fatal("expected move_pipeline to exist for new move package")
+
+		return
 	}
 
 	if !slices.Contains(sub.Packages, "game/logic/move/newmove") {
@@ -304,6 +308,8 @@ func TestGroupPackages_WebInfraPackages(t *testing.T) {
 	sub := archModel.Subsystems["middleware"]
 	if sub == nil {
 		t.Fatal("expected middleware subsystem")
+
+		return
 	}
 
 	for _, suffix := range []string{"web/middleware", "web/mux", "web/nbio"} {
@@ -529,6 +535,8 @@ func TestGroupPackages_PackagesSorted(t *testing.T) {
 	sub := archModel.Subsystems["game_services"]
 	if sub == nil {
 		t.Fatal("expected game_services")
+
+		return
 	}
 
 	if !sort.StringsAreSorted(sub.Packages) {
@@ -555,6 +563,8 @@ func TestGroupPackages_KernelPackages(t *testing.T) {
 	configSub := archModel.Subsystems["kernel_config"]
 	if configSub == nil {
 		t.Fatal("expected kernel_config subsystem")
+
+		return
 	}
 
 	if !slices.Contains(configSub.Packages, "kernel/config") {
@@ -569,6 +579,8 @@ func TestGroupPackages_KernelPackages(t *testing.T) {
 	busSub := archModel.Subsystems["kernel_bus"]
 	if busSub == nil {
 		t.Fatal("expected kernel_bus subsystem")
+
+		return
 	}
 
 	if !slices.Contains(busSub.Packages, "kernel/bus") {
@@ -583,6 +595,8 @@ func TestGroupPackages_KernelPackages(t *testing.T) {
 	obsSub := archModel.Subsystems["kernel_observability"]
 	if obsSub == nil {
 		t.Fatal("expected kernel_observability subsystem")
+
+		return
 	}
 
 	if len(obsSub.Packages) != 4 {
@@ -611,6 +625,8 @@ func TestGroupPackages_WebRestPackages(t *testing.T) {
 	sub := archModel.Subsystems["rest_utils"]
 	if sub == nil {
 		t.Fatal("expected rest_utils subsystem")
+
+		return
 	}
 
 	if len(sub.Packages) != 4 {
@@ -634,6 +650,8 @@ func TestGroupPackages_LobbyLogicPackages(t *testing.T) {
 	sub := archModel.Subsystems["lobby_logic"]
 	if sub == nil {
 		t.Fatal("expected lobby_logic subsystem")
+
+		return
 	}
 
 	if len(sub.Packages) != 4 {
