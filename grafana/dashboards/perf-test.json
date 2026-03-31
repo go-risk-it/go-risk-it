@@ -242,7 +242,7 @@
             },
             "targets": [
                 {
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"db\\.transaction\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"db[.]transaction\"}[1m])) by (le))",
                     "legendFormat": "p95",
                     "refId": "A"
                 }
@@ -901,31 +901,31 @@
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*\"}[1m])) by (le))",
                     "legendFormat": "HTTP Total",
                     "refId": "A"
                 },
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"db\\.transaction\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"db[.]transaction\"}[1m])) by (le))",
                     "legendFormat": "DB Transaction",
                     "refId": "B"
                 },
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"game\\.orchestrate_move\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"game[.]orchestrate_move\"}[1m])) by (le))",
                     "legendFormat": "Game Logic",
                     "refId": "C"
                 },
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"ws\\.broadcast\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"ws[.]broadcast\"}[1m])) by (le))",
                     "legendFormat": "WS Broadcast",
                     "refId": "D"
                 },
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"consumer\\..*\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"consumer[.].*\"}[1m])) by (le))",
                     "legendFormat": "Event Handler (post-response)",
                     "refId": "E"
                 }
@@ -1437,7 +1437,7 @@
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*\"}[1m])) by (le))",
                     "legendFormat": "HTTP p95",
                     "refId": "A"
                 },

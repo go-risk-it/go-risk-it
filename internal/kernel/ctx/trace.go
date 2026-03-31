@@ -29,10 +29,3 @@ func WithSpan(ctx context.Context, span trace.Span) TraceContext {
 		span:    span,
 	}
 }
-
-// WithSpanFromContext extracts the current span from ctx and wraps it in a
-// TraceContext. Use this in business logic instead of importing otel/trace
-// directly.
-func WithSpanFromContext(ctx context.Context) TraceContext {
-	return WithSpan(ctx, trace.SpanFromContext(ctx))
-}

@@ -12,7 +12,7 @@ import (
 	"go.opentelemetry.io/otel/trace/noop"
 )
 
-func TestWithBase_SpanFromBase(t *testing.T) {
+func TestRebase_SpanFromBase(t *testing.T) {
 	t.Parallel()
 
 	// Set up a real OTel tracer provider with in-memory exporter.
@@ -45,20 +45,22 @@ func TestWithBase_SpanFromBase(t *testing.T) {
 	require.Equal(t, originalSpanID, gameCtx.Span().SpanContext().SpanID(),
 		"precondition: gameCtx should carry the original span")
 
-	// Call WithBase with the child span's context — this simulates what
-	// StartGameSpan does after otel.Tracer.Start() enriches the context.
-	rebased := gameCtx.WithBase(childCtx)
+	// Call Rebase with the child span's context — this simulates what
+	// observe.RawSpan does after otel.Tracer.Start() enriches the context.
+	rebased := gameCtx.Rebase(childCtx)
 
 	// The rebased context must carry the child span, not the original.
-	require.Equal(t, childSpanID, rebased.Span().SpanContext().SpanID(),
-		"WithBase must extract the span from base, not from the original context")
+	rebasedGame, ok := rebased.(ctx.GameContext)
+	require.True(t, ok, "Rebase must return a GameContext")
+	require.Equal(t, childSpanID, rebasedGame.Span().SpanContext().SpanID(),
+		"Rebase must extract the span from base, not from the original context")
 
 	// Domain fields must be preserved.
-	require.Equal(t, int64(42), rebased.GameID())
-	require.Equal(t, "test-user", rebased.UserID())
+	require.Equal(t, int64(42), rebasedGame.GameID())
+	require.Equal(t, "test-user", rebasedGame.UserID())
 }
 
-func TestWithBase_PreservesNoopSpanFromBase(t *testing.T) {
+func TestRebase_PreservesNoopSpanFromBase(t *testing.T) {
 	t.Parallel()
 
 	// Set up a real OTel tracer to create a real span for the original context.
@@ -76,15 +78,18 @@ func TestWithBase_PreservesNoopSpanFromBase(t *testing.T) {
 	userCtx := kernelctx.WithUserID(traceCtx, "test-user")
 	gameCtx := ctx.WithGameID(userCtx, 7)
 
-	// WithBase with a plain context (no span embedded) should yield a noop span.
-	rebased := gameCtx.WithBase(context.Background())
+	// Rebase with a plain context (no span embedded) should yield a noop span.
+	rebased := gameCtx.Rebase(context.Background())
+
+	rebasedGame, ok := rebased.(ctx.GameContext)
+	require.True(t, ok, "Rebase must return a GameContext")
 
 	// trace.SpanFromContext on a plain context returns a noop span with invalid SpanContext.
-	require.False(t, rebased.Span().SpanContext().IsValid(),
-		"WithBase on a plain context should yield an invalid (noop) span")
+	require.False(t, rebasedGame.Span().SpanContext().IsValid(),
+		"Rebase on a plain context should yield an invalid (noop) span")
 }
 
-func TestWithBase_PropagatesCancellation(t *testing.T) {
+func TestRebase_PropagatesCancellation(t *testing.T) {
 	t.Parallel()
 
 	base, cancel := context.WithCancel(context.Background())
@@ -93,7 +98,7 @@ func TestWithBase_PropagatesCancellation(t *testing.T) {
 	userCtx := kernelctx.WithUserID(traceCtx, "test-user")
 	gameCtx := ctx.WithGameID(userCtx, 42)
 
-	rebased := gameCtx.WithBase(base)
+	rebased := gameCtx.Rebase(base)
 
 	require.NoError(t, rebased.Err(), "rebased context should not be cancelled yet")
 
@@ -102,15 +107,17 @@ func TestWithBase_PropagatesCancellation(t *testing.T) {
 	require.Error(t, rebased.Err(), "cancelling base must propagate to rebased GameContext")
 }
 
-func TestWithBase_PreservesDomainFields(t *testing.T) {
+func TestRebase_PreservesDomainFields(t *testing.T) {
 	t.Parallel()
 
 	traceCtx := kernelctx.WithSpan(context.Background(), noop.Span{})
 	userCtx := kernelctx.WithUserID(traceCtx, "user-abc")
 	gameCtx := ctx.WithGameID(userCtx, 99)
 
-	rebased := gameCtx.WithBase(context.Background())
+	rebased := gameCtx.Rebase(context.Background())
 
-	require.Equal(t, int64(99), rebased.GameID())
-	require.Equal(t, "user-abc", rebased.UserID())
+	rebasedGame, ok := rebased.(ctx.GameContext)
+	require.True(t, ok, "Rebase must return a GameContext")
+	require.Equal(t, int64(99), rebasedGame.GameID())
+	require.Equal(t, "user-abc", rebasedGame.UserID())
 }

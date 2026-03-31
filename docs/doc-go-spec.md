@@ -111,7 +111,6 @@ All other non-excluded packages. Required doc.go sections:
 | `game/logic/region/assignment` | logic |
 | `game/rand` | logic |
 | `game/routes` | web |
-| `game/tracing` | logic |
 | `game/ws` | web |
 | `kernel/bus` | kernel |
 | `kernel/config` | kernel |

@@ -105,14 +105,8 @@ func (s *service) CreateGameWithQuerier(
 	regions []string,
 	players []player.Player,
 ) (result int64, err error) {
-	spanCtx, done := observe.Span(userCtx, "game.create")
+	userCtx, done := observe.Span(userCtx, "game.create")
 	defer func() { done(err) }()
-
-	// Rebuild typed context with span so child DB calls are grouped.
-	userCtx = kernelctx.WithUserID(
-		kernelctx.WithSpanFromContext(spanCtx),
-		userCtx.UserID(),
-	)
 
 	game, err := querier.InsertGame(userCtx)
 	if err != nil {

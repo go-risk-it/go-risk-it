@@ -9,7 +9,7 @@
 // sequentially — OnAll handlers first, then OnType handlers — with per-handler
 // panic recovery. Handler contexts are detached from the emitter's cancellation
 // chain but carry a linked OTel span and preserved domain metadata (via
-// [ctx.Detachable]).
+// [ctx.Rebaseable]).
 //
 // [OnEvent] provides type-safe generic subscriptions, extracting the event
 // type string at registration time via the nil-pointer method call pattern.

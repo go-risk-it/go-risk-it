@@ -49,7 +49,6 @@ var expectedLayer = map[string]string{
 	"game/events":              "Events-domain",
 	"game/routes":              "Web",
 	"game/ws":                  "Web",
-	"game/tracing":             "Logic",
 	"game/rand":                "Logic",
 	"game/config":              "Game-support",
 	"game/headlines":           "Game-support",
@@ -107,7 +106,7 @@ func layerFromPrefix(suffix string) string {
 		return "Game-support"
 	case strings.HasPrefix(suffix, "game/snapshot"):
 		return "Game-support"
-	case strings.HasPrefix(suffix, "game/logic/") || strings.HasPrefix(suffix, "game/tracing") ||
+	case strings.HasPrefix(suffix, "game/logic/") ||
 		strings.HasPrefix(suffix, "game/rand"):
 		return "Logic"
 	case strings.HasPrefix(suffix, "lobby/api/"):

@@ -13,9 +13,8 @@ import (
 // (logic, events, web) has typed access to the active game.
 type GameContext interface {
 	kernelctx.UserContext
-	kernelctx.Detachable
+	kernelctx.Rebaseable
 	GameID() int64
-	WithBase(base context.Context) GameContext
 }
 
 type gameContext struct {
@@ -27,6 +26,7 @@ type gameContext struct {
 var (
 	_ GameContext           = (*gameContext)(nil)
 	_ kernelctx.LogEnricher = (*gameContext)(nil)
+	_ kernelctx.Rebaseable  = (*gameContext)(nil)
 )
 
 func (c *gameContext) GameID() int64 {
@@ -37,21 +37,11 @@ func (c *gameContext) SlogAttrs() []slog.Attr {
 	return append(c.UserContext.SlogAttrs(), slog.Int64("game_id", c.gameID))
 }
 
-func (c *gameContext) DetachOnto(base context.Context) context.Context {
+func (c *gameContext) Rebase(base context.Context) context.Context {
 	return WithGameID(
 		kernelctx.WithUserID(kernelctx.WithSpan(base, trace.SpanFromContext(base)), c.UserID()),
 		c.gameID,
 	)
-}
-
-func (c *gameContext) WithBase(base context.Context) GameContext {
-	return &gameContext{
-		UserContext: kernelctx.WithUserID(
-			kernelctx.WithSpan(base, trace.SpanFromContext(base)),
-			c.UserID(),
-		),
-		gameID: c.gameID,
-	}
 }
 
 // WithGameID creates a GameContext from a UserContext and a game ID.

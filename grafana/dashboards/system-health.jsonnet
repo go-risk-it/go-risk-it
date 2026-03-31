@@ -475,47 +475,39 @@ dashboard.new(
           description='Normal: p95 < 100ms. Watch for: p99 > 500ms (slow consumers blocking broadcast). Check next: Messages Rate for throughput.',
         ),
 
-        // Messages Rate — manual counter, keep (per-message counter, no span equivalent)
+        // Messages Rate — spanmetrics: rate of ws.broadcast spans
         layout.panel(
           panels.timeseriesPanel(
             title='Messages Rate',
-            targets=[targets.target(
-              'sum(rate(ws_messages_sent_total{service_name="%s"}[1m]))' % svc,
-              'sent/s',
-              'A',
-            )],
+            targets=[targets.spanRate(targets.spans.wsBroadcast, 'broadcasts/s')],
             unit='ops',
             color=colors.fixedColor(colors.ws),
           ),
           w=12, h=8,
-          description='Normal: steady sent rate proportional to active games. Watch for: rate dropping to zero while games are active (broadcast failures). Check next: Fan-Out for amplification ratio.',
+          description='Normal: steady rate proportional to active games. Watch for: rate dropping to zero while games are active. Check next: Fan-Out for amplification ratio.',
         ),
 
-        // Fan-Out — mixed: ws_messages_sent_total (manual) / bus:move_executed (spanmetrics)
+        // Fan-Out — average ws_fanout dimension from broadcast spans
         layout.panel(
           panels.timeseriesPanel(
             title='Fan-Out',
             targets=[targets.target(
-              'sum(rate(ws_messages_sent_total{service_name="%s"}[1m])) / sum(rate(%s{service="%s", span_name="bus:move_executed"}[1m]))' % [svc, targets.spanmetricsMetric.calls, svc],
-              'msgs/move',
+              'avg(traces_spanmetrics_latency_sum{service="%s", span_name=~"%s"}) by ()' % [svc, targets.spans.wsBroadcast],
+              'avg fanout',
               'A',
             )],
             unit='short',
             color=colors.fixedColor(colors.ws),
           ),
           w=12, h=8,
-          description='Normal: ~4x (one broadcast per player per move). Watch for: > 10x indicates broadcast storms. Check next: Errors for delivery failures.',
+          description='Normal: ~4 (one message per connected player per broadcast). Watch for: 0 (no connected players). Check next: WS Connections.',
         ),
 
-        // WS Errors — manual counter, keep
+        // WS Errors — spanmetrics: error rate of ws.broadcast spans
         layout.panel(
           panels.timeseriesPanel(
             title='WS Errors',
-            targets=[targets.target(
-              'sum(rate(ws_broadcast_errors_total{service_name="%s"}[1m]))' % svc,
-              'errors/s',
-              'A',
-            )],
+            targets=[targets.spanErrorRate(targets.spans.wsBroadcast, 'errors/s')],
             unit='ops',
             color=colors.fixedColor(colors.errors),
           ),
@@ -529,13 +521,13 @@ dashboard.new(
     // DECIDE — Where's the bottleneck? (3 always-visible + 2 collapsed rows)
     // ════════════════════════════════════════════════════════════════
     decide=[
-      // Fan-out Amplification — mixed: manual ws_messages / spanmetrics bus dispatch
+      // Fan-out Amplification — spanmetrics: broadcast rate / move event rate
       layout.panel(
         panels.timeseriesPanel(
           title='Fan-out Amplification',
           targets=[targets.target(
-            'sum(rate(ws_messages_sent_total{service_name="%s"}[1m])) / sum(rate(%s{service="%s", span_name="bus:move_executed"}[1m]))' % [svc, targets.spanmetricsMetric.calls, svc],
-            'msgs/move',
+            'sum(rate(%s{service="%s", span_name=~"%s"}[1m])) / sum(rate(%s{service="%s", span_name="bus:move_executed"}[1m]))' % [targets.spanmetricsMetric.calls, svc, targets.spans.wsBroadcast, targets.spanmetricsMetric.calls, svc],
+            'broadcasts/move',
             'A',
           )],
           unit='short',

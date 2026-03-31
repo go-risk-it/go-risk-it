@@ -135,10 +135,6 @@
         "layer": "Game-support",
         "summary": "Package snapshot provides aggregated read models for efficient game state\nretrieval. [Service.GetPublicSnapshot] returns the full public state\n(game metadata, phase, board, players) and\n[Service.GetPrivateSnapshotsByUser] returns per-player private state\n(cards, mission). All queries execute sequentially on a single connection,\navoiding the DB pool starvation caused by parallel fetcher goroutines."
     },
-    "game/tracing": {
-        "layer": "Logic",
-        "summary": "Package tracing provides helpers for creating OpenTelemetry spans within\nthe game context chain."
-    },
     "game/ws": {
         "layer": "Web",
         "summary": "Package ws manages per-game WebSocket connections."

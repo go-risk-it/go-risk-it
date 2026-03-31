@@ -61,7 +61,7 @@ func New(serverConfig config.ServerConfig, _ ...any) Upgrader {
 
 	wsUpgrader.OnClose(func(connection *websocket.Conn, err error) {
 		if err != nil {
-			slog.Info("connection closed with error", "error", err)
+			slog.Warn("connection closed with error", "error", err)
 		} else {
 			slog.Info("connection closed", "remoteAddress", connection.RemoteAddr().String())
 		}

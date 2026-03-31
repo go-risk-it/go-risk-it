@@ -5,11 +5,11 @@
 // Domain modules extend this chain with their own context types:
 // game/ctx.GameContext (game ID) and lobby/ctx.LobbyContext (lobby ID).
 // Each layer embeds the previous one, so a GameContext satisfies both
-// UserContext and TraceContext. The [Detachable] interface allows the event
-// bus to copy domain metadata onto a fresh context without type-switching on
-// concrete types. The [LogEnricher] interface allows the slog handler to
-// extract structured attributes from any context type without concrete type
-// switches.
+// UserContext and TraceContext. The [Rebaseable] interface allows the event
+// bus and the observe package to copy domain metadata onto a fresh context
+// without type-switching on concrete types. The [LogEnricher] interface
+// allows the slog handler to extract structured attributes from any context
+// type without concrete type switches.
 //
 // # Layer
 //

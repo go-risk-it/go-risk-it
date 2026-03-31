@@ -207,7 +207,7 @@ func (b *busImpl) Close(closeCtx context.Context) error {
 
 // detachContext creates a context detached from the parent's cancellation chain but
 // preserving domain metadata. It starts a linked span rooted in its own trace and
-// applies a timeout. If the parent implements ctx.Detachable, DetachOnto enriches the
+// applies a timeout. If the parent implements ctx.Rebaseable, Rebase enriches the
 // timeout context with domain-specific scope (GameID, LobbyID, etc.). The returned
 // cancel function ends the linked span and cancels the timeout context.
 func detachContext(
@@ -224,8 +224,8 @@ func detachContext(
 	timeoutCtx, timeoutCancel := context.WithTimeout(spanCtx, timeout)
 
 	result := timeoutCtx
-	if d, ok := parent.(ctx.Detachable); ok {
-		result = d.DetachOnto(timeoutCtx)
+	if r, ok := parent.(ctx.Rebaseable); ok {
+		result = r.Rebase(timeoutCtx)
 	}
 
 	cancel := func() {

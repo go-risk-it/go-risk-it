@@ -3,17 +3,17 @@ package orchestration
 import (
 	"fmt"
 
-	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
+	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/player"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/state"
-	"github.com/go-risk-it/go-risk-it/internal/game/tracing"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 )
 
 type ValidationService interface {
-	Validate(ctx ctx.GameContext, querier db.Querier, game *state.Game) error
+	Validate(ctx gamectx.GameContext, querier db.Querier, game *state.Game) error
 }
 
 type validationServiceImpl struct {
@@ -27,32 +27,34 @@ func NewValidationService(playerService player.Service) ValidationService {
 }
 
 func (s *validationServiceImpl) Validate(
-	ctx ctx.GameContext,
+	gameCtx gamectx.GameContext,
 	querier db.Querier,
 	game *state.Game,
 ) error {
-	ctx, done := tracing.StartGameSpan(ctx, "game.move.validate")
-	defer done(nil)
+	return observe.SpanErr(
+		gameCtx,
+		"game.move.validate",
+		func(ctx gamectx.GameContext) error {
+			if game.WinnerUserID != "" {
+				return domainerrors.NewConflictError("game is already over")
+			}
 
-	if game.WinnerUserID != "" {
-		return domainerrors.NewConflictError("game is already over")
-	}
+			players, err := s.playerService.GetPlayers(ctx, querier)
+			if err != nil {
+				return fmt.Errorf("failed to get players: %w", err)
+			}
 
-	players, err := s.playerService.GetPlayers(ctx, querier)
-	if err != nil {
-		return fmt.Errorf("failed to get players: %w", err)
-	}
+			thisPlayer := extractPlayerFrom(players, ctx.UserID())
+			if thisPlayer == nil {
+				return domainerrors.NewForbiddenError("player is not in game")
+			}
 
-	thisPlayer := extractPlayerFrom(players, ctx.UserID())
-	if thisPlayer == nil {
-		return domainerrors.NewForbiddenError("player is not in game")
-	}
+			if err := s.checkTurn(game, int64(len(players)), thisPlayer.TurnIndex); err != nil {
+				return fmt.Errorf("turn check failed: %w", err)
+			}
 
-	if err := s.checkTurn(game, int64(len(players)), thisPlayer.TurnIndex); err != nil {
-		return fmt.Errorf("turn check failed: %w", err)
-	}
-
-	return nil
+			return nil
+		})
 }
 
 func (s *validationServiceImpl) checkTurn(

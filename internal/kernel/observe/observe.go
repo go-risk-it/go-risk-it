@@ -13,10 +13,10 @@ import (
 
 const tracerName = "go-risk-it"
 
-// Span starts a new child span and returns the enriched context plus a done
+// RawSpan starts a new child span and returns the enriched context plus a done
 // function. Callers must call done when the operation completes:
 //
-//	ctx, done := observe.Span(ctx, "operation", attrs...)
+//	ctx, done := observe.RawSpan(ctx, "operation", attrs...)
 //	defer done(nil)
 //
 // If the operation produces an error via named returns, use:
@@ -26,8 +26,12 @@ const tracerName = "go-risk-it"
 // done(err) records the error on the span and sets the span status to Error.
 // done(nil) simply ends the span.
 //
-//nolint:spancheck // span is returned to the caller via the done closure
-func Span(
+// Prefer [Span] (typed generic) for business logic with typed contexts
+// (GameContext, LobbyContext). Use RawSpan only when the parent is a plain
+// context.Context without domain metadata — typically infrastructure callers
+// like the event bus or transaction wrapper.
+
+func RawSpan(
 	parent context.Context,
 	name string,
 	attrs ...attribute.KeyValue,
@@ -35,6 +39,11 @@ func Span(
 	childCtx, span := otel.GetTracerProvider().
 		Tracer(tracerName).
 		Start(parent, name, trace.WithAttributes(attrs...))
+
+	// Auto-preserve domain type across span boundary.
+	if r, ok := parent.(ctx.Rebaseable); ok {
+		childCtx = r.Rebase(childCtx)
+	}
 
 	done := func(err error) {
 		if err != nil {

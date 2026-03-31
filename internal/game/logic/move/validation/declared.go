@@ -1,13 +1,11 @@
 package validation
 
 import (
-	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
 )
 
 // CheckDeclaredTroops validates that the declared troop counts match actual region troops.
 func CheckDeclaredTroops(
-	ctx ctx.GameContext,
 	sourceTroops int64,
 	targetTroops int64,
 	declaredSourceTroops int64,

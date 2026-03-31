@@ -179,7 +179,7 @@
             },
             "targets": [
                 {
-                    "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"consumer\\..*\", status_code=\"STATUS_CODE_ERROR\"}[1m]))",
+                    "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"consumer[.].*\", status_code=\"STATUS_CODE_ERROR\"}[1m]))",
                     "legendFormat": "errors/s",
                     "refId": "A"
                 }
@@ -469,7 +469,7 @@
             },
             "targets": [
                 {
-                    "expr": "sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"game\\.orchestrate_move\"}[1m])) by (le)",
+                    "expr": "sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"game[.]orchestrate_move\"}[1m])) by (le)",
                     "format": "heatmap",
                     "legendFormat": "{{le}}",
                     "refId": "A"
@@ -612,12 +612,12 @@
             },
             "targets": [
                 {
-                    "expr": "histogram_quantile(0.5, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"game\\.orchestrate_move\"}[1m])) by (le, phase))",
+                    "expr": "histogram_quantile(0.5, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"game[.]orchestrate_move\"}[1m])) by (le, phase))",
                     "legendFormat": "{{phase}} P50",
                     "refId": "A"
                 },
                 {
-                    "expr": "histogram_quantile(0.99, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"game\\.orchestrate_move\"}[1m])) by (le, phase))",
+                    "expr": "histogram_quantile(0.99, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"game[.]orchestrate_move\"}[1m])) by (le, phase))",
                     "legendFormat": "{{phase}} P99",
                     "refId": "B"
                 }
@@ -809,7 +809,7 @@
             },
             "targets": [
                 {
-                    "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"game\\.orchestrate_move\"}[1m])) by (phase)",
+                    "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"game[.]orchestrate_move\"}[1m])) by (phase)",
                     "legendFormat": "{{phase}}",
                     "refId": "A"
                 }
@@ -985,7 +985,7 @@
             },
             "targets": [
                 {
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"consumer\\..*\"}[1m])) by (le, span_name))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"consumer[.].*\"}[1m])) by (le, span_name))",
                     "legendFormat": "{{span_name}} p95",
                     "refId": "A"
                 }
@@ -1041,7 +1041,7 @@
             },
             "targets": [
                 {
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"bus:.*\"}[1m])) by (le, span_name))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"bus:.*\"}[1m])) by (le, span_name))",
                     "legendFormat": "{{span_name}}",
                     "refId": "A"
                 }
@@ -1220,7 +1220,7 @@
                     },
                     "targets": [
                         {
-                            "expr": "sum(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"game\\.orchestrate_move\"}) by (phase)",
+                            "expr": "sum(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"game[.]orchestrate_move\"}) by (phase)",
                             "legendFormat": "{{phase}}",
                             "refId": "A"
                         }

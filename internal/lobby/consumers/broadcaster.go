@@ -2,11 +2,11 @@ package consumers
 
 import (
 	"encoding/json"
+	"fmt"
 
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/api/messaging"
-	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
+	lobbyctx "github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	lobbyevt "github.com/go-risk-it/go-risk-it/internal/lobby/events"
 )
 
@@ -36,55 +36,55 @@ func (p *LobbyStateBroadcaster) Register(sub eventbus.Subscriber) {
 }
 
 func (p *LobbyStateBroadcaster) onStateChanged(
-	lobbyCtx ctx.LobbyContext,
+	lCtx lobbyctx.LobbyContext,
 	_ *lobbyevt.LobbyStateChanged,
 ) {
-	p.fetchAndPublish(lobbyCtx, p.writer.Broadcast)
+	p.fetchAndPublish(lCtx, p.writer.Broadcast)
 }
 
 func (p *LobbyStateBroadcaster) onPlayerConnected(
-	lobbyCtx ctx.LobbyContext,
+	lCtx lobbyctx.LobbyContext,
 	_ *lobbyevt.LobbyPlayerConnected,
 ) {
-	p.fetchAndPublish(lobbyCtx, p.writer.WriteMessage)
+	p.fetchAndPublish(lCtx, p.writer.WriteMessage)
 }
 
 // messageDispatcher sends a WS message to either a single player (WriteMessage)
 // or all players (Broadcast).
-type messageDispatcher func(ctx.LobbyContext, json.RawMessage)
+type messageDispatcher func(lobbyctx.LobbyContext, json.RawMessage)
 
 func (p *LobbyStateBroadcaster) fetchAndPublish(
-	lobbyCtx ctx.LobbyContext,
+	lCtx lobbyctx.LobbyContext,
 	dispatch messageDispatcher,
 ) {
 	var msg json.RawMessage
 
 	var fetchOk bool
 
-	eventbus.SafeOp(lobbyCtx, "fetchLobbyState", func() {
-		lobbyState, err := p.stateController.GetLobbyState(lobbyCtx)
+	LobbySafeOp(lCtx, "fetchLobbyState", func(lCtx lobbyctx.LobbyContext) error {
+		lobbyState, err := p.stateController.GetLobbyState(lCtx)
 		if err != nil {
-			observe.Error(lobbyCtx, err, "failed to get lobby state")
-
-			return
+			return fmt.Errorf("failed to get lobby state: %w", err)
 		}
 
 		built, err := messaging.BuildMessage(messaging.LobbyStateType, lobbyState)
 		if err != nil {
-			observe.Error(lobbyCtx, err, "failed to build lobby state message")
-
-			return
+			return fmt.Errorf("failed to build lobby state message: %w", err)
 		}
 
 		msg = built
 		fetchOk = true
+
+		return nil
 	})
 
 	if !fetchOk {
 		return
 	}
 
-	eventbus.SafeOp(lobbyCtx, "dispatchLobbyState", func() {
-		dispatch(lobbyCtx, msg)
+	LobbySafeOp(lCtx, "dispatchLobbyState", func(lCtx lobbyctx.LobbyContext) error {
+		dispatch(lCtx, msg)
+
+		return nil
 	})
 }

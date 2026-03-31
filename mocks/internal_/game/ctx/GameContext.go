@@ -9,7 +9,6 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	mock "github.com/stretchr/testify/mock"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -90,59 +89,6 @@ func (_c *GameContext_Deadline_Call) Return(deadline time.Time, ok bool) *GameCo
 }
 
 func (_c *GameContext_Deadline_Call) RunAndReturn(run func() (time.Time, bool)) *GameContext_Deadline_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// DetachOnto provides a mock function for the type GameContext
-func (_mock *GameContext) DetachOnto(base context.Context) context.Context {
-	ret := _mock.Called(base)
-
-	if len(ret) == 0 {
-		panic("no return value specified for DetachOnto")
-	}
-
-	var r0 context.Context
-	if returnFunc, ok := ret.Get(0).(func(context.Context) context.Context); ok {
-		r0 = returnFunc(base)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(context.Context)
-		}
-	}
-	return r0
-}
-
-// GameContext_DetachOnto_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DetachOnto'
-type GameContext_DetachOnto_Call struct {
-	*mock.Call
-}
-
-// DetachOnto is a helper method to define mock.On call
-//   - base context.Context
-func (_e *GameContext_Expecter) DetachOnto(base interface{}) *GameContext_DetachOnto_Call {
-	return &GameContext_DetachOnto_Call{Call: _e.mock.On("DetachOnto", base)}
-}
-
-func (_c *GameContext_DetachOnto_Call) Run(run func(base context.Context)) *GameContext_DetachOnto_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		run(
-			arg0,
-		)
-	})
-	return _c
-}
-
-func (_c *GameContext_DetachOnto_Call) Return(context1 context.Context) *GameContext_DetachOnto_Call {
-	_c.Call.Return(context1)
-	return _c
-}
-
-func (_c *GameContext_DetachOnto_Call) RunAndReturn(run func(base context.Context) context.Context) *GameContext_DetachOnto_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -277,6 +223,59 @@ func (_c *GameContext_GameID_Call) Return(n int64) *GameContext_GameID_Call {
 }
 
 func (_c *GameContext_GameID_Call) RunAndReturn(run func() int64) *GameContext_GameID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Rebase provides a mock function for the type GameContext
+func (_mock *GameContext) Rebase(base context.Context) context.Context {
+	ret := _mock.Called(base)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Rebase")
+	}
+
+	var r0 context.Context
+	if returnFunc, ok := ret.Get(0).(func(context.Context) context.Context); ok {
+		r0 = returnFunc(base)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(context.Context)
+		}
+	}
+	return r0
+}
+
+// GameContext_Rebase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Rebase'
+type GameContext_Rebase_Call struct {
+	*mock.Call
+}
+
+// Rebase is a helper method to define mock.On call
+//   - base context.Context
+func (_e *GameContext_Expecter) Rebase(base interface{}) *GameContext_Rebase_Call {
+	return &GameContext_Rebase_Call{Call: _e.mock.On("Rebase", base)}
+}
+
+func (_c *GameContext_Rebase_Call) Run(run func(base context.Context)) *GameContext_Rebase_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *GameContext_Rebase_Call) Return(context1 context.Context) *GameContext_Rebase_Call {
+	_c.Call.Return(context1)
+	return _c
+}
+
+func (_c *GameContext_Rebase_Call) RunAndReturn(run func(base context.Context) context.Context) *GameContext_Rebase_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -466,59 +465,6 @@ func (_c *GameContext_Value_Call) Return(v any) *GameContext_Value_Call {
 }
 
 func (_c *GameContext_Value_Call) RunAndReturn(run func(key any) any) *GameContext_Value_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// WithBase provides a mock function for the type GameContext
-func (_mock *GameContext) WithBase(base context.Context) ctx.GameContext {
-	ret := _mock.Called(base)
-
-	if len(ret) == 0 {
-		panic("no return value specified for WithBase")
-	}
-
-	var r0 ctx.GameContext
-	if returnFunc, ok := ret.Get(0).(func(context.Context) ctx.GameContext); ok {
-		r0 = returnFunc(base)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(ctx.GameContext)
-		}
-	}
-	return r0
-}
-
-// GameContext_WithBase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithBase'
-type GameContext_WithBase_Call struct {
-	*mock.Call
-}
-
-// WithBase is a helper method to define mock.On call
-//   - base context.Context
-func (_e *GameContext_Expecter) WithBase(base interface{}) *GameContext_WithBase_Call {
-	return &GameContext_WithBase_Call{Call: _e.mock.On("WithBase", base)}
-}
-
-func (_c *GameContext_WithBase_Call) Run(run func(base context.Context)) *GameContext_WithBase_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		run(
-			arg0,
-		)
-	})
-	return _c
-}
-
-func (_c *GameContext_WithBase_Call) Return(gameContext ctx.GameContext) *GameContext_WithBase_Call {
-	_c.Call.Return(gameContext)
-	return _c
-}
-
-func (_c *GameContext_WithBase_Call) RunAndReturn(run func(base context.Context) ctx.GameContext) *GameContext_WithBase_Call {
 	_c.Call.Return(run)
 	return _c
 }

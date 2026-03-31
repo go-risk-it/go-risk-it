@@ -9,7 +9,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/mission/checker"
 	"github.com/go-risk-it/go-risk-it/internal/game/rand"
-	"github.com/go-risk-it/go-risk-it/internal/game/tracing"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -197,12 +197,13 @@ func (s *service) GetAvailableMissions(players []sqlc.GamePlayer) []BaseMission 
 	return missions
 }
 
+//nolint:nonamedreturns // named returns needed for defer-based error recording
 func (s *service) IsMissionAccomplished(
 	ctx ctx.GameContext,
 	querier db.Querier,
-) (bool, error) {
-	ctx, done := tracing.StartGameSpan(ctx, "game.move.check_mission")
-	defer done(nil)
+) (accomplished bool, err error) {
+	ctx, done := observe.Span(ctx, "game.move.check_mission")
+	defer func() { done(err) }()
 
 	baseMission, err := querier.GetMission(ctx, sqlc.GetMissionParams{
 		GameID: ctx.GameID(),
