@@ -538,6 +538,7 @@ func TestGroupPackages_KernelPackages(t *testing.T) {
 		"kernel/config",
 		"kernel/bus",
 		"kernel/metrics",
+		"kernel/observe",
 		"kernel/slog",
 		"kernel/logger",
 	)
@@ -572,14 +573,14 @@ func TestGroupPackages_KernelPackages(t *testing.T) {
 		t.Errorf("kernel_bus label = %q, want %q", busSub.Label, "Event Bus")
 	}
 
-	// kernel/metrics, kernel/slog, kernel/logger → kernel_observability
+	// kernel/metrics, kernel/observe, kernel/slog, kernel/logger → kernel_observability
 	obsSub := archModel.Subsystems["kernel_observability"]
 	if obsSub == nil {
 		t.Fatal("expected kernel_observability subsystem")
 	}
 
-	if len(obsSub.Packages) != 3 {
-		t.Errorf("expected 3 packages in kernel_observability, got %d: %v",
+	if len(obsSub.Packages) != 4 {
+		t.Errorf("expected 4 packages in kernel_observability, got %d: %v",
 			len(obsSub.Packages), obsSub.Packages)
 	}
 
