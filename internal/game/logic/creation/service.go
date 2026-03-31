@@ -98,47 +98,56 @@ func (s *service) CreateGame(
 	return gameID, nil
 }
 
-//nolint:nonamedreturns // named returns needed for defer-based error recording
 func (s *service) CreateGameWithQuerier(
 	userCtx kernelctx.UserContext,
 	querier db.Querier,
 	regions []string,
 	players []player.Player,
-) (result int64, err error) {
-	userCtx, done := observe.Span(userCtx, "game.create")
-	defer func() { done(err) }()
+) (int64, error) {
+	return observe.Span(
+		userCtx,
+		"game.create",
+		func(userCtx kernelctx.UserContext) (int64, error) {
+			game, err := querier.InsertGame(userCtx)
+			if err != nil {
+				return -1, fmt.Errorf("failed to insert game: %w", err)
+			}
 
-	game, err := querier.InsertGame(userCtx)
-	if err != nil {
-		return -1, fmt.Errorf("failed to insert game: %w", err)
-	}
+			gameCtx := ctx.WithGameID(userCtx, game.ID)
 
-	gameCtx := ctx.WithGameID(userCtx, game.ID)
+			createdPlayers, err := s.playerService.CreatePlayers(
+				gameCtx,
+				querier,
+				game.ID,
+				players,
+			)
+			if err != nil {
+				return -1, fmt.Errorf("failed to create players: %w", err)
+			}
 
-	createdPlayers, err := s.playerService.CreatePlayers(gameCtx, querier, game.ID, players)
-	if err != nil {
-		return -1, fmt.Errorf("failed to create players: %w", err)
-	}
+			if err = s.missionService.CreateMissions(
+				gameCtx, querier, createdPlayers,
+			); err != nil {
+				return -1, fmt.Errorf("failed to create missions: %w", err)
+			}
 
-	if err = s.missionService.CreateMissions(gameCtx, querier, createdPlayers); err != nil {
-		return -1, fmt.Errorf("failed to create missions: %w", err)
-	}
+			if err = s.regionService.CreateRegions(
+				gameCtx, querier, createdPlayers, regions,
+			); err != nil {
+				return -1, fmt.Errorf("failed to create regions: %w", err)
+			}
 
-	if err = s.regionService.CreateRegions(
-		gameCtx, querier, createdPlayers, regions,
-	); err != nil {
-		return -1, fmt.Errorf("failed to create regions: %w", err)
-	}
+			if err = s.cardService.CreateCards(gameCtx, querier); err != nil {
+				return -1, fmt.Errorf("failed to create cards: %w", err)
+			}
 
-	if err = s.cardService.CreateCards(gameCtx, querier); err != nil {
-		return -1, fmt.Errorf("failed to create cards: %w", err)
-	}
+			if err := s.createPhase(gameCtx, querier, game); err != nil {
+				return -1, fmt.Errorf("failed to create phase: %w", err)
+			}
 
-	if err := s.createPhase(gameCtx, querier, game); err != nil {
-		return -1, fmt.Errorf("failed to create phase: %w", err)
-	}
-
-	return game.ID, nil
+			return game.ID, nil
+		},
+	)
 }
 
 func (s *service) createPhase(

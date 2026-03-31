@@ -5,34 +5,24 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-// Span starts a new child span and returns the enriched context with its
-// original type preserved, plus a done function. The type parameter C is inferred
-// from the parent's static type — callers never need to specify it explicitly.
+// Span wraps a typed-context function with automatic span lifecycle. The context
+// type C is preserved through auto-rebase — fn receives the same typed context
+// as parent. This is the primary span creation function for business logic.
 //
-// This is the preferred span creation function for typed contexts (GameContext,
-// LobbyContext). For plain context.Context, use [RawSpan] instead.
+// Eliminates named returns, defer-done discipline, and the risk of discarding
+// the span-enriched context. For error-only functions, use [SpanErr]. For
+// infrastructure callers on plain context.Context, use [RawSpan].
 //
-//	ctx, done := observe.Span(gameCtx, "game.move.validate")
-//	defer func() { done(err) }()
-//	// ctx is still GameContext — compile-time safe
-//
-
-func Span[C ctx.Rebaseable](
-	parent C,
-	name string,
-	attrs ...attribute.KeyValue,
-) (C, func(error)) {
-	child, done := RawSpan(parent, name, attrs...)
-	//nolint:forcetypeassert // Rebaseable.Rebase contract guarantees type preservation
-	return child.(C), done
-}
-
-// SpanFunc wraps a typed-context function with automatic span lifecycle.
-// The context type C is preserved through auto-rebase — fn receives the same
-// typed context as parent. Eliminates both done(nil) bugs and type assertions.
+//	func (s *service) GetState(ctx gamectx.GameContext) (*Game, error) {
+//	    return observe.Span(ctx, "game.get_state",
+//	        func(ctx gamectx.GameContext) (*Game, error) {
+//	            // ctx carries the child span — compile-time safe
+//	        },
+//	    )
+//	}
 //
 //nolint:forcetypeassert // Rebaseable.Rebase contract guarantees type preservation
-func SpanFunc[C ctx.Rebaseable, T any](
+func Span[C ctx.Rebaseable, T any](
 	parent C,
 	name string,
 	fn func(C) (T, error),
@@ -46,6 +36,16 @@ func SpanFunc[C ctx.Rebaseable, T any](
 }
 
 // SpanErr wraps a typed-context error function with automatic span lifecycle.
+// This is the error-only variant of [Span] — use when the function returns only
+// an error (no result value).
+//
+//	func (s *service) Advance(ctx gamectx.GameContext) error {
+//	    return observe.SpanErr(ctx, "game.advance",
+//	        func(ctx gamectx.GameContext) error {
+//	            // ctx carries the child span — compile-time safe
+//	        },
+//	    )
+//	}
 //
 //nolint:forcetypeassert // Rebaseable.Rebase contract guarantees type preservation
 func SpanErr[C ctx.Rebaseable](

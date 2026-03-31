@@ -21,7 +21,7 @@ func (t *tracedService[T, R]) Perform(
 	querier db.Querier,
 	move T,
 ) (R, error) {
-	return observe.SpanFunc(
+	return observe.Span(
 		gameCtx,
 		"game.move.perform",
 		func(gameCtx ctx.GameContext) (R, error) {
@@ -36,7 +36,7 @@ func (t *tracedService[T, R]) Walk(
 	querier db.Querier,
 	voluntaryAdvancement bool,
 ) (sqlc.GamePhaseType, error) {
-	return observe.SpanFunc(
+	return observe.Span(
 		gameCtx,
 		"game.move.walk",
 		func(gameCtx ctx.GameContext) (sqlc.GamePhaseType, error) {

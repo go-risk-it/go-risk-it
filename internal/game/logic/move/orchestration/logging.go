@@ -4,15 +4,19 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
+	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 )
 
 type LoggingService interface {
-	GetMoveLogs(ctx ctx.GameContext, limit int64) ([]sqlc.GetMoveLogsRow, error)
-	LogMove(ctx ctx.GameContext, querier db.Querier, move, result any) (sqlc.GameMoveLog, error)
+	GetMoveLogs(ctx gamectx.GameContext, limit int64) ([]sqlc.GetMoveLogsRow, error)
+	LogMove(
+		ctx gamectx.GameContext,
+		querier db.Querier,
+		move, result any,
+	) (sqlc.GameMoveLog, error)
 }
 
 type loggingServiceImpl struct {
@@ -30,7 +34,7 @@ func NewLoggingService(
 }
 
 func (s *loggingServiceImpl) GetMoveLogs(
-	ctx ctx.GameContext,
+	ctx gamectx.GameContext,
 	limit int64,
 ) ([]sqlc.GetMoveLogsRow, error) {
 	moveLogs, err := s.querier.GetMoveLogs(ctx, sqlc.GetMoveLogsParams{
@@ -44,37 +48,39 @@ func (s *loggingServiceImpl) GetMoveLogs(
 	return moveLogs, nil
 }
 
-//nolint:nonamedreturns // named returns needed for defer-based error recording
 func (s *loggingServiceImpl) LogMove(
-	ctx ctx.GameContext,
+	ctx gamectx.GameContext,
 	querier db.Querier,
 	move, result any,
-) (moveLog sqlc.GameMoveLog, err error) {
-	ctx, done := observe.Span(ctx, "game.move.log")
-	defer func() { done(err) }()
+) (sqlc.GameMoveLog, error) {
+	return observe.Span(
+		ctx,
+		"game.move.log",
+		func(ctx gamectx.GameContext) (sqlc.GameMoveLog, error) {
+			moveJSON, err := json.Marshal(move)
+			if err != nil {
+				return sqlc.GameMoveLog{}, fmt.Errorf("failed to marshal move: %w", err)
+			}
 
-	moveJSON, err := json.Marshal(move)
-	if err != nil {
-		return sqlc.GameMoveLog{}, fmt.Errorf("failed to marshal move: %w", err)
-	}
+			var resultJSON []byte
+			if result != nil {
+				resultJSON, err = json.Marshal(result)
+				if err != nil {
+					return sqlc.GameMoveLog{}, fmt.Errorf("failed to marshal result: %w", err)
+				}
+			}
 
-	var resultJSON []byte
-	if result != nil {
-		resultJSON, err = json.Marshal(result)
-		if err != nil {
-			return sqlc.GameMoveLog{}, fmt.Errorf("failed to marshal result: %w", err)
-		}
-	}
+			moveLog, err := querier.CreateMoveLog(ctx, sqlc.CreateMoveLogParams{
+				GameID:   ctx.GameID(),
+				UserID:   ctx.UserID(),
+				MoveData: moveJSON,
+				Result:   resultJSON,
+			})
+			if err != nil {
+				return sqlc.GameMoveLog{}, fmt.Errorf("failed to insert move log: %w", err)
+			}
 
-	moveLog, err = querier.CreateMoveLog(ctx, sqlc.CreateMoveLogParams{
-		GameID:   ctx.GameID(),
-		UserID:   ctx.UserID(),
-		MoveData: moveJSON,
-		Result:   resultJSON,
-	})
-	if err != nil {
-		return sqlc.GameMoveLog{}, fmt.Errorf("failed to insert move log: %w", err)
-	}
-
-	return moveLog, nil
+			return moveLog, nil
+		},
+	)
 }

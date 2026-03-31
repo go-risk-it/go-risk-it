@@ -26,10 +26,10 @@ const tracerName = "go-risk-it"
 // done(err) records the error on the span and sets the span status to Error.
 // done(nil) simply ends the span.
 //
-// Prefer [Span] (typed generic) for business logic with typed contexts
-// (GameContext, LobbyContext). Use RawSpan only when the parent is a plain
-// context.Context without domain metadata — typically infrastructure callers
-// like the event bus or transaction wrapper.
+// This is the infrastructure escape hatch for callers that operate on plain
+// context.Context (event bus, transaction wrapper, WebSocket broadcast).
+// Business logic should use [Span] or [SpanErr] instead — they provide
+// closure-based lifecycle that makes discarded-context bugs impossible.
 
 func RawSpan(
 	parent context.Context,

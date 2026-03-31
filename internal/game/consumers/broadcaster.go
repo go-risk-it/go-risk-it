@@ -69,17 +69,21 @@ func (p *GameStateBroadcaster) handleMoveExecuted(
 	gameCtx gamectx.GameContext,
 	event *gameevt.MoveExecuted,
 ) {
-	GameSafeOp(gameCtx, "fetchAndPublishPublicState", func(gameCtx gamectx.GameContext) error {
-		return fetchAndPublishPublicState(
-			gameCtx, p.snapshotService, p.presence, p.writer.Broadcast,
-		)
-	})
+	eventbus.TypedSafeOp(
+		gameCtx,
+		"fetchAndPublishPublicState",
+		func(gameCtx gamectx.GameContext) error {
+			return fetchAndPublishPublicState(
+				gameCtx, p.snapshotService, p.presence, p.writer.Broadcast,
+			)
+		},
+	)
 
-	GameSafeOp(gameCtx, "publishPrivateStates", func(gameCtx gamectx.GameContext) error {
+	eventbus.TypedSafeOp(gameCtx, "publishPrivateStates", func(gameCtx gamectx.GameContext) error {
 		return p.publishPrivateStates(gameCtx)
 	})
 
-	GameSafeOp(gameCtx, "publishMoveLog", func(gameCtx gamectx.GameContext) error {
+	eventbus.TypedSafeOp(gameCtx, "publishMoveLog", func(gameCtx gamectx.GameContext) error {
 		return p.publishMoveLog(gameCtx, event)
 	})
 }
@@ -88,17 +92,25 @@ func (p *GameStateBroadcaster) handlePlayerConnected(
 	gameCtx gamectx.GameContext,
 	_ *gameevt.PlayerConnected,
 ) {
-	GameSafeOp(gameCtx, "fetchAndPublishPublicState", func(gameCtx gamectx.GameContext) error {
-		return fetchAndPublishPublicState(
-			gameCtx, p.snapshotService, p.presence, p.writer.WriteMessage,
-		)
-	})
+	eventbus.TypedSafeOp(
+		gameCtx,
+		"fetchAndPublishPublicState",
+		func(gameCtx gamectx.GameContext) error {
+			return fetchAndPublishPublicState(
+				gameCtx, p.snapshotService, p.presence, p.writer.WriteMessage,
+			)
+		},
+	)
 
-	GameSafeOp(gameCtx, "publishPrivateStateToPlayer", func(gameCtx gamectx.GameContext) error {
-		return p.publishPrivateStateToPlayer(gameCtx)
-	})
+	eventbus.TypedSafeOp(
+		gameCtx,
+		"publishPrivateStateToPlayer",
+		func(gameCtx gamectx.GameContext) error {
+			return p.publishPrivateStateToPlayer(gameCtx)
+		},
+	)
 
-	GameSafeOp(gameCtx, "publishMoveHistory", func(gameCtx gamectx.GameContext) error {
+	eventbus.TypedSafeOp(gameCtx, "publishMoveHistory", func(gameCtx gamectx.GameContext) error {
 		return p.publishMoveHistory(gameCtx)
 	})
 }
@@ -107,13 +119,17 @@ func (p *GameStateBroadcaster) handlePhaseTransitioned(
 	gameCtx gamectx.GameContext,
 	_ *gameevt.PhaseTransitioned,
 ) {
-	GameSafeOp(gameCtx, "fetchAndPublishPublicState", func(gameCtx gamectx.GameContext) error {
-		return fetchAndPublishPublicState(
-			gameCtx, p.snapshotService, p.presence, p.writer.Broadcast,
-		)
-	})
+	eventbus.TypedSafeOp(
+		gameCtx,
+		"fetchAndPublishPublicState",
+		func(gameCtx gamectx.GameContext) error {
+			return fetchAndPublishPublicState(
+				gameCtx, p.snapshotService, p.presence, p.writer.Broadcast,
+			)
+		},
+	)
 
-	GameSafeOp(gameCtx, "publishPrivateStates", func(gameCtx gamectx.GameContext) error {
+	eventbus.TypedSafeOp(gameCtx, "publishPrivateStates", func(gameCtx gamectx.GameContext) error {
 		return p.publishPrivateStates(gameCtx)
 	})
 }
@@ -122,7 +138,7 @@ func (p *GameStateBroadcaster) handleGameCompleted(
 	gameCtx gamectx.GameContext,
 	_ *gameevt.GameCompleted,
 ) {
-	GameSafeOp(gameCtx, "removeGame", func(gameCtx gamectx.GameContext) error {
+	eventbus.TypedSafeOp(gameCtx, "removeGame", func(gameCtx gamectx.GameContext) error {
 		p.lifecycle.RemoveGame(gameCtx)
 
 		return nil

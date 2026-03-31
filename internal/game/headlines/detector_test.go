@@ -707,7 +707,7 @@ func spanNames(stubs tracetest.SpanStubs) []string {
 }
 
 // ---------------------------------------------------------------------------
-// Test: MoveExecuted — headline detector creates detector.headlines span
+// Test: MoveExecuted — headline detector creates consumer.detector.headlines span
 // ---------------------------------------------------------------------------
 
 //nolint:paralleltest // swaps global TracerProvider
@@ -739,7 +739,7 @@ func TestDetector_CreatesHeadlineSpan(t *testing.T) {
 	var found bool
 
 	for _, stub := range stubs {
-		if stub.Name == "detector.headlines" {
+		if stub.Name == "consumer.detector.headlines" {
 			found = true
 
 			break
@@ -747,6 +747,6 @@ func TestDetector_CreatesHeadlineSpan(t *testing.T) {
 	}
 
 	require.True(t, found,
-		"expected span named 'detector.headlines' in recorded spans, got: %v",
+		"expected span named 'consumer.detector.headlines' in recorded spans, got: %v",
 		spanNames(stubs))
 }

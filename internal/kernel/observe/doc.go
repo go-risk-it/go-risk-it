@@ -5,22 +5,21 @@
 //
 // # API
 //
-// Eight public functions cover the full observability surface:
+// Six public functions cover the full observability surface:
 //
-//   - [Span] starts a child span and returns the enriched context with its
-//     original typed context preserved at compile time (e.g., GameContext in
-//     → GameContext out). This is the primary span creation function for
-//     business logic. The type parameter is inferred from the argument.
-//   - [SpanFunc] wraps a (T, error) function on a typed context with
-//     automatic span lifecycle. The closure receives the typed context
-//     directly — no type assertion needed at call sites.
-//   - [SpanErr] wraps an error function on a typed context with
-//     automatic span lifecycle. Same typed-context benefit as SpanFunc.
-//   - [RawSpan] starts a child span on a plain context.Context. Only needed
-//     for infrastructure callers (event bus, transaction wrapper) that operate
-//     on untyped contexts. When the parent implements [ctx.Rebaseable], domain
-//     metadata is automatically preserved on the child context (see Auto-Rebase
-//     below).
+//   - [Span] wraps a typed-context function that returns (T, error) with
+//     automatic span lifecycle. The closure receives the span-enriched typed
+//     context directly — no named returns, no defer-done discipline, no risk
+//     of discarding the context. This is the primary span creation function
+//     for business logic.
+//   - [SpanErr] is the error-only variant of [Span] — for functions that
+//     return only an error (no result value).
+//   - [RawSpan] starts a child span on a plain context.Context and returns
+//     the enriched context plus a done function for manual lifecycle
+//     management. Only needed for infrastructure callers (event bus,
+//     transaction wrapper) that operate on untyped contexts. When the parent
+//     implements [ctx.Rebaseable], domain metadata is automatically preserved
+//     on the child context (see Auto-Rebase below).
 //   - [SpanEvent] adds a named event to the current span (trace-only, no log).
 //   - [Info], [Warn], [Error] emit both an slog log and a span event.
 //     [Error] additionally records the error on the span and sets its status
@@ -35,44 +34,36 @@
 // OTel-enriched child context. Call sites get a context that carries both
 // the new span and the original domain fields — no manual rebasing needed.
 //
-// [Span] builds on this: the returned context has the same static type
-// as the parent, so downstream code keeps compile-time access to domain
-// fields without a type assertion.
+// [Span] and [SpanErr] build on this: the closure receives the same typed
+// context as the parent, so downstream code keeps compile-time access to
+// domain fields without a type assertion.
 //
 // # Span Creation: Choosing the Right Function
 //
-// Use [Span] when the parent is a typed context (GameContext, etc.)
-// and you need the typed context back:
-//
-//	func (s *service) PerformMove(ctx gamectx.GameContext) (err error) {
-//	    ctx, done := observe.Span(ctx, "move.perform")
-//	    defer func() { done(err) }()
-//	    // ctx is still GameContext — compile-time safe
-//	}
-//
-// Use [SpanFunc] when the function returns (T, error) on a typed
-// context — eliminates named returns, defer-done discipline, and type
-// assertions entirely:
+// Use [Span] when the function returns (T, error) on a typed context:
 //
 //	func (s *service) CreateGame(ctx gamectx.GameContext) (int64, error) {
-//	    return observe.SpanFunc(
-//	        ctx, "game.create",
+//	    return observe.Span(ctx, "game.create",
 //	        func(ctx gamectx.GameContext) (int64, error) {
-//	        // ... business logic ...
-//	        return gameID, nil
-//	    })
+//	            // ctx carries the child span — compile-time safe
+//	            return gameID, nil
+//	        },
+//	    )
 //	}
 //
 // Use [SpanErr] for typed-context functions that return only an error:
 //
-//	func (s *service) ValidateMove(ctx gamectx.GameContext) error {
-//	    return observe.SpanErr(ctx, "move.validate", func(ctx gamectx.GameContext) error {
-//	        // ... validation logic ...
-//	        return nil
-//	    })
+//	func (s *service) Advance(ctx gamectx.GameContext) error {
+//	    return observe.SpanErr(ctx, "game.advance",
+//	        func(ctx gamectx.GameContext) error {
+//	            // ... business logic ...
+//	            return nil
+//	        },
+//	    )
 //	}
 //
-// Use [RawSpan] + defer done(nil) for void functions on plain contexts:
+// Use [RawSpan] + defer done(nil) for void functions on plain contexts
+// (infrastructure only):
 //
 //	func (s *service) BroadcastState(ctx context.Context) {
 //	    ctx, done := observe.RawSpan(ctx, "state.broadcast")
@@ -81,44 +72,21 @@
 //	}
 //
 // WARNING: never use defer done(nil) in a function that returns error — the
-// span will always record success even when the function fails. Use named
-// returns with a deferred closure instead:
-//
-//	// WRONG — span always records success:
-//	func (s *service) GetState(ctx context.Context) (*State, error) {
-//	    ctx, done := observe.RawSpan(ctx, "state.get")
-//	    defer done(nil) // BUG: err is lost
-//	    // ...
-//	}
-//
-//	// CORRECT — span captures the actual error:
-//	func (s *service) GetState(ctx context.Context) (state *State, err error) {
-//	    ctx, done := observe.RawSpan(ctx, "state.get")
-//	    defer func() { done(err) }()
-//	    // ...
-//	}
-//
-// Or better, use [SpanFunc] which eliminates the pattern entirely:
-//
-//	func (s *service) GetState(ctx gamectx.GameContext) (*State, error) {
-//	    return observe.SpanFunc(
-//	        ctx, "state.get",
-//	        func(ctx gamectx.GameContext) (*State, error) {
-//	        // ...
-//	    })
-//	}
+// span will always record success even when the function fails. In
+// error-returning functions, always use [Span] or [SpanErr] instead.
 //
 // An arch_test rule (Rule 25) enforces this: defer done(nil) in an
-// error-returning function is a build-time failure.
+// error-returning function is a build-time failure. Rule O3 additionally
+// restricts [RawSpan] to infrastructure packages — business logic must use
+// [Span] or [SpanErr].
 //
 // # Usage Rules
 //
 //  1. [Error] is for partial failures only — when execution continues despite
 //     the error. If you are returning the error, just return it; done(err) on
 //     the span handles status marking.
-//  2. Prefer [Span] for typed contexts, [SpanFunc]/[SpanErr]
-//     for typed-context closures, raw [RawSpan]+done(nil) only for void
-//     functions on plain contexts.
+//  2. Use [Span]/[SpanErr] for business logic (closure-based, structurally
+//     safe). Use [RawSpan]+done for infrastructure only (manual lifecycle).
 //  3. Attrs are optional — context attributes (user_id, game_id, lobby_id)
 //     are auto-extracted via [ctx.LogEnricher]. Pass explicit attrs only for
 //     operation-specific metadata.
@@ -127,10 +95,9 @@
 //
 // Span names use noun.verb format that reads naturally in a trace waterfall:
 //
-//	observe.Span(ctx, "game.create")
-//	observe.Span(ctx, "move.perform")
-//	observe.Span(ctx, "phase.advance")
-//	observe.Span(ctx, "board.loadGraph")
+//	observe.Span(ctx, "game.create", func(ctx gamectx.GameContext) (int64, error) { ... })
+//	observe.SpanErr(ctx, "game.advance", func(ctx gamectx.GameContext) error { ... })
+//	observe.RawSpan(ctx, "db.transaction")
 //
 // The noun identifies the domain concept; the verb identifies the operation.
 // This produces readable trace trees where each span is a self-describing
@@ -140,9 +107,9 @@
 //
 // Choose the right function based on what you are observing:
 //
-//   - [Span] / [SpanFunc] / [SpanErr] / [RawSpan] — for operations with
-//     meaningful duration. Creates a parent-child relationship in the trace
-//     tree. Use for service method entry points, transactions, and I/O calls.
+//   - [Span] / [SpanErr] / [RawSpan] — for operations with meaningful
+//     duration. Creates a parent-child relationship in the trace tree. Use
+//     for service method entry points, transactions, and I/O calls.
 //   - [SpanEvent] — for decision points or milestones within an existing span.
 //     No log emission, no new span. Use for "phase transitioned to ATTACK" or
 //     "card combination validated" — events that matter for trace analysis but

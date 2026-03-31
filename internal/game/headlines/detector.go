@@ -1,7 +1,6 @@
 package headlines
 
 import (
-	"context"
 	"fmt"
 	"slices"
 	"sync"
@@ -67,25 +66,26 @@ func (d *detector) handleGameCompleted(_ ctx.GameContext, event *gameevt.GameCom
 }
 
 func (d *detector) handleMoveExecuted(gameCtx ctx.GameContext, event *gameevt.MoveExecuted) {
-	_, done := observe.RawSpan(gameCtx, "detector.headlines")
-	defer done(nil)
+	eventbus.TypedSafeOp(gameCtx, "detector.headlines", func(gameCtx ctx.GameContext) error {
+		if event.ActionType != sqlc.GamePhaseTypeATTACK {
+			return nil
+		}
 
-	if event.ActionType != sqlc.GamePhaseTypeATTACK {
-		return
-	}
+		if event.AttackResult == nil || event.AttackResult.ConqueringTroops <= 0 {
+			return nil
+		}
 
-	if event.AttackResult == nil || event.AttackResult.ConqueringTroops <= 0 {
-		return
-	}
+		ownership, err := d.ensureCache(gameCtx, event.GameID())
+		if err != nil {
+			observe.Warn(gameCtx, "headline detector: failed to init cache")
 
-	ownership, err := d.ensureCache(gameCtx, event.GameID())
-	if err != nil {
-		observe.Warn(gameCtx, "headline detector: failed to init cache")
+			return err
+		}
 
-		return
-	}
+		d.processConquest(gameCtx, ownership, event, gameCtx.UserID())
 
-	d.processConquest(gameCtx, ownership, event, gameCtx.UserID())
+		return nil
+	})
 }
 
 // ensureCache returns the ownership cache for the game, initializing it from a
@@ -157,7 +157,7 @@ func (d *detector) initCache(
 // handler goroutine. This is safe because collectHandlers uses an RLock (released before
 // dispatch) and dispatchEvent launches a new goroutine per event. No lock re-entrancy.
 func (d *detector) processConquest(
-	eventCtx context.Context,
+	gameCtx ctx.GameContext,
 	ownership *gameOwnership,
 	event *gameevt.MoveExecuted,
 	attackerUserID string,
@@ -165,7 +165,7 @@ func (d *detector) processConquest(
 	derived := d.detectHeadlines(ownership, event, attackerUserID)
 
 	for _, headline := range derived {
-		d.pub.Emit(eventCtx, headline)
+		d.pub.Emit(gameCtx, headline)
 	}
 }
 
