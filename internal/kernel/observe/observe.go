@@ -92,13 +92,6 @@ func ExtractContextAttrs(c context.Context) []attribute.KeyValue {
 	return extractContextAttrs(c)
 }
 
-// OtelToSlog converts OTel attribute.KeyValue values to slog.Attr values.
-//
-// Exported for testing — production code should not call this directly.
-func OtelToSlog(attrs []attribute.KeyValue) []slog.Attr {
-	return otelToSlog(attrs)
-}
-
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------

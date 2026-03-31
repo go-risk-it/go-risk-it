@@ -93,6 +93,8 @@ func TestGroupPackages_LongestPrefixWins(t *testing.T) {
 	gameSub := archModel.Subsystems["game_services"]
 	if gameSub == nil {
 		t.Fatal("expected subsystem game_services to exist")
+
+		return
 	}
 
 	if !slices.Contains(gameSub.Packages, "game/logic/board") {
@@ -234,6 +236,8 @@ func TestGroupPackages_OverrideTakesPrecedenceOverRoot(t *testing.T) {
 	support := archModel.Subsystems["game_support"]
 	if support == nil {
 		t.Fatal("expected subsystem game_support")
+
+		return
 	}
 
 	if !slices.Contains(support.Packages, "game/config") {
@@ -262,6 +266,8 @@ func TestGroupPackages_NewPackage(t *testing.T) {
 	sub := archModel.Subsystems["game_services"]
 	if sub == nil {
 		t.Fatal("expected game_services to exist for synthetic package")
+
+		return
 	}
 
 	if !slices.Contains(sub.Packages, "game/logic/foo") {

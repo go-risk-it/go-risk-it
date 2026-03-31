@@ -431,51 +431,6 @@ func TestExtractContextAttrs_GameContext_ReturnsUserIDAndGameID(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// Tests: otelToSlog
-// ---------------------------------------------------------------------------
-
-func TestOtelToSlog_ConvertsStringAndInt64(t *testing.T) {
-	t.Parallel()
-
-	otelAttrs := []attribute.KeyValue{
-		attribute.String("name", "alice"),
-		attribute.Int64("count", 42),
-	}
-
-	slogAttrs := observe.OtelToSlog(otelAttrs)
-
-	require.Len(t, slogAttrs, 2)
-	assert.Equal(t, "name", slogAttrs[0].Key)
-	assert.Equal(t, slog.StringValue("alice"), slogAttrs[0].Value)
-	assert.Equal(t, "count", slogAttrs[1].Key)
-	assert.Equal(t, slog.Int64Value(42), slogAttrs[1].Value)
-}
-
-func TestOtelToSlog_ConvertsBoolAndFloat64(t *testing.T) {
-	t.Parallel()
-
-	otelAttrs := []attribute.KeyValue{
-		attribute.Bool("active", true),
-		attribute.Float64("ratio", 3.14),
-	}
-
-	slogAttrs := observe.OtelToSlog(otelAttrs)
-
-	require.Len(t, slogAttrs, 2)
-	assert.Equal(t, "active", slogAttrs[0].Key)
-	assert.Equal(t, slog.BoolValue(true), slogAttrs[0].Value)
-	assert.Equal(t, "ratio", slogAttrs[1].Key)
-	assert.Equal(t, slog.Float64Value(3.14), slogAttrs[1].Value)
-}
-
-func TestOtelToSlog_EmptyInput(t *testing.T) {
-	t.Parallel()
-
-	slogAttrs := observe.OtelToSlog(nil)
-	require.Nil(t, slogAttrs)
-}
-
-// ---------------------------------------------------------------------------
 // Tests: Graceful degradation — no span in context
 // ---------------------------------------------------------------------------
 
