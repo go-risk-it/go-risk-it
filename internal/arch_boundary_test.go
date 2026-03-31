@@ -4,7 +4,9 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -629,6 +631,51 @@ func TestArch_BusinessLogicNoDirectOTel(t *testing.T) {
 
 			t.Errorf("%s imports forbidden OTel package %s — use kernel/observe instead",
 				pkg.ImportPath, imp)
+		}
+	}
+}
+
+// ─── Rule O3: Observe RawSpan Restriction ───
+
+// rawSpanPattern matches observe.RawSpan( calls in source files.
+//
+//nolint:gochecknoglobals // test-only regex
+var rawSpanPattern = regexp.MustCompile(`observe\.RawSpan\(`)
+
+// Rule O3: business logic packages must use observe.Span or observe.SpanErr
+// for span creation. observe.RawSpan is restricted to infrastructure packages
+// (kernel/, web/) because it requires manual lifecycle management (done function)
+// and risks discarded-context bugs.
+func TestArch_BusinessLogicNoRawSpan(t *testing.T) {
+	t.Parallel()
+
+	pkgs := loadPackages(t, "./internal/game/logic/...")
+	pkgs = append(pkgs, loadPackages(t, "./internal/lobby/logic/...")...)
+	pkgs = append(pkgs, loadPackages(t, "./internal/game/consumers/...")...)
+	pkgs = append(pkgs, loadPackages(t, "./internal/lobby/consumers/...")...)
+	pkgs = append(pkgs, loadPackages(t, "./internal/game/snapshot/...")...)
+	pkgs = append(pkgs, loadPackages(t, "./internal/game/headlines/...")...)
+
+	for _, pkg := range pkgs {
+		for _, goFile := range pkg.GoFiles {
+			if strings.HasSuffix(goFile, "_test.go") || goFile == docGoFile {
+				continue
+			}
+
+			path := filepath.Join(pkg.Dir, goFile)
+
+			content, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatalf("failed to read %s: %v", path, err)
+			}
+
+			if rawSpanPattern.Match(content) {
+				t.Errorf(
+					"%s uses observe.RawSpan — business logic must use "+
+						"observe.Span or observe.SpanErr instead",
+					path,
+				)
+			}
 		}
 	}
 }

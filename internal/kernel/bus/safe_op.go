@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"runtime/debug"
 
+	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -37,4 +38,17 @@ func SafeOp(
 
 	err := action(ctx)
 	done(err)
+}
+
+// TypedSafeOp wraps SafeOp with typed context propagation. The action receives
+// the domain-typed context directly — no type assertion needed at call sites.
+//
+// Rebaseable.Rebase contract guarantees the context type is preserved through
+// the SafeOp span boundary.
+//
+//nolint:forcetypeassert // Rebaseable.Rebase contract guarantees type preservation
+func TypedSafeOp[C ctx.Rebaseable](c C, name string, action func(C) error) {
+	SafeOp(c, name, func(rawCtx context.Context) error {
+		return action(rawCtx.(C))
+	})
 }

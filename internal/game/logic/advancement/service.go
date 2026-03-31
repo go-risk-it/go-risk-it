@@ -61,38 +61,34 @@ func NewService[T, R any](
 	}
 }
 
-//nolint:nonamedreturns // named returns needed for defer-based error recording
-func (s *service[T, R]) Advance(ctx gamectx.GameContext) (err error) {
+func (s *service[T, R]) Advance(ctx gamectx.GameContext) error {
 	currentPhase := s.moveService.PhaseType()
 
-	ctx, done := observe.Span(ctx, "game.advance",
-		attribute.String("phase", string(currentPhase)),
-	)
-	defer func() { done(err) }()
+	return observe.SpanErr(ctx, "game.advance", func(ctx gamectx.GameContext) error {
+		outcome, err := dbutil.InTransactionWithIsolation(
+			s.querier,
+			ctx,
+			s.metrics,
+			pgx.RepeatableRead,
+			func(q db.Querier) (advanceOutcome, error) {
+				return s.advanceInternal(ctx, q)
+			},
+		)
+		if err != nil {
+			return fmt.Errorf("unable to perform move: %w", err)
+		}
 
-	outcome, err := dbutil.InTransactionWithIsolation(
-		s.querier,
-		ctx,
-		s.metrics,
-		pgx.RepeatableRead,
-		func(q db.Querier) (advanceOutcome, error) {
-			return s.advanceInternal(ctx, q)
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("unable to perform move: %w", err)
-	}
+		s.bus.Emit(ctx, gameevt.NewPhaseTransitioned(
+			ctx.GameID(),
+			ctx.UserID(),
+			time.Now(),
+			currentPhase,
+			outcome.targetPhase,
+			outcome.turn,
+		))
 
-	s.bus.Emit(ctx, gameevt.NewPhaseTransitioned(
-		ctx.GameID(),
-		ctx.UserID(),
-		time.Now(),
-		currentPhase,
-		outcome.targetPhase,
-		outcome.turn,
-	))
-
-	return nil
+		return nil
+	}, attribute.String("phase", string(currentPhase)))
 }
 
 func (s *service[T, R]) AdvanceWithQuerier(

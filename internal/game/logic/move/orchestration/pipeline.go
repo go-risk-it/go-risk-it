@@ -14,24 +14,20 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-//nolint:nonamedreturns // named returns needed for defer-based error recording
 func (s *orchestrator[T, R]) OrchestrateMove(
 	ctx gamectx.GameContext,
 	move T,
-) (err error) {
-	ctx, done := observe.Span(ctx, "game.orchestrate_move",
-		attribute.String("phase", string(s.service.PhaseType())),
-	)
-	defer func() { done(err) }()
+) error {
+	return observe.SpanErr(ctx, "game.orchestrate_move", func(ctx gamectx.GameContext) error {
+		outcome, err := s.executeTransaction(ctx, move)
+		if err != nil {
+			return fmt.Errorf("unable to perform move: %w", err)
+		}
 
-	outcome, err := s.executeTransaction(ctx, move)
-	if err != nil {
-		return fmt.Errorf("unable to perform move: %w", err)
-	}
+		s.emitEvents(ctx, outcome)
 
-	s.emitEvents(ctx, outcome)
-
-	return nil
+		return nil
+	}, attribute.String("phase", string(s.service.PhaseType())))
 }
 
 func (s *orchestrator[T, R]) executeTransaction(

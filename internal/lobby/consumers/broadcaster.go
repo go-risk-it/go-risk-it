@@ -61,7 +61,7 @@ func (p *LobbyStateBroadcaster) fetchAndPublish(
 
 	var fetchOk bool
 
-	LobbySafeOp(lCtx, "fetchLobbyState", func(lCtx lobbyctx.LobbyContext) error {
+	eventbus.TypedSafeOp(lCtx, "fetchLobbyState", func(lCtx lobbyctx.LobbyContext) error {
 		lobbyState, err := p.stateController.GetLobbyState(lCtx)
 		if err != nil {
 			return fmt.Errorf("failed to get lobby state: %w", err)
@@ -82,7 +82,7 @@ func (p *LobbyStateBroadcaster) fetchAndPublish(
 		return
 	}
 
-	LobbySafeOp(lCtx, "dispatchLobbyState", func(lCtx lobbyctx.LobbyContext) error {
+	eventbus.TypedSafeOp(lCtx, "dispatchLobbyState", func(lCtx lobbyctx.LobbyContext) error {
 		dispatch(lCtx, msg)
 
 		return nil

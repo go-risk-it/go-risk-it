@@ -1,11 +1,11 @@
 package routes
 
 import (
-	"errors"
 	"fmt"
 	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/commands"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/logic/start"
@@ -35,7 +35,7 @@ func (c *StartController) StartGame(ctx ctx.LobbyContext) error {
 	}
 
 	if !canStartLobby {
-		return errors.New("lobby cannot be started")
+		return domainerrors.NewValidationError("lobby cannot be started")
 	}
 
 	lobbyPlayers, err := c.startService.GetLobbyPlayers(ctx)

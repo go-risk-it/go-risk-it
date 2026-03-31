@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
+	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/mission/checker"
@@ -15,23 +15,23 @@ import (
 
 type Service interface {
 	CreateMissions(
-		ctx ctx.GameContext,
+		ctx gamectx.GameContext,
 		querier db.Querier,
 		players []sqlc.GamePlayer,
 	) error
-	IsMissionAccomplished(ctx ctx.GameContext, querier db.Querier) (bool, error)
-	ReassignMissions(ctx ctx.GameContext, querier db.Querier, eliminatedPlayerID int64) error
+	IsMissionAccomplished(ctx gamectx.GameContext, querier db.Querier) (bool, error)
+	ReassignMissions(ctx gamectx.GameContext, querier db.Querier, eliminatedPlayerID int64) error
 
 	GetTwoContinentsMission(
-		ctx ctx.GameContext,
+		ctx gamectx.GameContext,
 		missionID int64,
 	) (TwoContinentsMission, error)
 	GetTwoContinentsPlusOneMission(
-		ctx ctx.GameContext,
+		ctx gamectx.GameContext,
 		missionID int64,
 	) (TwoContinentsPlusOneMission, error)
 	GetEliminatePlayerMission(
-		ctx ctx.GameContext,
+		ctx gamectx.GameContext,
 		missionID int64,
 	) (string, error)
 }
@@ -57,7 +57,7 @@ func New(
 }
 
 func (s *service) GetTwoContinentsMission(
-	ctx ctx.GameContext,
+	ctx gamectx.GameContext,
 	missionID int64,
 ) (TwoContinentsMission, error) {
 	mission, err := s.querier.GetTwoContinentsMission(ctx, missionID)
@@ -72,7 +72,7 @@ func (s *service) GetTwoContinentsMission(
 }
 
 func (s *service) GetTwoContinentsPlusOneMission(
-	ctx ctx.GameContext,
+	ctx gamectx.GameContext,
 	missionID int64,
 ) (TwoContinentsPlusOneMission, error) {
 	mission, err := s.querier.GetTwoContinentsPlusOneMission(ctx, missionID)
@@ -90,7 +90,7 @@ func (s *service) GetTwoContinentsPlusOneMission(
 }
 
 func (s *service) GetEliminatePlayerMission(
-	ctx ctx.GameContext,
+	ctx gamectx.GameContext,
 	missionID int64,
 ) (string, error) {
 	targetUser, err := s.querier.GetPlayerToEliminate(ctx, missionID)
@@ -102,7 +102,7 @@ func (s *service) GetEliminatePlayerMission(
 }
 
 func (s *service) CreateMissions(
-	ctx ctx.GameContext,
+	ctx gamectx.GameContext,
 	querier db.Querier,
 	players []sqlc.GamePlayer,
 ) error {
@@ -197,46 +197,48 @@ func (s *service) GetAvailableMissions(players []sqlc.GamePlayer) []BaseMission 
 	return missions
 }
 
-//nolint:nonamedreturns // named returns needed for defer-based error recording
 func (s *service) IsMissionAccomplished(
-	ctx ctx.GameContext,
+	ctx gamectx.GameContext,
 	querier db.Querier,
-) (accomplished bool, err error) {
-	ctx, done := observe.Span(ctx, "game.move.check_mission")
-	defer func() { done(err) }()
+) (bool, error) {
+	return observe.Span(
+		ctx,
+		"game.move.check_mission",
+		func(ctx gamectx.GameContext) (bool, error) {
+			baseMission, err := querier.GetMission(ctx, sqlc.GetMissionParams{
+				GameID: ctx.GameID(),
+				UserID: ctx.UserID(),
+			})
+			if err != nil {
+				return false, fmt.Errorf("failed to get mission: %w", err)
+			}
 
-	baseMission, err := querier.GetMission(ctx, sqlc.GetMissionParams{
-		GameID: ctx.GameID(),
-		UserID: ctx.UserID(),
-	})
-	if err != nil {
-		return false, fmt.Errorf("failed to get mission: %w", err)
-	}
+			isMissionAccomplished, err := s.isMissionAccomplished(ctx, querier, baseMission)
+			if err != nil {
+				return false, fmt.Errorf("failed to check if mission is accomplished: %w", err)
+			}
 
-	isMissionAccomplished, err := s.isMissionAccomplished(ctx, querier, baseMission)
-	if err != nil {
-		return false, fmt.Errorf("failed to check if mission is accomplished: %w", err)
-	}
+			if isMissionAccomplished {
+				if err := querier.AssignGameWinner(ctx, sqlc.AssignGameWinnerParams{
+					WinnerPlayerID: pgtype.Int8{
+						Int64: baseMission.PlayerID,
+						Valid: true,
+					},
+					GameID: ctx.GameID(),
+				}); err != nil {
+					return false, fmt.Errorf("failed to assign game winner: %w", err)
+				}
 
-	if isMissionAccomplished {
-		if err := querier.AssignGameWinner(ctx, sqlc.AssignGameWinnerParams{
-			WinnerPlayerID: pgtype.Int8{
-				Int64: baseMission.PlayerID,
-				Valid: true,
-			},
-			GameID: ctx.GameID(),
-		}); err != nil {
-			return false, fmt.Errorf("failed to assign game winner: %w", err)
-		}
+				return true, nil
+			}
 
-		return true, nil
-	}
-
-	return false, nil
+			return false, nil
+		},
+	)
 }
 
 func (s *service) isMissionAccomplished(
-	ctx ctx.GameContext,
+	ctx gamectx.GameContext,
 	querier db.Querier,
 	baseMission sqlc.GameMission,
 ) (bool, error) {
@@ -249,7 +251,7 @@ func (s *service) isMissionAccomplished(
 }
 
 func (s *service) ReassignMissions(
-	ctx ctx.GameContext,
+	ctx gamectx.GameContext,
 	querier db.Querier,
 	eliminatedPlayerID int64,
 ) error {

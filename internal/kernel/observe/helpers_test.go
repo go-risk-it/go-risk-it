@@ -30,41 +30,48 @@ func buildLobbyContext(t *testing.T) lobbyctx.LobbyContext {
 }
 
 // ---------------------------------------------------------------------------
-// Tests: Span (typed generic)
+// Tests: Span (closure-based, returns (T, error))
 // ---------------------------------------------------------------------------
 
 //nolint:paralleltest // swaps global TracerProvider
-func TestSpan_GameContext_ReturnsGameContext(t *testing.T) {
+func TestSpan_GameContext_PreservesType(t *testing.T) {
 	setupTracing(t)
 
 	gameCtx := buildGameContext(t)
 
-	result, done := observe.Span(gameCtx, "game.test")
-	defer done(nil)
+	result, err := observe.Span(
+		gameCtx,
+		"game.typed-func",
+		func(gc gamectx.GameContext) (int64, error) {
+			// fn receives GameContext directly — no assertion needed.
+			return gc.GameID(), nil
+		},
+	)
 
-	// The returned context must be a GameContext with the same GameID.
-	require.NotNil(t, result)
-	assert.Equal(t, int64(99), result.GameID())
-	assert.Equal(t, "user-42", result.UserID())
+	require.NoError(t, err)
+	assert.Equal(t, int64(99), result)
 }
 
 //nolint:paralleltest // swaps global TracerProvider
-func TestSpan_LobbyContext_ReturnsLobbyContext(t *testing.T) {
+func TestSpan_LobbyContext_PreservesType(t *testing.T) {
 	setupTracing(t)
 
-	lobbyCtx := buildLobbyContext(t)
+	lCtx := buildLobbyContext(t)
 
-	result, done := observe.Span(lobbyCtx, "lobby.test")
-	defer done(nil)
+	result, err := observe.Span(
+		lCtx,
+		"lobby.typed-func",
+		func(lc lobbyctx.LobbyContext) (int64, error) {
+			return lc.LobbyID(), nil
+		},
+	)
 
-	// The returned context must be a LobbyContext with the same LobbyID.
-	require.NotNil(t, result)
-	assert.Equal(t, int64(77), result.LobbyID())
-	assert.Equal(t, "user-42", result.UserID())
+	require.NoError(t, err)
+	assert.Equal(t, int64(77), result)
 }
 
 //nolint:paralleltest // swaps global TracerProvider
-func TestSpan_CreatesChildSpan(t *testing.T) {
+func TestSpan_PreservesTraceChain(t *testing.T) {
 	exporter := setupTracing(t)
 
 	gameCtx := buildGameContext(t)
@@ -72,11 +79,17 @@ func TestSpan_CreatesChildSpan(t *testing.T) {
 	parentTraceID := parentSpan.SpanContext().TraceID()
 	parentSpanID := parentSpan.SpanContext().SpanID()
 
-	_, done := observe.Span(gameCtx, "game.child-op")
-	done(nil)
+	_, err := observe.Span(
+		gameCtx,
+		"game.trace-chain",
+		func(_ gamectx.GameContext) (struct{}, error) {
+			return struct{}{}, nil
+		},
+	)
+	require.NoError(t, err)
 
 	stubs := exporter.GetSpans()
-	stub := findSpan(stubs, "game.child-op")
+	stub := findSpan(stubs, "game.trace-chain")
 	require.NotNil(t, stub, "child span must be recorded")
 
 	assert.Equal(t, parentTraceID, stub.SpanContext.TraceID(),
@@ -86,15 +99,20 @@ func TestSpan_CreatesChildSpan(t *testing.T) {
 }
 
 //nolint:paralleltest // swaps global TracerProvider
-func TestSpan_DoneRecordsError(t *testing.T) {
+func TestSpan_ErrorRecordedOnSpan(t *testing.T) {
 	exporter := setupTracing(t)
 
 	gameCtx := buildGameContext(t)
-
-	_, done := observe.Span(gameCtx, "game.failing-op")
-
 	testErr := errors.New("validation failed")
-	done(testErr)
+
+	_, err := observe.Span(
+		gameCtx,
+		"game.failing-op",
+		func(_ gamectx.GameContext) (struct{}, error) {
+			return struct{}{}, testErr
+		},
+	)
+	require.Error(t, err)
 
 	stubs := exporter.GetSpans()
 	stub := findSpan(stubs, "game.failing-op")
@@ -108,27 +126,8 @@ func TestSpan_DoneRecordsError(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// Tests: SpanFunc
+// Tests: SpanErr (closure-based, returns error)
 // ---------------------------------------------------------------------------
-
-//nolint:paralleltest // swaps global TracerProvider
-func TestSpanFunc_GameContext(t *testing.T) {
-	setupTracing(t)
-
-	gameCtx := buildGameContext(t)
-
-	result, err := observe.SpanFunc(
-		gameCtx,
-		"game.typed-func",
-		func(gc gamectx.GameContext) (int64, error) {
-			// fn receives GameContext directly — no assertion needed.
-			return gc.GameID(), nil
-		},
-	)
-
-	require.NoError(t, err)
-	assert.Equal(t, int64(99), result)
-}
 
 //nolint:paralleltest // swaps global TracerProvider
 func TestSpanErr_GameContext(t *testing.T) {
@@ -150,32 +149,4 @@ func TestSpanErr_GameContext(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, int64(99), captured)
-}
-
-//nolint:paralleltest // swaps global TracerProvider
-func TestSpanFunc_PreservesTraceChain(t *testing.T) {
-	exporter := setupTracing(t)
-
-	gameCtx := buildGameContext(t)
-	parentSpan := gameCtx.Span()
-	parentTraceID := parentSpan.SpanContext().TraceID()
-	parentSpanID := parentSpan.SpanContext().SpanID()
-
-	_, err := observe.SpanFunc(
-		gameCtx,
-		"game.trace-chain",
-		func(_ gamectx.GameContext) (struct{}, error) {
-			return struct{}{}, nil
-		},
-	)
-	require.NoError(t, err)
-
-	stubs := exporter.GetSpans()
-	stub := findSpan(stubs, "game.trace-chain")
-	require.NotNil(t, stub, "child span must be recorded")
-
-	assert.Equal(t, parentTraceID, stub.SpanContext.TraceID(),
-		"child must be in same trace as parent")
-	assert.Equal(t, parentSpanID, stub.Parent.SpanID(),
-		"child's parent must be the parent span")
 }

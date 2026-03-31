@@ -3,7 +3,7 @@ package snapshot
 import (
 	"fmt"
 
-	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
+	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
@@ -53,13 +53,13 @@ type PrivateSnapshot struct {
 type Service interface {
 	// GetPublicSnapshot returns the full publicly visible game state, including
 	// the game metadata, phase-specific state, board regions, and player summaries.
-	GetPublicSnapshot(ctx ctx.GameContext) (*PublicSnapshot, error)
+	GetPublicSnapshot(ctx gamectx.GameContext) (*PublicSnapshot, error)
 
 	// GetPrivateSnapshotsByUser returns private state for every player in the game,
 	// keyed by user ID (string). Each snapshot contains the player's
 	// card hand and base mission information. Internally maps player_id → user_id
 	// via GetPlayersByGame, so callers need not perform the mapping themselves.
-	GetPrivateSnapshotsByUser(ctx ctx.GameContext) (map[string]*PrivateSnapshot, error)
+	GetPrivateSnapshotsByUser(ctx gamectx.GameContext) (map[string]*PrivateSnapshot, error)
 }
 
 type service struct {
@@ -75,41 +75,43 @@ func NewService(querier db.Querier) Service {
 	}
 }
 
-//nolint:nonamedreturns // named returns needed for defer-based error recording
-func (s *service) GetPublicSnapshot(ctx ctx.GameContext) (result *PublicSnapshot, err error) {
-	ctx, done := observe.Span(ctx, "snapshot.get_public")
-	defer func() { done(err) }()
+func (s *service) GetPublicSnapshot(ctx gamectx.GameContext) (*PublicSnapshot, error) {
+	return observe.Span(
+		ctx,
+		"snapshot.get_public",
+		func(ctx gamectx.GameContext) (*PublicSnapshot, error) {
+			game, err := s.querier.GetGame(ctx, ctx.GameID())
+			if err != nil {
+				return nil, fmt.Errorf("getting game: %w", err)
+			}
 
-	game, err := s.querier.GetGame(ctx, ctx.GameID())
-	if err != nil {
-		return nil, fmt.Errorf("getting game: %w", err)
-	}
+			phaseState, err := s.getPhaseState(ctx, game.CurrentPhase)
+			if err != nil {
+				return nil, err
+			}
 
-	phaseState, err := s.getPhaseState(ctx, game.CurrentPhase)
-	if err != nil {
-		return nil, err
-	}
+			regions, err := s.querier.GetRegionsByGame(ctx, ctx.GameID())
+			if err != nil {
+				return nil, fmt.Errorf("getting regions: %w", err)
+			}
 
-	regions, err := s.querier.GetRegionsByGame(ctx, ctx.GameID())
-	if err != nil {
-		return nil, fmt.Errorf("getting regions: %w", err)
-	}
+			players, err := s.querier.GetPlayersState(ctx, ctx.GameID())
+			if err != nil {
+				return nil, fmt.Errorf("getting players state: %w", err)
+			}
 
-	players, err := s.querier.GetPlayersState(ctx, ctx.GameID())
-	if err != nil {
-		return nil, fmt.Errorf("getting players state: %w", err)
-	}
-
-	return &PublicSnapshot{
-		Game:    game,
-		Phase:   phaseState,
-		Board:   regions,
-		Players: players,
-	}, nil
+			return &PublicSnapshot{
+				Game:    game,
+				Phase:   phaseState,
+				Board:   regions,
+				Players: players,
+			}, nil
+		},
+	)
 }
 
 func (s *service) getPhaseState(
-	ctx ctx.GameContext,
+	ctx gamectx.GameContext,
 	phaseType sqlc.GamePhaseType,
 ) (PhaseState, error) {
 	switch phaseType {
@@ -138,28 +140,38 @@ func (s *service) getPhaseState(
 	}
 }
 
-//nolint:nonamedreturns // named returns needed for defer-based error recording
 func (s *service) GetPrivateSnapshotsByUser(
-	ctx ctx.GameContext,
-) (result map[string]*PrivateSnapshot, err error) {
-	ctx, done := observe.Span(ctx, "snapshot.get_private")
-	defer func() { done(err) }()
+	ctx gamectx.GameContext,
+) (map[string]*PrivateSnapshot, error) {
+	return observe.Span(
+		ctx,
+		"snapshot.get_private",
+		func(ctx gamectx.GameContext) (map[string]*PrivateSnapshot, error) {
+			players, err := s.querier.GetPlayersByGame(ctx, ctx.GameID())
+			if err != nil {
+				return nil, fmt.Errorf("getting players by game: %w", err)
+			}
 
-	players, err := s.querier.GetPlayersByGame(ctx, ctx.GameID())
-	if err != nil {
-		return nil, fmt.Errorf("getting players by game: %w", err)
-	}
+			cards, err := s.querier.GetAllCardsForGame(ctx, ctx.GameID())
+			if err != nil {
+				return nil, fmt.Errorf("getting all cards for game: %w", err)
+			}
 
-	cards, err := s.querier.GetAllCardsForGame(ctx, ctx.GameID())
-	if err != nil {
-		return nil, fmt.Errorf("getting all cards for game: %w", err)
-	}
+			missions, err := s.querier.GetAllMissionsForGame(ctx, ctx.GameID())
+			if err != nil {
+				return nil, fmt.Errorf("getting all missions for game: %w", err)
+			}
 
-	missions, err := s.querier.GetAllMissionsForGame(ctx, ctx.GameID())
-	if err != nil {
-		return nil, fmt.Errorf("getting all missions for game: %w", err)
-	}
+			return buildPrivateSnapshots(players, cards, missions), nil
+		},
+	)
+}
 
+func buildPrivateSnapshots(
+	players []sqlc.GamePlayer,
+	cards []sqlc.GetAllCardsForGameRow,
+	missions []sqlc.GameMission,
+) map[string]*PrivateSnapshot {
 	playerToUser := make(map[int64]string, len(players))
 	for _, player := range players {
 		playerToUser[player.ID] = player.UserID
@@ -199,5 +211,5 @@ func (s *service) GetPrivateSnapshotsByUser(
 		})
 	}
 
-	return snapshots, nil
+	return snapshots
 }

@@ -1,17 +1,20 @@
 package management
 
 import (
+	"errors"
 	"fmt"
 
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	dbutil "github.com/go-risk-it/go-risk-it/internal/kernel/data"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/data/sqlc"
 	lobbyevt "github.com/go-risk-it/go-risk-it/internal/lobby/events"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type UserLobbies struct {
@@ -74,6 +77,11 @@ func (s *service) JoinLobbyWithQuerier(
 		Name:    name,
 	})
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return domainerrors.NewConflictError("already joined this lobby")
+		}
+
 		return fmt.Errorf("failed to insert participant: %w", err)
 	}
 
@@ -90,7 +98,7 @@ func (s *service) GetUserLobbiesWithQuerier(
 	ctx kernelctx.UserContext,
 	querier db.Querier,
 ) (*UserLobbies, error) {
-	return observe.SpanFunc(ctx, "lobby.get_user_lobbies",
+	return observe.Span(ctx, "lobby.get_user_lobbies",
 		func(ctx kernelctx.UserContext) (*UserLobbies, error) {
 			ownedLobbies, err := querier.GetOwnedLobbies(ctx, ctx.UserID())
 			if err != nil {
