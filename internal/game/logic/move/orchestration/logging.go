@@ -3,7 +3,6 @@ package orchestration
 import (
 	"encoding/json"
 	"fmt"
-	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
@@ -34,8 +33,6 @@ func (s *loggingServiceImpl) GetMoveLogs(
 	ctx ctx.GameContext,
 	limit int64,
 ) ([]sqlc.GetMoveLogsRow, error) {
-	slog.DebugContext(ctx, "getting move logs", "limit", limit)
-
 	moveLogs, err := s.querier.GetMoveLogs(ctx, sqlc.GetMoveLogsParams{
 		GameID:  ctx.GameID(),
 		MaxLogs: limit,
@@ -52,8 +49,8 @@ func (s *loggingServiceImpl) LogMove(
 	querier db.Querier,
 	move, result any,
 ) (sqlc.GameMoveLog, error) {
-	ctx, span := tracing.StartGameSpan(ctx, "game.move.log")
-	defer span.End()
+	ctx, done := tracing.StartGameSpan(ctx, "game.move.log")
+	defer done(nil)
 
 	moveJSON, err := json.Marshal(move)
 	if err != nil {

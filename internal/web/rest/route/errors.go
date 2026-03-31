@@ -2,10 +2,10 @@ package route
 
 import (
 	"errors"
-	"log/slog"
 	"net/http"
 
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
@@ -31,7 +31,7 @@ func WrapErrors(handler PlainHandler) http.HandlerFunc {
 		}
 
 		if logErr := restutils.WriteErrorWithTrace(writer, err, traceID); logErr != nil {
-			slog.ErrorContext(request.Context(), "request failed", "error", logErr)
+			observe.Error(request.Context(), logErr, "request failed")
 		}
 	}
 }

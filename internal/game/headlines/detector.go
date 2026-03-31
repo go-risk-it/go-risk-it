@@ -14,11 +14,9 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/board"
 	"github.com/go-risk-it/go-risk-it/internal/game/snapshot"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
-	"go.opentelemetry.io/otel"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"go.uber.org/fx"
 )
-
-const detectorTracerName = "go-risk-it-headline-detector"
 
 // gameOwnership tracks per-game region ownership for incremental headline detection.
 type gameOwnership struct {
@@ -78,10 +76,8 @@ func (d *detector) handleGameCompleted(_ ctx.GameContext, event *gameevt.GameCom
 }
 
 func (d *detector) handleMoveExecuted(gameCtx ctx.GameContext, event *gameevt.MoveExecuted) {
-	_, span := otel.GetTracerProvider().
-		Tracer(detectorTracerName).
-		Start(gameCtx, "detector.headlines")
-	defer span.End()
+	_, done := observe.Span(gameCtx, "detector.headlines")
+	defer done(nil)
 
 	if event.ActionType != sqlc.GamePhaseTypeATTACK {
 		return

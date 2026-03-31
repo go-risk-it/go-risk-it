@@ -322,7 +322,7 @@ func TestRegister_LogsTraceIDFromLinkedSpan(
 	contextHandler := riskslog.NewContextHandler(jsonHandler, slog.LevelInfo)
 
 	// Use the real async bus which runs detachContext + startLinkedSpan.
-	bus := eventbus.NewBus(nopLifecycle{}, nil)
+	bus := eventbus.NewBus(nopLifecycle{})
 
 	logger.Register(logger.Params{
 		Bus:    bus,
@@ -357,13 +357,13 @@ func TestRegister_LogsTraceIDFromLinkedSpan(
 		"failed to unmarshal log output: %s", buf.String())
 
 	// Assert: domain fields are present in log output (extracted by ContextHandler).
-	require.Equal(t, "player1", result["userID"], "userID must be present from detached context")
+	require.Equal(t, "player1", result["user_id"], "user_id must be present from detached context")
 	require.InDelta(
 		t,
 		float64(42),
-		result["gameID"],
+		result["game_id"],
 		0,
-		"gameID must be present from detached context",
+		"game_id must be present from detached context",
 	)
 
 	// Note: traceID/spanID are NOT in log output because ContextHandler no longer

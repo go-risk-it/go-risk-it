@@ -2,34 +2,15 @@ package orchestration
 
 import (
 	"fmt"
-	"log/slog"
-	"time"
 
 	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 )
-
-func (s *orchestrator[T, R]) recordMetrics(
-	ctx gamectx.GameContext,
-	start time.Time,
-) {
-	phase := string(s.service.PhaseType())
-	phaseAttr := metric.WithAttributes(
-		attribute.String("phase", phase),
-	)
-
-	s.gameMetrics.MovesTotal.Add(ctx, 1, phaseAttr)
-	s.gameMetrics.PhaseDuration.Record(
-		ctx, time.Since(start).Seconds(), phaseAttr,
-	)
-}
 
 func (s *orchestrator[T, R]) recordGameFinished(
 	ctx gamectx.GameContext,
 ) {
-	s.gameMetrics.GamesFinished.Add(ctx, 1)
 	s.gameMetrics.ActiveGames.Add(ctx, -1)
 
 	if elapsed, ok := s.gameTiming.ElapsedAndClear(ctx.GameID()); ok {
@@ -51,7 +32,7 @@ func (s *orchestrator[T, R]) checkMission(
 	}
 
 	if isMissionAccomplished {
-		slog.InfoContext(ctx, "game is over")
+		observe.SpanEvent(ctx, "game_is_over")
 		s.recordGameFinished(ctx)
 	}
 

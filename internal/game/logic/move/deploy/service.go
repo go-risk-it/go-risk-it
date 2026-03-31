@@ -2,7 +2,6 @@ package deploy
 
 import (
 	"fmt"
-	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
@@ -54,14 +53,10 @@ func (s *service) GetDeployableTroopsWithQuerier(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) (int64, error) {
-	slog.DebugContext(ctx, "getting deployable troops")
-
 	deployableTroops, err := querier.GetDeployableTroops(ctx, ctx.GameID())
 	if err != nil {
 		return 0, fmt.Errorf("failed to get deployable troops: %w", err)
 	}
-
-	slog.DebugContext(ctx, "got deployable troops", "troops", deployableTroops)
 
 	return deployableTroops, nil
 }

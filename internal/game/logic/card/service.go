@@ -2,7 +2,6 @@ package card
 
 import (
 	"fmt"
-	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
@@ -33,8 +32,6 @@ func (s *service) TransferCardsOwnership(
 	querier db.Querier,
 	defendingPlayerID int64,
 ) error {
-	slog.InfoContext(ctx, "transferring cards ownership")
-
 	if err := querier.TransferCardsOwnership(ctx, sqlc.TransferCardsOwnershipParams{
 		GameID: ctx.GameID(),
 		From: pgtype.Int8{
@@ -45,8 +42,6 @@ func (s *service) TransferCardsOwnership(
 	}); err != nil {
 		return fmt.Errorf("unable defender transfer cards ownership: %w", err)
 	}
-
-	slog.InfoContext(ctx, "transferred cards ownership")
 
 	return nil
 }
@@ -66,8 +61,6 @@ func New(
 }
 
 func (s *service) CreateCards(ctx ctx.GameContext, querier db.Querier) error {
-	slog.InfoContext(ctx, "creating cards")
-
 	cards, err := s.buildCards(ctx, querier)
 	if err != nil {
 		return fmt.Errorf("unable to build cards: %w", err)
@@ -77,8 +70,6 @@ func (s *service) CreateCards(ctx ctx.GameContext, querier db.Querier) error {
 	if err != nil {
 		return fmt.Errorf("unable to insert cards: %w", err)
 	}
-
-	slog.InfoContext(ctx, "cards created")
 
 	return nil
 }
@@ -131,8 +122,6 @@ func (s *service) GetCardsForPlayerWithQuerier(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) ([]sqlc.GetCardsForPlayerRow, error) {
-	slog.InfoContext(ctx, "getting cards for player")
-
 	result, err := querier.GetCardsForPlayer(ctx, sqlc.GetCardsForPlayerParams{
 		ID:     ctx.GameID(),
 		UserID: ctx.UserID(),
@@ -140,8 +129,6 @@ func (s *service) GetCardsForPlayerWithQuerier(
 	if err != nil {
 		return nil, fmt.Errorf("unable to get cards for player: %w", err)
 	}
-
-	slog.InfoContext(ctx, "got cards for player", "cards", result)
 
 	return result, nil
 }

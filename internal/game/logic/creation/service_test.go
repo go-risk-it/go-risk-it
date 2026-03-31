@@ -4,7 +4,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/creation"
 	gamemetrics "github.com/go-risk-it/go-risk-it/internal/game/logic/metrics"
@@ -18,6 +17,7 @@ import (
 	playermock "github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/player"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/game/logic/region"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/metric/noop"
 	tracenoop "go.opentelemetry.io/otel/trace/noop"
@@ -28,10 +28,10 @@ var (
 	errInsertGame    = errors.New("insert logic error")
 )
 
-func testInfraMetrics(t *testing.T) *metrics.InfraMetrics {
+func testStateMetrics(t *testing.T) *metrics.StateMetrics {
 	t.Helper()
 
-	m, err := metrics.NewInfraMetrics(noop.Meter{})
+	m, err := metrics.NewStateMetrics(noop.Meter{})
 	require.NoError(t, err)
 
 	return m
@@ -76,25 +76,23 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 	}
 
 	// setup mocks
-	mockQuerier.EXPECT().InsertGame(context).Return(sqlc.GameGame{
+	mockQuerier.EXPECT().InsertGame(mock.Anything).Return(sqlc.GameGame{
 		ID:             gameID,
 		CurrentPhaseID: pgtype.Int8{Int64: 1, Valid: true},
 	}, nil)
 
-	gameContext := ctx.WithGameID(context, gameID)
-
-	mockQuerier.EXPECT().InsertPhase(gameContext, sqlc.InsertPhaseParams{
+	mockQuerier.EXPECT().InsertPhase(mock.Anything, sqlc.InsertPhaseParams{
 		GameID: gameID,
 		Type:   sqlc.GamePhaseTypeDEPLOY,
 		Turn:   0,
 	}).Return(sqlc.GamePhase{ID: phaseID}, nil)
 
-	mockQuerier.EXPECT().SetGamePhase(gameContext, sqlc.SetGamePhaseParams{
+	mockQuerier.EXPECT().SetGamePhase(mock.Anything, sqlc.SetGamePhaseParams{
 		ID:             gameID,
 		CurrentPhaseID: pgtype.Int8{Int64: phaseID, Valid: true},
 	}).Return(nil)
 
-	mockQuerier.EXPECT().InsertDeployPhase(gameContext, sqlc.InsertDeployPhaseParams{
+	mockQuerier.EXPECT().InsertDeployPhase(mock.Anything, sqlc.InsertDeployPhaseParams{
 		PhaseID:          phaseID,
 		DeployableTroops: int64(3),
 	}).Return(sqlc.GameDeployPhase{ID: 1}, nil)
@@ -102,25 +100,25 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 	playerServiceMock := playermock.NewService(t)
 	playerServiceMock.
 		EXPECT().
-		CreatePlayers(gameContext, mockQuerier, gameID, users).
+		CreatePlayers(mock.Anything, mockQuerier, gameID, users).
 		Return(players, nil)
 
 	missionServiceMock := mission.NewService(t)
 	missionServiceMock.
 		EXPECT().
-		CreateMissions(gameContext, mockQuerier, players).
+		CreateMissions(mock.Anything, mockQuerier, players).
 		Return(nil)
 
 	regionServiceMock := region.NewService(t)
 	regionServiceMock.
 		EXPECT().
-		CreateRegions(gameContext, mockQuerier, players, regions).
+		CreateRegions(mock.Anything, mockQuerier, players, regions).
 		Return(nil)
 
 	cardServiceMock := card.NewService(t)
 	cardServiceMock.
 		EXPECT().
-		CreateCards(gameContext, mockQuerier).
+		CreateCards(mock.Anything, mockQuerier).
 		Return(nil)
 
 	// Initialize the state
@@ -131,7 +129,7 @@ func TestServiceImpl_CreateGame_WithValidBoardAndUsers(t *testing.T) {
 		missionServiceMock,
 		playerServiceMock,
 		regionServiceMock,
-		testInfraMetrics(t),
+		testStateMetrics(t),
 		testGameMetrics(t),
 		gamemetrics.NewGameTiming(),
 	)
@@ -161,7 +159,7 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 		missionService,
 		playerService,
 		regionService,
-		testInfraMetrics(t),
+		testStateMetrics(t),
 		testGameMetrics(t),
 		gamemetrics.NewGameTiming(),
 	)
@@ -179,7 +177,7 @@ func TestServiceImpl_CreateGame_InsertGameError(t *testing.T) {
 	// Set up expectations for InsertGame method
 	querier.
 		EXPECT().
-		InsertGame(ctx).Return(sqlc.GameGame{}, errInsertGame)
+		InsertGame(mock.Anything).Return(sqlc.GameGame{}, errInsertGame)
 
 	// Call the method under test
 	gameID, err := service.CreateGameWithQuerier(ctx, querier, []string{}, users)
@@ -209,7 +207,7 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 		missionService,
 		playerService,
 		regionService,
-		testInfraMetrics(t),
+		testStateMetrics(t),
 		testGameMetrics(t),
 		gamemetrics.NewGameTiming(),
 	)
@@ -228,17 +226,15 @@ func TestServiceImpl_CreateGame_CreatePlayersError(t *testing.T) {
 	// Set up expectations for InsertGame method
 	querier.
 		EXPECT().
-		InsertGame(context).
+		InsertGame(mock.Anything).
 		Return(sqlc.GameGame{
 			ID: gameID,
 		}, nil)
 
-	gameContext := ctx.WithGameID(context, gameID)
-
 	// Set up expectations for CreatePlayers method
 	playerService.
 		EXPECT().
-		CreatePlayers(gameContext, querier, int64(1), users).
+		CreatePlayers(mock.Anything, querier, int64(1), users).
 		Return(nil, errCreatePlayers)
 
 	// Call the method under test
@@ -274,47 +270,45 @@ func TestServiceImpl_CreateGameWithQuerier_NoEventEmitted(t *testing.T) {
 
 	regions := []string{"netherlands", "italy", "tasin", "samon"}
 
-	mockQuerier.EXPECT().InsertGame(context).Return(sqlc.GameGame{
+	mockQuerier.EXPECT().InsertGame(mock.Anything).Return(sqlc.GameGame{
 		ID:             gameID,
 		CurrentPhaseID: pgtype.Int8{Int64: 1, Valid: true},
 	}, nil)
 
-	gameContext := ctx.WithGameID(context, gameID)
-
-	mockQuerier.EXPECT().InsertPhase(gameContext, sqlc.InsertPhaseParams{
+	mockQuerier.EXPECT().InsertPhase(mock.Anything, sqlc.InsertPhaseParams{
 		GameID: gameID,
 		Type:   sqlc.GamePhaseTypeDEPLOY,
 		Turn:   0,
 	}).Return(sqlc.GamePhase{ID: phaseID}, nil)
 
-	mockQuerier.EXPECT().SetGamePhase(gameContext, sqlc.SetGamePhaseParams{
+	mockQuerier.EXPECT().SetGamePhase(mock.Anything, sqlc.SetGamePhaseParams{
 		ID:             gameID,
 		CurrentPhaseID: pgtype.Int8{Int64: phaseID, Valid: true},
 	}).Return(nil)
 
-	mockQuerier.EXPECT().InsertDeployPhase(gameContext, sqlc.InsertDeployPhaseParams{
+	mockQuerier.EXPECT().InsertDeployPhase(mock.Anything, sqlc.InsertDeployPhaseParams{
 		PhaseID:          phaseID,
 		DeployableTroops: int64(3),
 	}).Return(sqlc.GameDeployPhase{ID: 1}, nil)
 
 	playerServiceMock := playermock.NewService(t)
 	playerServiceMock.EXPECT().
-		CreatePlayers(gameContext, mockQuerier, gameID, users).
+		CreatePlayers(mock.Anything, mockQuerier, gameID, users).
 		Return(players, nil)
 
 	missionServiceMock := mission.NewService(t)
 	missionServiceMock.EXPECT().
-		CreateMissions(gameContext, mockQuerier, players).
+		CreateMissions(mock.Anything, mockQuerier, players).
 		Return(nil)
 
 	regionServiceMock := region.NewService(t)
 	regionServiceMock.EXPECT().
-		CreateRegions(gameContext, mockQuerier, players, regions).
+		CreateRegions(mock.Anything, mockQuerier, players, regions).
 		Return(nil)
 
 	cardServiceMock := card.NewService(t)
 	cardServiceMock.EXPECT().
-		CreateCards(gameContext, mockQuerier).
+		CreateCards(mock.Anything, mockQuerier).
 		Return(nil)
 
 	bus := eventbus.NewTestBus()
@@ -325,7 +319,7 @@ func TestServiceImpl_CreateGameWithQuerier_NoEventEmitted(t *testing.T) {
 		missionServiceMock,
 		playerServiceMock,
 		regionServiceMock,
-		testInfraMetrics(t),
+		testStateMetrics(t),
 		testGameMetrics(t),
 		gamemetrics.NewGameTiming(),
 	)
@@ -355,7 +349,7 @@ func TestServiceImpl_CreateGameWithQuerier_Error_NoEventEmitted(t *testing.T) {
 		mission.NewService(t),
 		playermock.NewService(t),
 		region.NewService(t),
-		testInfraMetrics(t),
+		testStateMetrics(t),
 		testGameMetrics(t),
 		gamemetrics.NewGameTiming(),
 	)
@@ -369,7 +363,7 @@ func TestServiceImpl_CreateGameWithQuerier_Error_NoEventEmitted(t *testing.T) {
 		{UserID: "dc2dabc6-ca5b-41af-8cb4-8eb768f13258", Name: "user2"},
 	}
 
-	querier.EXPECT().InsertGame(userCtx).Return(sqlc.GameGame{}, errInsertGame)
+	querier.EXPECT().InsertGame(mock.Anything).Return(sqlc.GameGame{}, errInsertGame)
 
 	_, err := service.CreateGameWithQuerier(userCtx, querier, []string{}, users)
 

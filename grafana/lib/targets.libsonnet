@@ -1,5 +1,12 @@
 // Reusable Prometheus target generators for go-risk-it Grafana dashboards.
-// Contains target constructors, histogram quantile helpers, and shared lifecycle targets/overrides.
+// Contains target constructors, histogram quantile helpers, spanmetrics helpers,
+// and shared lifecycle targets/overrides.
+//
+// Two metric families:
+//   1. Manual metrics (service_name label) — emitted by app code or perf-test client.
+//      Helpers: histogramQuantileTargets, histogramQuantileTargetsWithExemplars, phaseLatencyTargets.
+//   2. Spanmetrics (service label) — derived by the OTel Collector spanmetrics connector from traces.
+//      Helpers: spanDuration, spanRate, spanErrorRate.
 local colors = import 'colors.libsonnet';
 {
   // ── Service name constants ──
@@ -28,9 +35,12 @@ local colors = import 'colors.libsonnet';
     refId: refId,
   },
 
-  // ── Histogram quantile helpers ──
+  // ══════════════════════════════════════════════════════════════════
+  // Manual metric helpers (service_name label)
+  // Used by perf-test client metrics and any manually-instrumented counters/histograms.
+  // ══════════════════════════════════════════════════════════════════
 
-  // Generate histogram_quantile targets for a metric.
+  // Generate histogram_quantile targets for a manual metric.
   // metric: string (bucket metric name), quantiles: array of [quantile_str, label] pairs
   // quantile_str should be a string like "0.5", "0.95", "0.99" to avoid float precision issues.
   // serviceName: string (OTel service_name label, default 'risk-it'; use 'perftest' for client metrics)
@@ -73,42 +83,135 @@ local colors = import 'colors.libsonnet';
     for q in [[['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']][i]]
   ],
 
-  // ── Lifecycle boundary targets ──
+  // ══════════════════════════════════════════════════════════════════
+  // Spanmetrics helpers (service label)
+  // Derived by the OTel Collector spanmetrics connector from traces.
+  // Metric names: traces_spanmetrics_duration_seconds_bucket,
+  //               traces_spanmetrics_calls_total
+  // ══════════════════════════════════════════════════════════════════
+
+  // Base metric names produced by the spanmetrics connector.
+  spanmetricsMetric:: {
+    duration: 'traces_spanmetrics_duration_seconds_bucket',
+    calls: 'traces_spanmetrics_calls_total',
+  },
+
+  // Span name regex patterns for each instrumented domain.
+  // Used as the spanNameFilter argument to spanDuration/spanRate/spanErrorRate.
+  spans:: {
+    http: '(GET|POST|PUT|DELETE) .*',
+    db: 'db\\.transaction',
+    gameLogic: 'game\\.orchestrate_move',
+    wsBroadcast: 'ws\\.broadcast',
+    eventHandler: 'consumer\\..*',
+    busDispatch: 'bus:.*',
+    snapshot: 'snapshot\\..*',
+    gameCreate: 'game\\.create',
+    lobbyLobbies: 'lobby\\.get_user_lobbies',
+  },
+
+  // Generate histogram_quantile targets from spanmetrics duration buckets.
+  // spanNameFilter: regex string matching span_name (use spans.* constants).
+  // quantiles: array of [quantile_str, label] pairs.
+  // exemplars: bool (default false) — enable trace exemplar support.
+  // extraLabels: string (optional) — additional label matchers, e.g. ',phase="ATTACK"'.
+  spanDuration(spanNameFilter, quantiles, exemplars=false, extraLabels='')::
+    [
+      {
+        expr: 'histogram_quantile(%s, sum(rate(%s{service="%s", span_name=~"%s"%s}[1m])) by (le))' % [q[0], $.spanmetricsMetric.duration, $.serviceName, spanNameFilter, extraLabels],
+        legendFormat: q[1],
+        refId: std.char(65 + i),
+        [if exemplars then 'exemplar']: true,
+      }
+      for i in std.range(0, std.length(quantiles) - 1)
+      for q in [quantiles[i]]
+    ],
+
+  // Generate a rate target from spanmetrics calls_total.
+  // spanNameFilter: regex string matching span_name.
+  // legend: legendFormat string.
+  // extraLabels: string (optional) — additional label matchers.
+  spanRate(spanNameFilter, legend, extraLabels='')::
+    $.target(
+      'sum(rate(%s{service="%s", span_name=~"%s", status_code!="STATUS_CODE_ERROR"%s}[1m]))' % [$.spanmetricsMetric.calls, $.serviceName, spanNameFilter, extraLabels],
+      legend,
+    ),
+
+  // Generate an error rate target from spanmetrics calls_total (status_code=STATUS_CODE_ERROR).
+  // spanNameFilter: regex string matching span_name.
+  // legend: legendFormat string.
+  // extraLabels: string (optional) — additional label matchers.
+  spanErrorRate(spanNameFilter, legend, extraLabels='')::
+    $.target(
+      'sum(rate(%s{service="%s", span_name=~"%s", status_code="STATUS_CODE_ERROR"%s}[1m]))' % [$.spanmetricsMetric.calls, $.serviceName, spanNameFilter, extraLabels],
+      legend,
+    ),
+
+  // Generate a rate target from spanmetrics calls_total grouped by a label.
+  // spanNameFilter: regex string matching span_name.
+  // groupBy: label to group by (e.g. 'span_name', 'phase', 'event_type').
+  // legend: legendFormat template string (e.g. '{{span_name}}').
+  // extraLabels: string (optional) — additional label matchers.
+  spanRateBy(spanNameFilter, groupBy, legend, extraLabels='')::
+    $.target(
+      'sum(rate(%s{service="%s", span_name=~"%s"%s}[1m])) by (%s)' % [$.spanmetricsMetric.calls, $.serviceName, spanNameFilter, extraLabels, groupBy],
+      legend,
+    ),
+
+  // Generate histogram_quantile targets from spanmetrics, grouped by a label.
+  // spanNameFilter: regex string matching span_name.
+  // quantile: string (e.g. '0.95').
+  // groupBy: label to include in by clause alongside le.
+  // legend: legendFormat template string.
+  // extraLabels: string (optional) — additional label matchers.
+  spanDurationBy(spanNameFilter, quantile, groupBy, legend, extraLabels='')::
+    $.target(
+      'histogram_quantile(%s, sum(rate(%s{service="%s", span_name=~"%s"%s}[1m])) by (le, %s))' % [quantile, $.spanmetricsMetric.duration, $.serviceName, spanNameFilter, extraLabels, groupBy],
+      legend,
+    ),
+
+  // ── Lifecycle boundary targets (spanmetrics) ──
 
   // Standard lifecycle latency targets (p95) for the 5 server boundaries.
-  // Used by: perf-test (Latency Attribution) and system-health (Lifecycle Timing).
-  lifecycleTargets:: [
+  // Uses spanmetrics (service label) for server-side instrumentation.
+  // Used by: system-health (Lifecycle Timing) and perf-test (Latency Attribution).
+  spanLifecycleTargets:: [
     {
       refId: 'A',
-      expr: 'histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name="%s"}[1m])) by (le))' % $.serviceName,
+      expr: 'histogram_quantile(0.95, sum(rate(%s{service="%s", span_name=~"%s"}[1m])) by (le))' % [$.spanmetricsMetric.duration, $.serviceName, $.spans.http],
       legendFormat: 'HTTP Total',
       exemplar: true,
     },
     {
       refId: 'B',
-      expr: 'histogram_quantile(0.95, sum(rate(db_transaction_duration_seconds_bucket{service_name="%s"}[1m])) by (le))' % $.serviceName,
+      expr: 'histogram_quantile(0.95, sum(rate(%s{service="%s", span_name=~"%s"}[1m])) by (le))' % [$.spanmetricsMetric.duration, $.serviceName, $.spans.db],
       legendFormat: 'DB Transaction',
       exemplar: true,
     },
     {
       refId: 'C',
-      expr: 'histogram_quantile(0.95, sum(rate(game_phase_duration_seconds_bucket{service_name="%s"}[1m])) by (le))' % $.serviceName,
+      expr: 'histogram_quantile(0.95, sum(rate(%s{service="%s", span_name=~"%s"}[1m])) by (le))' % [$.spanmetricsMetric.duration, $.serviceName, $.spans.gameLogic],
       legendFormat: 'Game Logic',
       exemplar: true,
     },
     {
       refId: 'D',
-      expr: 'histogram_quantile(0.95, sum(rate(ws_broadcast_duration_seconds_bucket{service_name="%s"}[1m])) by (le))' % $.serviceName,
+      expr: 'histogram_quantile(0.95, sum(rate(%s{service="%s", span_name=~"%s"}[1m])) by (le))' % [$.spanmetricsMetric.duration, $.serviceName, $.spans.wsBroadcast],
       legendFormat: 'WS Broadcast',
       exemplar: true,
     },
     {
       refId: 'E',
-      expr: 'histogram_quantile(0.95, sum(rate(event_handler_duration_seconds_bucket{service_name="%s"}[1m])) by (le))' % $.serviceName,
+      expr: 'histogram_quantile(0.95, sum(rate(%s{service="%s", span_name=~"%s"}[1m])) by (le))' % [$.spanmetricsMetric.duration, $.serviceName, $.spans.eventHandler],
       legendFormat: 'Event Handler (post-response)',
       exemplar: true,
     },
   ],
+
+  // ── Legacy lifecycle boundary targets (manual metrics) ──
+  // Kept for backward compatibility — used by perf-test client metrics
+  // that report via manual histograms with service_name label.
+  lifecycleTargets:: $.spanLifecycleTargets,
 
   // Standard lifecycle color/style overrides for the 5 server boundaries.
   // HTTP Total: amber, bold line. DB: blue. Game Logic: green.

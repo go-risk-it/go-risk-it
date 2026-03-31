@@ -566,3 +566,69 @@ func TestArch_BusTypeRestrictedToWiring(t *testing.T) {
 		}
 	}
 }
+
+// ─── Rules O1–O2: Observability Enforcement ───
+
+// Rule O1: business logic packages must not import log/slog.
+// Structured logging should flow through kernel/observe spans and slog handlers,
+// not through direct slog calls in business logic. Known slog users in web/
+// (engine.go, upgrader.go) are outside this scope.
+func TestArch_BusinessLogicNoSlog(t *testing.T) {
+	t.Parallel()
+
+	pkgs := loadPackages(t, "./internal/game/logic/...")
+	pkgs = append(pkgs, loadPackages(t, "./internal/lobby/logic/...")...)
+	pkgs = append(pkgs, loadPackages(t, "./internal/game/consumers/...")...)
+	pkgs = append(pkgs, loadPackages(t, "./internal/lobby/consumers/...")...)
+
+	assertNoRawImports(t, pkgs, "log/slog")
+}
+
+// directOTelAllowlist lists business logic packages that are permitted to import
+// forbidden OTel packages (otel root or otel/trace) as migration debt or
+// infrastructure necessity. Each entry maps to the specific forbidden import
+// it permits.
+//
+//nolint:gochecknoglobals // test-only allowlist
+var directOTelAllowlist = map[string]string{
+	// Needs otel.Meter() for custom game metrics registration.
+	"game/logic/metrics": "go.opentelemetry.io/otel",
+}
+
+// Rule O2: business logic packages must not import go.opentelemetry.io/otel (root)
+// or go.opentelemetry.io/otel/trace directly — use kernel/observe instead.
+// Allowed: go.opentelemetry.io/otel/attribute (needed by observe API callers)
+// and go.opentelemetry.io/otel/metric (needed by game/logic/metrics/).
+// Note: go list -json Imports only includes production imports, so test files
+// (which often import otel/trace/noop) are naturally excluded.
+func TestArch_BusinessLogicNoDirectOTel(t *testing.T) {
+	t.Parallel()
+
+	pkgs := loadPackages(t, "./internal/game/logic/...")
+	pkgs = append(pkgs, loadPackages(t, "./internal/lobby/logic/...")...)
+	pkgs = append(pkgs, loadPackages(t, "./internal/game/consumers/...")...)
+	pkgs = append(pkgs, loadPackages(t, "./internal/lobby/consumers/...")...)
+
+	forbidden := map[string]bool{
+		"go.opentelemetry.io/otel":       true,
+		"go.opentelemetry.io/otel/trace": true,
+	}
+
+	for _, pkg := range pkgs {
+		short := packageSuffix(pkg.ImportPath)
+		allowedImport := directOTelAllowlist[short]
+
+		for _, imp := range pkg.Imports {
+			if !forbidden[imp] {
+				continue
+			}
+
+			if imp == allowedImport {
+				continue
+			}
+
+			t.Errorf("%s imports forbidden OTel package %s — use kernel/observe instead",
+				pkg.ImportPath, imp)
+		}
+	}
+}

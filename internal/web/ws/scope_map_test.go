@@ -12,10 +12,10 @@ import (
 	metricnoop "go.opentelemetry.io/otel/metric/noop"
 )
 
-func scopeMapTestMetrics(t *testing.T) *metrics.InfraMetrics {
+func scopeMapTestMetrics(t *testing.T) *metrics.StateMetrics {
 	t.Helper()
 
-	m, err := metrics.NewInfraMetrics(metricnoop.Meter{})
+	m, err := metrics.NewStateMetrics(metricnoop.Meter{})
 	require.NoError(t, err)
 
 	return m

@@ -3,7 +3,6 @@ package consumers
 import (
 	"errors"
 	"fmt"
-	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
 	"github.com/go-risk-it/go-risk-it/internal/game/consumers/converter"
@@ -57,8 +56,6 @@ func (c *MoveLogController) ConvertMoveLogs(
 	ctx ctx.GameContext,
 	sqlcLogs []sqlc.GameMoveLog,
 ) (messaging.MoveHistory, error) {
-	slog.DebugContext(ctx, "converting move logs")
-
 	result := make([]messaging.MovePerformed, 0)
 
 	for _, sqlcLog := range sqlcLogs {
@@ -69,8 +66,6 @@ func (c *MoveLogController) ConvertMoveLogs(
 
 		result = append(result, convertedSqlcLog)
 	}
-
-	slog.DebugContext(ctx, "converted move logs", "moves", result)
 
 	return messaging.MoveHistory{
 		Moves: result,

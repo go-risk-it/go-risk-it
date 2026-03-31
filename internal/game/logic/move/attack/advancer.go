@@ -3,7 +3,6 @@ package attack
 import (
 	"errors"
 	"fmt"
-	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
@@ -52,8 +51,6 @@ func (s *service) advanceToConquerPhase(
 	}); err != nil {
 		return fmt.Errorf("failed to create conquer phase: %w", err)
 	}
-
-	slog.DebugContext(ctx, "created conquer phase")
 
 	return nil
 }

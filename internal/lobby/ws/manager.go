@@ -2,10 +2,10 @@ package ws
 
 import (
 	"encoding/json"
-	"log/slog"
 
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	lobbyevt "github.com/go-risk-it/go-risk-it/internal/lobby/events"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws"
@@ -15,12 +15,12 @@ import (
 type manager struct {
 	connections *ws.ScopeMap[int64]
 	bus         eventbus.Publisher
-	metrics     *metrics.InfraMetrics
+	metrics     *metrics.StateMetrics
 }
 
 func NewManager(
 	bus eventbus.Publisher,
-	metrics *metrics.InfraMetrics,
+	metrics *metrics.StateMetrics,
 ) Manager {
 	return &manager{
 		connections: ws.NewScopeMap[int64](),
@@ -30,7 +30,7 @@ func NewManager(
 }
 
 func (m *manager) ConnectPlayer(ctx ctx.LobbyContext, connection *websocket.Conn) {
-	slog.InfoContext(ctx, "connecting player to lobby")
+	observe.Info(ctx, "connecting player to lobby")
 
 	m.connections.GetOrCreate(ctx.LobbyID(), func() *ws.PlayerConnections {
 		return ws.NewPlayerConnections(m.metrics)

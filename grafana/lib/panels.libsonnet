@@ -159,6 +159,7 @@ local targets = import 'targets.libsonnet';
   // Build a percentile bands timeseries panel with filled areas between p50-p95-p99.
   // Inner band (p95->p50) has fillOpacity 10, outer band (p99->p95) has fillOpacity 5.
   // Uses fillBelowTo overrides so each band fills down to the next percentile line.
+  // Uses manual metrics (service_name label). For spanmetrics, use spanPercentileBandsPanel.
   percentileBandsPanel(title, metric, unit, serviceName='risk-it', exemplars=false)::
     $.timeseriesPanel(
       title=title,
@@ -184,6 +185,40 @@ local targets = import 'targets.libsonnet';
       ],
     ) + {
       // Override default fillOpacity to 0 so only the band overrides apply.
+      fieldConfig+: {
+        defaults+: {
+          custom+: {
+            fillOpacity: 0,
+          },
+        },
+      },
+    },
+
+  // Build a percentile bands panel from spanmetrics duration histograms.
+  // spanNameFilter: regex matching span_name (use targets.spans.* constants).
+  // Same visual treatment as percentileBandsPanel but queries the spanmetrics connector.
+  spanPercentileBandsPanel(title, spanNameFilter, unit, exemplars=false)::
+    $.timeseriesPanel(
+      title=title,
+      targets=targets.spanDuration(spanNameFilter, [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']], exemplars=exemplars),
+      unit=unit,
+      overrides=[
+        {
+          matcher: { id: 'byName', options: 'p99' },
+          properties: [
+            { id: 'custom.fillBelowTo', value: 'p95' },
+            { id: 'custom.fillOpacity', value: 5 },
+          ],
+        },
+        {
+          matcher: { id: 'byName', options: 'p95' },
+          properties: [
+            { id: 'custom.fillBelowTo', value: 'p50' },
+            { id: 'custom.fillOpacity', value: 10 },
+          ],
+        },
+      ],
+    ) + {
       fieldConfig+: {
         defaults+: {
           custom+: {

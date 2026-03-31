@@ -2,12 +2,12 @@ package management
 
 import (
 	"fmt"
-	"log/slog"
 
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	dbutil "github.com/go-risk-it/go-risk-it/internal/kernel/data"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/data/sqlc"
@@ -30,7 +30,7 @@ type Service interface {
 type service struct {
 	querier db.Querier
 	bus     eventbus.Publisher
-	metrics *metrics.InfraMetrics
+	metrics *metrics.StateMetrics
 }
 
 var _ Service = (*service)(nil)
@@ -38,7 +38,7 @@ var _ Service = (*service)(nil)
 func NewService(
 	querier db.Querier,
 	bus eventbus.Publisher,
-	m *metrics.InfraMetrics,
+	m *metrics.StateMetrics,
 ) Service {
 	return &service{
 		querier: querier,
@@ -68,9 +68,7 @@ func (s *service) JoinLobbyWithQuerier(
 	querier db.Querier,
 	name string,
 ) error {
-	slog.InfoContext(ctx, "joining lobby")
-
-	participantID, err := querier.InsertParticipant(ctx, sqlc.InsertParticipantParams{
+	_, err := querier.InsertParticipant(ctx, sqlc.InsertParticipantParams{
 		LobbyID: ctx.LobbyID(),
 		UserID:  ctx.UserID(),
 		Name:    name,
@@ -78,8 +76,6 @@ func (s *service) JoinLobbyWithQuerier(
 	if err != nil {
 		return fmt.Errorf("failed to insert participant: %w", err)
 	}
-
-	slog.InfoContext(ctx, "participant joined", "participant_id", participantID)
 
 	return nil
 }
@@ -90,40 +86,40 @@ func (s *service) GetUserLobbies(
 	return s.GetUserLobbiesWithQuerier(ctx, s.querier)
 }
 
+//nolint:nonamedreturns // named returns needed for defer-based error recording
 func (s *service) GetUserLobbiesWithQuerier(
 	ctx kernelctx.UserContext,
 	querier db.Querier,
-) (*UserLobbies, error) {
-	slog.InfoContext(ctx, "getting user lobbies")
+) (result *UserLobbies, err error) {
+	spanCtx, done := observe.Span(ctx, "lobby.get_user_lobbies")
+	defer func() { done(err) }()
+
+	// Rebuild typed context with span so child DB calls are grouped.
+	ctx = kernelctx.WithUserID(
+		kernelctx.WithSpanFromContext(spanCtx),
+		ctx.UserID(),
+	)
 
 	ownedLobbies, err := querier.GetOwnedLobbies(ctx, ctx.UserID())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get owned lobbies: %w", err)
 	}
 
-	slog.InfoContext(ctx, "got owned lobbies", "lobbies", ownedLobbies)
-
 	joinedLobbies, err := querier.GetJoinedLobbies(ctx, ctx.UserID())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get joined lobbies: %w", err)
 	}
-
-	slog.InfoContext(ctx, "got joined lobbies", "lobbies", joinedLobbies)
 
 	joinableLobbies, err := querier.GetJoinableLobbies(ctx, ctx.UserID())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get joinable lobbies: %w", err)
 	}
 
-	slog.InfoContext(ctx, "got joinable lobbies", "lobbies", joinableLobbies)
-
 	userLobbies := &UserLobbies{
 		Owned:    ownedLobbies,
 		Joined:   joinedLobbies,
 		Joinable: joinableLobbies,
 	}
-
-	slog.InfoContext(ctx, "got user lobbies", "lobbies", userLobbies)
 
 	return userLobbies, nil
 }

@@ -1,8 +1,6 @@
 package validation
 
 import (
-	"log/slog"
-
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
@@ -15,8 +13,6 @@ func CheckSourceOwnedByPlayer(
 	region *sqlc.GetRegionsByGameRow,
 	regionLabel string,
 ) error {
-	slog.DebugContext(ctx, "checking source region ownership")
-
 	if region.UserID != ctx.UserID() {
 		return domainerrors.NewValidationError(
 			regionLabel + " region is not owned by player",
@@ -32,8 +28,6 @@ func CheckTargetNotOwnedByPlayer(
 	ctx ctx.GameContext,
 	region *sqlc.GetRegionsByGameRow,
 ) error {
-	slog.DebugContext(ctx, "checking target region not owned by player")
-
 	if region.UserID == ctx.UserID() {
 		return domainerrors.NewValidationError("cannot attack your own region")
 	}
@@ -47,8 +41,6 @@ func CheckTargetOwnedByPlayer(
 	ctx ctx.GameContext,
 	region *sqlc.GetRegionsByGameRow,
 ) error {
-	slog.DebugContext(ctx, "checking target region owned by player")
-
 	if region.UserID != ctx.UserID() {
 		return domainerrors.NewValidationError("target region is not owned by player")
 	}

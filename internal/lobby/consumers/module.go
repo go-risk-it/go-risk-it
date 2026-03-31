@@ -2,7 +2,6 @@ package consumers
 
 import (
 	"github.com/go-risk-it/go-risk-it/internal/kernel/bus"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"go.uber.org/fx"
 )
 
@@ -13,14 +12,12 @@ type Params struct {
 	Bus             bus.Subscriber
 	Writer          Writer
 	StateController *StateController
-	Metrics         *metrics.InfraMetrics
 }
 
 func newLobbyStateBroadcaster(params Params) *LobbyStateBroadcaster {
 	return NewLobbyStateBroadcaster(
 		params.Writer,
 		params.StateController,
-		params.Metrics,
 	)
 }
 

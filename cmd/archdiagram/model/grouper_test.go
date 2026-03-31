@@ -77,6 +77,8 @@ func TestGroupPackages_LongestPrefixWins(t *testing.T) {
 	moveSub := archModel.Subsystems["move_pipeline"]
 	if moveSub == nil {
 		t.Fatal("expected subsystem move_pipeline to exist")
+
+		return
 	}
 
 	for _, suffix := range []string{
@@ -93,6 +95,8 @@ func TestGroupPackages_LongestPrefixWins(t *testing.T) {
 	gameSub := archModel.Subsystems["game_services"]
 	if gameSub == nil {
 		t.Fatal("expected subsystem game_services to exist")
+
+		return
 	}
 
 	if !slices.Contains(gameSub.Packages, "game/logic/board") {
@@ -234,6 +238,8 @@ func TestGroupPackages_OverrideTakesPrecedenceOverRoot(t *testing.T) {
 	support := archModel.Subsystems["game_support"]
 	if support == nil {
 		t.Fatal("expected subsystem game_support")
+
+		return
 	}
 
 	if !slices.Contains(support.Packages, "game/config") {
@@ -262,6 +268,8 @@ func TestGroupPackages_NewPackage(t *testing.T) {
 	sub := archModel.Subsystems["game_services"]
 	if sub == nil {
 		t.Fatal("expected game_services to exist for synthetic package")
+
+		return
 	}
 
 	if !slices.Contains(sub.Packages, "game/logic/foo") {
@@ -280,6 +288,8 @@ func TestGroupPackages_NewMovePackage(t *testing.T) {
 	sub := archModel.Subsystems["move_pipeline"]
 	if sub == nil {
 		t.Fatal("expected move_pipeline to exist for new move package")
+
+		return
 	}
 
 	if !slices.Contains(sub.Packages, "game/logic/move/newmove") {
@@ -298,6 +308,8 @@ func TestGroupPackages_WebInfraPackages(t *testing.T) {
 	sub := archModel.Subsystems["middleware"]
 	if sub == nil {
 		t.Fatal("expected middleware subsystem")
+
+		return
 	}
 
 	for _, suffix := range []string{"web/middleware", "web/mux", "web/nbio"} {
@@ -523,6 +535,8 @@ func TestGroupPackages_PackagesSorted(t *testing.T) {
 	sub := archModel.Subsystems["game_services"]
 	if sub == nil {
 		t.Fatal("expected game_services")
+
+		return
 	}
 
 	if !sort.StringsAreSorted(sub.Packages) {
@@ -538,6 +552,7 @@ func TestGroupPackages_KernelPackages(t *testing.T) {
 		"kernel/config",
 		"kernel/bus",
 		"kernel/metrics",
+		"kernel/observe",
 		"kernel/slog",
 		"kernel/logger",
 	)
@@ -548,6 +563,8 @@ func TestGroupPackages_KernelPackages(t *testing.T) {
 	configSub := archModel.Subsystems["kernel_config"]
 	if configSub == nil {
 		t.Fatal("expected kernel_config subsystem")
+
+		return
 	}
 
 	if !slices.Contains(configSub.Packages, "kernel/config") {
@@ -562,6 +579,8 @@ func TestGroupPackages_KernelPackages(t *testing.T) {
 	busSub := archModel.Subsystems["kernel_bus"]
 	if busSub == nil {
 		t.Fatal("expected kernel_bus subsystem")
+
+		return
 	}
 
 	if !slices.Contains(busSub.Packages, "kernel/bus") {
@@ -572,14 +591,16 @@ func TestGroupPackages_KernelPackages(t *testing.T) {
 		t.Errorf("kernel_bus label = %q, want %q", busSub.Label, "Event Bus")
 	}
 
-	// kernel/metrics, kernel/slog, kernel/logger → kernel_observability
+	// kernel/metrics, kernel/observe, kernel/slog, kernel/logger → kernel_observability
 	obsSub := archModel.Subsystems["kernel_observability"]
 	if obsSub == nil {
 		t.Fatal("expected kernel_observability subsystem")
+
+		return
 	}
 
-	if len(obsSub.Packages) != 3 {
-		t.Errorf("expected 3 packages in kernel_observability, got %d: %v",
+	if len(obsSub.Packages) != 4 {
+		t.Errorf("expected 4 packages in kernel_observability, got %d: %v",
 			len(obsSub.Packages), obsSub.Packages)
 	}
 
@@ -604,6 +625,8 @@ func TestGroupPackages_WebRestPackages(t *testing.T) {
 	sub := archModel.Subsystems["rest_utils"]
 	if sub == nil {
 		t.Fatal("expected rest_utils subsystem")
+
+		return
 	}
 
 	if len(sub.Packages) != 4 {
@@ -627,6 +650,8 @@ func TestGroupPackages_LobbyLogicPackages(t *testing.T) {
 	sub := archModel.Subsystems["lobby_logic"]
 	if sub == nil {
 		t.Fatal("expected lobby_logic subsystem")
+
+		return
 	}
 
 	if len(sub.Packages) != 4 {

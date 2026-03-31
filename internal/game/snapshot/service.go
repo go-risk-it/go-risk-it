@@ -6,6 +6,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/game/tracing"
 )
 
 // PublicSnapshot contains all publicly visible game state aggregated from
@@ -74,7 +75,11 @@ func NewService(querier db.Querier) Service {
 	}
 }
 
-func (s *service) GetPublicSnapshot(ctx ctx.GameContext) (*PublicSnapshot, error) {
+//nolint:nonamedreturns // named returns needed for defer-based error recording
+func (s *service) GetPublicSnapshot(ctx ctx.GameContext) (result *PublicSnapshot, err error) {
+	ctx, done := tracing.StartGameSpan(ctx, "snapshot.get_public")
+	defer func() { done(err) }()
+
 	game, err := s.querier.GetGame(ctx, ctx.GameID())
 	if err != nil {
 		return nil, fmt.Errorf("getting game: %w", err)
@@ -133,9 +138,13 @@ func (s *service) getPhaseState(
 	}
 }
 
+//nolint:nonamedreturns // named returns needed for defer-based error recording
 func (s *service) GetPrivateSnapshotsByUser(
 	ctx ctx.GameContext,
-) (map[string]*PrivateSnapshot, error) {
+) (result map[string]*PrivateSnapshot, err error) {
+	ctx, done := tracing.StartGameSpan(ctx, "snapshot.get_private")
+	defer func() { done(err) }()
+
 	players, err := s.querier.GetPlayersByGame(ctx, ctx.GameID())
 	if err != nil {
 		return nil, fmt.Errorf("getting players by game: %w", err)

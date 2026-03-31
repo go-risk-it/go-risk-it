@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"strings"
 
@@ -25,7 +24,9 @@ func WriteResponse(writer http.ResponseWriter, body []byte, status int) {
 
 	_, err := writer.Write(body)
 	if err != nil {
-		slog.Error("failed to write HTTP response", "error", err)
+		// No context available here — accept the write failure silently.
+		// The span in the calling middleware will capture the error.
+		_ = err
 	}
 }
 

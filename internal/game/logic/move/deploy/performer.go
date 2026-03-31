@@ -2,13 +2,14 @@ package deploy
 
 import (
 	"fmt"
-	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/validation"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const (
@@ -21,8 +22,6 @@ func (s *service) Perform(
 	querier db.Querier,
 	move Move,
 ) (struct{}, error) {
-	slog.DebugContext(ctx, "performing deploy move", "move", move)
-
 	deployableTroops, err := s.GetDeployableTroopsWithQuerier(ctx, querier)
 	if err != nil {
 		return struct{}{}, fmt.Errorf("failed to get deployable troops: %w", err)
@@ -65,12 +64,9 @@ func (s *service) executeDeploy(
 	region *sqlc.GetRegionsByGameRow,
 	troops int64,
 ) error {
-	slog.DebugContext(ctx,
-		"executing deploy",
-		"region",
-		region.ExternalReference,
-		"troops",
-		troops,
+	observe.SpanEvent(ctx, "executing_deploy",
+		attribute.String("region", region.ExternalReference),
+		attribute.Int64("troops", troops),
 	)
 
 	if err := s.decreaseDeployableTroops(ctx, querier, troops); err != nil {
@@ -81,12 +77,9 @@ func (s *service) executeDeploy(
 		return fmt.Errorf("failed to increase region troops: %w", err)
 	}
 
-	slog.DebugContext(ctx,
-		"deploy executed successfully",
-		"region",
-		region.ExternalReference,
-		"troops",
-		troops,
+	observe.SpanEvent(ctx, "deploy_executed_successfully",
+		attribute.String("region", region.ExternalReference),
+		attribute.Int64("troops", troops),
 	)
 
 	return nil
@@ -97,7 +90,9 @@ func (s *service) decreaseDeployableTroops(
 	querier db.Querier,
 	troops int64,
 ) error {
-	slog.DebugContext(ctx, "decreasing deployable troops", "troops", troops)
+	observe.SpanEvent(ctx, "decreasing_deployable_troops",
+		attribute.Int64("troops", troops),
+	)
 
 	err := querier.DecreaseDeployableTroops(ctx, sqlc.DecreaseDeployableTroopsParams{
 		ID:               ctx.GameID(),
@@ -106,8 +101,6 @@ func (s *service) decreaseDeployableTroops(
 	if err != nil {
 		return fmt.Errorf("failed to decrease deployable troops: %w", err)
 	}
-
-	slog.DebugContext(ctx, "decreased deployable troops", "troops", troops)
 
 	return nil
 }

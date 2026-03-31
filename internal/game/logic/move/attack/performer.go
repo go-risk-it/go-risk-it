@@ -2,7 +2,6 @@ package attack
 
 import (
 	"fmt"
-	"log/slog"
 	"slices"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
@@ -10,6 +9,8 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/validation"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const (
@@ -27,7 +28,11 @@ func (s *service) Perform(
 	querier db.Querier,
 	move Move,
 ) (*MoveResult, error) {
-	slog.DebugContext(ctx, "performing attack move", "move", move)
+	observe.SpanEvent(ctx, "performing_attack_move",
+		attribute.String("attacking_region_id", move.AttackingRegionID),
+		attribute.String("defending_region_id", move.DefendingRegionID),
+		attribute.Int64("attacking_troops", move.AttackingTroops),
+	)
 
 	attackingRegion, err := s.regionService.GetRegion(ctx, querier, move.AttackingRegionID)
 	if err != nil {
@@ -47,8 +52,6 @@ func (s *service) Perform(
 	if err != nil {
 		return nil, fmt.Errorf("unable to perform attack move: %w", err)
 	}
-
-	slog.DebugContext(ctx, "attack executed successfully")
 
 	result := &MoveResult{
 		AttackingRegionID: move.AttackingRegionID,
@@ -71,11 +74,12 @@ func (s *service) perform(
 		int(min(defendingRegion.Troops, maxDefendingDice)),
 	)
 
-	slog.DebugContext(ctx, "rolled dices", "attack", attackDices, "defense", defenseDices)
+	observe.SpanEvent(ctx, "rolled_dices",
+		attribute.IntSlice("attack_dices", attackDices),
+		attribute.IntSlice("defense_dices", defenseDices),
+	)
 
 	casualties := computeCasualties(ctx, attackDices, defenseDices)
-
-	slog.DebugContext(ctx, "updating region troops")
 
 	if err := s.regionService.UpdateTroopsInRegion(
 		ctx,
@@ -118,12 +122,10 @@ func computeCasualties(ctx ctx.GameContext, attackDices, defenseDices []int) *ca
 		}
 	}
 
-	slog.DebugContext(ctx,
-		"casualties",
-		"attacking",
-		casualties.attacking,
-		"defending",
-		casualties.defending)
+	observe.SpanEvent(ctx, "casualties",
+		attribute.Int64("attacking", casualties.attacking),
+		attribute.Int64("defending", casualties.defending),
+	)
 
 	return casualties
 }
@@ -138,8 +140,6 @@ func (s *service) validate(
 	defendingRegion *sqlc.GetRegionsByGameRow,
 	move Move,
 ) error {
-	slog.DebugContext(ctx, "validating attack move", "move", move)
-
 	if err := checkRegionOwnership(ctx, attackingRegion, defendingRegion); err != nil {
 		return fmt.Errorf("region ownership check failed: %w", err)
 	}
@@ -161,8 +161,6 @@ func (s *service) validate(
 		return domainerrors.NewValidationError("attacking region cannot reach defending region")
 	}
 
-	slog.DebugContext(ctx, "attack move validation passed", "move", move)
-
 	return nil
 }
 
@@ -172,8 +170,6 @@ func checkTroops(
 	defendingRegion *sqlc.GetRegionsByGameRow,
 	move Move,
 ) error {
-	slog.DebugContext(ctx, "checking troops")
-
 	if move.AttackingTroops < minTroopsToAttack {
 		return domainerrors.NewValidationError("at least one troop is required to attack")
 	}
@@ -183,19 +179,6 @@ func checkTroops(
 	}
 
 	if defendingRegion.Troops < minTroopsToDefend {
-		slog.ErrorContext(ctx,
-			"attempting to attack a region with no troops — possible server bug",
-			"defendingRegion", defendingRegion.ExternalReference,
-			"defendingTroops", defendingRegion.Troops,
-			"defendingOwner", defendingRegion.UserID,
-			"attackingRegion", attackingRegion.ExternalReference,
-			"attackingTroops", attackingRegion.Troops,
-			"attackingOwner", attackingRegion.UserID,
-			"moveAttackingTroops", move.AttackingTroops,
-			"gameID", ctx.GameID(),
-			"userID", ctx.UserID(),
-		)
-
 		return domainerrors.NewValidationError("defending region does not have enough troops")
 	}
 
@@ -209,8 +192,6 @@ func checkTroops(
 		return fmt.Errorf("declared values are invalid: %w", err)
 	}
 
-	slog.DebugContext(ctx, "troops check passed")
-
 	return nil
 }
 
@@ -219,8 +200,6 @@ func checkRegionOwnership(
 	attackingRegion *sqlc.GetRegionsByGameRow,
 	defendingRegion *sqlc.GetRegionsByGameRow,
 ) error {
-	slog.DebugContext(ctx, "checking region ownership")
-
 	if err := validation.CheckSourceOwnedByPlayer(ctx, attackingRegion, "attacking"); err != nil {
 		return err
 	}
@@ -228,8 +207,6 @@ func checkRegionOwnership(
 	if err := validation.CheckTargetNotOwnedByPlayer(ctx, defendingRegion); err != nil {
 		return err
 	}
-
-	slog.DebugContext(ctx, "region ownership check passed")
 
 	return nil
 }

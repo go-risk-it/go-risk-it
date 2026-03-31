@@ -4,15 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -35,7 +33,7 @@ const (
 func InTransaction[Q Transactable[Q], T any](
 	querier Q,
 	ctx context.Context,
-	txMetrics *metrics.InfraMetrics,
+	txMetrics *metrics.StateMetrics,
 	txFunc func(Q) (T, error),
 ) (T, error) {
 	return InTransactionWithIsolation(querier, ctx, txMetrics, pgx.ReadCommitted, txFunc)
@@ -48,7 +46,7 @@ func InTransaction[Q Transactable[Q], T any](
 func InTransactionWithIsolation[Q Transactable[Q], T any](
 	querier Q,
 	ctx context.Context,
-	txMetrics *metrics.InfraMetrics,
+	txMetrics *metrics.StateMetrics,
 	isolationLevel pgx.TxIsoLevel,
 	txFunc func(Q) (T, error),
 ) (T, error) {
@@ -56,10 +54,10 @@ func InTransactionWithIsolation[Q Transactable[Q], T any](
 
 	for attempt := range maxRetries {
 		if attempt > 0 {
-			slog.WarnContext(ctx, "retrying transaction",
-				"attempt", attempt+1,
-				"maxRetries", maxRetries,
-				"lastError", lastErr,
+			observe.Warn(ctx, "retrying transaction",
+				attribute.Int("attempt", attempt+1),
+				attribute.Int("max_retries", maxRetries),
+				attribute.String("last_error", lastErr.Error()),
 			)
 
 			if txMetrics != nil {
@@ -69,11 +67,6 @@ func InTransactionWithIsolation[Q Transactable[Q], T any](
 			time.Sleep(retryBackoffBase * time.Duration(1<<attempt))
 		}
 
-		slog.InfoContext(ctx, "starting transaction",
-			"isolation", isolationLevel,
-			"attempt", attempt+1,
-		)
-
 		transaction, err := querier.BeginTx(ctx, pgx.TxOptions{IsoLevel: isolationLevel})
 		if err != nil {
 			var zero T
@@ -82,7 +75,7 @@ func InTransactionWithIsolation[Q Transactable[Q], T any](
 		}
 
 		result, err := executeTransaction(
-			querier, ctx, txMetrics, isolationLevel, txFunc, transaction,
+			querier, ctx, isolationLevel, txFunc, transaction,
 		)
 		if err != nil && isRetryable(err) {
 			lastErr = err
@@ -111,46 +104,46 @@ func isRetryable(err error) bool {
 func executeTransaction[Q Transactable[Q], T any](
 	querier Q,
 	ctx context.Context,
-	txMetrics *metrics.InfraMetrics,
 	isolationLevel pgx.TxIsoLevel,
 	txFunc func(Q) (T, error),
 	transaction pgx.Tx,
 ) (result T, err error) {
-	_, span := otel.GetTracerProvider().Tracer("go-risk-it-db").Start(
-		ctx, "db.transaction",
-		trace.WithAttributes(
-			attribute.String("isolation", string(isolationLevel)),
-		),
+	spanCtx, done := observe.Span(ctx, "db.transaction",
+		attribute.String("isolation", string(isolationLevel)),
 	)
-	defer span.End()
-
-	slog.InfoContext(ctx, "started transaction")
-
-	txStart := time.Now()
-	isoAttr := metric.WithAttributes(attribute.String("isolation", string(isolationLevel)))
 
 	defer func() {
+		span := trace.SpanFromContext(spanCtx)
+
 		if panicking := recover(); panicking != nil {
-			slog.ErrorContext(ctx, "panic in transaction, rolling back", "panic", panicking)
-			rollback(transaction, ctx, txMetrics)
+			observe.Error(
+				ctx,
+				fmt.Errorf("panic: %v", panicking),
+				"panic in transaction, rolling back",
+			)
+			rollback(transaction, ctx)
+
+			span.SetAttributes(attribute.String("db_outcome", "rollback"))
+			done(fmt.Errorf("panic: %v", panicking))
 
 			panic(panicking) // re-throw panic after Rollback
 		} else if err != nil {
-			slog.ErrorContext(ctx, "error in transaction, rolling back", "error", err)
-			rollback(transaction, ctx, txMetrics)
+			observe.Error(ctx, err, "error in transaction, rolling back")
+			rollback(transaction, ctx)
+
+			span.SetAttributes(attribute.String("db_outcome", "rollback"))
+			done(err)
 		} else {
 			err = transaction.Commit(ctx) // err is nil; if Commit returns error update err
 			if err != nil {
-				slog.ErrorContext(ctx, "failed to commit transaction", "error", err)
-			} else {
-				slog.InfoContext(ctx, "committed transaction")
-			}
-		}
+				observe.Error(ctx, err, "failed to commit transaction")
 
-		if txMetrics != nil {
-			txMetrics.TransactionDuration.Record(
-				ctx, time.Since(txStart).Seconds(), isoAttr,
-			)
+				span.SetAttributes(attribute.String("db_outcome", "rollback"))
+				done(err)
+			} else {
+				span.SetAttributes(attribute.String("db_outcome", "commit"))
+				done(nil)
+			}
 		}
 	}()
 
@@ -162,18 +155,9 @@ func executeTransaction[Q Transactable[Q], T any](
 func rollback(
 	transaction pgx.Tx,
 	ctx context.Context,
-	txMetrics *metrics.InfraMetrics,
 ) {
-	slog.InfoContext(ctx, "rolling back transaction")
-
-	if txMetrics != nil {
-		txMetrics.TransactionRollbacks.Add(ctx, 1)
-	}
-
 	err := transaction.Rollback(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to rollback transaction", "error", err)
+		observe.Error(ctx, err, "failed to rollback transaction")
 	}
-
-	slog.InfoContext(ctx, "rolled back transaction")
 }

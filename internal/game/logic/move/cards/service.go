@@ -3,7 +3,6 @@ package cards
 import (
 	"errors"
 	"fmt"
-	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
@@ -73,8 +72,6 @@ func (s *service) PhaseType() sqlc.GamePhaseType {
 }
 
 func (s *service) Draw(ctx ctx.GameContext, querier db.Querier) error {
-	slog.InfoContext(ctx, "drawing card")
-
 	cards, err := querier.GetAvailableCards(ctx, ctx.GameID())
 	if err != nil {
 		return fmt.Errorf("failed to get available cards: %w", err)
@@ -93,8 +90,6 @@ func (s *service) Draw(ctx ctx.GameContext, querier db.Querier) error {
 		return fmt.Errorf("failed to draw card: %w", err)
 	}
 
-	slog.InfoContext(ctx, "card drawn", "card", card.ID)
-
 	return nil
 }
 
@@ -102,8 +97,6 @@ func (s *service) NextPlayerHasValidCombination(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) (bool, error) {
-	slog.DebugContext(ctx, "checking if the player has a valid card combination")
-
 	nextPlayer, err := s.playerService.GetNextPlayer(ctx, querier)
 	if err != nil {
 		return false, fmt.Errorf("failed to get player: %w", err)
@@ -116,9 +109,6 @@ func (s *service) NextPlayerHasValidCombination(
 	if err != nil {
 		return false, fmt.Errorf("unable to get cards for player: %w", err)
 	}
-
-	slog.DebugContext(ctx, "player has cards",
-		"count", len(nextPlayerCards), "cards", nextPlayerCards)
 
 	if len(nextPlayerCards) < minCardsForCombination {
 		return false, nil
@@ -141,19 +131,12 @@ func (s *service) NextPlayerHasValidCombination(
 					},
 				}
 
-				slog.DebugContext(ctx, "checking combination", "combination", combination)
-
 				if _, err := identifyCombination(combination, cardIndex); err == nil {
-					slog.DebugContext(ctx, "player has a valid combination",
-						"combination", combination)
-
 					return true, nil
 				}
 			}
 		}
 	}
-
-	slog.DebugContext(ctx, "player has no valid combination")
 
 	return false, nil
 }

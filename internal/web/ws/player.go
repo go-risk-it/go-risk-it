@@ -3,25 +3,27 @@ package ws
 import (
 	"encoding/json"
 	"errors"
-	"log/slog"
+	"fmt"
 	"net"
-	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	upgradablerwmutex "github.com/go-risk-it/go-risk-it/internal/kernel/upgradablerw_mutex"
 	"github.com/lesismal/nbio/nbhttp/websocket"
-	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type PlayerConnections struct {
 	mu upgradablerwmutex.UpgradableRWMutex
 
 	playerConnections map[string]*websocket.Conn
-	metrics           *metrics.InfraMetrics
+	metrics           *metrics.StateMetrics
 }
 
-func NewPlayerConnections(m *metrics.InfraMetrics) *PlayerConnections {
+func NewPlayerConnections(m *metrics.StateMetrics) *PlayerConnections {
 	return &PlayerConnections{
 		playerConnections: make(map[string]*websocket.Conn),
 		metrics:           m,
@@ -29,23 +31,17 @@ func NewPlayerConnections(m *metrics.InfraMetrics) *PlayerConnections {
 }
 
 func (p *PlayerConnections) Broadcast(ctx ctx.UserContext, message json.RawMessage) {
-	_, span := otel.GetTracerProvider().Tracer("go-risk-it-ws").Start(
-		ctx, "ws.broadcast",
-	)
-	defer span.End()
-
-	start := time.Now()
+	spanCtx, done := observe.Span(ctx, "ws.broadcast")
+	defer done(nil)
 
 	p.mu.UpgradableRLock()
 	defer p.mu.UpgradableRUnlock()
 
 	if len(p.playerConnections) == 0 {
-		slog.WarnContext(ctx, "no connections for given game")
+		observe.Warn(ctx, "no connections for given game")
 
 		return
 	}
-
-	slog.InfoContext(ctx, "broadcasting message", "playerCount", len(p.playerConnections))
 
 	toCleanup := make([]string, 0)
 	sent := 0
@@ -53,18 +49,18 @@ func (p *PlayerConnections) Broadcast(ctx ctx.UserContext, message json.RawMessa
 	for player, connection := range p.playerConnections {
 		err := connection.WriteMessage(websocket.TextMessage, message)
 		if err != nil && errors.Is(err, net.ErrClosed) {
-			slog.DebugContext(ctx, "unable to write message because connection is closed")
-
 			toCleanup = append(toCleanup, player)
-			p.metrics.BroadcastErrors.Add(ctx, 1)
 		} else {
 			sent++
 		}
 	}
 
-	p.metrics.MessagesSent.Add(ctx, int64(sent))
-	p.metrics.BroadcastDuration.Record(ctx, time.Since(start).Seconds())
-	p.metrics.BroadcastFanOut.Record(ctx, int64(len(p.playerConnections)))
+	span := trace.SpanFromContext(spanCtx)
+	span.SetAttributes(attribute.Int("ws_fanout", len(p.playerConnections)))
+
+	if len(toCleanup) > 0 {
+		span.SetStatus(codes.Error, fmt.Sprintf("%d broadcast errors", len(toCleanup)))
+	}
 
 	p.cleanUpConnections(ctx, toCleanup)
 }
@@ -74,24 +70,20 @@ func (p *PlayerConnections) Write(ctx ctx.UserContext, message json.RawMessage) 
 	defer p.mu.UpgradableRUnlock()
 
 	if len(p.playerConnections) == 0 {
-		slog.WarnContext(ctx, "no connections for given game")
+		observe.Warn(ctx, "no connections for given game")
 
 		return
 	}
 
 	connection, ok := p.playerConnections[ctx.UserID()]
 	if !ok {
-		slog.WarnContext(ctx, "no connection for given player")
+		observe.Warn(ctx, "no connection for given player")
 
 		return
 	}
 
-	slog.InfoContext(ctx, "writing message to player", "message", string(message))
-
 	err := connection.WriteMessage(websocket.TextMessage, message)
 	if err != nil && errors.Is(err, net.ErrClosed) {
-		slog.DebugContext(ctx, "unable to write message because connection is closed")
-
 		p.cleanUpConnections(ctx, []string{ctx.UserID()})
 	}
 }
@@ -101,8 +93,6 @@ func (p *PlayerConnections) cleanUpConnections(ctx ctx.UserContext, toCleanup []
 		return
 	}
 
-	slog.DebugContext(ctx, "cleaning up connections", "users", toCleanup)
-
 	p.mu.UpgradeWLock()
 
 	for _, player := range toCleanup {
@@ -110,29 +100,26 @@ func (p *PlayerConnections) cleanUpConnections(ctx ctx.UserContext, toCleanup []
 	}
 
 	p.metrics.ActiveConnections.Add(ctx, -int64(len(toCleanup)))
-
-	slog.DebugContext(ctx, "cleaned up connections", "users", toCleanup)
 }
 
 func (p *PlayerConnections) ConnectPlayer(ctx ctx.UserContext, connection *websocket.Conn) {
-	slog.InfoContext(ctx, "Connecting player",
-		"remoteAddress", connection.RemoteAddr().String())
+	observe.Info(ctx, "connecting player",
+		attribute.String("remote_address", connection.RemoteAddr().String()))
 
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	if existing := p.playerConnections[ctx.UserID()]; existing != nil {
-		slog.WarnContext(ctx, "player already connected, closing old connection")
+		observe.Warn(ctx, "player already connected, closing old connection")
 
-		if err := existing.Close(); err != nil {
-			slog.DebugContext(ctx, "failed to close old connection", "error", err)
-		}
+		_ = existing.Close()
 	} else {
 		p.metrics.ActiveConnections.Add(ctx, 1)
 	}
 
 	p.playerConnections[ctx.UserID()] = connection
-	slog.InfoContext(ctx, "Connected player", "currentConnections", len(p.playerConnections))
+	observe.Info(ctx, "connected player",
+		attribute.Int("current_connections", len(p.playerConnections)))
 }
 
 func (p *PlayerConnections) GetConnectedPlayers(ctx ctx.UserContext) []string {
@@ -143,8 +130,6 @@ func (p *PlayerConnections) GetConnectedPlayers(ctx ctx.UserContext) []string {
 	for player := range p.playerConnections {
 		result = append(result, player)
 	}
-
-	slog.DebugContext(ctx, "found connected players", "players", result, "count", len(result))
 
 	return result
 }

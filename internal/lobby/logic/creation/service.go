@@ -2,7 +2,6 @@ package creation
 
 import (
 	"fmt"
-	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	dbutil "github.com/go-risk-it/go-risk-it/internal/kernel/data"
@@ -23,12 +22,12 @@ type Service interface {
 
 type service struct {
 	querier db.Querier
-	metrics *metrics.InfraMetrics
+	metrics *metrics.StateMetrics
 }
 
 var _ Service = (*service)(nil)
 
-func NewService(querier db.Querier, m *metrics.InfraMetrics) Service {
+func NewService(querier db.Querier, m *metrics.StateMetrics) Service {
 	return &service{
 		querier: querier,
 		metrics: m,
@@ -56,14 +55,10 @@ func (s *service) CreateLobbyWithQuerier(
 	querier db.Querier,
 	ownerName string,
 ) (int64, error) {
-	slog.InfoContext(ctx, "creating lobby")
-
 	lobbyID, err := querier.CreateLobby(ctx)
 	if err != nil {
 		return -1, fmt.Errorf("failed to create lobby: %w", err)
 	}
-
-	slog.InfoContext(ctx, "lobby created", "lobbyID", lobbyID)
 
 	participantID, err := querier.InsertParticipant(ctx, sqlc.InsertParticipantParams{
 		LobbyID: lobbyID,
@@ -74,8 +69,6 @@ func (s *service) CreateLobbyWithQuerier(
 		return -1, fmt.Errorf("failed to insert participant: %w", err)
 	}
 
-	slog.InfoContext(ctx, "participant inserted", "participantID", participantID)
-
 	if err := querier.UpdateLobbyOwner(ctx, sqlc.UpdateLobbyOwnerParams{
 		OwnerID: pgtype.Int8{
 			Int64: participantID,
@@ -85,8 +78,6 @@ func (s *service) CreateLobbyWithQuerier(
 	}); err != nil {
 		return -1, fmt.Errorf("failed to update lobby owner: %w", err)
 	}
-
-	slog.InfoContext(ctx, "lobby owner updated")
 
 	return lobbyID, nil
 }

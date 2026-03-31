@@ -34,7 +34,7 @@ func (c *gameContext) GameID() int64 {
 }
 
 func (c *gameContext) SlogAttrs() []slog.Attr {
-	return append(c.UserContext.SlogAttrs(), slog.Int64("gameID", c.gameID))
+	return append(c.UserContext.SlogAttrs(), slog.Int64("game_id", c.gameID))
 }
 
 func (c *gameContext) DetachOnto(base context.Context) context.Context {

@@ -2,9 +2,10 @@ package route
 
 import (
 	"errors"
-	"log/slog"
 	"net/http"
 	"strings"
+
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 )
 
 // ExtractWSToken extracts the JWT from the Sec-WebSocket-Protocol header and sets it as a
@@ -18,10 +19,10 @@ func ExtractWSToken(request *http.Request) {
 
 	token, err := parseWSSubprotocol(subprotocol)
 	if err != nil {
-		slog.ErrorContext(
+		observe.Error(
 			request.Context(),
+			err,
 			"unable to extract token from subprotocol",
-			"error", err,
 		)
 
 		return

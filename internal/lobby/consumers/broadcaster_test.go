@@ -69,7 +69,7 @@ func newDeps(t *testing.T) *deps {
 func (d *deps) newBroadcaster() *consumers.LobbyStateBroadcaster {
 	stateCtrl := consumers.NewStateController(d.stateSvc)
 
-	return consumers.NewLobbyStateBroadcaster(d.writer, stateCtrl, nil)
+	return consumers.NewLobbyStateBroadcaster(d.writer, stateCtrl)
 }
 
 // wsMessageType extracts the "type" field from a serialized WS message envelope.

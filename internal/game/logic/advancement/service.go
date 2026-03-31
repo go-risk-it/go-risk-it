@@ -2,7 +2,6 @@ package advancement
 
 import (
 	"fmt"
-	"log/slog"
 	"time"
 
 	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
@@ -17,9 +16,9 @@ import (
 	dbutil "github.com/go-risk-it/go-risk-it/internal/kernel/data"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/jackc/pgx/v5"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
 )
 
 type Service[T, R any] interface {
@@ -42,7 +41,7 @@ type service[T, R any] struct {
 	moveService       moveservice.Service[T, R]
 	validationService orchestration.ValidationService
 	bus               eventbus.Publisher
-	metrics           *metrics.InfraMetrics
+	metrics           *metrics.StateMetrics
 }
 
 func NewService[T, R any](
@@ -51,7 +50,7 @@ func NewService[T, R any](
 	moveService moveservice.Service[T, R],
 	validationService orchestration.ValidationService,
 	bus eventbus.Publisher,
-	metrics *metrics.InfraMetrics,
+	metrics *metrics.StateMetrics,
 ) Service[T, R] {
 	return &service[T, R]{
 		gameState:         gameState,
@@ -63,13 +62,14 @@ func NewService[T, R any](
 	}
 }
 
-func (s *service[T, R]) Advance(ctx gamectx.GameContext) error {
+//nolint:nonamedreturns // named returns needed for defer-based error recording
+func (s *service[T, R]) Advance(ctx gamectx.GameContext) (err error) {
 	currentPhase := s.moveService.PhaseType()
 
-	ctx, span := tracing.StartGameSpan(ctx, "game.advance",
+	ctx, done := tracing.StartGameSpan(ctx, "game.advance",
 		attribute.String("phase", string(currentPhase)),
 	)
-	defer span.End()
+	defer func() { done(err) }()
 
 	outcome, err := dbutil.InTransactionWithIsolation(
 		s.querier,
@@ -81,9 +81,6 @@ func (s *service[T, R]) Advance(ctx gamectx.GameContext) error {
 		},
 	)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-
 		return fmt.Errorf("unable to perform move: %w", err)
 	}
 
@@ -117,10 +114,6 @@ func (s *service[T, R]) advanceInternal(
 ) (advanceOutcome, error) {
 	currentPhase := s.moveService.PhaseType()
 
-	slog.InfoContext(ctx, "processing request to advance phase",
-		"currentPhase", currentPhase,
-	)
-
 	game, err := s.getAndValidateState(ctx, querier)
 	if err != nil {
 		return advanceOutcome{}, err
@@ -134,7 +127,7 @@ func (s *service[T, R]) advanceInternal(
 		)
 	}
 
-	targetPhase, err := s.walkAndAdvance(ctx, querier, currentPhase)
+	targetPhase, err := s.walkAndAdvance(ctx, querier)
 	if err != nil {
 		return advanceOutcome{}, err
 	}
@@ -155,12 +148,10 @@ func (s *service[T, R]) getAndValidateState(
 	}
 
 	if err := s.validationService.Validate(ctx, querier, game); err != nil {
-		slog.ErrorContext(ctx, "validation failed", "error", err)
+		observe.Error(ctx, err, "validation failed")
 
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
-
-	slog.DebugContext(ctx, "game is in phase", "phase", game.Phase)
 
 	return game, nil
 }
@@ -168,7 +159,6 @@ func (s *service[T, R]) getAndValidateState(
 func (s *service[T, R]) walkAndAdvance(
 	ctx gamectx.GameContext,
 	querier db.Querier,
-	currentPhase sqlc.GamePhaseType,
 ) (sqlc.GamePhaseType, error) {
 	targetPhase, err := s.moveService.Walk(ctx, querier, true)
 	if err != nil {
@@ -182,10 +172,6 @@ func (s *service[T, R]) walkAndAdvance(
 	); err != nil {
 		return "", fmt.Errorf("unable to perform move: %w", err)
 	}
-
-	slog.InfoContext(ctx, "phase advanced successfully",
-		"from", currentPhase,
-	)
 
 	return targetPhase, nil
 }

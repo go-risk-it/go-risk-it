@@ -2,7 +2,6 @@ package orchestration
 
 import (
 	"fmt"
-	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
@@ -32,10 +31,8 @@ func (s *validationServiceImpl) Validate(
 	querier db.Querier,
 	game *state.Game,
 ) error {
-	ctx, span := tracing.StartGameSpan(ctx, "game.move.validate")
-	defer span.End()
-
-	slog.DebugContext(ctx, "performing generic move validation")
+	ctx, done := tracing.StartGameSpan(ctx, "game.move.validate")
+	defer done(nil)
 
 	if game.WinnerUserID != "" {
 		return domainerrors.NewConflictError("game is already over")
@@ -54,8 +51,6 @@ func (s *validationServiceImpl) Validate(
 	if err := s.checkTurn(game, int64(len(players)), thisPlayer.TurnIndex); err != nil {
 		return fmt.Errorf("turn check failed: %w", err)
 	}
-
-	slog.DebugContext(ctx, "generic move validation passed")
 
 	return nil
 }

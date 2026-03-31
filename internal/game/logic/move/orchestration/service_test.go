@@ -44,18 +44,18 @@ func testCtx() gamectx.GameContext {
 	return gamectx.WithGameID(userCtx, testGameID)
 }
 
-func testMetrics(t *testing.T) (*metrics.InfraMetrics, *gamemetrics.GameMetrics) {
+func testMetrics(t *testing.T) (*metrics.StateMetrics, *gamemetrics.GameMetrics) {
 	t.Helper()
 
 	meter := noop.Meter{}
 
-	infraResult, err := metrics.NewInfraMetrics(meter)
+	stateResult, err := metrics.NewStateMetrics(meter)
 	require.NoError(t, err)
 
 	gameResult, err := gamemetrics.NewGameMetrics(meter)
 	require.NoError(t, err)
 
-	return infraResult, gameResult
+	return stateResult, gameResult
 }
 
 // setupTransaction configures mock querier to support InTransactionWithIsolation.

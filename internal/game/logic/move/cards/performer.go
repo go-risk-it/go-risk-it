@@ -2,13 +2,14 @@ package cards
 
 import (
 	"fmt"
-	"log/slog"
 	"slices"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 func (s *service) Perform(
@@ -16,8 +17,6 @@ func (s *service) Perform(
 	querier db.Querier,
 	move Move,
 ) (*MoveResult, error) {
-	slog.DebugContext(ctx, "performing cards move", "move", move)
-
 	cardIndex, err := s.buildCardIndex(ctx, querier)
 	if err != nil {
 		return nil, err
@@ -97,7 +96,9 @@ func (s *service) processCombinations(
 		playedCards = append(playedCards, combination.CardIDs...)
 	}
 
-	slog.DebugContext(ctx, "processed combinations", "extraTroops", extraDeployableTroops)
+	observe.SpanEvent(ctx, "processed_combinations",
+		attribute.Int64("extra_troops", extraDeployableTroops),
+	)
 
 	return extraDeployableTroops, playedCards, nil
 }
@@ -119,8 +120,6 @@ func (s *service) grantRegionTroops(
 	}
 
 	if len(grants) == 0 {
-		slog.DebugContext(ctx, "no region troop grants")
-
 		return nil, nil
 	}
 
@@ -136,7 +135,9 @@ func (s *service) grantRegionTroops(
 		return nil, fmt.Errorf("failed to grant region troops: %w", err)
 	}
 
-	slog.DebugContext(ctx, "granted bonus troops to regions", "count", len(grantedRegionIds))
+	observe.SpanEvent(ctx, "granted_bonus_troops_to_regions",
+		attribute.Int("count", len(grantedRegionIds)),
+	)
 
 	return grants, nil
 }

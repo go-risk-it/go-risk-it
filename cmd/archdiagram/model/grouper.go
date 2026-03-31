@@ -56,6 +56,7 @@ var SubsystemOverrides = map[string]string{
 	"kernel/errors":             "kernel_errors",
 	"kernel/logger":             "kernel_observability",
 	"kernel/metrics":            "kernel_observability",
+	"kernel/observe":            "kernel_observability",
 	"kernel/otelsetup":          "kernel_observability",
 	"kernel/slog":               "kernel_observability",
 	"kernel/upgradablerw_mutex": "kernel_utils",

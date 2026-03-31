@@ -2,7 +2,6 @@ package reinforce
 
 import (
 	"fmt"
-	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
@@ -25,8 +24,6 @@ func (s *service) Advance(
 		return fmt.Errorf("unable to get game state: %w", err)
 	}
 
-	slog.DebugContext(ctx, "checking if player has conquered", "turn", game.Turn)
-
 	hasConqueredInTurn, err := querier.HasConqueredInTurn(ctx, sqlc.HasConqueredInTurnParams{
 		ID:   ctx.GameID(),
 		Turn: game.Turn,
@@ -36,8 +33,6 @@ func (s *service) Advance(
 	}
 
 	if hasConqueredInTurn {
-		slog.InfoContext(ctx, "player has conquered in turn")
-
 		if err := s.cardsService.Draw(ctx, querier); err != nil {
 			return fmt.Errorf("failed to draw cards: %w", err)
 		}

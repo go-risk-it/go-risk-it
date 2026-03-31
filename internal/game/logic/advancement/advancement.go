@@ -25,7 +25,7 @@ func NewAttackAdvancer(
 	moveService moveservice.Service[attack.Move, *attack.MoveResult],
 	validationService orchestration.ValidationService,
 	bus eventbus.Publisher,
-	metrics *metrics.InfraMetrics,
+	metrics *metrics.StateMetrics,
 ) AttackAdvancer {
 	return NewService[attack.Move, *attack.MoveResult](
 		gameState,
@@ -43,7 +43,7 @@ func NewCardsAdvancer(
 	moveService moveservice.Service[cards.Move, *cards.MoveResult],
 	validationService orchestration.ValidationService,
 	bus eventbus.Publisher,
-	metrics *metrics.InfraMetrics,
+	metrics *metrics.StateMetrics,
 ) CardsAdvancer {
 	return NewService[cards.Move, *cards.MoveResult](
 		gameState,
@@ -61,7 +61,7 @@ func NewReinforceAdvancer(
 	moveService moveservice.Service[reinforce.Move, struct{}],
 	validationService orchestration.ValidationService,
 	bus eventbus.Publisher,
-	metrics *metrics.InfraMetrics,
+	metrics *metrics.StateMetrics,
 ) ReinforceAdvancer {
 	return NewService[reinforce.Move, struct{}](
 		gameState,

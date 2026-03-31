@@ -2,7 +2,6 @@ package phase
 
 import (
 	"fmt"
-	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
@@ -40,8 +39,6 @@ func (s *service) InsertPhase(
 	querier db.Querier,
 	phaseType sqlc.GamePhaseType,
 ) (*sqlc.GamePhase, error) {
-	slog.InfoContext(ctx, "checking if phase needs to be advanced")
-
 	gameState, err := s.gameService.GetGameStateWithQuerier(ctx, querier)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get game state: %w", err)
@@ -50,12 +47,6 @@ func (s *service) InsertPhase(
 	if phaseType == gameState.Phase {
 		return nil, fmt.Errorf("game already in desired phase: %v", phaseType)
 	}
-
-	slog.InfoContext(ctx,
-		"inserting phase",
-		"phase",
-		phaseType,
-	)
 
 	currentPhase, err := querier.GetCurrentPhase(ctx, ctx.GameID())
 	if err != nil {
@@ -112,8 +103,6 @@ func (s *service) insertPhase(
 	phaseType sqlc.GamePhaseType,
 	turn int64,
 ) (*sqlc.GamePhase, error) {
-	slog.InfoContext(ctx, "creating phase", "gameID", gameID, "turn", turn)
-
 	phase, err := querier.InsertPhase(ctx, sqlc.InsertPhaseParams{
 		GameID: gameID,
 		Type:   phaseType,
@@ -122,8 +111,6 @@ func (s *service) insertPhase(
 	if err != nil {
 		return nil, fmt.Errorf("failed to create phase: %w", err)
 	}
-
-	slog.InfoContext(ctx, "phase created", "phase", phase)
 
 	return &phase, nil
 }
@@ -134,8 +121,6 @@ func (s *service) setGamePhase(
 	gameID int64,
 	phaseID int64,
 ) error {
-	slog.DebugContext(ctx, "setting phase", "phase", phaseID)
-
 	err := querier.SetGamePhase(ctx, sqlc.SetGamePhaseParams{
 		ID:             gameID,
 		CurrentPhaseID: pgtype.Int8{Int64: phaseID, Valid: true},
@@ -143,8 +128,6 @@ func (s *service) setGamePhase(
 	if err != nil {
 		return fmt.Errorf("failed to set phase: %w", err)
 	}
-
-	slog.DebugContext(ctx, "phase set", "phase", phaseID)
 
 	return nil
 }

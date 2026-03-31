@@ -1,29 +1,23 @@
 package middleware
 
 import (
-	"context"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	otelmetric "go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 )
 
 type OTelMiddleware struct {
-	tracer  trace.Tracer
-	metrics *metrics.InfraMetrics
+	tracer trace.Tracer
 }
 
-func NewOTelMiddleware(metrics *metrics.InfraMetrics) *OTelMiddleware {
+func NewOTelMiddleware() *OTelMiddleware {
 	return &OTelMiddleware{
-		tracer:  otel.GetTracerProvider().Tracer("go-risk-it-http"),
-		metrics: metrics,
+		tracer: otel.GetTracerProvider().Tracer("go-risk-it-http"),
 	}
 }
 
@@ -55,7 +49,7 @@ func (m *OTelMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
 		traceContext := ctx.WithSpan(tracedCtx, span)
 
 		// WebSocket routes need the raw response writer for nbio's upgrade.
-		// Skip status recording and HTTP metrics for WS connections.
+		// Skip status recording for WS connections.
 		if isWebSocket {
 			routeToWrap.ServeHTTP(writer, request.WithContext(traceContext))
 
@@ -63,51 +57,21 @@ func (m *OTelMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
 		}
 
 		recorder := &statusRecorder{ResponseWriter: writer, statusCode: http.StatusOK}
-		start := time.Now()
 
 		routeToWrap.ServeHTTP(
 			recorder,
 			request.WithContext(traceContext),
 		)
 
-		duration := time.Since(start).Seconds()
-
-		m.recordHTTPMetrics(
-			tracedCtx,
-			request.Method,
-			routeToWrap.Pattern(),
-			recorder.statusCode,
-			duration,
-		)
+		span.SetAttributes(attribute.Int("http_status_code", recorder.statusCode))
+		if recorder.statusCode >= http.StatusBadRequest {
+			span.SetAttributes(
+				attribute.String("error_category", StatusToCategory(recorder.statusCode)),
+			)
+		}
 	})
 
 	return routeToWrap.Wrap(handler)
-}
-
-func (m *OTelMiddleware) recordHTTPMetrics(
-	ctx context.Context,
-	method string,
-	pattern string,
-	statusCode int,
-	duration float64,
-) {
-	attrs := otelmetric.WithAttributes(
-		attribute.String("http.method", method),
-		attribute.String("http.route", pattern),
-		attribute.Int("http.status_code", statusCode),
-	)
-
-	m.metrics.HTTPRequestDuration.Record(ctx, duration, attrs)
-	m.metrics.HTTPRequestsTotal.Add(ctx, 1, attrs)
-
-	if statusCode >= http.StatusBadRequest {
-		errorAttrs := otelmetric.WithAttributes(
-			attribute.String("http.method", method),
-			attribute.String("http.route", pattern),
-			attribute.String("error.category", StatusToCategory(statusCode)),
-		)
-		m.metrics.HTTPErrorsTotal.Add(ctx, 1, errorAttrs)
-	}
 }
 
 func StatusToCategory(code int) string {

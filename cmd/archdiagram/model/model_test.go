@@ -302,6 +302,8 @@ func TestBuildModel_InternalDeps(t *testing.T) {
 	pkg := archModel.Packages["web/game/controller"]
 	if pkg == nil {
 		t.Fatal("web/game/controller not found")
+
+		return
 	}
 
 	// Should have internal deps on the two internal packages, not fmt/net/http.
