@@ -86,34 +86,32 @@ func (s *service) GetUserLobbies(
 	return s.GetUserLobbiesWithQuerier(ctx, s.querier)
 }
 
-//nolint:nonamedreturns // named returns needed for defer-based error recording
 func (s *service) GetUserLobbiesWithQuerier(
 	ctx kernelctx.UserContext,
 	querier db.Querier,
-) (result *UserLobbies, err error) {
-	ctx, done := observe.Span(ctx, "lobby.get_user_lobbies")
-	defer func() { done(err) }()
+) (*UserLobbies, error) {
+	return observe.SpanFunc(ctx, "lobby.get_user_lobbies",
+		func(ctx kernelctx.UserContext) (*UserLobbies, error) {
+			ownedLobbies, err := querier.GetOwnedLobbies(ctx, ctx.UserID())
+			if err != nil {
+				return nil, fmt.Errorf("failed to get owned lobbies: %w", err)
+			}
 
-	ownedLobbies, err := querier.GetOwnedLobbies(ctx, ctx.UserID())
-	if err != nil {
-		return nil, fmt.Errorf("failed to get owned lobbies: %w", err)
-	}
+			joinedLobbies, err := querier.GetJoinedLobbies(ctx, ctx.UserID())
+			if err != nil {
+				return nil, fmt.Errorf("failed to get joined lobbies: %w", err)
+			}
 
-	joinedLobbies, err := querier.GetJoinedLobbies(ctx, ctx.UserID())
-	if err != nil {
-		return nil, fmt.Errorf("failed to get joined lobbies: %w", err)
-	}
+			joinableLobbies, err := querier.GetJoinableLobbies(ctx, ctx.UserID())
+			if err != nil {
+				return nil, fmt.Errorf("failed to get joinable lobbies: %w", err)
+			}
 
-	joinableLobbies, err := querier.GetJoinableLobbies(ctx, ctx.UserID())
-	if err != nil {
-		return nil, fmt.Errorf("failed to get joinable lobbies: %w", err)
-	}
-
-	userLobbies := &UserLobbies{
-		Owned:    ownedLobbies,
-		Joined:   joinedLobbies,
-		Joinable: joinableLobbies,
-	}
-
-	return userLobbies, nil
+			return &UserLobbies{
+				Owned:    ownedLobbies,
+				Joined:   joinedLobbies,
+				Joinable: joinableLobbies,
+			}, nil
+		},
+	)
 }
