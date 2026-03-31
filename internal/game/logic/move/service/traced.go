@@ -21,7 +21,7 @@ func (t *tracedService[T, R]) Perform(
 	querier db.Querier,
 	move T,
 ) (R, error) {
-	return observe.TypedSpanFunc(
+	return observe.SpanFunc(
 		gameCtx,
 		"game.move.perform",
 		func(gameCtx ctx.GameContext) (R, error) {
@@ -36,7 +36,7 @@ func (t *tracedService[T, R]) Walk(
 	querier db.Querier,
 	voluntaryAdvancement bool,
 ) (sqlc.GamePhaseType, error) {
-	return observe.TypedSpanFunc(
+	return observe.SpanFunc(
 		gameCtx,
 		"game.move.walk",
 		func(gameCtx ctx.GameContext) (sqlc.GamePhaseType, error) {
@@ -52,7 +52,7 @@ func (t *tracedService[T, R]) Advance(
 	targetPhase sqlc.GamePhaseType,
 	performResult R,
 ) error {
-	return observe.TypedSpanErr(gameCtx, "game.move.advance", func(gameCtx ctx.GameContext) error {
+	return observe.SpanErr(gameCtx, "game.move.advance", func(gameCtx ctx.GameContext) error {
 		return t.inner.Advance(gameCtx, querier, targetPhase, performResult)
 	}, attribute.String("phase", string(t.inner.PhaseType())))
 }

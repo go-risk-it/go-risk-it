@@ -19,7 +19,7 @@ func (s *orchestrator[T, R]) OrchestrateMove(
 	ctx gamectx.GameContext,
 	move T,
 ) (err error) {
-	ctx, done := observe.TypedSpan(ctx, "game.orchestrate_move",
+	ctx, done := observe.Span(ctx, "game.orchestrate_move",
 		attribute.String("phase", string(s.service.PhaseType())),
 	)
 	defer func() { done(err) }()

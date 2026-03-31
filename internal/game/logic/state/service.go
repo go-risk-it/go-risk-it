@@ -46,7 +46,7 @@ func (s *service) GetGameStateWithQuerier(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) (result *Game, err error) {
-	ctx, done := observe.TypedSpan(ctx, "game.advance.get_state")
+	ctx, done := observe.Span(ctx, "game.advance.get_state")
 	defer func() { done(err) }()
 
 	game, err := querier.GetGame(ctx, ctx.GameID())

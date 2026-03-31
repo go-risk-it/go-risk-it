@@ -67,7 +67,7 @@ func (d *detector) handleGameCompleted(_ ctx.GameContext, event *gameevt.GameCom
 }
 
 func (d *detector) handleMoveExecuted(gameCtx ctx.GameContext, event *gameevt.MoveExecuted) {
-	_, done := observe.Span(gameCtx, "detector.headlines")
+	_, done := observe.RawSpan(gameCtx, "detector.headlines")
 	defer done(nil)
 
 	if event.ActionType != sqlc.GamePhaseTypeATTACK {

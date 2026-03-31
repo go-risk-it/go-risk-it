@@ -31,7 +31,7 @@ func NewPlayerConnections(m *metrics.StateMetrics) *PlayerConnections {
 }
 
 func (p *PlayerConnections) Broadcast(ctx ctx.UserContext, message json.RawMessage) {
-	spanCtx, done := observe.Span(ctx, "ws.broadcast")
+	spanCtx, done := observe.RawSpan(ctx, "ws.broadcast")
 	defer done(nil)
 
 	p.mu.UpgradableRLock()

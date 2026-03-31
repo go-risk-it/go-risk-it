@@ -46,7 +46,7 @@ func TestRebase_SpanFromBase(t *testing.T) {
 		"precondition: gameCtx should carry the original span")
 
 	// Call Rebase with the child span's context — this simulates what
-	// observe.Span does after otel.Tracer.Start() enriches the context.
+	// observe.RawSpan does after otel.Tracer.Start() enriches the context.
 	rebased := gameCtx.Rebase(childCtx)
 
 	// The rebased context must carry the child span, not the original.

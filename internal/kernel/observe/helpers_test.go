@@ -30,16 +30,16 @@ func buildLobbyContext(t *testing.T) lobbyctx.LobbyContext {
 }
 
 // ---------------------------------------------------------------------------
-// Tests: TypedSpan
+// Tests: Span (typed generic)
 // ---------------------------------------------------------------------------
 
 //nolint:paralleltest // swaps global TracerProvider
-func TestTypedSpan_GameContext_ReturnsGameContext(t *testing.T) {
+func TestSpan_GameContext_ReturnsGameContext(t *testing.T) {
 	setupTracing(t)
 
 	gameCtx := buildGameContext(t)
 
-	result, done := observe.TypedSpan(gameCtx, "game.test")
+	result, done := observe.Span(gameCtx, "game.test")
 	defer done(nil)
 
 	// The returned context must be a GameContext with the same GameID.
@@ -49,12 +49,12 @@ func TestTypedSpan_GameContext_ReturnsGameContext(t *testing.T) {
 }
 
 //nolint:paralleltest // swaps global TracerProvider
-func TestTypedSpan_LobbyContext_ReturnsLobbyContext(t *testing.T) {
+func TestSpan_LobbyContext_ReturnsLobbyContext(t *testing.T) {
 	setupTracing(t)
 
 	lobbyCtx := buildLobbyContext(t)
 
-	result, done := observe.TypedSpan(lobbyCtx, "lobby.test")
+	result, done := observe.Span(lobbyCtx, "lobby.test")
 	defer done(nil)
 
 	// The returned context must be a LobbyContext with the same LobbyID.
@@ -64,7 +64,7 @@ func TestTypedSpan_LobbyContext_ReturnsLobbyContext(t *testing.T) {
 }
 
 //nolint:paralleltest // swaps global TracerProvider
-func TestTypedSpan_CreatesChildSpan(t *testing.T) {
+func TestSpan_CreatesChildSpan(t *testing.T) {
 	exporter := setupTracing(t)
 
 	gameCtx := buildGameContext(t)
@@ -72,7 +72,7 @@ func TestTypedSpan_CreatesChildSpan(t *testing.T) {
 	parentTraceID := parentSpan.SpanContext().TraceID()
 	parentSpanID := parentSpan.SpanContext().SpanID()
 
-	_, done := observe.TypedSpan(gameCtx, "game.child-op")
+	_, done := observe.Span(gameCtx, "game.child-op")
 	done(nil)
 
 	stubs := exporter.GetSpans()
@@ -86,12 +86,12 @@ func TestTypedSpan_CreatesChildSpan(t *testing.T) {
 }
 
 //nolint:paralleltest // swaps global TracerProvider
-func TestTypedSpan_DoneRecordsError(t *testing.T) {
+func TestSpan_DoneRecordsError(t *testing.T) {
 	exporter := setupTracing(t)
 
 	gameCtx := buildGameContext(t)
 
-	_, done := observe.TypedSpan(gameCtx, "game.failing-op")
+	_, done := observe.Span(gameCtx, "game.failing-op")
 
 	testErr := errors.New("validation failed")
 	done(testErr)
@@ -108,16 +108,16 @@ func TestTypedSpan_DoneRecordsError(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// Tests: TypedSpanFunc
+// Tests: SpanFunc
 // ---------------------------------------------------------------------------
 
 //nolint:paralleltest // swaps global TracerProvider
-func TestTypedSpanFunc_GameContext(t *testing.T) {
+func TestSpanFunc_GameContext(t *testing.T) {
 	setupTracing(t)
 
 	gameCtx := buildGameContext(t)
 
-	result, err := observe.TypedSpanFunc(
+	result, err := observe.SpanFunc(
 		gameCtx,
 		"game.typed-func",
 		func(gc gamectx.GameContext) (int64, error) {
@@ -131,14 +131,14 @@ func TestTypedSpanFunc_GameContext(t *testing.T) {
 }
 
 //nolint:paralleltest // swaps global TracerProvider
-func TestTypedSpanErr_GameContext(t *testing.T) {
+func TestSpanErr_GameContext(t *testing.T) {
 	setupTracing(t)
 
 	gameCtx := buildGameContext(t)
 
 	var captured int64
 
-	err := observe.TypedSpanErr(
+	err := observe.SpanErr(
 		gameCtx,
 		"game.typed-err",
 		func(gc gamectx.GameContext) error {
@@ -153,7 +153,7 @@ func TestTypedSpanErr_GameContext(t *testing.T) {
 }
 
 //nolint:paralleltest // swaps global TracerProvider
-func TestTypedSpanFunc_PreservesTraceChain(t *testing.T) {
+func TestSpanFunc_PreservesTraceChain(t *testing.T) {
 	exporter := setupTracing(t)
 
 	gameCtx := buildGameContext(t)
@@ -161,7 +161,7 @@ func TestTypedSpanFunc_PreservesTraceChain(t *testing.T) {
 	parentTraceID := parentSpan.SpanContext().TraceID()
 	parentSpanID := parentSpan.SpanContext().SpanID()
 
-	_, err := observe.TypedSpanFunc(
+	_, err := observe.SpanFunc(
 		gameCtx,
 		"game.trace-chain",
 		func(_ gamectx.GameContext) (struct{}, error) {

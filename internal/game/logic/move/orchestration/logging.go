@@ -50,7 +50,7 @@ func (s *loggingServiceImpl) LogMove(
 	querier db.Querier,
 	move, result any,
 ) (moveLog sqlc.GameMoveLog, err error) {
-	ctx, done := observe.TypedSpan(ctx, "game.move.log")
+	ctx, done := observe.Span(ctx, "game.move.log")
 	defer func() { done(err) }()
 
 	moveJSON, err := json.Marshal(move)

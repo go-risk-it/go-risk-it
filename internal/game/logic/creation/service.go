@@ -105,7 +105,7 @@ func (s *service) CreateGameWithQuerier(
 	regions []string,
 	players []player.Player,
 ) (result int64, err error) {
-	userCtx, done := observe.TypedSpan(userCtx, "game.create")
+	userCtx, done := observe.Span(userCtx, "game.create")
 	defer func() { done(err) }()
 
 	game, err := querier.InsertGame(userCtx)

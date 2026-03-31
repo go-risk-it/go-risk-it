@@ -386,7 +386,7 @@ var ctxPackagesWithRebaseable = map[string][]string{
 
 // Rule 26: every concrete typed-context struct must have a compile-time
 // `var _ Rebaseable = (*T)(nil)` assertion. This ensures auto-rebase in
-// observe.Span works for all context types.
+// observe.Span and observe.RawSpan works for all context types.
 //
 
 func TestArch_TypedContextsImplementRebaseable(t *testing.T) {

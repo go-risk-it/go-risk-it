@@ -65,7 +65,7 @@ func NewService[T, R any](
 func (s *service[T, R]) Advance(ctx gamectx.GameContext) (err error) {
 	currentPhase := s.moveService.PhaseType()
 
-	ctx, done := observe.TypedSpan(ctx, "game.advance",
+	ctx, done := observe.Span(ctx, "game.advance",
 		attribute.String("phase", string(currentPhase)),
 	)
 	defer func() { done(err) }()

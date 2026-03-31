@@ -41,24 +41,24 @@ observability. It exposes eight functions:
 
 | Function         | What it does                                                  |
 |------------------|---------------------------------------------------------------|
-| `Span`           | Starts a child span, returns `(ctx, done)` closure. Auto-rebases typed contexts via `Rebaseable` |
-| `TypedSpan`      | Generic `Span` that preserves the caller's context type (e.g., `GameContext` in → `GameContext` out) |
-| `TypedSpanFunc`  | Wraps a `(T, error)` function on a typed context with automatic span lifecycle — eliminates `done(nil)` bugs and type assertions |
-| `TypedSpanErr`   | Like `TypedSpanFunc` but for functions returning only `error`  |
+| `Span`           | Generic span that preserves the caller's context type (e.g., `GameContext` in → `GameContext` out). Primary API for business logic |
+| `SpanFunc`       | Wraps a `(T, error)` function on a typed context with automatic span lifecycle — eliminates `done(nil)` bugs and type assertions |
+| `SpanErr`        | Like `SpanFunc` but for functions returning only `error`      |
+| `RawSpan`        | Starts a child span on plain `context.Context`, returns `(ctx, done)` closure. Auto-rebases typed contexts via `Rebaseable`. For infrastructure callers only |
 | `SpanEvent`      | Adds a named event to the current span                        |
 | `Info`           | Dual-signal: slog INFO log + span event                       |
 | `Warn`           | Dual-signal: slog WARN log + span event                       |
-| `Error`          | Dual-signal: slog ERROR log + span event + RecordError + status. **Partial failures only** — if returning the error, use `done(err)` or `TypedSpanFunc`/`TypedSpanErr` instead |
+| `Error`          | Dual-signal: slog ERROR log + span event + RecordError + status. **Partial failures only** — if returning the error, use `done(err)` or `SpanFunc`/`SpanErr` instead |
 
 The package is stateless: it uses `otel.GetTracerProvider()` and
 `slog.Default()`, requiring no injected dependencies. Context attributes
 (user_id, game_id, lobby_id) are automatically extracted via the `ctx.LogEnricher`
 interface.
 
-**Auto-rebase:** When `Span` or `TypedSpan` receives a typed context
+**Auto-rebase:** When `Span` or `RawSpan` receives a typed context
 (`GameContext`, `LobbyContext`, `UserContext`), the domain metadata is
 automatically preserved across the OTel span boundary via the
-`kernel/ctx.Rebaseable` interface. This means `observe.TypedSpan(gameCtx, "name")`
+`kernel/ctx.Rebaseable` interface. This means `observe.Span(gameCtx, "name")`
 returns a `GameContext` with the new child span threaded through — no manual
 context rebuilding needed.
 
@@ -66,10 +66,10 @@ context rebuilding needed.
 
 | Pattern | When to use |
 |---------|-------------|
-| `TypedSpan(ctx, name)` | Typed contexts (GameContext, LobbyContext) — type inferred from argument |
-| `TypedSpanFunc(ctx, name, fn)` | Typed-context functions returning `(T, error)` — zero-discipline error capture |
-| `TypedSpanErr(ctx, name, fn)` | Typed-context functions returning `error` only |
-| `Span(ctx, name)` + `done(nil)` | Void functions (no error return) — only correct use of `done(nil)` |
+| `Span(ctx, name)` | Typed contexts (GameContext, LobbyContext) — type inferred from argument |
+| `SpanFunc(ctx, name, fn)` | Typed-context functions returning `(T, error)` — zero-discipline error capture |
+| `SpanErr(ctx, name, fn)` | Typed-context functions returning `error` only |
+| `RawSpan(ctx, name)` + `done(nil)` | Void functions on plain context.Context (no error return) — only correct use of `done(nil)` |
 
 **Import rule:** Logic and domain packages must use `kernel/observe` for all
 observability. Direct imports of `log/slog` or `go.opentelemetry.io/otel/trace`
@@ -85,11 +85,11 @@ Every observation in go-risk-it falls into one of three categories:
 
 ```go
 // Typed context — preserves GameContext type:
-ctx, done := observe.TypedSpan(ctx, "game.orchestrate_move", attrs...)
+ctx, done := observe.Span(ctx, "game.orchestrate_move", attrs...)
 defer func() { done(err) }()
 
 // Or zero-discipline wrapper (preferred for error-returning functions):
-return observe.TypedSpanErr(ctx, "game.move.validate", func(ctx gamectx.GameContext) error {
+return observe.SpanErr(ctx, "game.move.validate", func(ctx gamectx.GameContext) error {
     // ... validation logic ...
 })
 ```

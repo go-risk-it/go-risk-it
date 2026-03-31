@@ -21,7 +21,7 @@ func SafeOp(
 	name string,
 	action func(ctx context.Context) error,
 ) {
-	ctx, done := observe.Span(parent, "consumer."+name, attribute.String("handler", name))
+	ctx, done := observe.RawSpan(parent, "consumer."+name, attribute.String("handler", name))
 
 	defer func() {
 		if recovered := recover(); recovered != nil {

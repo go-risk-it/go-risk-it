@@ -91,7 +91,7 @@ func (s *service) GetUserLobbiesWithQuerier(
 	ctx kernelctx.UserContext,
 	querier db.Querier,
 ) (result *UserLobbies, err error) {
-	ctx, done := observe.TypedSpan(ctx, "lobby.get_user_lobbies")
+	ctx, done := observe.Span(ctx, "lobby.get_user_lobbies")
 	defer func() { done(err) }()
 
 	ownedLobbies, err := querier.GetOwnedLobbies(ctx, ctx.UserID())

@@ -108,7 +108,7 @@ func executeTransaction[Q Transactable[Q], T any](
 	txFunc func(Q) (T, error),
 	transaction pgx.Tx,
 ) (result T, err error) {
-	spanCtx, done := observe.Span(ctx, "db.transaction",
+	spanCtx, done := observe.RawSpan(ctx, "db.transaction",
 		attribute.String("isolation", string(isolationLevel)),
 	)
 

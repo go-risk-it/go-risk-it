@@ -141,9 +141,9 @@ func TestSafeOp_CreatesChildSpan(t *testing.T) {
 	assert.Equal(t, parentSpanCtx.SpanID(), childStub.Parent.SpanID(),
 		"child span must have parent as its parent")
 
-	// The tracer name (instrumentation scope) must match observe.Span's constant.
+	// The tracer name (instrumentation scope) must match observe.RawSpan's constant.
 	assert.Equal(t, "go-risk-it", childStub.InstrumentationScope.Name,
-		"tracer name must match observe.Span's constant (go-risk-it)")
+		"tracer name must match observe.RawSpan's constant (go-risk-it)")
 }
 
 // ---------------------------------------------------------------------------

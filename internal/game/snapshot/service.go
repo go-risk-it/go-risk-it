@@ -77,7 +77,7 @@ func NewService(querier db.Querier) Service {
 
 //nolint:nonamedreturns // named returns needed for defer-based error recording
 func (s *service) GetPublicSnapshot(ctx ctx.GameContext) (result *PublicSnapshot, err error) {
-	ctx, done := observe.TypedSpan(ctx, "snapshot.get_public")
+	ctx, done := observe.Span(ctx, "snapshot.get_public")
 	defer func() { done(err) }()
 
 	game, err := s.querier.GetGame(ctx, ctx.GameID())
@@ -142,7 +142,7 @@ func (s *service) getPhaseState(
 func (s *service) GetPrivateSnapshotsByUser(
 	ctx ctx.GameContext,
 ) (result map[string]*PrivateSnapshot, err error) {
-	ctx, done := observe.TypedSpan(ctx, "snapshot.get_private")
+	ctx, done := observe.Span(ctx, "snapshot.get_private")
 	defer func() { done(err) }()
 
 	players, err := s.querier.GetPlayersByGame(ctx, ctx.GameID())

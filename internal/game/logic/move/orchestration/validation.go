@@ -31,7 +31,7 @@ func (s *validationServiceImpl) Validate(
 	querier db.Querier,
 	game *state.Game,
 ) error {
-	return observe.TypedSpanErr(
+	return observe.SpanErr(
 		gameCtx,
 		"game.move.validate",
 		func(ctx gamectx.GameContext) error {

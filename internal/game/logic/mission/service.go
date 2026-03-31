@@ -202,7 +202,7 @@ func (s *service) IsMissionAccomplished(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) (accomplished bool, err error) {
-	ctx, done := observe.TypedSpan(ctx, "game.move.check_mission")
+	ctx, done := observe.Span(ctx, "game.move.check_mission")
 	defer func() { done(err) }()
 
 	baseMission, err := querier.GetMission(ctx, sqlc.GetMissionParams{

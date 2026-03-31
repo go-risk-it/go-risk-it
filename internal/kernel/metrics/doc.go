@@ -23,9 +23,11 @@
 // derived from spans by the OTel Collector's spanmetrics connector
 // (see grafana/otelcol-extra.yaml):
 //
-//   - Latency histograms — use [observe.Span] instead. The spanmetrics connector
+//   - Latency histograms — use [observe.Span] or [observe.RawSpan] instead.
+//     The spanmetrics connector
 //     produces traces_spanmetrics_duration_seconds_bucket from every span.
-//   - Per-operation counters — use [observe.Span] instead. The connector produces
+//   - Per-operation counters — use [observe.Span] or [observe.RawSpan]
+//     instead. The connector produces
 //     traces_spanmetrics_calls_total from every span, broken down by span name
 //     and configured dimension attributes.
 //   - Error rate metrics — use [observe.Error] instead. It sets the span status to
