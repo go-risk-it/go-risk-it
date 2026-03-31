@@ -37,6 +37,7 @@ var expectedLayer = map[string]string{
 	"kernel/data/pool":          "Kernel",
 	"kernel/errors":             "Kernel",
 	"kernel/metrics":            "Kernel",
+	"kernel/observe":            "Kernel",
 	"kernel/otelsetup":          "Kernel",
 	"kernel/slog":               "Kernel",
 	"kernel/upgradablerw_mutex": "Kernel",

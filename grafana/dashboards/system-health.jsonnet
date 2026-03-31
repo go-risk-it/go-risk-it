@@ -39,14 +39,12 @@ dashboard.new(
     // ════════════════════════════════════════════════════════════════
     observe=[
       // Row 1: 4x w=6 stat panels with background color
+
+      // HTTP Latency p95 — spanmetrics
       layout.panel(
         panels.statPanel(
           title='HTTP Latency p95',
-          targets=[targets.target(
-            'histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name="%s"}[1m])) by (le))' % svc,
-            'p95',
-            'A',
-          )],
+          targets=targets.spanDuration(targets.spans.http, [['0.95', 'p95']]),
           thresholds=thresholds.e2eP95,
           unit='s',
           colorMode='background',
@@ -55,14 +53,11 @@ dashboard.new(
         description='Normal: < 500ms p95 (green). Watch for: sustained yellow (> 500ms) or red (> 1s). Check next: Lifecycle Timing in Orient for breakdown.',
       ),
 
+      // DB Transaction p95 — spanmetrics
       layout.panel(
         panels.statPanel(
           title='DB Transaction p95',
-          targets=[targets.target(
-            'histogram_quantile(0.95, sum(rate(db_transaction_duration_seconds_bucket{service_name="%s"}[1m])) by (le))' % svc,
-            'p95',
-            'A',
-          )],
+          targets=targets.spanDuration(targets.spans.db, [['0.95', 'p95']]),
           thresholds=thresholds.dbTxnP95,
           unit='s',
           colorMode='background',
@@ -71,11 +66,12 @@ dashboard.new(
         description='Normal: < 50ms p95 (green). Watch for: yellow (> 50ms) signals pool pressure, red (> 100ms) signals contention. Check next: Database collapsed row in Orient.',
       ),
 
+      // HTTP Error Rate % — spanmetrics calls with status_code filter
       layout.panel(
         panels.statPanel(
           title='HTTP Error Rate %',
           targets=[targets.target(
-            'sum(rate(http_server_requests_total{service_name="%s",http_status_code=~"[45].."}[1m])) / sum(rate(http_server_requests_total{service_name="%s"}[1m])) * 100' % [svc, svc],
+            'sum(rate(%s{service="%s", span_name=~"%s", status_code="STATUS_CODE_ERROR"}[1m])) / sum(rate(%s{service="%s", span_name=~"%s"}[1m])) * 100' % [targets.spanmetricsMetric.calls, svc, targets.spans.http, targets.spanmetricsMetric.calls, svc, targets.spans.http],
             'error %',
             'A',
           )],
@@ -87,6 +83,7 @@ dashboard.new(
         description='Normal: < 1% errors (green). Watch for: yellow (> 1%) may be transient; red (> 5%) indicates systematic failures. Check next: HTTP Error Rate timeseries in Server & HTTP.',
       ),
 
+      // Pool Utilization — manual gauge, keep
       layout.panel(
         panels.statPanel(
           title='Pool Utilization',
@@ -104,6 +101,8 @@ dashboard.new(
       ),
 
       // Row 2: 3x w=8 stat panels
+
+      // Canceled Acquires — manual counter, keep
       layout.panel(
         panels.statPanel(
           title='Canceled Acquires',
@@ -118,6 +117,7 @@ dashboard.new(
         description='Normal: 0 canceled acquires (green). Watch for: any non-zero rate (red) means requests timing out waiting for DB connections. Check next: Pool Utilization and Acquire Time in Database row.',
       ),
 
+      // Cache Hit Rate — postgres exporter, keep
       layout.panel(
         panels.statPanel(
           title='Cache Hit Rate',
@@ -133,6 +133,7 @@ dashboard.new(
         description='Normal: > 99% cache hit rate (green). Watch for: yellow (< 99%) indicates working set exceeds shared_buffers; red (< 90%) severe miss rate. Check next: Postgres Internals collapsed row.',
       ),
 
+      // WS Connections — manual gauge, keep
       layout.panel(
         panels.statPanel(
           title='WS Connections',
@@ -152,11 +153,11 @@ dashboard.new(
     // ORIENT — What's the shape? (2 always-visible + 3 collapsed rows)
     // ════════════════════════════════════════════════════════════════
     orient=[
-      // Lifecycle Timing hero panel (w=24, h=10)
+      // Lifecycle Timing hero panel (w=24, h=10) — spanmetrics via spanLifecycleTargets
       layout.panel(
         panels.timeseriesPanel(
           title='Lifecycle Timing (p95)',
-          targets=targets.lifecycleTargets,
+          targets=targets.spanLifecycleTargets,
           unit='s',
           overrides=targets.lifecycleOverrides,
         ),
@@ -164,11 +165,11 @@ dashboard.new(
         description='Normal: HTTP Total < 500ms, DB < 50ms, Game Logic < 200ms, WS < 100ms. Watch for: any boundary diverging from baseline. Check next: collapsed rows below for per-boundary detail.',
       ),
 
-      // Percentile Bands panel (w=24, h=8)
+      // Percentile Bands panel (w=24, h=8) — spanmetrics
       layout.panel(
-        panels.percentileBandsPanel(
+        panels.spanPercentileBandsPanel(
           title='HTTP Latency Percentile Bands',
-          metric='http_server_request_duration_seconds_bucket',
+          spanNameFilter=targets.spans.http,
           unit='s',
         ),
         w=24, h=8,
@@ -179,14 +180,11 @@ dashboard.new(
     orientDepth={
       // ── Collapsed: Database (~9 panels) ──
       Database: [
-        // Txn Duration P50/P95/P99
+        // Txn Duration P50/P95/P99 — spanmetrics
         layout.panel(
           panels.timeseriesPanel(
             title='Txn Duration P50/P95/P99',
-            targets=targets.histogramQuantileTargetsWithExemplars(
-              'db_transaction_duration_seconds_bucket',
-              [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']],
-            ),
+            targets=targets.spanDuration(targets.spans.db, [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']], exemplars=true),
             unit='s',
             color=colors.fixedColor(colors.db),
           ),
@@ -194,7 +192,7 @@ dashboard.new(
           description='Normal: p95 < 50ms, p99 < 100ms. Watch for: p99 diverging from p95 (long-tail transactions). Check next: Pool Usage for saturation.',
         ),
 
-        // Pool Usage
+        // Pool Usage — manual gauges, keep
         layout.panel(
           panels.timeseriesPanel(
             title='Pool Usage',
@@ -210,7 +208,7 @@ dashboard.new(
           description='Normal: active well below total, healthy idle buffer. Watch for: active approaching total (saturation). Check next: Acquire Time for queue pressure.',
         ),
 
-        // Acquire Time
+        // Acquire Time — manual gauge, keep
         layout.panel(
           panels.timeseriesPanel(
             title='Acquire Time (avg)',
@@ -226,7 +224,7 @@ dashboard.new(
           description='Normal: < 1ms average acquire time. Watch for: sustained > 10ms (pool exhaustion starting). Check next: Canceled Acquires in Observe.',
         ),
 
-        // Pool Saturation
+        // Pool Saturation — manual gauge, keep
         layout.panel(
           panels.timeseriesPanel(
             title='Pool Saturation',
@@ -241,7 +239,7 @@ dashboard.new(
           description='Normal: < 60% with SLO line visible. Watch for: crossing yellow threshold under normal load. Check next: Acquire Rate for demand side.',
         ),
 
-        // Acquire Rate
+        // Acquire Rate — manual counter, keep
         layout.panel(
           panels.timeseriesPanel(
             title='Acquire Rate',
@@ -257,7 +255,7 @@ dashboard.new(
           description='Normal: proportional to request rate. Watch for: spikes not correlated with traffic. Check next: Rollbacks for failed transactions.',
         ),
 
-        // Rollbacks
+        // Rollbacks — postgres exporter, keep
         layout.panel(
           panels.timeseriesPanel(
             title='Rollbacks',
@@ -273,7 +271,7 @@ dashboard.new(
           description='Normal: near zero rollback rate. Watch for: sustained rollbacks indicating transaction conflicts. Check next: PG Connections for connection-level issues.',
         ),
 
-        // PG Connections
+        // PG Connections — postgres exporter, keep
         layout.panel(
           panels.timeseriesPanel(
             title='PG Connections',
@@ -287,7 +285,7 @@ dashboard.new(
           description='Normal: stable connection count matching pool size. Watch for: gradual increase (connection leak). Check next: PG Txns/sec for throughput.',
         ),
 
-        // PG Txns/sec
+        // PG Txns/sec — postgres exporter, keep
         layout.panel(
           panels.timeseriesPanel(
             title='PG Txns/sec',
@@ -301,7 +299,7 @@ dashboard.new(
           description='Normal: commits >> rollbacks. Watch for: rollback rate approaching commit rate. Check next: PG Rows for row-level throughput.',
         ),
 
-        // PG Rows
+        // PG Rows — postgres exporter, keep
         layout.panel(
           panels.timeseriesPanel(
             title='PG Rows',
@@ -320,15 +318,11 @@ dashboard.new(
 
       // ── Collapsed: Server & HTTP (~10 panels) ──
       'Server & HTTP': [
-        // HTTP Request Rate
+        // HTTP Request Rate — spanmetrics
         layout.panel(
           panels.timeseriesPanel(
             title='HTTP Request Rate',
-            targets=[targets.target(
-              'sum(rate(http_server_requests_total{service_name="%s"}[1m]))' % svc,
-              'req/s',
-              'A',
-            )],
+            targets=[targets.spanRate(targets.spans.http, 'req/s')],
             unit='reqps',
             color=colors.fixedColor(colors.http),
           ),
@@ -336,12 +330,12 @@ dashboard.new(
           description='Normal: stable request rate matching expected load. Watch for: sudden drops (upstream issue) or spikes (load surge). Check next: HTTP Error Rate % for failure ratio.',
         ),
 
-        // HTTP Error Rate % timeseries
+        // HTTP Error Rate % timeseries — spanmetrics
         layout.panel(
           panels.timeseriesPanel(
             title='HTTP Error Rate %',
             targets=[targets.target(
-              'sum(rate(http_server_requests_total{service_name="%s",http_status_code=~"[45].."}[1m])) / sum(rate(http_server_requests_total{service_name="%s"}[1m])) * 100' % [svc, svc],
+              'sum(rate(%s{service="%s", span_name=~"%s", status_code="STATUS_CODE_ERROR"}[1m])) / sum(rate(%s{service="%s", span_name=~"%s"}[1m])) * 100' % [targets.spanmetricsMetric.calls, svc, targets.spans.http, targets.spanmetricsMetric.calls, svc, targets.spans.http],
               'error %',
               'A',
             )],
@@ -352,14 +346,11 @@ dashboard.new(
           description='Normal: < 1% with SLO line visible. Watch for: error rate crossing SLO threshold. Check next: HTTP Latency P50/P95/P99 for latency correlation.',
         ),
 
-        // HTTP Latency P50/P95/P99
+        // HTTP Latency P50/P95/P99 — spanmetrics
         layout.panel(
           panels.timeseriesPanel(
             title='HTTP Latency P50/P95/P99',
-            targets=targets.histogramQuantileTargetsWithExemplars(
-              'http_server_request_duration_seconds_bucket',
-              [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']],
-            ),
+            targets=targets.spanDuration(targets.spans.http, [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']], exemplars=true),
             unit='s',
             color=colors.fixedColor(colors.http),
           ),
@@ -367,15 +358,11 @@ dashboard.new(
           description='Normal: p50 < 100ms, p95 < 500ms, p99 < 1s. Watch for: p99 diverging sharply from p95 (long tail). Check next: HTTP Rate by Route for per-endpoint breakdown.',
         ),
 
-        // HTTP Rate by Route
+        // HTTP Rate by Route — spanmetrics grouped by span_name
         layout.panel(
           panels.timeseriesPanel(
             title='HTTP Rate by Route',
-            targets=[targets.target(
-              'sum(rate(http_server_requests_total{service_name="%s"}[1m])) by (http_route)' % svc,
-              '{{http_route}}',
-              'A',
-            )],
+            targets=[targets.spanRateBy(targets.spans.http, 'span_name', '{{span_name}}')],
             unit='reqps',
             color=colors.fixedColor(colors.http),
           ),
@@ -383,7 +370,7 @@ dashboard.new(
           description='Normal: move endpoints dominate. Watch for: unusual routes or disproportionate rates. Check next: Game Engine dashboard for game-specific routes.',
         ),
 
-        // Process CPU
+        // Process CPU — runtime metric, keep
         layout.panel(
           panels.timeseriesPanel(
             title='Process CPU',
@@ -399,7 +386,7 @@ dashboard.new(
           description='Normal: < 1 core under normal load. Watch for: sustained increase correlated with game count. Check next: Scheduler Latency for GC pressure.',
         ),
 
-        // Scheduler Latency
+        // Scheduler Latency — runtime metric, keep
         layout.panel(
           panels.timeseriesPanel(
             title='Scheduler Latency',
@@ -414,7 +401,7 @@ dashboard.new(
           description='Normal: < 1ms scheduler latency. Watch for: spikes during GC pauses or high goroutine count. Check next: Goroutines for concurrency.',
         ),
 
-        // Goroutines
+        // Goroutines — runtime metric, keep
         layout.panel(
           panels.timeseriesPanel(
             title='Goroutines',
@@ -430,7 +417,7 @@ dashboard.new(
           description='Normal: stable count proportional to active games. Watch for: monotonic increase (goroutine leak). Check next: Heap Memory for memory pressure.',
         ),
 
-        // Heap Memory
+        // Heap Memory — runtime metric, keep
         layout.panel(
           panels.timeseriesPanel(
             title='Heap Memory',
@@ -444,7 +431,7 @@ dashboard.new(
           description='Normal: allocated tracks used with sawtooth GC pattern. Watch for: used growing without release (heap pressure). Check next: GC Goal for tuning.',
         ),
 
-        // GC Goal
+        // GC Goal — runtime metric, keep
         layout.panel(
           panels.timeseriesPanel(
             title='GC Goal',
@@ -458,7 +445,7 @@ dashboard.new(
           description='Normal: GOGC at 100%, GOMEMLIMIT stable or absent. Watch for: GOMEMLIMIT being approached by heap usage (OOM risk). Check next: Runtime Memory for total footprint.',
         ),
 
-        // Runtime Memory
+        // Runtime Memory — runtime metric, keep
         layout.panel(
           panels.timeseriesPanel(
             title='Runtime Memory',
@@ -476,14 +463,11 @@ dashboard.new(
 
       // ── Collapsed: WebSocket (~4 panels) ──
       WebSocket: [
-        // Broadcast Latency P50/P95/P99
+        // Broadcast Latency P50/P95/P99 — spanmetrics
         layout.panel(
           panels.timeseriesPanel(
             title='Broadcast Latency P50/P95/P99',
-            targets=targets.histogramQuantileTargetsWithExemplars(
-              'ws_broadcast_duration_seconds_bucket',
-              [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']],
-            ),
+            targets=targets.spanDuration(targets.spans.wsBroadcast, [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']], exemplars=true),
             unit='s',
             color=colors.fixedColor(colors.ws),
           ),
@@ -491,7 +475,7 @@ dashboard.new(
           description='Normal: p95 < 100ms. Watch for: p99 > 500ms (slow consumers blocking broadcast). Check next: Messages Rate for throughput.',
         ),
 
-        // Messages Rate
+        // Messages Rate — manual counter, keep (per-message counter, no span equivalent)
         layout.panel(
           panels.timeseriesPanel(
             title='Messages Rate',
@@ -507,12 +491,12 @@ dashboard.new(
           description='Normal: steady sent rate proportional to active games. Watch for: rate dropping to zero while games are active (broadcast failures). Check next: Fan-Out for amplification ratio.',
         ),
 
-        // Fan-Out
+        // Fan-Out — mixed: ws_messages_sent_total (manual) / bus:move_executed (spanmetrics)
         layout.panel(
           panels.timeseriesPanel(
             title='Fan-Out',
             targets=[targets.target(
-              'sum(rate(ws_messages_sent_total{service_name="%s"}[1m])) / sum(rate(event_bus_events_total{service_name="%s",event_type="move_executed"}[1m]))' % [svc, svc],
+              'sum(rate(ws_messages_sent_total{service_name="%s"}[1m])) / sum(rate(%s{service="%s", span_name="bus:move_executed"}[1m]))' % [svc, targets.spanmetricsMetric.calls, svc],
               'msgs/move',
               'A',
             )],
@@ -523,7 +507,7 @@ dashboard.new(
           description='Normal: ~4x (one broadcast per player per move). Watch for: > 10x indicates broadcast storms. Check next: Errors for delivery failures.',
         ),
 
-        // WS Errors
+        // WS Errors — manual counter, keep
         layout.panel(
           panels.timeseriesPanel(
             title='WS Errors',
@@ -545,12 +529,12 @@ dashboard.new(
     // DECIDE — Where's the bottleneck? (3 always-visible + 2 collapsed rows)
     // ════════════════════════════════════════════════════════════════
     decide=[
-      // Fan-out Amplification
+      // Fan-out Amplification — mixed: manual ws_messages / spanmetrics bus dispatch
       layout.panel(
         panels.timeseriesPanel(
           title='Fan-out Amplification',
           targets=[targets.target(
-            'sum(rate(ws_messages_sent_total{service_name="%s"}[1m])) / sum(rate(event_bus_events_total{service_name="%s",event_type="move_executed"}[1m]))' % [svc, svc],
+            'sum(rate(ws_messages_sent_total{service_name="%s"}[1m])) / sum(rate(%s{service="%s", span_name="bus:move_executed"}[1m]))' % [svc, targets.spanmetricsMetric.calls, svc],
             'msgs/move',
             'A',
           )],
@@ -561,12 +545,12 @@ dashboard.new(
         description='Normal: ~4x (one per player). Watch for: > 10x (SLO yellow) suggests broadcast storms. Check next: WebSocket collapsed row for per-message detail.',
       ),
 
-      // DB Latency Share
+      // DB Latency Share — spanmetrics for both numerator and denominator
       layout.panel(
         panels.timeseriesPanel(
           title='DB Latency Share',
           targets=[targets.target(
-            'histogram_quantile(0.95, sum(rate(db_transaction_duration_seconds_bucket{service_name="%s"}[1m])) by (le)) / histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name="%s"}[1m])) by (le)) * 100' % [svc, svc],
+            'histogram_quantile(0.95, sum(rate(%s{service="%s", span_name=~"%s"}[1m])) by (le)) / histogram_quantile(0.95, sum(rate(%s{service="%s", span_name=~"%s"}[1m])) by (le)) * 100' % [targets.spanmetricsMetric.duration, svc, targets.spans.db, targets.spanmetricsMetric.duration, svc, targets.spans.http],
             'DB % of HTTP p95',
             'A',
           )],
@@ -577,7 +561,7 @@ dashboard.new(
         description='Normal: 30-50% (DB is a fraction of total latency). Watch for: > 70% (SLO yellow) means DB dominates request time. Check next: Postgres Internals collapsed row.',
       ),
 
-      // Runtime Memory
+      // Runtime Memory — runtime metric, keep
       layout.panel(
         panels.timeseriesPanel(
           title='Runtime Memory',
@@ -704,12 +688,12 @@ dashboard.new(
 
       // ── Collapsed: Query Performance (~1 panel) ──
       'Query Performance': [
-        // Query Latency Heatmap
+        // Query Latency Heatmap — spanmetrics for DB transactions
         layout.panel(
           panels.heatmapPanel(
             title='Query Latency Heatmap',
             targets=[targets.heatmapTarget(
-              'sum(rate(db_transaction_duration_seconds_bucket{service_name="%s"}[1m])) by (le)' % svc,
+              'sum(rate(%s{service="%s", span_name=~"%s"}[1m])) by (le)' % [targets.spanmetricsMetric.duration, svc, targets.spans.db],
             )],
             unit='s',
             colorScheme='Spectral',

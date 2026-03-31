@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"os"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
@@ -60,9 +59,6 @@ func (s *service) CanPlayerReach(
 	source string,
 	target string,
 ) (bool, error) {
-	slog.DebugContext(ctx, "checking if player can reach target",
-		"source", source, "target", target)
-
 	regions, err := s.regionService.GetRegionsWithQuerier(ctx, querier)
 	if err != nil {
 		return false, fmt.Errorf("failed to get regions: %w", err)
@@ -85,8 +81,6 @@ func (s *service) CanPlayerReach(
 }
 
 func (s *service) GetBoardRegions(ctx context.Context) ([]string, error) {
-	slog.DebugContext(ctx, "getting board regions")
-
 	graph, err := s.getGraph(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get board: %w", err)
@@ -94,21 +88,13 @@ func (s *service) GetBoardRegions(ctx context.Context) ([]string, error) {
 
 	result := graph.GetRegions()
 
-	slog.DebugContext(ctx, "got board regions", "regions", result)
-
 	return result, nil
 }
 
 func (s *service) getGraph(ctx context.Context) (Graph, error) {
-	slog.DebugContext(ctx, "getting graph")
-
 	if s.graph != nil {
-		slog.DebugContext(ctx, "graph cache hit")
-
 		return s.graph, nil
 	}
-
-	slog.DebugContext(ctx, "graph cache miss, fetching board from file")
 
 	boardDto, err := s.fetchFromFile(ctx)
 	if err != nil {
@@ -120,21 +106,13 @@ func (s *service) getGraph(ctx context.Context) (Graph, error) {
 		return nil, fmt.Errorf("failed to create graph: %w", err)
 	}
 
-	slog.DebugContext(ctx, "graph cache updated")
-
 	return s.graph, nil
 }
 
 func (s *service) GetContinents(ctx ctx.GameContext) (Continents, error) {
-	slog.DebugContext(ctx, "getting continents")
-
 	if s.continents != nil {
-		slog.DebugContext(ctx, "continents cache hit")
-
 		return s.continents, nil
 	}
-
-	slog.DebugContext(ctx, "continents cache miss, fetching board from file")
 
 	boardDto, err := s.fetchFromFile(ctx)
 	if err != nil {
@@ -146,12 +124,13 @@ func (s *service) GetContinents(ctx ctx.GameContext) (Continents, error) {
 		return nil, fmt.Errorf("failed to create continents: %w", err)
 	}
 
-	slog.DebugContext(ctx, "continents cache updated")
-
 	return s.continents, nil
 }
 
-func (s *service) fetchFromFile(ctx context.Context) (*BoardDto, error) {
+//nolint:unparam // ctx reserved for future observability
+func (s *service) fetchFromFile(
+	ctx context.Context,
+) (*BoardDto, error) {
 	data, err := os.ReadFile("map.json")
 	if err != nil {
 		return nil, fmt.Errorf("error reading file: %w", err)
@@ -163,8 +142,6 @@ func (s *service) fetchFromFile(ctx context.Context) (*BoardDto, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshaling JSON: %w", err)
 	}
-
-	slog.DebugContext(ctx, "Read board from file", "board", board)
 
 	return board, nil
 }

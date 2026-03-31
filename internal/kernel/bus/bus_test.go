@@ -10,10 +10,10 @@ import (
 	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	lobbyclx "github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.opentelemetry.io/otel/trace"
@@ -540,7 +540,6 @@ func TestNewBus_FxLifecycle(t *testing.T) {
 
 	app := fx.New(
 		fx.Provide(eventbus.NewBus),
-		fx.Supply((*metrics.InfraMetrics)(nil)),
 		fx.Populate(&bus),
 		fx.NopLogger,
 	)
@@ -571,7 +570,6 @@ func TestNewBus_FxSubInterfaces(t *testing.T) {
 
 	app := fx.New(
 		eventbus.Module,
-		fx.Supply((*metrics.InfraMetrics)(nil)),
 		fx.Populate(&pub, &sub, &bus),
 		fx.NopLogger,
 	)
@@ -762,6 +760,84 @@ func TestBus_EmitLinkedSpanTopology(
 	require.True(t, ok, "detached context must be a GameContext, got %T", got.handlerCtx)
 	require.Equal(t, int64(99), handlerGameCtx.GameID())
 	require.Equal(t, "player-1", handlerGameCtx.UserID())
+}
+
+//nolint:paralleltest // swaps global TracerProvider
+func TestBus_DispatchSpanAttributes(t *testing.T) {
+	// Verifies that bus dispatch spans carry event_type and scope attributes
+	// (user_id, game_id) extracted from the parent context.
+
+	exporter := tracetest.NewInMemoryExporter()
+	tracerProvider := sdktrace.NewTracerProvider(sdktrace.WithSyncer(exporter))
+	t.Cleanup(func() { _ = tracerProvider.Shutdown(context.Background()) })
+
+	prev := otel.GetTracerProvider()
+	otel.SetTracerProvider(tracerProvider)
+	t.Cleanup(func() { otel.SetTracerProvider(prev) })
+
+	// Build a GameContext with user_id and game_id.
+	tracer := tracerProvider.Tracer("test")
+	parentCtx, parentSpan := tracer.Start(context.Background(), "trigger")
+	traceCtx := ctx.WithSpan(parentCtx, parentSpan)
+	userCtx := ctx.WithUserID(traceCtx, "player-42")
+	gameCtx := gamectx.WithGameID(userCtx, 7)
+	parentSpan.End()
+
+	bus := eventbus.NewBusForTest()
+
+	handlerDone := make(chan struct{})
+	bus.OnAll(func(_ context.Context, _ eventbus.Event) {
+		close(handlerDone)
+	})
+
+	evt := newTestEvent(7, "move.executed")
+	bus.Emit(gameCtx, evt)
+
+	// Wait for handler to complete, then close bus to flush the dispatch goroutine.
+	select {
+	case <-handlerDone:
+	case <-time.After(2 * time.Second):
+		t.Fatal("handler did not complete within timeout")
+	}
+
+	err := bus.Close(context.Background())
+	require.NoError(t, err)
+
+	// Find the bus dispatch span.
+	stubs := exporter.GetSpans()
+	var busStub *tracetest.SpanStub
+	for i := range stubs {
+		if stubs[i].Name == "bus:move.executed" {
+			busStub = &stubs[i]
+
+			break
+		}
+	}
+
+	require.NotNil(t, busStub, "bus dispatch span must be present in recorded spans")
+
+	// Build a lookup of span attributes by key.
+	attrMap := make(map[string]any, len(busStub.Attributes))
+	for _, a := range busStub.Attributes {
+		switch a.Value.Type() { //nolint:exhaustive // only STRING and INT64 are used in test assertions
+		case attribute.STRING:
+			attrMap[string(a.Key)] = a.Value.AsString()
+		case attribute.INT64:
+			attrMap[string(a.Key)] = a.Value.AsInt64()
+		}
+	}
+
+	// AC1: event_type attribute is present with the correct value.
+	require.Equal(t, "move.executed", attrMap["event_type"],
+		"dispatch span must carry event_type attribute")
+
+	// AC2: user_id scope attribute is extracted from the GameContext.
+	require.Equal(t, "player-42", attrMap["user_id"],
+		"dispatch span must carry user_id attribute from context")
+
+	// AC3: game_id scope attribute is extracted from the GameContext.
+	require.Equal(t, int64(7), attrMap["game_id"],
+		"dispatch span must carry game_id attribute from context")
 }
 
 func TestCollectHandlers_Ordering(t *testing.T) {

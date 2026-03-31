@@ -2,11 +2,12 @@ package attack
 
 import (
 	"fmt"
-	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const (
@@ -31,7 +32,7 @@ func (s *service) Walk(
 	}
 
 	if hasConquered {
-		slog.DebugContext(ctx, "must advance phase to CONQUER")
+		observe.SpanEvent(ctx, "must_advance_phase_to_conquer")
 
 		return sqlc.GamePhaseTypeCONQUER, nil
 	}
@@ -45,7 +46,7 @@ func (s *service) Walk(
 	}
 
 	if voluntaryAdvancement || !canContinueAttacking {
-		slog.DebugContext(ctx, "must advance phase to REINFORCE")
+		observe.SpanEvent(ctx, "must_advance_phase_to_reinforce")
 
 		return sqlc.GamePhaseTypeREINFORCE, nil
 	}
@@ -62,18 +63,15 @@ func (s *service) HasConquered(ctx ctx.GameContext, querier db.Querier) (bool, e
 		return false, fmt.Errorf("failed to get regions: %w", err)
 	}
 
-	slog.DebugContext(ctx, "checking if player has conquered any region", "regions", len(regions))
-
 	for _, region := range regions {
 		if region.UserID != ctx.UserID() && region.Troops == conqueredRegionTroops {
-			slog.DebugContext(ctx, "player has conquered a region",
-				"region", region.ExternalReference)
+			observe.SpanEvent(ctx, "player_has_conquered_a_region",
+				attribute.String("region", region.ExternalReference),
+			)
 
 			return true, nil
 		}
 	}
-
-	slog.DebugContext(ctx, "player has not conquered any region")
 
 	return false, nil
 }
@@ -89,17 +87,11 @@ func (s *service) CanContinueAttacking(
 		return false, fmt.Errorf("failed to get regions: %w", err)
 	}
 
-	slog.DebugContext(ctx, "checking if player can continue attacking", "regions", len(regions))
-
 	for _, region := range regions {
 		if region.UserID == ctx.UserID() && region.Troops > minTroopsToLaunchAttack {
-			slog.DebugContext(ctx, "player can continue attacking")
-
 			return true, nil
 		}
 	}
-
-	slog.DebugContext(ctx, "player can not continue attacking")
 
 	return false, nil
 }

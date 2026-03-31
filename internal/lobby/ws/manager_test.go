@@ -21,10 +21,10 @@ import (
 	"go.opentelemetry.io/otel/trace/noop"
 )
 
-func testMetrics(t *testing.T) *metrics.InfraMetrics {
+func testMetrics(t *testing.T) *metrics.StateMetrics {
 	t.Helper()
 
-	m, err := metrics.NewInfraMetrics(metricnoop.Meter{})
+	m, err := metrics.NewStateMetrics(metricnoop.Meter{})
 	require.NoError(t, err)
 
 	return m

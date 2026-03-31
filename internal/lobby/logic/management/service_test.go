@@ -13,6 +13,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/lobby/logic/management"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/lobby/data/db"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
@@ -135,15 +136,15 @@ func TestServiceImpl_GetUserLobbiesWithQuerier_Success(t *testing.T) {
 
 	querier.
 		EXPECT().
-		GetOwnedLobbies(uctx, "giovanni").
+		GetOwnedLobbies(mock.Anything, "giovanni").
 		Return(ownedLobbies, nil)
 	querier.
 		EXPECT().
-		GetJoinedLobbies(uctx, "giovanni").
+		GetJoinedLobbies(mock.Anything, "giovanni").
 		Return(joinedLobbies, nil)
 	querier.
 		EXPECT().
-		GetJoinableLobbies(uctx, "giovanni").
+		GetJoinableLobbies(mock.Anything, "giovanni").
 		Return(joinableLobbies, nil)
 
 	result, err := service.GetUserLobbiesWithQuerier(uctx, querier)
@@ -169,7 +170,7 @@ func TestServiceImpl_GetUserLobbiesWithQuerier_Failures(t *testing.T) {
 			setupMocks: func(querier *db.Querier, uctx kernelctx.UserContext) {
 				querier.
 					EXPECT().
-					GetOwnedLobbies(uctx, "giovanni").
+					GetOwnedLobbies(mock.Anything, "giovanni").
 					Return(nil, errors.New("owned query error"))
 			},
 			expectedError: "failed to get owned lobbies: owned query error",
@@ -179,11 +180,11 @@ func TestServiceImpl_GetUserLobbiesWithQuerier_Failures(t *testing.T) {
 			setupMocks: func(querier *db.Querier, uctx kernelctx.UserContext) {
 				querier.
 					EXPECT().
-					GetOwnedLobbies(uctx, "giovanni").
+					GetOwnedLobbies(mock.Anything, "giovanni").
 					Return([]sqlc.GetOwnedLobbiesRow{}, nil)
 				querier.
 					EXPECT().
-					GetJoinedLobbies(uctx, "giovanni").
+					GetJoinedLobbies(mock.Anything, "giovanni").
 					Return(nil, errors.New("joined query error"))
 			},
 			expectedError: "failed to get joined lobbies: joined query error",
@@ -193,15 +194,15 @@ func TestServiceImpl_GetUserLobbiesWithQuerier_Failures(t *testing.T) {
 			setupMocks: func(querier *db.Querier, uctx kernelctx.UserContext) {
 				querier.
 					EXPECT().
-					GetOwnedLobbies(uctx, "giovanni").
+					GetOwnedLobbies(mock.Anything, "giovanni").
 					Return([]sqlc.GetOwnedLobbiesRow{}, nil)
 				querier.
 					EXPECT().
-					GetJoinedLobbies(uctx, "giovanni").
+					GetJoinedLobbies(mock.Anything, "giovanni").
 					Return([]sqlc.GetJoinedLobbiesRow{}, nil)
 				querier.
 					EXPECT().
-					GetJoinableLobbies(uctx, "giovanni").
+					GetJoinableLobbies(mock.Anything, "giovanni").
 					Return(nil, errors.New("joinable query error"))
 			},
 			expectedError: "failed to get joinable lobbies: joinable query error",

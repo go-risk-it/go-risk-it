@@ -148,6 +148,7 @@ func TestArch_KernelProductionFileCeiling(t *testing.T) {
 var kernelMultiConsumerAllowlist = map[string]bool{
 	"kernel/slog":               true, // consumed only by app composition root
 	"kernel/logger":             true, // consumed at composition root — no production importers outside kernel
+	"kernel/observe":            true, // new foundational package — consumers will be added as call sites migrate
 	"kernel/otelsetup":          true, // consumed only by web.Module composition root
 	"kernel/upgradablerw_mutex": true, // consolidated into web/ws.ScopeMap + web/ws.PlayerConnections
 }

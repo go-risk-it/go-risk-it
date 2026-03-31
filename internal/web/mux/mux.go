@@ -1,12 +1,10 @@
 package mux
 
 import (
-	"log/slog"
 	"net/http"
 
 	"github.com/go-risk-it/go-risk-it/internal/web/middleware"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.uber.org/fx"
 )
 
@@ -18,7 +16,6 @@ func NewServeMux(
 	otelMiddleware *middleware.OTelMiddleware,
 ) http.Handler {
 	mux := http.NewServeMux()
-	routeNames := make([]string, 0, len(routes))
 
 	for _, route := range routes {
 		mux.Handle(
@@ -31,15 +28,16 @@ func NewServeMux(
 				),
 			),
 		)
-
-		routeNames = append(routeNames, route.Pattern())
 	}
-
-	slog.Info("Registered routes", "routes", routeNames)
 
 	// CORS wraps the entire mux so OPTIONS preflight requests are handled
 	// before Go's ServeMux does method matching (which would return 405).
-	return corsMiddleware.WrapHandler(otelhttp.NewHandler(mux, "/"))
+	//
+	// otelhttp.NewHandler was intentionally removed: OTelMiddleware already
+	// creates per-route spans with accurate http.route attributes. The
+	// mux-level handler added a redundant root span with route="/", which
+	// polluted spanmetrics with an uninformative aggregation.
+	return corsMiddleware.WrapHandler(mux)
 }
 
 var Module = fx.Options(

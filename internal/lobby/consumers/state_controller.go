@@ -1,8 +1,7 @@
 package consumers
 
 import (
-	"log/slog"
-
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/api/messaging"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/logic/state"
@@ -28,7 +27,7 @@ func NewStateController(
 func (s *StateController) GetLobbyState(ctx ctx.LobbyContext) (messaging.LobbyState, error) {
 	lobby, err := s.stateService.GetLobbyState(ctx)
 	if err != nil {
-		slog.WarnContext(ctx, "failed to get lobby state", "error", err)
+		observe.Warn(ctx, "failed to get lobby state")
 
 		return messaging.LobbyState{}, err
 	}

@@ -21,7 +21,7 @@ func TestUserContext_SlogAttrs(t *testing.T) {
 	attrs := userCtx.SlogAttrs()
 
 	require.Len(t, attrs, 1)
-	require.Equal(t, slog.String("userID", "user-42"), attrs[0])
+	require.Equal(t, slog.String("user_id", "user-42"), attrs[0])
 }
 
 func TestGameContext_SlogAttrs_ComposesUserAndGame(t *testing.T) {
@@ -33,11 +33,11 @@ func TestGameContext_SlogAttrs_ComposesUserAndGame(t *testing.T) {
 
 	attrs := gameCtx.SlogAttrs()
 
-	require.Len(t, attrs, 2, "GameContext must return both userID and gameID")
+	require.Len(t, attrs, 2, "GameContext must return both user_id and game_id")
 
 	attrMap := attrsToMap(attrs)
-	require.Equal(t, "player-1", attrMap["userID"].String())
-	require.Equal(t, int64(42), attrMap["gameID"].Int64())
+	require.Equal(t, "player-1", attrMap["user_id"].String())
+	require.Equal(t, int64(42), attrMap["game_id"].Int64())
 }
 
 func TestLobbyContext_SlogAttrs_ComposesUserAndLobby(t *testing.T) {
@@ -49,11 +49,11 @@ func TestLobbyContext_SlogAttrs_ComposesUserAndLobby(t *testing.T) {
 
 	attrs := lobbyCtx.SlogAttrs()
 
-	require.Len(t, attrs, 2, "LobbyContext must return both userID and lobbyID")
+	require.Len(t, attrs, 2, "LobbyContext must return both user_id and lobby_id")
 
 	attrMap := attrsToMap(attrs)
-	require.Equal(t, "host-1", attrMap["userID"].String())
-	require.Equal(t, int64(99), attrMap["lobbyID"].Int64())
+	require.Equal(t, "host-1", attrMap["user_id"].String())
+	require.Equal(t, int64(99), attrMap["lobby_id"].Int64())
 }
 
 // attrsToMap converts a slice of slog.Attr to a map keyed by attr name for easy lookup.

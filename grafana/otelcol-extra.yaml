@@ -57,6 +57,30 @@ connectors:
     metrics_flush_interval: 5s
     exemplars:
       enabled: true
+    dimensions:
+      - name: http_route
+      - name: http_method
+      - name: http_status_code
+      - name: error_category
+      - name: event_type
+      - name: handler
+      - name: isolation
+      - name: phase
+      - name: db_outcome
+      - name: ws_fanout
+    metrics_expiration: 5m
+    aggregation_cardinality_limit: 10000
+    # Verification checklist (run with live stack):
+    # (a) metric names: traces_spanmetrics_duration_seconds_bucket, traces_spanmetrics_calls_total
+    # (b) label format: check whether it's "service" or "service_name"
+    # (c) http_route dimension appears as expected label on metrics
+    # (d) metrics_expiration cleans up stale series after 5m
+    # (e) all 10 dimensions appear as labels on spanmetrics:
+    #     curl http://localhost:9090/api/v1/label/__name__/values | grep spanmetrics
+    #     curl 'http://localhost:9090/api/v1/series?match[]=traces_spanmetrics_calls_total' | jq '.data[0]'
+    #     → verify: http_route, http_method, http_status_code, event_type, handler,
+    #              phase, isolation, error_category, db_outcome, ws_fanout
+    # (f) dashboard queries resolve: open each dashboard in Grafana, verify panels render data
 
 service:
   extensions: [health_check]

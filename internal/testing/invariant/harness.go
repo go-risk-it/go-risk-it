@@ -95,7 +95,7 @@ func buildFxApp(
 	provider := metric.NewMeterProvider(metric.WithReader(reader))
 	meter := provider.Meter("invariant-test")
 
-	testMetrics, err := metrics.NewInfraMetrics(meter)
+	testMetrics, err := metrics.NewStateMetrics(meter)
 	if err != nil {
 		panic(fmt.Sprintf("failed to create test metrics: %v", err))
 	}

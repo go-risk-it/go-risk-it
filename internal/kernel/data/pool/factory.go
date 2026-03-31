@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/noop"
 	"go.uber.org/fx"
 )
 
@@ -77,7 +78,13 @@ func createPool(
 		poolConfig.MaxConnIdleTime = cfg.MaxConnIdleTime
 	}
 
-	poolConfig.ConnConfig.Tracer = otelpgx.NewTracer()
+	// Silence otelpgx's built-in metrics — we collect DB metrics via our own
+	// reportPoolStats gauge callbacks (db.pool.*) and spanmetrics from the
+	// "db.transaction" spans. otelpgx metrics would duplicate those and
+	// pollute the metric namespace.
+	poolConfig.ConnConfig.Tracer = otelpgx.NewTracer(
+		otelpgx.WithMeterProvider(noop.NewMeterProvider()),
+	)
 
 	connectionPool, err := pgxpool.NewWithConfig(ctx, poolConfig)
 	if err != nil {

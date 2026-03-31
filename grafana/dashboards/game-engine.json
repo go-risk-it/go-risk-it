@@ -124,7 +124,7 @@
             },
             "targets": [
                 {
-                    "expr": "sum(event_bus_events_total{service_name=\"risk-it\"})",
+                    "expr": "sum(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"bus:.*\"})",
                     "legendFormat": "total events",
                     "refId": "A"
                 }
@@ -179,7 +179,7 @@
             },
             "targets": [
                 {
-                    "expr": "sum(rate(event_handler_errors_total{service_name=\"risk-it\"}[5m]))",
+                    "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"consumer\\..*\", status_code=\"STATUS_CODE_ERROR\"}[1m]))",
                     "legendFormat": "errors/s",
                     "refId": "A"
                 }
@@ -317,12 +317,12 @@
             },
             "targets": [
                 {
-                    "expr": "rate(game_created_total{service_name=\"risk-it\"}[1m])",
+                    "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"bus:game_created\", status_code!=\"STATUS_CODE_ERROR\"}[1m]))",
                     "legendFormat": "Created",
                     "refId": "A"
                 },
                 {
-                    "expr": "rate(game_finished_total{service_name=\"risk-it\"}[1m])",
+                    "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"bus:game_completed\", status_code!=\"STATUS_CODE_ERROR\"}[1m]))",
                     "legendFormat": "Finished",
                     "refId": "B"
                 }
@@ -335,7 +335,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Normal: move_executed dominates, all 8 event types visible. Watch for: any event type dropping to zero while others continue. Check next: Event Handler Latency in Decide for handler-level bottlenecks.",
+            "description": "Normal: bus:move_executed dominates, all event types visible. Watch for: any event type dropping to zero while others continue. Check next: Event Handler Latency in Decide for handler-level bottlenecks.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -354,128 +354,7 @@
                     },
                     "unit": "ops"
                 },
-                "overrides": [
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "continent_captured"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#FF9830",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "continent_lost"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#FF780A",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "game_completed"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#3274D9",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "game_created"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#73BF69",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "move_executed"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#56A64B",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "phase_transitioned"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#73BF69",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "player_connected"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#8AB8FF",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "player_eliminated"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#E02F44",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    }
-                ]
+                "overrides": []
             },
             "gridPos": {
                 "h": 8,
@@ -500,8 +379,8 @@
             },
             "targets": [
                 {
-                    "expr": "sum(rate(event_bus_events_total{service_name=\"risk-it\"}[1m])) by (event_type)",
-                    "legendFormat": "{{event_type}}",
+                    "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"bus:.*\"}[1m])) by (span_name)",
+                    "legendFormat": "{{span_name}}",
                     "refId": "A"
                 }
             ],
@@ -590,7 +469,7 @@
             },
             "targets": [
                 {
-                    "expr": "sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le)",
+                    "expr": "sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"game\\.orchestrate_move\"}[1m])) by (le)",
                     "format": "heatmap",
                     "legendFormat": "{{le}}",
                     "refId": "A"
@@ -733,12 +612,12 @@
             },
             "targets": [
                 {
-                    "expr": "histogram_quantile(0.5, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le, phase))",
+                    "expr": "histogram_quantile(0.5, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"game\\.orchestrate_move\"}[1m])) by (le, phase))",
                     "legendFormat": "{{phase}} P50",
                     "refId": "A"
                 },
                 {
-                    "expr": "histogram_quantile(0.99, sum(rate(game_phase_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le, phase))",
+                    "expr": "histogram_quantile(0.99, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"game\\.orchestrate_move\"}[1m])) by (le, phase))",
                     "legendFormat": "{{phase}} P99",
                     "refId": "B"
                 }
@@ -840,17 +719,17 @@
             },
             "targets": [
                 {
-                    "expr": "sum(rate(event_bus_events_total{service_name=\"risk-it\",event_type=\"continent_captured\"}[1m]))",
+                    "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"bus:continent_captured\", status_code!=\"STATUS_CODE_ERROR\"}[1m]))",
                     "legendFormat": "Captured",
                     "refId": "A"
                 },
                 {
-                    "expr": "sum(rate(event_bus_events_total{service_name=\"risk-it\",event_type=\"continent_lost\"}[1m]))",
+                    "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"bus:continent_lost\", status_code!=\"STATUS_CODE_ERROR\"}[1m]))",
                     "legendFormat": "Lost",
                     "refId": "B"
                 },
                 {
-                    "expr": "sum(rate(event_bus_events_total{service_name=\"risk-it\",event_type=\"player_eliminated\"}[1m]))",
+                    "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"bus:player_eliminated\", status_code!=\"STATUS_CODE_ERROR\"}[1m]))",
                     "legendFormat": "Eliminated",
                     "refId": "C"
                 }
@@ -930,7 +809,7 @@
             },
             "targets": [
                 {
-                    "expr": "sum(rate(game_moves_total{service_name=\"risk-it\"}[1m])) by (phase)",
+                    "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"game\\.orchestrate_move\"}[1m])) by (phase)",
                     "legendFormat": "{{phase}}",
                     "refId": "A"
                 }
@@ -1106,8 +985,8 @@
             },
             "targets": [
                 {
-                    "expr": "histogram_quantile(0.95, sum(rate(event_handler_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le, handler))",
-                    "legendFormat": "{{handler}} p95",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"consumer\\..*\"}[1m])) by (le, span_name))",
+                    "legendFormat": "{{span_name}} p95",
                     "refId": "A"
                 }
             ],
@@ -1119,7 +998,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Normal: all event types dispatched < 50ms. Watch for: move_executed dispatch exceeding 100ms (many handlers subscribed). Check next: Event Bus Detail collapsed row for throughput and errors.",
+            "description": "Normal: all event types dispatched < 50ms. Watch for: bus:move_executed dispatch exceeding 100ms (many handlers subscribed). Check next: Event Bus Detail collapsed row for throughput and errors.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -1137,128 +1016,7 @@
                     },
                     "unit": "s"
                 },
-                "overrides": [
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "continent_captured"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#FF9830",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "continent_lost"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#FF780A",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "game_completed"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#3274D9",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "game_created"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#73BF69",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "move_executed"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#56A64B",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "phase_transitioned"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#73BF69",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "player_connected"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#8AB8FF",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "player_eliminated"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#E02F44",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    }
-                ]
+                "overrides": []
             },
             "gridPos": {
                 "h": 8,
@@ -1283,8 +1041,8 @@
             },
             "targets": [
                 {
-                    "expr": "histogram_quantile(0.95, sum(rate(event_bus_dispatch_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le, event_type))",
-                    "legendFormat": "{{event_type}}",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"bus:.*\"}[1m])) by (le, span_name))",
+                    "legendFormat": "{{span_name}}",
                     "refId": "A"
                 }
             ],
@@ -1306,7 +1064,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "description": "Normal: move_executed dominates throughput. Watch for: unexpected event type surges. Check next: Event Bus Events Total for cumulative count.",
+                    "description": "Normal: bus:move_executed dominates throughput. Watch for: unexpected event type surges. Check next: Event Bus Events Total for cumulative count.",
                     "fieldConfig": {
                         "defaults": {
                             "custom": {
@@ -1324,128 +1082,7 @@
                             },
                             "unit": "ops"
                         },
-                        "overrides": [
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "continent_captured"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#FF9830",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "continent_lost"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#FF780A",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "game_completed"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#3274D9",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "game_created"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#73BF69",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "move_executed"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#56A64B",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "phase_transitioned"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#73BF69",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "player_connected"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#8AB8FF",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "player_eliminated"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#E02F44",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            }
-                        ]
+                        "overrides": []
                     },
                     "gridPos": {
                         "h": 8,
@@ -1470,8 +1107,8 @@
                     },
                     "targets": [
                         {
-                            "expr": "sum(rate(event_bus_events_total{service_name=\"risk-it\"}[1m])) by (event_type)",
-                            "legendFormat": "{{event_type}}",
+                            "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"bus:.*\"}[1m])) by (span_name)",
+                            "legendFormat": "{{span_name}}",
                             "refId": "A"
                         }
                     ],
@@ -1520,7 +1157,7 @@
                     },
                     "targets": [
                         {
-                            "expr": "sum(event_bus_events_total{service_name=\"risk-it\"})",
+                            "expr": "sum(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"bus:.*\"})",
                             "legendFormat": "total events",
                             "refId": "A"
                         }
@@ -1583,7 +1220,7 @@
                     },
                     "targets": [
                         {
-                            "expr": "sum(game_moves_total{service_name=\"risk-it\"}) by (phase)",
+                            "expr": "sum(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"game\\.orchestrate_move\"}) by (phase)",
                             "legendFormat": "{{phase}}",
                             "refId": "A"
                         }
@@ -1639,8 +1276,8 @@
                     },
                     "targets": [
                         {
-                            "expr": "sum(rate(http_server_requests_total{service_name=\"risk-it\",http_route=~\".*games.*\"}[1m])) by (http_route)",
-                            "legendFormat": "{{http_route}}",
+                            "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*/games.*\"}[1m])) by (span_name)",
+                            "legendFormat": "{{span_name}}",
                             "refId": "A"
                         }
                     ],

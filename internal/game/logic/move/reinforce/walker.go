@@ -2,7 +2,6 @@ package reinforce
 
 import (
 	"fmt"
-	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
@@ -20,12 +19,8 @@ func (s *service) Walk(
 	}
 
 	if !hasValidCombination {
-		slog.DebugContext(ctx, "no valid combination, advancing to deploy phase")
-
 		return sqlc.GamePhaseTypeDEPLOY, nil
 	}
-
-	slog.DebugContext(ctx, "player has at least one valid combination, advancing to cards phase")
 
 	return sqlc.GamePhaseTypeCARDS, nil
 }

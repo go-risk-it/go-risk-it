@@ -17,6 +17,7 @@ graph LR
         kerneldata["Data"]
         kernelerrors["Errors"]
         kernelobservability["Observability"]
+        kernelobserve["Observe"]
         kernelutils["Utils"]
     end
 

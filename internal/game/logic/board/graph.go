@@ -3,7 +3,6 @@ package board
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"maps"
 	"slices"
 
@@ -130,6 +129,7 @@ func (g *graphImpl) CanReach(
 	return g.canReachRecursive(ctx, source, target, usableRegions, visited)
 }
 
+//nolint:unparam // ctx reserved for future observability
 func (g *graphImpl) canReachRecursive(
 	ctx context.Context,
 	source string,
@@ -138,8 +138,6 @@ func (g *graphImpl) canReachRecursive(
 	visited map[string]struct{},
 ) bool {
 	if source == target {
-		slog.DebugContext(ctx, "region is reachable", "source", source, "target", target)
-
 		return true
 	}
 

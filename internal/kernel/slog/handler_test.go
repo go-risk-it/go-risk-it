@@ -67,9 +67,9 @@ func TestPlainContext(t *testing.T) {
 	// No context fields should be present.
 	require.NotContains(t, result, "traceID")
 	require.NotContains(t, result, "spanID")
-	require.NotContains(t, result, "userID")
-	require.NotContains(t, result, "gameID")
-	require.NotContains(t, result, "lobbyID")
+	require.NotContains(t, result, "user_id")
+	require.NotContains(t, result, "game_id")
+	require.NotContains(t, result, "lobby_id")
 }
 
 func TestTraceContext(t *testing.T) {
@@ -91,9 +91,9 @@ func TestTraceContext(t *testing.T) {
 	// they should not appear.
 	require.NotContains(t, result, "traceID")
 	require.NotContains(t, result, "spanID")
-	require.NotContains(t, result, "userID")
-	require.NotContains(t, result, "gameID")
-	require.NotContains(t, result, "lobbyID")
+	require.NotContains(t, result, "user_id")
+	require.NotContains(t, result, "game_id")
+	require.NotContains(t, result, "lobby_id")
 }
 
 func TestUserContext(t *testing.T) {
@@ -110,11 +110,11 @@ func TestUserContext(t *testing.T) {
 
 	result := parseLine(t, &buf)
 	require.Equal(t, "user message", result["msg"])
-	require.Equal(t, "user-123", result["userID"])
+	require.Equal(t, "user-123", result["user_id"])
 	require.NotContains(t, result, "traceID")
 	require.NotContains(t, result, "spanID")
-	require.NotContains(t, result, "gameID")
-	require.NotContains(t, result, "lobbyID")
+	require.NotContains(t, result, "game_id")
+	require.NotContains(t, result, "lobby_id")
 }
 
 func TestGameContext(t *testing.T) {
@@ -132,11 +132,11 @@ func TestGameContext(t *testing.T) {
 
 	result := parseLine(t, &buf)
 	require.Equal(t, "game message", result["msg"])
-	require.Equal(t, "user-456", result["userID"])
-	require.InDelta(t, float64(42), result["gameID"], 0)
+	require.Equal(t, "user-456", result["user_id"])
+	require.InDelta(t, float64(42), result["game_id"], 0)
 	require.NotContains(t, result, "traceID")
 	require.NotContains(t, result, "spanID")
-	require.NotContains(t, result, "lobbyID")
+	require.NotContains(t, result, "lobby_id")
 }
 
 func TestLobbyContext(t *testing.T) {
@@ -154,11 +154,11 @@ func TestLobbyContext(t *testing.T) {
 
 	result := parseLine(t, &buf)
 	require.Equal(t, "lobby message", result["msg"])
-	require.Equal(t, "user-789", result["userID"])
-	require.InDelta(t, float64(99), result["lobbyID"], 0)
+	require.Equal(t, "user-789", result["user_id"])
+	require.InDelta(t, float64(99), result["lobby_id"], 0)
 	require.NotContains(t, result, "traceID")
 	require.NotContains(t, result, "spanID")
-	require.NotContains(t, result, "gameID")
+	require.NotContains(t, result, "game_id")
 }
 
 func TestWithAttrsPreserved(t *testing.T) {
@@ -186,7 +186,7 @@ func TestWithAttrsPreserved(t *testing.T) {
 
 	// Both explicit attrs and context attrs should be present.
 	require.Equal(t, "deploy", result["component"])
-	require.Equal(t, "user-attrs", result["userID"])
+	require.Equal(t, "user-attrs", result["user_id"])
 	require.NotContains(t, result, "traceID")
 	require.NotContains(t, result, "spanID")
 }

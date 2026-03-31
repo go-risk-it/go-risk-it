@@ -122,6 +122,7 @@ All other non-excluded packages. Required doc.go sections:
 | `kernel/errors` | kernel |
 | `kernel/logger` | kernel |
 | `kernel/metrics` | kernel |
+| `kernel/observe` | kernel |
 | `kernel/otelsetup` | kernel |
 | `kernel/slog` | kernel |
 | `kernel/upgradablerw_mutex` | kernel |
@@ -231,3 +232,19 @@ checked first (see `expectedLayer` in arch_test.go), then prefix-based rules:
 All rules only check packages that already HAVE a doc.go — they enforce
 correctness of existing files, not existence of new ones. Existence is
 ratcheted via the baseline count.
+
+## Golden File Maintenance
+
+`cmd/archdiagram/docparser/testdata/golden.json` stores expected summaries for
+every documented package. `TestGoldenFile` checks that the doc parser extracts
+the same summary from each package's doc.go.
+
+**When to update:** Whenever you change the **first paragraph** of a doc.go
+file (the text before the first `//` blank line or heading), the golden file
+entry for that package must be updated to match. The test will fail with a
+got/want diff showing the old and new summaries.
+
+**How to update:** Edit `testdata/golden.json` directly — find the package key
+(e.g., `"kernel/metrics"`) and replace its `"summary"` value with the new first
+paragraph. Run `go test ./cmd/archdiagram/docparser/ -run TestGoldenFile` to
+verify.

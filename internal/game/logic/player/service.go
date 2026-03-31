@@ -2,7 +2,6 @@ package player
 
 import (
 	"fmt"
-	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
@@ -55,14 +54,10 @@ func (s *service) GetPlayersStateWithQuerier(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) ([]sqlc.GetPlayersStateRow, error) {
-	slog.InfoContext(ctx, "fetching player state")
-
 	result, err := querier.GetPlayersState(ctx, ctx.GameID())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get players: %w", err)
 	}
-
-	slog.InfoContext(ctx, "got player state")
 
 	return result, nil
 }
@@ -76,8 +71,6 @@ func (s *service) GetPlayers(
 		return result, fmt.Errorf("failed to get players: %w", err)
 	}
 
-	slog.InfoContext(ctx, "got players")
-
 	return result, nil
 }
 
@@ -89,8 +82,6 @@ func (s *service) GetCurrentPlayer(
 	if err != nil {
 		return sqlc.GamePlayer{}, fmt.Errorf("failed to get current player: %w", err)
 	}
-
-	slog.InfoContext(ctx, "got current player", "player", nil)
 
 	return result, nil
 }
@@ -111,8 +102,6 @@ func (s *service) GetNextPlayer(
 	if err != nil {
 		return sqlc.GamePlayer{}, fmt.Errorf("failed to get next player: %w", err)
 	}
-
-	slog.InfoContext(ctx, "got next player", "player", result)
 
 	return result, nil
 }
@@ -149,8 +138,6 @@ func (s *service) CreatePlayers(
 	gameID int64,
 	players []Player,
 ) ([]sqlc.GamePlayer, error) {
-	slog.InfoContext(ctx, "creating players", "players", players)
-
 	turnIndex := int64(0)
 	playersParams := make([]sqlc.InsertPlayersParams, 0, len(players))
 
@@ -170,8 +157,6 @@ func (s *service) CreatePlayers(
 	if _, err := querier.InsertPlayers(ctx, playersParams); err != nil {
 		return nil, fmt.Errorf("failed to insert players: %w", err)
 	}
-
-	slog.InfoContext(ctx, "created players", "players", players)
 
 	result, err := querier.GetPlayersByGame(ctx, gameID)
 	if err != nil {

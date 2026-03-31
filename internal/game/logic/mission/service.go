@@ -3,7 +3,6 @@ package mission
 import (
 	"errors"
 	"fmt"
-	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
@@ -107,8 +106,6 @@ func (s *service) CreateMissions(
 	querier db.Querier,
 	players []sqlc.GamePlayer,
 ) error {
-	slog.InfoContext(ctx, "creating missions")
-
 	missions := s.GetAvailableMissions(players)
 	s.rng.Shuffle(len(missions), func(i, j int) {
 		missions[i], missions[j] = missions[j], missions[i]
@@ -122,8 +119,6 @@ func (s *service) CreateMissions(
 			return fmt.Errorf("failed to pick mission: %w", err)
 		}
 
-		slog.DebugContext(ctx, "picked mission", "mission", mission)
-
 		missionID, err := querier.InsertMission(ctx, sqlc.InsertMissionParams{
 			PlayerID: players[index].ID,
 			Type:     mission.Type(),
@@ -136,8 +131,6 @@ func (s *service) CreateMissions(
 			return fmt.Errorf("failed to persist mission specifics: %w", err)
 		}
 	}
-
-	slog.InfoContext(ctx, "created missions")
 
 	return nil
 }
@@ -208,10 +201,8 @@ func (s *service) IsMissionAccomplished(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) (bool, error) {
-	ctx, span := tracing.StartGameSpan(ctx, "game.move.check_mission")
-	defer span.End()
-
-	slog.DebugContext(ctx, "checking if mission is accomplished")
+	ctx, done := tracing.StartGameSpan(ctx, "game.move.check_mission")
+	defer done(nil)
 
 	baseMission, err := querier.GetMission(ctx, sqlc.GetMissionParams{
 		GameID: ctx.GameID(),
@@ -227,8 +218,6 @@ func (s *service) IsMissionAccomplished(
 	}
 
 	if isMissionAccomplished {
-		slog.InfoContext(ctx, "mission is accomplished, assigning winner")
-
 		if err := querier.AssignGameWinner(ctx, sqlc.AssignGameWinnerParams{
 			WinnerPlayerID: pgtype.Int8{
 				Int64: baseMission.PlayerID,
@@ -274,8 +263,6 @@ func (s *service) ReassignMissions(
 	if err := querier.DeleteSpuriousEliminatePlayerMissions(ctx, ctx.GameID()); err != nil {
 		return fmt.Errorf("failed to delete spurious missions: %w", err)
 	}
-
-	slog.InfoContext(ctx, "reassigned missions")
 
 	return nil
 }

@@ -2,8 +2,6 @@ package orchestration
 
 import (
 	"fmt"
-	"log/slog"
-	"time"
 
 	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
@@ -12,31 +10,26 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/tracing"
 	dbutil "github.com/go-risk-it/go-risk-it/internal/kernel/data"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/jackc/pgx/v5"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
 )
 
+//nolint:nonamedreturns // named returns needed for defer-based error recording
 func (s *orchestrator[T, R]) OrchestrateMove(
 	ctx gamectx.GameContext,
 	move T,
-) error {
-	ctx, span := tracing.StartGameSpan(ctx, "game.orchestrate_move",
+) (err error) {
+	ctx, done := tracing.StartGameSpan(ctx, "game.orchestrate_move",
 		attribute.String("phase", string(s.service.PhaseType())),
 	)
-	defer span.End()
-
-	start := time.Now()
+	defer func() { done(err) }()
 
 	outcome, err := s.executeTransaction(ctx, move)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-
 		return fmt.Errorf("unable to perform move: %w", err)
 	}
 
-	s.recordMetrics(ctx, start)
 	s.emitEvents(ctx, outcome)
 
 	return nil
@@ -47,7 +40,7 @@ func (s *orchestrator[T, R]) executeTransaction(
 	move T,
 ) (moveOutcome[R], error) {
 	return dbutil.InTransactionWithIsolation(
-		s.querier, ctx, s.infraMetrics, pgx.RepeatableRead,
+		s.querier, ctx, s.stateMetrics, pgx.RepeatableRead,
 		func(querier db.Querier) (moveOutcome[R], error) {
 			phase := s.service.PhaseType()
 
@@ -81,7 +74,8 @@ func (s *orchestrator[T, R]) orchestrateMoveWithQuerier(
 	gameState *state.Game,
 ) (moveOutcome[R], error) {
 	turn := gameState.Turn
-	slog.InfoContext(ctx, "orchestrating move", "move", move)
+
+	observe.SpanEvent(ctx, "orchestrating_move")
 
 	if err := s.validationService.Validate(
 		ctx, querier, gameState,
@@ -168,22 +162,14 @@ func (s *orchestrator[T, R]) walkAndAdvance(
 	}
 
 	if targetPhase == s.service.PhaseType() {
-		slog.InfoContext(ctx, "no need to advance")
-
 		return targetPhase, nil
 	}
-
-	slog.InfoContext(ctx, "advancing phase", "target", targetPhase)
 
 	if err := s.service.Advance(
 		ctx, querier, targetPhase, performResult,
 	); err != nil {
 		return "", fmt.Errorf("unable to advance move: %w", err)
 	}
-
-	slog.InfoContext(ctx, "successfully advanced phase",
-		"target", targetPhase,
-	)
 
 	return targetPhase, nil
 }

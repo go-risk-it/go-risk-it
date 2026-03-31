@@ -2,7 +2,6 @@ package conquer
 
 import (
 	"fmt"
-	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
@@ -67,8 +66,6 @@ func (s *service) GetPhaseStateWithQuerier(
 	ctx ctx.GameContext,
 	querier db.Querier,
 ) (sqlc.GetConquerPhaseStateRow, error) {
-	slog.DebugContext(ctx, "getting conquer phase state")
-
 	conquerPhase, err := querier.GetConquerPhaseState(ctx, ctx.GameID())
 	if err != nil {
 		return sqlc.GetConquerPhaseStateRow{}, fmt.Errorf(
@@ -76,8 +73,6 @@ func (s *service) GetPhaseStateWithQuerier(
 			err,
 		)
 	}
-
-	slog.DebugContext(ctx, "got conquer phase state", "phase", conquerPhase)
 
 	return conquerPhase, nil
 }

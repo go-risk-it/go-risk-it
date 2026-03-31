@@ -142,7 +142,6 @@ func (d *deps) newBroadcaster() *consumers.GameStateBroadcaster {
 		consumers.NewMissionController(d.missionSvc),
 		consumers.NewMoveLogController(d.loggingSvc),
 		gameconfig.HistoryConfig{Size: historySize},
-		nil, // metrics — nil is safe, safeOp guards with nil check
 	)
 }
 

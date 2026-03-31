@@ -23,10 +23,10 @@ import (
 
 const testPlayerID = "player-1"
 
-func testMetrics(t *testing.T) *metrics.InfraMetrics {
+func testMetrics(t *testing.T) *metrics.StateMetrics {
 	t.Helper()
 
-	m, err := metrics.NewInfraMetrics(metricnoop.Meter{})
+	m, err := metrics.NewStateMetrics(metricnoop.Meter{})
 	require.NoError(t, err)
 
 	return m
@@ -68,7 +68,7 @@ func testWSConn(t *testing.T) *websocket.Conn {
 // connectableManager creates a Manager with a mock bus publisher that allows ConnectPlayer.
 func connectableManager(
 	t *testing.T,
-	metr *metrics.InfraMetrics,
+	metr *metrics.StateMetrics,
 ) (ws.Manager, *mockbus.Publisher) {
 	t.Helper()
 

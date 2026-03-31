@@ -181,7 +181,11 @@
     },
     "kernel/metrics": {
         "layer": "Kernel",
-        "summary": "Package metrics registers OpenTelemetry instruments for infrastructure\nobservability: HTTP request handling, WebSocket broadcasting, database\ntransactions, and event bus dispatch."
+        "summary": "Package metrics registers manual OpenTelemetry instruments for resource\nstate that has no span equivalent. These are the only metrics that should\nbe created by hand \u2014 all request-scoped metrics (latency, throughput,\nerrors) are derived automatically from traces by the spanmetrics connector."
+    },
+    "kernel/observe": {
+        "layer": "Kernel",
+        "summary": "Package observe provides unified observability primitives for dual-signal\nemission: every call site emits both an slog log record and an OTel span\nevent through a single function call. Business logic uses observe instead\nof importing log/slog or go.opentelemetry.io/otel directly."
     },
     "kernel/otelsetup": {
         "layer": "Kernel",

@@ -1,12 +1,8 @@
 package consumers
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"log/slog"
-	"runtime/debug"
-	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/api/messaging"
 	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/config"
@@ -17,25 +13,16 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/snapshot"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
-	"go.opentelemetry.io/otel"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/metric"
 )
 
 // messageDispatcher sends a WS message to either a single player (WriteMessage)
 // or all players (Broadcast).
 type messageDispatcher func(ctx.GameContext, json.RawMessage)
 
-const broadcasterTracerName = "go-risk-it-broadcaster"
-
 // GameStateBroadcaster consumes game events from the bus and publishes state
-// updates over WebSocket connections. Each handler performs sequential ordered
-// delivery within a single goroutine (the bus dispatches each handler in its
-// own goroutine). Sub-operations are wrapped in safeOp for independent panic
-// recovery -- a panic in one sub-operation does not prevent the others from
-// executing.
+// updates over WebSocket connections.
 type GameStateBroadcaster struct {
 	writer            Writer
 	presence          Presence
@@ -44,7 +31,6 @@ type GameStateBroadcaster struct {
 	missionController *MissionController
 	moveLogController *MoveLogController
 	historyConfig     gameconfig.HistoryConfig
-	metrics           *metrics.InfraMetrics
 }
 
 // NewGameStateBroadcaster creates a broadcaster with narrow WS dependencies and
@@ -57,7 +43,6 @@ func NewGameStateBroadcaster(
 	missionController *MissionController,
 	moveLogController *MoveLogController,
 	historyConfig gameconfig.HistoryConfig,
-	met *metrics.InfraMetrics,
 ) *GameStateBroadcaster {
 	if historyConfig.Size <= 0 {
 		panic("HistoryConfig.Size must be > 0")
@@ -71,7 +56,6 @@ func NewGameStateBroadcaster(
 		missionController: missionController,
 		moveLogController: moveLogController,
 		historyConfig:     historyConfig,
-		metrics:           met,
 	}
 }
 
@@ -83,115 +67,62 @@ func (p *GameStateBroadcaster) Register(sub eventbus.Subscriber) {
 	gameevt.OnGameEvent[*gameevt.PlayerConnected](sub, p.handlePlayerConnected)
 }
 
-// handleMoveExecuted broadcasts public state, then private states per player,
-// then the move log entry to all connected players.
 func (p *GameStateBroadcaster) handleMoveExecuted(
 	gameCtx ctx.GameContext,
 	event *gameevt.MoveExecuted,
 ) {
-	safeOp(gameCtx, "fetchAndPublishPublicState", p.metrics, func() {
+	eventbus.SafeOp(gameCtx, "fetchAndPublishPublicState", func() {
 		fetchAndPublishPublicState(gameCtx, p.snapshotService, p.presence, p.writer.Broadcast)
 	})
 
-	safeOp(gameCtx, "publishPrivateStates", p.metrics, func() {
+	eventbus.SafeOp(gameCtx, "publishPrivateStates", func() {
 		p.publishPrivateStates(gameCtx)
 	})
 
-	safeOp(gameCtx, "publishMoveLog", p.metrics, func() {
+	eventbus.SafeOp(gameCtx, "publishMoveLog", func() {
 		p.publishMoveLog(gameCtx, event)
 	})
 }
 
-// handlePlayerConnected sends full game state to the newly connected player:
-// public state via WriteMessage, then private state for this player, then
-// recent move history.
 func (p *GameStateBroadcaster) handlePlayerConnected(
 	gameCtx ctx.GameContext,
 	_ *gameevt.PlayerConnected,
 ) {
-	safeOp(gameCtx, "fetchAndPublishPublicState", p.metrics, func() {
+	eventbus.SafeOp(gameCtx, "fetchAndPublishPublicState", func() {
 		fetchAndPublishPublicState(gameCtx, p.snapshotService, p.presence, p.writer.WriteMessage)
 	})
 
-	safeOp(gameCtx, "publishPrivateStateToPlayer", p.metrics, func() {
+	eventbus.SafeOp(gameCtx, "publishPrivateStateToPlayer", func() {
 		p.publishPrivateStateToPlayer(gameCtx)
 	})
 
-	safeOp(gameCtx, "publishMoveHistory", p.metrics, func() {
+	eventbus.SafeOp(gameCtx, "publishMoveHistory", func() {
 		p.publishMoveHistory(gameCtx)
 	})
 }
 
-// handlePhaseTransitioned broadcasts updated public and private state after a
-// phase advance (e.g., attack -> reinforce). This is separate from MoveExecuted
-// because the advancement service emits PhaseTransitioned directly without a
-// MoveExecuted event.
 func (p *GameStateBroadcaster) handlePhaseTransitioned(
 	gameCtx ctx.GameContext,
 	_ *gameevt.PhaseTransitioned,
 ) {
-	safeOp(gameCtx, "fetchAndPublishPublicState", p.metrics, func() {
+	eventbus.SafeOp(gameCtx, "fetchAndPublishPublicState", func() {
 		fetchAndPublishPublicState(gameCtx, p.snapshotService, p.presence, p.writer.Broadcast)
 	})
 
-	safeOp(gameCtx, "publishPrivateStates", p.metrics, func() {
+	eventbus.SafeOp(gameCtx, "publishPrivateStates", func() {
 		p.publishPrivateStates(gameCtx)
 	})
 }
 
-// handleGameCompleted cleans up the game's connection tracking.
 func (p *GameStateBroadcaster) handleGameCompleted(
 	gameCtx ctx.GameContext,
 	_ *gameevt.GameCompleted,
 ) {
-	safeOp(gameCtx, "removeGame", p.metrics, func() {
+	eventbus.SafeOp(gameCtx, "removeGame", func() {
 		p.lifecycle.RemoveGame(gameCtx)
 	})
 }
 
-// safeOp runs action with a child span and duration metric recording. On panic
-// it records the error on the span and logs the recovered value and stack trace.
-// This is a sequential wrapper (not a goroutine) -- the bus already owns
-// goroutine lifecycle.
-func safeOp(
-	parent context.Context,
-	name string,
-	met *metrics.InfraMetrics,
-	action func(),
-) {
-	ctx, span := otel.GetTracerProvider().
-		Tracer(broadcasterTracerName).
-		Start(parent, "consumer."+name)
-	defer span.End()
-
-	start := time.Now()
-
-	defer func() {
-		elapsed := time.Since(start).Seconds()
-
-		if met != nil {
-			met.EventHandlerDuration.Record(ctx, elapsed,
-				metric.WithAttributes(attribute.String("handler", name)))
-		}
-
-		if recovered := recover(); recovered != nil {
-			span.RecordError(fmt.Errorf("panic in %s: %v", name, recovered))
-			span.SetStatus(codes.Error, "panic")
-
-			slog.ErrorContext(ctx, "panic in consumer operation",
-				"operation", name,
-				"error", recovered,
-				"stack", string(debug.Stack()),
-			)
-		}
-	}()
-
-	action()
-}
-
-// fetchAndPublishPublicState fetches the public snapshot, converts it into typed
-// DTOs, serializes them into WS message envelopes, and dispatches each using the
-// provided dispatcher.
 func fetchAndPublishPublicState(
 	gameCtx ctx.GameContext,
 	snapshotService snapshot.Service,
@@ -200,7 +131,7 @@ func fetchAndPublishPublicState(
 ) {
 	snap, err := snapshotService.GetPublicSnapshot(gameCtx)
 	if err != nil {
-		slog.ErrorContext(gameCtx, "failed to get public snapshot", "error", err)
+		observe.Error(gameCtx, err, "failed to get public snapshot")
 
 		return
 	}
@@ -209,7 +140,7 @@ func fetchAndPublishPublicState(
 
 	msgs, err := converter.ConvertPublicSnapshot(snap, connectedPlayers)
 	if err != nil {
-		slog.ErrorContext(gameCtx, "failed to convert public snapshot", "error", err)
+		observe.Error(gameCtx, err, "failed to convert public snapshot")
 
 		return
 	}
@@ -224,14 +155,8 @@ func fetchAndPublishPublicState(
 	} {
 		msg, err := messaging.BuildMessage(item.msgType, item.payload)
 		if err != nil {
-			slog.ErrorContext(
-				gameCtx,
-				"failed to build message",
-				"type",
-				item.msgType,
-				"error",
-				err,
-			)
+			observe.Error(gameCtx, err, "failed to build message",
+				attribute.String("type", string(item.msgType)))
 
 			return
 		}
@@ -240,13 +165,10 @@ func fetchAndPublishPublicState(
 	}
 }
 
-// publishPrivateStates fetches per-player private snapshots, converts each
-// into typed DTOs, serializes them into WS message envelopes, and writes
-// them to the corresponding player's connection.
 func (p *GameStateBroadcaster) publishPrivateStates(gameCtx ctx.GameContext) {
 	snapshots, err := p.snapshotService.GetPrivateSnapshotsByUser(gameCtx)
 	if err != nil {
-		slog.ErrorContext(gameCtx, "failed to get private snapshots", "error", err)
+		observe.Error(gameCtx, err, "failed to get private snapshots")
 
 		return
 	}
@@ -256,12 +178,8 @@ func (p *GameStateBroadcaster) publishPrivateStates(gameCtx ctx.GameContext) {
 	for userID, snap := range snapshots {
 		msgs, err := converter.ConvertPrivateSnapshot(gameCtx, snap, missionResolver)
 		if err != nil {
-			slog.ErrorContext(
-				gameCtx,
-				"failed to convert private snapshot",
-				"userID", userID,
-				"error", err,
-			)
+			observe.Error(gameCtx, err, "failed to convert private snapshot",
+				attribute.String("user_id", userID))
 
 			continue
 		}
@@ -280,8 +198,8 @@ func (p *GameStateBroadcaster) publishPrivateStates(gameCtx ctx.GameContext) {
 		} {
 			msg, err := messaging.BuildMessage(item.msgType, item.payload)
 			if err != nil {
-				slog.ErrorContext(playerCtx, "failed to build private message",
-					"type", item.msgType, "error", err)
+				observe.Error(playerCtx, err, "failed to build private message",
+					attribute.String("type", string(item.msgType)))
 
 				continue
 			}
@@ -291,8 +209,6 @@ func (p *GameStateBroadcaster) publishPrivateStates(gameCtx ctx.GameContext) {
 	}
 }
 
-// publishMoveLog converts the move log from the event and broadcasts it to all
-// connected players.
 func (p *GameStateBroadcaster) publishMoveLog(
 	gameCtx ctx.GameContext,
 	event *gameevt.MoveExecuted,
@@ -302,14 +218,14 @@ func (p *GameStateBroadcaster) publishMoveLog(
 		[]sqlc.GameMoveLog{event.MoveLog},
 	)
 	if err != nil {
-		slog.ErrorContext(gameCtx, "failed to convert move log", "error", err)
+		observe.Error(gameCtx, err, "failed to convert move log")
 
 		return
 	}
 
 	msg, err := messaging.BuildMessage(messaging.MoveHistoryType, history)
 	if err != nil {
-		slog.ErrorContext(gameCtx, "failed to build move history message", "error", err)
+		observe.Error(gameCtx, err, "failed to build move history message")
 
 		return
 	}
@@ -317,13 +233,10 @@ func (p *GameStateBroadcaster) publishMoveLog(
 	p.writer.Broadcast(gameCtx, msg)
 }
 
-// publishPrivateStateToPlayer fetches per-player private snapshots, extracts the
-// connecting player's snapshot, converts it into typed DTOs, serializes them into
-// WS message envelopes, and writes them to the connecting player's connection.
 func (p *GameStateBroadcaster) publishPrivateStateToPlayer(gameCtx ctx.GameContext) {
 	snapshots, err := p.snapshotService.GetPrivateSnapshotsByUser(gameCtx)
 	if err != nil {
-		slog.ErrorContext(gameCtx, "failed to get private snapshots", "error", err)
+		observe.Error(gameCtx, err, "failed to get private snapshots")
 
 		return
 	}
@@ -332,7 +245,9 @@ func (p *GameStateBroadcaster) publishPrivateStateToPlayer(gameCtx ctx.GameConte
 
 	snap, ok := snapshots[userID]
 	if !ok {
-		slog.ErrorContext(gameCtx, "no private snapshot for connecting player", "userID", userID)
+		observe.Error(gameCtx, fmt.Errorf("no snapshot for %s", userID),
+			"no private snapshot for connecting player",
+			attribute.String("user_id", userID))
 
 		return
 	}
@@ -341,12 +256,8 @@ func (p *GameStateBroadcaster) publishPrivateStateToPlayer(gameCtx ctx.GameConte
 
 	msgs, err := converter.ConvertPrivateSnapshot(gameCtx, snap, missionResolver)
 	if err != nil {
-		slog.ErrorContext(
-			gameCtx,
-			"failed to convert private snapshot",
-			"userID", userID,
-			"error", err,
-		)
+		observe.Error(gameCtx, err, "failed to convert private snapshot",
+			attribute.String("user_id", userID))
 
 		return
 	}
@@ -360,8 +271,8 @@ func (p *GameStateBroadcaster) publishPrivateStateToPlayer(gameCtx ctx.GameConte
 	} {
 		msg, err := messaging.BuildMessage(item.msgType, item.payload)
 		if err != nil {
-			slog.ErrorContext(gameCtx, "failed to build private message",
-				"type", item.msgType, "error", err)
+			observe.Error(gameCtx, err, "failed to build private message",
+				attribute.String("type", string(item.msgType)))
 
 			continue
 		}
@@ -370,19 +281,17 @@ func (p *GameStateBroadcaster) publishPrivateStateToPlayer(gameCtx ctx.GameConte
 	}
 }
 
-// publishMoveHistory fetches the recent move history and writes it to the
-// connecting player.
 func (p *GameStateBroadcaster) publishMoveHistory(gameCtx ctx.GameContext) {
 	history, err := p.moveLogController.GetMoveLogs(gameCtx, p.historyConfig.Size)
 	if err != nil {
-		slog.ErrorContext(gameCtx, "failed to get move history", "error", err)
+		observe.Error(gameCtx, err, "failed to get move history")
 
 		return
 	}
 
 	msg, err := messaging.BuildMessage(messaging.MoveHistoryType, history)
 	if err != nil {
-		slog.ErrorContext(gameCtx, "failed to build move history message", "error", err)
+		observe.Error(gameCtx, err, "failed to build move history message")
 
 		return
 	}

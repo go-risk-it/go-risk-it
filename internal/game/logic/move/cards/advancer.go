@@ -2,12 +2,13 @@ package cards
 
 import (
 	"fmt"
-	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/phase"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const (
@@ -44,8 +45,6 @@ func (s *service) Advance(
 		return fmt.Errorf("failed to create deploy phase: %w", err)
 	}
 
-	slog.InfoContext(ctx, "created deploy phase")
-
 	return nil
 }
 
@@ -80,13 +79,11 @@ func (s *service) getDeployableTroops(
 		return -1, fmt.Errorf("failed to get continent reward: %w", err)
 	}
 
-	slog.DebugContext(ctx, "awarding deployable troops",
-		"region",
-		regionReward,
-		"continent",
-		continentReward,
-		"card",
-		cardReward)
+	observe.SpanEvent(ctx, "awarding_deployable_troops",
+		attribute.Int64("region_reward", regionReward),
+		attribute.Int64("continent_reward", continentReward),
+		attribute.Int64("card_reward", cardReward),
+	)
 
 	return regionReward + continentReward + cardReward, nil
 }

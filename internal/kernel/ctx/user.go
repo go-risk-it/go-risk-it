@@ -24,7 +24,7 @@ func (c *userContext) UserID() string {
 }
 
 func (c *userContext) SlogAttrs() []slog.Attr {
-	return []slog.Attr{slog.String("userID", c.userID)}
+	return []slog.Attr{slog.String("user_id", c.userID)}
 }
 
 func WithUserID(ctx TraceContext, userID string) UserContext {

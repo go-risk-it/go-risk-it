@@ -1,8 +1,6 @@
 package validation
 
 import (
-	"log/slog"
-
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
 )
@@ -15,8 +13,6 @@ func CheckDeclaredTroops(
 	declaredSourceTroops int64,
 	declaredTargetTroops int64,
 ) error {
-	slog.DebugContext(ctx, "checking declared values")
-
 	if sourceTroops != declaredSourceTroops {
 		return domainerrors.NewValidationError(
 			"source region doesn't have the declared number of troops",
@@ -28,8 +24,6 @@ func CheckDeclaredTroops(
 			"target region doesn't have the declared number of troops",
 		)
 	}
-
-	slog.DebugContext(ctx, "declared values check passed")
 
 	return nil
 }

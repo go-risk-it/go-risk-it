@@ -10,6 +10,7 @@ import (
 	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/mocks/internal_/game/data/db"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
@@ -52,10 +53,10 @@ func TestGetPublicSnapshot_DeployPhase(t *testing.T) {
 		{UserID: "user-2", Name: "Bob", TurnIndex: 1, CardCount: 1, RegionCount: 1},
 	}
 
-	querier.EXPECT().GetGame(gameCtx, testGameID).Return(gameRow, nil)
-	querier.EXPECT().GetDeployableTroops(gameCtx, testGameID).Return(deployableTroops, nil)
-	querier.EXPECT().GetRegionsByGame(gameCtx, testGameID).Return(regions, nil)
-	querier.EXPECT().GetPlayersState(gameCtx, testGameID).Return(players, nil)
+	querier.EXPECT().GetGame(mock.Anything, testGameID).Return(gameRow, nil)
+	querier.EXPECT().GetDeployableTroops(mock.Anything, testGameID).Return(deployableTroops, nil)
+	querier.EXPECT().GetRegionsByGame(mock.Anything, testGameID).Return(regions, nil)
+	querier.EXPECT().GetPlayersState(mock.Anything, testGameID).Return(players, nil)
 
 	result, err := svc.GetPublicSnapshot(gameCtx)
 
@@ -95,10 +96,10 @@ func TestGetPublicSnapshot_ConquerPhase(t *testing.T) {
 		{UserID: "user-1", Name: "Alice", TurnIndex: 0, CardCount: 0, RegionCount: 1},
 	}
 
-	querier.EXPECT().GetGame(gameCtx, testGameID).Return(gameRow, nil)
-	querier.EXPECT().GetConquerPhaseState(gameCtx, testGameID).Return(conquerState, nil)
-	querier.EXPECT().GetRegionsByGame(gameCtx, testGameID).Return(regions, nil)
-	querier.EXPECT().GetPlayersState(gameCtx, testGameID).Return(players, nil)
+	querier.EXPECT().GetGame(mock.Anything, testGameID).Return(gameRow, nil)
+	querier.EXPECT().GetConquerPhaseState(mock.Anything, testGameID).Return(conquerState, nil)
+	querier.EXPECT().GetRegionsByGame(mock.Anything, testGameID).Return(regions, nil)
+	querier.EXPECT().GetPlayersState(mock.Anything, testGameID).Return(players, nil)
 
 	result, err := svc.GetPublicSnapshot(gameCtx)
 
@@ -133,9 +134,9 @@ func TestGetPublicSnapshot_AttackPhase(t *testing.T) {
 		{UserID: "user-1", Name: "Alice", TurnIndex: 0, CardCount: 0, RegionCount: 1},
 	}
 
-	querier.EXPECT().GetGame(gameCtx, testGameID).Return(gameRow, nil)
-	querier.EXPECT().GetRegionsByGame(gameCtx, testGameID).Return(regions, nil)
-	querier.EXPECT().GetPlayersState(gameCtx, testGameID).Return(players, nil)
+	querier.EXPECT().GetGame(mock.Anything, testGameID).Return(gameRow, nil)
+	querier.EXPECT().GetRegionsByGame(mock.Anything, testGameID).Return(regions, nil)
+	querier.EXPECT().GetPlayersState(mock.Anything, testGameID).Return(players, nil)
 
 	result, err := svc.GetPublicSnapshot(gameCtx)
 
@@ -165,9 +166,9 @@ func TestGetPublicSnapshot_CardsPhase(t *testing.T) {
 	regions := []sqlc.GetRegionsByGameRow{}
 	players := []sqlc.GetPlayersStateRow{}
 
-	querier.EXPECT().GetGame(gameCtx, testGameID).Return(gameRow, nil)
-	querier.EXPECT().GetRegionsByGame(gameCtx, testGameID).Return(regions, nil)
-	querier.EXPECT().GetPlayersState(gameCtx, testGameID).Return(players, nil)
+	querier.EXPECT().GetGame(mock.Anything, testGameID).Return(gameRow, nil)
+	querier.EXPECT().GetRegionsByGame(mock.Anything, testGameID).Return(regions, nil)
+	querier.EXPECT().GetPlayersState(mock.Anything, testGameID).Return(players, nil)
 
 	result, err := svc.GetPublicSnapshot(gameCtx)
 
@@ -194,9 +195,9 @@ func TestGetPublicSnapshot_ReinforcePhase(t *testing.T) {
 	regions := []sqlc.GetRegionsByGameRow{}
 	players := []sqlc.GetPlayersStateRow{}
 
-	querier.EXPECT().GetGame(gameCtx, testGameID).Return(gameRow, nil)
-	querier.EXPECT().GetRegionsByGame(gameCtx, testGameID).Return(regions, nil)
-	querier.EXPECT().GetPlayersState(gameCtx, testGameID).Return(players, nil)
+	querier.EXPECT().GetGame(mock.Anything, testGameID).Return(gameRow, nil)
+	querier.EXPECT().GetRegionsByGame(mock.Anything, testGameID).Return(regions, nil)
+	querier.EXPECT().GetPlayersState(mock.Anything, testGameID).Return(players, nil)
 
 	result, err := svc.GetPublicSnapshot(gameCtx)
 
@@ -215,7 +216,7 @@ func TestGetPublicSnapshot_GameError(t *testing.T) {
 	gameCtx := gameContext(t)
 
 	gameErr := errors.New("db connection failed")
-	querier.EXPECT().GetGame(gameCtx, testGameID).Return(sqlc.GetGameRow{}, gameErr)
+	querier.EXPECT().GetGame(mock.Anything, testGameID).Return(sqlc.GetGameRow{}, gameErr)
 
 	result, err := svc.GetPublicSnapshot(gameCtx)
 
@@ -240,8 +241,8 @@ func TestGetPublicSnapshot_DeployTroopsError(t *testing.T) {
 	}
 	deployErr := errors.New("deploy query failed")
 
-	querier.EXPECT().GetGame(gameCtx, testGameID).Return(gameRow, nil)
-	querier.EXPECT().GetDeployableTroops(gameCtx, testGameID).Return(int64(0), deployErr)
+	querier.EXPECT().GetGame(mock.Anything, testGameID).Return(gameRow, nil)
+	querier.EXPECT().GetDeployableTroops(mock.Anything, testGameID).Return(int64(0), deployErr)
 
 	result, err := svc.GetPublicSnapshot(gameCtx)
 
@@ -266,9 +267,9 @@ func TestGetPublicSnapshot_ConquerStateError(t *testing.T) {
 	}
 	conquerErr := errors.New("conquer query failed")
 
-	querier.EXPECT().GetGame(gameCtx, testGameID).Return(gameRow, nil)
+	querier.EXPECT().GetGame(mock.Anything, testGameID).Return(gameRow, nil)
 	querier.EXPECT().
-		GetConquerPhaseState(gameCtx, testGameID).
+		GetConquerPhaseState(mock.Anything, testGameID).
 		Return(sqlc.GetConquerPhaseStateRow{}, conquerErr)
 
 	result, err := svc.GetPublicSnapshot(gameCtx)
@@ -294,8 +295,8 @@ func TestGetPublicSnapshot_RegionsError(t *testing.T) {
 	}
 	regionsErr := errors.New("regions query failed")
 
-	querier.EXPECT().GetGame(gameCtx, testGameID).Return(gameRow, nil)
-	querier.EXPECT().GetRegionsByGame(gameCtx, testGameID).Return(nil, regionsErr)
+	querier.EXPECT().GetGame(mock.Anything, testGameID).Return(gameRow, nil)
+	querier.EXPECT().GetRegionsByGame(mock.Anything, testGameID).Return(nil, regionsErr)
 
 	result, err := svc.GetPublicSnapshot(gameCtx)
 
@@ -323,9 +324,9 @@ func TestGetPublicSnapshot_PlayersError(t *testing.T) {
 	}
 	playersErr := errors.New("players query failed")
 
-	querier.EXPECT().GetGame(gameCtx, testGameID).Return(gameRow, nil)
-	querier.EXPECT().GetRegionsByGame(gameCtx, testGameID).Return(regions, nil)
-	querier.EXPECT().GetPlayersState(gameCtx, testGameID).Return(nil, playersErr)
+	querier.EXPECT().GetGame(mock.Anything, testGameID).Return(gameRow, nil)
+	querier.EXPECT().GetRegionsByGame(mock.Anything, testGameID).Return(regions, nil)
+	querier.EXPECT().GetPlayersState(mock.Anything, testGameID).Return(nil, playersErr)
 
 	result, err := svc.GetPublicSnapshot(gameCtx)
 
@@ -381,9 +382,9 @@ func TestGetPrivateSnapshotsByUser_MultiplePlayersPartitioned(t *testing.T) {
 		{ID: 400, PlayerID: 40, Type: sqlc.GameMissionTypeEIGHTEENTERRITORIESTWOTROOPS},
 	}
 
-	querier.EXPECT().GetPlayersByGame(gameCtx, testGameID).Return(players, nil)
-	querier.EXPECT().GetAllCardsForGame(gameCtx, testGameID).Return(cards, nil)
-	querier.EXPECT().GetAllMissionsForGame(gameCtx, testGameID).Return(missions, nil)
+	querier.EXPECT().GetPlayersByGame(mock.Anything, testGameID).Return(players, nil)
+	querier.EXPECT().GetAllCardsForGame(mock.Anything, testGameID).Return(cards, nil)
+	querier.EXPECT().GetAllMissionsForGame(mock.Anything, testGameID).Return(missions, nil)
 
 	result, err := svc.GetPrivateSnapshotsByUser(gameCtx)
 
@@ -463,9 +464,9 @@ func TestGetPrivateSnapshotsByUser_PlayerWithNoCards(t *testing.T) {
 		{ID: 100, PlayerID: 10, Type: sqlc.GameMissionTypeTWOCONTINENTSPLUSONE},
 	}
 
-	querier.EXPECT().GetPlayersByGame(gameCtx, testGameID).Return(players, nil)
-	querier.EXPECT().GetAllCardsForGame(gameCtx, testGameID).Return(cards, nil)
-	querier.EXPECT().GetAllMissionsForGame(gameCtx, testGameID).Return(missions, nil)
+	querier.EXPECT().GetPlayersByGame(mock.Anything, testGameID).Return(players, nil)
+	querier.EXPECT().GetAllCardsForGame(mock.Anything, testGameID).Return(cards, nil)
+	querier.EXPECT().GetAllMissionsForGame(mock.Anything, testGameID).Return(missions, nil)
 
 	result, err := svc.GetPrivateSnapshotsByUser(gameCtx)
 
@@ -485,7 +486,7 @@ func TestGetPrivateSnapshotsByUser_PlayersError(t *testing.T) {
 	gameCtx := gameContext(t)
 
 	playersErr := errors.New("players query failed")
-	querier.EXPECT().GetPlayersByGame(gameCtx, testGameID).Return(nil, playersErr)
+	querier.EXPECT().GetPlayersByGame(mock.Anything, testGameID).Return(nil, playersErr)
 
 	result, err := svc.GetPrivateSnapshotsByUser(gameCtx)
 
@@ -507,8 +508,8 @@ func TestGetPrivateSnapshotsByUser_CardsError(t *testing.T) {
 	}
 	cardsErr := errors.New("cards query failed")
 
-	querier.EXPECT().GetPlayersByGame(gameCtx, testGameID).Return(players, nil)
-	querier.EXPECT().GetAllCardsForGame(gameCtx, testGameID).Return(nil, cardsErr)
+	querier.EXPECT().GetPlayersByGame(mock.Anything, testGameID).Return(players, nil)
+	querier.EXPECT().GetAllCardsForGame(mock.Anything, testGameID).Return(nil, cardsErr)
 
 	result, err := svc.GetPrivateSnapshotsByUser(gameCtx)
 
@@ -531,9 +532,9 @@ func TestGetPrivateSnapshotsByUser_MissionsError(t *testing.T) {
 	cards := []sqlc.GetAllCardsForGameRow{}
 	missionsErr := errors.New("missions query failed")
 
-	querier.EXPECT().GetPlayersByGame(gameCtx, testGameID).Return(players, nil)
-	querier.EXPECT().GetAllCardsForGame(gameCtx, testGameID).Return(cards, nil)
-	querier.EXPECT().GetAllMissionsForGame(gameCtx, testGameID).Return(nil, missionsErr)
+	querier.EXPECT().GetPlayersByGame(mock.Anything, testGameID).Return(players, nil)
+	querier.EXPECT().GetAllCardsForGame(mock.Anything, testGameID).Return(cards, nil)
+	querier.EXPECT().GetAllMissionsForGame(mock.Anything, testGameID).Return(nil, missionsErr)
 
 	result, err := svc.GetPrivateSnapshotsByUser(gameCtx)
 
@@ -550,11 +551,13 @@ func TestGetPrivateSnapshotsByUser_EmptyGame(t *testing.T) {
 
 	gameCtx := gameContext(t)
 
-	querier.EXPECT().GetPlayersByGame(gameCtx, testGameID).Return([]sqlc.GamePlayer{}, nil)
+	querier.EXPECT().GetPlayersByGame(mock.Anything, testGameID).Return([]sqlc.GamePlayer{}, nil)
 	querier.EXPECT().
-		GetAllCardsForGame(gameCtx, testGameID).
+		GetAllCardsForGame(mock.Anything, testGameID).
 		Return([]sqlc.GetAllCardsForGameRow{}, nil)
-	querier.EXPECT().GetAllMissionsForGame(gameCtx, testGameID).Return([]sqlc.GameMission{}, nil)
+	querier.EXPECT().
+		GetAllMissionsForGame(mock.Anything, testGameID).
+		Return([]sqlc.GameMission{}, nil)
 
 	result, err := svc.GetPrivateSnapshotsByUser(gameCtx)
 

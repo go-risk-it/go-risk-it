@@ -2,7 +2,6 @@ package creation
 
 import (
 	"fmt"
-	"log/slog"
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
@@ -18,6 +17,7 @@ import (
 	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	dbutil "github.com/go-risk-it/go-risk-it/internal/kernel/data"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -42,7 +42,7 @@ type service struct {
 	missionService mission.Service
 	playerService  player.Service
 	regionService  region.Service
-	infraMetrics   *metrics.InfraMetrics
+	stateMetrics   *metrics.StateMetrics
 	gameMetrics    *gamemetrics.GameMetrics
 	gameTiming     *gamemetrics.GameTiming
 }
@@ -56,7 +56,7 @@ func NewService(
 	missionService mission.Service,
 	playerService player.Service,
 	regionService region.Service,
-	infraMetrics *metrics.InfraMetrics,
+	stateMetrics *metrics.StateMetrics,
 	gameMetrics *gamemetrics.GameMetrics,
 	gameTiming *gamemetrics.GameTiming,
 ) Service {
@@ -67,7 +67,7 @@ func NewService(
 		missionService: missionService,
 		regionService:  regionService,
 		cardService:    cardService,
-		infraMetrics:   infraMetrics,
+		stateMetrics:   stateMetrics,
 		gameMetrics:    gameMetrics,
 		gameTiming:     gameTiming,
 	}
@@ -81,7 +81,7 @@ func (s *service) CreateGame(
 	gameID, err := dbutil.InTransaction(
 		s.querier,
 		ctx,
-		s.infraMetrics,
+		s.stateMetrics,
 		func(qtx db.Querier) (int64, error) {
 			return s.CreateGameWithQuerier(ctx, qtx, regions, players)
 		},
@@ -90,7 +90,6 @@ func (s *service) CreateGame(
 		return -1, fmt.Errorf("failed to create game: %w", err)
 	}
 
-	s.gameMetrics.GamesCreated.Add(ctx, 1)
 	s.gameMetrics.ActiveGames.Add(ctx, 1)
 	s.gameTiming.RecordStart(gameID)
 
@@ -99,13 +98,21 @@ func (s *service) CreateGame(
 	return gameID, nil
 }
 
+//nolint:nonamedreturns // named returns needed for defer-based error recording
 func (s *service) CreateGameWithQuerier(
 	userCtx kernelctx.UserContext,
 	querier db.Querier,
 	regions []string,
 	players []player.Player,
-) (int64, error) {
-	slog.InfoContext(userCtx, "creating game", "regions", len(regions), "players", len(players))
+) (result int64, err error) {
+	spanCtx, done := observe.Span(userCtx, "game.create")
+	defer func() { done(err) }()
+
+	// Rebuild typed context with span so child DB calls are grouped.
+	userCtx = kernelctx.WithUserID(
+		kernelctx.WithSpanFromContext(spanCtx),
+		userCtx.UserID(),
+	)
 
 	game, err := querier.InsertGame(userCtx)
 	if err != nil {
@@ -133,14 +140,9 @@ func (s *service) CreateGameWithQuerier(
 		return -1, fmt.Errorf("failed to create cards: %w", err)
 	}
 
-	slog.DebugContext(gameCtx, "creating initial phase", "gameID", game.ID)
-
 	if err := s.createPhase(gameCtx, querier, game); err != nil {
 		return -1, fmt.Errorf("failed to create phase: %w", err)
 	}
-
-	slog.InfoContext(gameCtx, "successfully created game",
-		"regions", len(regions), "players", len(players))
 
 	return game.ID, nil
 }
@@ -159,16 +161,12 @@ func (s *service) createPhase(
 		return fmt.Errorf("failed to create initial phase: %w", err)
 	}
 
-	slog.InfoContext(ctx, "updating game phase", "gameID", game.ID, "phaseID", phase.ID)
-
 	if err := querier.SetGamePhase(ctx, sqlc.SetGamePhaseParams{
 		ID:             game.ID,
 		CurrentPhaseID: pgtype.Int8{Int64: phase.ID, Valid: true},
 	}); err != nil {
 		return fmt.Errorf("failed to update game phase: %w", err)
 	}
-
-	slog.InfoContext(ctx, "updated phase, creating deploy phase")
 
 	if _, err = querier.InsertDeployPhase(ctx, sqlc.InsertDeployPhaseParams{
 		PhaseID:          phase.ID,

@@ -26,7 +26,7 @@ type OrchestratorDeps struct {
 	MissionService    mission.Service
 	ValidationService ValidationService
 	Bus               bus.Publisher
-	InfraMetrics      *metrics.InfraMetrics
+	StateMetrics      *metrics.StateMetrics
 	GameMetrics       *gamemetrics.GameMetrics
 	GameTiming        *gamemetrics.GameTiming
 }
@@ -39,7 +39,7 @@ type orchestrator[T, R any] struct {
 	missionService    mission.Service
 	validationService ValidationService
 	bus               bus.Publisher
-	infraMetrics      *metrics.InfraMetrics
+	stateMetrics      *metrics.StateMetrics
 	gameMetrics       *gamemetrics.GameMetrics
 	gameTiming        *gamemetrics.GameTiming
 }
@@ -54,7 +54,7 @@ func NewOrchestrator[T, R any](
 	missionService mission.Service,
 	validationService ValidationService,
 	bus bus.Publisher,
-	infraMetrics *metrics.InfraMetrics,
+	stateMetrics *metrics.StateMetrics,
 	gameMetrics *gamemetrics.GameMetrics,
 	gameTiming *gamemetrics.GameTiming,
 ) Orchestrator[T, R] {
@@ -66,7 +66,7 @@ func NewOrchestrator[T, R any](
 		missionService:    missionService,
 		validationService: validationService,
 		bus:               bus,
-		infraMetrics:      infraMetrics,
+		stateMetrics:      stateMetrics,
 		gameMetrics:       gameMetrics,
 		gameTiming:        gameTiming,
 	}
@@ -129,7 +129,7 @@ func newOrchestratorFromDeps[T, R any](
 		deps.MissionService,
 		deps.ValidationService,
 		deps.Bus,
-		deps.InfraMetrics,
+		deps.StateMetrics,
 		deps.GameMetrics,
 		deps.GameTiming,
 	)

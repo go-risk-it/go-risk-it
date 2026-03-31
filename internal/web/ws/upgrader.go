@@ -49,7 +49,7 @@ func New(serverConfig config.ServerConfig, _ ...any) Upgrader {
 	}
 
 	wsUpgrader.OnOpen(func(connection *websocket.Conn) {
-		slog.Info("Connection opened", "remoteAddress", connection.RemoteAddr().String())
+		slog.Info("connection opened", "remoteAddress", connection.RemoteAddr().String())
 		connection.Keepalive(pingInterval)
 	})
 
@@ -61,9 +61,9 @@ func New(serverConfig config.ServerConfig, _ ...any) Upgrader {
 
 	wsUpgrader.OnClose(func(connection *websocket.Conn, err error) {
 		if err != nil {
-			slog.Info("Connection closed with error", "error", err)
+			slog.Info("connection closed with error", "error", err)
 		} else {
-			slog.Info("Connection closed", "remoteAddress", connection.RemoteAddr().String())
+			slog.Info("connection closed", "remoteAddress", connection.RemoteAddr().String())
 		}
 	})
 

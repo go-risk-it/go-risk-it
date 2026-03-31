@@ -3,7 +3,6 @@ package middleware
 import (
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"strings"
 
@@ -42,11 +41,6 @@ func (m *AuthMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
 				return
 			}
 
-			slog.DebugContext(
-				traceContext,
-				"applying auth middleware",
-			)
-
 			subject, err := m.verifyJWT(request)
 			if err != nil {
 				_ = restutils.WriteError(
@@ -59,11 +53,6 @@ func (m *AuthMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
 
 				return
 			}
-
-			slog.DebugContext(
-				traceContext,
-				"Auth token is valid",
-			)
 
 			userContext := ctx.WithUserID(traceContext, subject)
 

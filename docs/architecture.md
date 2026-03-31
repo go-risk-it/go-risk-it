@@ -56,6 +56,7 @@ graph TD
         pkg_kernel_data["Data"]
         pkg_kernel_errors["Errors"]
         pkg_kernel_observability["Observability"]
+        pkg_kernel_observe["Observe"]
         pkg_kernel_utils["Utils"]
     end
 

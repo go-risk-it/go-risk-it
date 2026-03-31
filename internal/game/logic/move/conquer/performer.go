@@ -2,12 +2,13 @@ package conquer
 
 import (
 	"fmt"
-	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const (
@@ -21,7 +22,9 @@ func (s *service) Perform(
 	querier db.Querier,
 	move Move,
 ) (struct{}, error) {
-	slog.DebugContext(ctx, "performing conquer move", "move", move)
+	observe.SpanEvent(ctx, "performing_conquer_move",
+		attribute.Int64("troops", move.Troops),
+	)
 
 	phaseState, err := s.GetPhaseStateWithQuerier(ctx, querier)
 	if err != nil {
@@ -71,8 +74,6 @@ func (s *service) Perform(
 		}
 	}
 
-	slog.DebugContext(ctx, "conquer executed successfully")
-
 	return struct{}{}, nil
 }
 
@@ -100,8 +101,6 @@ func (s *service) updateRegionTroops(
 	); err != nil {
 		return 0, fmt.Errorf("failed to increase troops in target region: %w", err)
 	}
-
-	slog.DebugContext(ctx, "troops updated successfully")
 
 	defeatedPlayerID, err := s.regionService.UpdateRegionOwner(
 		ctx,
@@ -137,8 +136,6 @@ func (s *service) handlePlayerEliminated(
 	querier db.Querier,
 	eliminatedPlayerID int64,
 ) error {
-	slog.InfoContext(ctx, "defending player has been eliminated", "defender", eliminatedPlayerID)
-
 	if err := s.cardService.TransferCardsOwnership(ctx, querier, eliminatedPlayerID); err != nil {
 		return fmt.Errorf("unable to advance phase: %w", err)
 	}

@@ -4,7 +4,6 @@ import (
 	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/config"
 	"github.com/go-risk-it/go-risk-it/internal/game/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/bus"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"go.uber.org/fx"
 )
 
@@ -20,7 +19,6 @@ type Params struct {
 	MissionController *MissionController
 	MoveLogController *MoveLogController
 	HistoryConfig     gameconfig.HistoryConfig
-	Metrics           *metrics.InfraMetrics
 }
 
 func newGameStateBroadcaster(params Params) *GameStateBroadcaster {
@@ -32,7 +30,6 @@ func newGameStateBroadcaster(params Params) *GameStateBroadcaster {
 		params.MissionController,
 		params.MoveLogController,
 		params.HistoryConfig,
-		params.Metrics,
 	)
 }
 
