@@ -309,7 +309,7 @@ func TestRegister_LogsTraceIDFromLinkedSpan(
 	parentTraceID := parentSpan.SpanContext().TraceID()
 	parentSpan.End()
 
-	// Build a GameContext carrying the parent span so DetachOnto copies domain metadata.
+	// Build a GameContext carrying the parent span so Rebase copies domain metadata.
 	traceCtx := ctx.WithSpan(parentCtx, parentSpan)
 	userCtx := ctx.WithUserID(traceCtx, "player1")
 	gameCtx := gamectx.WithGameID(userCtx, 42)

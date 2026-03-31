@@ -11,6 +11,7 @@ import (
 	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
+	lobbyctx "github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
@@ -446,4 +447,99 @@ func TestInfo_NoSpanInContext_StillLogsSlog(t *testing.T) {
 	result := parseLogLine(t, buf)
 	assert.Equal(t, "no-span info", result["msg"])
 	assert.Equal(t, "val", result["key"])
+}
+
+// ---------------------------------------------------------------------------
+// Tests: Auto-rebase — Span preserves domain context type
+// ---------------------------------------------------------------------------
+
+// buildUserContext creates a bare UserContext chain for testing.
+func buildUserContext(t *testing.T) ctx.UserContext {
+	t.Helper()
+
+	parentCtx, parentSpan := startParentSpan(t)
+	traceCtx := ctx.WithSpan(parentCtx, parentSpan)
+
+	return ctx.WithUserID(traceCtx, "user-bare")
+}
+
+//nolint:paralleltest // swaps global TracerProvider
+func TestSpan_AutoRebase_GameContext_ReturnsGameContext(t *testing.T) {
+	setupTracing(t)
+
+	gameCtx := buildGameContext(t)
+
+	childCtx, done := observe.Span(gameCtx, "game-op")
+	defer done(nil)
+
+	gc, ok := childCtx.(gamectx.GameContext)
+	require.True(t, ok, "Span must return a GameContext when given a GameContext")
+	assert.Equal(t, int64(99), gc.GameID())
+	assert.Equal(t, "user-42", gc.UserID())
+}
+
+//nolint:paralleltest // swaps global TracerProvider
+func TestSpan_AutoRebase_LobbyContext_ReturnsLobbyContext(t *testing.T) {
+	setupTracing(t)
+
+	lobbyCtx := buildLobbyContext(t)
+
+	childCtx, done := observe.Span(lobbyCtx, "lobby-op")
+	defer done(nil)
+
+	lc, ok := childCtx.(lobbyctx.LobbyContext)
+	require.True(t, ok, "Span must return a LobbyContext when given a LobbyContext")
+	assert.Equal(t, int64(77), lc.LobbyID())
+	assert.Equal(t, "user-42", lc.UserID())
+}
+
+//nolint:paralleltest // swaps global TracerProvider
+func TestSpan_AutoRebase_UserContext_ReturnsUserContext(t *testing.T) {
+	setupTracing(t)
+
+	userCtx := buildUserContext(t)
+
+	childCtx, done := observe.Span(userCtx, "user-op")
+	defer done(nil)
+
+	uc, ok := childCtx.(ctx.UserContext)
+	require.True(t, ok, "Span must return a UserContext when given a UserContext")
+	assert.Equal(t, "user-bare", uc.UserID())
+}
+
+//nolint:paralleltest // swaps global TracerProvider
+func TestSpan_AutoRebase_PlainContext_ReturnsPlainContext(t *testing.T) {
+	setupTracing(t)
+
+	childCtx, done := observe.Span(context.Background(), "plain-op")
+	defer done(nil)
+
+	// A plain context should NOT be a Rebaseable or any domain context.
+	_, isRebaseable := childCtx.(ctx.Rebaseable)
+	assert.False(t, isRebaseable, "plain context must not become Rebaseable after Span")
+
+	_, isGame := childCtx.(gamectx.GameContext)
+	assert.False(t, isGame, "plain context must not become GameContext after Span")
+}
+
+//nolint:paralleltest // swaps global TracerProvider
+func TestSpan_AutoRebase_PreservesTraceParentChain(t *testing.T) {
+	exporter := setupTracing(t)
+
+	gameCtx := buildGameContext(t)
+	parentSpan := trace.SpanFromContext(gameCtx)
+	parentTraceID := parentSpan.SpanContext().TraceID()
+	parentSpanID := parentSpan.SpanContext().SpanID()
+
+	_, done := observe.Span(gameCtx, "child-trace-op")
+	done(nil)
+
+	stubs := exporter.GetSpans()
+	stub := findSpan(stubs, "child-trace-op")
+	require.NotNil(t, stub, "child span must be recorded")
+
+	assert.Equal(t, parentTraceID, stub.SpanContext.TraceID(),
+		"child must be in same trace as parent")
+	assert.Equal(t, parentSpanID, stub.Parent.SpanID(),
+		"child's parent must be the parent span")
 }

@@ -11,7 +11,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/orchestration"
 	moveservice "github.com/go-risk-it/go-risk-it/internal/game/logic/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/state"
-	"github.com/go-risk-it/go-risk-it/internal/game/tracing"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	dbutil "github.com/go-risk-it/go-risk-it/internal/kernel/data"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
@@ -66,7 +65,7 @@ func NewService[T, R any](
 func (s *service[T, R]) Advance(ctx gamectx.GameContext) (err error) {
 	currentPhase := s.moveService.PhaseType()
 
-	ctx, done := tracing.StartGameSpan(ctx, "game.advance",
+	ctx, done := observe.TypedSpan(ctx, "game.advance",
 		attribute.String("phase", string(currentPhase)),
 	)
 	defer func() { done(err) }()
@@ -148,8 +147,6 @@ func (s *service[T, R]) getAndValidateState(
 	}
 
 	if err := s.validationService.Validate(ctx, querier, game); err != nil {
-		observe.Error(ctx, err, "validation failed")
-
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 

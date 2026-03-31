@@ -1,11 +1,20 @@
 package internal_test
 
 import (
+	"bufio"
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"os"
+	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
 
 // ─── Rules 14–16: Package Quality Metrics ───
+
+const docGoFile = "doc.go"
 
 // Rule 14: no package exceeds the export ceiling (excluding generated packages).
 func TestArch_MaxExportsPerPackage(t *testing.T) {
@@ -123,7 +132,7 @@ func TestArch_KernelProductionFileCeiling(t *testing.T) {
 
 	for _, pkg := range pkgs {
 		for _, goFile := range pkg.GoFiles {
-			if strings.HasSuffix(goFile, "_test.go") || goFile == "doc.go" {
+			if strings.HasSuffix(goFile, "_test.go") || goFile == docGoFile {
 				continue
 			}
 
@@ -238,4 +247,279 @@ func TestArch_KernelPackagesHaveMultipleConsumers(
 				kpkg, len(groups), groupNames)
 		}
 	}
+}
+
+// ─── Rule 25: Observe done(nil) Safety ───
+
+// doneNilPattern matches literal `defer done(nil)` statements.
+//
+//nolint:gochecknoglobals // test-only regex
+var doneNilPattern = regexp.MustCompile(`\bdefer\s+done\(nil\)`)
+
+// enclosingFuncReturnsError scans backward from lineIdx to find the nearest
+// func declaration and checks if its return type list includes "error".
+func enclosingFuncReturnsError(lines []string, lineIdx int) bool {
+	for scanIdx := lineIdx - 1; scanIdx >= 0; scanIdx-- {
+		line := strings.TrimSpace(lines[scanIdx])
+
+		// Skip blank lines and comments.
+		if line == "" || strings.HasPrefix(line, "//") {
+			continue
+		}
+
+		// Found the enclosing func declaration (may span multiple lines;
+		// look for the closing `)` of the return list on this or subsequent lines).
+		if strings.HasPrefix(line, "func ") || strings.HasPrefix(line, "func(") {
+			// Reconstruct the full signature (may be split across lines).
+			sig := line
+			var sigSb273 strings.Builder
+			for j := scanIdx + 1; j < lineIdx; j++ {
+				sigSb273.WriteString(" " + strings.TrimSpace(lines[j]))
+				if strings.Contains(lines[j], "{") {
+					break
+				}
+			}
+			sig += sigSb273.String()
+
+			return strings.Contains(sig, "error")
+		}
+
+		// If we hit a closing brace of a previous function, stop — we're
+		// not inside a func.
+		if line == "}" {
+			return false
+		}
+	}
+
+	return false
+}
+
+// Rule 25: defer done(nil) must only appear in void functions (no error return).
+// In error-returning functions, use `defer func() { done(err) }()` or
+// SpanFunc/SpanErr instead. This prevents silently dropping error status on spans.
+//
+//nolint:cyclop // file-scanning logic with nested line checks
+func TestArch_DoneNilOnlyInVoidFunctions(t *testing.T) {
+	t.Parallel()
+
+	pkgs := loadPackages(t, "./internal/...")
+
+	for _, pkg := range pkgs {
+		for _, goFile := range pkg.GoFiles {
+			if strings.HasSuffix(goFile, "_test.go") || goFile == docGoFile {
+				continue
+			}
+
+			path := filepath.Join(pkg.Dir, goFile)
+
+			content, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatalf("failed to read %s: %v", path, err)
+			}
+
+			// Quick check: skip files without defer done(nil).
+			if !doneNilPattern.Match(content) {
+				continue
+			}
+
+			// Scan line by line to find each occurrence.
+			lines := readLines(t, path)
+			for idx, line := range lines {
+				if !doneNilPattern.MatchString(line) {
+					continue
+				}
+
+				// Skip comment lines.
+				trimmed := strings.TrimSpace(line)
+				if strings.HasPrefix(trimmed, "//") {
+					continue
+				}
+
+				if enclosingFuncReturnsError(lines, idx) {
+					t.Errorf(
+						"%s:%d has defer done(nil) in an error-returning function "+
+							"— use defer func() { done(err) }() or SpanFunc/SpanErr",
+						path, idx+1,
+					)
+				}
+			}
+		}
+	}
+}
+
+// readLines reads a file into a slice of lines.
+func readLines(t *testing.T, path string) []string {
+	t.Helper()
+
+	file, err := os.Open(path)
+	if err != nil {
+		t.Fatalf("failed to open %s: %v", path, err)
+	}
+	defer file.Close()
+
+	var lines []string
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+		t.Fatalf("failed to scan %s: %v", path, err)
+	}
+
+	return lines
+}
+
+// ─── Rule 26: Rebaseable Contract on Typed Contexts ───
+
+// ctxPackagesWithRebaseable maps context packages to the concrete types that
+// must have compile-time Rebaseable assertions. Each entry is the struct name
+// (unexported) that implements the context interface.
+//
+//nolint:gochecknoglobals // test-only mapping
+var ctxPackagesWithRebaseable = map[string][]string{
+	"./internal/kernel/ctx": {"userContext"},
+	"./internal/game/ctx":   {"gameContext"},
+	"./internal/lobby/ctx":  {"lobbyContext"},
+}
+
+// Rule 26: every concrete typed-context struct must have a compile-time
+// `var _ Rebaseable = (*T)(nil)` assertion. This ensures auto-rebase in
+// observe.Span works for all context types.
+//
+
+func TestArch_TypedContextsImplementRebaseable(t *testing.T) {
+	t.Parallel()
+
+	fset := token.NewFileSet()
+
+	for pkgPattern, requiredTypes := range ctxPackagesWithRebaseable {
+		pkgs := loadPackages(t, pkgPattern)
+
+		for _, pkg := range pkgs {
+			found := findRebaseableAssertions(t, fset, pkg)
+
+			for _, requiredType := range requiredTypes {
+				if !found[requiredType] {
+					t.Errorf(
+						"%s: missing compile-time assertion "+
+							"var _ Rebaseable = (*%s)(nil)",
+						pkg.ImportPath, requiredType,
+					)
+				}
+			}
+		}
+	}
+}
+
+// findRebaseableAssertions scans a package's Go files for
+// `var _ ... Rebaseable = (*T)(nil)` assertions and returns a set of the
+// type names T found.
+//
+//nolint:cyclop // AST inspection with nested type checks
+func findRebaseableAssertions(
+	t *testing.T,
+	fset *token.FileSet,
+	pkg goPackage,
+) map[string]bool {
+	t.Helper()
+
+	found := make(map[string]bool)
+
+	for _, goFile := range pkg.GoFiles {
+		if strings.HasSuffix(goFile, "_test.go") {
+			continue
+		}
+
+		path := filepath.Join(pkg.Dir, goFile)
+
+		file, err := parser.ParseFile(fset, path, nil, 0)
+		if err != nil {
+			t.Fatalf("failed to parse %s: %v", path, err)
+		}
+
+		for _, decl := range file.Decls {
+			genDecl, ok := decl.(*ast.GenDecl)
+			if !ok {
+				continue
+			}
+
+			for _, spec := range genDecl.Specs {
+				valueSpec, ok := spec.(*ast.ValueSpec)
+				if !ok {
+					continue
+				}
+
+				// Must be `var _ SomeType = (*T)(nil)`
+				if len(valueSpec.Names) != 1 || valueSpec.Names[0].Name != "_" {
+					continue
+				}
+
+				// Check if the type is Rebaseable (possibly qualified).
+				if !isRebaseableType(valueSpec.Type) {
+					continue
+				}
+
+				// Extract the concrete type from the value `(*T)(nil)`.
+				typeName := extractNilPtrType(valueSpec.Values)
+				if typeName != "" {
+					found[typeName] = true
+				}
+			}
+		}
+	}
+
+	return found
+}
+
+// isRebaseableType checks if a type expression is "Rebaseable" or "pkg.Rebaseable".
+func isRebaseableType(expr ast.Expr) bool {
+	switch typed := expr.(type) {
+	case *ast.Ident:
+		return typed.Name == "Rebaseable"
+	case *ast.SelectorExpr:
+		return typed.Sel.Name == "Rebaseable"
+	default:
+		return false
+	}
+}
+
+// extractNilPtrType extracts T from `(*T)(nil)` in a value spec.
+//
+//nolint:varnamelen // ok is idiomatic for type assertion checks
+func extractNilPtrType(values []ast.Expr) string {
+	if len(values) != 1 {
+		return ""
+	}
+
+	// The pattern is a type conversion: (*T)(nil)
+	call, ok := values[0].(*ast.CallExpr)
+	if !ok || len(call.Args) != 1 {
+		return ""
+	}
+
+	// Check arg is nil.
+	argIdent, ok := call.Args[0].(*ast.Ident)
+	if !ok || argIdent.Name != "nil" {
+		return ""
+	}
+
+	// The function position is a ParenExpr wrapping *T.
+	paren, ok := call.Fun.(*ast.ParenExpr)
+	if !ok {
+		return ""
+	}
+
+	star, ok := paren.X.(*ast.StarExpr)
+	if !ok {
+		return ""
+	}
+
+	ident, ok := star.X.(*ast.Ident)
+	if !ok {
+		return ""
+	}
+
+	return ident.Name
 }

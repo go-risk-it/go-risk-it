@@ -6,7 +6,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/game/tracing"
 	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 )
@@ -42,9 +41,13 @@ func (s *service) GetGameState(ctx ctx.GameContext) (*Game, error) {
 	return s.GetGameStateWithQuerier(ctx, s.querier)
 }
 
-func (s *service) GetGameStateWithQuerier(ctx ctx.GameContext, querier db.Querier) (*Game, error) {
-	ctx, done := tracing.StartGameSpan(ctx, "game.advance.get_state")
-	defer done(nil)
+//nolint:nonamedreturns // named returns needed for defer-based error recording
+func (s *service) GetGameStateWithQuerier(
+	ctx ctx.GameContext,
+	querier db.Querier,
+) (result *Game, err error) {
+	ctx, done := observe.TypedSpan(ctx, "game.advance.get_state")
+	defer func() { done(err) }()
 
 	game, err := querier.GetGame(ctx, ctx.GameID())
 	if err != nil {

@@ -4,7 +4,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/game/tracing"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -16,47 +16,45 @@ func NewTracedService[T, R any](inner Service[T, R]) Service[T, R] {
 	return &tracedService[T, R]{inner: inner}
 }
 
-//nolint:nonamedreturns // named returns needed for defer-based error recording
 func (t *tracedService[T, R]) Perform(
 	gameCtx ctx.GameContext,
 	querier db.Querier,
 	move T,
-) (result R, err error) {
-	gameCtx, done := tracing.StartGameSpan(gameCtx, "game.move.perform",
+) (R, error) {
+	return observe.TypedSpanFunc(
+		gameCtx,
+		"game.move.perform",
+		func(gameCtx ctx.GameContext) (R, error) {
+			return t.inner.Perform(gameCtx, querier, move)
+		},
 		attribute.String("phase", string(t.inner.PhaseType())),
 	)
-	defer func() { done(err) }()
-
-	return t.inner.Perform(gameCtx, querier, move)
 }
 
-//nolint:nonamedreturns // named returns needed for defer-based error recording
 func (t *tracedService[T, R]) Walk(
 	gameCtx ctx.GameContext,
 	querier db.Querier,
 	voluntaryAdvancement bool,
-) (targetPhase sqlc.GamePhaseType, err error) {
-	gameCtx, done := tracing.StartGameSpan(gameCtx, "game.move.walk",
+) (sqlc.GamePhaseType, error) {
+	return observe.TypedSpanFunc(
+		gameCtx,
+		"game.move.walk",
+		func(gameCtx ctx.GameContext) (sqlc.GamePhaseType, error) {
+			return t.inner.Walk(gameCtx, querier, voluntaryAdvancement)
+		},
 		attribute.String("phase", string(t.inner.PhaseType())),
 	)
-	defer func() { done(err) }()
-
-	return t.inner.Walk(gameCtx, querier, voluntaryAdvancement)
 }
 
-//nolint:nonamedreturns // named returns needed for defer-based error recording
 func (t *tracedService[T, R]) Advance(
 	gameCtx ctx.GameContext,
 	querier db.Querier,
 	targetPhase sqlc.GamePhaseType,
 	performResult R,
-) (err error) {
-	gameCtx, done := tracing.StartGameSpan(gameCtx, "game.move.advance",
-		attribute.String("phase", string(t.inner.PhaseType())),
-	)
-	defer func() { done(err) }()
-
-	return t.inner.Advance(gameCtx, querier, targetPhase, performResult)
+) error {
+	return observe.TypedSpanErr(gameCtx, "game.move.advance", func(gameCtx ctx.GameContext) error {
+		return t.inner.Advance(gameCtx, querier, targetPhase, performResult)
+	}, attribute.String("phase", string(t.inner.PhaseType())))
 }
 
 func (t *tracedService[T, R]) PhaseType() sqlc.GamePhaseType {

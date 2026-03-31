@@ -91,14 +91,8 @@ func (s *service) GetUserLobbiesWithQuerier(
 	ctx kernelctx.UserContext,
 	querier db.Querier,
 ) (result *UserLobbies, err error) {
-	spanCtx, done := observe.Span(ctx, "lobby.get_user_lobbies")
+	ctx, done := observe.TypedSpan(ctx, "lobby.get_user_lobbies")
 	defer func() { done(err) }()
-
-	// Rebuild typed context with span so child DB calls are grouped.
-	ctx = kernelctx.WithUserID(
-		kernelctx.WithSpanFromContext(spanCtx),
-		ctx.UserID(),
-	)
 
 	ownedLobbies, err := querier.GetOwnedLobbies(ctx, ctx.UserID())
 	if err != nil {

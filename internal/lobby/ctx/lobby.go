@@ -13,7 +13,7 @@ import (
 // (logic, events, web) has typed access to the active lobby.
 type LobbyContext interface {
 	kernelctx.UserContext
-	kernelctx.Detachable
+	kernelctx.Rebaseable
 	LobbyID() int64
 }
 
@@ -26,6 +26,7 @@ type lobbyContext struct {
 var (
 	_ LobbyContext          = (*lobbyContext)(nil)
 	_ kernelctx.LogEnricher = (*lobbyContext)(nil)
+	_ kernelctx.Rebaseable  = (*lobbyContext)(nil)
 )
 
 func (c *lobbyContext) LobbyID() int64 {
@@ -36,7 +37,7 @@ func (c *lobbyContext) SlogAttrs() []slog.Attr {
 	return append(c.UserContext.SlogAttrs(), slog.Int64("lobby_id", c.lobbyID))
 }
 
-func (c *lobbyContext) DetachOnto(base context.Context) context.Context {
+func (c *lobbyContext) Rebase(base context.Context) context.Context {
 	return WithLobbyID(
 		kernelctx.WithUserID(kernelctx.WithSpan(base, trace.SpanFromContext(base)), c.UserID()),
 		c.lobbyID,

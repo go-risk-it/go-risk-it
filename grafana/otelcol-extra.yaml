@@ -68,10 +68,10 @@ connectors:
       - name: phase
       - name: db_outcome
       - name: ws_fanout
-    metrics_expiration: 5m
+    metrics_expiration: 6h
     aggregation_cardinality_limit: 10000
     # Verification checklist (run with live stack):
-    # (a) metric names: traces_spanmetrics_duration_seconds_bucket, traces_spanmetrics_calls_total
+    # (a) metric names: traces_spanmetrics_latency_bucket, traces_spanmetrics_calls_total
     # (b) label format: check whether it's "service" or "service_name"
     # (c) http_route dimension appears as expected label on metrics
     # (d) metrics_expiration cleans up stale series after 5m

@@ -91,8 +91,9 @@ local colors = import 'colors.libsonnet';
   // ══════════════════════════════════════════════════════════════════
 
   // Base metric names produced by the spanmetrics connector.
+  // The LGTM stack's built-in spanmetrics uses 'latency' naming (seconds).
   spanmetricsMetric:: {
-    duration: 'traces_spanmetrics_duration_seconds_bucket',
+    duration: 'traces_spanmetrics_latency_bucket',
     calls: 'traces_spanmetrics_calls_total',
   },
 
@@ -100,14 +101,14 @@ local colors = import 'colors.libsonnet';
   // Used as the spanNameFilter argument to spanDuration/spanRate/spanErrorRate.
   spans:: {
     http: '(GET|POST|PUT|DELETE) .*',
-    db: 'db\\.transaction',
-    gameLogic: 'game\\.orchestrate_move',
-    wsBroadcast: 'ws\\.broadcast',
-    eventHandler: 'consumer\\..*',
+    db: 'db[.]transaction',
+    gameLogic: 'game[.]orchestrate_move',
+    wsBroadcast: 'ws[.]broadcast',
+    eventHandler: 'consumer[.].*',
     busDispatch: 'bus:.*',
-    snapshot: 'snapshot\\..*',
-    gameCreate: 'game\\.create',
-    lobbyLobbies: 'lobby\\.get_user_lobbies',
+    snapshot: 'snapshot[.].*',
+    gameCreate: 'game[.]create',
+    lobbyLobbies: 'lobby[.]get_user_lobbies',
   },
 
   // Generate histogram_quantile targets from spanmetrics duration buckets.

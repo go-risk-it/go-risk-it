@@ -3,7 +3,6 @@ package headlines_test
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"sync"
 	"testing"
 	"time"
@@ -232,7 +231,6 @@ func setupDetector(
 		Sub:      bus,
 		Snapshot: snapshotSvc,
 		Board:    boardSvc,
-		Logger:   slog.Default(),
 	})
 
 	return bus, snapshotSvc

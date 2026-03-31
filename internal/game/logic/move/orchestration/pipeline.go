@@ -7,7 +7,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/state"
-	"github.com/go-risk-it/go-risk-it/internal/game/tracing"
 	dbutil "github.com/go-risk-it/go-risk-it/internal/kernel/data"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
@@ -20,7 +19,7 @@ func (s *orchestrator[T, R]) OrchestrateMove(
 	ctx gamectx.GameContext,
 	move T,
 ) (err error) {
-	ctx, done := tracing.StartGameSpan(ctx, "game.orchestrate_move",
+	ctx, done := observe.TypedSpan(ctx, "game.orchestrate_move",
 		attribute.String("phase", string(s.service.PhaseType())),
 	)
 	defer func() { done(err) }()

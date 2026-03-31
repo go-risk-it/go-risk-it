@@ -163,7 +163,7 @@ func TestArch_GameCtxImportIsolation(t *testing.T) {
 		}
 
 		// Kernel test files (external test packages) are allowed to import game/ctx
-		// for testing the Detachable/LogEnricher contracts.
+		// for testing the Rebaseable/LogEnricher contracts.
 		if strings.HasPrefix(short, "kernel/") {
 			continue
 		}

@@ -3,7 +3,6 @@ package headlines
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"slices"
 	"sync"
 	"time"
@@ -34,7 +33,6 @@ type detector struct {
 	sub        eventbus.Subscriber
 	snapshot   snapshot.Service
 	board      board.Service
-	logger     *slog.Logger
 }
 
 // DetectorParams holds the dependencies for registering the headline detector.
@@ -45,23 +43,16 @@ type DetectorParams struct {
 	Sub      eventbus.Subscriber
 	Snapshot snapshot.Service
 	Board    board.Service
-	Logger   *slog.Logger `optional:"true"`
 }
 
 // RegisterDetector subscribes the headline detector to MoveExecuted events.
 func RegisterDetector(params DetectorParams) {
-	log := params.Logger
-	if log == nil {
-		log = slog.Default()
-	}
-
 	det := &detector{
 		games:    make(map[int64]*gameOwnership),
 		pub:      params.Pub,
 		sub:      params.Sub,
 		snapshot: params.Snapshot,
 		board:    params.Board,
-		logger:   log,
 	}
 
 	gameevt.OnGameEvent[*gameevt.MoveExecuted](params.Sub, det.handleMoveExecuted)
@@ -89,10 +80,7 @@ func (d *detector) handleMoveExecuted(gameCtx ctx.GameContext, event *gameevt.Mo
 
 	ownership, err := d.ensureCache(gameCtx, event.GameID())
 	if err != nil {
-		d.logger.ErrorContext(gameCtx, "headline detector: failed to init cache",
-			"gameID", event.GameID(),
-			"error", err,
-		)
+		observe.Warn(gameCtx, "headline detector: failed to init cache")
 
 		return
 	}

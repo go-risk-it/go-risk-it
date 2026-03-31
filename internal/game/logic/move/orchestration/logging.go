@@ -7,7 +7,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/game/tracing"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 )
 
 type LoggingService interface {
@@ -44,13 +44,14 @@ func (s *loggingServiceImpl) GetMoveLogs(
 	return moveLogs, nil
 }
 
+//nolint:nonamedreturns // named returns needed for defer-based error recording
 func (s *loggingServiceImpl) LogMove(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	move, result any,
-) (sqlc.GameMoveLog, error) {
-	ctx, done := tracing.StartGameSpan(ctx, "game.move.log")
-	defer done(nil)
+) (moveLog sqlc.GameMoveLog, err error) {
+	ctx, done := observe.TypedSpan(ctx, "game.move.log")
+	defer func() { done(err) }()
 
 	moveJSON, err := json.Marshal(move)
 	if err != nil {
@@ -65,7 +66,7 @@ func (s *loggingServiceImpl) LogMove(
 		}
 	}
 
-	moveLog, err := querier.CreateMoveLog(ctx, sqlc.CreateMoveLogParams{
+	moveLog, err = querier.CreateMoveLog(ctx, sqlc.CreateMoveLogParams{
 		GameID:   ctx.GameID(),
 		UserID:   ctx.UserID(),
 		MoveData: moveJSON,

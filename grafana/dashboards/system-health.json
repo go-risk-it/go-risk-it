@@ -83,7 +83,7 @@
             },
             "targets": [
                 {
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*\"}[1m])) by (le))",
                     "legendFormat": "p95",
                     "refId": "A"
                 }
@@ -157,7 +157,7 @@
             },
             "targets": [
                 {
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"db\\.transaction\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"db[.]transaction\"}[1m])) by (le))",
                     "legendFormat": "p95",
                     "refId": "A"
                 }
@@ -675,31 +675,31 @@
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*\"}[1m])) by (le))",
                     "legendFormat": "HTTP Total",
                     "refId": "A"
                 },
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"db\\.transaction\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"db[.]transaction\"}[1m])) by (le))",
                     "legendFormat": "DB Transaction",
                     "refId": "B"
                 },
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"game\\.orchestrate_move\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"game[.]orchestrate_move\"}[1m])) by (le))",
                     "legendFormat": "Game Logic",
                     "refId": "C"
                 },
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"ws\\.broadcast\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"ws[.]broadcast\"}[1m])) by (le))",
                     "legendFormat": "WS Broadcast",
                     "refId": "D"
                 },
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"consumer\\..*\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"consumer[.].*\"}[1m])) by (le))",
                     "legendFormat": "Event Handler (post-response)",
                     "refId": "E"
                 }
@@ -788,17 +788,17 @@
             },
             "targets": [
                 {
-                    "expr": "histogram_quantile(0.5, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.5, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*\"}[1m])) by (le))",
                     "legendFormat": "p50",
                     "refId": "A"
                 },
                 {
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*\"}[1m])) by (le))",
                     "legendFormat": "p95",
                     "refId": "B"
                 },
                 {
-                    "expr": "histogram_quantile(0.99, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.99, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*\"}[1m])) by (le))",
                     "legendFormat": "p99",
                     "refId": "C"
                 }
@@ -869,19 +869,19 @@
                     "targets": [
                         {
                             "exemplar": true,
-                            "expr": "histogram_quantile(0.5, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"db\\.transaction\"}[1m])) by (le))",
+                            "expr": "histogram_quantile(0.5, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"db[.]transaction\"}[1m])) by (le))",
                             "legendFormat": "p50",
                             "refId": "A"
                         },
                         {
                             "exemplar": true,
-                            "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"db\\.transaction\"}[1m])) by (le))",
+                            "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"db[.]transaction\"}[1m])) by (le))",
                             "legendFormat": "p95",
                             "refId": "B"
                         },
                         {
                             "exemplar": true,
-                            "expr": "histogram_quantile(0.99, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"db\\.transaction\"}[1m])) by (le))",
+                            "expr": "histogram_quantile(0.99, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"db[.]transaction\"}[1m])) by (le))",
                             "legendFormat": "p99",
                             "refId": "C"
                         }
@@ -1614,19 +1614,19 @@
                     "targets": [
                         {
                             "exemplar": true,
-                            "expr": "histogram_quantile(0.5, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*\"}[1m])) by (le))",
+                            "expr": "histogram_quantile(0.5, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*\"}[1m])) by (le))",
                             "legendFormat": "p50",
                             "refId": "A"
                         },
                         {
                             "exemplar": true,
-                            "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*\"}[1m])) by (le))",
+                            "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*\"}[1m])) by (le))",
                             "legendFormat": "p95",
                             "refId": "B"
                         },
                         {
                             "exemplar": true,
-                            "expr": "histogram_quantile(0.99, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*\"}[1m])) by (le))",
+                            "expr": "histogram_quantile(0.99, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*\"}[1m])) by (le))",
                             "legendFormat": "p99",
                             "refId": "C"
                         }
@@ -2115,19 +2115,19 @@
                     "targets": [
                         {
                             "exemplar": true,
-                            "expr": "histogram_quantile(0.5, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"ws\\.broadcast\"}[1m])) by (le))",
+                            "expr": "histogram_quantile(0.5, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"ws[.]broadcast\"}[1m])) by (le))",
                             "legendFormat": "p50",
                             "refId": "A"
                         },
                         {
                             "exemplar": true,
-                            "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"ws\\.broadcast\"}[1m])) by (le))",
+                            "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"ws[.]broadcast\"}[1m])) by (le))",
                             "legendFormat": "p95",
                             "refId": "B"
                         },
                         {
                             "exemplar": true,
-                            "expr": "histogram_quantile(0.99, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"ws\\.broadcast\"}[1m])) by (le))",
+                            "expr": "histogram_quantile(0.99, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"ws[.]broadcast\"}[1m])) by (le))",
                             "legendFormat": "p99",
                             "refId": "C"
                         }
@@ -2140,7 +2140,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "description": "Normal: steady sent rate proportional to active games. Watch for: rate dropping to zero while games are active (broadcast failures). Check next: Fan-Out for amplification ratio.",
+                    "description": "Normal: steady rate proportional to active games. Watch for: rate dropping to zero while games are active. Check next: Fan-Out for amplification ratio.",
                     "fieldConfig": {
                         "defaults": {
                             "color": {
@@ -2187,8 +2187,8 @@
                     },
                     "targets": [
                         {
-                            "expr": "sum(rate(ws_messages_sent_total{service_name=\"risk-it\"}[1m]))",
-                            "legendFormat": "sent/s",
+                            "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"ws[.]broadcast\", status_code!=\"STATUS_CODE_ERROR\"}[1m]))",
+                            "legendFormat": "broadcasts/s",
                             "refId": "A"
                         }
                     ],
@@ -2200,7 +2200,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "description": "Normal: ~4x (one broadcast per player per move). Watch for: > 10x indicates broadcast storms. Check next: Errors for delivery failures.",
+                    "description": "Normal: ~4 (one message per connected player per broadcast). Watch for: 0 (no connected players). Check next: WS Connections.",
                     "fieldConfig": {
                         "defaults": {
                             "color": {
@@ -2247,8 +2247,8 @@
                     },
                     "targets": [
                         {
-                            "expr": "sum(rate(ws_messages_sent_total{service_name=\"risk-it\"}[1m])) / sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=\"bus:move_executed\"}[1m]))",
-                            "legendFormat": "msgs/move",
+                            "expr": "avg(traces_spanmetrics_latency_sum{service=\"risk-it\", span_name=~\"ws[.]broadcast\"}) by ()",
+                            "legendFormat": "avg fanout",
                             "refId": "A"
                         }
                     ],
@@ -2307,7 +2307,7 @@
                     },
                     "targets": [
                         {
-                            "expr": "sum(rate(ws_broadcast_errors_total{service_name=\"risk-it\"}[1m]))",
+                            "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"ws[.]broadcast\", status_code=\"STATUS_CODE_ERROR\"}[1m]))",
                             "legendFormat": "errors/s",
                             "refId": "A"
                         }
@@ -2403,8 +2403,8 @@
             },
             "targets": [
                 {
-                    "expr": "sum(rate(ws_messages_sent_total{service_name=\"risk-it\"}[1m])) / sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=\"bus:move_executed\"}[1m]))",
-                    "legendFormat": "msgs/move",
+                    "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"ws[.]broadcast\"}[1m])) / sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=\"bus:move_executed\"}[1m]))",
+                    "legendFormat": "broadcasts/move",
                     "refId": "A"
                 }
             ],
@@ -2483,7 +2483,7 @@
             },
             "targets": [
                 {
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"db\\.transaction\"}[1m])) by (le)) / histogram_quantile(0.95, sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*\"}[1m])) by (le)) * 100",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"db[.]transaction\"}[1m])) by (le)) / histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*\"}[1m])) by (le)) * 100",
                     "legendFormat": "DB % of HTTP p95",
                     "refId": "A"
                 }
@@ -3196,7 +3196,7 @@
                     },
                     "targets": [
                         {
-                            "expr": "sum(rate(traces_spanmetrics_duration_seconds_bucket{service=\"risk-it\", span_name=~\"db\\.transaction\"}[1m])) by (le)",
+                            "expr": "sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"db[.]transaction\"}[1m])) by (le)",
                             "format": "heatmap",
                             "legendFormat": "{{le}}",
                             "refId": "A"

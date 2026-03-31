@@ -26,7 +26,7 @@ const tracerName = "go-risk-it"
 // done(err) records the error on the span and sets the span status to Error.
 // done(nil) simply ends the span.
 //
-//nolint:spancheck // span is returned to the caller via the done closure
+
 func Span(
 	parent context.Context,
 	name string,
@@ -35,6 +35,11 @@ func Span(
 	childCtx, span := otel.GetTracerProvider().
 		Tracer(tracerName).
 		Start(parent, name, trace.WithAttributes(attrs...))
+
+	// Auto-preserve domain type across span boundary.
+	if r, ok := parent.(ctx.Rebaseable); ok {
+		childCtx = r.Rebase(childCtx)
+	}
 
 	done := func(err error) {
 		if err != nil {
