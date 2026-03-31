@@ -45,7 +45,7 @@ func (s *service) AreNeighbours(
 	source string,
 	target string,
 ) (bool, error) {
-	graph, err := s.getGraph(ctx)
+	graph, err := s.getGraph()
 	if err != nil {
 		return false, fmt.Errorf("failed to get graph: %w", err)
 	}
@@ -72,16 +72,16 @@ func (s *service) CanPlayerReach(
 		}
 	}
 
-	graph, err := s.getGraph(ctx)
+	graph, err := s.getGraph()
 	if err != nil {
 		return false, fmt.Errorf("failed to get graph: %w", err)
 	}
 
-	return graph.CanReach(ctx, source, target, usableRegions), nil
+	return graph.CanReach(source, target, usableRegions), nil
 }
 
 func (s *service) GetBoardRegions(ctx context.Context) ([]string, error) {
-	graph, err := s.getGraph(ctx)
+	graph, err := s.getGraph()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get board: %w", err)
 	}
@@ -91,12 +91,12 @@ func (s *service) GetBoardRegions(ctx context.Context) ([]string, error) {
 	return result, nil
 }
 
-func (s *service) getGraph(ctx context.Context) (Graph, error) {
+func (s *service) getGraph() (Graph, error) {
 	if s.graph != nil {
 		return s.graph, nil
 	}
 
-	boardDto, err := s.fetchFromFile(ctx)
+	boardDto, err := s.fetchFromFile()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get boardDto: %w", err)
 	}
@@ -114,7 +114,7 @@ func (s *service) GetContinents(ctx ctx.GameContext) (Continents, error) {
 		return s.continents, nil
 	}
 
-	boardDto, err := s.fetchFromFile(ctx)
+	boardDto, err := s.fetchFromFile()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get boardDto: %w", err)
 	}
@@ -127,10 +127,7 @@ func (s *service) GetContinents(ctx ctx.GameContext) (Continents, error) {
 	return s.continents, nil
 }
 
-//nolint:unparam // ctx reserved for future observability
-func (s *service) fetchFromFile(
-	ctx context.Context,
-) (*BoardDto, error) {
+func (s *service) fetchFromFile() (*BoardDto, error) {
 	data, err := os.ReadFile("map.json")
 	if err != nil {
 		return nil, fmt.Errorf("error reading file: %w", err)

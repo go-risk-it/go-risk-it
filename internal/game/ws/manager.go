@@ -37,7 +37,7 @@ func (m *manager) GetConnectedPlayers(ctx ctx.GameContext) []string {
 		return nil
 	}
 
-	return connections.GetConnectedPlayers(ctx)
+	return connections.GetConnectedPlayers()
 }
 
 func (m *manager) Broadcast(ctx ctx.GameContext, message json.RawMessage) {

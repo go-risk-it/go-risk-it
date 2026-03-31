@@ -1,7 +1,6 @@
 package board
 
 import (
-	"context"
 	"fmt"
 	"maps"
 	"slices"
@@ -13,7 +12,6 @@ type Graph interface {
 	GetRegions() []string
 	AreNeighbours(source string, target string) bool
 	CanReach(
-		ctx context.Context,
 		source string,
 		target string,
 		usableRegions map[string]struct{},
@@ -111,7 +109,6 @@ func (g *graphImpl) AreNeighbours(source string, target string) bool {
 }
 
 func (g *graphImpl) CanReach(
-	ctx context.Context,
 	source string,
 	target string,
 	usableRegions map[string]struct{},
@@ -126,12 +123,10 @@ func (g *graphImpl) CanReach(
 
 	visited := make(map[string]struct{})
 
-	return g.canReachRecursive(ctx, source, target, usableRegions, visited)
+	return g.canReachRecursive(source, target, usableRegions, visited)
 }
 
-//nolint:unparam // ctx reserved for future observability
 func (g *graphImpl) canReachRecursive(
-	ctx context.Context,
 	source string,
 	target string,
 	usableRegions map[string]struct{},
@@ -152,7 +147,7 @@ func (g *graphImpl) canReachRecursive(
 			continue
 		}
 
-		if g.canReachRecursive(ctx, neighbour, target, usableRegions, visited) {
+		if g.canReachRecursive(neighbour, target, usableRegions, visited) {
 			return true
 		}
 	}

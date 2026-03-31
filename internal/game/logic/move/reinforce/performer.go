@@ -88,7 +88,7 @@ func (s *service) validate(
 		return fmt.Errorf("region ownership check failed: %w", err)
 	}
 
-	if err := checkTroops(ctx, sourceRegion, targetRegion, move); err != nil {
+	if err := checkTroops(sourceRegion, targetRegion, move); err != nil {
 		return fmt.Errorf("troops check failed: %w", err)
 	}
 
@@ -126,7 +126,6 @@ func checkRegionOwnership(
 }
 
 func checkTroops(
-	ctx ctx.GameContext,
 	sourceRegion *sqlc.GetRegionsByGameRow,
 	targetRegion *sqlc.GetRegionsByGameRow,
 	move Move,
@@ -140,7 +139,6 @@ func checkTroops(
 	}
 
 	if err := validation.CheckDeclaredTroops(
-		ctx,
 		sourceRegion.Troops,
 		targetRegion.Troops,
 		move.TroopsInSource,

@@ -122,7 +122,7 @@ func (p *PlayerConnections) ConnectPlayer(ctx ctx.UserContext, connection *webso
 		attribute.Int("current_connections", len(p.playerConnections)))
 }
 
-func (p *PlayerConnections) GetConnectedPlayers(ctx ctx.UserContext) []string {
+func (p *PlayerConnections) GetConnectedPlayers() []string {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 

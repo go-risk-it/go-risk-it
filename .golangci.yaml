@@ -15,6 +15,8 @@ linters:
     - wsl
     - wsl_v5
   settings:
+    unparam:
+      check-exported: true
     exhaustive:
       default-signifies-exhaustive: true
     gocritic:

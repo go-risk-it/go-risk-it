@@ -5,8 +5,6 @@
 package board
 
 import (
-	"context"
-
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -95,16 +93,16 @@ func (_c *Graph_AreNeighbours_Call) RunAndReturn(run func(source string, target 
 }
 
 // CanReach provides a mock function for the type Graph
-func (_mock *Graph) CanReach(ctx context.Context, source string, target string, usableRegions map[string]struct{}) bool {
-	ret := _mock.Called(ctx, source, target, usableRegions)
+func (_mock *Graph) CanReach(source string, target string, usableRegions map[string]struct{}) bool {
+	ret := _mock.Called(source, target, usableRegions)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CanReach")
 	}
 
 	var r0 bool
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, map[string]struct{}) bool); ok {
-		r0 = returnFunc(ctx, source, target, usableRegions)
+	if returnFunc, ok := ret.Get(0).(func(string, string, map[string]struct{}) bool); ok {
+		r0 = returnFunc(source, target, usableRegions)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
@@ -117,37 +115,31 @@ type Graph_CanReach_Call struct {
 }
 
 // CanReach is a helper method to define mock.On call
-//   - ctx context.Context
 //   - source string
 //   - target string
 //   - usableRegions map[string]struct{}
-func (_e *Graph_Expecter) CanReach(ctx interface{}, source interface{}, target interface{}, usableRegions interface{}) *Graph_CanReach_Call {
-	return &Graph_CanReach_Call{Call: _e.mock.On("CanReach", ctx, source, target, usableRegions)}
+func (_e *Graph_Expecter) CanReach(source interface{}, target interface{}, usableRegions interface{}) *Graph_CanReach_Call {
+	return &Graph_CanReach_Call{Call: _e.mock.On("CanReach", source, target, usableRegions)}
 }
 
-func (_c *Graph_CanReach_Call) Run(run func(ctx context.Context, source string, target string, usableRegions map[string]struct{})) *Graph_CanReach_Call {
+func (_c *Graph_CanReach_Call) Run(run func(source string, target string, usableRegions map[string]struct{})) *Graph_CanReach_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
+		var arg0 string
 		if args[0] != nil {
-			arg0 = args[0].(context.Context)
+			arg0 = args[0].(string)
 		}
 		var arg1 string
 		if args[1] != nil {
 			arg1 = args[1].(string)
 		}
-		var arg2 string
+		var arg2 map[string]struct{}
 		if args[2] != nil {
-			arg2 = args[2].(string)
-		}
-		var arg3 map[string]struct{}
-		if args[3] != nil {
-			arg3 = args[3].(map[string]struct{})
+			arg2 = args[2].(map[string]struct{})
 		}
 		run(
 			arg0,
 			arg1,
 			arg2,
-			arg3,
 		)
 	})
 	return _c
@@ -158,7 +150,7 @@ func (_c *Graph_CanReach_Call) Return(b bool) *Graph_CanReach_Call {
 	return _c
 }
 
-func (_c *Graph_CanReach_Call) RunAndReturn(run func(ctx context.Context, source string, target string, usableRegions map[string]struct{}) bool) *Graph_CanReach_Call {
+func (_c *Graph_CanReach_Call) RunAndReturn(run func(source string, target string, usableRegions map[string]struct{}) bool) *Graph_CanReach_Call {
 	_c.Call.Return(run)
 	return _c
 }
