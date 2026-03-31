@@ -1,8 +1,6 @@
 package observe
 
 import (
-	"context"
-
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -27,48 +25,6 @@ func TypedSpan[C ctx.Rebaseable](
 	child, done := Span(parent, name, attrs...)
 	//nolint:forcetypeassert // Rebaseable.Rebase contract guarantees type preservation
 	return child.(C), done
-}
-
-// SpanFunc wraps a function that returns (T, error) with automatic span lifecycle.
-// The span is created, fn is called with the span-enriched context, and done(err) is
-// called with the function's error. This eliminates done(nil) bugs — the error is
-// always captured.
-//
-//	return observe.SpanFunc(ctx, "game.create", func(ctx context.Context) (int64, error) {
-//	    // ... business logic ...
-//	    return gameID, nil
-//	})
-func SpanFunc[T any](
-	ctx context.Context,
-	name string,
-	fn func(context.Context) (T, error),
-	attrs ...attribute.KeyValue,
-) (T, error) {
-	ctx, done := Span(ctx, name, attrs...)
-	result, err := fn(ctx)
-	done(err)
-
-	return result, err
-}
-
-// SpanErr wraps a function that returns error with automatic span lifecycle.
-// Equivalent to SpanFunc for functions that return only an error.
-//
-//	return observe.SpanErr(ctx, "game.move.validate", func(ctx context.Context) error {
-//	    // ... validation logic ...
-//	    return nil
-//	})
-func SpanErr(
-	ctx context.Context,
-	name string,
-	fn func(context.Context) error,
-	attrs ...attribute.KeyValue,
-) error {
-	ctx, done := Span(ctx, name, attrs...)
-	err := fn(ctx)
-	done(err)
-
-	return err
 }
 
 // TypedSpanFunc wraps a typed-context function with automatic span lifecycle.

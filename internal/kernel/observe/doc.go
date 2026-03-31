@@ -5,7 +5,7 @@
 //
 // # API
 //
-// Ten public functions cover the full observability surface:
+// Eight public functions cover the full observability surface:
 //
 //   - [Span] starts a child span and returns a done closure for lifecycle
 //     management. When the parent implements [ctx.Rebaseable], domain metadata
@@ -13,9 +13,6 @@
 //   - [TypedSpan] starts a child span and returns the enriched context with
 //     its original type preserved at compile time. Preferred for typed
 //     contexts (GameContext, LobbyContext).
-//   - [SpanFunc] wraps a (T, error) function with automatic span lifecycle —
-//     no named returns or defer needed.
-//   - [SpanErr] wraps an error function with automatic span lifecycle.
 //   - [TypedSpanFunc] wraps a (T, error) function on a typed context with
 //     automatic span lifecycle. The closure receives the typed context
 //     directly — no type assertion needed at call sites.
@@ -50,20 +47,23 @@
 //	    // ctx is still GameContext — compile-time safe
 //	}
 //
-// Use [SpanFunc] when the function returns (T, error) — eliminates named
-// returns and the defer-done discipline entirely:
+// Use [TypedSpanFunc] when the function returns (T, error) on a typed
+// context — eliminates named returns, defer-done discipline, and type
+// assertions entirely:
 //
-//	func (s *service) CreateGame(ctx context.Context) (int64, error) {
-//	    return observe.SpanFunc(ctx, "game.create", func(ctx context.Context) (int64, error) {
+//	func (s *service) CreateGame(ctx gamectx.GameContext) (int64, error) {
+//	    return observe.TypedSpanFunc(
+//	        ctx, "game.create",
+//	        func(ctx gamectx.GameContext) (int64, error) {
 //	        // ... business logic ...
 //	        return gameID, nil
 //	    })
 //	}
 //
-// Use [SpanErr] for functions that return only an error:
+// Use [TypedSpanErr] for typed-context functions that return only an error:
 //
-//	func (s *service) ValidateMove(ctx context.Context) error {
-//	    return observe.SpanErr(ctx, "move.validate", func(ctx context.Context) error {
+//	func (s *service) ValidateMove(ctx gamectx.GameContext) error {
+//	    return observe.TypedSpanErr(ctx, "move.validate", func(ctx gamectx.GameContext) error {
 //	        // ... validation logic ...
 //	        return nil
 //	    })
@@ -95,10 +95,12 @@
 //	    // ...
 //	}
 //
-// Or better, use [SpanFunc] which eliminates the pattern entirely:
+// Or better, use [TypedSpanFunc] which eliminates the pattern entirely:
 //
-//	func (s *service) GetState(ctx context.Context) (*State, error) {
-//	    return observe.SpanFunc(ctx, "state.get", func(ctx context.Context) (*State, error) {
+//	func (s *service) GetState(ctx gamectx.GameContext) (*State, error) {
+//	    return observe.TypedSpanFunc(
+//	        ctx, "state.get",
+//	        func(ctx gamectx.GameContext) (*State, error) {
 //	        // ...
 //	    })
 //	}
@@ -112,8 +114,7 @@
 //     the error. If you are returning the error, just return it; done(err) on
 //     the span handles status marking.
 //  2. Prefer [TypedSpan] for typed contexts, [TypedSpanFunc]/[TypedSpanErr]
-//     for typed-context closures, [SpanFunc]/[SpanErr] for plain-context
-//     closures, raw [Span]+done(nil) only for void functions.
+//     for typed-context closures, raw [Span]+done(nil) only for void functions.
 //  3. Attrs are optional — context attributes (user_id, game_id, lobby_id)
 //     are auto-extracted via [ctx.LogEnricher]. Pass explicit attrs only for
 //     operation-specific metadata.
@@ -135,7 +136,7 @@
 //
 // Choose the right function based on what you are observing:
 //
-//   - [Span] / [TypedSpan] / [SpanFunc] / [SpanErr] / [TypedSpanFunc] /
+//   - [Span] / [TypedSpan] / [TypedSpanFunc] /
 //     [TypedSpanErr] — for operations with
 //     meaningful duration. Creates a parent-child relationship in the trace
 //     tree. Use for service method entry points, transactions, and I/O calls.
