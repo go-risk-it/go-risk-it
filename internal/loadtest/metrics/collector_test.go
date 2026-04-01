@@ -357,19 +357,3 @@ func TestRecordGameFatal_CounterOnly(t *testing.T) {
 		t.Errorf("expected 3 fatal games, got %d", snap.GamesFatal)
 	}
 }
-
-func TestRecordGameStarted_NoOp(t *testing.T) {
-	t.Parallel()
-	c := NewStepAccumulator(1 * time.Minute)
-
-	// RecordGameStarted is now a no-op (OTel coupling removed).
-	// Calling it should not panic or affect any snapshot counters.
-	c.RecordGameStarted()
-	c.RecordGameStarted()
-
-	snap := c.Snapshot()
-	// No "games started" counter exists in the snapshot — verify nothing else changed.
-	if snap.GamesCompleted != 0 {
-		t.Errorf("expected 0 games completed, got %d", snap.GamesCompleted)
-	}
-}

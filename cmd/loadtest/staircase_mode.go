@@ -133,7 +133,11 @@ func (a *App) buildStepExecutorDeps(gameTimeout time.Duration) orchestrator.Step
 		},
 		NewCollector: metrics.NewStepAccumulator,
 		CollectResources: func() resources.ServerResources {
-			return resources.CollectServerResources(resources.DefaultStatsFunc)
+			return resources.CollectServerResources(
+				resources.DefaultStatsFunc,
+				resources.DefaultRiskItContainer,
+				resources.DefaultDBContainer,
+			)
 		},
 		Annotator:   a.annotator,
 		LiveMetrics: a.liveMetrics,

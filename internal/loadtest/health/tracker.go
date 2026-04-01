@@ -11,6 +11,10 @@ const (
 	// minCompletedForMedian is the minimum completed games before using their
 	// mean duration for zombie detection. Below this, ZombieAge is used directly.
 	minCompletedForMedian = 3
+	// ewmaAlpha controls the EWMA smoothing factor. Lower values produce a
+	// smoother average that reacts slower to changes. With alpha=0.1, the
+	// effective window is ~10 samples (1/alpha).
+	ewmaAlpha = 0.1
 )
 
 type gameState struct {
@@ -28,9 +32,10 @@ type Tracker struct {
 	games      map[int]*gameState
 	now        func() time.Time // clock function for testing
 
-	// Running stats for mean move interval computation.
-	totalMoveInterval time.Duration
-	moveIntervalCount int64
+	// Exponentially weighted moving average of move intervals (nanoseconds).
+	// Initialized to fallbackMoveInterval so early moves don't produce wild
+	// thresholds. Updated on each RecordMove with alpha = ewmaAlpha.
+	ewmaInterval float64
 
 	// Completed game durations for zombie threshold.
 	completedDurations []time.Duration
@@ -39,9 +44,10 @@ type Tracker struct {
 // NewTracker creates a health tracker with the given classification thresholds.
 func NewTracker(thresholds Thresholds) *Tracker {
 	return &Tracker{
-		thresholds: thresholds,
-		games:      make(map[int]*gameState),
-		now:        time.Now,
+		thresholds:   thresholds,
+		games:        make(map[int]*gameState),
+		now:          time.Now,
+		ewmaInterval: float64(fallbackMoveInterval),
 	}
 }
 
@@ -73,8 +79,7 @@ func (t *Tracker) RecordMove(gameIndex int, phase string) {
 	gs.moveCount++
 	gs.currentPhase = phase
 
-	t.totalMoveInterval += interval
-	t.moveIntervalCount++
+	t.ewmaInterval = ewmaAlpha*float64(interval) + (1-ewmaAlpha)*t.ewmaInterval
 }
 
 // RecordPhaseChange updates a game's current phase.
@@ -163,13 +168,9 @@ func (t *Tracker) classify(
 	return StatusHealthy
 }
 
-// meanMoveInterval returns the average time between moves, or a fallback.
+// meanMoveInterval returns the EWMA of time between moves.
 func (t *Tracker) meanMoveInterval() time.Duration {
-	if t.moveIntervalCount == 0 {
-		return fallbackMoveInterval
-	}
-
-	return t.totalMoveInterval / time.Duration(t.moveIntervalCount)
+	return time.Duration(t.ewmaInterval)
 }
 
 // zombieThreshold returns the age at which a game is considered a zombie.

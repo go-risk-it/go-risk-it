@@ -9,7 +9,6 @@ type SLO struct {
 	Metric    string  `json:"metric"`
 	Threshold float64 `json:"threshold"`
 	Unit      string  `json:"unit"`
-	LowerBad  bool    `json:"lowerBad,omitempty"` // true if values below threshold are bad
 }
 
 // SLOSet groups SLOs into user-experience and boundary-health tiers.

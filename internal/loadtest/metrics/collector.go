@@ -296,13 +296,6 @@ func (a *StepAccumulator) RecordGameFatal() {
 	a.gamesFatal.Add(1)
 }
 
-// RecordGameStarted is a no-op retained for caller compatibility.
-// Live games-active tracking has moved to LiveMetrics (T2).
-func (a *StepAccumulator) RecordGameStarted() {
-	// Intentionally empty — gamesActive is a cross-step OTel concern,
-	// not a per-step accumulation concern.
-}
-
 // RecordRetry increments the REST retry counter.
 func (a *StepAccumulator) RecordRetry() {
 	a.totalRetries.Add(1)

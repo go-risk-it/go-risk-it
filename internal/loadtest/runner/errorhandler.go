@@ -151,14 +151,7 @@ func (h *ErrorHandler) handleExecution(bus *Bus, evt MoveFailedEvent) {
 }
 
 func (h *ErrorHandler) waitAndEmitState(bus *Bus) {
-	waitForAnyUpdate(h.gameCtx.Players, h.timeouts.UpdateWait, h.gameCtx.Ctx)
-	time.Sleep(h.timeouts.PostMoveSettle)
-
-	snap := h.gameCtx.Players[0].WS.View().Snapshot()
-	bus.Emit(StateReceivedEvent{
-		Snapshot:  snap,
-		Timestamp: time.Now(),
-	})
+	waitSettleAndEmitState(bus, h.gameCtx, h.timeouts)
 }
 
 func (h *ErrorHandler) currentPhase() string {

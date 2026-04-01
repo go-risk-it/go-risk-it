@@ -34,7 +34,6 @@ func (h *ProtocolHandler) Register(bus *Bus) {
 	bus.On(EventGameStarted, h.handle)
 }
 
-//nolint:funlen // sequential CLI/report logic
 func (h *ProtocolHandler) handle(bus *Bus, e Event) {
 	evt := e.(GameStartedEvent) //nolint:forcetypeassert // event bus guarantees type
 	gameCtx := h.gameCtx
@@ -58,7 +57,34 @@ func (h *ProtocolHandler) handle(bus *Bus, e Event) {
 	}
 	_ = transport // used by default newREST factory
 
-	// 1. Sign up players.
+	players, err := h.signupPlayers(evt)
+	if err != nil {
+		emitFatal(err)
+
+		return
+	}
+
+	gameID, err := h.createGame(evt, players)
+	if err != nil {
+		emitFatal(err)
+
+		return
+	}
+
+	if err := h.connectWebSockets(evt, players, gameID); err != nil {
+		emitFatal(err)
+
+		return
+	}
+
+	h.populateSession(gameID, players)
+	h.emitInitialState(bus, players)
+}
+
+// signupPlayers authenticates all players and returns their info.
+func (h *ProtocolHandler) signupPlayers(
+	evt GameStartedEvent,
+) ([]*PlayerInfo, error) {
 	auth := h.newAuth(h.baseURL, h.anonKey)
 	players := make([]*PlayerInfo, evt.NumPlayers)
 
@@ -71,16 +97,14 @@ func (h *ProtocolHandler) handle(bus *Bus, e Event) {
 
 		authResult, err := auth.Signup(email, password)
 		if err != nil {
-			emitFatal(fmt.Errorf("signup player %d: %w", i, err))
-
-			return
+			return nil, fmt.Errorf("signup player %d: %w", i, err)
 		}
 
 		players[i] = &PlayerInfo{
 			UserID: authResult.UserID,
 			Name:   fmt.Sprintf("bot-%d-%d", evt.GameIndex, i),
 			Auth:   authResult,
-			REST:   h.newREST(h.baseURL, authResult.AccessToken, gameCtx.Accumulator),
+			REST:   h.newREST(h.baseURL, authResult.AccessToken, h.gameCtx.Accumulator),
 		}
 	}
 
@@ -89,7 +113,14 @@ func (h *ProtocolHandler) handle(bus *Bus, e Event) {
 		attribute.Int("numPlayers", evt.NumPlayers),
 	)
 
-	// 2. Create game via first player.
+	return players, nil
+}
+
+// createGame creates a game via the first player and returns its ID.
+func (h *ProtocolHandler) createGame(
+	evt GameStartedEvent,
+	players []*PlayerInfo,
+) (int64, error) {
 	gamePlayers := make([]client.CreateGamePlayer, evt.NumPlayers)
 	for i, p := range players {
 		gamePlayers[i] = client.CreateGamePlayer{
@@ -103,9 +134,7 @@ func (h *ProtocolHandler) handle(bus *Bus, e Event) {
 		client.CreateGameRequest{Players: gamePlayers},
 	)
 	if err != nil {
-		emitFatal(fmt.Errorf("create game: %w", err))
-
-		return
+		return 0, fmt.Errorf("create game: %w", err)
 	}
 
 	observe.Info(context.Background(), "game created",
@@ -113,13 +142,19 @@ func (h *ProtocolHandler) handle(bus *Bus, e Event) {
 		attribute.Int64("game_id", gameID),
 	)
 
-	// 3. All players connect WebSocket.
-	for i, p := range players {
-		ws, err := h.newWS(h.wsURL, gameID, p.Auth.AccessToken, gameCtx.Accumulator)
-		if err != nil {
-			emitFatal(fmt.Errorf("ws connect player %d: %w", i, err))
+	return gameID, nil
+}
 
-			return
+// connectWebSockets establishes WS connections for all players.
+func (h *ProtocolHandler) connectWebSockets(
+	evt GameStartedEvent,
+	players []*PlayerInfo,
+	gameID int64,
+) error {
+	for i, p := range players {
+		ws, err := h.newWS(h.wsURL, gameID, p.Auth.AccessToken, h.gameCtx.Accumulator)
+		if err != nil {
+			return fmt.Errorf("ws connect player %d: %w", i, err)
 		}
 
 		p.WS = ws
@@ -129,20 +164,25 @@ func (h *ProtocolHandler) handle(bus *Bus, e Event) {
 		attribute.Int("gameIndex", evt.GameIndex),
 	)
 
-	// 4. Wait for initial state.
+	return nil
+}
+
+// populateSession fills the game context with session state.
+func (h *ProtocolHandler) populateSession(gameID int64, players []*PlayerInfo) {
 	time.Sleep(h.timeouts.InitialStateWait)
 
-	// 5. Populate game context.
 	userIndex := make(map[string]int)
 	for i, p := range players {
 		userIndex[p.UserID] = i
 	}
 
-	gameCtx.GameID = gameID
-	gameCtx.Players = players
-	gameCtx.UserIndex = userIndex
+	h.gameCtx.GameID = gameID
+	h.gameCtx.Players = players
+	h.gameCtx.UserIndex = userIndex
+}
 
-	// 6. Emit initial state.
+// emitInitialState publishes the first state snapshot to the bus.
+func (h *ProtocolHandler) emitInitialState(bus *Bus, players []*PlayerInfo) {
 	snap := players[0].WS.View().Snapshot()
 	bus.Emit(StateReceivedEvent{
 		Snapshot:  snap,

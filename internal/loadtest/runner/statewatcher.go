@@ -25,18 +25,7 @@ func (h *StateWatcherHandler) handleWaitAndEmit(bus *Bus, _ Event) {
 		return
 	}
 
-	waitForAnyUpdate(h.gameCtx.Players, h.timeouts.UpdateWait, h.gameCtx.Ctx)
-	time.Sleep(h.timeouts.PostMoveSettle)
-
-	if h.gameCtx.Ctx.Err() != nil {
-		return
-	}
-
-	snap := h.gameCtx.Players[0].WS.View().Snapshot()
-	bus.Emit(StateReceivedEvent{
-		Snapshot:  snap,
-		Timestamp: time.Now(),
-	})
+	waitSettleAndEmitState(bus, h.gameCtx, h.timeouts)
 }
 
 func (h *StateWatcherHandler) handleConflict(bus *Bus, _ Event) {
@@ -54,6 +43,20 @@ func (h *StateWatcherHandler) handleConflict(bus *Bus, _ Event) {
 	}
 
 	snap := activeView.Snapshot()
+	bus.Emit(StateReceivedEvent{
+		Snapshot:  snap,
+		Timestamp: time.Now(),
+	})
+}
+
+// waitSettleAndEmitState waits for a WS state update, sleeps the settle time,
+// snapshots player 0, and emits a StateReceivedEvent. Shared by ErrorHandler
+// and StateWatcherHandler.
+func waitSettleAndEmitState(bus *Bus, gameCtx *GameSession, timeouts Timeouts) {
+	waitForAnyUpdate(gameCtx.Players, timeouts.UpdateWait, gameCtx.Ctx)
+	time.Sleep(timeouts.PostMoveSettle)
+
+	snap := gameCtx.Players[0].WS.View().Snapshot()
 	bus.Emit(StateReceivedEvent{
 		Snapshot:  snap,
 		Timestamp: time.Now(),

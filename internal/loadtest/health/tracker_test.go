@@ -4,6 +4,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // fakeClock returns a controllable clock function. Calling advance() moves the
@@ -55,18 +57,17 @@ func TestTracker_SlowGame(t *testing.T) {
 		ZombieAge:         10 * time.Second, // disable zombie detection
 	}, now)
 
-	// Create a baseline: 20ms between second moves.
-	// Each game: register (t=X), move deploy (t=X, interval ~0), advance 20ms, move attack (interval=20ms).
-	// Mean interval = (0 + 20ms) / 2 = 10ms per game pair.
-	for i := range 5 {
-		tracker.RegisterGame(i)
-		tracker.RecordMove(i, "deploy")
-		advance(20 * time.Millisecond)
-		tracker.RecordMove(i, "attack")
-		tracker.CompleteGame(i)
+	// Create a baseline: 100 moves at 10ms intervals so the EWMA converges
+	// from its 5s fallback to ~10ms. With alpha=0.1 and 100 samples,
+	// 0.9^100 ≈ 2.7e-5 so the fallback contribution is negligible.
+	tracker.RegisterGame(0)
+	for range 100 {
+		advance(10 * time.Millisecond)
+		tracker.RecordMove(0, "deploy")
 	}
+	tracker.CompleteGame(0)
 
-	// Mean interval = 10ms.
+	// EWMA ≈ 10ms.
 	// Slow threshold: 1.5 * 10ms = 15ms.
 	// Stalled threshold: 3 * 10ms = 30ms.
 	// Register a game and advance 20ms (> 15ms, < 30ms) → slow.
@@ -90,16 +91,15 @@ func TestTracker_StalledGame(t *testing.T) {
 		ZombieAge:         10 * time.Second, // disable zombie detection
 	}, now)
 
-	// Establish baseline: 20ms between moves → mean 10ms.
-	for i := range 5 {
-		tracker.RegisterGame(i)
-		tracker.RecordMove(i, "deploy")
-		advance(20 * time.Millisecond)
-		tracker.RecordMove(i, "attack")
-		tracker.CompleteGame(i)
+	// Establish baseline: 100 moves at 10ms intervals → EWMA converges to ~10ms.
+	tracker.RegisterGame(0)
+	for range 100 {
+		advance(10 * time.Millisecond)
+		tracker.RecordMove(0, "deploy")
 	}
+	tracker.CompleteGame(0)
 
-	// Mean interval 10ms. Stalled threshold: 3 * 10ms = 30ms.
+	// EWMA ≈ 10ms. Stalled threshold: 3 * 10ms = 30ms.
 	// Register a game and advance 40ms (> 30ms) → stalled.
 	tracker.RegisterGame(100)
 	tracker.RecordMove(100, "deploy")
@@ -143,22 +143,22 @@ func TestTracker_DistributionCounts(t *testing.T) {
 		ZombieAge:         10 * time.Second, // disable zombie detection
 	}, now)
 
-	// Establish baseline: 20ms between moves → mean 10ms.
-	for i := range 10 {
-		tracker.RegisterGame(i)
-		tracker.RecordMove(i, "deploy")
-		advance(20 * time.Millisecond)
-		tracker.RecordMove(i, "attack")
-		tracker.CompleteGame(i)
+	// Establish baseline: 100 moves at 10ms intervals → EWMA converges to ~10ms.
+	tracker.RegisterGame(0)
+	for range 100 {
+		advance(10 * time.Millisecond)
+		tracker.RecordMove(0, "deploy")
 	}
+	tracker.CompleteGame(0)
 
+	// EWMA ≈ 10ms. Slow > 15ms, stalled > 30ms.
 	// Register 3 games at known time offsets from their last move.
-	// Stalled game: 40ms since last move (> 3 * 10ms).
+	// Stalled game: 40ms since last move (> 30ms).
 	tracker.RegisterGame(103)
 	tracker.RecordMove(103, "deploy")
 	advance(40 * time.Millisecond)
 
-	// Slow game: 20ms since last move (> 1.5 * 10ms, < 3 * 10ms).
+	// Slow game: 20ms since last move (> 15ms, < 30ms).
 	tracker.RegisterGame(102)
 	tracker.RecordMove(102, "deploy")
 	advance(20 * time.Millisecond)
@@ -175,7 +175,7 @@ func TestTracker_DistributionCounts(t *testing.T) {
 	// Game 103 had its last move 60ms ago (40ms + 20ms from slow game's advance).
 	// Game 102 had its last move 20ms ago.
 	// Game 101 just moved (0ms).
-	// With mean interval 10ms: stalled > 30ms, slow > 15ms.
+	// With EWMA ≈ 10ms: stalled > 30ms, slow > 15ms.
 	// So game 103 is stalled (60ms > 30ms), game 102 is slow (20ms > 15ms), game 101 is healthy.
 	if dist.Stalled != 1 {
 		t.Errorf("expected 1 stalled, got %d", dist.Stalled)
@@ -269,4 +269,70 @@ func TestTracker_Concurrent(t *testing.T) {
 	if dist.Total != 0 {
 		t.Errorf("expected 0 active games after all complete, got %d", dist.Total)
 	}
+}
+
+func TestTracker_EWMAWeightsRecent(t *testing.T) {
+	t.Parallel()
+
+	now, advance := fakeClock(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC))
+	tracker := newTestTracker(DefaultThresholds(), now)
+
+	// Phase 1: 50 slow moves at 100ms intervals.
+	// After ~45 samples, EWMA converges from the 5s fallback to ~100ms.
+	tracker.RegisterGame(1)
+	for range 50 {
+		advance(100 * time.Millisecond)
+		tracker.RecordMove(1, "deploy")
+	}
+	tracker.CompleteGame(1)
+
+	// Phase 2: 50 fast moves at 10ms intervals.
+	tracker.RegisterGame(2)
+	for range 50 {
+		advance(10 * time.Millisecond)
+		tracker.RecordMove(2, "deploy")
+	}
+	tracker.CompleteGame(2)
+
+	// With EWMA (alpha=0.1), after 50 samples at 100ms the EWMA converges to
+	// ~100ms (residual from 5s fallback is negligible: 0.9^50 * 5000 ≈ 2.9ms).
+	// After 50 more at 10ms: ewma ≈ 0.9^50 * 100 + 10 * (1 - 0.9^50)
+	//   ≈ 0.0052 * 100 + 10 * 0.9948 ≈ 0.5 + 9.9 ≈ 10.5ms.
+	//
+	// A cumulative average over all 100 samples would be ~55ms.
+	// We assert the EWMA is below 15ms — far from the 55ms cumulative average,
+	// proving that recent samples dominate.
+	mean := tracker.meanMoveInterval()
+	assert.InDelta(t, 10_500_000, float64(mean), float64(2*time.Millisecond),
+		"EWMA should track recent 10ms intervals, not cumulative ~55ms average; got %v", mean)
+}
+
+func TestTracker_EWMAInitializedToFallback(t *testing.T) {
+	t.Parallel()
+
+	now, _ := fakeClock(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC))
+	tracker := newTestTracker(DefaultThresholds(), now)
+
+	// Before any moves, meanMoveInterval should return fallbackMoveInterval.
+	mean := tracker.meanMoveInterval()
+	assert.Equal(t, fallbackMoveInterval, mean,
+		"EWMA should be initialized to fallbackMoveInterval before any moves")
+}
+
+func TestTracker_EWMASingleMove(t *testing.T) {
+	t.Parallel()
+
+	now, advance := fakeClock(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC))
+	tracker := newTestTracker(DefaultThresholds(), now)
+
+	tracker.RegisterGame(1)
+	advance(2 * time.Second)
+	tracker.RecordMove(1, "deploy")
+
+	// After one move with 2s interval:
+	// ewma = 0.1 * 2s + 0.9 * 5s = 0.2s + 4.5s = 4.7s
+	mean := tracker.meanMoveInterval()
+	expected := time.Duration(0.1*float64(2*time.Second) + 0.9*float64(fallbackMoveInterval))
+	assert.Equal(t, expected, mean,
+		"single move should blend interval with fallback via EWMA")
 }

@@ -12,6 +12,13 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
+const (
+	// DefaultRiskItContainer is the default Docker container name for the risk-it server.
+	DefaultRiskItContainer = "go-risk-it-risk-it-1"
+	// DefaultDBContainer is the default Docker container name for the database.
+	DefaultDBContainer = "supabase-db"
+)
+
 // ContainerStats holds resource usage for a single Docker container.
 type ContainerStats struct {
 	CPUPercent  float64 `json:"cpuPercent"`
@@ -108,33 +115,36 @@ func parseMemoryValue(s string) float64 {
 
 // CollectServerResources collects stats for risk-it and db containers.
 // Best-effort: returns zero stats for containers that fail, never errors.
-func CollectServerResources(statsFn StatsFunc) ServerResources {
+func CollectServerResources(
+	statsFn StatsFunc,
+	riskItContainer, dbContainer string,
+) ServerResources {
 	var res ServerResources
 
 	ctx := context.Background()
 
-	if raw, err := statsFn("go-risk-it-risk-it-1"); err != nil {
+	if raw, err := statsFn(riskItContainer); err != nil {
 		observe.Warn(ctx, "docker stats failed",
-			attribute.String("container", "go-risk-it-risk-it-1"),
+			attribute.String("container", riskItContainer),
 			attribute.String("error", err.Error()),
 		)
 	} else if stats, err := ParseDockerStats(raw); err != nil {
 		observe.Warn(ctx, "docker stats parse failed",
-			attribute.String("container", "go-risk-it-risk-it-1"),
+			attribute.String("container", riskItContainer),
 			attribute.String("error", err.Error()),
 		)
 	} else {
 		res.RiskIt = stats
 	}
 
-	if raw, err := statsFn("supabase-db"); err != nil {
+	if raw, err := statsFn(dbContainer); err != nil {
 		observe.Warn(ctx, "docker stats failed",
-			attribute.String("container", "supabase-db"),
+			attribute.String("container", dbContainer),
 			attribute.String("error", err.Error()),
 		)
 	} else if stats, err := ParseDockerStats(raw); err != nil {
 		observe.Warn(ctx, "docker stats parse failed",
-			attribute.String("container", "supabase-db"),
+			attribute.String("container", dbContainer),
 			attribute.String("error", err.Error()),
 		)
 	} else {

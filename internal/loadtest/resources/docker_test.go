@@ -66,7 +66,11 @@ func TestCollectServerResources_BothContainers(t *testing.T) {
 	fake := func(name string) ([]byte, error) {
 		return []byte(`{"cpuPerc":"5.00%","memUsage":"200MiB / 1024MiB"}`), nil
 	}
-	res := resources.CollectServerResources(fake)
+	res := resources.CollectServerResources(
+		fake,
+		resources.DefaultRiskItContainer,
+		resources.DefaultDBContainer,
+	)
 	assert.InDelta(t, 5.0, res.RiskIt.CPUPercent, 0.01)
 	assert.InDelta(t, 200.0, res.RiskIt.MemoryMB, 0.1)
 	assert.InDelta(t, 5.0, res.DB.CPUPercent, 0.01)
@@ -77,15 +81,35 @@ func TestCollectServerResources_ContainerDown(t *testing.T) {
 	t.Parallel()
 
 	fake := func(name string) ([]byte, error) {
-		if name == "go-risk-it-risk-it-1" {
+		if name == resources.DefaultRiskItContainer {
 			return nil, errors.New("container not running")
 		}
 
 		return []byte(`{"cpuPerc":"3.00%","memUsage":"100MiB / 512MiB"}`), nil
 	}
-	res := resources.CollectServerResources(fake)
+	res := resources.CollectServerResources(
+		fake,
+		resources.DefaultRiskItContainer,
+		resources.DefaultDBContainer,
+	)
 	assert.Equal(t, 0.0, res.RiskIt.CPUPercent) //nolint:testifylint // loadtest test pattern
 	assert.Equal(t, 0.0, res.RiskIt.MemoryMB)   //nolint:testifylint // loadtest test pattern
 	assert.InDelta(t, 3.0, res.DB.CPUPercent, 0.01)
 	assert.InDelta(t, 100.0, res.DB.MemoryMB, 0.1)
+}
+
+func TestCollectServerResources_CustomContainerNames(t *testing.T) {
+	t.Parallel()
+
+	var queriedNames []string
+
+	fake := func(name string) ([]byte, error) {
+		queriedNames = append(queriedNames, name)
+
+		return []byte(`{"cpuPerc":"1.00%","memUsage":"50MiB / 256MiB"}`), nil
+	}
+	res := resources.CollectServerResources(fake, "my-server", "my-db")
+	assert.Equal(t, []string{"my-server", "my-db"}, queriedNames)
+	assert.InDelta(t, 1.0, res.RiskIt.CPUPercent, 0.01)
+	assert.InDelta(t, 1.0, res.DB.CPUPercent, 0.01)
 }
