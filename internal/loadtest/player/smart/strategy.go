@@ -67,7 +67,7 @@ func (s *Strategy) decideDeploy(
 	}
 
 	if len(actions) == 0 {
-		return advanceAction(gamestate.Deploy), nil
+		return player.NewAdvanceAction(gamestate.Deploy), nil
 	}
 
 	// Phase 1: prefer border regions, then pick randomly.
@@ -86,7 +86,7 @@ func (s *Strategy) decideAttack(
 ) (*player.Action, error) {
 	actions := GenerateAttacks(snap, bv, userID, s.graph)
 	if len(actions) == 0 {
-		return advanceAction(gamestate.Attack), nil
+		return player.NewAdvanceAction(gamestate.Attack), nil
 	}
 
 	// Phase 1: only consider max-troop attacks (3 when possible), pick randomly.
@@ -107,7 +107,7 @@ func (s *Strategy) decideConquer(
 	if len(actions) == 0 {
 		log.Printf("[smart] WARNING: no valid conquer moves generated, this should not happen")
 
-		return advanceAction(gamestate.Conquer), nil
+		return player.NewAdvanceAction(gamestate.Conquer), nil
 	}
 
 	// Always pick minTroopsToMove (first action). The board state may be stale
@@ -123,7 +123,7 @@ func (s *Strategy) decideReinforce(
 ) (*player.Action, error) {
 	actions := GenerateReinforces(snap, bv, userID, s.graph)
 	if len(actions) == 0 {
-		return advanceAction(gamestate.Reinforce), nil
+		return player.NewAdvanceAction(gamestate.Reinforce), nil
 	}
 
 	// Phase 1: prefer interior→border reinforcements, pick randomly.
@@ -132,7 +132,7 @@ func (s *Strategy) decideReinforce(
 		return pickRandom(borderReinforces), nil
 	}
 
-	return advanceAction(gamestate.Reinforce), nil
+	return player.NewAdvanceAction(gamestate.Reinforce), nil
 }
 
 // filterBorderDeploys returns only deploy actions targeting border regions.

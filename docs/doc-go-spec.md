@@ -44,6 +44,7 @@ Single-file packages whose sole purpose is fx.Module aggregation:
 |---------|------|
 | `game` | `game.go` |
 | `game/logic/move` | `move.go` |
+| `loadtest/fileutil` | `fileutil.go` |
 | `loadtest/scenario` | `scenario.go` |
 | `lobby` | `lobby.go` |
 | `web` | `web.go` |

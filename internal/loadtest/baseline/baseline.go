@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
-	"strconv"
-	"strings"
 	"time"
+
+	"github.com/go-risk-it/go-risk-it/internal/loadtest/fileutil"
 )
 
 // Baseline captures a complete performance snapshot for a git commit.
@@ -71,55 +70,6 @@ func Load(path string) (Baseline, error) {
 	return baselineData, nil
 }
 
-// sanitizeSlug normalizes a name for use in filenames: lowercase, hyphens, no special chars.
-func sanitizeSlug(s string) string {
-	s = strings.ToLower(s)
-	s = strings.ReplaceAll(s, " ", "-")
-
-	// Strip anything that isn't alphanumeric or hyphen.
-	re := regexp.MustCompile(`[^a-z0-9-]`)
-	s = re.ReplaceAllString(s, "")
-
-	// Collapse multiple hyphens.
-	re = regexp.MustCompile(`-+`)
-	s = re.ReplaceAllString(s, "-")
-
-	return strings.Trim(s, "-")
-}
-
-// nextSequenceNumber scans dir for files matching NNN-* and returns the next number.
-func nextSequenceNumber(dir string) (int, error) {
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return 0, nil // directory doesn't exist yet, start at 0
-	}
-
-	highest := -1
-	re := regexp.MustCompile(`^(\d{3})-`)
-
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-
-		matches := re.FindStringSubmatch(entry.Name())
-		if matches == nil {
-			continue
-		}
-
-		n, err := strconv.Atoi(matches[1])
-		if err != nil {
-			continue
-		}
-
-		if n > highest {
-			highest = n
-		}
-	}
-
-	return highest + 1, nil
-}
-
 // SaveNumbered writes baseline as JSON to dir/NNN-<slug>-<commit>.json with auto-incrementing
 // sequence number. Returns the path of the written file.
 func SaveNumbered(dir, slug string, baselineData Baseline) (string, error) {
@@ -127,12 +77,12 @@ func SaveNumbered(dir, slug string, baselineData Baseline) (string, error) {
 		return "", fmt.Errorf("create dir: %w", err)
 	}
 
-	seq, err := nextSequenceNumber(dir)
+	seq, err := fileutil.NextSequenceNumber(dir)
 	if err != nil {
 		return "", fmt.Errorf("sequence number: %w", err)
 	}
 
-	slug = sanitizeSlug(slug)
+	slug = fileutil.SanitizeSlug(slug)
 	filename := fmt.Sprintf("%03d-%s-%s.json", seq, slug, baselineData.CommitSHA)
 	path := filepath.Join(dir, filename)
 

@@ -7,16 +7,13 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
-	"strconv"
-	"strings"
+
+	"github.com/go-risk-it/go-risk-it/internal/loadtest/fileutil"
 )
 
 // Pre-compiled regexes for file operations.
 var (
-	reEntryFile    = regexp.MustCompile(`^\d{3}-.*\.json$`)
-	reSequenceNum  = regexp.MustCompile(`^(\d{3})-`)
-	reNonAlphaNum  = regexp.MustCompile(`[^a-z0-9-]`)
-	reMultiHyphens = regexp.MustCompile(`-+`)
+	reEntryFile = regexp.MustCompile(`^\d{3}-.*\.json$`)
 )
 
 // SaveEntry writes entry as JSON to dir/NNN-slug-commit.json with
@@ -26,12 +23,12 @@ func SaveEntry(dir, slug string, entry Entry) (string, error) {
 		return "", fmt.Errorf("create dir: %w", err)
 	}
 
-	seq, err := nextSequenceNumber(dir)
+	seq, err := fileutil.NextSequenceNumber(dir)
 	if err != nil {
 		return "", fmt.Errorf("sequence number: %w", err)
 	}
 
-	slug = sanitizeSlug(slug)
+	slug = fileutil.SanitizeSlug(slug)
 	filename := fmt.Sprintf("%03d-%s-%s.json", seq, slug, entry.CommitSHA)
 	path := filepath.Join(dir, filename)
 
@@ -103,48 +100,4 @@ func LatestEntry(dir string) (Entry, error) {
 	}
 
 	return LoadEntry(paths[len(paths)-1])
-}
-
-// sanitizeSlug normalizes a name for use in filenames: lowercase, hyphens,
-// no special chars.
-func sanitizeSlug(s string) string {
-	s = strings.ToLower(s)
-	s = strings.ReplaceAll(s, " ", "-")
-	s = reNonAlphaNum.ReplaceAllString(s, "")
-	s = reMultiHyphens.ReplaceAllString(s, "-")
-
-	return strings.Trim(s, "-")
-}
-
-// nextSequenceNumber scans dir for files matching NNN-* and returns the
-// next number.
-func nextSequenceNumber(dir string) (int, error) {
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return 0, nil
-	}
-
-	highest := -1
-
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-
-		matches := reSequenceNum.FindStringSubmatch(entry.Name())
-		if matches == nil {
-			continue
-		}
-
-		n, err := strconv.Atoi(matches[1])
-		if err != nil {
-			continue
-		}
-
-		if n > highest {
-			highest = n
-		}
-	}
-
-	return highest + 1, nil
 }

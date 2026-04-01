@@ -44,12 +44,12 @@ func (s *Strategy) DecideMove(snap gamestate.ViewSnapshot, userID string) (*play
 
 func (s *Strategy) decideCards(snap gamestate.ViewSnapshot) (*player.Action, error) {
 	if snap.CardState == nil || len(snap.CardState.Cards) < 3 {
-		return advanceAction(gamestate.Cards), nil
+		return player.NewAdvanceAction(gamestate.Cards), nil
 	}
 
-	combo := findCardCombo(snap.CardState.Cards)
+	combo := player.FindCardCombo(snap.CardState.Cards)
 	if combo == nil {
-		return advanceAction(gamestate.Cards), nil
+		return player.NewAdvanceAction(gamestate.Cards), nil
 	}
 
 	return &player.Action{
@@ -58,51 +58,6 @@ func (s *Strategy) decideCards(snap gamestate.ViewSnapshot) (*player.Action, err
 			Combinations: [][]int64{combo},
 		},
 	}, nil
-}
-
-func findCardCombo(cards []gamestate.Card) []int64 {
-	byType := make(map[gamestate.CardType][]int64)
-	var jollyIDs []int64
-
-	for _, c := range cards {
-		if c.Type == gamestate.Jolly {
-			jollyIDs = append(jollyIDs, c.ID)
-		} else {
-			byType[c.Type] = append(byType[c.Type], c.ID)
-		}
-	}
-
-	// Try 3-of-a-kind.
-	for _, ids := range byType {
-		if len(ids) >= 3 {
-			return ids[:3]
-		}
-	}
-
-	// Try one-of-each (cavalry + infantry + artillery).
-	types := []gamestate.CardType{gamestate.Cavalry, gamestate.Infantry, gamestate.Artillery}
-	var oneOfEach []int64
-
-	for _, t := range types {
-		if ids, ok := byType[t]; ok && len(ids) > 0 {
-			oneOfEach = append(oneOfEach, ids[0])
-		}
-	}
-
-	if len(oneOfEach) == 3 {
-		return oneOfEach
-	}
-
-	// Try 2-of-a-kind + jolly (the only valid jolly combo).
-	if len(jollyIDs) > 0 {
-		for _, ids := range byType {
-			if len(ids) >= 2 {
-				return []int64{ids[0], ids[1], jollyIDs[0]}
-			}
-		}
-	}
-
-	return nil
 }
 
 func (s *Strategy) decideDeploy(
@@ -117,7 +72,7 @@ func (s *Strategy) decideDeploy(
 	}
 
 	if state.DeployableTroops == 0 {
-		return advanceAction(gamestate.Deploy), nil
+		return player.NewAdvanceAction(gamestate.Deploy), nil
 	}
 
 	// Find the weakest border region (lowest troops adjacent to enemy).
@@ -145,7 +100,7 @@ func (s *Strategy) decideDeploy(
 	}
 
 	if bestRegion == nil {
-		return advanceAction(gamestate.Deploy), nil
+		return player.NewAdvanceAction(gamestate.Deploy), nil
 	}
 
 	return &player.Action{
@@ -190,7 +145,7 @@ func (s *Strategy) decideAttack(
 	}
 
 	if bestSource == nil {
-		return advanceAction(gamestate.Attack), nil
+		return player.NewAdvanceAction(gamestate.Attack), nil
 	}
 
 	attackingTroops := min(bestSource.Troops-1, 3)
@@ -277,7 +232,7 @@ func (s *Strategy) decideReinforce(
 		}
 	}
 
-	return advanceAction(gamestate.Reinforce), nil
+	return player.NewAdvanceAction(gamestate.Reinforce), nil
 }
 
 func (s *Strategy) isBorderRegion(
@@ -320,13 +275,4 @@ func buildRegionMap(snap gamestate.ViewSnapshot) map[string]*gamestate.Region {
 	}
 
 	return m
-}
-
-func advanceAction(phase gamestate.PhaseType) *player.Action {
-	return &player.Action{
-		Type: player.ActionAdvance,
-		Advance: &player.AdvanceAction{
-			CurrentPhase: string(phase),
-		},
-	}
 }

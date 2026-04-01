@@ -679,3 +679,24 @@ func TestArch_BusinessLogicNoRawSpan(t *testing.T) {
 		}
 	}
 }
+
+// ─── Rules L1–L2: Loadtest Isolation ───
+
+// Rule L1: loadtest packages must never import game or lobby domain packages.
+// The loadtest harness operates against the server's HTTP/WS API boundary only.
+func TestArch_LoadtestNeverImportsGameOrLobby(t *testing.T) {
+	t.Parallel()
+
+	pkgs := loadPackages(t, "./internal/loadtest/...")
+	assertNoImports(t, pkgs, modulePrefix+"game/", modulePrefix+"lobby/")
+}
+
+// Rule L2: game and lobby domain packages must never import loadtest.
+func TestArch_GameLobbyNeverImportsLoadtest(t *testing.T) {
+	t.Parallel()
+
+	gamePkgs := loadPackages(t, "./internal/game/...")
+	lobbyPkgs := loadPackages(t, "./internal/lobby/...")
+	gamePkgs = append(gamePkgs, lobbyPkgs...)
+	assertNoImports(t, gamePkgs, modulePrefix+"loadtest/")
+}

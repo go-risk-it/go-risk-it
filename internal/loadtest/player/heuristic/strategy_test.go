@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/mapgraph"
+	"github.com/go-risk-it/go-risk-it/internal/loadtest/player"
 )
 
 // testGraph builds a small 4-region graph:
@@ -111,7 +112,7 @@ func TestFindCardCombo(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := findCardCombo(tt.cards)
+			got := player.FindCardCombo(tt.cards)
 
 			if tt.want == nil {
 				if got != nil {

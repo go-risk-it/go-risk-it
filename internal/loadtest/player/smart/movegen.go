@@ -13,12 +13,12 @@ import (
 // or an advance action otherwise. Cards are deterministic (no scoring needed).
 func GenerateCardPlay(snap gamestate.ViewSnapshot) *player.Action {
 	if snap.CardState == nil || len(snap.CardState.Cards) < 3 {
-		return advanceAction(gamestate.Cards)
+		return player.NewAdvanceAction(gamestate.Cards)
 	}
 
-	combo := findCardCombo(snap.CardState.Cards)
+	combo := player.FindCardCombo(snap.CardState.Cards)
 	if combo == nil {
-		return advanceAction(gamestate.Cards)
+		return player.NewAdvanceAction(gamestate.Cards)
 	}
 
 	return &player.Action{
@@ -191,60 +191,4 @@ func GenerateReinforces(
 	}
 
 	return actions
-}
-
-// findCardCombo finds a valid 3-card combination.
-// Reused from heuristic strategy — same logic.
-func findCardCombo(cards []gamestate.Card) []int64 {
-	byType := make(map[gamestate.CardType][]int64)
-	var jollyIDs []int64
-
-	for _, c := range cards {
-		if c.Type == gamestate.Jolly {
-			jollyIDs = append(jollyIDs, c.ID)
-		} else {
-			byType[c.Type] = append(byType[c.Type], c.ID)
-		}
-	}
-
-	// 3-of-a-kind.
-	for _, ids := range byType {
-		if len(ids) >= 3 {
-			return ids[:3]
-		}
-	}
-
-	// One-of-each.
-	types := []gamestate.CardType{gamestate.Cavalry, gamestate.Infantry, gamestate.Artillery}
-	var oneOfEach []int64
-
-	for _, t := range types {
-		if ids, ok := byType[t]; ok && len(ids) > 0 {
-			oneOfEach = append(oneOfEach, ids[0])
-		}
-	}
-
-	if len(oneOfEach) == 3 {
-		return oneOfEach
-	}
-
-	// 2 + jolly.
-	if len(jollyIDs) > 0 {
-		for _, ids := range byType {
-			if len(ids) >= 2 {
-				return []int64{ids[0], ids[1], jollyIDs[0]}
-			}
-		}
-	}
-
-	return nil
-}
-
-func advanceAction(phase gamestate.PhaseType) *player.Action {
-	return &player.Action{
-		Type: player.ActionAdvance,
-		Advance: &player.AdvanceAction{
-			CurrentPhase: string(phase),
-		},
-	}
 }
