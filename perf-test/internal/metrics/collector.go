@@ -105,7 +105,7 @@ type Collector struct {
 	moveBuckets []atomic.Int64
 
 	// Warm-up filtering: gate histogram recording until MarkWarmUpDone is called.
-	warmUpConfigured bool
+	warmUpConfigured atomic.Bool
 	warmUpDone       atomic.Bool
 }
 

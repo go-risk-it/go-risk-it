@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"sync"
 	"testing"
 	"time"
 )
@@ -231,4 +232,31 @@ func TestCollector_NoWarmUp_BackwardCompat(t *testing.T) {
 	if !snap.WarmUpComplete {
 		t.Error("WarmUpComplete should be true when no warm-up configured")
 	}
+}
+
+func TestCollector_WarmUp_ConcurrentConfigureAndRecord(t *testing.T) {
+	c := NewCollector(1 * time.Minute)
+
+	var wg sync.WaitGroup
+
+	// Spawn goroutines that call ConfigureWarmUp concurrently with RecordE2E.
+	// Under -race, a plain bool would trigger a data race between the write
+	// in ConfigureWarmUp and the read in isWarmUpDone (called by RecordE2E).
+	const goroutines = 100
+
+	wg.Add(goroutines)
+
+	for range goroutines / 2 {
+		go func() {
+			defer wg.Done()
+			c.ConfigureWarmUp()
+		}()
+
+		go func() {
+			defer wg.Done()
+			c.RecordE2E(10 * time.Millisecond)
+		}()
+	}
+
+	wg.Wait()
 }
