@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -53,6 +54,13 @@ func classifyHTTPStatus(statusCode int, cause error) error {
 // error (timeout, connection reset/refused, EOF), or nil otherwise.
 func classifyNetError(err error) error {
 	if err == nil {
+		return nil
+	}
+
+	// Context errors are fatal — retrying on a dead context is futile.
+	// Must check BEFORE net.Error: context.DeadlineExceeded satisfies
+	// net.Error (Timeout()=true), so the net.Error branch would catch it.
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
 		return nil
 	}
 
