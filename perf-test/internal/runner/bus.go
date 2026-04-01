@@ -1,5 +1,10 @@
 package runner
 
+import (
+	"log"
+	"runtime/debug"
+)
+
 // EventType identifies the kind of event flowing through the bus.
 type EventType string
 
@@ -42,6 +47,7 @@ func (b *Bus) On(t EventType, h HandlerFunc) {
 // Emit dispatches an event to all registered handlers.
 // No-op if the bus has been stopped.
 // Re-entrant: a handler may call Emit, which dispatches immediately (depth-first).
+// A panicking handler is recovered; subsequent handlers still fire.
 func (b *Bus) Emit(e Event) {
 	if b.stopped {
 		return
@@ -51,13 +57,27 @@ func (b *Bus) Emit(e Event) {
 		b.emitted = append(b.emitted, e)
 	}
 
-	for _, h := range b.handlers[e.Type()] {
+	for i, h := range b.handlers[e.Type()] {
 		if b.stopped {
 			return
 		}
 
-		h(b, e)
+		b.callHandler(e, i, h)
 	}
+}
+
+// callHandler invokes a single handler with panic recovery.
+func (b *Bus) callHandler(e Event, index int, h HandlerFunc) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf(
+				"[bus] PANIC in handler %d for event %q: %v\n%s",
+				index, e.Type(), r, debug.Stack(),
+			)
+		}
+	}()
+
+	h(b, e)
 }
 
 // Stop prevents all subsequent Emit calls from dispatching.

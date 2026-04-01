@@ -147,3 +147,59 @@ func TestBus_Emitted_PanicsInNonTestMode(t *testing.T) {
 	require.Panics(t, func() { bus.Emitted() })
 	require.Panics(t, func() { bus.EmittedOfType(EventType("x")) })
 }
+
+func TestBus_Emit_HandlerPanic_Recovers(t *testing.T) {
+	t.Parallel()
+
+	bus := NewTestBus()
+	var order []string
+
+	// First handler panics.
+	bus.On(EventType("x"), func(b *Bus, e Event) {
+		order = append(order, "h1-before-panic")
+		panic("handler blew up")
+	})
+	// Second handler must still fire.
+	bus.On(EventType("x"), func(b *Bus, e Event) {
+		order = append(order, "h2")
+	})
+
+	// Emit must not propagate the panic.
+	require.NotPanics(t, func() {
+		bus.Emit(testEvent{eventType: "x"})
+	})
+
+	assert.Equal(t, []string{"h1-before-panic", "h2"}, order)
+}
+
+func TestBus_Emit_HandlerPanic_BusStillFunctional(t *testing.T) {
+	t.Parallel()
+
+	bus := NewTestBus()
+	var log []string
+
+	// Register a panicking handler on event type "a".
+	bus.On(EventType("a"), func(b *Bus, e Event) {
+		panic("boom")
+	})
+
+	// Register a normal handler on event type "b".
+	bus.On(EventType("b"), func(b *Bus, e Event) {
+		log = append(log, "b-handled")
+	})
+
+	// First emit: the panic is recovered.
+	bus.Emit(testEvent{eventType: "a"})
+
+	// Bus must still be functional — not stopped, not broken.
+	assert.False(t, bus.Stopped())
+
+	// Second emit: different event type works normally.
+	bus.Emit(testEvent{eventType: "b"})
+	assert.Equal(t, []string{"b-handled"}, log)
+
+	// Third emit: even the panicking handler's event type can be emitted again.
+	require.NotPanics(t, func() {
+		bus.Emit(testEvent{eventType: "a"})
+	})
+}
