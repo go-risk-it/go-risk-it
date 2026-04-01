@@ -134,12 +134,12 @@ func TestGameContext_Rebase_InheritsBaseDeadline(t *testing.T) {
 
 	gameCtx := newGameContext(context.Background(), "player-3", 55)
 
-	base, baseCancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
+	base, baseCancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 	defer baseCancel()
 
 	rebased := gameCtx.Rebase(base)
 
-	time.Sleep(10 * time.Millisecond)
+	<-rebased.Done()
 	require.ErrorIs(t, rebased.Err(), context.DeadlineExceeded)
 }
 
@@ -148,11 +148,11 @@ func TestLobbyContext_Rebase_InheritsBaseDeadline(t *testing.T) {
 
 	lobbyCtx := newLobbyContext(context.Background(), "host-3", 21)
 
-	base, baseCancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
+	base, baseCancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 	defer baseCancel()
 
 	rebased := lobbyCtx.Rebase(base)
 
-	time.Sleep(10 * time.Millisecond)
+	<-rebased.Done()
 	require.ErrorIs(t, rebased.Err(), context.DeadlineExceeded)
 }
