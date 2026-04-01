@@ -1,13 +1,13 @@
 package routes
 
 import (
-	"errors"
 	"fmt"
 
 	game "github.com/go-risk-it/go-risk-it/internal/game/api"
 	"github.com/go-risk-it/go-risk-it/internal/game/api/rest/request"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/advancement"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
 )
 
 type AdvancementController struct {
@@ -36,11 +36,11 @@ func (c *AdvancementController) Advance(
 
 	switch advancement.CurrentPhase {
 	case game.Deploy:
-		err = errors.New("cannot advance from deploy phase")
+		err = domainerrors.NewValidationError("cannot advance from deploy phase")
 	case game.Attack:
 		err = c.attackAdvancer.Advance(ctx)
 	case game.Conquer:
-		err = errors.New("cannot advance from conquer phase")
+		err = domainerrors.NewValidationError("cannot advance from conquer phase")
 	case game.Reinforce:
 		err = c.reinforceAdvancer.Advance(ctx)
 	case game.Cards:

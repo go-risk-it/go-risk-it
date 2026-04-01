@@ -1,22 +1,17 @@
 package routes
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 
-	gameRequest "github.com/go-risk-it/go-risk-it/internal/game/api/rest/request"
-	"github.com/go-risk-it/go-risk-it/internal/game/api/rest/response"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/player"
 	"github.com/go-risk-it/go-risk-it/internal/game/logic/state"
 	gameWs "github.com/go-risk-it/go-risk-it/internal/game/ws"
-	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/web/rest/route"
-	restutils "github.com/go-risk-it/go-risk-it/internal/web/rest/utils"
 	"github.com/go-risk-it/go-risk-it/internal/web/ws"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 func ProvideRoutes(
@@ -29,119 +24,45 @@ func ProvideRoutes(
 	playerService player.Service,
 ) []*route.Route {
 	return []*route.Route{
-		route.Authed("POST /api/v1/games", createGame(gameCtrl)),
-		route.Authed("GET /api/v1/games/summary", getGamesSummary(gameCtrl)),
-		Game("POST /api/v1/games/{id}/advancements", advanceGame(advCtrl)),
-		Game(
+		route.CreateHandler("POST /api/v1/games", gameCtrl.CreateGame),
+		route.QueryHandler("GET /api/v1/games/summary", gameCtrl.GetUserGames),
+		route.DomainCommand(
+			"POST /api/v1/games/{id}/advancements",
+			ctx.WithGameID,
+			advCtrl.Advance,
+		),
+		route.DomainCommand(
 			"POST /api/v1/games/{id}/moves/deployments",
-			moveHandler[gameRequest.DeployMove](moveCtrl.PerformDeployMove),
+			ctx.WithGameID,
+			moveCtrl.PerformDeployMove,
 		),
-		Game(
+		route.DomainCommand(
 			"POST /api/v1/games/{id}/moves/attacks",
-			moveHandler[gameRequest.AttackMove](moveCtrl.PerformAttackMove),
+			ctx.WithGameID,
+			moveCtrl.PerformAttackMove,
 		),
-		Game(
+		route.DomainCommand(
 			"POST /api/v1/games/{id}/moves/conquers",
-			moveHandler[gameRequest.ConquerMove](moveCtrl.PerformConquerMove),
+			ctx.WithGameID,
+			moveCtrl.PerformConquerMove,
 		),
-		Game(
+		route.DomainCommand(
 			"POST /api/v1/games/{id}/moves/reinforcements",
-			moveHandler[gameRequest.ReinforceMove](moveCtrl.PerformReinforceMove),
+			ctx.WithGameID,
+			moveCtrl.PerformReinforceMove,
 		),
-		Game(
+		route.DomainCommand(
 			"POST /api/v1/games/{id}/moves/cards",
-			moveHandler[gameRequest.CardsMove](moveCtrl.PerformCardsMove),
+			ctx.WithGameID,
+			moveCtrl.PerformCardsMove,
 		),
-		GameWS("GET /api/v1/games/{id}/ws", connectGameWS(
-			gameConnectionManager, upgrader, gameStateService, playerService,
-		)),
-	}
-}
-
-func createGame(gameCtrl *GameController) route.PlainHandler {
-	return func(writer http.ResponseWriter, req *http.Request) error {
-		createGameRequest, err := restutils.DecodeRequest[gameRequest.CreateGame](writer, req)
-		if err != nil {
-			return err
-		}
-
-		userContext, ok := req.Context().(kernelctx.UserContext)
-		if !ok {
-			return errors.New("invalid user context")
-		}
-
-		gameID, err := gameCtrl.CreateGame(userContext, createGameRequest) //nolint:contextcheck
-		if err != nil {
-			return err
-		}
-
-		createGameResponse, err := json.Marshal(response.CreateGame{GameID: gameID})
-		if err != nil {
-			return fmt.Errorf("failed to marshal response: %w", err)
-		}
-
-		restutils.WriteResponse(writer, createGameResponse, http.StatusCreated)
-
-		return nil
-	}
-}
-
-func getGamesSummary(gameCtrl *GameController) route.PlainHandler {
-	return func(writer http.ResponseWriter, req *http.Request) error {
-		userContext, ok := req.Context().(kernelctx.UserContext)
-		if !ok {
-			return errors.New("invalid user context")
-		}
-
-		games, err := gameCtrl.GetUserGames(userContext)
-		if err != nil {
-			return err
-		}
-
-		gamesResponse, err := json.Marshal(games)
-		if err != nil {
-			return fmt.Errorf("failed to marshal response: %w", err)
-		}
-
-		restutils.WriteResponse(writer, gamesResponse, http.StatusOK)
-
-		return nil
-	}
-}
-
-func advanceGame(advCtrl *AdvancementController) GameHandler {
-	return func(writer http.ResponseWriter, req *http.Request, gameCtx ctx.GameContext) error {
-		advancementRequest, err := restutils.DecodeRequest[gameRequest.Advancement](writer, req)
-		if err != nil {
-			return err
-		}
-
-		if err = advCtrl.Advance(gameCtx, advancementRequest); err != nil {
-			return err
-		}
-
-		restutils.WriteResponse(writer, []byte{}, http.StatusNoContent)
-
-		return nil
-	}
-}
-
-func moveHandler[T any](
-	perform func(ctx.GameContext, T) error,
-) GameHandler {
-	return func(writer http.ResponseWriter, req *http.Request, gameCtx ctx.GameContext) error {
-		moveRequest, err := restutils.DecodeRequest[T](writer, req)
-		if err != nil {
-			return err
-		}
-
-		if err := perform(gameCtx, moveRequest); err != nil {
-			return err
-		}
-
-		restutils.WriteResponse(writer, []byte{}, http.StatusNoContent)
-
-		return nil
+		route.DomainWS(
+			"GET /api/v1/games/{id}/ws",
+			func(r *http.Request) (ctx.GameContext, error) {
+				return route.BuildDomainContext(r, ctx.WithGameID)
+			},
+			connectGameWS(gameConnectionManager, upgrader, gameStateService, playerService),
+		),
 	}
 }
 
@@ -150,7 +71,7 @@ func connectGameWS(
 	upgrader ws.Upgrader,
 	gameStateService state.Service,
 	playerService player.Service,
-) GameHandler {
+) func(http.ResponseWriter, *http.Request, ctx.GameContext) error {
 	return func(writer http.ResponseWriter, request *http.Request, gameCtx ctx.GameContext) error {
 		if err := ValidateGameWSConnection(gameCtx, gameStateService, playerService); err != nil {
 			return err
@@ -162,11 +83,10 @@ func connectGameWS(
 		}
 
 		gameConnectionManager.ConnectPlayer(gameCtx, conn)
-		slog.InfoContext(
+		observe.Info(
 			request.Context(),
 			"Game WS upgraded",
-			"remoteAddress",
-			conn.RemoteAddr().String(),
+			attribute.String("remoteAddress", conn.RemoteAddr().String()),
 		)
 
 		return nil

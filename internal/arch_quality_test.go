@@ -523,3 +523,179 @@ func extractNilPtrType(values []ast.Expr) string {
 
 	return ident.Name
 }
+
+// ─── Rules R1, E5, M1: Route Package Enforcement ───
+
+// isRoutesPackage returns true if the package import path ends with "/routes".
+func isRoutesPackage(importPath string) bool {
+	suffix := packageSuffix(importPath)
+
+	return strings.HasSuffix(suffix, "/routes")
+}
+
+// Rule R1: routes/ packages must not import the "errors" standard library package.
+// After consolidation, all error creation in routes/ uses domainerrors.New*.
+// Importing bare "errors" would allow regression to untyped error handling.
+func TestArch_RoutesNeverImportBareErrors(t *testing.T) {
+	t.Parallel()
+
+	pkgs := loadPackages(t, "./internal/...")
+
+	for _, pkg := range pkgs {
+		if !isRoutesPackage(pkg.ImportPath) {
+			continue
+		}
+
+		for _, imp := range pkg.Imports {
+			if imp == "errors" {
+				t.Errorf(
+					"%s imports \"errors\" — routes/ packages must use "+
+						"domainerrors (kernel/errors) instead of bare errors.New",
+					pkg.ImportPath,
+				)
+			}
+		}
+	}
+}
+
+// Rule O1 extension: routes/ packages must not import "log/slog".
+// After consolidation, all logging in routes/ uses observe.Info/observe.Error.
+func TestArch_RoutesNeverImportSlog(t *testing.T) {
+	t.Parallel()
+
+	pkgs := loadPackages(t, "./internal/...")
+
+	for _, pkg := range pkgs {
+		if !isRoutesPackage(pkg.ImportPath) {
+			continue
+		}
+
+		for _, imp := range pkg.Imports {
+			if imp == "log/slog" {
+				t.Errorf(
+					"%s imports \"log/slog\" — routes/ packages must use "+
+						"kernel/observe instead of log/slog",
+					pkg.ImportPath,
+				)
+			}
+		}
+	}
+}
+
+// countProductionFiles counts production .go files in a package,
+// excluding _test.go and doc.go files.
+func countProductionFiles(pkg goPackage) int {
+	count := 0
+
+	for _, goFile := range pkg.GoFiles {
+		if strings.HasSuffix(goFile, "_test.go") || goFile == docGoFile {
+			continue
+		}
+
+		count++
+	}
+
+	return count
+}
+
+// Rule E5: route file count ratchet — the number of production .go files
+// in each routes/ directory must not exceed the baseline ceiling.
+// This prevents route file proliferation; new endpoints should be consolidated
+// into existing controller files.
+func TestArch_RouteFileCountCeiling(t *testing.T) {
+	t.Parallel()
+
+	baseline := loadBaseline(t)
+	pkgs := loadPackages(t, "./internal/...")
+
+	for _, pkg := range pkgs {
+		if !isRoutesPackage(pkg.ImportPath) {
+			continue
+		}
+
+		fileCount := countProductionFiles(pkg)
+
+		if fileCount > baseline.RouteMaxProductionFilesPerDir {
+			t.Errorf(
+				"%s has %d production files (ceiling: %d) — "+
+					"route file count exceeded ceiling — routes should not proliferate; "+
+					"consider consolidating into existing files",
+				pkg.ImportPath, fileCount, baseline.RouteMaxProductionFilesPerDir,
+			)
+		}
+
+		t.Logf("routes %s: %d production files (ceiling: %d, headroom: %d)",
+			packageSuffix(pkg.ImportPath), fileCount,
+			baseline.RouteMaxProductionFilesPerDir,
+			baseline.RouteMaxProductionFilesPerDir-fileCount,
+		)
+	}
+}
+
+// routeModuleDirs lists the module routes/ directories that must conform
+// to the standard module shape.
+//
+//nolint:gochecknoglobals // test-only list
+var routeModuleDirs = []string{
+	"./internal/game/routes",
+	"./internal/lobby/routes",
+}
+
+// Rule M1: module shape ratchet — both game/routes/ and lobby/routes/ must
+// contain the canonical file set: routes.go, module.go, doc.go, and at least
+// one file matching *_controller.go. This enforces the post-consolidation
+// module structure and prevents drift to ad-hoc file layouts.
+func TestArch_RouteModuleShape(t *testing.T) {
+	t.Parallel()
+
+	for _, dir := range routeModuleDirs {
+		pkgs := loadPackages(t, dir)
+		if len(pkgs) == 0 {
+			t.Errorf("%s: no package found", dir)
+
+			continue
+		}
+
+		pkg := pkgs[0]
+		allFiles := make(map[string]bool)
+
+		for _, f := range pkg.GoFiles {
+			allFiles[f] = true
+		}
+
+		// Required files: routes.go, module.go, doc.go
+		for _, required := range []string{"routes.go", "module.go", docGoFile} {
+			if !allFiles[required] {
+				t.Errorf(
+					"%s missing required file %s — "+
+						"module routes/ directory missing required files — "+
+						"each module needs routes.go, module.go, doc.go, "+
+						"and at least one *_controller.go",
+					pkg.ImportPath, required,
+				)
+			}
+		}
+
+		// At least one *_controller.go file
+		hasController := false
+
+		for f := range allFiles {
+			if strings.HasSuffix(f, "_controller.go") &&
+				!strings.HasSuffix(f, "_test.go") {
+				hasController = true
+
+				break
+			}
+		}
+
+		if !hasController {
+			t.Errorf(
+				"%s has no *_controller.go file — "+
+					"module routes/ directory missing required files — "+
+					"each module needs routes.go, module.go, doc.go, "+
+					"and at least one *_controller.go",
+				pkg.ImportPath,
+			)
+		}
+	}
+}

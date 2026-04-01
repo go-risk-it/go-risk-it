@@ -173,11 +173,12 @@ func excludeLoadtest(pkgs []goPackage) []goPackage {
 
 // archBaseline defines the metric ceilings for package quality ratcheting.
 type archBaseline struct {
-	MaxExportsPerPackage     int `json:"maxExportsPerPackage"`
-	MaxFanOut                int `json:"maxFanOut"`
-	MaxFilesPerPackage       int `json:"maxFilesPerPackage"`
-	MinDocGoCount            int `json:"minDocGoCount"`
-	KernelMaxProductionFiles int `json:"kernelMaxProductionFiles"`
+	MaxExportsPerPackage          int `json:"maxExportsPerPackage"`
+	MaxFanOut                     int `json:"maxFanOut"`
+	MaxFilesPerPackage            int `json:"maxFilesPerPackage"`
+	MinDocGoCount                 int `json:"minDocGoCount"`
+	KernelMaxProductionFiles      int `json:"kernelMaxProductionFiles"`
+	RouteMaxProductionFilesPerDir int `json:"routeMaxProductionFilesPerDir"`
 }
 
 func loadBaseline(t *testing.T) archBaseline {

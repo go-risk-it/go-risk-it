@@ -3,5 +3,6 @@
   "maxFanOut": 25,
   "maxFilesPerPackage": 11,
   "minDocGoCount": 71,
-  "kernelMaxProductionFiles": 30
+  "kernelMaxProductionFiles": 30,
+  "routeMaxProductionFilesPerDir": 6
 }

@@ -2,13 +2,14 @@ package routes
 
 import (
 	"fmt"
-	"log/slog"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/commands"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/lobby/logic/start"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // StartController orchestrates game start by dispatching a CreateGame command
@@ -55,7 +56,7 @@ func (c *StartController) StartGame(ctx ctx.LobbyContext) error {
 		return fmt.Errorf("failed to mark lobby as started: %w", err)
 	}
 
-	slog.InfoContext(ctx, "lobby started", "game_id", createGameResult.GameID)
+	observe.Info(ctx, "lobby started", attribute.Int64("game_id", createGameResult.GameID))
 
 	return nil
 }
