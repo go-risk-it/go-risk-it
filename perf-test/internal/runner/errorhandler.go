@@ -13,7 +13,7 @@ import (
 
 // ErrorHandler implements error recovery with retry logic and escalation.
 type ErrorHandler struct {
-	gameCtx                 *GameContext
+	gameCtx                 *GameSession
 	timeouts                Timeouts
 	result                  *GameResult
 	ctx                     context.Context

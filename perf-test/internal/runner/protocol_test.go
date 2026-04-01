@@ -120,8 +120,8 @@ func makeProtocolHandler(
 	auth AuthClient,
 	rest *fakeRESTForProtocol,
 	wsErr error,
-) (*ProtocolHandler, *GameContext) {
-	gameCtx := &GameContext{
+) (*ProtocolHandler, *GameSession) {
+	gameCtx := &GameSession{
 		GameIndex: 1,
 		StartTime: time.Now(),
 		Collector: metrics.NewCollector(0),
@@ -229,7 +229,7 @@ func TestProtocol_WSConnectFails_EmitsGameComplete(t *testing.T) {
 	require.Error(t, completeEvents[0].(GameCompleteEvent).Result.FatalError)
 }
 
-func TestProtocol_PopulatesGameContext(t *testing.T) {
+func TestProtocol_PopulatesGameSession(t *testing.T) {
 	t.Parallel()
 
 	auth := newFakeAuth(4)

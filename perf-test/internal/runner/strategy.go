@@ -16,9 +16,8 @@ import (
 type StrategyHandler struct {
 	strategy  player.Strategy
 	thinkTime time.Duration
-	gameCtx   *GameContext
+	gameCtx   *GameSession
 	ctx       context.Context
-	lastPhase string
 }
 
 // Register subscribes to EventStateReceived.
@@ -68,11 +67,7 @@ func (h *StrategyHandler) handle(bus *Bus, e Event) {
 	// Use active player's own view for the most accurate state.
 	activeSnap := h.gameCtx.Players[activeIdx].WS.View().Snapshot()
 
-	// Track phase transitions.
 	currentPhase := strings.ToLower(string(activeSnap.CurrentPhase()))
-	if currentPhase != h.lastPhase {
-		h.lastPhase = currentPhase
-	}
 
 	// Decide move.
 	action, err := h.strategy.DecideMove(activeSnap, activeUserID)

@@ -177,7 +177,7 @@ func TestRunner_HappyPath_CompletesGame(t *testing.T) {
 		},
 	}
 
-	r := newTestRunner(cfg, func(gameCtx *GameContext) {
+	r := newTestRunner(cfg, func(gameCtx *GameSession) {
 		gameCtx.GameID = 42
 		gameCtx.Players = []*PlayerInfo{
 			{
@@ -221,7 +221,7 @@ func TestRunner_SetupFailure_ReturnsFatal(t *testing.T) {
 
 	r := New(cfg)
 	// Override auth to fail.
-	r.protocolFactory = func(gameCtx *GameContext) *ProtocolHandler {
+	r.protocolFactory = func(gameCtx *GameSession) *ProtocolHandler {
 		return &ProtocolHandler{
 			baseURL:  cfg.BaseURL,
 			wsURL:    cfg.WSURL,
@@ -275,7 +275,7 @@ func TestRunner_Timeout_ReturnsTimedOut(t *testing.T) {
 		},
 	}
 
-	r := newTestRunner(cfg, func(gameCtx *GameContext) {
+	r := newTestRunner(cfg, func(gameCtx *GameSession) {
 		gameCtx.GameID = 42
 		gameCtx.Players = []*PlayerInfo{
 			{
@@ -324,7 +324,7 @@ func TestRunner_WSConnectionsClosed(t *testing.T) {
 		},
 	}
 
-	r := newTestRunner(cfg, func(gameCtx *GameContext) {
+	r := newTestRunner(cfg, func(gameCtx *GameSession) {
 		gameCtx.GameID = 42
 		gameCtx.Players = []*PlayerInfo{
 			{

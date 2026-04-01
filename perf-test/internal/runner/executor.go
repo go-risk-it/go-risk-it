@@ -12,7 +12,7 @@ import (
 
 // ExecutorHandler executes moves via REST and classifies outcomes.
 type ExecutorHandler struct {
-	gameCtx *GameContext
+	gameCtx *GameSession
 }
 
 // Register subscribes to EventMoveDecided.

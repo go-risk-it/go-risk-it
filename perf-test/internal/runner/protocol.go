@@ -18,7 +18,7 @@ type ProtocolHandler struct {
 	wsURL    string
 	anonKey  string
 	timeouts Timeouts
-	gameCtx  *GameContext
+	gameCtx  *GameSession
 
 	// Factories for testability.
 	newAuth func(baseURL, anonKey string) AuthClient

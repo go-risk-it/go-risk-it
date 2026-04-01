@@ -33,9 +33,9 @@ type Config struct {
 type Runner struct {
 	cfg Config
 	// protocolFactory allows tests to override the protocol handler.
-	protocolFactory func(gameCtx *GameContext) *ProtocolHandler
+	protocolFactory func(gameCtx *GameSession) *ProtocolHandler
 	// setupOverride allows tests to skip protocol and inject state directly.
-	setupOverride func(gameCtx *GameContext)
+	setupOverride func(gameCtx *GameSession)
 }
 
 // New creates a Runner with default wiring.
@@ -44,7 +44,7 @@ func New(cfg Config) *Runner {
 }
 
 // newTestRunner creates a Runner that skips protocol setup and injects state.
-func newTestRunner(cfg Config, setup func(gameCtx *GameContext)) *Runner {
+func newTestRunner(cfg Config, setup func(gameCtx *GameSession)) *Runner {
 	return &Runner{cfg: cfg, setupOverride: setup}
 }
 
@@ -71,7 +71,7 @@ func (r *Runner) Run(ctx context.Context, gameIndex, numPlayers int) GameResult 
 	defer cancel()
 
 	start := time.Now()
-	gameCtx := &GameContext{
+	gameCtx := &GameSession{
 		GameIndex: gameIndex,
 		StartTime: start,
 		Collector: r.cfg.Collector,
@@ -143,7 +143,7 @@ func (r *Runner) Run(ctx context.Context, gameIndex, numPlayers int) GameResult 
 
 func (r *Runner) wireHandlers(
 	bus *Bus,
-	gameCtx *GameContext,
+	gameCtx *GameSession,
 	ctx context.Context,
 	result *GameResult,
 ) {
@@ -187,7 +187,7 @@ func (r *Runner) wireHandlers(
 	errorH.Register(bus)
 }
 
-func (r *Runner) buildProtocolHandler(gameCtx *GameContext) *ProtocolHandler {
+func (r *Runner) buildProtocolHandler(gameCtx *GameSession) *ProtocolHandler {
 	if r.protocolFactory != nil {
 		return r.protocolFactory(gameCtx)
 	}

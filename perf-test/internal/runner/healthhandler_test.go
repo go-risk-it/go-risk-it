@@ -27,7 +27,7 @@ func TestHealth_DelegatesAllHooks(t *testing.T) {
 	t.Parallel()
 
 	obs := &fakeObserver{}
-	gameCtx := &GameContext{GameIndex: 7}
+	gameCtx := &GameSession{GameIndex: 7}
 	h := &HealthHandler{observer: obs, gameCtx: gameCtx}
 	bus := NewTestBus()
 	h.Register(bus)
@@ -56,7 +56,7 @@ func TestHealth_DelegatesAllHooks(t *testing.T) {
 func TestHealth_NilObserver_UsesNop(t *testing.T) {
 	t.Parallel()
 
-	gameCtx := &GameContext{GameIndex: 1}
+	gameCtx := &GameSession{GameIndex: 1}
 	h := NewHealthHandler(nil, gameCtx)
 	bus := NewTestBus()
 	h.Register(bus)

@@ -31,11 +31,11 @@ func (f *fakeStrategy) DecideMove(_ gamestate.ViewSnapshot, _ string) (*player.A
 func makeStrategyHandler(
 	ctx context.Context,
 	strategy player.Strategy,
-) (*StrategyHandler, *GameContext) {
+) (*StrategyHandler, *GameSession) {
 	// Default state for the WS views — deploy phase, turn 0.
 	defaultSnap := mkSnap(0, gamestate.Deploy, "")
 
-	gameCtx := &GameContext{
+	gameCtx := &GameSession{
 		GameIndex: 1,
 		Players: []*PlayerInfo{
 			{UserID: "u0", Name: "p0", WS: newFakeWSWithState(defaultSnap)},

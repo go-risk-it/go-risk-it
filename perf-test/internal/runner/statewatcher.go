@@ -9,7 +9,7 @@ import (
 
 // StateWatcherHandler waits for fresh game state via WebSocket after moves.
 type StateWatcherHandler struct {
-	gameCtx  *GameContext
+	gameCtx  *GameSession
 	timeouts Timeouts
 	ctx      context.Context
 }

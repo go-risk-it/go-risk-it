@@ -14,11 +14,11 @@ import (
 
 func makeStateWatcherHandler(
 	ctx context.Context,
-) (*StateWatcherHandler, *GameContext) {
+) (*StateWatcherHandler, *GameSession) {
 	snap := mkSnap(0, gamestate.Deploy, "")
 	ws0 := newFakeWSWithState(snap)
 
-	gameCtx := &GameContext{
+	gameCtx := &GameSession{
 		GameIndex: 1,
 		Players: []*PlayerInfo{
 			{UserID: "u0", Name: "p0", WS: ws0},

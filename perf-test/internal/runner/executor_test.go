@@ -66,8 +66,8 @@ func (f *fakeRESTForExecutor) Advance(gameID int64, _ string) error {
 	return f.err
 }
 
-func makeExecutorHandler(rest *fakeRESTForExecutor) (*ExecutorHandler, *GameContext) {
-	gameCtx := &GameContext{
+func makeExecutorHandler(rest *fakeRESTForExecutor) (*ExecutorHandler, *GameSession) {
+	gameCtx := &GameSession{
 		GameID: 42,
 		Players: []*PlayerInfo{
 			{UserID: "u0", Name: "p0", REST: rest},

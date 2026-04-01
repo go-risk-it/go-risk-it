@@ -8,12 +8,12 @@ import (
 // HealthHandler delegates game lifecycle events to a GameObserver.
 type HealthHandler struct {
 	observer  orchestrator.GameObserver
-	gameCtx   *GameContext
+	gameCtx   *GameSession
 	lastPhase metrics.Phase
 }
 
 // NewHealthHandler creates a HealthHandler. Nil observer uses NopObserver.
-func NewHealthHandler(obs orchestrator.GameObserver, gameCtx *GameContext) *HealthHandler {
+func NewHealthHandler(obs orchestrator.GameObserver, gameCtx *GameSession) *HealthHandler {
 	if obs == nil {
 		obs = orchestrator.NopObserver{}
 	}

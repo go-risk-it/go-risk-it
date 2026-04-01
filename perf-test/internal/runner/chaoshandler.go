@@ -8,13 +8,13 @@ import (
 // ChaosHandler injects fault scenarios after successful moves.
 type ChaosHandler struct {
 	injector *chaos.Injector
-	gameCtx  *GameContext
+	gameCtx  *GameSession
 	// For testing: overrides the default handle logic.
 	maybeDisconnectFn func(players []*PlayerInfo, activeIdx int)
 }
 
 // NewChaosHandler creates a ChaosHandler. If injector is nil, the handler is a no-op.
-func NewChaosHandler(injector *chaos.Injector, gameCtx *GameContext) *ChaosHandler {
+func NewChaosHandler(injector *chaos.Injector, gameCtx *GameSession) *ChaosHandler {
 	return &ChaosHandler{injector: injector, gameCtx: gameCtx}
 }
 

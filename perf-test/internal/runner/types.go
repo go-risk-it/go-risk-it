@@ -48,8 +48,8 @@ type PlayerInfo struct {
 	WS     WSClient
 }
 
-// GameContext holds shared mutable state for a single game.
-type GameContext struct {
+// GameSession holds shared mutable state for a single game.
+type GameSession struct {
 	GameIndex int
 	GameID    int64
 	Players   []*PlayerInfo

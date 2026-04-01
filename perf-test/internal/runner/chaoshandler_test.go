@@ -13,7 +13,7 @@ func TestChaos_MoveSucceeded_MaybeDisconnects(t *testing.T) {
 	var called bool
 	var numPlayers int
 
-	gameCtx := &GameContext{
+	gameCtx := &GameSession{
 		Players: []*PlayerInfo{
 			{UserID: "u0", Name: "p0", WS: newFakeWS()},
 			{UserID: "u1", Name: "p1", WS: newFakeWS()},
@@ -44,7 +44,7 @@ func TestChaos_MoveSucceeded_MaybeDisconnects(t *testing.T) {
 func TestChaos_NilInjector_NoRegistration(t *testing.T) {
 	t.Parallel()
 
-	gameCtx := &GameContext{
+	gameCtx := &GameSession{
 		Players: []*PlayerInfo{
 			{UserID: "u0", Name: "p0", WS: newFakeWS()},
 		},

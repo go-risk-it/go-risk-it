@@ -40,7 +40,7 @@ func makeErrorHandler(
 	snap := mkSnap(0, gamestate.Deploy, "")
 	ws := newFakeWSWithState(snap)
 
-	gameCtx := &GameContext{
+	gameCtx := &GameSession{
 		GameIndex: 1,
 		GameID:    42,
 		Players: []*PlayerInfo{
