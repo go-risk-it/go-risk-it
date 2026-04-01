@@ -99,7 +99,7 @@ dashboard.new(
           title='HTTP Error Rate',
           targets=[
             targets.target(
-              '(sum(rate(%s{service="%s", span_name=~"%s", status_code="STATUS_CODE_ERROR"}[1m])) or vector(0)) / sum(rate(%s{service="%s", span_name=~"%s"}[1m]))' % [targets.spanmetricsMetric.calls, svc, targets.spans.http, targets.spanmetricsMetric.calls, svc, targets.spans.http],
+              '(sum(rate(%s{service_name="%s", span_name=~"%s", status_code="STATUS_CODE_ERROR"}[1m])) or vector(0)) / sum(rate(%s{service_name="%s", span_name=~"%s"}[1m]))' % [targets.spanmetricsMetric.calls, svc, targets.spans.http, targets.spanmetricsMetric.calls, svc, targets.spans.http],
               'Error Rate',
             ),
           ],

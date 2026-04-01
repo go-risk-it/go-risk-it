@@ -56,7 +56,7 @@ dashboard.new(
         panels.statPanel(
           title='Total Events',
           targets=[targets.target(
-            'sum(%s{service="%s", span_name=~"%s"})' % [targets.spanmetricsMetric.calls, svc, targets.spans.busDispatch],
+            'sum(%s{service_name="%s", span_name=~"%s"})' % [targets.spanmetricsMetric.calls, svc, targets.spans.busDispatch],
             'total events',
           )],
           thresholds={
@@ -136,9 +136,9 @@ dashboard.new(
         panels.heatmapPanel(
           title='Phase Duration Heatmap',
           targets=[targets.heatmapTarget(
-            'sum(rate(%s{service="%s", span_name=~"%s"}[1m])) by (le)' % [targets.spanmetricsMetric.duration, svc, targets.spans.gameLogic],
+            'sum(rate(%s{service_name="%s", span_name=~"%s"}[1m])) by (le)' % [targets.spanmetricsMetric.duration, svc, targets.spans.gameLogic],
           )],
-          unit='s',
+          unit='ms',
           colorScheme='Oranges',
           colorFill='dark-orange',
         ),
@@ -267,7 +267,7 @@ dashboard.new(
           panels.statPanel(
             title='Event Bus Events Total',
             targets=[targets.target(
-              'sum(%s{service="%s", span_name=~"%s"})' % [targets.spanmetricsMetric.calls, svc, targets.spans.busDispatch],
+              'sum(%s{service_name="%s", span_name=~"%s"})' % [targets.spanmetricsMetric.calls, svc, targets.spans.busDispatch],
               'total events',
             )],
             thresholds={
@@ -287,7 +287,7 @@ dashboard.new(
           panels.barGaugePanel(
             title='Total Moves by Phase',
             targets=[targets.target(
-              'sum(%s{service="%s", span_name=~"%s"}) by (phase)' % [targets.spanmetricsMetric.calls, svc, targets.spans.gameLogic],
+              'sum(%s{service_name="%s", span_name=~"%s"}) by (phase)' % [targets.spanmetricsMetric.calls, svc, targets.spans.gameLogic],
               '{{phase}}',
             )],
           ),
@@ -300,7 +300,7 @@ dashboard.new(
           panels.timeseriesPanel(
             title='Game HTTP Route Request Rate',
             targets=[targets.target(
-              'sum(rate(%s{service="%s", span_name=~"(GET|POST|PUT|DELETE) .*/games.*"}[1m])) by (span_name)' % [targets.spanmetricsMetric.calls, svc],
+              'sum(rate(%s{service_name="%s", span_name=~"(GET|POST|PUT|DELETE) .*/games.*"}[1m])) by (span_name)' % [targets.spanmetricsMetric.calls, svc],
               '{{span_name}}',
             )],
             unit='reqps',

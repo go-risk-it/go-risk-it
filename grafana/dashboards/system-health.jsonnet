@@ -71,7 +71,7 @@ dashboard.new(
         panels.statPanel(
           title='HTTP Error Rate %',
           targets=[targets.target(
-            'sum(rate(%s{service="%s", span_name=~"%s", status_code="STATUS_CODE_ERROR"}[1m])) / sum(rate(%s{service="%s", span_name=~"%s"}[1m])) * 100' % [targets.spanmetricsMetric.calls, svc, targets.spans.http, targets.spanmetricsMetric.calls, svc, targets.spans.http],
+            'sum(rate(%s{service_name="%s", span_name=~"%s", status_code="STATUS_CODE_ERROR"}[1m])) / sum(rate(%s{service_name="%s", span_name=~"%s"}[1m])) * 100' % [targets.spanmetricsMetric.calls, svc, targets.spans.http, targets.spanmetricsMetric.calls, svc, targets.spans.http],
             'error %',
             'A',
           )],
@@ -335,7 +335,7 @@ dashboard.new(
           panels.timeseriesPanel(
             title='HTTP Error Rate %',
             targets=[targets.target(
-              'sum(rate(%s{service="%s", span_name=~"%s", status_code="STATUS_CODE_ERROR"}[1m])) / sum(rate(%s{service="%s", span_name=~"%s"}[1m])) * 100' % [targets.spanmetricsMetric.calls, svc, targets.spans.http, targets.spanmetricsMetric.calls, svc, targets.spans.http],
+              'sum(rate(%s{service_name="%s", span_name=~"%s", status_code="STATUS_CODE_ERROR"}[1m])) / sum(rate(%s{service_name="%s", span_name=~"%s"}[1m])) * 100' % [targets.spanmetricsMetric.calls, svc, targets.spans.http, targets.spanmetricsMetric.calls, svc, targets.spans.http],
               'error %',
               'A',
             )],
@@ -492,7 +492,7 @@ dashboard.new(
           panels.timeseriesPanel(
             title='Fan-Out',
             targets=[targets.target(
-              'avg(traces_spanmetrics_latency_sum{service="%s", span_name=~"%s"}) by ()' % [svc, targets.spans.wsBroadcast],
+              'avg(traces_span_metrics_duration_milliseconds_sum{service_name="%s", span_name=~"%s"}) by ()' % [svc, targets.spans.wsBroadcast],
               'avg fanout',
               'A',
             )],
@@ -526,7 +526,7 @@ dashboard.new(
         panels.timeseriesPanel(
           title='Fan-out Amplification',
           targets=[targets.target(
-            'sum(rate(%s{service="%s", span_name=~"%s"}[1m])) / sum(rate(%s{service="%s", span_name="bus:move_executed"}[1m]))' % [targets.spanmetricsMetric.calls, svc, targets.spans.wsBroadcast, targets.spanmetricsMetric.calls, svc],
+            'sum(rate(%s{service_name="%s", span_name=~"%s"}[1m])) / sum(rate(%s{service_name="%s", span_name="bus:move_executed"}[1m]))' % [targets.spanmetricsMetric.calls, svc, targets.spans.wsBroadcast, targets.spanmetricsMetric.calls, svc],
             'broadcasts/move',
             'A',
           )],
@@ -542,7 +542,7 @@ dashboard.new(
         panels.timeseriesPanel(
           title='DB Latency Share',
           targets=[targets.target(
-            'histogram_quantile(0.95, sum(rate(%s{service="%s", span_name=~"%s"}[1m])) by (le)) / histogram_quantile(0.95, sum(rate(%s{service="%s", span_name=~"%s"}[1m])) by (le)) * 100' % [targets.spanmetricsMetric.duration, svc, targets.spans.db, targets.spanmetricsMetric.duration, svc, targets.spans.http],
+            'histogram_quantile(0.95, sum(rate(%s{service_name="%s", span_name=~"%s"}[1m])) by (le)) / histogram_quantile(0.95, sum(rate(%s{service_name="%s", span_name=~"%s"}[1m])) by (le)) * 100' % [targets.spanmetricsMetric.duration, svc, targets.spans.db, targets.spanmetricsMetric.duration, svc, targets.spans.http],
             'DB % of HTTP p95',
             'A',
           )],
@@ -685,9 +685,9 @@ dashboard.new(
           panels.heatmapPanel(
             title='Query Latency Heatmap',
             targets=[targets.heatmapTarget(
-              'sum(rate(%s{service="%s", span_name=~"%s"}[1m])) by (le)' % [targets.spanmetricsMetric.duration, svc, targets.spans.db],
+              'sum(rate(%s{service_name="%s", span_name=~"%s"}[1m])) by (le)' % [targets.spanmetricsMetric.duration, svc, targets.spans.db],
             )],
-            unit='s',
+            unit='ms',
             colorScheme='Spectral',
             colorFill='dark-red',
           ),

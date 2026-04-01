@@ -1,0 +1,214 @@
+{
+  "commit_sha": "cd1b4066",
+  "timestamp": "2026-04-01T02:44:32.112862+02:00",
+  "branch": "main",
+  "config": {
+    "steps": [
+      40,
+      80,
+      120,
+      160,
+      200,
+      250,
+      300
+    ],
+    "hold_duration_sec": 120,
+    "num_players": 4,
+    "game_timeout_sec": 900,
+    "stop_on_breach": true
+  },
+  "slo_ceiling": {
+    "games": 0,
+    "throughput_mps": 0,
+    "completion_rate": 0
+  },
+  "steps": [
+    {
+      "target_games": 40,
+      "metrics": {
+        "e2e": {
+          "p50_s": 0.005,
+          "p95_s": 0.017,
+          "p99_s": 0.039,
+          "max_s": 0.185
+        },
+        "ws_delivery": {
+          "p50_s": 0.051,
+          "p95_s": 0.055,
+          "p99_s": 30.015,
+          "max_s": 30.015
+        },
+        "throughput_moves_per_sec": 303.83250612654797,
+        "throughput_peak_moves_per_sec": 680,
+        "http_error_rate": 0,
+        "move_failure_rate": 0.023541069659069606,
+        "total_moves": 36460,
+        "total_errors": 0,
+        "games_completed": 0,
+        "games_timed_out": 0,
+        "games_fatal": 0,
+        "total_retries": 0,
+        "total_conflicts": 879,
+        "total_reconnects": 0,
+        "total_reconnect_failures": 0,
+        "phase_latency": {
+          "attack": {
+            "p50_s": 0.004,
+            "p95_s": 0.015,
+            "p99_s": 0.034,
+            "max_s": 0.185
+          },
+          "cards": {
+            "p50_s": 0.005,
+            "p95_s": 0.017,
+            "p99_s": 0.044,
+            "max_s": 0.136
+          },
+          "conquer": {
+            "p50_s": 0.005,
+            "p95_s": 0.018,
+            "p99_s": 0.044,
+            "max_s": 0.139
+          },
+          "deploy": {
+            "p50_s": 0.004,
+            "p95_s": 0.017,
+            "p99_s": 0.037,
+            "max_s": 0.177
+          },
+          "reinforce": {
+            "p50_s": 0.006,
+            "p95_s": 0.02,
+            "p99_s": 0.047,
+            "max_s": 0.155
+          }
+        },
+        "rest_latency": {
+          "advance": {
+            "p50_s": 0.004,
+            "p95_s": 0.014,
+            "p99_s": 0.03,
+            "max_s": 0.131
+          },
+          "attack": {
+            "p50_s": 0.004,
+            "p95_s": 0.016,
+            "p99_s": 0.036,
+            "max_s": 0.185
+          },
+          "cards": {
+            "p50_s": 0.005,
+            "p95_s": 0.017,
+            "p99_s": 0.044,
+            "max_s": 0.136
+          },
+          "conquer": {
+            "p50_s": 0.005,
+            "p95_s": 0.018,
+            "p99_s": 0.044,
+            "max_s": 0.139
+          },
+          "deploy": {
+            "p50_s": 0.004,
+            "p95_s": 0.017,
+            "p99_s": 0.037,
+            "max_s": 0.177
+          },
+          "reinforce": {
+            "p50_s": 0.007,
+            "p95_s": 0.025,
+            "p99_s": 0.06,
+            "max_s": 0.155
+          }
+        },
+        "error_breakdown": {
+          "conflict": 879
+        },
+        "phase_entries": {
+          "attack": 14197,
+          "cards": 1393,
+          "conquer": 9380,
+          "deploy": 4854,
+          "reinforce": 4814
+        },
+        "phase_moves": {
+          "attack": 16019,
+          "cards": 1393,
+          "conquer": 9380,
+          "deploy": 4854,
+          "reinforce": 4814
+        },
+        "duration_sec": 120.000326709
+      },
+      "slo_eval": {
+        "violations": [
+          {
+            "slo": {
+              "name": "WS delivery latency p99",
+              "metric": "ws_delivery_p99_s",
+              "threshold": 0.2,
+              "unit": "s"
+            },
+            "actual": 30.015
+          }
+        ]
+      },
+      "server_resources": {
+        "risk_it": {
+          "cpu_percent": 41.23,
+          "memory_mb": 75.95,
+          "memory_limit_mb": 17459.2
+        },
+        "db": {
+          "cpu_percent": 46.6,
+          "memory_mb": 385.8,
+          "memory_limit_mb": 17459.2
+        }
+      },
+      "duration_sec": 120.000326709,
+      "health_distribution": {
+        "healthy": 6,
+        "slow": 0,
+        "stalled": 34,
+        "zombie": 0,
+        "total": 40
+      }
+    }
+  ],
+  "breaking_points": [
+    {
+      "slo_name": "WS delivery latency p99",
+      "breaks_at_games": 40,
+      "last_good_value": 0,
+      "break_value": 30.015
+    }
+  ],
+  "environment": {
+    "go_version": "go1.26.1",
+    "goos": "darwin",
+    "goarch": "arm64",
+    "gomaxprocs": 14,
+    "num_cpu": 14,
+    "docker_version": "Docker version 28.3.3, build 980b856"
+  },
+  "insights": [
+    {
+      "category": "anomaly",
+      "severity": "warning",
+      "title": "WS delivery tail latency blow-up",
+      "detail": "p99/p95 ratio = 545.7x (p95=0.055s, p99=30.015s)"
+    },
+    {
+      "category": "anomaly",
+      "severity": "warning",
+      "title": "Error dominance",
+      "detail": "\"conflict\" accounts for 100% of non-success outcomes (879/879)"
+    },
+    {
+      "category": "anomaly",
+      "severity": "info",
+      "title": "Phase flow imbalance",
+      "detail": "deploy entries (4854) are 34% of attack entries (14197) — games may be getting stuck"
+    }
+  ]
+}
