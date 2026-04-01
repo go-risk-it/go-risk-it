@@ -196,8 +196,8 @@ func TestMoveExecuted_ToRecord_Attack(t *testing.T) {
 	require.Equal(t, int64(42), record["game_id"])
 	require.Equal(t, "attacker", record["user_id"])
 	require.Equal(t, now.Format(time.RFC3339), record["timestamp"])
-	require.Equal(t, sqlc.GamePhaseTypeATTACK, record["action_type"])
-	require.Equal(t, sqlc.GamePhaseTypeATTACK, record["target_phase"])
+	require.Equal(t, "ATTACK", record["action_type"])
+	require.Equal(t, "ATTACK", record["target_phase"])
 	require.Equal(t, false, record["game_over"])
 	require.Equal(t, int64(5), record["turn"])
 	require.Equal(t, int64(99), record["move_log_id"])
@@ -237,7 +237,7 @@ func TestMoveExecuted_ToRecord_Cards(t *testing.T) {
 	record := event.ToRecord()
 
 	require.Equal(t, gameevt.TypeMoveExecuted, record["event_type"])
-	require.Equal(t, sqlc.GamePhaseTypeCARDS, record["action_type"])
+	require.Equal(t, "CARDS", record["action_type"])
 	require.Equal(t, int64(6), record["extra_deployable_troops"])
 	require.Equal(t, 2, record["region_troop_grants"])
 
@@ -262,7 +262,7 @@ func TestMoveExecuted_ToRecord_Deploy(t *testing.T) {
 
 	record := event.ToRecord()
 
-	require.Equal(t, sqlc.GamePhaseTypeDEPLOY, record["action_type"])
+	require.Equal(t, "DEPLOY", record["action_type"])
 
 	// No action-specific keys
 	require.NotContains(t, record, "attacking_region_id")
@@ -287,7 +287,7 @@ func TestMoveExecuted_ToRecord_Conquer(t *testing.T) {
 
 	record := event.ToRecord()
 
-	require.Equal(t, sqlc.GamePhaseTypeCONQUER, record["action_type"])
+	require.Equal(t, "CONQUER", record["action_type"])
 
 	require.NotContains(t, record, "attacking_region_id")
 	require.NotContains(t, record, "defending_region_id")
@@ -311,7 +311,7 @@ func TestMoveExecuted_ToRecord_Reinforce(t *testing.T) {
 
 	record := event.ToRecord()
 
-	require.Equal(t, sqlc.GamePhaseTypeREINFORCE, record["action_type"])
+	require.Equal(t, "REINFORCE", record["action_type"])
 
 	require.NotContains(t, record, "attacking_region_id")
 	require.NotContains(t, record, "defending_region_id")
@@ -382,8 +382,8 @@ func TestPhaseTransitioned_ToRecord(t *testing.T) {
 	require.Equal(t, int64(42), record["game_id"])
 	require.Equal(t, "player1", record["user_id"])
 	require.Equal(t, now.Format(time.RFC3339), record["timestamp"])
-	require.Equal(t, sqlc.GamePhaseTypeDEPLOY, record["from_phase"])
-	require.Equal(t, sqlc.GamePhaseTypeATTACK, record["to_phase"])
+	require.Equal(t, "DEPLOY", record["from_phase"])
+	require.Equal(t, "ATTACK", record["to_phase"])
 	require.Equal(t, int64(5), record["turn"])
 }
 

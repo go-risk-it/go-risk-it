@@ -83,8 +83,8 @@ func (e *MoveExecuted) ToRecord() map[string]any {
 		"game_id":      e.gameID,
 		"user_id":      e.userID,
 		"timestamp":    e.timestamp.Format(time.RFC3339),
-		"action_type":  e.ActionType,
-		"target_phase": e.TargetPhase,
+		"action_type":  string(e.ActionType),
+		"target_phase": string(e.TargetPhase),
 		"game_over":    e.GameOver,
 		"turn":         e.Turn,
 		"move_log_id":  e.MoveLog.ID,
@@ -147,8 +147,8 @@ func (e *PhaseTransitioned) ToRecord() map[string]any {
 		"game_id":    e.gameID,
 		"user_id":    e.userID,
 		"timestamp":  e.timestamp.Format(time.RFC3339),
-		"from_phase": e.FromPhase,
-		"to_phase":   e.ToPhase,
+		"from_phase": string(e.FromPhase),
+		"to_phase":   string(e.ToPhase),
 		"turn":       e.Turn,
 	}
 }
