@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/loadtest/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/player"
 	"github.com/stretchr/testify/assert"
@@ -19,7 +18,7 @@ func TestMetrics_MoveSucceeded_RecordsAllMetrics(t *testing.T) {
 	bus := NewTestBus()
 	h.Register(bus)
 
-	// Emit MoveDecided first (sets moveStartTime + phase).
+	// Emit MoveDecided first (records phase entry).
 	bus.Emit(MoveDecidedEvent{
 		Action: &player.Action{Type: player.ActionDeploy},
 		UserID: "u0",
@@ -120,7 +119,7 @@ func TestMetrics_GameComplete_Fatal(t *testing.T) {
 	assert.Equal(t, int64(1), snap.GamesFatal)
 }
 
-func TestMetrics_PhaseEntry_OnChange(t *testing.T) {
+func TestMetrics_PhaseEntry_Recorded(t *testing.T) {
 	t.Parallel()
 
 	c := metrics.NewCollector(0)
@@ -141,30 +140,19 @@ func TestMetrics_PhaseEntry_OnChange(t *testing.T) {
 	})
 
 	snap := c.Snapshot()
-	// Both "deploy" and "attack" should have phase entries.
 	require.Contains(t, snap.PhaseEntries, "deploy")
 	require.Contains(t, snap.PhaseEntries, "attack")
 	assert.Equal(t, int64(1), snap.PhaseEntries["deploy"])
 	assert.Equal(t, int64(1), snap.PhaseEntries["attack"])
 }
 
-func TestMetrics_MoveSucceeded_RecordsPhaseLatency(t *testing.T) {
+func TestMetrics_MoveSucceeded_RecordsPhaseMove(t *testing.T) {
 	t.Parallel()
 
 	c := metrics.NewCollector(0)
 	h := &MetricsHandler{collector: c}
 	bus := NewTestBus()
 	h.Register(bus)
-
-	// Emit MoveDecided to set phase and moveStartTime.
-	bus.Emit(MoveDecidedEvent{
-		Action: &player.Action{Type: player.ActionAttack},
-		UserID: "u0",
-		Phase:  "attack",
-	})
-
-	// Small sleep so E2E duration is > 0.
-	time.Sleep(2 * time.Millisecond)
 
 	bus.Emit(MoveSucceededEvent{
 		Action:      &player.Action{Type: player.ActionAttack},
@@ -173,11 +161,9 @@ func TestMetrics_MoveSucceeded_RecordsPhaseLatency(t *testing.T) {
 	})
 
 	snap := c.Snapshot()
-	require.Contains(t, snap.PhaseLatency, "attack")
-	assert.Positive(t, snap.PhaseLatency["attack"].Count,
-		"PhaseLatency should be recorded alongside E2E")
-	assert.Positive(t, snap.E2EMove.Count,
-		"E2E should also be recorded")
+	require.Contains(t, snap.PhaseMoves, "attack")
+	assert.Equal(t, int64(1), snap.PhaseMoves["attack"])
+	assert.Equal(t, int64(1), snap.TotalMoves)
 }
 
 func TestMetrics_GameComplete_ReceivesEventBeforeBusStop(t *testing.T) {
@@ -210,31 +196,4 @@ func TestMetrics_GameComplete_ReceivesEventBeforeBusStop(t *testing.T) {
 	assert.True(t, stopped, "stop handler should have fired")
 	assert.Equal(t, int64(1), snap.GamesCompleted,
 		"MetricsHandler must see GameComplete before Stop()")
-}
-
-func TestMetrics_StateReceived_RecordsWSDelivery(t *testing.T) {
-	t.Parallel()
-
-	c := metrics.NewCollector(0)
-	h := &MetricsHandler{collector: c}
-	bus := NewTestBus()
-	h.Register(bus)
-
-	// Set lastRESTEndTime by emitting a MoveSucceeded.
-	restEnd := time.Now()
-	bus.Emit(MoveSucceededEvent{
-		Action:      &player.Action{Type: player.ActionDeploy},
-		RESTLatency: time.Millisecond,
-		RESTEndTime: restEnd,
-	})
-
-	// Now emit StateReceived after the REST end.
-	bus.Emit(StateReceivedEvent{
-		Snapshot:  gamestate.ViewSnapshot{},
-		Timestamp: restEnd.Add(10 * time.Millisecond),
-	})
-
-	// WS delivery should have been recorded.
-	snap := c.Snapshot()
-	assert.Positive(t, snap.WSDelivery.Count)
 }

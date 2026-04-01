@@ -24,17 +24,6 @@ const (
 	serviceName       = "perftest"
 )
 
-// latencyBuckets mirrors internal/metrics.LatencyBuckets from the server module.
-var latencyBuckets = []float64{ //nolint:gochecknoglobals
-	0.001, 0.005, 0.01, 0.025, 0.05,
-	0.1, 0.25, 0.5, 1, 2.5, 5, 10,
-}
-
-// gameDurationBuckets mirrors internal/metrics.GameDurationBuckets from the server module.
-var gameDurationBuckets = []float64{ //nolint:gochecknoglobals
-	1, 5, 10, 30, 60, 120, 300, 600, 1800, 3600,
-}
-
 // healthCounter abstracts UpDownCounter for testability.
 // Production code uses otelUpDownCounter (wraps metric.Int64UpDownCounter).
 // Tests inject fakes via the interface.
@@ -51,23 +40,14 @@ func (c *otelUpDownCounter) Add(delta int64) {
 	c.counter.Add(context.Background(), delta)
 }
 
-// OTelExporter wraps OTel instruments that mirror the HDR histogram collector.
-// Each Record*() call on the Collector also records to these instruments for live export.
+// OTelExporter wraps OTel instruments for live export.
+// Only resource-state gauges remain — all RED metrics (rate, errors, duration)
+// are now derived from spans via the spanmetrics connector.
 type OTelExporter struct {
 	meterProvider  *sdkmetric.MeterProvider
 	tracerProvider *sdktrace.TracerProvider
 
-	// Counters.
-	movesTotal      metric.Int64Counter
-	errorsTotal     metric.Int64Counter
-	gamesCompleted  metric.Int64Counter
-	gamesTimedOut   metric.Int64Counter
-	gamesFatal      metric.Int64Counter
-	conflictsTotal  metric.Int64Counter
-	retriesTotal    metric.Int64Counter
-	reconnectsTotal metric.Int64Counter
-
-	// UpDown counters.
+	// UpDown counters — resource state with no span equivalent.
 	gamesActive metric.Int64UpDownCounter
 
 	// Health classification gauges.
@@ -76,16 +56,6 @@ type OTelExporter struct {
 	healthStalled healthCounter
 	healthZombie  healthCounter
 	prevHealth    health.Distribution
-
-	// Histograms.
-	restDuration  metric.Float64Histogram
-	e2eDuration   metric.Float64Histogram
-	wsDuration    metric.Float64Histogram
-	phaseDuration metric.Float64Histogram
-
-	// Game-level histograms.
-	gameDuration metric.Float64Histogram
-	gameMoves    metric.Int64Histogram
 }
 
 // NewOTelExporter creates an OTel metric exporter pointing at the given OTLP HTTP endpoint.
@@ -183,54 +153,6 @@ func newMeterProvider(
 func (o *OTelExporter) initInstruments(meter metric.Meter) error {
 	var err error
 
-	if o.movesTotal, err = meter.Int64Counter("perftest.moves.total",
-		metric.WithDescription("Total moves performed by load test"),
-	); err != nil {
-		return err
-	}
-
-	if o.errorsTotal, err = meter.Int64Counter("perftest.errors.total",
-		metric.WithDescription("Total errors by type"),
-	); err != nil {
-		return err
-	}
-
-	if o.gamesCompleted, err = meter.Int64Counter("perftest.games.completed",
-		metric.WithDescription("Games completed successfully"),
-	); err != nil {
-		return err
-	}
-
-	if o.gamesTimedOut, err = meter.Int64Counter("perftest.games.timed_out",
-		metric.WithDescription("Games that timed out"),
-	); err != nil {
-		return err
-	}
-
-	if o.gamesFatal, err = meter.Int64Counter("perftest.games.fatal",
-		metric.WithDescription("Games with fatal errors"),
-	); err != nil {
-		return err
-	}
-
-	if o.conflictsTotal, err = meter.Int64Counter("perftest.conflicts.total",
-		metric.WithDescription("Total 409 conflict responses"),
-	); err != nil {
-		return err
-	}
-
-	if o.retriesTotal, err = meter.Int64Counter("perftest.retries.total",
-		metric.WithDescription("Total REST retries"),
-	); err != nil {
-		return err
-	}
-
-	if o.reconnectsTotal, err = meter.Int64Counter("perftest.reconnects.total",
-		metric.WithDescription("Total WebSocket reconnection attempts"),
-	); err != nil {
-		return err
-	}
-
 	if o.gamesActive, err = meter.Int64UpDownCounter("perftest.games.active",
 		metric.WithDescription("Currently running games"),
 	); err != nil {
@@ -272,53 +194,6 @@ func (o *OTelExporter) initInstruments(meter metric.Meter) error {
 	}
 
 	o.healthZombie = &otelUpDownCounter{counter: healthZombie}
-
-	if o.restDuration, err = meter.Float64Histogram("perftest.rest.duration",
-		metric.WithDescription("REST API call duration"),
-		metric.WithUnit("s"),
-		metric.WithExplicitBucketBoundaries(latencyBuckets...),
-	); err != nil {
-		return err
-	}
-
-	if o.e2eDuration, err = meter.Float64Histogram("perftest.e2e.duration",
-		metric.WithDescription("End-to-end move duration"),
-		metric.WithUnit("s"),
-		metric.WithExplicitBucketBoundaries(latencyBuckets...),
-	); err != nil {
-		return err
-	}
-
-	if o.wsDuration, err = meter.Float64Histogram("perftest.ws.delivery.duration",
-		metric.WithDescription("WebSocket delivery latency"),
-		metric.WithUnit("s"),
-		metric.WithExplicitBucketBoundaries(latencyBuckets...),
-	); err != nil {
-		return err
-	}
-
-	if o.phaseDuration, err = meter.Float64Histogram("perftest.phase.duration",
-		metric.WithDescription("Per-phase E2E latency"),
-		metric.WithUnit("s"),
-		metric.WithExplicitBucketBoundaries(latencyBuckets...),
-	); err != nil {
-		return err
-	}
-
-	if o.gameDuration, err = meter.Float64Histogram("perftest.game.duration",
-		metric.WithDescription("Duration of completed games"),
-		metric.WithUnit("s"),
-		metric.WithExplicitBucketBoundaries(gameDurationBuckets...),
-	); err != nil {
-		return err
-	}
-
-	if o.gameMoves, err = meter.Int64Histogram("perftest.game.moves",
-		metric.WithDescription("Number of moves per game"),
-		metric.WithExplicitBucketBoundaries(10, 25, 50, 100, 200, 500, 1000),
-	); err != nil {
-		return err
-	}
 
 	return nil
 }

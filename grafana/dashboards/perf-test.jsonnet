@@ -44,16 +44,11 @@ dashboard.new(
     observe=[
       // Row 1: 4 SLO tiles (w=6 each)
 
-      // E2E p95 (stat bg) — perf-test client metric, keep manual
+      // E2E p95 (stat bg) — move span duration = E2E latency (spanmetrics)
       layout.panel(
         panels.statPanel(
           title='E2E p95',
-          targets=[
-            targets.target(
-              'histogram_quantile(0.95, sum(rate(perftest_e2e_duration_seconds_bucket{service_name="%s"}[1m])) by (le))' % perfSvc,
-              'E2E p95',
-            ),
-          ],
+          targets=[targets.perfTestMoveDuration('0.95')],
           thresholds=thresholds.e2eP95,
           unit='s',
           colorMode='background',
@@ -62,7 +57,7 @@ dashboard.new(
         description='Normal: < 500ms (green). Watch for: crossing 500ms (yellow) or 1s (red) sustained. Check next: E2E Move Latency panel for percentile trend over time.',
       ),
 
-      // WS Delivery p95 (stat bg) — perf-test client metric, keep manual
+      // WS Delivery p95 (stat bg) — manual metric (span event timing, not span duration)
       layout.panel(
         panels.statPanel(
           title='WS Delivery p95',
@@ -113,7 +108,7 @@ dashboard.new(
 
       // Row 2: Active Games + Throughput + Completion Rate + Error Breakdown
 
-      // Active Games (stat, no background) — perf-test client metric, keep manual
+      // Active Games (stat, no background) — manual gauge (survivor instrument)
       layout.panel(
         panels.statPanel(
           title='Active Games',
@@ -129,16 +124,11 @@ dashboard.new(
         description='Normal: matches configured concurrency. Watch for: stuck at 0 (no games starting) or exceeding target (games not completing). Check next: Completion Rate and Game Completion panels.',
       ),
 
-      // Throughput (timeseries) — perf-test client metric, keep manual
+      // Throughput (timeseries) — move span rate (spanmetrics)
       layout.panel(
         panels.timeseriesPanel(
           title='Throughput',
-          targets=[
-            targets.target(
-              'rate(perftest_moves_total{service_name="%s"}[30s])' % perfSvc,
-              'moves/s',
-            ),
-          ],
+          targets=[targets.perfTestMoveRate()],
           unit='ops',
           color=colors.fixedColor(colors.client),
         ) + {
@@ -152,13 +142,13 @@ dashboard.new(
         description='Normal: proportional to active games. Watch for: sudden drops (server overload) or flat at zero (test harness stuck). Check next: E2E Move Latency to see if slowdown explains throughput drop.',
       ),
 
-      // Completion Rate (stat bg, inverted thresholds) — perf-test client metric, keep manual
+      // Completion Rate (stat bg) — game span success rate (spanmetrics)
       layout.panel(
         panels.statPanel(
           title='Completion Rate',
           targets=[
             targets.target(
-              'sum(perftest_games_completed_total{service_name="%s"}) / (sum(perftest_games_completed_total{service_name="%s"}) + (sum(perftest_games_timed_out_total{service_name="%s"}) or vector(0)) + (sum(perftest_games_fatal_total{service_name="%s"}) or vector(0)))' % [perfSvc, perfSvc, perfSvc, perfSvc],
+              '(sum(rate(%s{service="%s", span_name=~"%s", status_code!="STATUS_CODE_ERROR"}[1m])) or vector(0)) / (sum(rate(%s{service="%s", span_name=~"%s"}[1m])) or vector(1))' % [targets.spanmetricsMetric.calls, targets.perfTestServiceName, targets.perfTestSpans.game, targets.spanmetricsMetric.calls, targets.perfTestServiceName, targets.perfTestSpans.game],
               'Completion',
             ),
           ],
@@ -170,7 +160,7 @@ dashboard.new(
         description='Normal: > 95% (green). Watch for: dropping below 80% (yellow) means too many timeouts or fatals. Check next: Error Breakdown for error types causing failures.',
       ),
 
-      // Error Breakdown (timeseries stacked) — perf-test client metric, keep manual
+      // Error Breakdown (timeseries stacked) — manual metric (error_type is span event attr)
       layout.panel(
         panels.timeseriesPanel(
           title='Error Breakdown',
@@ -204,13 +194,13 @@ dashboard.new(
     // ORIENT — What's the shape? (3 hero panels)
     // ================================================================
     orient=[
-      // E2E Latency Heatmap (w=24, h=8, YlOrRd) — perf-test client metric, keep manual
+      // E2E Latency Heatmap (w=24, h=8, YlOrRd) — move span duration (spanmetrics)
       layout.panel(
         panels.heatmapPanel(
           title='E2E Latency Heatmap',
           targets=[
             targets.heatmapTarget(
-              'sum(rate(perftest_e2e_duration_seconds_bucket{service_name="%s"}[$__rate_interval])) by (le)' % perfSvc,
+              'sum(rate(%s{service="%s", span_name=~"%s"}[$__rate_interval])) by (le)' % [targets.spanmetricsMetric.duration, targets.perfTestServiceName, targets.perfTestSpans.move],
             ),
           ],
           unit='s',
@@ -221,14 +211,39 @@ dashboard.new(
         description='Normal: dense band below 500ms. Watch for: color spreading into higher buckets (latency distribution widening under load). Check next: Percentile Bands below for exact P50/P95/P99 values.',
       ),
 
-      // E2E Percentile Bands (w=24, h=8) — perf-test client metric, keep manual
+      // E2E Percentile Bands (w=24, h=8) — move span duration (spanmetrics)
       layout.panel(
-        panels.percentileBandsPanel(
+        panels.timeseriesPanel(
           title='E2E Latency Percentile Bands',
-          metric='perftest_e2e_duration_seconds_bucket',
+          targets=targets.perfTestMoveDurations(
+            [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']],
+          ),
           unit='s',
-          serviceName=perfSvc,
-        ),
+          overrides=[
+            {
+              matcher: { id: 'byName', options: 'p99' },
+              properties: [
+                { id: 'custom.fillBelowTo', value: 'p95' },
+                { id: 'custom.fillOpacity', value: 5 },
+              ],
+            },
+            {
+              matcher: { id: 'byName', options: 'p95' },
+              properties: [
+                { id: 'custom.fillBelowTo', value: 'p50' },
+                { id: 'custom.fillOpacity', value: 10 },
+              ],
+            },
+          ],
+        ) + {
+          fieldConfig+: {
+            defaults+: {
+              custom+: {
+                fillOpacity: 0,
+              },
+            },
+          },
+        },
         w=24, h=8,
         description='Normal: tight bands with P95 < 500ms. Watch for: bands widening (latency variance increasing) or P99 diverging from P95 (tail latency problem). Check next: Latency Attribution to identify which server boundary causes the spread.',
       ),
@@ -250,14 +265,13 @@ dashboard.new(
     // DECIDE — Where's the bottleneck? (7 always-visible + 2 collapsed)
     // ================================================================
     decide=[
-      // E2E Move Latency P50/P95/P99 — perf-test client metric, keep manual
+      // E2E Move Latency P50/P95/P99 — move span duration (spanmetrics)
       layout.panel(
         panels.timeseriesPanel(
           title='E2E Move Latency (P50/P95/P99)',
-          targets=targets.histogramQuantileTargetsWithExemplars(
-            'perftest_e2e_duration_seconds_bucket',
+          targets=targets.perfTestMoveDurations(
             [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']],
-            perfSvc,
+            exemplars=true,
           ),
           unit='s',
           color=colors.fixedColor(colors.client),
@@ -266,7 +280,7 @@ dashboard.new(
         description='Normal: P95 < 500ms, P99 < 1s. Watch for: P95 crossing the threshold line (SLO breach). Check next: REST Latency by Action to identify which move type is slowest.',
       ),
 
-      // WS Delivery Latency P50/P95/P99 — perf-test client metric, keep manual
+      // WS Delivery Latency P50/P95/P99 — manual metric (span event timing, not span duration)
       layout.panel(
         panels.timeseriesPanel(
           title='WS Delivery Latency (P50/P95/P99)',
@@ -283,25 +297,14 @@ dashboard.new(
         description='Normal: P95 < 200ms. Watch for: P95 crossing the threshold line (WS delivery SLO breach). Check next: WebSocket dashboard for connection and broadcast details.',
       ),
 
-      // REST Latency by Action — perf-test client metric, keep manual
+      // Move Latency by Action — move span duration grouped by action (spanmetrics)
       layout.panel(
         panels.timeseriesPanel(
-          title='REST Latency by Action (P50/P95/P99)',
+          title='Move Latency by Action (P50/P95/P99)',
           targets=[
-            targets.target(
-              'histogram_quantile(0.5, sum(rate(perftest_rest_duration_seconds_bucket{service_name="%s"}[1m])) by (le, action))' % perfSvc,
-              '{{action}} p50',
-            ),
-            targets.target(
-              'histogram_quantile(0.95, sum(rate(perftest_rest_duration_seconds_bucket{service_name="%s"}[1m])) by (le, action))' % perfSvc,
-              '{{action}} p95',
-              'B',
-            ),
-            targets.target(
-              'histogram_quantile(0.99, sum(rate(perftest_rest_duration_seconds_bucket{service_name="%s"}[1m])) by (le, action))' % perfSvc,
-              '{{action}} p99',
-              'C',
-            ),
+            targets.perfTestMoveDurationBy('0.5', 'action', '{{action}} p50'),
+            targets.perfTestMoveDurationBy('0.95', 'action', '{{action}} p95', filters='') + { refId: 'B' },
+            targets.perfTestMoveDurationBy('0.99', 'action', '{{action}} p99', filters='') + { refId: 'C' },
           ],
           unit='s',
         ),
@@ -309,7 +312,7 @@ dashboard.new(
         description='Normal: all actions < 200ms at P95. Watch for: single action diverging (e.g. attack P95 spiking while others stay flat). Check next: Database dashboard for query-level latency.',
       ),
 
-      // Conflicts/sec — perf-test client metric, keep manual
+      // Conflicts/sec — manual counter (conflict is span error, not a distinct dimension)
       layout.panel(
         panels.timeseriesPanel(
           title='Conflicts/sec',
@@ -332,15 +335,12 @@ dashboard.new(
         description='Normal: low, proportional to concurrency. Watch for: conflicts/s exceeding moves/s (more retries than successes, contention too high). Check next: E2E Latency vs Concurrency to correlate conflict rate with load.',
       ),
 
-      // E2E Latency vs Concurrency — perf-test client metric, keep manual
+      // E2E Latency vs Concurrency — move span p95 (spanmetrics) + active games (manual)
       layout.panel(
         panels.timeseriesPanel(
           title='E2E Latency vs Concurrency',
           targets=[
-            targets.target(
-              'histogram_quantile(0.95, sum(rate(perftest_e2e_duration_seconds_bucket{service_name="%s"}[1m])) by (le))' % perfSvc,
-              'E2E p95',
-            ),
+            targets.perfTestMoveDuration('0.95') + { legendFormat: 'E2E p95' },
             targets.target(
               'perftest_games_active{service_name="%s"}' % perfSvc,
               'active games',
@@ -373,7 +373,7 @@ dashboard.new(
         description='Normal: HTTP P95 < 100ms regardless of concurrency. Watch for: server latency rising before client E2E does (server is the bottleneck). Check next: Latency Attribution in Orient to identify which server boundary dominates.',
       ),
 
-      // Effective Concurrency — perf-test client metric, keep manual
+      // Effective Concurrency — manual gauges (survivor instruments)
       layout.panel(
         panels.timeseriesPanel(
           title='Effective Concurrency',
@@ -414,26 +414,23 @@ dashboard.new(
     decideDepth={
       // ── Collapsed: Client Phase Latency (1 panel) ──
       'Client Phase Latency': [
-        // perf-test client metric, keep manual
+        // Move span duration grouped by phase (spanmetrics)
         layout.panel(
           panels.timeseriesPanel(
             title='Phase Duration by Phase',
             targets=[
-              targets.target(
-                'histogram_quantile(0.95, sum(rate(perftest_phase_duration_seconds_bucket{service_name="%s"}[1m])) by (le, phase))' % perfSvc,
-                '{{phase}} p95',
-              ),
+              targets.perfTestMoveDurationBy('0.95', 'phase', '{{phase}} p95'),
             ],
             unit='s',
           ),
           w=24, h=8,
-          description='Normal: deploy and attack phases are longest. Watch for: single phase P95 spiking while others stay flat. Check next: REST Latency by Action for per-action HTTP latency comparison.',
+          description='Normal: deploy and attack phases are longest. Watch for: single phase P95 spiking while others stay flat. Check next: Move Latency by Action for per-action latency comparison.',
         ),
       ],
 
       // ── Collapsed: Health Breakdown (1 showcase panel) ──
       'Health Breakdown': [
-        // Health State Waterfall SHOWCASE — perf-test client metric, keep manual
+        // Health State Waterfall SHOWCASE — manual gauges (survivor instruments)
         layout.panel(
           panels.timeseriesPanel(
             title='Health State Waterfall',
@@ -485,7 +482,7 @@ dashboard.new(
     // ACT — What's the evidence? (4 panels)
     // ================================================================
     act=[
-      // Error Rate by Type (timeseries stacked) — perf-test client metric, keep manual
+      // Error Rate by Type (timeseries stacked) — manual metric (error_type is span event attr)
       layout.panel(
         panels.timeseriesPanel(
           title='Error Rate by Type',
@@ -510,14 +507,13 @@ dashboard.new(
         description='Normal: zero or near-zero. Watch for: any sustained error rate, especially new error types appearing. Check next: Game Completion panel to see if errors cause game failures.',
       ),
 
-      // Game Duration P50/P95 (timeseries) — perf-test client metric, keep manual
+      // Game Duration P50/P95 (timeseries) — game span duration (spanmetrics)
       layout.panel(
         panels.timeseriesPanel(
           title='Game Duration (P50/P95)',
-          targets=targets.histogramQuantileTargetsWithExemplars(
-            'perftest_game_duration_seconds_bucket',
+          targets=targets.perfTestGameDurations(
             [['0.5', 'p50'], ['0.95', 'p95']],
-            perfSvc,
+            exemplars=true,
           ),
           unit='s',
           color=colors.fixedColor(colors.gameLogic),
@@ -526,7 +522,7 @@ dashboard.new(
         description='Normal: consistent across the test run. Watch for: game duration growing over time (server slowing down under sustained load). Check next: Moves per Game to check if duration increase is from more moves or slower moves.',
       ),
 
-      // Moves per Game P50/P95 (timeseries) — perf-test client metric, keep manual
+      // Moves per Game P50/P95 (timeseries) — manual histogram (game move count, not span duration)
       layout.panel(
         panels.timeseriesPanel(
           title='Moves per Game (P50/P95)',
@@ -542,7 +538,7 @@ dashboard.new(
         description='Normal: stable distribution determined by game logic, not server performance. Watch for: sudden changes in move count (game logic bug or strategy change). Check next: Game Duration to correlate move count with total time.',
       ),
 
-      // Game Completion cumulative (timeseries) — perf-test client metric, keep manual
+      // Game Completion cumulative (timeseries) — manual counters (absolute totals)
       layout.panel(
         panels.timeseriesPanel(
           title='Game Completion',

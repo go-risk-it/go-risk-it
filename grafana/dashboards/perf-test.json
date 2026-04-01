@@ -104,8 +104,8 @@
             },
             "targets": [
                 {
-                    "expr": "histogram_quantile(0.95, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
-                    "legendFormat": "E2E p95",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le))",
+                    "legendFormat": "p95",
                     "refId": "A"
                 }
             ],
@@ -436,7 +436,7 @@
             },
             "targets": [
                 {
-                    "expr": "rate(perftest_moves_total{service_name=\"perftest\"}[30s])",
+                    "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m]))",
                     "legendFormat": "moves/s",
                     "refId": "A"
                 }
@@ -498,7 +498,7 @@
             },
             "targets": [
                 {
-                    "expr": "sum(perftest_games_completed_total{service_name=\"perftest\"}) / (sum(perftest_games_completed_total{service_name=\"perftest\"}) + (sum(perftest_games_timed_out_total{service_name=\"perftest\"}) or vector(0)) + (sum(perftest_games_fatal_total{service_name=\"perftest\"}) or vector(0)))",
+                    "expr": "(sum(rate(traces_spanmetrics_calls_total{service=\"perftest\", span_name=~\"perftest[.]game[.]run\", status_code!=\"STATUS_CODE_ERROR\"}[1m])) or vector(0)) / (sum(rate(traces_spanmetrics_calls_total{service=\"perftest\", span_name=~\"perftest[.]game[.]run\"}[1m])) or vector(1))",
                     "legendFormat": "Completion",
                     "refId": "A"
                 }
@@ -643,7 +643,7 @@
             },
             "targets": [
                 {
-                    "expr": "sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[$__rate_interval])) by (le)",
+                    "expr": "sum(rate(traces_spanmetrics_latency_bucket{service=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[$__rate_interval])) by (le)",
                     "format": "heatmap",
                     "legendFormat": "{{le}}",
                     "refId": "A"
@@ -733,17 +733,17 @@
             },
             "targets": [
                 {
-                    "expr": "histogram_quantile(0.5, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.5, sum(rate(traces_spanmetrics_latency_bucket{service=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le))",
                     "legendFormat": "p50",
                     "refId": "A"
                 },
                 {
-                    "expr": "histogram_quantile(0.95, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le))",
                     "legendFormat": "p95",
                     "refId": "B"
                 },
                 {
-                    "expr": "histogram_quantile(0.99, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.99, sum(rate(traces_spanmetrics_latency_bucket{service=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le))",
                     "legendFormat": "p99",
                     "refId": "C"
                 }
@@ -1018,19 +1018,19 @@
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.5, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.5, sum(rate(traces_spanmetrics_latency_bucket{service=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le))",
                     "legendFormat": "p50",
                     "refId": "A"
                 },
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.95, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le))",
                     "legendFormat": "p95",
                     "refId": "B"
                 },
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.99, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.99, sum(rate(traces_spanmetrics_latency_bucket{service=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le))",
                     "legendFormat": "p99",
                     "refId": "C"
                 }
@@ -1186,22 +1186,22 @@
             },
             "targets": [
                 {
-                    "expr": "histogram_quantile(0.5, sum(rate(perftest_rest_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le, action))",
+                    "expr": "histogram_quantile(0.5, sum(rate(traces_spanmetrics_latency_bucket{service=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le, action))",
                     "legendFormat": "{{action}} p50",
                     "refId": "A"
                 },
                 {
-                    "expr": "histogram_quantile(0.95, sum(rate(perftest_rest_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le, action))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le, action))",
                     "legendFormat": "{{action}} p95",
                     "refId": "B"
                 },
                 {
-                    "expr": "histogram_quantile(0.99, sum(rate(perftest_rest_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le, action))",
+                    "expr": "histogram_quantile(0.99, sum(rate(traces_spanmetrics_latency_bucket{service=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le, action))",
                     "legendFormat": "{{action}} p99",
                     "refId": "C"
                 }
             ],
-            "title": "REST Latency by Action (P50/P95/P99)",
+            "title": "Move Latency by Action (P50/P95/P99)",
             "type": "timeseries"
         },
         {
@@ -1340,7 +1340,7 @@
             },
             "targets": [
                 {
-                    "expr": "histogram_quantile(0.95, sum(rate(perftest_e2e_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le))",
                     "legendFormat": "E2E p95",
                     "refId": "A"
                 },
@@ -1571,7 +1571,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "description": "Normal: deploy and attack phases are longest. Watch for: single phase P95 spiking while others stay flat. Check next: REST Latency by Action for per-action HTTP latency comparison.",
+                    "description": "Normal: deploy and attack phases are longest. Watch for: single phase P95 spiking while others stay flat. Check next: Move Latency by Action for per-action latency comparison.",
                     "fieldConfig": {
                         "defaults": {
                             "custom": {
@@ -1614,7 +1614,7 @@
                     },
                     "targets": [
                         {
-                            "expr": "histogram_quantile(0.95, sum(rate(perftest_phase_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le, phase))",
+                            "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le, phase))",
                             "legendFormat": "{{phase}} p95",
                             "refId": "A"
                         }
@@ -1897,13 +1897,13 @@
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.5, sum(rate(perftest_game_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.5, sum(rate(traces_spanmetrics_latency_bucket{service=\"perftest\", span_name=~\"perftest[.]game[.]run\"}[1m])) by (le))",
                     "legendFormat": "p50",
                     "refId": "A"
                 },
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.95, sum(rate(perftest_game_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"perftest\", span_name=~\"perftest[.]game[.]run\"}[1m])) by (le))",
                     "legendFormat": "p95",
                     "refId": "B"
                 }

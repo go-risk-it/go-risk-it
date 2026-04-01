@@ -58,6 +58,7 @@ connectors:
     exemplars:
       enabled: true
     dimensions:
+      # Server-side span dimensions (risk-it service)
       - name: http_route
       - name: http_method
       - name: http_status_code
@@ -68,6 +69,12 @@ connectors:
       - name: phase
       - name: db_outcome
       - name: ws_fanout
+      # Perf-test span dimensions (perftest service)
+      # Bounded cardinality: action ~6 values, phase ~5, error_type ~4, outcome ~3
+      # Total additional combinations: ~900 (well within 10k limit)
+      - name: action
+      - name: error_type
+      - name: outcome
     metrics_expiration: 6h
     aggregation_cardinality_limit: 10000
     # Verification checklist (run with live stack):
@@ -75,11 +82,12 @@ connectors:
     # (b) label format: check whether it's "service" or "service_name"
     # (c) http_route dimension appears as expected label on metrics
     # (d) metrics_expiration cleans up stale series after 5m
-    # (e) all 10 dimensions appear as labels on spanmetrics:
+    # (e) all 13 dimensions appear as labels on spanmetrics:
     #     curl http://localhost:9090/api/v1/label/__name__/values | grep spanmetrics
     #     curl 'http://localhost:9090/api/v1/series?match[]=traces_spanmetrics_calls_total' | jq '.data[0]'
     #     → verify: http_route, http_method, http_status_code, event_type, handler,
-    #              phase, isolation, error_category, db_outcome, ws_fanout
+    #              phase, isolation, error_category, db_outcome, ws_fanout,
+    #              action, error_type, outcome
     # (f) dashboard queries resolve: open each dashboard in Grafana, verify panels render data
 
 service:
