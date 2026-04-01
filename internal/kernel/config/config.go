@@ -8,7 +8,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/knadh/koanf/parsers/yaml"
-	"github.com/knadh/koanf/providers/env"
+	env "github.com/knadh/koanf/providers/env/v2"
 	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/v2"
 	"go.uber.org/fx"
@@ -90,10 +90,20 @@ func getEnv() string {
 	return environment
 }
 
+// TransformKey converts environment variable names to koanf-compatible
+// dotted key paths. For example, DATABASE_HOST becomes database.host.
+// Multi-word YAML keys (e.g. disable_ssl) cannot be set via env vars
+// because every underscore becomes a dot separator.
+//
+// Exported for use in test code that constructs its own env.Provider
+// with a custom EnvironFunc.
+func TransformKey(key, value string) (string, any) {
+	return strings.ReplaceAll(strings.ToLower(key), "_", "."), value
+}
+
 func readFromEnv(k *koanf.Koanf) error {
-	err := k.Load(env.Provider("", ".", func(s string) string {
-		return strings.ReplaceAll(strings.ToLower(
-			strings.TrimPrefix(s, "")), "_", ".")
+	err := k.Load(env.Provider(".", env.Opt{
+		TransformFunc: TransformKey,
 	}), nil)
 	if err != nil {
 		return fmt.Errorf("failed to load env vars: %w", err)

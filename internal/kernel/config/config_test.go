@@ -1,12 +1,11 @@
 package config_test
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/go-risk-it/go-risk-it/internal/kernel/config"
 	"github.com/knadh/koanf/parsers/yaml"
-	"github.com/knadh/koanf/providers/env"
+	env "github.com/knadh/koanf/providers/env/v2"
 	"github.com/knadh/koanf/providers/rawbytes"
 	"github.com/knadh/koanf/v2"
 	"github.com/stretchr/testify/assert"
@@ -60,6 +59,8 @@ server:
 }
 
 func TestKernelConfig_EnvOverridesYaml(t *testing.T) {
+	t.Parallel()
+
 	raw := []byte(`
 database:
   host: yaml-host
@@ -75,16 +76,18 @@ otel:
   enabled: false
 `)
 
-	t.Setenv("DATABASE_HOST", "env-host")
-	t.Setenv("DATABASE_USER", "env-user")
-	t.Setenv("JWT_SECRET", "env-secret")
-	t.Setenv("OTEL_ENABLED", "true")
-
 	koanfManager := koanf.New(".")
 	require.NoError(t, koanfManager.Load(rawbytes.Provider(raw), yaml.Parser()))
-	require.NoError(t, koanfManager.Load(env.Provider("", ".", func(s string) string {
-		return strings.ReplaceAll(strings.ToLower(
-			strings.TrimPrefix(s, "")), "_", ".")
+	require.NoError(t, koanfManager.Load(env.Provider(".", env.Opt{
+		TransformFunc: config.TransformKey,
+		EnvironFunc: func() []string {
+			return []string{
+				"DATABASE_HOST=env-host",
+				"DATABASE_USER=env-user",
+				"JWT_SECRET=env-secret",
+				"OTEL_ENABLED=true",
+			}
+		},
 	}), nil))
 
 	var cfg config.Config
@@ -117,4 +120,85 @@ func TestKernelConfig_GameFieldsNotInStruct(t *testing.T) {
 	// _ = cfg.Dice
 	// _ = cfg.Regionassignment
 	// _ = cfg.History
+}
+
+func TestTransformKey(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		key       string
+		value     string
+		wantKey   string
+		wantValue any
+	}{
+		{
+			name:      "single hierarchy",
+			key:       "DATABASE_HOST",
+			value:     "myhost",
+			wantKey:   "database.host",
+			wantValue: "myhost",
+		},
+		{
+			name:      "two levels",
+			key:       "JWT_SECRET",
+			value:     "mysecret",
+			wantKey:   "jwt.secret",
+			wantValue: "mysecret",
+		},
+		{
+			name:      "boolean",
+			key:       "OTEL_ENABLED",
+			value:     "true",
+			wantKey:   "otel.enabled",
+			wantValue: "true",
+		},
+		{
+			name:      "multi-word field becomes extra dot",
+			key:       "DATABASE_DISABLE_SSL",
+			value:     "true",
+			wantKey:   "database.disable.ssl",
+			wantValue: "true",
+			// Note: this does NOT match the YAML key "database.disable_ssl".
+			// Multi-word fields cannot be overridden by env vars.
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			gotKey, gotValue := config.TransformKey(testCase.key, testCase.value)
+
+			assert.Equal(t, testCase.wantKey, gotKey)
+			assert.Equal(t, testCase.wantValue, gotValue)
+		})
+	}
+}
+
+func TestEnvDoesNotClobberUnrelatedKeys(t *testing.T) {
+	t.Parallel()
+
+	raw := []byte(`
+database:
+  host: yaml-host
+  disable_ssl: true
+  max_conns: 50
+`)
+
+	koanfManager := koanf.New(".")
+	require.NoError(t, koanfManager.Load(rawbytes.Provider(raw), yaml.Parser()))
+	require.NoError(t, koanfManager.Load(env.Provider(".", env.Opt{
+		TransformFunc: config.TransformKey,
+		EnvironFunc: func() []string {
+			return []string{
+				"DATABASE_HOST=env-host",
+			}
+		},
+	}), nil))
+
+	assert.True(t, koanfManager.Bool("database.disable_ssl"),
+		"multi-word YAML key should keep its value")
+	assert.Equal(t, int64(50), koanfManager.Int64("database.max_conns"),
+		"multi-word YAML key should keep its value")
 }

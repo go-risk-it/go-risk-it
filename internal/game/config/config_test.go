@@ -1,12 +1,12 @@
 package config_test
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/config"
+	kernelconfig "github.com/go-risk-it/go-risk-it/internal/kernel/config"
 	"github.com/knadh/koanf/parsers/yaml"
-	"github.com/knadh/koanf/providers/env"
+	env "github.com/knadh/koanf/providers/env/v2"
 	"github.com/knadh/koanf/providers/rawbytes"
 	"github.com/knadh/koanf/v2"
 	"github.com/stretchr/testify/assert"
@@ -82,6 +82,8 @@ database:
 }
 
 func TestGameConfig_EnvCannotOverrideMultiWordKeys(t *testing.T) {
+	t.Parallel()
+
 	raw := []byte(`
 game:
   dice:
@@ -90,20 +92,21 @@ game:
     size: 42
 `)
 
-	// GAME_DICE_ROLL_STRATEGY maps to "game.dice.roll.strategy" (extra dot)
-	// which does NOT match the YAML key "game.dice.roll_strategy".
-	// This documents the intentional design: game config values come from
-	// YAML files, not env vars.
-	t.Setenv("GAME_DICE_ROLL_STRATEGY", "env-strategy")
-
-	// Single-word keys like "game.history.size" CAN be overridden.
-	t.Setenv("GAME_HISTORY_SIZE", "99")
-
 	koanfManager := koanf.New(".")
 	require.NoError(t, koanfManager.Load(rawbytes.Provider(raw), yaml.Parser()))
-	require.NoError(t, koanfManager.Load(env.Provider("", ".", func(s string) string {
-		return strings.ReplaceAll(strings.ToLower(
-			strings.TrimPrefix(s, "")), "_", ".")
+	require.NoError(t, koanfManager.Load(env.Provider(".", env.Opt{
+		TransformFunc: kernelconfig.TransformKey,
+		EnvironFunc: func() []string {
+			// GAME_DICE_ROLL_STRATEGY maps to "game.dice.roll.strategy" (extra dot)
+			// which does NOT match the YAML key "game.dice.roll_strategy".
+			// This documents the intentional design: game config values come from
+			// YAML files, not env vars.
+			return []string{
+				"GAME_DICE_ROLL_STRATEGY=env-strategy",
+				// Single-word keys like "game.history.size" CAN be overridden.
+				"GAME_HISTORY_SIZE=99",
+			}
+		},
 	}), nil))
 
 	result, err := config.NewGameConfig(koanfManager)
