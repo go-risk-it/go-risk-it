@@ -12,5 +12,9 @@ var Module = fx.Options(
 			ProvideRoutes,
 			fx.ResultTags(`group:"routes,flatten"`),
 		),
+		fx.Annotate(
+			ProvideWSRoute,
+			fx.ResultTags(`group:"routes"`),
+		),
 	),
 )

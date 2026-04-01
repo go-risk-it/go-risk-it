@@ -18,10 +18,6 @@ func ProvideRoutes(
 	gameCtrl *GameController,
 	advCtrl *AdvancementController,
 	moveCtrl *MoveController,
-	gameConnectionManager gameWs.Gateway,
-	upgrader ws.Upgrader,
-	gameStateService state.Service,
-	playerService player.Service,
 ) []*route.Route {
 	return []*route.Route{
 		route.CreateHandler("POST /api/v1/games", gameCtrl.CreateGame),
@@ -56,14 +52,22 @@ func ProvideRoutes(
 			ctx.WithGameID,
 			moveCtrl.PerformCardsMove,
 		),
-		route.DomainWS(
-			"GET /api/v1/games/{id}/ws",
-			func(r *http.Request) (ctx.GameContext, error) {
-				return route.BuildDomainContext(r, ctx.WithGameID)
-			},
-			connectGameWS(gameConnectionManager, upgrader, gameStateService, playerService),
-		),
 	}
+}
+
+func ProvideWSRoute(
+	gameConnectionManager gameWs.Gateway,
+	upgrader ws.Upgrader,
+	gameStateService state.Service,
+	playerService player.Service,
+) *route.Route {
+	return route.DomainWS(
+		"GET /api/v1/games/{id}/ws",
+		func(r *http.Request) (ctx.GameContext, error) {
+			return route.BuildDomainContext(r, ctx.WithGameID)
+		},
+		connectGameWS(gameConnectionManager, upgrader, gameStateService, playerService),
+	)
 }
 
 func connectGameWS(

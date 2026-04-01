@@ -16,8 +16,6 @@ func ProvideRoutes(
 	creationCtrl *CreationController,
 	managementCtrl *ManagementController,
 	startCtrl *StartController,
-	lobbyConnectionManager lobbyWs.Manager,
-	upgrader ws.Upgrader,
 ) []*route.Route {
 	return []*route.Route{
 		route.CreateHandler("POST /api/v1/lobbies", creationCtrl.CreateLobby),
@@ -32,14 +30,20 @@ func ProvideRoutes(
 			ctx.WithLobbyID,
 			startCtrl.StartGame,
 		),
-		route.DomainWS(
-			"GET /api/v1/lobbies/{id}/ws",
-			func(r *http.Request) (ctx.LobbyContext, error) {
-				return route.BuildDomainContext(r, ctx.WithLobbyID)
-			},
-			connectLobbyWS(lobbyConnectionManager, upgrader),
-		),
 	}
+}
+
+func ProvideWSRoute(
+	lobbyConnectionManager lobbyWs.Manager,
+	upgrader ws.Upgrader,
+) *route.Route {
+	return route.DomainWS(
+		"GET /api/v1/lobbies/{id}/ws",
+		func(r *http.Request) (ctx.LobbyContext, error) {
+			return route.BuildDomainContext(r, ctx.WithLobbyID)
+		},
+		connectLobbyWS(lobbyConnectionManager, upgrader),
+	)
 }
 
 func connectLobbyWS(

@@ -15,6 +15,10 @@ var Module = fx.Options(
 			ProvideRoutes,
 			fx.ResultTags(`group:"routes,flatten"`),
 		),
+		fx.Annotate(
+			ProvideWSRoute,
+			fx.ResultTags(`group:"routes"`),
+		),
 	),
 	// Export GameController as commands.Handler for the kernel router.
 	fx.Provide(func(gc *GameController) commands.Handler { return gc }),
