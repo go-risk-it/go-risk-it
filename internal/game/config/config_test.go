@@ -1,10 +1,12 @@
 package config_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/config"
 	"github.com/knadh/koanf/parsers/yaml"
+	"github.com/knadh/koanf/providers/env"
 	"github.com/knadh/koanf/providers/rawbytes"
 	"github.com/knadh/koanf/v2"
 	"github.com/stretchr/testify/assert"
@@ -77,4 +79,38 @@ database:
 	assert.Empty(t, result.DiceConfig.RollStrategy)
 	assert.Empty(t, result.RegionassignmentConfig.AssignmentStrategy)
 	assert.Equal(t, int64(0), result.HistoryConfig.Size)
+}
+
+func TestGameConfig_EnvCannotOverrideMultiWordKeys(t *testing.T) {
+	raw := []byte(`
+game:
+  dice:
+    roll_strategy: yaml-strategy
+  history:
+    size: 42
+`)
+
+	// GAME_DICE_ROLL_STRATEGY maps to "game.dice.roll.strategy" (extra dot)
+	// which does NOT match the YAML key "game.dice.roll_strategy".
+	// This documents the intentional design: game config values come from
+	// YAML files, not env vars.
+	t.Setenv("GAME_DICE_ROLL_STRATEGY", "env-strategy")
+
+	// Single-word keys like "game.history.size" CAN be overridden.
+	t.Setenv("GAME_HISTORY_SIZE", "99")
+
+	koanfManager := koanf.New(".")
+	require.NoError(t, koanfManager.Load(rawbytes.Provider(raw), yaml.Parser()))
+	require.NoError(t, koanfManager.Load(env.Provider("", ".", func(s string) string {
+		return strings.ReplaceAll(strings.ToLower(
+			strings.TrimPrefix(s, "")), "_", ".")
+	}), nil))
+
+	result, err := config.NewGameConfig(koanfManager)
+	require.NoError(t, err)
+
+	assert.Equal(t, "yaml-strategy", result.DiceConfig.RollStrategy,
+		"multi-word key should keep YAML value — env var lands on wrong koanf path")
+	assert.Equal(t, int64(99), result.HistoryConfig.Size,
+		"single-word key should be overridden by env var")
 }
