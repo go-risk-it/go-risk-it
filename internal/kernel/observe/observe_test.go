@@ -389,46 +389,147 @@ func TestInfo_WithGameContext_MergesContextAttrs(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// Tests: extractContextAttrs
+// Tests: Context attrs on span attributes (via RawSpan context merging)
 // ---------------------------------------------------------------------------
 
-func TestExtractContextAttrs_PlainContext_ReturnsNil(t *testing.T) {
-	t.Parallel()
-
-	attrs := observe.ExtractContextAttrs(context.Background())
-	require.Nil(t, attrs)
-}
-
 //nolint:paralleltest // swaps global TracerProvider
-func TestExtractContextAttrs_UserContext_ReturnsUserID(t *testing.T) {
-	setupTracing(t)
-
-	parentCtx, _ := startParentSpan(t)
-	traceCtx := ctx.WithSpan(parentCtx, trace.SpanFromContext(parentCtx))
-	userCtx := ctx.WithUserID(traceCtx, "user-abc")
-
-	attrs := observe.ExtractContextAttrs(userCtx)
-
-	require.Len(t, attrs, 1)
-	assert.Equal(t, attribute.Key("user_id"), attrs[0].Key)
-	assert.Equal(t, attribute.StringValue("user-abc"), attrs[0].Value)
-}
-
-//nolint:paralleltest // swaps global TracerProvider
-func TestExtractContextAttrs_GameContext_ReturnsUserIDAndGameID(t *testing.T) {
-	setupTracing(t)
+func TestRawSpan_MergesContextAttrsOntoSpan(t *testing.T) {
+	exporter := setupTracing(t)
 
 	gameCtx := buildGameContext(t)
 
-	attrs := observe.ExtractContextAttrs(gameCtx)
+	childCtx, done := observe.RawSpan(gameCtx, "test-ctx-merge",
+		attribute.String("phase", "ATTACK"),
+	)
+	_ = childCtx
+	done(nil)
 
-	require.Len(t, attrs, 2)
+	// End the parent span too.
+	gameCtx.Span().End()
 
-	// Order is user_id then game_id (composition order in SlogAttrs).
-	assert.Equal(t, attribute.Key("user_id"), attrs[0].Key)
-	assert.Equal(t, attribute.StringValue("user-42"), attrs[0].Value)
-	assert.Equal(t, attribute.Key("game_id"), attrs[1].Key)
-	assert.Equal(t, attribute.Int64Value(99), attrs[1].Value)
+	stubs := exporter.GetSpans()
+	stub := findSpan(stubs, "test-ctx-merge")
+	require.NotNil(t, stub)
+
+	// Context attrs (user_id, game_id) should be span-level attributes.
+	require.True(t, hasAttr(stub.Attributes, "user_id", attribute.StringValue("user-42")),
+		"context user_id must be on span attributes")
+	require.True(t, hasAttr(stub.Attributes, "game_id", attribute.Int64Value(99)),
+		"context game_id must be on span attributes")
+	// Explicit attr should also be present.
+	require.True(t, hasAttr(stub.Attributes, "phase", attribute.StringValue("ATTACK")),
+		"explicit attr must be on span attributes")
+}
+
+//nolint:paralleltest // swaps global TracerProvider
+func TestRawSpan_PlainContext_NoContextAttrs(t *testing.T) {
+	exporter := setupTracing(t)
+
+	_, done := observe.RawSpan(context.Background(), "test-plain",
+		attribute.String("key", "val"),
+	)
+	done(nil)
+
+	stubs := exporter.GetSpans()
+	stub := findSpan(stubs, "test-plain")
+	require.NotNil(t, stub)
+
+	// Only the explicit attr should be present.
+	require.Len(t, stub.Attributes, 1)
+	require.True(t, hasAttr(stub.Attributes, "key", attribute.StringValue("val")))
+}
+
+// ---------------------------------------------------------------------------
+// Tests: LinkedSpan
+// ---------------------------------------------------------------------------
+
+//nolint:paralleltest // swaps global TracerProvider
+func TestLinkedSpan_CreatesRootSpanWithLink(t *testing.T) {
+	exporter := setupTracing(t)
+
+	parentCtx, parentSpan := startParentSpan(t)
+
+	childCtx, done := observe.LinkedSpan(parentCtx, "linked-op",
+		attribute.String("event_type", "move_executed"),
+	)
+	_ = childCtx
+	done(nil)
+	parentSpan.End()
+
+	stubs := exporter.GetSpans()
+	stub := findSpan(stubs, "linked-op")
+	require.NotNil(t, stub)
+
+	// Should have the explicit attr.
+	require.True(t, hasAttr(stub.Attributes, "event_type", attribute.StringValue("move_executed")))
+
+	// Should be a root span (different trace ID from parent).
+	parent := findSpan(stubs, "parent-op")
+	require.NotNil(t, parent)
+	assert.NotEqual(t, parent.SpanContext.TraceID(), stub.SpanContext.TraceID(),
+		"linked span must be a separate trace")
+
+	// Should have a link back to the parent span.
+	require.Len(t, stub.Links, 1)
+	assert.Equal(t, parent.SpanContext.SpanID(), stub.Links[0].SpanContext.SpanID(),
+		"link must point to the trigger span")
+}
+
+//nolint:paralleltest // swaps global TracerProvider
+func TestLinkedSpan_MergesContextAttrs(t *testing.T) {
+	exporter := setupTracing(t)
+
+	gameCtx := buildGameContext(t)
+
+	_, done := observe.LinkedSpan(gameCtx, "linked-game",
+		attribute.String("event_type", "game_completed"),
+	)
+	done(nil)
+	gameCtx.Span().End()
+
+	stubs := exporter.GetSpans()
+	stub := findSpan(stubs, "linked-game")
+	require.NotNil(t, stub)
+
+	// Context attrs from the parent GameContext must be on the linked span.
+	require.True(t, hasAttr(stub.Attributes, "user_id", attribute.StringValue("user-42")),
+		"context user_id must be on linked span")
+	require.True(t, hasAttr(stub.Attributes, "game_id", attribute.Int64Value(99)),
+		"context game_id must be on linked span")
+	require.True(
+		t,
+		hasAttr(stub.Attributes, "event_type", attribute.StringValue("game_completed")),
+		"explicit attr must be on linked span",
+	)
+}
+
+//nolint:paralleltest // swaps global TracerProvider
+func TestLinkedSpan_NoParentSpan_DegracesGracefully(t *testing.T) {
+	exporter := setupTracing(t)
+
+	// No parent span — just a plain context.
+	_, done := observe.LinkedSpan(context.Background(), "linked-no-parent")
+	done(nil)
+
+	stubs := exporter.GetSpans()
+	stub := findSpan(stubs, "linked-no-parent")
+	require.NotNil(t, stub, "span should still be created")
+	assert.Empty(t, stub.Links, "no links when parent has no span")
+}
+
+//nolint:paralleltest // swaps global TracerProvider
+func TestLinkedSpan_RecordsError(t *testing.T) {
+	exporter := setupTracing(t)
+
+	_, done := observe.LinkedSpan(context.Background(), "linked-error")
+	done(errors.New("handler failed"))
+
+	stubs := exporter.GetSpans()
+	stub := findSpan(stubs, "linked-error")
+	require.NotNil(t, stub)
+
+	assert.Equal(t, codes.Error, stub.Status.Code)
+	assert.Equal(t, "handler failed", stub.Status.Description)
 }
 
 // ---------------------------------------------------------------------------

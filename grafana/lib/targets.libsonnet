@@ -5,7 +5,7 @@
 // Two metric families:
 //   1. Manual metrics (service_name label) — emitted by app code or perf-test client.
 //      Helpers: histogramQuantileTargets, histogramQuantileTargetsWithExemplars, phaseLatencyTargets.
-//   2. Spanmetrics (service label) — derived by the OTel Collector spanmetrics connector from traces.
+//   2. Spanmetrics (service_name label) — derived by the OTel Collector spanmetrics connector from traces.
 //      Helpers: spanDuration, spanRate, spanErrorRate.
 local colors = import 'colors.libsonnet';
 {
@@ -84,18 +84,21 @@ local colors = import 'colors.libsonnet';
   ],
 
   // ══════════════════════════════════════════════════════════════════
-  // Spanmetrics helpers (service label)
+  // Spanmetrics helpers (service_name label)
   // Derived by the OTel Collector spanmetrics connector from traces.
-  // Metric names: traces_spanmetrics_duration_seconds_bucket,
-  //               traces_spanmetrics_calls_total
+  // Metric names: traces_span_metrics_duration_milliseconds_bucket,
+  //               traces_span_metrics_calls_total
   // ══════════════════════════════════════════════════════════════════
 
   // Base metric names produced by the spanmetrics connector.
-  // The LGTM stack's built-in spanmetrics uses 'latency' naming (seconds).
+  // Duration is in milliseconds — histogram_quantile results are divided by 1000
+  // to produce seconds for dashboard display.
   spanmetricsMetric:: {
-    duration: 'traces_spanmetrics_latency_bucket',
-    calls: 'traces_spanmetrics_calls_total',
+    duration: 'traces_span_metrics_duration_milliseconds_bucket',
+    calls: 'traces_span_metrics_calls_total',
   },
+
+  serviceLabel:: 'service_name',
 
   // Span name regex patterns for each instrumented domain.
   // Used as the spanNameFilter argument to spanDuration/spanRate/spanErrorRate.
@@ -119,7 +122,7 @@ local colors = import 'colors.libsonnet';
   spanDuration(spanNameFilter, quantiles, exemplars=false, extraLabels='')::
     [
       {
-        expr: 'histogram_quantile(%s, sum(rate(%s{service="%s", span_name=~"%s"%s}[1m])) by (le))' % [q[0], $.spanmetricsMetric.duration, $.serviceName, spanNameFilter, extraLabels],
+        expr: 'histogram_quantile(%s, sum(rate(%s{%s="%s", span_name=~"%s"%s}[1m])) by (le)) / 1000' % [q[0], $.spanmetricsMetric.duration, $.serviceLabel, $.serviceName, spanNameFilter, extraLabels],
         legendFormat: q[1],
         refId: std.char(65 + i),
         [if exemplars then 'exemplar']: true,
@@ -134,7 +137,7 @@ local colors = import 'colors.libsonnet';
   // extraLabels: string (optional) — additional label matchers.
   spanRate(spanNameFilter, legend, extraLabels='')::
     $.target(
-      'sum(rate(%s{service="%s", span_name=~"%s", status_code!="STATUS_CODE_ERROR"%s}[1m]))' % [$.spanmetricsMetric.calls, $.serviceName, spanNameFilter, extraLabels],
+      'sum(rate(%s{%s="%s", span_name=~"%s", status_code!="STATUS_CODE_ERROR"%s}[1m]))' % [$.spanmetricsMetric.calls, $.serviceLabel, $.serviceName, spanNameFilter, extraLabels],
       legend,
     ),
 
@@ -144,7 +147,7 @@ local colors = import 'colors.libsonnet';
   // extraLabels: string (optional) — additional label matchers.
   spanErrorRate(spanNameFilter, legend, extraLabels='')::
     $.target(
-      'sum(rate(%s{service="%s", span_name=~"%s", status_code="STATUS_CODE_ERROR"%s}[1m]))' % [$.spanmetricsMetric.calls, $.serviceName, spanNameFilter, extraLabels],
+      'sum(rate(%s{%s="%s", span_name=~"%s", status_code="STATUS_CODE_ERROR"%s}[1m]))' % [$.spanmetricsMetric.calls, $.serviceLabel, $.serviceName, spanNameFilter, extraLabels],
       legend,
     ),
 
@@ -155,7 +158,7 @@ local colors = import 'colors.libsonnet';
   // extraLabels: string (optional) — additional label matchers.
   spanRateBy(spanNameFilter, groupBy, legend, extraLabels='')::
     $.target(
-      'sum(rate(%s{service="%s", span_name=~"%s"%s}[1m])) by (%s)' % [$.spanmetricsMetric.calls, $.serviceName, spanNameFilter, extraLabels, groupBy],
+      'sum(rate(%s{%s="%s", span_name=~"%s"%s}[1m])) by (%s)' % [$.spanmetricsMetric.calls, $.serviceLabel, $.serviceName, spanNameFilter, extraLabels, groupBy],
       legend,
     ),
 
@@ -167,43 +170,43 @@ local colors = import 'colors.libsonnet';
   // extraLabels: string (optional) — additional label matchers.
   spanDurationBy(spanNameFilter, quantile, groupBy, legend, extraLabels='')::
     $.target(
-      'histogram_quantile(%s, sum(rate(%s{service="%s", span_name=~"%s"%s}[1m])) by (le, %s))' % [quantile, $.spanmetricsMetric.duration, $.serviceName, spanNameFilter, extraLabels, groupBy],
+      'histogram_quantile(%s, sum(rate(%s{%s="%s", span_name=~"%s"%s}[1m])) by (le, %s)) / 1000' % [quantile, $.spanmetricsMetric.duration, $.serviceLabel, $.serviceName, spanNameFilter, extraLabels, groupBy],
       legend,
     ),
 
   // ── Lifecycle boundary targets (spanmetrics) ──
 
   // Standard lifecycle latency targets (p95) for the 5 server boundaries.
-  // Uses spanmetrics (service label) for server-side instrumentation.
+  // Uses spanmetrics (service_name label) for server-side instrumentation.
   // Used by: system-health (Lifecycle Timing) and perf-test (Latency Attribution).
   spanLifecycleTargets:: [
     {
       refId: 'A',
-      expr: 'histogram_quantile(0.95, sum(rate(%s{service="%s", span_name=~"%s"}[1m])) by (le))' % [$.spanmetricsMetric.duration, $.serviceName, $.spans.http],
+      expr: 'histogram_quantile(0.95, sum(rate(%s{%s="%s", span_name=~"%s"}[1m])) by (le)) / 1000' % [$.spanmetricsMetric.duration, $.serviceLabel, $.serviceName, $.spans.http],
       legendFormat: 'HTTP Total',
       exemplar: true,
     },
     {
       refId: 'B',
-      expr: 'histogram_quantile(0.95, sum(rate(%s{service="%s", span_name=~"%s"}[1m])) by (le))' % [$.spanmetricsMetric.duration, $.serviceName, $.spans.db],
+      expr: 'histogram_quantile(0.95, sum(rate(%s{%s="%s", span_name=~"%s"}[1m])) by (le)) / 1000' % [$.spanmetricsMetric.duration, $.serviceLabel, $.serviceName, $.spans.db],
       legendFormat: 'DB Transaction',
       exemplar: true,
     },
     {
       refId: 'C',
-      expr: 'histogram_quantile(0.95, sum(rate(%s{service="%s", span_name=~"%s"}[1m])) by (le))' % [$.spanmetricsMetric.duration, $.serviceName, $.spans.gameLogic],
+      expr: 'histogram_quantile(0.95, sum(rate(%s{%s="%s", span_name=~"%s"}[1m])) by (le)) / 1000' % [$.spanmetricsMetric.duration, $.serviceLabel, $.serviceName, $.spans.gameLogic],
       legendFormat: 'Game Logic',
       exemplar: true,
     },
     {
       refId: 'D',
-      expr: 'histogram_quantile(0.95, sum(rate(%s{service="%s", span_name=~"%s"}[1m])) by (le))' % [$.spanmetricsMetric.duration, $.serviceName, $.spans.wsBroadcast],
+      expr: 'histogram_quantile(0.95, sum(rate(%s{%s="%s", span_name=~"%s"}[1m])) by (le)) / 1000' % [$.spanmetricsMetric.duration, $.serviceLabel, $.serviceName, $.spans.wsBroadcast],
       legendFormat: 'WS Broadcast',
       exemplar: true,
     },
     {
       refId: 'E',
-      expr: 'histogram_quantile(0.95, sum(rate(%s{service="%s", span_name=~"%s"}[1m])) by (le))' % [$.spanmetricsMetric.duration, $.serviceName, $.spans.eventHandler],
+      expr: 'histogram_quantile(0.95, sum(rate(%s{%s="%s", span_name=~"%s"}[1m])) by (le)) / 1000' % [$.spanmetricsMetric.duration, $.serviceLabel, $.serviceName, $.spans.eventHandler],
       legendFormat: 'Event Handler (post-response)',
       exemplar: true,
     },

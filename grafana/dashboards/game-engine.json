@@ -124,7 +124,7 @@
             },
             "targets": [
                 {
-                    "expr": "sum(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"bus:.*\"})",
+                    "expr": "sum(traces_span_metrics_calls_total{service_name=\"risk-it\", span_name=~\"bus:.*\"})",
                     "legendFormat": "total events",
                     "refId": "A"
                 }
@@ -179,7 +179,7 @@
             },
             "targets": [
                 {
-                    "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"consumer[.].*\", status_code=\"STATUS_CODE_ERROR\"}[1m]))",
+                    "expr": "sum(rate(traces_span_metrics_calls_total{service_name=\"risk-it\", span_name=~\"consumer[.].*\", status_code=\"STATUS_CODE_ERROR\"}[1m]))",
                     "legendFormat": "errors/s",
                     "refId": "A"
                 }
@@ -317,12 +317,12 @@
             },
             "targets": [
                 {
-                    "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"bus:game_created\", status_code!=\"STATUS_CODE_ERROR\"}[1m]))",
+                    "expr": "sum(rate(traces_span_metrics_calls_total{service_name=\"risk-it\", span_name=~\"bus:game_created\", status_code!=\"STATUS_CODE_ERROR\"}[1m]))",
                     "legendFormat": "Created",
                     "refId": "A"
                 },
                 {
-                    "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"bus:game_completed\", status_code!=\"STATUS_CODE_ERROR\"}[1m]))",
+                    "expr": "sum(rate(traces_span_metrics_calls_total{service_name=\"risk-it\", span_name=~\"bus:game_completed\", status_code!=\"STATUS_CODE_ERROR\"}[1m]))",
                     "legendFormat": "Finished",
                     "refId": "B"
                 }
@@ -379,7 +379,7 @@
             },
             "targets": [
                 {
-                    "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"bus:.*\"}[1m])) by (span_name)",
+                    "expr": "sum(rate(traces_span_metrics_calls_total{service_name=\"risk-it\", span_name=~\"bus:.*\"}[1m])) by (span_name)",
                     "legendFormat": "{{span_name}}",
                     "refId": "A"
                 }
@@ -464,12 +464,12 @@
                 "yAxis": {
                     "axisPlacement": "left",
                     "reverse": false,
-                    "unit": "s"
+                    "unit": "ms"
                 }
             },
             "targets": [
                 {
-                    "expr": "sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"game[.]orchestrate_move\"}[1m])) by (le)",
+                    "expr": "sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"risk-it\", span_name=~\"game[.]orchestrate_move\"}[1m])) by (le)",
                     "format": "heatmap",
                     "legendFormat": "{{le}}",
                     "refId": "A"
@@ -612,12 +612,12 @@
             },
             "targets": [
                 {
-                    "expr": "histogram_quantile(0.5, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"game[.]orchestrate_move\"}[1m])) by (le, phase))",
+                    "expr": "histogram_quantile(0.5, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"risk-it\", span_name=~\"game[.]orchestrate_move\"}[1m])) by (le, phase)) / 1000",
                     "legendFormat": "{{phase}} P50",
                     "refId": "A"
                 },
                 {
-                    "expr": "histogram_quantile(0.99, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"game[.]orchestrate_move\"}[1m])) by (le, phase))",
+                    "expr": "histogram_quantile(0.99, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"risk-it\", span_name=~\"game[.]orchestrate_move\"}[1m])) by (le, phase)) / 1000",
                     "legendFormat": "{{phase}} P99",
                     "refId": "B"
                 }
@@ -719,17 +719,17 @@
             },
             "targets": [
                 {
-                    "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"bus:continent_captured\", status_code!=\"STATUS_CODE_ERROR\"}[1m]))",
+                    "expr": "sum(rate(traces_span_metrics_calls_total{service_name=\"risk-it\", span_name=~\"bus:continent_captured\", status_code!=\"STATUS_CODE_ERROR\"}[1m]))",
                     "legendFormat": "Captured",
                     "refId": "A"
                 },
                 {
-                    "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"bus:continent_lost\", status_code!=\"STATUS_CODE_ERROR\"}[1m]))",
+                    "expr": "sum(rate(traces_span_metrics_calls_total{service_name=\"risk-it\", span_name=~\"bus:continent_lost\", status_code!=\"STATUS_CODE_ERROR\"}[1m]))",
                     "legendFormat": "Lost",
                     "refId": "B"
                 },
                 {
-                    "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"bus:player_eliminated\", status_code!=\"STATUS_CODE_ERROR\"}[1m]))",
+                    "expr": "sum(rate(traces_span_metrics_calls_total{service_name=\"risk-it\", span_name=~\"bus:player_eliminated\", status_code!=\"STATUS_CODE_ERROR\"}[1m]))",
                     "legendFormat": "Eliminated",
                     "refId": "C"
                 }
@@ -809,7 +809,7 @@
             },
             "targets": [
                 {
-                    "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"game[.]orchestrate_move\"}[1m])) by (phase)",
+                    "expr": "sum(rate(traces_span_metrics_calls_total{service_name=\"risk-it\", span_name=~\"game[.]orchestrate_move\"}[1m])) by (phase)",
                     "legendFormat": "{{phase}}",
                     "refId": "A"
                 }
@@ -985,7 +985,7 @@
             },
             "targets": [
                 {
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"consumer[.].*\"}[1m])) by (le, span_name))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"risk-it\", span_name=~\"consumer[.].*\"}[1m])) by (le, span_name)) / 1000",
                     "legendFormat": "{{span_name}} p95",
                     "refId": "A"
                 }
@@ -1041,7 +1041,7 @@
             },
             "targets": [
                 {
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service=\"risk-it\", span_name=~\"bus:.*\"}[1m])) by (le, span_name))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"risk-it\", span_name=~\"bus:.*\"}[1m])) by (le, span_name)) / 1000",
                     "legendFormat": "{{span_name}}",
                     "refId": "A"
                 }
@@ -1107,7 +1107,7 @@
                     },
                     "targets": [
                         {
-                            "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"bus:.*\"}[1m])) by (span_name)",
+                            "expr": "sum(rate(traces_span_metrics_calls_total{service_name=\"risk-it\", span_name=~\"bus:.*\"}[1m])) by (span_name)",
                             "legendFormat": "{{span_name}}",
                             "refId": "A"
                         }
@@ -1157,7 +1157,7 @@
                     },
                     "targets": [
                         {
-                            "expr": "sum(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"bus:.*\"})",
+                            "expr": "sum(traces_span_metrics_calls_total{service_name=\"risk-it\", span_name=~\"bus:.*\"})",
                             "legendFormat": "total events",
                             "refId": "A"
                         }
@@ -1220,7 +1220,7 @@
                     },
                     "targets": [
                         {
-                            "expr": "sum(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"game[.]orchestrate_move\"}) by (phase)",
+                            "expr": "sum(traces_span_metrics_calls_total{service_name=\"risk-it\", span_name=~\"game[.]orchestrate_move\"}) by (phase)",
                             "legendFormat": "{{phase}}",
                             "refId": "A"
                         }
@@ -1276,7 +1276,7 @@
                     },
                     "targets": [
                         {
-                            "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*/games.*\"}[1m])) by (span_name)",
+                            "expr": "sum(rate(traces_span_metrics_calls_total{service_name=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*/games.*\"}[1m])) by (span_name)",
                             "legendFormat": "{{span_name}}",
                             "refId": "A"
                         }

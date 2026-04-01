@@ -5,7 +5,7 @@
 //
 // # API
 //
-// Six public functions cover the full observability surface:
+// Seven public functions cover the full observability surface:
 //
 //   - [Span] wraps a typed-context function that returns (T, error) with
 //     automatic span lifecycle. The closure receives the span-enriched typed
@@ -20,6 +20,10 @@
 //     transaction wrapper) that operate on untyped contexts. When the parent
 //     implements [ctx.Rebaseable], domain metadata is automatically preserved
 //     on the child context (see Auto-Rebase below).
+//   - [LinkedSpan] creates a new root span linked to the parent's span for
+//     trace correlation. The new span lives in its own trace — causally
+//     related but independently lifecycled. Use this for operations that
+//     outlive the triggering request (event handlers, async tasks).
 //   - [SpanEvent] adds a named event to the current span (trace-only, no log).
 //   - [Info], [Warn], [Error] emit both an slog log and a span event.
 //     [Error] additionally records the error on the span and sets its status
@@ -70,6 +74,13 @@
 //	    defer done(nil)
 //	    // ...
 //	}
+//
+// Use [LinkedSpan] for operations that outlive the triggering request
+// (event handlers, async processing):
+//
+//	ctx, done := observe.LinkedSpan(parent, "bus:move_executed",
+//	    attribute.String("event_type", "move_executed"))
+//	defer done(nil)
 //
 // WARNING: never use defer done(nil) in a function that returns error — the
 // span will always record success even when the function fails. In
@@ -126,9 +137,14 @@
 // via the [ctx.LogEnricher] interface. If the context implements LogEnricher
 // (which [ctx.UserContext], [game/ctx.GameContext], and
 // [lobby/ctx.LobbyContext] all do), attributes like user_id, game_id, and
-// lobby_id are merged into span events without the call site passing them
-// explicitly. The slog channel gets these attributes separately via the
-// kernel slog ContextHandler, so observe only adds them to span events.
+// lobby_id are:
+//
+//   - Set as span attributes on spans created by [RawSpan], [Span], [SpanErr],
+//     and [LinkedSpan] — making them searchable in Tempo via TraceQL.
+//   - Merged into span events emitted by [SpanEvent], [Info], [Warn], [Error].
+//   - Written to slog logs separately via the kernel slog ContextHandler.
+//
+// Call sites never need to pass context metadata explicitly.
 //
 // # OTel Wiring
 //

@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
@@ -36,12 +35,12 @@ func (m *OTelMiddleware) Wrap(routeToWrap *route.Route) *route.Route {
 	isWebSocket := routeToWrap.IsWebSocket()
 
 	handler := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		spanName := fmt.Sprintf("%s %s", request.Method, routeToWrap.Pattern())
+		spanName := routeToWrap.Pattern()
 
 		tracedCtx, span := m.tracer.Start(request.Context(), spanName,
 			trace.WithAttributes(
-				attribute.String("http.method", request.Method),
-				attribute.String("http.route", routeToWrap.Pattern()),
+				attribute.String("http_method", request.Method),
+				attribute.String("http_route", routeToWrap.Pattern()),
 			),
 		)
 		defer span.End()

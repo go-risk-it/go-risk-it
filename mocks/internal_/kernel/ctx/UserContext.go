@@ -5,6 +5,7 @@
 package ctx
 
 import (
+	"context"
 	"log/slog"
 	"time"
 
@@ -178,6 +179,59 @@ func (_c *UserContext_Err_Call) Return(err error) *UserContext_Err_Call {
 }
 
 func (_c *UserContext_Err_Call) RunAndReturn(run func() error) *UserContext_Err_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Rebase provides a mock function for the type UserContext
+func (_mock *UserContext) Rebase(base context.Context) context.Context {
+	ret := _mock.Called(base)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Rebase")
+	}
+
+	var r0 context.Context
+	if returnFunc, ok := ret.Get(0).(func(context.Context) context.Context); ok {
+		r0 = returnFunc(base)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(context.Context)
+		}
+	}
+	return r0
+}
+
+// UserContext_Rebase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Rebase'
+type UserContext_Rebase_Call struct {
+	*mock.Call
+}
+
+// Rebase is a helper method to define mock.On call
+//   - base context.Context
+func (_e *UserContext_Expecter) Rebase(base interface{}) *UserContext_Rebase_Call {
+	return &UserContext_Rebase_Call{Call: _e.mock.On("Rebase", base)}
+}
+
+func (_c *UserContext_Rebase_Call) Run(run func(base context.Context)) *UserContext_Rebase_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *UserContext_Rebase_Call) Return(context1 context.Context) *UserContext_Rebase_Call {
+	_c.Call.Return(context1)
+	return _c
+}
+
+func (_c *UserContext_Rebase_Call) RunAndReturn(run func(base context.Context) context.Context) *UserContext_Rebase_Call {
 	_c.Call.Return(run)
 	return _c
 }

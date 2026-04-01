@@ -10,9 +10,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/fx"
 )
 
@@ -215,11 +213,8 @@ func detachContext(
 	event Event,
 	timeout time.Duration,
 ) (context.Context, context.CancelFunc) {
-	spanName := "bus:" + event.EventType()
-	spanCtx, span := startLinkedSpan(parent, spanName)
-
-	ctxAttrs := observe.ExtractContextAttrs(parent)
-	span.SetAttributes(append(ctxAttrs, attribute.String("event_type", event.EventType()))...)
+	spanCtx, done := observe.LinkedSpan(parent, "bus:"+event.EventType(),
+		attribute.String("event_type", event.EventType()))
 
 	timeoutCtx, timeoutCancel := context.WithTimeout(spanCtx, timeout)
 
@@ -229,34 +224,9 @@ func detachContext(
 	}
 
 	cancel := func() {
-		span.End()
+		done(nil)
 		timeoutCancel()
 	}
 
 	return result, cancel
-}
-
-const busTracerName = "go-risk-it-eventbus"
-
-// startLinkedSpan creates a new root span linked to the trigger span from the parent
-// context. This provides trace correlation (via the link) while ensuring handler spans
-// live in their own trace (via WithNewRoot on context.Background). Degrades gracefully
-// to a noop span when the global TracerProvider is a noop.
-func startLinkedSpan(
-	parent context.Context,
-	spanName string,
-) (context.Context, trace.Span) {
-	triggerSpan := trace.SpanFromContext(parent)
-	opts := []trace.SpanStartOption{trace.WithNewRoot()}
-
-	if triggerSpan.SpanContext().IsValid() {
-		opts = append(opts, trace.WithLinks(trace.Link{
-			SpanContext: triggerSpan.SpanContext(),
-		}))
-	}
-
-	//nolint:spancheck // span is returned to the caller who manages its lifecycle
-	return otel.GetTracerProvider().Tracer(busTracerName).Start(
-		context.Background(), spanName, opts...,
-	)
 }
