@@ -127,6 +127,27 @@ func computeCasualties(ctx ctx.GameContext, attackDices, defenseDices []int) *ca
 		attribute.Int64("defending", casualties.defending),
 	)
 
+	if total := casualties.attacking + casualties.defending; total != int64(matches) {
+		panic(fmt.Sprintf(
+			"invariant violation: total casualties %d must equal dice matches %d",
+			total, matches,
+		))
+	}
+
+	if casualties.attacking < 0 || casualties.attacking > int64(len(attackDices)) {
+		panic(fmt.Sprintf(
+			"invariant violation: attacking casualties %d out of bounds [0, %d]",
+			casualties.attacking, len(attackDices),
+		))
+	}
+
+	if casualties.defending < 0 || casualties.defending > int64(len(defenseDices)) {
+		panic(fmt.Sprintf(
+			"invariant violation: defending casualties %d out of bounds [0, %d]",
+			casualties.defending, len(defenseDices),
+		))
+	}
+
 	return casualties
 }
 
