@@ -3,8 +3,6 @@ package bus
 import (
 	"context"
 	"time"
-
-	"go.opentelemetry.io/otel/trace"
 )
 
 // NewBusForTest creates a Bus without fx lifecycle for unit testing.
@@ -22,14 +20,6 @@ func DetachContextForTest(
 	timeout time.Duration,
 ) (context.Context, context.CancelFunc) {
 	return detachContext(parent, event, timeout)
-}
-
-// StartLinkedSpanForTest exposes startLinkedSpan for testing.
-func StartLinkedSpanForTest(
-	parent context.Context,
-	spanName string,
-) (context.Context, trace.Span) {
-	return startLinkedSpan(parent, spanName)
 }
 
 // CollectHandlersForTest exposes collectHandlers for testing handler ordering.

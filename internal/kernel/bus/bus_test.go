@@ -388,72 +388,6 @@ func TestDetachContext_PlainContext(t *testing.T) {
 }
 
 //nolint:paralleltest // swaps global TracerProvider
-func TestStartLinkedSpan_ValidTrigger(
-	t *testing.T,
-) {
-	exporter := tracetest.NewInMemoryExporter()
-	tracerProvider := sdktrace.NewTracerProvider(sdktrace.WithSyncer(exporter))
-	t.Cleanup(func() { _ = tracerProvider.Shutdown(context.Background()) })
-
-	// Set this test's TracerProvider as the global so startLinkedSpan picks it up.
-	prev := otel.GetTracerProvider()
-	otel.SetTracerProvider(tracerProvider)
-	t.Cleanup(func() { otel.SetTracerProvider(prev) })
-
-	// Create a source span to link from.
-	tracer := tracerProvider.Tracer("test")
-	sourceCtx, sourceSpan := tracer.Start(context.Background(), "source")
-	sourceSpanCtx := sourceSpan.SpanContext()
-	sourceSpan.End()
-
-	// Call startLinkedSpan with the source context.
-	linkedCtx, linkedSpan := eventbus.StartLinkedSpanForTest(sourceCtx, "bus:test.event")
-	linkedSpan.End()
-
-	_ = linkedCtx // linked context should carry the linked span
-
-	// Find the linked span in recorded spans.
-	stubs := exporter.GetSpans()
-	var linkedStub *tracetest.SpanStub
-	for i := range stubs {
-		if stubs[i].Name == "bus:test.event" {
-			linkedStub = &stubs[i]
-
-			break
-		}
-	}
-
-	require.NotNil(t, linkedStub, "linked span must be in recorded spans")
-	require.Len(t, linkedStub.Links, 1, "linked span must have exactly 1 link")
-	require.Equal(t, sourceSpanCtx, linkedStub.Links[0].SpanContext,
-		"link must reference the source span")
-
-	// Must be a new root — different TraceID from source.
-	require.NotEqual(t, sourceSpanCtx.TraceID(), linkedStub.SpanContext.TraceID(),
-		"linked span must have its own trace (WithNewRoot)")
-}
-
-func TestStartLinkedSpan_NoopDegradation(t *testing.T) {
-	t.Parallel()
-
-	// With a noop provider (default when no real provider is registered), startLinkedSpan
-	// must not panic and must return a valid (non-nil) span.
-	noopCtx, noopSpan := noop.NewTracerProvider().Tracer("test").Start(
-		context.Background(), "source",
-	)
-	noopSpan.End()
-
-	// This must not panic.
-	linkedCtx, linkedSpan := eventbus.StartLinkedSpanForTest(noopCtx, "bus:test.event")
-	linkedSpan.End()
-
-	require.NotNil(t, linkedCtx)
-	require.NotNil(t, linkedSpan)
-	require.False(t, linkedSpan.SpanContext().IsValid(),
-		"noop linked span should have invalid SpanContext")
-}
-
-//nolint:paralleltest // swaps global TracerProvider
 func TestDetachContext_ComposedCancel(
 	t *testing.T,
 ) {
@@ -461,12 +395,12 @@ func TestDetachContext_ComposedCancel(
 	tracerProvider := sdktrace.NewTracerProvider(sdktrace.WithSyncer(exporter))
 	t.Cleanup(func() { _ = tracerProvider.Shutdown(context.Background()) })
 
-	// Set this test's TracerProvider as the global so startLinkedSpan picks it up.
+	// Set this test's TracerProvider as the global so observe.LinkedSpan picks it up.
 	prev := otel.GetTracerProvider()
 	otel.SetTracerProvider(tracerProvider)
 	t.Cleanup(func() { otel.SetTracerProvider(prev) })
 
-	// Create a source span context so startLinkedSpan has something to link.
+	// Create a source span context so observe.LinkedSpan has something to link.
 	tracer := tracerProvider.Tracer("test")
 	sourceCtx, sourceSpan := tracer.Start(context.Background(), "source")
 	sourceSpan.End()

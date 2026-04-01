@@ -38,7 +38,7 @@ func RawSpan(
 ) (context.Context, func(error)) {
 	childCtx, span := otel.GetTracerProvider().
 		Tracer(tracerName).
-		Start(parent, name, trace.WithAttributes(attrs...))
+		Start(parent, name, trace.WithAttributes(mergeContextAttrs(parent, attrs)...))
 
 	// Auto-preserve domain type across span boundary.
 	if r, ok := parent.(ctx.Rebaseable); ok {
@@ -92,13 +92,45 @@ func Error(ctx context.Context, err error, msg string, attrs ...attribute.KeyVal
 	span.SetStatus(codes.Error, err.Error())
 }
 
-// ExtractContextAttrs type-asserts ctx as a [ctx.LogEnricher] and converts the
-// resulting slog.Attr slice to OTel attribute.KeyValue. Returns nil for contexts
-// that do not implement LogEnricher.
+// LinkedSpan creates a new root span linked to the parent's span for trace
+// correlation. The new span lives in its own trace — causally related but
+// independently lifecycled. Context attributes from the parent (user_id,
+// game_id, lobby_id) are automatically set on the new span.
 //
-// Exported for testing — production code should not call this directly.
-func ExtractContextAttrs(c context.Context) []attribute.KeyValue {
-	return extractContextAttrs(c)
+// Use this for operations that outlive the triggering request (event handlers,
+// async tasks). For child spans within the same trace, use [RawSpan].
+func LinkedSpan(
+	parent context.Context,
+	name string,
+	attrs ...attribute.KeyValue,
+) (context.Context, func(error)) {
+	triggerSpan := trace.SpanFromContext(parent)
+	opts := []trace.SpanStartOption{trace.WithNewRoot()}
+
+	if triggerSpan.SpanContext().IsValid() {
+		opts = append(opts, trace.WithLinks(trace.Link{
+			SpanContext: triggerSpan.SpanContext(),
+		}))
+	}
+
+	allAttrs := mergeContextAttrs(parent, attrs)
+	opts = append(opts, trace.WithAttributes(allAttrs...))
+
+	//nolint:spancheck // span is returned to the caller who manages its lifecycle
+	childCtx, span := otel.GetTracerProvider().
+		Tracer(tracerName).
+		Start(context.Background(), name, opts...)
+
+	done := func(err error) {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+
+		span.End()
+	}
+
+	return childCtx, done //nolint:spancheck // caller owns the done(err) lifecycle
 }
 
 // ---------------------------------------------------------------------------
