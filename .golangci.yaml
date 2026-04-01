@@ -85,6 +85,10 @@ linters:
       - linters:
           - contextcheck
         path: internal/web/middleware/
+      - path: internal/loadtest/
+        text: ".*"
+      - path: cmd/loadtest/
+        text: ".*"
       - linters:
           - dogsled
           - dupl

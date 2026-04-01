@@ -149,6 +149,28 @@ func isGeneratedPackage(importPath string) bool {
 	return strings.Contains(short, "/sqlc") || strings.Contains(short, "/mocks")
 }
 
+// isLoadtestPackage returns true for packages under internal/loadtest/.
+// Loadtest packages have different conventions (stdlib log, different export patterns)
+// and are excluded from server-specific quality rules until Phase 4 migration.
+func isLoadtestPackage(importPath string) bool {
+	short := strings.TrimPrefix(importPath, modulePrefix)
+
+	return strings.HasPrefix(short, "loadtest/")
+}
+
+// excludeLoadtest filters out loadtest packages from a package list.
+func excludeLoadtest(pkgs []goPackage) []goPackage {
+	var result []goPackage
+
+	for _, pkg := range pkgs {
+		if !isLoadtestPackage(pkg.ImportPath) {
+			result = append(result, pkg)
+		}
+	}
+
+	return result
+}
+
 // archBaseline defines the metric ceilings for package quality ratcheting.
 type archBaseline struct {
 	MaxExportsPerPackage     int `json:"maxExportsPerPackage"`

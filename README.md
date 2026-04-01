@@ -328,6 +328,25 @@ of importing log/slog or go.opentelemetry.io/otel directly.
 │   └── upgradablerw_mutex/ # Package upgradable_rw_mutex provides an [UpgradableRWMutex] that extends
 sync.RWMutex with the ability to atomically upgrade a read lock to a write
 lock without releasing it first.
+├── loadtest/
+│   ├── annotations/
+│   ├── baseline/
+│   ├── chaos/
+│   ├── client/
+│   ├── dbstats/
+│   ├── gamestate/
+│   ├── health/
+│   ├── journal/
+│   │   └── session/
+│   ├── mapgraph/
+│   ├── metrics/
+│   ├── orchestrator/
+│   ├── player/
+│   │   ├── heuristic/
+│   │   └── smart/
+│   ├── resources/
+│   ├── runner/
+│   └── scenario/
 ├── lobby/
 │   ├── api/
 │   │   ├── messaging/          # Package messaging defines the WebSocket message types sent to lobby clients.

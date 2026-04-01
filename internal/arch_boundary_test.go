@@ -341,7 +341,7 @@ func TestArch_WebNeverImportsDataQuerier(t *testing.T) {
 func TestArch_NoStdlibLog(t *testing.T) {
 	t.Parallel()
 
-	pkgs := loadPackages(t, "./internal/...")
+	pkgs := excludeLoadtest(loadPackages(t, "./internal/..."))
 
 	assertNoRawImports(t, pkgs, "log")
 }

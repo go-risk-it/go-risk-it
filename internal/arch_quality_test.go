@@ -24,7 +24,7 @@ func TestArch_MaxExportsPerPackage(t *testing.T) {
 	pkgs := loadPackages(t, "./internal/...")
 
 	for _, pkg := range pkgs {
-		if isGeneratedPackage(pkg.ImportPath) {
+		if isGeneratedPackage(pkg.ImportPath) || isLoadtestPackage(pkg.ImportPath) {
 			continue
 		}
 
@@ -44,6 +44,10 @@ func TestArch_MaxFanOut(t *testing.T) {
 	pkgs := loadPackages(t, "./internal/...")
 
 	for _, pkg := range pkgs {
+		if isLoadtestPackage(pkg.ImportPath) {
+			continue
+		}
+
 		fanOut := len(internalImports(pkg))
 		if fanOut > baseline.MaxFanOut {
 			t.Errorf("%s has fan-out %d (ceiling: %d)",
@@ -60,7 +64,7 @@ func TestArch_MaxFilesPerPackage(t *testing.T) {
 	pkgs := loadPackages(t, "./internal/...")
 
 	for _, pkg := range pkgs {
-		if isGeneratedPackage(pkg.ImportPath) {
+		if isGeneratedPackage(pkg.ImportPath) || isLoadtestPackage(pkg.ImportPath) {
 			continue
 		}
 

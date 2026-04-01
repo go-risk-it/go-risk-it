@@ -99,6 +99,11 @@ func IsExcluded(suffix string) bool {
 		return true
 	}
 
+	// Loadtest packages are a separate domain — excluded from the server architecture diagram.
+	if strings.HasPrefix(suffix, "loadtest/") {
+		return true
+	}
+
 	return false
 }
 

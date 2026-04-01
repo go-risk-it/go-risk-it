@@ -3,9 +3,11 @@ module github.com/go-risk-it/go-risk-it
 go 1.26.1
 
 require (
+	github.com/HdrHistogram/hdrhistogram-go v1.2.0
 	github.com/exaring/otelpgx v0.10.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/golang-migrate/migrate/v4 v4.19.1
+	github.com/gorilla/websocket v1.5.3
 	github.com/hellofresh/health-go/v5 v5.5.5
 	github.com/jackc/pgx/v5 v5.9.1
 	github.com/joho/godotenv v1.5.1
@@ -15,6 +17,7 @@ require (
 	github.com/knadh/koanf/providers/rawbytes v1.0.0
 	github.com/knadh/koanf/v2 v2.3.4
 	github.com/lesismal/nbio v1.6.8
+	github.com/lib/pq v1.12.0
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.41.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.41.0
@@ -67,7 +70,6 @@ require (
 	github.com/klauspost/compress v1.18.2 // indirect
 	github.com/knadh/koanf/maps v0.1.2 // indirect
 	github.com/lesismal/llib v1.2.2 // indirect
-	github.com/lib/pq v1.12.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20260216142805-b3301c5f2a88 // indirect
 	github.com/magiconair/properties v1.8.10 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect

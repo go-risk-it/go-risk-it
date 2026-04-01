@@ -141,6 +141,8 @@ func layerFromPrefix(suffix string) string {
 		return "Web"
 	case strings.HasPrefix(suffix, "testing/") || suffix == "testonly":
 		return "Test"
+	case strings.HasPrefix(suffix, "loadtest/"):
+		return "Loadtest"
 	default:
 		return ""
 	}
