@@ -35,6 +35,8 @@ services:
       dockerfile: docker/component-test/Dockerfile
     ports:
       - "8080:8080"
+    env_file:
+      - component-test/.env
     environment:
       - OTEL_RESOURCE_ATTRIBUTES=service.name=risk-it,service.version=0.1.0
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://lgtm:4318
@@ -64,9 +66,12 @@ services:
       - ./grafana/otelcol-extra.yaml:/otel-lgtm/otelcol-config.yaml
 
   postgres-exporter:
-    image: quay.io/prometheuscommunity/postgres-exporter:latest@sha256:e96064f876226d94bb6ce48a4c4b3dd76edba91168ec1ab024e5c4b959310b0f
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.16.0
     environment:
       DATA_SOURCE_NAME: "postgresql://postgres:${DATABASE_PASSWORD}@db:5432/postgres?sslmode=disable"
+      PG_EXPORTER_DISABLE_SETTINGS_METRICS: "true"
+    command:
+      - "--no-collector.stat_bgwriter"
     depends_on:
       db:
         condition: service_healthy

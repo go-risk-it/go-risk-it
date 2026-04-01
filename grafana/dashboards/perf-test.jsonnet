@@ -148,7 +148,7 @@ dashboard.new(
           title='Completion Rate',
           targets=[
             targets.target(
-              '(sum(rate(%s{service="%s", span_name=~"%s", status_code!="STATUS_CODE_ERROR"}[1m])) or vector(0)) / (sum(rate(%s{service="%s", span_name=~"%s"}[1m])) or vector(1))' % [targets.spanmetricsMetric.calls, targets.perfTestServiceName, targets.perfTestSpans.game, targets.spanmetricsMetric.calls, targets.perfTestServiceName, targets.perfTestSpans.game],
+              '(sum(rate(%s{%s="%s", span_name=~"%s", status_code!="STATUS_CODE_ERROR"}[1m])) or vector(0)) / (sum(rate(%s{%s="%s", span_name=~"%s"}[1m])) or vector(1))' % [targets.spanmetricsMetric.calls, targets.serviceLabel, targets.perfTestServiceName, targets.perfTestSpans.game, targets.spanmetricsMetric.calls, targets.serviceLabel, targets.perfTestServiceName, targets.perfTestSpans.game],
               'Completion',
             ),
           ],
@@ -200,7 +200,7 @@ dashboard.new(
           title='E2E Latency Heatmap',
           targets=[
             targets.heatmapTarget(
-              'sum(rate(%s{service="%s", span_name=~"%s"}[$__rate_interval])) by (le)' % [targets.spanmetricsMetric.duration, targets.perfTestServiceName, targets.perfTestSpans.move],
+              'sum(rate(%s{%s="%s", span_name=~"%s"}[$__rate_interval])) by (le)' % [targets.spanmetricsMetric.duration, targets.serviceLabel, targets.perfTestServiceName, targets.perfTestSpans.move],
             ),
           ],
           unit='s',

@@ -36,7 +36,8 @@ type signupRequest struct {
 }
 
 type signupResponse struct {
-	AccessToken string `json:"accessToken"`
+	//nolint:tagliatelle // Supabase OAuth2 response uses snake_case
+	AccessToken string `json:"access_token"`
 	User        struct {
 		ID string `json:"id"`
 	} `json:"user"`

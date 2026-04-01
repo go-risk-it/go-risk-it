@@ -1,0 +1,37 @@
+{
+  "id": "worktree-perf-test-convergence-p1",
+  "branch": "worktree-perf-test-convergence-p1",
+  "baselineEntry": "perf-journal/entries/021-staircase-light-fdde2f57.json",
+  "startedAt": "2026-04-01T14:30:36.250991+02:00",
+  "runs": [
+    {
+      "entryPath": "perf-journal/entries/021-staircase-light-fdde2f57.json",
+      "commitSha": "fdde2f57",
+      "ceilingGames": 40,
+      "ceilingDelta": 40,
+      "timestamp": "2026-04-01T14:30:36.251239+02:00"
+    },
+    {
+      "entryPath": "perf-journal/entries/022-staircase-light-fdde2f57.json",
+      "commitSha": "fdde2f57",
+      "ceilingGames": 40,
+      "ceilingDelta": 0,
+      "timestamp": "2026-04-01T14:56:04.86398+02:00"
+    },
+    {
+      "entryPath": "perf-journal/entries/023-staircase-light-fdde2f57.json",
+      "commitSha": "fdde2f57",
+      "ceilingGames": 40,
+      "ceilingDelta": 0,
+      "timestamp": "2026-04-01T15:02:32.126181+02:00"
+    },
+    {
+      "entryPath": "perf-journal/entries/024-staircase-light-fdde2f57.json",
+      "commitSha": "fdde2f57",
+      "ceilingGames": 40,
+      "ceilingDelta": 0,
+      "timestamp": "2026-04-01T15:06:02.570102+02:00"
+    }
+  ],
+  "status": "active"
+}

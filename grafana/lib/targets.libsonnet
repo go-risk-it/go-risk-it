@@ -190,7 +190,7 @@ local colors = import 'colors.libsonnet';
   // filters: string (optional) — additional label matchers, e.g. ',action="attack"'.
   perfTestMoveRate(filters='')::
     $.target(
-      'sum(rate(%s{service="%s", span_name=~"%s"%s}[1m]))' % [$.spanmetricsMetric.calls, $.perfTestServiceName, $.perfTestSpans.move, filters],
+      'sum(rate(%s{%s="%s", span_name=~"%s"%s}[1m]))' % [$.spanmetricsMetric.calls, $.serviceLabel, $.perfTestServiceName, $.perfTestSpans.move, filters],
       'moves/s',
     ),
 
@@ -199,7 +199,7 @@ local colors = import 'colors.libsonnet';
   // filters: string (optional) — additional label matchers.
   perfTestMoveDuration(quantile, filters='')::
     $.target(
-      'histogram_quantile(%s, sum(rate(%s{service="%s", span_name=~"%s"%s}[1m])) by (le))' % [quantile, $.spanmetricsMetric.duration, $.perfTestServiceName, $.perfTestSpans.move, filters],
+      'histogram_quantile(%s, sum(rate(%s{%s="%s", span_name=~"%s"%s}[1m])) by (le))' % [quantile, $.spanmetricsMetric.duration, $.serviceLabel, $.perfTestServiceName, $.perfTestSpans.move, filters],
       'p' + std.strReplace(std.strReplace(quantile, '0.', ''), '.', ''),
     ),
 
@@ -210,7 +210,7 @@ local colors = import 'colors.libsonnet';
   perfTestMoveDurations(quantiles, filters='', exemplars=false)::
     [
       {
-        expr: 'histogram_quantile(%s, sum(rate(%s{service="%s", span_name=~"%s"%s}[1m])) by (le))' % [q[0], $.spanmetricsMetric.duration, $.perfTestServiceName, $.perfTestSpans.move, filters],
+        expr: 'histogram_quantile(%s, sum(rate(%s{%s="%s", span_name=~"%s"%s}[1m])) by (le))' % [q[0], $.spanmetricsMetric.duration, $.serviceLabel, $.perfTestServiceName, $.perfTestSpans.move, filters],
         legendFormat: q[1],
         refId: std.char(65 + i),
         [if exemplars then 'exemplar']: true,
@@ -223,7 +223,7 @@ local colors = import 'colors.libsonnet';
   // filters: string (optional) — additional label matchers, e.g. ',outcome="completed"'.
   perfTestGameRate(filters='')::
     $.target(
-      'sum(rate(%s{service="%s", span_name=~"%s"%s}[1m]))' % [$.spanmetricsMetric.calls, $.perfTestServiceName, $.perfTestSpans.game, filters],
+      'sum(rate(%s{%s="%s", span_name=~"%s"%s}[1m]))' % [$.spanmetricsMetric.calls, $.serviceLabel, $.perfTestServiceName, $.perfTestSpans.game, filters],
       'games/s',
     ),
 
@@ -232,7 +232,7 @@ local colors = import 'colors.libsonnet';
   // filters: string (optional) — additional label matchers.
   perfTestGameDuration(quantile, filters='')::
     $.target(
-      'histogram_quantile(%s, sum(rate(%s{service="%s", span_name=~"%s"%s}[1m])) by (le))' % [quantile, $.spanmetricsMetric.duration, $.perfTestServiceName, $.perfTestSpans.game, filters],
+      'histogram_quantile(%s, sum(rate(%s{%s="%s", span_name=~"%s"%s}[1m])) by (le))' % [quantile, $.spanmetricsMetric.duration, $.serviceLabel, $.perfTestServiceName, $.perfTestSpans.game, filters],
       'p' + std.strReplace(std.strReplace(quantile, '0.', ''), '.', ''),
     ),
 
@@ -243,7 +243,7 @@ local colors = import 'colors.libsonnet';
   perfTestGameDurations(quantiles, filters='', exemplars=false)::
     [
       {
-        expr: 'histogram_quantile(%s, sum(rate(%s{service="%s", span_name=~"%s"%s}[1m])) by (le))' % [q[0], $.spanmetricsMetric.duration, $.perfTestServiceName, $.perfTestSpans.game, filters],
+        expr: 'histogram_quantile(%s, sum(rate(%s{%s="%s", span_name=~"%s"%s}[1m])) by (le))' % [q[0], $.spanmetricsMetric.duration, $.serviceLabel, $.perfTestServiceName, $.perfTestSpans.game, filters],
         legendFormat: q[1],
         refId: std.char(65 + i),
         [if exemplars then 'exemplar']: true,
@@ -256,7 +256,7 @@ local colors = import 'colors.libsonnet';
   // filters: string (optional) — additional label matchers.
   perfTestMoveErrorRate(filters='')::
     $.target(
-      'sum(rate(%s{service="%s", span_name=~"%s", status_code="STATUS_CODE_ERROR"%s}[1m]))' % [$.spanmetricsMetric.calls, $.perfTestServiceName, $.perfTestSpans.move, filters],
+      'sum(rate(%s{%s="%s", span_name=~"%s", status_code="STATUS_CODE_ERROR"%s}[1m]))' % [$.spanmetricsMetric.calls, $.serviceLabel, $.perfTestServiceName, $.perfTestSpans.move, filters],
       'move errors/s',
     ),
 
@@ -266,7 +266,7 @@ local colors = import 'colors.libsonnet';
   // filters: string (optional) — additional label matchers.
   perfTestMoveRateBy(groupBy, legend, filters='')::
     $.target(
-      'sum(rate(%s{service="%s", span_name=~"%s"%s}[1m])) by (%s)' % [$.spanmetricsMetric.calls, $.perfTestServiceName, $.perfTestSpans.move, filters, groupBy],
+      'sum(rate(%s{%s="%s", span_name=~"%s"%s}[1m])) by (%s)' % [$.spanmetricsMetric.calls, $.serviceLabel, $.perfTestServiceName, $.perfTestSpans.move, filters, groupBy],
       legend,
     ),
 
@@ -277,7 +277,7 @@ local colors = import 'colors.libsonnet';
   // filters: string (optional) — additional label matchers.
   perfTestMoveDurationBy(quantile, groupBy, legend, filters='')::
     $.target(
-      'histogram_quantile(%s, sum(rate(%s{service="%s", span_name=~"%s"%s}[1m])) by (le, %s))' % [quantile, $.spanmetricsMetric.duration, $.perfTestServiceName, $.perfTestSpans.move, filters, groupBy],
+      'histogram_quantile(%s, sum(rate(%s{%s="%s", span_name=~"%s"%s}[1m])) by (le, %s))' % [quantile, $.spanmetricsMetric.duration, $.serviceLabel, $.perfTestServiceName, $.perfTestSpans.move, filters, groupBy],
       legend,
     ),
 
