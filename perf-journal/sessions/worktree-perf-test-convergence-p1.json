@@ -31,6 +31,20 @@
       "ceilingGames": 40,
       "ceilingDelta": 0,
       "timestamp": "2026-04-01T15:06:02.570102+02:00"
+    },
+    {
+      "entryPath": "perf-journal/entries/025-staircase-light-c21ac28d.json",
+      "commitSha": "c21ac28d",
+      "ceilingGames": 40,
+      "ceilingDelta": 0,
+      "timestamp": "2026-04-01T15:20:16.408937+02:00"
+    },
+    {
+      "entryPath": "perf-journal/entries/026-staircase-c21ac28d.json",
+      "commitSha": "c21ac28d",
+      "ceilingGames": 120,
+      "ceilingDelta": 80,
+      "timestamp": "2026-04-01T15:33:39.042914+02:00"
     }
   ],
   "status": "active"
