@@ -36,8 +36,13 @@ type WS struct {
 	// closed is set to true when Close() is called intentionally.
 	closed bool
 
-	// pingStop stops the current connection's ping goroutine.
-	pingStop chan struct{}
+	// gen is the connection generation counter. Each (readLoop, pingLoop) pair
+	// is scoped to a generation. Incremented on successful reconnect.
+	gen uint64
+
+	// genDone signals the current generation's pingLoop to stop.
+	// Closed by reconnect (to stop old pingLoop) or by Close (to stop all).
+	genDone chan struct{}
 
 	collector *metrics.Collector
 }
@@ -59,18 +64,20 @@ func ConnectWS(
 		return nil, fmt.Errorf("websocket dial: %w", err)
 	}
 
+	genDone := make(chan struct{})
+
 	ws := &WS{
 		conn:      conn,
 		wsURL:     wsURL,
 		header:    header,
 		view:      gamestate.NewView(),
 		done:      make(chan struct{}),
-		pingStop:  make(chan struct{}),
+		genDone:   genDone,
 		collector: collector,
 	}
 
-	go ws.readLoop()
-	go ws.pingLoop(ws.pingStop)
+	go ws.readLoop(0, genDone, conn)
+	go ws.pingLoop(genDone, conn)
 
 	return ws, nil
 }
@@ -109,39 +116,66 @@ func (ws *WS) Close() error {
 	}
 
 	ws.closed = true
-	close(ws.pingStop)
+	close(ws.genDone)
 
 	return ws.conn.Close()
 }
 
-func (ws *WS) readLoop() {
-	defer close(ws.done)
+// readLoop reads messages from the WebSocket connection. Each readLoop
+// invocation is scoped to a connection generation: it takes its own
+// generation number, genDone channel, and connection reference as parameters
+// and never reads ws.conn directly.
+func (ws *WS) readLoop(myGen uint64, myGenDone <-chan struct{}, myConn *websocket.Conn) {
+	shouldCloseDone := true
+
+	defer func() {
+		if shouldCloseDone {
+			close(ws.done)
+		}
+	}()
 
 	for {
-		_, data, err := ws.conn.ReadMessage()
+		_, data, err := myConn.ReadMessage()
 		if err != nil {
-			// Check if this was an intentional close.
 			ws.mu.Lock()
-			intentional := ws.closed
-			ws.mu.Unlock()
+			if ws.closed {
+				ws.mu.Unlock()
 
-			if intentional {
+				return // shouldCloseDone stays true — permanent shutdown.
+			}
+
+			if myGen < ws.gen {
+				// This readLoop was superseded by a newer generation.
+				// The successor owns done.
+				ws.mu.Unlock()
+				shouldCloseDone = false
+
 				return
 			}
+
+			ws.mu.Unlock()
 
 			if websocket.IsUnexpectedCloseError(
 				err,
 				websocket.CloseGoingAway,
 				websocket.CloseNormalClosure,
 			) {
-				log.Printf("ws read error: %v", err)
+				log.Printf("ws read error (gen %d): %v", myGen, err)
 			}
 
-			// Attempt reconnection.
-			if !ws.reconnect() {
+			// Attempt reconnection. If it succeeds, a new readLoop is
+			// launched by reconnect — this one must exit without closing done.
+			if ws.reconnect(myGen) {
+				shouldCloseDone = false
+
 				return
 			}
 
+			// Reconnect exhausted or closed during backoff.
+			return
+		}
+
+		if ws.view == nil {
 			continue
 		}
 
@@ -158,17 +192,29 @@ func (ws *WS) readLoop() {
 	}
 }
 
-// reconnect attempts to re-establish the WebSocket connection with exponential backoff.
-// Returns true if reconnection succeeded, false if all attempts exhausted.
-func (ws *WS) reconnect() bool {
+// reconnect attempts to re-establish the WebSocket connection with exponential
+// backoff. If successful, it spawns a new readLoop and pingLoop for the new
+// generation. Returns true if reconnection succeeded.
+func (ws *WS) reconnect(fromGen uint64) bool {
 	ws.mu.Lock()
+
 	if ws.closed {
 		ws.mu.Unlock()
 
 		return false
 	}
 
-	close(ws.pingStop)
+	if fromGen != ws.gen {
+		// Another goroutine already reconnected — this call is stale.
+		ws.mu.Unlock()
+
+		return false
+	}
+
+	// Stop the old generation's pingLoop and immediately replace genDone
+	// with a fresh channel so Close() never sees a closed channel.
+	close(ws.genDone)
+	ws.genDone = make(chan struct{})
 	ws.mu.Unlock()
 
 	backoff := reconnectBase
@@ -195,6 +241,7 @@ func (ws *WS) reconnect() bool {
 		conn, _, err := websocket.DefaultDialer.Dial(ws.wsURL, ws.header)
 		if err != nil {
 			log.Printf("ws reconnect failed: %v", err)
+
 			backoff *= 2
 			if backoff > reconnectMax {
 				backoff = reconnectMax
@@ -203,14 +250,28 @@ func (ws *WS) reconnect() bool {
 			continue
 		}
 
-		// Swap in the new connection and restart ping.
+		// Swap in the new connection and start a new generation.
 		ws.mu.Lock()
+		if ws.closed {
+			conn.Close()
+			ws.mu.Unlock()
+
+			return false
+		}
+
+		ws.gen++
 		ws.conn = conn
-		ws.pingStop = make(chan struct{})
+
+		newGenDone := make(chan struct{})
+		ws.genDone = newGenDone
+		newGen := ws.gen
+
 		ws.mu.Unlock()
 
-		go ws.pingLoop(ws.pingStop)
-		log.Printf("ws reconnected successfully")
+		go ws.readLoop(newGen, newGenDone, conn)
+		go ws.pingLoop(newGenDone, conn)
+
+		log.Printf("ws reconnected successfully (gen %d)", newGen)
 
 		return true
 	}
@@ -221,34 +282,25 @@ func (ws *WS) reconnect() bool {
 		ws.collector.RecordReconnectFailure()
 	}
 
-	// Replace pingStop so Close() can safely close it.
-	ws.mu.Lock()
-	ws.pingStop = make(chan struct{})
-	ws.mu.Unlock()
-
 	return false
 }
 
-func (ws *WS) pingLoop(stop chan struct{}) {
+func (ws *WS) pingLoop(myGenDone <-chan struct{}, myConn *websocket.Conn) {
 	ticker := time.NewTicker(pingInterval)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
-			ws.mu.Lock()
-			conn := ws.conn
-			ws.mu.Unlock()
-
-			if err := conn.WriteControl(
+			if err := myConn.WriteControl(
 				websocket.PingMessage, nil, time.Now().Add(writeWait),
 			); err != nil {
 				log.Printf("ws ping failed, forcing reconnect: %v", err)
-				conn.Close()
+				myConn.Close()
 
 				return
 			}
-		case <-stop:
+		case <-myGenDone:
 			return
 		}
 	}
