@@ -31,7 +31,7 @@ func makeTestStepExecutor(
 
 	deps := orchestrator.StepExecutorDeps{
 		RunnerFactory: func(
-			c *metrics.Collector,
+			c *metrics.StepAccumulator,
 			_ orchestrator.GameObserver,
 		) orchestrator.RunFunc {
 			return func(ctx context.Context, idx, players int) orchestrator.GameResult {
@@ -43,12 +43,12 @@ func makeTestStepExecutor(
 				return orchestrator.GameResult{GameIndex: idx}
 			}
 		},
-		NewCollector: func(d time.Duration) *metrics.Collector {
+		NewCollector: func(d time.Duration) *metrics.StepAccumulator {
 			if collectorCalls != nil {
 				collectorCalls.Add(1)
 			}
 
-			return metrics.NewCollector(d)
+			return metrics.NewStepAccumulator(d)
 		},
 		CollectResources: func() resources.ServerResources {
 			return resources.ServerResources{}
@@ -92,7 +92,7 @@ func TestRunStaircase_StopOnBreach(t *testing.T) {
 
 	deps := orchestrator.StepExecutorDeps{
 		RunnerFactory: func(
-			c *metrics.Collector,
+			c *metrics.StepAccumulator,
 			_ orchestrator.GameObserver,
 		) orchestrator.RunFunc {
 			return func(ctx context.Context, idx, players int) orchestrator.GameResult {
@@ -108,7 +108,7 @@ func TestRunStaircase_StopOnBreach(t *testing.T) {
 				return orchestrator.GameResult{GameIndex: idx}
 			}
 		},
-		NewCollector:     metrics.NewCollector,
+		NewCollector:     metrics.NewStepAccumulator,
 		CollectResources: func() resources.ServerResources { return resources.ServerResources{} },
 		Annotator:        annotations.NewAnnotator(""),
 	}
@@ -166,7 +166,7 @@ func TestRunStaircase_ContextCancellation(t *testing.T) {
 
 	deps := orchestrator.StepExecutorDeps{
 		RunnerFactory: func(
-			c *metrics.Collector,
+			c *metrics.StepAccumulator,
 			_ orchestrator.GameObserver,
 		) orchestrator.RunFunc {
 			return func(ctx context.Context, idx, players int) orchestrator.GameResult {
@@ -178,7 +178,7 @@ func TestRunStaircase_ContextCancellation(t *testing.T) {
 				return orchestrator.GameResult{GameIndex: idx}
 			}
 		},
-		NewCollector:     metrics.NewCollector,
+		NewCollector:     metrics.NewStepAccumulator,
 		CollectResources: func() resources.ServerResources { return resources.ServerResources{} },
 		Annotator:        annotations.NewAnnotator(""),
 	}
@@ -212,7 +212,7 @@ func TestRunStaircase_FreshCollectorPerStep(t *testing.T) {
 
 	deps := orchestrator.StepExecutorDeps{
 		RunnerFactory: func(
-			c *metrics.Collector,
+			c *metrics.StepAccumulator,
 			_ orchestrator.GameObserver,
 		) orchestrator.RunFunc {
 			return func(ctx context.Context, idx, players int) orchestrator.GameResult {
@@ -224,10 +224,10 @@ func TestRunStaircase_FreshCollectorPerStep(t *testing.T) {
 				return orchestrator.GameResult{GameIndex: idx}
 			}
 		},
-		NewCollector: func(d time.Duration) *metrics.Collector {
+		NewCollector: func(d time.Duration) *metrics.StepAccumulator {
 			collectorCalls.Add(1)
 
-			return metrics.NewCollector(d)
+			return metrics.NewStepAccumulator(d)
 		},
 		CollectResources: func() resources.ServerResources { return resources.ServerResources{} },
 		Annotator:        annotations.NewAnnotator(""),
@@ -256,7 +256,7 @@ func TestRunStaircase_ResourcesCollected(t *testing.T) {
 
 	deps := orchestrator.StepExecutorDeps{
 		RunnerFactory: func(
-			c *metrics.Collector,
+			c *metrics.StepAccumulator,
 			_ orchestrator.GameObserver,
 		) orchestrator.RunFunc {
 			return func(ctx context.Context, idx, players int) orchestrator.GameResult {
@@ -268,7 +268,7 @@ func TestRunStaircase_ResourcesCollected(t *testing.T) {
 				return orchestrator.GameResult{GameIndex: idx}
 			}
 		},
-		NewCollector: metrics.NewCollector,
+		NewCollector: metrics.NewStepAccumulator,
 		CollectResources: func() resources.ServerResources {
 			return resources.ServerResources{
 				RiskIt: resources.ContainerStats{CPUPercent: 42.0, MemoryMB: 256},

@@ -1,4 +1,4 @@
-package client
+package client //nolint:testpackage // whitebox tests access unexported helpers
 
 import (
 	"net/http"
@@ -17,6 +17,8 @@ import (
 // testWSServer creates an httptest server with a gorilla/websocket upgrader.
 // The handler is called for each accepted WS connection. Returns the server
 // and a WS-scheme URL (ws://...) ready for dialing.
+//
+//nolint:unparam // interface conformance / future use
 func testWSServer(t *testing.T, handler func(*websocket.Conn)) (*httptest.Server, string) {
 	t.Helper()
 
@@ -47,8 +49,12 @@ func testWSServer(t *testing.T, handler func(*websocket.Conn)) (*httptest.Server
 func connectTestWS(t *testing.T, wsURL string) *WS {
 	t.Helper()
 
-	conn, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
+	conn, wsResp, err := websocket.DefaultDialer.Dial(wsURL, nil)
 	require.NoError(t, err)
+
+	if wsResp != nil && wsResp.Body != nil {
+		wsResp.Body.Close()
+	}
 
 	genDone := make(chan struct{})
 

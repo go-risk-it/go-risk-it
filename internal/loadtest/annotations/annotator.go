@@ -4,10 +4,13 @@ package annotations
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 	"time"
+
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // Annotator posts annotations to the Grafana HTTP API.
@@ -28,29 +31,48 @@ func NewAnnotator(grafanaURL string) *Annotator {
 // Annotate posts a timestamped annotation with the given tags.
 // Fire-and-forget: errors are logged, not returned.
 func (a *Annotator) Annotate(text string, tags ...string) {
+	ctx := context.Background()
+
 	if a.grafanaURL == "" {
 		return
 	}
 
-	body, _ := json.Marshal(map[string]any{
+	body, err := json.Marshal(map[string]any{
 		"time": time.Now().UnixMilli(),
 		"text": text,
 		"tags": tags,
 	})
+	if err != nil {
+		observe.Error(ctx, err, "annotation marshal failed")
 
-	resp, err := a.client.Post(
+		return
+	}
+
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
 		a.grafanaURL+"/api/annotations",
-		"application/json",
 		bytes.NewReader(body),
 	)
 	if err != nil {
-		log.Printf("[annotations] failed to post: %v", err)
+		observe.Error(ctx, err, "annotation request creation failed")
+
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := a.client.Do(req)
+	if err != nil {
+		observe.Error(ctx, err, "annotation post failed")
 
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("[annotations] unexpected status: %d", resp.StatusCode)
+		observe.Warn(ctx, "annotation unexpected status",
+			attribute.Int("status_code", resp.StatusCode),
+		)
 	}
 }

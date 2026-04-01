@@ -16,6 +16,8 @@ type BoardView struct {
 }
 
 // NewBoardView builds a BoardView from the current snapshot for a given player.
+//
+//nolint:cyclop // board analysis with region + continent classification
 func NewBoardView(
 	snap gamestate.ViewSnapshot,
 	userID string,

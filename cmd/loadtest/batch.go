@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/baseline"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/orchestrator"
@@ -20,7 +20,7 @@ func (a *App) runBatch(ctx context.Context) error {
 		GameTimeout: a.cfg.Game.GameTimeout,
 	}
 
-	collector := a.newCollector(a.cfg.Game.GameTimeout)
+	collector := metrics.NewStepAccumulator(a.cfg.Game.GameTimeout)
 	runGame := a.newRunFunc(collector, a.cfg.Game.GameTimeout)
 
 	start := time.Now()
@@ -45,7 +45,7 @@ func (a *App) runRamp(ctx context.Context) error {
 
 	estimated := estimateRampDuration(rampCfg)
 	maxDuration := estimated + rampCfg.GameTimeout
-	collector := a.newCollector(maxDuration)
+	collector := metrics.NewStepAccumulator(maxDuration)
 	runGame := a.newRunFunc(collector, rampCfg.GameTimeout)
 
 	start := time.Now()
@@ -57,7 +57,7 @@ func (a *App) runRamp(ctx context.Context) error {
 
 // printBatchReport prints the report for batch and ramp modes.
 func (a *App) printBatchReport(
-	collector *metrics.Collector,
+	collector *metrics.StepAccumulator,
 	results []orchestrator.GameResult,
 	totalDuration time.Duration,
 ) error {
@@ -84,6 +84,7 @@ func (a *App) printBatchReport(
 
 	switch a.cfg.Report.Output.Format {
 	case "json":
+		//nolint:lll // long string literal
 		if err := metrics.PrintJSON(os.Stdout, snap, totalDuration, fatalErrors, reportResults); err != nil {
 			return fmt.Errorf("json report: %w", err)
 		}
@@ -98,7 +99,7 @@ func (a *App) printBatchReport(
 	baseline.PrintInsights(os.Stdout, insights)
 
 	if err := handleBaseline(a.cfg, metricsSnap, insights); err != nil {
-		log.Printf("baseline: %v", err)
+		observe.Error(context.Background(), err, "baseline handling failed")
 	}
 
 	if fatalErrors > 0 {

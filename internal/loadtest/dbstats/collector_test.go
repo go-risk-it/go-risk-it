@@ -60,7 +60,12 @@ func TestStepDBStats_EmptyQueries(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Nil(t, decoded.TopQueries)
-	assert.Equal(t, float64(0), decoded.TotalQueryTimeMs)
+	assert.InDelta(
+		t,
+		float64(0),
+		decoded.TotalQueryTimeMs,
+		0.001,
+	)
 }
 
 func TestQueryFingerprint_JSONFields(t *testing.T) {
@@ -84,7 +89,7 @@ func TestQueryFingerprint_JSONFields(t *testing.T) {
 
 	assert.Contains(t, m, "query")
 	assert.Contains(t, m, "calls")
-	assert.Contains(t, m, "total_time_ms")
-	assert.Contains(t, m, "mean_time_ms")
-	assert.Contains(t, m, "max_time_ms")
+	assert.Contains(t, m, "totalTimeMs")
+	assert.Contains(t, m, "meanTimeMs")
+	assert.Contains(t, m, "maxTimeMs")
 }

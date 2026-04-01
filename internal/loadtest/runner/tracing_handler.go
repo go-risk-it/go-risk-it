@@ -1,7 +1,7 @@
 package runner
 
 import (
-	"fmt"
+	"errors"
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
@@ -34,19 +34,25 @@ func (h *TracingHandler) Register(bus *Bus) {
 }
 
 func (h *TracingHandler) handleGameStarted(_ *Bus, e Event) {
-	evt := e.(GameStartedEvent)
+	evt, ok := e.(GameStartedEvent)
+	if !ok {
+		return
+	}
 
 	ctx, done := observe.RawSpan(
 		h.session.Ctx,
 		"perftest.game.run",
-		attribute.Int("game_index", evt.GameIndex),
+		attribute.Int("gameIndex", evt.GameIndex),
 	)
 	h.session.Ctx = ctx
 	h.gameDone = done
 }
 
 func (h *TracingHandler) handleMoveDecided(_ *Bus, e Event) {
-	evt := e.(MoveDecidedEvent)
+	evt, ok := e.(MoveDecidedEvent)
+	if !ok {
+		return
+	}
 
 	// End any previous move span that was not closed (defensive).
 	h.endMoveSpan(nil)
@@ -65,7 +71,10 @@ func (h *TracingHandler) handleMoveDecided(_ *Bus, e Event) {
 }
 
 func (h *TracingHandler) handleMoveSucceeded(_ *Bus, e Event) {
-	evt := e.(MoveSucceededEvent)
+	evt, ok := e.(MoveSucceededEvent)
+	if !ok {
+		return
+	}
 
 	observe.SpanEvent(
 		h.session.Ctx,
@@ -80,12 +89,15 @@ func (h *TracingHandler) handleMoveSucceeded(_ *Bus, e Event) {
 }
 
 func (h *TracingHandler) handleMoveConflict(_ *Bus, _ Event) {
-	h.endMoveSpan(fmt.Errorf("conflict"))
+	h.endMoveSpan(errors.New("conflict"))
 	h.retryCount = 0
 }
 
 func (h *TracingHandler) handleMoveFailed(_ *Bus, e Event) {
-	evt := e.(MoveFailedEvent)
+	evt, ok := e.(MoveFailedEvent)
+	if !ok {
+		return
+	}
 
 	if h.retryCount > 0 {
 		observe.SpanEvent(
@@ -109,7 +121,10 @@ func (h *TracingHandler) handleMoveFailed(_ *Bus, e Event) {
 }
 
 func (h *TracingHandler) handleStateReceived(_ *Bus, e Event) {
-	evt := e.(StateReceivedEvent)
+	evt, ok := e.(StateReceivedEvent)
+	if !ok {
+		return
+	}
 
 	if !h.lastRESTEndTime.IsZero() && evt.Timestamp.After(h.lastRESTEndTime) {
 		wsDelivery := evt.Timestamp.Sub(h.lastRESTEndTime)
@@ -122,7 +137,10 @@ func (h *TracingHandler) handleStateReceived(_ *Bus, e Event) {
 }
 
 func (h *TracingHandler) handleGameComplete(_ *Bus, e Event) {
-	evt := e.(GameCompleteEvent)
+	evt, ok := e.(GameCompleteEvent)
+	if !ok {
+		return
+	}
 	result := evt.Result
 
 	// End any outstanding move span.
@@ -137,8 +155,8 @@ func (h *TracingHandler) handleGameComplete(_ *Bus, e Event) {
 		outcome = "fatal"
 		gameErr = result.FatalError
 	case result.TimedOut:
-		outcome = "timed_out"
-		gameErr = fmt.Errorf("game timed out")
+		outcome = "timedOut"
+		gameErr = errors.New("game timed out")
 	default:
 		outcome = "completed"
 	}

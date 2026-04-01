@@ -1,12 +1,14 @@
 package chaos
 
 import (
-	"log"
+	"context"
 	"math/rand/v2"
 	"sync"
 
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/client"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/metrics"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // Injector simulates player disconnects during load tests.
@@ -14,11 +16,11 @@ type Injector struct {
 	config    Config
 	rng       *rand.Rand
 	mu        sync.Mutex
-	collector *metrics.Collector
+	collector *metrics.StepAccumulator
 }
 
 // NewInjector creates a new fault injector.
-func NewInjector(cfg Config, collector *metrics.Collector) *Injector {
+func NewInjector(cfg Config, collector *metrics.StepAccumulator) *Injector {
 	return &Injector{
 		config:    cfg,
 		rng:       rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64())),
@@ -69,7 +71,10 @@ func (inj *Injector) MaybeDisconnect(
 	inj.mu.Unlock()
 
 	target := players[targetIdx]
-	log.Printf("[chaos] disconnecting player %s (idx=%d)", target.Name, targetIdx)
+	observe.Info(context.Background(), "chaos disconnecting player",
+		attribute.String("player", target.Name),
+		attribute.Int("idx", targetIdx),
+	)
 
 	if inj.config.ReconnectDelay > 0 {
 		// Disrupt triggers auto-reconnect via readLoop.

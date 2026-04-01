@@ -491,8 +491,6 @@ func TestArch_BusImportRatchet(t *testing.T) {
 // Rule N6: bus.Bus composite type must only be referenced in bus package itself
 // and FX wiring roots. Consumers should use bus.Publisher or bus.Subscriber.
 // Test files are excluded — test helpers legitimately reference bus.Bus.
-//
-//nolint:gocognit,cyclop // AST inspection with nested type checks
 func TestArch_BusTypeRestrictedToWiring(t *testing.T) {
 	t.Parallel()
 

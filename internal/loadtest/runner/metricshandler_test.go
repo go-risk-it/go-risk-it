@@ -1,4 +1,4 @@
-package runner
+package runner //nolint:testpackage // whitebox tests access unexported helpers
 
 import (
 	"testing"
@@ -13,7 +13,7 @@ import (
 func TestMetrics_MoveSucceeded_RecordsAllMetrics(t *testing.T) {
 	t.Parallel()
 
-	c := metrics.NewCollector(0)
+	c := metrics.NewStepAccumulator(0)
 	h := &MetricsHandler{collector: c}
 	bus := NewTestBus()
 	h.Register(bus)
@@ -38,7 +38,7 @@ func TestMetrics_MoveSucceeded_RecordsAllMetrics(t *testing.T) {
 func TestMetrics_MoveConflict_RecordsConflict(t *testing.T) {
 	t.Parallel()
 
-	c := metrics.NewCollector(0)
+	c := metrics.NewStepAccumulator(0)
 	h := &MetricsHandler{collector: c}
 	bus := NewTestBus()
 	h.Register(bus)
@@ -52,7 +52,7 @@ func TestMetrics_MoveConflict_RecordsConflict(t *testing.T) {
 func TestMetrics_MoveFailed_RecordsErrorType(t *testing.T) {
 	t.Parallel()
 
-	c := metrics.NewCollector(0)
+	c := metrics.NewStepAccumulator(0)
 	h := &MetricsHandler{collector: c}
 	bus := NewTestBus()
 	h.Register(bus)
@@ -71,7 +71,7 @@ func TestMetrics_MoveFailed_RecordsErrorType(t *testing.T) {
 func TestMetrics_GameComplete_Normal(t *testing.T) {
 	t.Parallel()
 
-	c := metrics.NewCollector(0)
+	c := metrics.NewStepAccumulator(0)
 	h := &MetricsHandler{collector: c}
 	bus := NewTestBus()
 	h.Register(bus)
@@ -89,7 +89,7 @@ func TestMetrics_GameComplete_Normal(t *testing.T) {
 func TestMetrics_GameComplete_TimedOut(t *testing.T) {
 	t.Parallel()
 
-	c := metrics.NewCollector(0)
+	c := metrics.NewStepAccumulator(0)
 	h := &MetricsHandler{collector: c}
 	bus := NewTestBus()
 	h.Register(bus)
@@ -106,7 +106,7 @@ func TestMetrics_GameComplete_TimedOut(t *testing.T) {
 func TestMetrics_GameComplete_Fatal(t *testing.T) {
 	t.Parallel()
 
-	c := metrics.NewCollector(0)
+	c := metrics.NewStepAccumulator(0)
 	h := &MetricsHandler{collector: c}
 	bus := NewTestBus()
 	h.Register(bus)
@@ -122,7 +122,7 @@ func TestMetrics_GameComplete_Fatal(t *testing.T) {
 func TestMetrics_PhaseEntry_Recorded(t *testing.T) {
 	t.Parallel()
 
-	c := metrics.NewCollector(0)
+	c := metrics.NewStepAccumulator(0)
 	h := &MetricsHandler{collector: c}
 	bus := NewTestBus()
 	h.Register(bus)
@@ -149,7 +149,7 @@ func TestMetrics_PhaseEntry_Recorded(t *testing.T) {
 func TestMetrics_MoveSucceeded_RecordsPhaseMove(t *testing.T) {
 	t.Parallel()
 
-	c := metrics.NewCollector(0)
+	c := metrics.NewStepAccumulator(0)
 	h := &MetricsHandler{collector: c}
 	bus := NewTestBus()
 	h.Register(bus)
@@ -172,7 +172,7 @@ func TestMetrics_GameComplete_ReceivesEventBeforeBusStop(t *testing.T) {
 	// Regression test: GameComplete must be seen by MetricsHandler BEFORE
 	// the result-capture handler calls Bus.Stop(). This test verifies the
 	// handler registration order established in runner.Run().
-	c := metrics.NewCollector(0)
+	c := metrics.NewStepAccumulator(0)
 	mh := &MetricsHandler{collector: c}
 	bus := NewTestBus()
 

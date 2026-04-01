@@ -3,11 +3,12 @@ package orchestrator
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/annotations"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/baseline"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // StaircaseConfig defines the staircase run parameters.
@@ -27,6 +28,8 @@ type StaircaseConfig struct {
 // RunStaircase executes the staircase: for each step, the executor runs games
 // at the target concurrency. The stopper decides whether to stop after each step.
 // Returns one StepOutput per executed step (including any breach step).
+//
+//nolint:funlen // sequential step orchestration
 func RunStaircase(
 	ctx context.Context,
 	steps []int,
@@ -47,20 +50,27 @@ func RunStaircase(
 	for i, targetGames := range steps {
 		select {
 		case <-ctx.Done():
-			log.Printf("[staircase] cancelled at step %d/%d", i+1, len(steps))
+			observe.Info(ctx, "staircase cancelled",
+				attribute.Int("step", i+1),
+				attribute.Int("total_steps", len(steps)),
+			)
 
 			return outputs
 		default:
 		}
 
-		log.Printf(
-			"[staircase] step %d/%d: %d concurrent games",
-			i+1, len(steps), targetGames,
+		observe.Info(ctx, "staircase step starting",
+			attribute.Int("step", i+1),
+			attribute.Int("total_steps", len(steps)),
+			attribute.Int("targetGames", targetGames),
 		)
 
 		output, err := executor.Execute(ctx, targetGames, indexOffset)
 		if err != nil {
-			log.Printf("[staircase] step %d/%d: execute: %v", i+1, len(steps), err)
+			observe.Error(ctx, err, "staircase step execute failed",
+				attribute.Int("step", i+1),
+				attribute.Int("total_steps", len(steps)),
+			)
 
 			break
 		}
@@ -69,7 +79,9 @@ func RunStaircase(
 		indexOffset += targetGames * IndexOffsetMultiplier
 
 		if stopper.ShouldStop(output) {
-			log.Printf("[staircase] SLO breach at %d games, stopping", targetGames)
+			observe.Warn(ctx, "staircase SLO breach, stopping",
+				attribute.Int("targetGames", targetGames),
+			)
 			annotator.Annotate(
 				fmt.Sprintf("staircase: SLO breach at %d games", targetGames),
 				"perf-test",
@@ -81,7 +93,7 @@ func RunStaircase(
 
 		// Cooldown between steps.
 		if i < len(steps)-1 {
-			log.Printf("[staircase] cooldown %v before next step", cd)
+			observe.Info(ctx, "staircase cooldown", attribute.String("duration", cd.String()))
 
 			select {
 			case <-ctx.Done():

@@ -2,10 +2,12 @@ package orchestrator
 
 import (
 	"context"
-	"log"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // RunFunc is the signature for running a single game.
@@ -153,12 +155,11 @@ func (p *Pool) LogProgress(stepNum int, targetGames int) {
 
 	launched := p.GamesLaunched()
 
-	log.Printf(
-		"[staircase step %d/%d] launched=%d completed=%d target=%d",
-		stepNum,
-		targetGames,
-		launched,
-		completed,
-		p.cfg.TargetGames,
+	observe.Info(context.Background(), "staircase step progress",
+		attribute.Int("step", stepNum),
+		attribute.Int("total_steps", targetGames),
+		attribute.Int("launched", launched),
+		attribute.Int("completed", completed),
+		attribute.Int("target", p.cfg.TargetGames),
 	)
 }

@@ -39,7 +39,7 @@ func (c *Config) Validate() error {
 }
 
 // Enabled returns true if any chaos injection is configured.
-func (c Config) Enabled() bool {
+func (c *Config) Enabled() bool {
 	return c.SlowMoveRate > 0 || c.ErrorMoveRate > 0 || c.DisconnectRate > 0
 }
 

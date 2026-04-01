@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 func main() {
@@ -20,11 +22,10 @@ func main() {
 	}
 
 	if cfg.Chaos.Enabled() {
-		log.Printf(
-			"chaos enabled: disconnect=%.0f%% slow_move=%.0f%% error_move=%.0f%%",
-			cfg.Chaos.DisconnectRate*100,
-			cfg.Chaos.SlowMoveRate*100,
-			cfg.Chaos.ErrorMoveRate*100,
+		observe.Info(context.Background(), "chaos enabled",
+			attribute.Float64("disconnect_rate_pct", cfg.Chaos.DisconnectRate*100),
+			attribute.Float64("slow_move_rate_pct", cfg.Chaos.SlowMoveRate*100),
+			attribute.Float64("error_move_rate_pct", cfg.Chaos.ErrorMoveRate*100),
 		)
 	}
 
@@ -41,28 +42,34 @@ func main() {
 	defer cancel()
 
 	if err := app.Run(ctx); err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		os.Exit(1)
+		log.Fatal(err) //nolint:gocritic // defers cleaned up by process exit
 	}
 }
 
 func logPresetInfo(cfg *Config) {
-	if cfg.Run.staircaseCfg != nil {
-		log.Printf(
-			"using staircase preset %q: steps=%v, hold=%v",
-			cfg.Run.Preset, cfg.Run.staircaseCfg.Steps, cfg.Run.staircaseCfg.HoldDuration,
+	ctx := context.Background()
+
+	switch {
+	case cfg.Run.staircaseCfg != nil:
+		observe.Info(ctx, "using staircase preset",
+			attribute.String("preset", cfg.Run.Preset),
+			attribute.String("steps", fmt.Sprintf("%v", cfg.Run.staircaseCfg.Steps)),
+			attribute.String("hold", cfg.Run.staircaseCfg.HoldDuration.String()),
 		)
-	} else if cfg.Run.rampCfg != nil {
-		log.Printf(
-			"using ramp preset %q: %d games/min, max %d, threshold %.0f%%",
-			cfg.Run.Preset, cfg.Run.rampCfg.GamesPerMinute, cfg.Run.rampCfg.MaxGames,
-			cfg.Run.rampCfg.ErrorThreshold*100,
+	case cfg.Run.rampCfg != nil:
+		observe.Info(ctx, "using ramp preset",
+			attribute.String("preset", cfg.Run.Preset),
+			attribute.Int("games_per_min", cfg.Run.rampCfg.GamesPerMinute),
+			attribute.Int("max_games", cfg.Run.rampCfg.MaxGames),
+			attribute.Float64("error_threshold_pct", cfg.Run.rampCfg.ErrorThreshold*100),
 		)
-	} else if cfg.Run.Preset != "" {
-		log.Printf(
-			"using preset %q: %d games, %d players, timeout=%v, ramp=%v",
-			cfg.Run.Preset, cfg.Run.Batch.NumGames, cfg.Game.NumPlayers,
-			cfg.Game.GameTimeout, cfg.Run.Batch.RampUp,
+	case cfg.Run.Preset != "":
+		observe.Info(ctx, "using preset",
+			attribute.String("preset", cfg.Run.Preset),
+			attribute.Int("num_games", cfg.Run.Batch.NumGames),
+			attribute.Int("numPlayers", cfg.Game.NumPlayers),
+			attribute.String("timeout", cfg.Game.GameTimeout.String()),
+			attribute.String("ramp_up", cfg.Run.Batch.RampUp.String()),
 		)
 	}
 }

@@ -4,14 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/health"
+	"go.opentelemetry.io/contrib/bridges/otelslog"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
+	sdklog "go.opentelemetry.io/otel/sdk/log"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -46,6 +50,7 @@ func (c *otelUpDownCounter) Add(delta int64) {
 type OTelExporter struct {
 	meterProvider  *sdkmetric.MeterProvider
 	tracerProvider *sdktrace.TracerProvider
+	logProvider    *sdklog.LoggerProvider
 
 	// UpDown counters — resource state with no span equivalent.
 	gamesActive metric.Int64UpDownCounter
@@ -92,9 +97,24 @@ func NewOTelExporter(ctx context.Context, endpoint string) (*OTelExporter, error
 		return nil, err
 	}
 
+	// Set up LoggerProvider for trace-log correlation via otelslog bridge.
+	logProvider, err := newLoggerProvider(ctx, endpoint)
+	if err != nil {
+		_ = tracerProvider.Shutdown(ctx)
+		_ = meterProvider.Shutdown(ctx)
+
+		return nil, err
+	}
+
+	setupSlog(logProvider)
+
 	meter := meterProvider.Meter("perftest")
 
-	o := &OTelExporter{meterProvider: meterProvider, tracerProvider: tracerProvider}
+	o := &OTelExporter{
+		meterProvider:  meterProvider,
+		tracerProvider: tracerProvider,
+		logProvider:    logProvider,
+	}
 	if err := o.initInstruments(meter); err != nil {
 		_ = tracerProvider.Shutdown(ctx)
 		_ = meterProvider.Shutdown(ctx)
@@ -156,14 +176,14 @@ func (o *OTelExporter) initInstruments(meter metric.Meter) error {
 	if o.gamesActive, err = meter.Int64UpDownCounter("perftest.games.active",
 		metric.WithDescription("Currently running games"),
 	); err != nil {
-		return err
+		return fmt.Errorf("create games.active counter: %w", err)
 	}
 
 	healthHealthy, err := meter.Int64UpDownCounter("perftest.health.healthy",
 		metric.WithDescription("Games classified as healthy"),
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("create health.healthy counter: %w", err)
 	}
 
 	o.healthHealthy = &otelUpDownCounter{counter: healthHealthy}
@@ -172,7 +192,7 @@ func (o *OTelExporter) initInstruments(meter metric.Meter) error {
 		metric.WithDescription("Games classified as slow"),
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("create health.slow counter: %w", err)
 	}
 
 	o.healthSlow = &otelUpDownCounter{counter: healthSlow}
@@ -181,7 +201,7 @@ func (o *OTelExporter) initInstruments(meter metric.Meter) error {
 		metric.WithDescription("Games classified as stalled"),
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("create health.stalled counter: %w", err)
 	}
 
 	o.healthStalled = &otelUpDownCounter{counter: healthStalled}
@@ -190,7 +210,7 @@ func (o *OTelExporter) initInstruments(meter metric.Meter) error {
 		metric.WithDescription("Games classified as zombie"),
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("create health.zombie counter: %w", err)
 	}
 
 	o.healthZombie = &otelUpDownCounter{counter: healthZombie}
@@ -221,10 +241,40 @@ func (o *OTelExporter) ResetHealthCounters() {
 	o.prevHealth = health.Distribution{}
 }
 
-// Shutdown flushes and stops both the meter and tracer providers.
+// Shutdown flushes and stops the meter, tracer, and logger providers.
 func (o *OTelExporter) Shutdown(ctx context.Context) error {
 	return errors.Join(
 		o.meterProvider.Shutdown(ctx),
 		o.tracerProvider.Shutdown(ctx),
+		o.logProvider.Shutdown(ctx),
 	)
+}
+
+// newLoggerProvider creates an OTLP log exporter for trace-log correlation.
+// Logs are shipped to the collector via OTLP HTTP (same endpoint as traces/metrics).
+func newLoggerProvider(ctx context.Context, endpoint string) (*sdklog.LoggerProvider, error) {
+	logExporter, err := otlploghttp.New(ctx,
+		otlploghttp.WithEndpoint(endpoint),
+		otlploghttp.WithInsecure(),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("create OTLP log exporter: %w", err)
+	}
+
+	return sdklog.NewLoggerProvider(
+		sdklog.WithProcessor(sdklog.NewBatchProcessor(logExporter)),
+	), nil
+}
+
+// setupSlog configures slog.Default() to use the otelslog bridge, mirroring
+// the server's ContextHandler → otelslog.Handler chain. The bridge auto-injects
+// trace_id and span_id from context, enabling trace-log correlation in Grafana.
+func setupSlog(logProvider *sdklog.LoggerProvider) {
+	handler := otelslog.NewHandler(
+		serviceName,
+		otelslog.WithLoggerProvider(logProvider),
+	)
+
+	logger := slog.New(handler)
+	slog.SetDefault(logger)
 }

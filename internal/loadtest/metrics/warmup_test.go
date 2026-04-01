@@ -1,4 +1,4 @@
-package metrics
+package metrics //nolint:testpackage // whitebox tests access unexported helpers
 
 import (
 	"sync"
@@ -6,8 +6,9 @@ import (
 	"time"
 )
 
-func TestCollector_WarmUp_HistogramsGatedBeforeMarkDone(t *testing.T) {
-	c := NewCollector(1 * time.Minute)
+func TestStepAccumulator_WarmUp_HistogramsGatedBeforeMarkDone(t *testing.T) {
+	t.Parallel()
+	c := NewStepAccumulator(1 * time.Minute)
 	c.ConfigureWarmUp()
 
 	// Record before warm-up is marked done — histograms should not count.
@@ -44,8 +45,9 @@ func TestCollector_WarmUp_HistogramsGatedBeforeMarkDone(t *testing.T) {
 	}
 }
 
-func TestCollector_WarmUp_HistogramsRecordAfterMarkDone(t *testing.T) {
-	c := NewCollector(1 * time.Minute)
+func TestStepAccumulator_WarmUp_HistogramsRecordAfterMarkDone(t *testing.T) {
+	t.Parallel()
+	c := NewStepAccumulator(1 * time.Minute)
 	c.ConfigureWarmUp()
 
 	// Mark warm-up done.
@@ -85,8 +87,9 @@ func TestCollector_WarmUp_HistogramsRecordAfterMarkDone(t *testing.T) {
 	}
 }
 
-func TestCollector_WarmUp_CountersAlwaysRecorded(t *testing.T) {
-	c := NewCollector(1 * time.Minute)
+func TestStepAccumulator_WarmUp_CountersAlwaysRecorded(t *testing.T) {
+	t.Parallel()
+	c := NewStepAccumulator(1 * time.Minute)
 	c.ConfigureWarmUp()
 
 	// Counters should increment even during warm-up.
@@ -156,8 +159,9 @@ func TestCollector_WarmUp_CountersAlwaysRecorded(t *testing.T) {
 	}
 }
 
-func TestCollector_WarmUp_GameCompleteDoesNotOpenGate(t *testing.T) {
-	c := NewCollector(1 * time.Minute)
+func TestStepAccumulator_WarmUp_GameCompleteDoesNotOpenGate(t *testing.T) {
+	t.Parallel()
+	c := NewStepAccumulator(1 * time.Minute)
 	c.ConfigureWarmUp()
 
 	// Complete many games — gate should remain closed (only MarkWarmUpDone opens it).
@@ -178,8 +182,9 @@ func TestCollector_WarmUp_GameCompleteDoesNotOpenGate(t *testing.T) {
 	}
 }
 
-func TestCollector_WarmUp_MarkDoneIdempotent(t *testing.T) {
-	c := NewCollector(1 * time.Minute)
+func TestStepAccumulator_WarmUp_MarkDoneIdempotent(t *testing.T) {
+	t.Parallel()
+	c := NewStepAccumulator(1 * time.Minute)
 	c.ConfigureWarmUp()
 
 	c.MarkWarmUpDone()
@@ -197,8 +202,9 @@ func TestCollector_WarmUp_MarkDoneIdempotent(t *testing.T) {
 	}
 }
 
-func TestCollector_NoWarmUp_BackwardCompat(t *testing.T) {
-	c := NewCollector(1 * time.Minute)
+func TestStepAccumulator_NoWarmUp_BackwardCompat(t *testing.T) {
+	t.Parallel()
+	c := NewStepAccumulator(1 * time.Minute)
 
 	// No ConfigureWarmUp called — should behave exactly as before.
 	c.RecordE2E(50 * time.Millisecond)
@@ -234,8 +240,9 @@ func TestCollector_NoWarmUp_BackwardCompat(t *testing.T) {
 	}
 }
 
-func TestCollector_WarmUp_ConcurrentConfigureAndRecord(t *testing.T) {
-	c := NewCollector(1 * time.Minute)
+func TestStepAccumulator_WarmUp_ConcurrentConfigureAndRecord(t *testing.T) {
+	t.Parallel()
+	c := NewStepAccumulator(1 * time.Minute)
 
 	var wg sync.WaitGroup
 

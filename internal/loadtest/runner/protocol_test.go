@@ -1,4 +1,4 @@
-package runner
+package runner //nolint:testpackage // whitebox tests access unexported helpers
 
 import (
 	"context"
@@ -23,7 +23,7 @@ type fakeAuth struct {
 	calls   []string
 }
 
-func newFakeAuth(n int) *fakeAuth {
+func newFakeAuth(n int) *fakeAuth { //nolint:unparam // interface conformance / future use
 	results := make([]*client.AuthResult, n)
 	for i := range n {
 		results[i] = &client.AuthResult{
@@ -131,22 +131,22 @@ func newFakeWSWithState(snap gamestate.ViewSnapshot) *fakeWSForProtocol {
 	// We use a simpler approach: create a view that has the state already set.
 	// Since View is mutex-protected, we apply messages to set state.
 	if snap.GameState != nil {
-		data, _ := json.Marshal(snap.GameState)
+		data, _ := json.Marshal(snap.GameState) //nolint:errchkjson // known safe type
 		_ = v.Apply(gamestate.WSMessage{Type: "gameState", Payload: data})
 	}
 
 	if snap.PlayersState != nil {
-		data, _ := json.Marshal(snap.PlayersState)
+		data, _ := json.Marshal(snap.PlayersState) //nolint:errchkjson // known safe type
 		_ = v.Apply(gamestate.WSMessage{Type: "playerState", Payload: data})
 	}
 
 	if snap.BoardState != nil {
-		data, _ := json.Marshal(snap.BoardState)
+		data, _ := json.Marshal(snap.BoardState) //nolint:errchkjson // known safe type
 		_ = v.Apply(gamestate.WSMessage{Type: "boardState", Payload: data})
 	}
 
 	if snap.CardState != nil {
-		data, _ := json.Marshal(snap.CardState)
+		data, _ := json.Marshal(snap.CardState) //nolint:errchkjson // known safe type
 		_ = v.Apply(gamestate.WSMessage{Type: "cardState", Payload: data})
 	}
 
@@ -168,9 +168,9 @@ func makeProtocolHandler(
 	wsErr error,
 ) (*ProtocolHandler, *GameSession) {
 	gameCtx := &GameSession{
-		GameIndex: 1,
-		StartTime: time.Now(),
-		Collector: metrics.NewCollector(0),
+		GameIndex:   1,
+		StartTime:   time.Now(),
+		Accumulator: metrics.NewStepAccumulator(0),
 	}
 
 	h := &ProtocolHandler{
@@ -182,10 +182,10 @@ func makeProtocolHandler(
 		newAuth: func(_, _ string) AuthClient {
 			return auth
 		},
-		newREST: func(_ string, token string, _ *metrics.Collector) RESTClient {
+		newREST: func(_ string, token string, _ *metrics.StepAccumulator) RESTClient {
 			return rest
 		},
-		newWS: func(_ string, _ int64, _ string, _ *metrics.Collector) (WSClient, error) {
+		newWS: func(_ string, _ int64, _ string, _ *metrics.StepAccumulator) (WSClient, error) {
 			if wsErr != nil {
 				return nil, wsErr
 			}
@@ -233,6 +233,7 @@ func TestProtocol_SignupFails_EmitsGameComplete(t *testing.T) {
 	completeEvents := bus.EmittedOfType(EventGameComplete)
 	require.Len(t, completeEvents, 1)
 
+	//nolint:forcetypeassert // test assertion
 	result := completeEvents[0].(GameCompleteEvent).Result
 	require.Error(t, result.FatalError)
 	assert.Contains(t, result.FatalError.Error(), "signup")
@@ -255,6 +256,7 @@ func TestProtocol_CreateGameFails_EmitsGameComplete(t *testing.T) {
 
 	completeEvents := bus.EmittedOfType(EventGameComplete)
 	require.Len(t, completeEvents, 1)
+	//nolint:forcetypeassert // test assertion
 	require.Error(t, completeEvents[0].(GameCompleteEvent).Result.FatalError)
 }
 
@@ -272,6 +274,7 @@ func TestProtocol_WSConnectFails_EmitsGameComplete(t *testing.T) {
 
 	completeEvents := bus.EmittedOfType(EventGameComplete)
 	require.Len(t, completeEvents, 1)
+	//nolint:forcetypeassert // test assertion
 	require.Error(t, completeEvents[0].(GameCompleteEvent).Result.FatalError)
 }
 

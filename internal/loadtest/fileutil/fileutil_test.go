@@ -69,7 +69,7 @@ func TestNextSequenceNumber(t *testing.T) {
 			"001-staircase-def456.json",
 			"002-adaptive-ghi789.json",
 		} {
-			require.NoError(t, os.WriteFile(filepath.Join(dir, name), []byte("{}"), 0o644))
+			require.NoError(t, os.WriteFile(filepath.Join(dir, name), []byte("{}"), 0o600))
 		}
 
 		seq, err := fileutil.NextSequenceNumber(dir)
@@ -86,7 +86,7 @@ func TestNextSequenceNumber(t *testing.T) {
 			"005-fifth.json",
 			"003-third.json",
 		} {
-			require.NoError(t, os.WriteFile(filepath.Join(dir, name), []byte("{}"), 0o644))
+			require.NoError(t, os.WriteFile(filepath.Join(dir, name), []byte("{}"), 0o600))
 		}
 
 		seq, err := fileutil.NextSequenceNumber(dir)
@@ -103,7 +103,7 @@ func TestNextSequenceNumber(t *testing.T) {
 			"config.json",
 			"002-valid.json",
 		} {
-			require.NoError(t, os.WriteFile(filepath.Join(dir, name), []byte("{}"), 0o644))
+			require.NoError(t, os.WriteFile(filepath.Join(dir, name), []byte("{}"), 0o600))
 		}
 
 		seq, err := fileutil.NextSequenceNumber(dir)
@@ -116,7 +116,7 @@ func TestNextSequenceNumber(t *testing.T) {
 
 		dir := t.TempDir()
 		require.NoError(t, os.Mkdir(filepath.Join(dir, "005-subdir"), 0o755))
-		require.NoError(t, os.WriteFile(filepath.Join(dir, "001-file.json"), []byte("{}"), 0o644))
+		require.NoError(t, os.WriteFile(filepath.Join(dir, "001-file.json"), []byte("{}"), 0o600))
 
 		seq, err := fileutil.NextSequenceNumber(dir)
 		require.NoError(t, err)

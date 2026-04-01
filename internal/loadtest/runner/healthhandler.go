@@ -30,12 +30,19 @@ func (h *HealthHandler) Register(bus *Bus) {
 }
 
 func (h *HealthHandler) handleStarted(_ *Bus, e Event) {
-	evt := e.(GameStartedEvent)
+	evt, ok := e.(GameStartedEvent)
+	if !ok {
+		return
+	}
+
 	h.observer.OnGameStarted(evt.GameIndex)
 }
 
 func (h *HealthHandler) handleMoveDecided(_ *Bus, e Event) {
-	evt := e.(MoveDecidedEvent)
+	evt, ok := e.(MoveDecidedEvent)
+	if !ok {
+		return
+	}
 
 	if evt.Phase != h.lastPhase {
 		h.observer.OnPhaseChange(h.gameCtx.GameIndex, string(evt.Phase))
@@ -44,12 +51,18 @@ func (h *HealthHandler) handleMoveDecided(_ *Bus, e Event) {
 }
 
 func (h *HealthHandler) handleMoveSucceeded(_ *Bus, e Event) {
-	evt := e.(MoveSucceededEvent)
+	evt, ok := e.(MoveSucceededEvent)
+	if !ok {
+		return
+	}
 	phase := actionTypeName(evt.Action.Type)
 	h.observer.OnMove(h.gameCtx.GameIndex, phase)
 }
 
 func (h *HealthHandler) handleComplete(_ *Bus, e Event) {
-	evt := e.(GameCompleteEvent)
+	evt, ok := e.(GameCompleteEvent)
+	if !ok {
+		return
+	}
 	h.observer.OnGameComplete(evt.Result.GameIndex)
 }

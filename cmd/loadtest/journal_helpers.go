@@ -1,13 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/journal"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/journal/session"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // saveJournalEntry saves the journal entry and handles session integration.
@@ -16,14 +18,16 @@ func saveJournalEntry(
 	slug string,
 	branch, commitSHA, hypothesis string,
 ) {
+	ctx := context.Background()
+
 	path, err := journal.SaveEntry("perf-journal/entries", slug, entry)
 	if err != nil {
-		log.Printf("failed to save journal entry: %v", err)
+		observe.Error(ctx, err, "failed to save journal entry")
 
 		return
 	}
 
-	log.Printf("journal entry saved: %s", path)
+	observe.Info(ctx, "journal entry saved", attribute.String("path", path))
 
 	if branch != "" && branch != "main" && branch != "master" {
 		handleSession(branch, commitSHA, path, entry.SLOCeiling.Games, hypothesis)
@@ -44,11 +48,12 @@ func compareJournalEntries(compareFile string, entry journal.Entry) error {
 
 // handleSession manages session state for branch-scoped optimization tracking.
 func handleSession(branch, commitSHA, entryPath string, ceilingGames int, hypothesis string) {
+	ctx := context.Background()
 	store := session.NewStore("perf-journal/sessions")
 
 	sess, err := store.GetOrCreate(branch, "perf-journal/entries")
 	if err != nil {
-		log.Printf("[session] failed to create/load session: %v", err)
+		observe.Error(ctx, err, "failed to create/load session")
 
 		return
 	}
@@ -69,18 +74,20 @@ func handleSession(branch, commitSHA, entryPath string, ceilingGames int, hypoth
 	}
 
 	if err := store.AddRun(branch, ref); err != nil {
-		log.Printf("[session] failed to add run: %v", err)
+		observe.Error(ctx, err, "failed to add session run")
 
 		return
 	}
 
 	runNum := len(sess.Runs) + 1
-	log.Printf(
-		"[session] %s: run #%d, ceiling=%d (delta=%+d from session start)",
-		branch, runNum, ceilingGames, ref.CeilingDelta,
+	observe.Info(ctx, "session run recorded",
+		attribute.String("branch", branch),
+		attribute.Int("run_num", runNum),
+		attribute.Int("ceiling", ceilingGames),
+		attribute.Int("delta", ref.CeilingDelta),
 	)
 
 	if hypothesis != "" {
-		log.Printf("[session] hypothesis: %s", hypothesis)
+		observe.Info(ctx, "session hypothesis", attribute.String("hypothesis", hypothesis))
 	}
 }

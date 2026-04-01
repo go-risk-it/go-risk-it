@@ -141,6 +141,7 @@ func printMainComparison(writer io.Writer, before, after MetricsSnapshot) {
 	tabWriter.Flush()
 }
 
+//nolint:cyclop // sequential report formatting
 func printPhaseComparison(writer io.Writer, before, after MetricsSnapshot) {
 	if len(before.PhaseLatency) == 0 || len(after.PhaseLatency) == 0 {
 		return
@@ -216,6 +217,8 @@ func deltaStatus(delta Delta) string {
 }
 
 // printEnvironmentWarnings prints a warning block if key environment fields differ.
+//
+//nolint:cyclop // sequential environment diff checks
 func printEnvironmentWarnings(writer io.Writer, before, after Environment) {
 	type envDiff struct {
 		field     string

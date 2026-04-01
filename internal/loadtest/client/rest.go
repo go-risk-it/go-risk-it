@@ -7,11 +7,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/metrics"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // RetryConfig controls the REST client's retry and timeout behavior.
@@ -46,7 +47,7 @@ type REST struct {
 	baseURL   string
 	token     string
 	client    *http.Client
-	collector *metrics.Collector
+	collector *metrics.StepAccumulator
 	retry     RetryConfig
 }
 
@@ -55,7 +56,7 @@ type REST struct {
 func NewREST(
 	baseURL, token string,
 	transport http.RoundTripper,
-	collector *metrics.Collector,
+	collector *metrics.StepAccumulator,
 	retryCfg RetryConfig,
 ) *REST {
 	var httpClient *http.Client
@@ -74,6 +75,7 @@ func NewREST(
 	}
 }
 
+//nolint:cyclop,funlen // HTTP retry loop with backoff
 func (r *REST) do(ctx context.Context, method, path string, body any) (*http.Response, error) {
 	// Marshal body once so it can be replayed on retry.
 	var bodyBytes []byte
@@ -107,8 +109,13 @@ func (r *REST) do(ctx context.Context, method, path string, body any) (*http.Res
 		if err != nil {
 			if classified := classifyNetError(err); classified != nil &&
 				attempt < r.retry.MaxRetries-1 {
-				log.Printf("retrying %s %s (attempt %d/%d): %v",
-					method, path, attempt+2, r.retry.MaxRetries, err)
+				observe.Warn(ctx, "retrying request",
+					attribute.String("method", method),
+					attribute.String("path", path),
+					attribute.Int("attempt", attempt+2),
+					attribute.Int("max_retries", r.retry.MaxRetries),
+					attribute.String("error", err.Error()),
+				)
 
 				if r.collector != nil {
 					r.collector.RecordRetry()
@@ -120,7 +127,7 @@ func (r *REST) do(ctx context.Context, method, path string, body any) (*http.Res
 				continue
 			}
 
-			return nil, err
+			return nil, fmt.Errorf("http do: %w", err)
 		}
 
 		// Record every HTTP response status.
@@ -133,8 +140,14 @@ func (r *REST) do(ctx context.Context, method, path string, body any) (*http.Res
 			if transient := classifyHTTPStatus(resp.StatusCode, nil); transient != nil {
 				body, _ := io.ReadAll(resp.Body)
 				resp.Body.Close()
-				log.Printf("retrying %s %s (attempt %d/%d): HTTP %d: %s",
-					method, path, attempt+2, r.retry.MaxRetries, resp.StatusCode, body)
+				observe.Warn(ctx, "retrying request on HTTP error",
+					attribute.String("method", method),
+					attribute.String("path", path),
+					attribute.Int("attempt", attempt+2),
+					attribute.Int("max_retries", r.retry.MaxRetries),
+					attribute.Int("status_code", resp.StatusCode),
+					attribute.String("body", string(body)),
+				)
 
 				if r.collector != nil {
 					r.collector.RecordRetry()
@@ -154,7 +167,7 @@ func (r *REST) do(ctx context.Context, method, path string, body any) (*http.Res
 	return nil, errors.New("retry loop exhausted")
 }
 
-// Game creation types.
+// CreateGamePlayer represents a player in a game creation request.
 type CreateGamePlayer struct {
 	UserID string `json:"userId"`
 	Name   string `json:"name"`
@@ -273,7 +286,8 @@ func (r *REST) Advance(ctx context.Context, gameID int64, currentPhase string) e
 			return &ConflictError{Message: msg}
 		}
 
-		if transient := classifyHTTPStatus(resp.StatusCode, fmt.Errorf("%s", msg)); transient != nil {
+		statusErr := fmt.Errorf("%s", msg)
+		if transient := classifyHTTPStatus(resp.StatusCode, statusErr); transient != nil {
 			return transient
 		}
 
@@ -311,7 +325,8 @@ func (r *REST) doMove(ctx context.Context, gameID int64, moveType string, move a
 			return &StaleStateError{Message: msg}
 		}
 
-		if transient := classifyHTTPStatus(resp.StatusCode, fmt.Errorf("%s", msg)); transient != nil {
+		statusErr := fmt.Errorf("%s", msg)
+		if transient := classifyHTTPStatus(resp.StatusCode, statusErr); transient != nil {
 			return transient
 		}
 

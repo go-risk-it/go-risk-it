@@ -17,11 +17,15 @@ type Strategy struct {
 	config    Config
 	rng       *rand.Rand
 	mu        sync.Mutex
-	collector *metrics.Collector
+	collector *metrics.StepAccumulator
 }
 
 // WrapStrategy creates a chaos-injecting wrapper around the given strategy.
-func WrapStrategy(inner player.Strategy, cfg Config, collector *metrics.Collector) *Strategy {
+func WrapStrategy(
+	inner player.Strategy,
+	cfg Config,
+	collector *metrics.StepAccumulator,
+) *Strategy {
 	return &Strategy{
 		inner:     inner,
 		config:    cfg,

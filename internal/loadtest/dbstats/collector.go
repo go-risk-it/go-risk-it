@@ -20,7 +20,7 @@ func NewCollector(dsn string) (*Collector, error) {
 		return nil, fmt.Errorf("open db: %w", err)
 	}
 
-	if err := db.Ping(); err != nil {
+	if err := db.PingContext(context.Background()); err != nil {
 		db.Close()
 
 		return nil, fmt.Errorf("ping db: %w", err)
@@ -58,6 +58,7 @@ func (c *Collector) Snapshot(ctx context.Context, topN int) (StepDBStats, error)
 
 	for rows.Next() {
 		var qf QueryFingerprint
+		//nolint:lll // long string literal
 		if err := rows.Scan(&qf.Query, &qf.Calls, &qf.TotalTimeMs, &qf.MeanTimeMs, &qf.MaxTimeMs); err != nil {
 			return stats, fmt.Errorf("scan row: %w", err)
 		}
@@ -84,5 +85,9 @@ func (c *Collector) Snapshot(ctx context.Context, topN int) (StepDBStats, error)
 
 // Close closes the database connection.
 func (c *Collector) Close() error {
-	return c.db.Close()
+	if err := c.db.Close(); err != nil {
+		return fmt.Errorf("close db: %w", err)
+	}
+
+	return nil
 }

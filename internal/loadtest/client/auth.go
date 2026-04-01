@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -35,7 +36,7 @@ type signupRequest struct {
 }
 
 type signupResponse struct {
-	AccessToken string `json:"access_token"`
+	AccessToken string `json:"accessToken"`
 	User        struct {
 		ID string `json:"id"`
 	} `json:"user"`
@@ -43,12 +44,17 @@ type signupResponse struct {
 
 // Signup creates a new user and returns the auth result.
 func (a *Auth) Signup(email, password string) (*AuthResult, error) {
-	body, err := json.Marshal(signupRequest{Email: email, Password: password})
+	ctx := context.Background()
+
+	body, err := json.Marshal( //nolint:gosec // intentional for loadtest tool
+		signupRequest{Email: email, Password: password},
+	)
 	if err != nil {
 		return nil, fmt.Errorf("marshal signup: %w", err)
 	}
 
-	req, err := http.NewRequest(
+	req, err := http.NewRequestWithContext(
+		ctx,
 		http.MethodPost,
 		a.baseURL+"/auth/v1/signup",
 		bytes.NewReader(body),

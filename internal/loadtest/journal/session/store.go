@@ -105,7 +105,7 @@ func (s *Store) save(sess *Session) error {
 
 	path := s.path(sess.Branch)
 
-	return os.WriteFile(path, data, 0o644)
+	return os.WriteFile(path, data, 0o600) //nolint:wrapcheck // internal error
 }
 
 // sanitizeBranch converts a branch name to a safe filename.

@@ -1,8 +1,12 @@
 package runner
 
 import (
-	"log"
+	"context"
+	"fmt"
 	"runtime/debug"
+
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // EventType identifies the kind of event flowing through the bus.
@@ -70,9 +74,12 @@ func (b *Bus) Emit(e Event) {
 func (b *Bus) callHandler(e Event, index int, h HandlerFunc) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf(
-				"[bus] PANIC in handler %d for event %q: %v\n%s",
-				index, e.Type(), r, debug.Stack(),
+			observe.Error(context.Background(),
+				fmt.Errorf("panic: %v", r),
+				"bus handler panic",
+				attribute.Int("handler_index", index),
+				attribute.String("event_type", string(e.Type())),
+				attribute.String("stack", string(debug.Stack())),
 			)
 		}
 	}()

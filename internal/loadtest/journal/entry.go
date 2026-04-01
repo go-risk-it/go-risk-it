@@ -13,41 +13,41 @@ import (
 type StaircaseParams struct {
 	Mode            string  `json:"mode,omitempty"` // "staircase" or "adaptive"
 	Steps           []int   `json:"steps"`
-	HoldDurationSec float64 `json:"hold_duration_sec"`
-	NumPlayers      int     `json:"num_players"`
-	GameTimeoutSec  float64 `json:"game_timeout_sec"`
-	StopOnBreach    bool    `json:"stop_on_breach"`
+	HoldDurationSec float64 `json:"holdDurationSec"`
+	NumPlayers      int     `json:"numPlayers"`
+	GameTimeoutSec  float64 `json:"gameTimeoutSec"`
+	StopOnBreach    bool    `json:"stopOnBreach"`
 }
 
 // StepResult holds metrics and SLO evaluation for a single staircase step.
 type StepResult struct {
-	TargetGames        int                       `json:"target_games"`
+	TargetGames        int                       `json:"targetGames"`
 	Metrics            baseline.MetricsSnapshot  `json:"metrics"`
-	SLOEval            baseline.EvalResult       `json:"slo_eval"`
-	ServerResources    resources.ServerResources `json:"server_resources"`
-	DurationSec        float64                   `json:"duration_sec"`
-	HealthDistribution *health.Distribution      `json:"health_distribution,omitempty"`
-	DBStats            *dbstats.StepDBStats      `json:"db_stats,omitempty"`
+	SLOEval            baseline.EvalResult       `json:"sloEval"`
+	ServerResources    resources.ServerResources `json:"serverResources"`
+	DurationSec        float64                   `json:"durationSec"`
+	HealthDistribution *health.Distribution      `json:"healthDistribution,omitempty"`
+	DBStats            *dbstats.StepDBStats      `json:"dbStats,omitempty"`
 }
 
 // SLOCeiling is the headline metric: max concurrent games where all SLOs hold.
 type SLOCeiling struct {
 	Games                int     `json:"games"`
-	ThroughputMPS        float64 `json:"throughput_mps"`
-	CompletionRate       float64 `json:"completion_rate"`
-	EffectiveConcurrency int     `json:"effective_concurrency,omitempty"`
+	ThroughputMPS        float64 `json:"throughputMps"`
+	CompletionRate       float64 `json:"completionRate"`
+	EffectiveConcurrency int     `json:"effectiveConcurrency,omitempty"`
 }
 
 // Entry is a complete performance journal entry.
 type Entry struct {
-	CommitSHA      string                   `json:"commit_sha"`
+	CommitSHA      string                   `json:"commitSha"`
 	Timestamp      time.Time                `json:"timestamp"`
 	Branch         string                   `json:"branch,omitempty"`
-	SessionID      string                   `json:"session_id,omitempty"`
+	SessionID      string                   `json:"sessionId,omitempty"`
 	Config         StaircaseParams          `json:"config"`
-	SLOCeiling     SLOCeiling               `json:"slo_ceiling"`
+	SLOCeiling     SLOCeiling               `json:"sloCeiling"`
 	Steps          []StepResult             `json:"steps"`
-	BreakingPoints []baseline.BreakingPoint `json:"breaking_points,omitempty"`
+	BreakingPoints []baseline.BreakingPoint `json:"breakingPoints,omitempty"`
 	Environment    baseline.Environment     `json:"environment"`
 	Insights       []baseline.Insight       `json:"insights,omitempty"`
 }

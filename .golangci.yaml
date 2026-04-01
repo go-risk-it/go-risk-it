@@ -57,6 +57,7 @@ linters:
         - github\.com/go-risk-it/go-risk-it/internal/game/ws\..*
         - github\.com/go-risk-it/go-risk-it/internal/lobby/ws\..*
         - github\.com/go-risk-it/go-risk-it/internal/web/.*
+        - github\.com/go-risk-it/go-risk-it/internal/loadtest/.*
         - github\.com/go-risk-it/go-risk-it/internal/game/rand\.RNG
     lll:
       line-length: 99
@@ -84,15 +85,26 @@ linters:
     rules:
       - linters:
           - contextcheck
-        path: internal/web/middleware/
-      - path: internal/loadtest/
-        text: ".*"
-      - path: cmd/loadtest/
-        text: ".*"
+        path: internal/loadtest/
       - linters:
+          - contextcheck
+        path: cmd/loadtest/
+      - linters:
+          - contextcheck
+        path: internal/web/middleware/
+      - linters:
+          - varnamelen
+        path: internal/loadtest/
+      - linters:
+          - varnamelen
+        path: cmd/loadtest/
+      - linters:
+          - cyclop
           - dogsled
           - dupl
           - funlen
+          - gocognit
+          - goconst
           - ireturn
           - lll
           - wrapcheck

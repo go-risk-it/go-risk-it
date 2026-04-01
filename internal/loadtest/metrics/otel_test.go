@@ -1,4 +1,4 @@
-package metrics
+package metrics //nolint:testpackage // whitebox tests access unexported helpers
 
 import (
 	"testing"
@@ -7,6 +7,7 @@ import (
 )
 
 func TestRecordHealthDistribution_FromZero(t *testing.T) {
+	t.Parallel()
 	// When prevHealth is zero-valued, all counts are new deltas.
 	o := &OTelExporter{}
 	o.initTestCounters()
@@ -19,6 +20,7 @@ func TestRecordHealthDistribution_FromZero(t *testing.T) {
 }
 
 func TestRecordHealthDistribution_Deltas(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name        string
 		prev        health.Distribution
@@ -62,6 +64,7 @@ func TestRecordHealthDistribution_Deltas(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			o := &OTelExporter{}
 			o.initTestCounters()
 
@@ -77,6 +80,7 @@ func TestRecordHealthDistribution_Deltas(t *testing.T) {
 }
 
 func TestRecordHealthDistribution_MultipleSequential(t *testing.T) {
+	t.Parallel()
 	// Simulate a realistic sequence of distributions during a staircase hold.
 	o := &OTelExporter{}
 	o.initTestCounters()
@@ -106,6 +110,7 @@ func TestRecordHealthDistribution_MultipleSequential(t *testing.T) {
 }
 
 func TestResetHealthCounters(t *testing.T) {
+	t.Parallel()
 	o := &OTelExporter{}
 	o.initTestCounters()
 
@@ -122,6 +127,7 @@ func TestResetHealthCounters(t *testing.T) {
 }
 
 func TestResetHealthCounters_FromZero(t *testing.T) {
+	t.Parallel()
 	// Resetting when already at zero should be a no-op.
 	o := &OTelExporter{}
 	o.initTestCounters()
@@ -132,6 +138,7 @@ func TestResetHealthCounters_FromZero(t *testing.T) {
 }
 
 func TestResetHealthCounters_ThenRecord(t *testing.T) {
+	t.Parallel()
 	o := &OTelExporter{}
 	o.initTestCounters()
 

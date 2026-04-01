@@ -9,7 +9,9 @@ type LevelResult struct {
 // FindBreakingPoints analyzes escalating-load results to find where each SLO
 // first fails. Only the first breach per SLO is reported.
 func FindBreakingPoints(runs []LevelResult, slos SLOSet) []BreakingPoint {
-	allSLOs := append(slos.UserExperience, slos.BoundaryHealth...)
+	allSLOs := make([]SLO, 0, len(slos.UserExperience)+len(slos.BoundaryHealth))
+	allSLOs = append(allSLOs, slos.UserExperience...)
+	allSLOs = append(allSLOs, slos.BoundaryHealth...)
 
 	// Track last good value per SLO.
 	type sloTracker struct {
@@ -24,12 +26,8 @@ func FindBreakingPoints(runs []LevelResult, slos SLOSet) []BreakingPoint {
 
 	var breakingPoints []BreakingPoint
 
-	values := func(snap MetricsSnapshot) map[string]float64 {
-		return metricValues(snap)
-	}
-
 	for _, run := range runs {
-		runValues := values(run.Metrics)
+		runValues := metricValues(run.Metrics)
 
 		for _, slo := range allSLOs {
 			tracker := trackers[slo.Name]

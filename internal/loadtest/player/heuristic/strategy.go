@@ -176,6 +176,7 @@ func (s *Strategy) decideConquer(snap gamestate.ViewSnapshot) (*player.Action, e
 	}, nil
 }
 
+//nolint:cyclop // reinforcement decision tree with inherent branching
 func (s *Strategy) decideReinforce(
 	snap gamestate.ViewSnapshot,
 	userID string,
@@ -204,6 +205,8 @@ func (s *Strategy) decideReinforce(
 		}
 	}
 
+	//nolint:nestif // complex decision tree
+	//nolint:nestif // reinforcement decision tree has inherent branching
 	if bestSource == nil || !s.isBorderRegion(bestSource.ID, userID, regionMap) {
 		// Find a border target to reinforce.
 		if bestSource != nil {

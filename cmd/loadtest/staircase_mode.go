@@ -4,19 +4,20 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/baseline"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/journal"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/orchestrator"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/resources"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/runner"
+	"go.opentelemetry.io/otel/attribute"
 )
 
-//nolint:funlen // orchestration function with sequential setup steps
+//nolint:funlen // sequential staircase orchestration
 func (a *App) runStaircase(ctx context.Context) error {
 	staircaseCfg := a.cfg.Run.staircaseCfg
 
@@ -100,7 +101,7 @@ func (a *App) runStaircase(ctx context.Context) error {
 		baseline.PrintInsights(os.Stdout, insights)
 	}
 
-	log.Printf("[staircase] ceiling=%d games", ceiling.Games)
+	observe.Info(ctx, "staircase ceiling", attribute.Int("games", ceiling.Games))
 
 	// Save and compare.
 	a.handleJournalSaveAndCompare(entry, branch, commitSHA)
@@ -111,7 +112,9 @@ func (a *App) runStaircase(ctx context.Context) error {
 // buildStepExecutorDeps creates the step executor dependencies.
 func (a *App) buildStepExecutorDeps(gameTimeout time.Duration) orchestrator.StepExecutorDeps {
 	return orchestrator.StepExecutorDeps{
-		RunnerFactory: func(c *metrics.Collector, obs orchestrator.GameObserver) orchestrator.RunFunc {
+		RunnerFactory: func(
+			c *metrics.StepAccumulator, obs orchestrator.GameObserver,
+		) orchestrator.RunFunc {
 			strategy, injector := a.setupChaos(c)
 
 			return runner.New(runner.Config{
@@ -120,20 +123,21 @@ func (a *App) buildStepExecutorDeps(gameTimeout time.Duration) orchestrator.Step
 				AnonKey:       a.cfg.Server.AnonKey,
 				Strategy:      strategy,
 				Timeout:       gameTimeout,
-				Collector:     c,
+				Accumulator:   c,
+				LiveMetrics:   a.liveMetrics,
 				ThinkTime:     a.cfg.Game.ThinkTime,
 				Timeouts:      runner.DefaultTimeouts(),
 				ChaosInjector: injector,
 				Observer:      obs,
 			}).ToRunFunc()
 		},
-		NewCollector: metrics.NewCollector,
+		NewCollector: metrics.NewStepAccumulator,
 		CollectResources: func() resources.ServerResources {
 			return resources.CollectServerResources(resources.DefaultStatsFunc)
 		},
-		Annotator:    a.annotator,
-		OTelExporter: a.otel,
-		DBStats:      a.dbStats,
+		Annotator:   a.annotator,
+		LiveMetrics: a.liveMetrics,
+		DBStats:     a.dbStats,
 	}
 }
 
@@ -154,7 +158,7 @@ func (a *App) handleJournalSaveAndCompare(entry journal.Entry, branch, commitSHA
 
 	if a.cfg.Report.Journal.Compare != "" {
 		if err := compareJournalEntries(a.cfg.Report.Journal.Compare, entry); err != nil {
-			log.Printf("journal compare: %v", err)
+			observe.Error(context.Background(), err, "journal compare failed")
 		}
 	}
 }

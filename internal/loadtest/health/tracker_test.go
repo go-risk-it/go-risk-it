@@ -1,4 +1,4 @@
-package health
+package health //nolint:testpackage // whitebox tests access unexported helpers
 
 import (
 	"sync"
@@ -9,7 +9,7 @@ import (
 // fakeClock returns a controllable clock function. Calling advance() moves the
 // clock forward by the given duration. The returned now() is safe for concurrent
 // use within a single test but shares state — don't use across parallel tests.
-func fakeClock(start time.Time) (now func() time.Time, advance func(d time.Duration)) {
+func fakeClock(start time.Time) (func() time.Time, func(d time.Duration)) {
 	current := start
 
 	return func() time.Time {
@@ -27,6 +27,7 @@ func newTestTracker(thresholds Thresholds, now func() time.Time) *Tracker {
 }
 
 func TestTracker_HealthyGame(t *testing.T) {
+	t.Parallel()
 	now, _ := fakeClock(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC))
 	tracker := newTestTracker(DefaultThresholds(), now)
 	tracker.RegisterGame(1)
@@ -46,6 +47,7 @@ func TestTracker_HealthyGame(t *testing.T) {
 }
 
 func TestTracker_SlowGame(t *testing.T) {
+	t.Parallel()
 	now, advance := fakeClock(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC))
 	tracker := newTestTracker(Thresholds{
 		SlowMultiplier:    1.5,
@@ -80,6 +82,7 @@ func TestTracker_SlowGame(t *testing.T) {
 }
 
 func TestTracker_StalledGame(t *testing.T) {
+	t.Parallel()
 	now, advance := fakeClock(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC))
 	tracker := newTestTracker(Thresholds{
 		SlowMultiplier:    1.5,
@@ -110,6 +113,7 @@ func TestTracker_StalledGame(t *testing.T) {
 }
 
 func TestTracker_ZombieGame(t *testing.T) {
+	t.Parallel()
 	now, advance := fakeClock(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC))
 	tracker := newTestTracker(Thresholds{
 		SlowMultiplier:    1.5,
@@ -131,6 +135,7 @@ func TestTracker_ZombieGame(t *testing.T) {
 }
 
 func TestTracker_DistributionCounts(t *testing.T) {
+	t.Parallel()
 	now, advance := fakeClock(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC))
 	tracker := newTestTracker(Thresholds{
 		SlowMultiplier:    1.5,
@@ -186,6 +191,7 @@ func TestTracker_DistributionCounts(t *testing.T) {
 }
 
 func TestTracker_EffectiveConcurrency(t *testing.T) {
+	t.Parallel()
 	dist := Distribution{
 		Healthy: 5,
 		Slow:    3,
@@ -200,6 +206,7 @@ func TestTracker_EffectiveConcurrency(t *testing.T) {
 }
 
 func TestTracker_CompleteGameRemoves(t *testing.T) {
+	t.Parallel()
 	now, _ := fakeClock(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC))
 	tracker := newTestTracker(DefaultThresholds(), now)
 
@@ -221,6 +228,7 @@ func TestTracker_CompleteGameRemoves(t *testing.T) {
 }
 
 func TestTracker_Concurrent(t *testing.T) {
+	t.Parallel()
 	// Concurrent test uses real clock — the deterministic clock isn't safe
 	// for concurrent goroutines advancing time independently.
 	tracker := NewTracker(DefaultThresholds())

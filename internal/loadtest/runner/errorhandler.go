@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/player"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // ErrorHandler implements error recovery with retry logic and escalation.
@@ -37,7 +38,10 @@ func (h *ErrorHandler) handleSucceeded(_ *Bus, _ Event) {
 }
 
 func (h *ErrorHandler) handleFailed(bus *Bus, e Event) {
-	evt := e.(MoveFailedEvent)
+	evt, ok := e.(MoveFailedEvent)
+	if !ok {
+		return
+	}
 
 	// Fatal errors skip all retry logic.
 	if evt.Fatal {
@@ -76,23 +80,23 @@ func (h *ErrorHandler) handleStale(bus *Bus, evt MoveFailedEvent) {
 	h.consecutiveStaleErrors++
 
 	if h.consecutiveStaleErrors >= h.maxStaleRetries {
-		log.Printf(
-			"[game %d] %d stale retries exhausted, advancing",
-			h.gameCtx.GameIndex, h.maxStaleRetries,
+		observe.Warn(h.gameCtx.Ctx, "stale retries exhausted, advancing",
+			attribute.Int("gameIndex", h.gameCtx.GameIndex),
+			attribute.Int("max_retries", h.maxStaleRetries),
 		)
 
 		phase := h.currentPhase()
 		activeREST := h.activeREST()
 
-		if advErr := activeREST.Advance(context.Background(), h.gameCtx.GameID, phase); advErr != nil {
+		if advErr := activeREST.Advance(
+			context.Background(), h.gameCtx.GameID, phase,
+		); advErr != nil {
 			h.consecutiveAdvanceFails++
-			log.Printf(
-				"[game %d] advance past %s failed (%d/%d): %v",
-				h.gameCtx.GameIndex,
-				phase,
-				h.consecutiveAdvanceFails,
-				h.maxAdvanceFails,
-				advErr,
+			observe.Error(h.gameCtx.Ctx, advErr, "advance past phase failed",
+				attribute.Int("gameIndex", h.gameCtx.GameIndex),
+				attribute.String("phase", phase),
+				attribute.Int("attempt", h.consecutiveAdvanceFails),
+				attribute.Int("max_attempts", h.maxAdvanceFails),
 			)
 
 			if h.consecutiveAdvanceFails >= h.maxAdvanceFails {
@@ -125,7 +129,9 @@ func (h *ErrorHandler) handleStale(bus *Bus, evt MoveFailedEvent) {
 func (h *ErrorHandler) handleExecution(bus *Bus, evt MoveFailedEvent) {
 	// If card play failed, advance past cards phase.
 	if evt.Action != nil && evt.Action.Type == player.ActionPlayCards {
-		log.Printf("[game %d] card play failed, advancing past cards phase", h.gameCtx.GameIndex)
+		observe.Warn(h.gameCtx.Ctx, "card play failed, advancing past cards phase",
+			attribute.Int("gameIndex", h.gameCtx.GameIndex),
+		)
 
 		activeREST := h.activeREST()
 		if advErr := activeREST.Advance(
@@ -133,7 +139,9 @@ func (h *ErrorHandler) handleExecution(bus *Bus, evt MoveFailedEvent) {
 			h.gameCtx.GameID,
 			string(gamestate.Cards),
 		); advErr != nil {
-			log.Printf("[game %d] advance past cards also failed: %v", h.gameCtx.GameIndex, advErr)
+			observe.Error(h.gameCtx.Ctx, advErr, "advance past cards also failed",
+				attribute.Int("gameIndex", h.gameCtx.GameIndex),
+			)
 		} else {
 			h.result.Moves++
 		}

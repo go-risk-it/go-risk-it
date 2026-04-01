@@ -1,4 +1,4 @@
-package runner
+package runner //nolint:testpackage // whitebox tests access unexported helpers
 
 import (
 	"context"
@@ -37,6 +37,7 @@ func setupTestTracer(t *testing.T) *tracetest.InMemoryExporter {
 	return exporter
 }
 
+//nolint:unparam // interface conformance / future use
 func makeTracingHandler() (*TracingHandler, *GameSession) {
 	gameCtx := &GameSession{
 		Ctx:       context.Background(),
@@ -48,6 +49,7 @@ func makeTracingHandler() (*TracingHandler, *GameSession) {
 	return h, gameCtx
 }
 
+//nolint:paralleltest // tests share global OTel TracerProvider
 func TestTracingHandler_GameLifecycle(t *testing.T) {
 	exporter := setupTestTracer(t)
 	h, _ := makeTracingHandler()
@@ -71,7 +73,7 @@ func TestTracingHandler_GameLifecycle(t *testing.T) {
 	assert.Equal(t, "perftest.game.run", gameSpan.Name)
 
 	// Check game_index attribute.
-	assertHasAttr(t, gameSpan.Attributes, attribute.Int("game_index", 7))
+	assertHasAttr(t, gameSpan.Attributes, attribute.Int("gameIndex", 7))
 
 	// Check span events for game.complete.
 	foundComplete := false
@@ -87,6 +89,7 @@ func TestTracingHandler_GameLifecycle(t *testing.T) {
 	assert.True(t, foundComplete, "should have game.complete span event")
 }
 
+//nolint:paralleltest // tests share global OTel TracerProvider
 func TestTracingHandler_MoveSpan_Success(t *testing.T) {
 	exporter := setupTestTracer(t)
 	h, _ := makeTracingHandler()
@@ -134,6 +137,7 @@ func TestTracingHandler_MoveSpan_Success(t *testing.T) {
 	assert.True(t, foundREST, "should have rest.complete span event on move span")
 }
 
+//nolint:paralleltest // tests share global OTel TracerProvider
 func TestTracingHandler_MoveSpan_Conflict(t *testing.T) {
 	exporter := setupTestTracer(t)
 	h, _ := makeTracingHandler()
@@ -163,6 +167,7 @@ func TestTracingHandler_MoveSpan_Conflict(t *testing.T) {
 		"conflict move span should have error status")
 }
 
+//nolint:paralleltest // tests share global OTel TracerProvider
 func TestTracingHandler_MoveSpan_Failed(t *testing.T) {
 	exporter := setupTestTracer(t)
 	h, _ := makeTracingHandler()
@@ -206,6 +211,7 @@ func TestTracingHandler_MoveSpan_Failed(t *testing.T) {
 	assert.True(t, foundFailed, "should have move.failed span event")
 }
 
+//nolint:paralleltest // tests share global OTel TracerProvider
 func TestTracingHandler_PhaseTracking(t *testing.T) {
 	exporter := setupTestTracer(t)
 	h, _ := makeTracingHandler()
@@ -250,6 +256,7 @@ func TestTracingHandler_PhaseTracking(t *testing.T) {
 	assertHasAttr(t, spans[1].Attributes, attribute.String("phase", "attack"))
 }
 
+//nolint:paralleltest // tests share global OTel TracerProvider
 func TestTracingHandler_RetryEvent(t *testing.T) {
 	exporter := setupTestTracer(t)
 	h, _ := makeTracingHandler()

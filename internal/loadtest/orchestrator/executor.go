@@ -3,14 +3,15 @@ package orchestrator
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/annotations"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/dbstats"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/health"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/resources"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const defaultHealthPollInterval = 5 * time.Second
@@ -26,11 +27,11 @@ type StepExecutorConfig struct {
 
 // StepExecutorDeps holds injected dependencies for testability.
 type StepExecutorDeps struct {
-	RunnerFactory    func(collector *metrics.Collector, observer GameObserver) RunFunc
-	NewCollector     func(maxDuration time.Duration) *metrics.Collector
+	RunnerFactory    func(collector *metrics.StepAccumulator, observer GameObserver) RunFunc
+	NewCollector     func(maxDuration time.Duration) *metrics.StepAccumulator
 	CollectResources func() resources.ServerResources
 	Annotator        *annotations.Annotator
-	OTelExporter     *metrics.OTelExporter
+	LiveMetrics      *metrics.LiveMetrics
 	DBStats          *dbstats.Collector
 }
 
@@ -60,22 +61,16 @@ func NewStepExecutor(
 func (e *DefaultStepExecutor) Execute(
 	ctx context.Context,
 	targetGames, indexOffset int,
-) (*StepOutput, error) {
+) (*StepOutput, error) { //nolint:unparam // interface conformance / future use
 	e.stepCount++
 	stepIndex := e.stepCount
 
 	// Reset health counters so each step starts from zero.
-	if e.deps.OTelExporter != nil {
-		e.deps.OTelExporter.ResetHealthCounters()
-	}
+	e.deps.LiveMetrics.ResetHealthCounters()
 
 	// Fresh collector per step for clean per-step percentiles.
 	collector := e.deps.NewCollector(e.cfg.HoldDuration)
 	collector.ConfigureWarmUp()
-
-	if e.deps.OTelExporter != nil {
-		collector.SetOTelExporter(e.deps.OTelExporter)
-	}
 
 	tracker := health.NewTracker(health.DefaultThresholds())
 	observer := health.NewTrackerObserver(tracker)
@@ -87,13 +82,15 @@ func (e *DefaultStepExecutor) Execute(
 }
 
 // runStep executes a single step: pool up, hold, snapshot, drain.
+//
+//nolint:cyclop,funlen // sequential step execution
 func (e *DefaultStepExecutor) runStep(
 	ctx context.Context,
 	targetGames int,
 	indexOffset int,
 	stepIndex int,
 	runFunc RunFunc,
-	collector *metrics.Collector,
+	collector *metrics.StepAccumulator,
 	tracker *health.Tracker,
 ) StepOutput {
 	stepCtx, stepCancel := context.WithCancel(ctx)
@@ -116,9 +113,10 @@ func (e *DefaultStepExecutor) runStep(
 	case <-pool.Ready():
 		collector.MarkWarmUpDone()
 
-		log.Printf(
-			"[step %d/%d] pool ready (%d games active)",
-			stepIndex, e.totalSteps, targetGames,
+		observe.Info(ctx, "pool ready",
+			attribute.Int("step", stepIndex),
+			attribute.Int("total_steps", e.totalSteps),
+			attribute.Int("games_active", targetGames),
 		)
 	case <-ctx.Done():
 		stepCancel()
@@ -130,7 +128,10 @@ func (e *DefaultStepExecutor) runStep(
 	// Reset DB stats counters after pool reaches steady state.
 	if e.deps.DBStats != nil {
 		if err := e.deps.DBStats.Reset(ctx); err != nil {
-			log.Printf("[step %d/%d] db stats reset: %v", stepIndex, e.totalSteps, err)
+			observe.Error(ctx, err, "db stats reset failed",
+				attribute.Int("step", stepIndex),
+				attribute.Int("total_steps", e.totalSteps),
+			)
 		}
 	}
 
@@ -160,18 +161,14 @@ holdLoop:
 		case <-holdTimer.C:
 			break holdLoop
 		case <-healthTicker.C:
-			if e.deps.OTelExporter != nil {
-				e.deps.OTelExporter.RecordHealthDistribution(tracker.Snapshot())
-			}
+			e.deps.LiveMetrics.RecordHealthDistribution(tracker.Snapshot())
 		case <-ctx.Done():
 			break holdLoop
 		}
 	}
 
 	// Emit final health distribution after the hold completes.
-	if e.deps.OTelExporter != nil {
-		e.deps.OTelExporter.RecordHealthDistribution(tracker.Snapshot())
-	}
+	e.deps.LiveMetrics.RecordHealthDistribution(tracker.Snapshot())
 
 	holdDuration := time.Since(holdStart)
 
@@ -190,7 +187,10 @@ holdLoop:
 	if e.deps.DBStats != nil {
 		stats, err := e.deps.DBStats.Snapshot(ctx, 10)
 		if err != nil {
-			log.Printf("[step %d/%d] db stats snapshot: %v", stepIndex, e.totalSteps, err)
+			observe.Error(ctx, err, "db stats snapshot failed",
+				attribute.Int("step", stepIndex),
+				attribute.Int("total_steps", e.totalSteps),
+			)
 		} else {
 			stepDBStats = &stats
 		}

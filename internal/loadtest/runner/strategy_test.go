@@ -1,4 +1,4 @@
-package runner
+package runner //nolint:testpackage // whitebox tests access unexported helpers
 
 import (
 	"context"
@@ -31,7 +31,7 @@ func (f *fakeStrategy) DecideMove(_ gamestate.ViewSnapshot, _ string) (*player.A
 func makeStrategyHandler(
 	ctx context.Context,
 	strategy player.Strategy,
-) (*StrategyHandler, *GameSession) {
+) (*StrategyHandler, *GameSession) { //nolint:unparam // interface conformance / future use
 	// Default state for the WS views — deploy phase, turn 0.
 	defaultSnap := mkSnap(0, gamestate.Deploy, "")
 
@@ -54,6 +54,7 @@ func makeStrategyHandler(
 	return h, gameCtx
 }
 
+//nolint:unparam // interface conformance / future use
 func mkSnap(turn int64, phase gamestate.PhaseType, winner string) gamestate.ViewSnapshot {
 	gs := &gamestate.GameState{
 		Turn:         turn,
@@ -84,6 +85,7 @@ func TestStrategy_GameOver_EmitsGameComplete(t *testing.T) {
 
 	completes := bus.EmittedOfType(EventGameComplete)
 	require.Len(t, completes, 1)
+	//nolint:forcetypeassert // test assertion
 	assert.Equal(t, "u1", completes[0].(GameCompleteEvent).Result.Winner)
 }
 
@@ -156,6 +158,7 @@ func TestStrategy_DecideMove_EmitsMoveDecided(t *testing.T) {
 	moves := bus.EmittedOfType(EventMoveDecided)
 	require.Len(t, moves, 1)
 
+	//nolint:forcetypeassert // test assertion
 	md := moves[0].(MoveDecidedEvent)
 	assert.Equal(t, action, md.Action)
 	assert.Equal(t, "u0", md.UserID)
@@ -176,6 +179,7 @@ func TestStrategy_DecideError_EmitsMoveFailed(t *testing.T) {
 	failures := bus.EmittedOfType(EventMoveFailed)
 	require.Len(t, failures, 1)
 
+	//nolint:forcetypeassert // test assertion
 	mf := failures[0].(MoveFailedEvent)
 	assert.False(t, mf.Fatal)
 	assert.Equal(t, metrics.ErrorTypeStrategy, mf.ErrType)
@@ -196,6 +200,7 @@ func TestStrategy_ContextCancelled_EmitsGameComplete(t *testing.T) {
 
 	completes := bus.EmittedOfType(EventGameComplete)
 	require.Len(t, completes, 1)
+	//nolint:forcetypeassert // test assertion
 	assert.False(t, completes[0].(GameCompleteEvent).Result.TimedOut)
 }
 
@@ -214,6 +219,7 @@ func TestStrategy_ContextDeadlineExceeded_EmitsTimedOut(t *testing.T) {
 
 	completes := bus.EmittedOfType(EventGameComplete)
 	require.Len(t, completes, 1)
+	//nolint:forcetypeassert // test assertion
 	assert.True(t, completes[0].(GameCompleteEvent).Result.TimedOut)
 }
 

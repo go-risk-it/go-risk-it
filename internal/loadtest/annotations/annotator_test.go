@@ -21,7 +21,7 @@ func TestAnnotator_Annotate_SendsCorrectPayload(t *testing.T) {
 			assert.Equal(t, "/api/annotations", request.URL.Path)
 			assert.Equal(t, "POST", request.Method)
 
-			require.NoError(
+			assert.NoError(
 				t,
 				json.NewDecoder(request.Body).Decode(&received),
 			)

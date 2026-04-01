@@ -21,8 +21,12 @@ func (h *ExecutorHandler) Register(bus *Bus) {
 	bus.On(EventMoveDecided, h.handle)
 }
 
+//nolint:funlen // type-switch error classification
 func (h *ExecutorHandler) handle(bus *Bus, e Event) {
-	evt := e.(MoveDecidedEvent)
+	evt, ok := e.(MoveDecidedEvent)
+	if !ok {
+		return
+	}
 
 	idx, ok := h.gameCtx.UserIndex[evt.UserID]
 	if !ok {

@@ -12,12 +12,12 @@ import (
 
 // Baseline captures a complete performance snapshot for a git commit.
 type Baseline struct {
-	CommitSHA      string          `json:"commit_sha"`
+	CommitSHA      string          `json:"commitSha"`
 	Timestamp      time.Time       `json:"timestamp"`
-	TestParams     TestParams      `json:"test_params"`
+	TestParams     TestParams      `json:"testParams"`
 	Metrics        MetricsSnapshot `json:"metrics"`
 	Environment    Environment     `json:"environment"`
-	BreakingPoints []BreakingPoint `json:"breaking_points,omitempty"`
+	BreakingPoints []BreakingPoint `json:"breakingPoints,omitempty"`
 	Insights       []Insight       `json:"insights,omitempty"`
 }
 
@@ -31,10 +31,10 @@ type TestParams struct {
 
 // BreakingPoint records the concurrency level at which an SLO first fails.
 type BreakingPoint struct {
-	SLOName       string  `json:"slo_name"`
-	BreaksAtGames int     `json:"breaks_at_games"`
-	LastGoodValue float64 `json:"last_good_value"`
-	BreakValue    float64 `json:"break_value"`
+	SLOName       string  `json:"sloName"`
+	BreaksAtGames int     `json:"breaksAtGames"`
+	LastGoodValue float64 `json:"lastGoodValue"`
+	BreakValue    float64 `json:"breakValue"`
 }
 
 // Save writes baseline as JSON to dir/<commit>-<date>.json.
@@ -48,7 +48,7 @@ func Save(dir string, baselineData Baseline) (string, error) {
 		return "", fmt.Errorf("marshal baseline: %w", err)
 	}
 
-	if err := os.WriteFile(path, data, 0o644); err != nil {
+	if err := os.WriteFile(path, data, 0o600); err != nil {
 		return "", fmt.Errorf("write baseline: %w", err)
 	}
 
@@ -91,7 +91,7 @@ func SaveNumbered(dir, slug string, baselineData Baseline) (string, error) {
 		return "", fmt.Errorf("marshal baseline: %w", err)
 	}
 
-	if err := os.WriteFile(path, data, 0o644); err != nil {
+	if err := os.WriteFile(path, data, 0o600); err != nil {
 		return "", fmt.Errorf("write baseline: %w", err)
 	}
 

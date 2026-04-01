@@ -3,13 +3,14 @@ package runner
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/client"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/metrics"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // ProtocolHandler handles GameStarted: signs up players, creates a game,
@@ -23,8 +24,9 @@ type ProtocolHandler struct {
 
 	// Factories for testability.
 	newAuth func(baseURL, anonKey string) AuthClient
-	newREST func(baseURL, token string, collector *metrics.Collector) RESTClient
-	newWS   func(wsURL string, gameID int64, token string, collector *metrics.Collector) (WSClient, error)
+	newREST func(baseURL, token string, collector *metrics.StepAccumulator) RESTClient
+	//nolint:lll // long string literal
+	newWS func(wsURL string, gameID int64, token string, collector *metrics.StepAccumulator) (WSClient, error)
 }
 
 // Register subscribes to EventGameStarted.
@@ -32,8 +34,9 @@ func (h *ProtocolHandler) Register(bus *Bus) {
 	bus.On(EventGameStarted, h.handle)
 }
 
+//nolint:funlen // sequential CLI/report logic
 func (h *ProtocolHandler) handle(bus *Bus, e Event) {
-	evt := e.(GameStartedEvent)
+	evt := e.(GameStartedEvent) //nolint:forcetypeassert // event bus guarantees type
 	gameCtx := h.gameCtx
 	gameCtx.GameIndex = evt.GameIndex
 
@@ -77,11 +80,14 @@ func (h *ProtocolHandler) handle(bus *Bus, e Event) {
 			UserID: authResult.UserID,
 			Name:   fmt.Sprintf("bot-%d-%d", evt.GameIndex, i),
 			Auth:   authResult,
-			REST:   h.newREST(h.baseURL, authResult.AccessToken, gameCtx.Collector),
+			REST:   h.newREST(h.baseURL, authResult.AccessToken, gameCtx.Accumulator),
 		}
 	}
 
-	log.Printf("[game %d] %d players authenticated", evt.GameIndex, evt.NumPlayers)
+	observe.Info(context.Background(), "players authenticated",
+		attribute.Int("gameIndex", evt.GameIndex),
+		attribute.Int("numPlayers", evt.NumPlayers),
+	)
 
 	// 2. Create game via first player.
 	gamePlayers := make([]client.CreateGamePlayer, evt.NumPlayers)
@@ -102,11 +108,14 @@ func (h *ProtocolHandler) handle(bus *Bus, e Event) {
 		return
 	}
 
-	log.Printf("[game %d] created game %d", evt.GameIndex, gameID)
+	observe.Info(context.Background(), "game created",
+		attribute.Int("gameIndex", evt.GameIndex),
+		attribute.Int64("game_id", gameID),
+	)
 
 	// 3. All players connect WebSocket.
 	for i, p := range players {
-		ws, err := h.newWS(h.wsURL, gameID, p.Auth.AccessToken, gameCtx.Collector)
+		ws, err := h.newWS(h.wsURL, gameID, p.Auth.AccessToken, gameCtx.Accumulator)
 		if err != nil {
 			emitFatal(fmt.Errorf("ws connect player %d: %w", i, err))
 
@@ -116,7 +125,9 @@ func (h *ProtocolHandler) handle(bus *Bus, e Event) {
 		p.WS = ws
 	}
 
-	log.Printf("[game %d] all players connected via WebSocket", evt.GameIndex)
+	observe.Info(context.Background(), "all players connected via WebSocket",
+		attribute.Int("gameIndex", evt.GameIndex),
+	)
 
 	// 4. Wait for initial state.
 	time.Sleep(h.timeouts.InitialStateWait)

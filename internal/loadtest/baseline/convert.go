@@ -2,7 +2,8 @@ package baseline
 
 import "github.com/go-risk-it/go-risk-it/internal/loadtest/metrics"
 
-// histToProfile converts a collector HistogramSnapshot (milliseconds) to a LatencyProfile (seconds).
+// histToProfile converts a collector HistogramSnapshot (milliseconds)
+// to a LatencyProfile (seconds).
 func histToProfile(h metrics.HistogramSnapshot) LatencyProfile {
 	return LatencyProfile{
 		P50: float64(h.P50) / 1000.0,
@@ -14,6 +15,8 @@ func histToProfile(h metrics.HistogramSnapshot) LatencyProfile {
 
 // SnapshotToMetrics converts a collector Snapshot into a baseline MetricsSnapshot.
 // Latency values are converted from milliseconds (HDR histogram) to seconds (baseline).
+//
+//nolint:cyclop,funlen // sequential field conversion
 func SnapshotToMetrics(snap *metrics.Snapshot, totalDurationSec float64) MetricsSnapshot {
 	var errorRate float64
 	if snap.TotalMoves > 0 {
@@ -60,7 +63,8 @@ func SnapshotToMetrics(snap *metrics.Snapshot, totalDurationSec float64) Metrics
 	phaseMoves := copyNonZeroMap(snap.PhaseMoves)
 
 	// Compute move failure rate from ErrorBreakdown.
-	// TotalMoves counts successful moves only, so total attempts = TotalMoves + sum(ErrorBreakdown).
+	// TotalMoves counts successful moves only, so total attempts =
+	// TotalMoves + sum(ErrorBreakdown).
 	var moveFailureRate float64
 	if len(snap.ErrorBreakdown) > 0 {
 		var totalNonSuccess int64

@@ -21,7 +21,9 @@ type GameResult struct {
 }
 
 // PrintReport writes a human-readable performance report to w.
-func PrintReport(
+//
+//nolint:gocognit // sequential report formatting
+func PrintReport( //nolint:cyclop,funlen // sequential report formatting
 	w io.Writer,
 	snap *Snapshot,
 	totalDuration time.Duration,
@@ -231,55 +233,55 @@ func PrintReport(
 type JSONReport struct {
 	Games struct {
 		Completed int64 `json:"completed"`
-		TimedOut  int64 `json:"timed_out"`
+		TimedOut  int64 `json:"timedOut"`
 		Fatal     int   `json:"fatal"`
 	} `json:"games"`
 	Moves struct {
 		Total  int64   `json:"total"`
-		PerSec float64 `json:"per_sec"`
+		PerSec float64 `json:"perSec"`
 	} `json:"moves"`
-	RESTLatency      map[string]JSONHistogram `json:"rest_latency"`
-	WSDelivery       JSONHistogram            `json:"ws_delivery"`
-	E2EMove          JSONHistogram            `json:"e2e_move"`
-	PhaseLatency     map[string]JSONHistogram `json:"phase_latency"`
-	PhaseFlow        map[string]JSONPhaseFlow `json:"phase_flow"`
-	HTTPStatusCounts map[string]int64         `json:"http_status_counts"`
-	ThroughputSeries []JSONThroughputBucket   `json:"throughput_series"`
+	RESTLatency      map[string]JSONHistogram `json:"restLatency"`
+	WSDelivery       JSONHistogram            `json:"wsDelivery"`
+	E2EMove          JSONHistogram            `json:"e2eMove"`
+	PhaseLatency     map[string]JSONHistogram `json:"phaseLatency"`
+	PhaseFlow        map[string]JSONPhaseFlow `json:"phaseFlow"`
+	HTTPStatusCounts map[string]int64         `json:"httpStatusCounts"`
+	ThroughputSeries []JSONThroughputBucket   `json:"throughputSeries"`
 	Errors           struct {
 		Total     int64            `json:"total"`
-		Rate      float64          `json:"rate_pct"`
+		Rate      float64          `json:"ratePct"`
 		Breakdown map[string]int64 `json:"breakdown"`
 	} `json:"errors"`
 	Resilience struct {
 		Retries           int64 `json:"retries"`
 		Conflicts         int64 `json:"conflicts"`
 		Reconnects        int64 `json:"reconnects"`
-		ReconnectFailures int64 `json:"reconnect_failures"`
+		ReconnectFailures int64 `json:"reconnectFailures"`
 	} `json:"resilience"`
-	DurationMs int64            `json:"duration_ms"`
-	PerGame    []JSONGameResult `json:"per_game,omitempty"`
+	DurationMs int64            `json:"durationMs"`
+	PerGame    []JSONGameResult `json:"perGame,omitempty"`
 
 	// Chaos events (only present when chaos was active).
-	ChaosEvents map[string]int64 `json:"chaos_events,omitempty"`
+	ChaosEvents map[string]int64 `json:"chaosEvents,omitempty"`
 }
 
 // JSONPhaseFlow is the JSON representation of phase transition stats.
 type JSONPhaseFlow struct {
 	Entries          int64   `json:"entries"`
 	Moves            int64   `json:"moves"`
-	AvgMovesPerEntry float64 `json:"avg_moves_per_entry"`
+	AvgMovesPerEntry float64 `json:"avgMovesPerEntry"`
 }
 
 // JSONThroughputBucket is the JSON representation of a throughput time bucket.
 type JSONThroughputBucket struct {
-	OffsetSec float64 `json:"offset_sec"`
+	OffsetSec float64 `json:"offsetSec"`
 	Moves     int64   `json:"moves"`
 }
 
 // JSONGameResult is the JSON representation of a single game's result.
 type JSONGameResult struct {
-	GameIndex  int    `json:"game_index"`
-	DurationMs int64  `json:"duration_ms"`
+	GameIndex  int    `json:"gameIndex"`
+	DurationMs int64  `json:"durationMs"`
 	Moves      int    `json:"moves"`
 	Errors     int    `json:"errors"`
 	Status     string `json:"status"`
@@ -296,6 +298,8 @@ type JSONHistogram struct {
 }
 
 // PrintJSON writes a machine-readable JSON report to w.
+//
+//nolint:cyclop,funlen // sequential JSON report building
 func PrintJSON(
 	w io.Writer,
 	snap *Snapshot,
@@ -392,7 +396,11 @@ func PrintJSON(
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
 
-	return enc.Encode(report)
+	if err := enc.Encode(report); err != nil {
+		return fmt.Errorf("encode json report: %w", err)
+	}
+
+	return nil
 }
 
 func toJSONHist(h HistogramSnapshot) JSONHistogram {

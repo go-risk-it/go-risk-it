@@ -3,15 +3,16 @@ package orchestrator
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/annotations"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/metrics"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // RampConfig holds parameters for continuous ramp mode.
@@ -21,8 +22,9 @@ type RampConfig struct {
 	ErrorThreshold float64
 	GameTimeout    time.Duration
 	NumPlayers     int
-	Multiplier     float64       // Rate multiplier per step (e.g., 1.5 = 50% increase each step). 0 means constant.
-	StepInterval   time.Duration // How often to apply the multiplier. 0 defaults to 1 minute.
+	// Multiplier per step (e.g., 1.5 = 50% increase). 0 means constant.
+	Multiplier   float64
+	StepInterval time.Duration // How often to apply the multiplier. 0 defaults to 1 minute.
 }
 
 // stepInterval returns the effective step interval, defaulting to 1 minute.
@@ -36,11 +38,13 @@ func (c RampConfig) stepInterval() time.Duration {
 
 // RunContinuousRamp spawns games at a steady rate, stopping when MaxGames is reached
 // or error rate exceeds ErrorThreshold.
+//
+//nolint:cyclop,funlen // ramp with rate escalation and error threshold
 func RunContinuousRamp(
 	ctx context.Context,
 	cfg RampConfig,
 	runGame RunFunc,
-	collector *metrics.Collector,
+	collector *metrics.StepAccumulator,
 	annotator *annotations.Annotator,
 ) []GameResult {
 	ctx, cancel := context.WithCancel(ctx)
@@ -49,9 +53,9 @@ func RunContinuousRamp(
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
-	go func() {
+	go func() { //nolint:gosec // G118: fire-and-forget signal handler
 		<-sigCh
-		log.Println("shutdown signal received, stopping ramp...")
+		observe.Info(context.Background(), "shutdown signal received, stopping ramp")
 		cancel()
 	}()
 
@@ -68,17 +72,19 @@ func RunContinuousRamp(
 	minuteNumber := 1
 
 	if cfg.Multiplier > 0 {
-		log.Printf(
-			"[ramp] starting: %d games/min ×%.1f/%v, max %d, error threshold %.0f%%",
-			cfg.GamesPerMinute,
-			cfg.Multiplier,
-			cfg.stepInterval(),
-			cfg.MaxGames,
-			cfg.ErrorThreshold*100,
+		observe.Info(ctx, "ramp starting",
+			attribute.Int("games_per_min", cfg.GamesPerMinute),
+			attribute.Float64("multiplier", cfg.Multiplier),
+			attribute.String("step_interval", cfg.stepInterval().String()),
+			attribute.Int("max_games", cfg.MaxGames),
+			attribute.Float64("error_threshold_pct", cfg.ErrorThreshold*100),
 		)
 	} else {
-		log.Printf("[ramp] starting: %d games/min, max %d, error threshold %.0f%%",
-			cfg.GamesPerMinute, cfg.MaxGames, cfg.ErrorThreshold*100)
+		observe.Info(ctx, "ramp starting",
+			attribute.Int("games_per_min", cfg.GamesPerMinute),
+			attribute.Int("max_games", cfg.MaxGames),
+			attribute.Float64("error_threshold_pct", cfg.ErrorThreshold*100),
+		)
 	}
 
 	annotator.Annotate("ramp: started", "perf-test", "phase")
@@ -86,7 +92,7 @@ func RunContinuousRamp(
 	// Progress reporter.
 	progressDone := make(chan struct{})
 
-	go func() {
+	go func() { //nolint:gosec // G118: background progress reporter
 		defer close(progressDone)
 
 		ticker := time.NewTicker(10 * time.Second)
@@ -99,9 +105,14 @@ func RunContinuousRamp(
 				total := snap.GamesCompleted + snap.GamesTimedOut + snap.GamesFatal
 				active := int64(launched) - total
 
-				log.Printf("[ramp] launched=%d active=%d completed=%d fatal=%d moves=%d errors=%d",
-					launched, active, snap.GamesCompleted, snap.GamesFatal,
-					snap.TotalMoves, snap.TotalErrors)
+				observe.Info(context.Background(), "ramp progress",
+					attribute.Int("launched", launched),
+					attribute.Int64("active", active),
+					attribute.Int64("completed", snap.GamesCompleted),
+					attribute.Int64("fatal", snap.GamesFatal),
+					attribute.Int64("moves", snap.TotalMoves),
+					attribute.Int64("errors", snap.TotalErrors),
+				)
 			case <-ctx.Done():
 				return
 			}
@@ -111,7 +122,7 @@ func RunContinuousRamp(
 	for launched < cfg.MaxGames {
 		select {
 		case <-ctx.Done():
-			log.Printf("[ramp] cancelled after %d games", launched)
+			observe.Info(ctx, "ramp cancelled", attribute.Int("games_launched", launched))
 
 			goto wait
 		default:
@@ -124,11 +135,10 @@ func RunContinuousRamp(
 		if totalFinished > 0 {
 			errorRate := float64(snap.GamesFatal+snap.GamesTimedOut) / float64(totalFinished)
 			if errorRate > cfg.ErrorThreshold {
-				log.Printf(
-					"[ramp] error threshold exceeded: %.1f%% > %.1f%%, stopping after %d games",
-					errorRate*100,
-					cfg.ErrorThreshold*100,
-					launched,
+				observe.Warn(ctx, "ramp error threshold exceeded",
+					attribute.Float64("error_rate_pct", errorRate*100),
+					attribute.Float64("threshold_pct", cfg.ErrorThreshold*100),
+					attribute.Int("games_launched", launched),
 				)
 
 				annotator.Annotate(
@@ -163,8 +173,10 @@ func RunContinuousRamp(
 			currentRate *= cfg.Multiplier
 			interval = time.Minute / time.Duration(currentRate)
 
-			log.Printf("[ramp] step %d: escalating to %.0f games/min",
-				minuteNumber, currentRate)
+			observe.Info(ctx, "ramp escalating",
+				attribute.Int("step", minuteNumber),
+				attribute.Float64("games_per_min", currentRate),
+			)
 
 			annotator.Annotate(
 				fmt.Sprintf("ramp: %.0f games/min", currentRate),
@@ -181,7 +193,9 @@ func RunContinuousRamp(
 	}
 
 wait:
-	log.Printf("[ramp] all %d games launched, waiting for completion...", launched)
+	observe.Info(ctx, "ramp all games launched, waiting for completion",
+		attribute.Int("games_launched", launched),
+	)
 	wg.Wait()
 	cancel()
 	<-progressDone

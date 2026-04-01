@@ -2,12 +2,13 @@ package metrics
 
 import (
 	"context"
-	"log"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/HdrHistogram/hdrhistogram-go"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // maxLatencyMs is the upper bound for histogram recording (30 seconds in ms).
@@ -52,13 +53,11 @@ const (
 	ChaosEventErrorMove  ChaosEvent = "error_move"
 )
 
-// Collector aggregates latency histograms and counters across concurrent games.
-// All methods are safe for concurrent use.
-type Collector struct {
+// StepAccumulator aggregates latency histograms and counters for a single
+// staircase step. One instance is created per step for clean per-step
+// percentiles. All methods are safe for concurrent use.
+type StepAccumulator struct {
 	mu sync.Mutex
-
-	// Optional OTel exporter for live metrics.
-	otel *OTelExporter
 
 	// Per-operation REST latency histograms (keyed by action type name).
 	restLatency map[string]*hdrhistogram.Histogram
@@ -107,9 +106,9 @@ type Collector struct {
 	warmUpDone       atomic.Bool
 }
 
-// NewCollector creates a new metrics collector with initialized histograms.
-// maxDuration sizes the throughput bucket slice.
-func NewCollector(maxDuration time.Duration) *Collector {
+// NewStepAccumulator creates a new per-step metrics accumulator with initialized
+// histograms. maxDuration sizes the throughput bucket slice.
+func NewStepAccumulator(maxDuration time.Duration) *StepAccumulator {
 	numBuckets := int(maxDuration/throughputBucketSize) + 1
 
 	phaseEntries := make(map[Phase]*atomic.Int64, len(knownPhases))
@@ -136,7 +135,7 @@ func NewCollector(maxDuration time.Duration) *Collector {
 		ChaosEventErrorMove:  {},
 	}
 
-	return &Collector{
+	return &StepAccumulator{
 		restLatency:      make(map[string]*hdrhistogram.Histogram),
 		phaseLatency:     make(map[string]*hdrhistogram.Histogram),
 		wsDelivery:       hdrhistogram.New(1, maxLatencyMs, 3),
@@ -151,28 +150,23 @@ func NewCollector(maxDuration time.Duration) *Collector {
 	}
 }
 
-// SetOTelExporter attaches an OTel exporter for live metric export.
-func (c *Collector) SetOTelExporter(o *OTelExporter) {
-	c.otel = o
-}
-
 // getOrCreateHist returns the histogram for the given action type, creating it if needed.
-func (c *Collector) getOrCreateHist(actionType string) *hdrhistogram.Histogram {
-	h, ok := c.restLatency[actionType]
+func (a *StepAccumulator) getOrCreateHist(actionType string) *hdrhistogram.Histogram {
+	h, ok := a.restLatency[actionType]
 	if !ok {
 		h = hdrhistogram.New(1, maxLatencyMs, 3)
-		c.restLatency[actionType] = h
+		a.restLatency[actionType] = h
 	}
 
 	return h
 }
 
 // getOrCreatePhaseHist returns the phase histogram, creating it if needed.
-func (c *Collector) getOrCreatePhaseHist(phase string) *hdrhistogram.Histogram {
-	h, ok := c.phaseLatency[phase]
+func (a *StepAccumulator) getOrCreatePhaseHist(phase string) *hdrhistogram.Histogram {
+	h, ok := a.phaseLatency[phase]
 	if !ok {
 		h = hdrhistogram.New(1, maxLatencyMs, 3)
-		c.phaseLatency[phase] = h
+		a.phaseLatency[phase] = h
 	}
 
 	return h
@@ -186,159 +180,153 @@ func clampMs(d time.Duration) int64 {
 }
 
 // recordToHist records d to h, gated by warm-up status.
-// Must NOT be called while c.mu is held (acquires c.mu internally).
-func (c *Collector) recordToHist(h *hdrhistogram.Histogram, d time.Duration) {
-	if !c.isWarmUpDone() {
+// Must NOT be called while a.mu is held (acquires a.mu internally).
+func (a *StepAccumulator) recordToHist(h *hdrhistogram.Histogram, d time.Duration) {
+	if !a.isWarmUpDone() {
 		return
 	}
 
-	c.mu.Lock()
+	a.mu.Lock()
 	_ = h.RecordValue(clampMs(d))
-	c.mu.Unlock()
+	a.mu.Unlock()
 }
 
 // RecordREST records a REST API call latency for the given action type.
-func (c *Collector) RecordREST(actionType string, d time.Duration) {
-	if c.isWarmUpDone() {
-		c.mu.Lock()
-		_ = c.getOrCreateHist(actionType).RecordValue(clampMs(d))
-		c.mu.Unlock()
+func (a *StepAccumulator) RecordREST(actionType string, d time.Duration) {
+	if a.isWarmUpDone() {
+		a.mu.Lock()
+		_ = a.getOrCreateHist(actionType).RecordValue(clampMs(d))
+		a.mu.Unlock()
 	}
 }
 
 // RecordWSDelivery records the latency from REST response to WS state update arriving.
-func (c *Collector) RecordWSDelivery(d time.Duration) {
-	c.recordToHist(c.wsDelivery, d)
+func (a *StepAccumulator) RecordWSDelivery(d time.Duration) {
+	a.recordToHist(a.wsDelivery, d)
 }
 
 // RecordE2E records end-to-end move latency (from before action to after WS update).
-func (c *Collector) RecordE2E(d time.Duration) {
-	c.recordToHist(c.e2eMove, d)
+func (a *StepAccumulator) RecordE2E(d time.Duration) {
+	a.recordToHist(a.e2eMove, d)
 }
 
 // RecordPhaseLatency records E2E latency tagged by game phase.
-func (c *Collector) RecordPhaseLatency(phase string, d time.Duration) {
-	if c.isWarmUpDone() {
-		c.mu.Lock()
-		_ = c.getOrCreatePhaseHist(phase).RecordValue(clampMs(d))
-		c.mu.Unlock()
+func (a *StepAccumulator) RecordPhaseLatency(phase string, d time.Duration) {
+	if a.isWarmUpDone() {
+		a.mu.Lock()
+		_ = a.getOrCreatePhaseHist(phase).RecordValue(clampMs(d))
+		a.mu.Unlock()
 	}
 }
 
 // RecordPhaseEntry increments the phase entry count.
-func (c *Collector) RecordPhaseEntry(phase Phase) {
-	if counter, ok := c.phaseEntries[phase]; ok {
+func (a *StepAccumulator) RecordPhaseEntry(phase Phase) {
+	if counter, ok := a.phaseEntries[phase]; ok {
 		counter.Add(1)
 	}
 }
 
 // RecordPhaseMove increments the phase move count.
-func (c *Collector) RecordPhaseMove(phase Phase) {
-	if counter, ok := c.phaseMoves[phase]; ok {
+func (a *StepAccumulator) RecordPhaseMove(phase Phase) {
+	if counter, ok := a.phaseMoves[phase]; ok {
 		counter.Add(1)
 	}
 }
 
 // RecordHTTPStatus increments the counter for the given HTTP status code.
-func (c *Collector) RecordHTTPStatus(statusCode int) {
-	c.mu.Lock()
-	counter, ok := c.httpStatusCounts[statusCode]
+func (a *StepAccumulator) RecordHTTPStatus(statusCode int) {
+	a.mu.Lock()
+	counter, ok := a.httpStatusCounts[statusCode]
 	if !ok {
 		counter = &atomic.Int64{}
-		c.httpStatusCounts[statusCode] = counter
+		a.httpStatusCounts[statusCode] = counter
 	}
-	c.mu.Unlock()
+	a.mu.Unlock()
 
 	counter.Add(1)
 }
 
 // RecordErrorType increments the specific error category counter.
-func (c *Collector) RecordErrorType(errorType ErrorType) {
-	if counter, ok := c.errorCounts[errorType]; ok {
+func (a *StepAccumulator) RecordErrorType(errorType ErrorType) {
+	if counter, ok := a.errorCounts[errorType]; ok {
 		counter.Add(1)
 	}
 }
 
 // RecordTimedMove records a move in the throughput time-series bucket.
-func (c *Collector) RecordTimedMove() {
-	elapsed := time.Since(c.startTime)
+func (a *StepAccumulator) RecordTimedMove() {
+	elapsed := time.Since(a.startTime)
 	idx := int(elapsed / throughputBucketSize)
 
-	if idx >= 0 && idx < len(c.moveBuckets) {
-		c.moveBuckets[idx].Add(1)
+	if idx >= 0 && idx < len(a.moveBuckets) {
+		a.moveBuckets[idx].Add(1)
 	} else {
-		log.Printf("[metrics] move at %v exceeds max duration, not counted in throughput", elapsed)
+		observe.Warn(context.Background(), "move exceeds max duration, not counted in throughput",
+			attribute.String("elapsed", elapsed.String()),
+		)
 	}
 }
 
 // RecordMove increments the total moves counter.
-func (c *Collector) RecordMove() {
-	c.totalMoves.Add(1)
+func (a *StepAccumulator) RecordMove() {
+	a.totalMoves.Add(1)
 }
 
 // RecordError increments the total errors counter.
-func (c *Collector) RecordError() {
-	c.totalErrors.Add(1)
+func (a *StepAccumulator) RecordError() {
+	a.totalErrors.Add(1)
 }
 
-// RecordGameComplete increments the games completed counter and records game-level metrics.
-func (c *Collector) RecordGameComplete(duration time.Duration, moves int) {
-	c.gamesCompleted.Add(1)
-
-	if c.otel != nil {
-		c.otel.gamesActive.Add(context.Background(), -1)
-	}
+// RecordGameComplete increments the games completed counter.
+//
+//nolint:unparam // interface conformance / future use
+func (a *StepAccumulator) RecordGameComplete(duration time.Duration, moves int) {
+	a.gamesCompleted.Add(1)
 }
 
-// RecordGameTimedOut increments the games timed out counter and records game-level metrics.
-func (c *Collector) RecordGameTimedOut(duration time.Duration, moves int) {
-	c.gamesTimedOut.Add(1)
-
-	if c.otel != nil {
-		c.otel.gamesActive.Add(context.Background(), -1)
-	}
+// RecordGameTimedOut increments the games timed out counter.
+//
+//nolint:unparam // interface conformance / future use
+func (a *StepAccumulator) RecordGameTimedOut(duration time.Duration, moves int) {
+	a.gamesTimedOut.Add(1)
 }
 
 // RecordGameFatal increments the games fatal error counter.
-func (c *Collector) RecordGameFatal() {
-	c.gamesFatal.Add(1)
-
-	if c.otel != nil {
-		c.otel.gamesActive.Add(context.Background(), -1)
-	}
+func (a *StepAccumulator) RecordGameFatal() {
+	a.gamesFatal.Add(1)
 }
 
-// RecordGameStarted increments the active games counter (OTel only, no HDR equivalent).
-func (c *Collector) RecordGameStarted() {
-	if c.otel != nil {
-		c.otel.gamesActive.Add(context.Background(), 1)
-	}
+// RecordGameStarted is a no-op retained for caller compatibility.
+// Live games-active tracking has moved to LiveMetrics (T2).
+func (a *StepAccumulator) RecordGameStarted() {
+	// Intentionally empty — gamesActive is a cross-step OTel concern,
+	// not a per-step accumulation concern.
 }
 
 // RecordRetry increments the REST retry counter.
-func (c *Collector) RecordRetry() {
-	c.totalRetries.Add(1)
+func (a *StepAccumulator) RecordRetry() {
+	a.totalRetries.Add(1)
 }
 
 // RecordConflict increments the 409 conflict counter.
-func (c *Collector) RecordConflict() {
-	c.totalConflicts.Add(1)
-	c.RecordErrorType(ErrorTypeConflict)
+func (a *StepAccumulator) RecordConflict() {
+	a.totalConflicts.Add(1)
+	a.RecordErrorType(ErrorTypeConflict)
 }
 
 // RecordReconnect increments the WS reconnection attempt counter.
-func (c *Collector) RecordReconnect() {
-	c.totalReconnects.Add(1)
+func (a *StepAccumulator) RecordReconnect() {
+	a.totalReconnects.Add(1)
 }
 
 // RecordReconnectFailure increments the WS reconnection failure counter.
-func (c *Collector) RecordReconnectFailure() {
-	c.totalReconnectFailures.Add(1)
+func (a *StepAccumulator) RecordReconnectFailure() {
+	a.totalReconnectFailures.Add(1)
 }
 
 // RecordChaosEvent increments the counter for the given chaos event type.
-func (c *Collector) RecordChaosEvent(eventType ChaosEvent) {
-	if counter, ok := c.chaosEvents[eventType]; ok {
+func (a *StepAccumulator) RecordChaosEvent(eventType ChaosEvent) {
+	if counter, ok := a.chaosEvents[eventType]; ok {
 		counter.Add(1)
 	}
 }
@@ -350,42 +338,44 @@ type ThroughputBucket struct {
 }
 
 // Snapshot returns a point-in-time copy of all metrics for reporting.
-func (c *Collector) Snapshot() *Snapshot {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+//
+//nolint:cyclop,funlen // sequential map iteration snapshot
+func (a *StepAccumulator) Snapshot() *Snapshot {
+	a.mu.Lock()
+	defer a.mu.Unlock()
 
-	rest := make(map[string]HistogramSnapshot, len(c.restLatency))
-	for name, h := range c.restLatency {
+	rest := make(map[string]HistogramSnapshot, len(a.restLatency))
+	for name, h := range a.restLatency {
 		rest[name] = snapshotHist(h)
 	}
 
-	phaseLatency := make(map[string]HistogramSnapshot, len(c.phaseLatency))
-	for name, h := range c.phaseLatency {
+	phaseLatency := make(map[string]HistogramSnapshot, len(a.phaseLatency))
+	for name, h := range a.phaseLatency {
 		phaseLatency[name] = snapshotHist(h)
 	}
 
-	phaseEntries := make(map[string]int64, len(c.phaseEntries))
-	for name, counter := range c.phaseEntries {
+	phaseEntries := make(map[string]int64, len(a.phaseEntries))
+	for name, counter := range a.phaseEntries {
 		phaseEntries[string(name)] = counter.Load()
 	}
 
-	phaseMoves := make(map[string]int64, len(c.phaseMoves))
-	for name, counter := range c.phaseMoves {
+	phaseMoves := make(map[string]int64, len(a.phaseMoves))
+	for name, counter := range a.phaseMoves {
 		phaseMoves[string(name)] = counter.Load()
 	}
 
-	httpStatusCounts := make(map[int]int64, len(c.httpStatusCounts))
-	for code, counter := range c.httpStatusCounts {
+	httpStatusCounts := make(map[int]int64, len(a.httpStatusCounts))
+	for code, counter := range a.httpStatusCounts {
 		httpStatusCounts[code] = counter.Load()
 	}
 
-	errorBreakdown := make(map[string]int64, len(c.errorCounts))
-	for name, counter := range c.errorCounts {
+	errorBreakdown := make(map[string]int64, len(a.errorCounts))
+	for name, counter := range a.errorCounts {
 		errorBreakdown[string(name)] = counter.Load()
 	}
 
-	chaosEvents := make(map[string]int64, len(c.chaosEvents))
-	for name, counter := range c.chaosEvents {
+	chaosEvents := make(map[string]int64, len(a.chaosEvents))
+	for name, counter := range a.chaosEvents {
 		v := counter.Load()
 		if v > 0 {
 			chaosEvents[string(name)] = v
@@ -394,8 +384,8 @@ func (c *Collector) Snapshot() *Snapshot {
 
 	// Only include non-zero throughput buckets.
 	var throughputBuckets []ThroughputBucket
-	for i := range c.moveBuckets {
-		moves := c.moveBuckets[i].Load()
+	for i := range a.moveBuckets {
+		moves := a.moveBuckets[i].Load()
 		if moves > 0 {
 			throughputBuckets = append(throughputBuckets, ThroughputBucket{
 				OffsetSec: float64(i) * throughputBucketSize.Seconds(),
@@ -406,17 +396,17 @@ func (c *Collector) Snapshot() *Snapshot {
 
 	return &Snapshot{
 		RESTLatency:            rest,
-		WSDelivery:             snapshotHist(c.wsDelivery),
-		E2EMove:                snapshotHist(c.e2eMove),
-		TotalMoves:             c.totalMoves.Load(),
-		TotalErrors:            c.totalErrors.Load(),
-		GamesCompleted:         c.gamesCompleted.Load(),
-		GamesTimedOut:          c.gamesTimedOut.Load(),
-		GamesFatal:             c.gamesFatal.Load(),
-		TotalRetries:           c.totalRetries.Load(),
-		TotalConflicts:         c.totalConflicts.Load(),
-		TotalReconnects:        c.totalReconnects.Load(),
-		TotalReconnectFailures: c.totalReconnectFailures.Load(),
+		WSDelivery:             snapshotHist(a.wsDelivery),
+		E2EMove:                snapshotHist(a.e2eMove),
+		TotalMoves:             a.totalMoves.Load(),
+		TotalErrors:            a.totalErrors.Load(),
+		GamesCompleted:         a.gamesCompleted.Load(),
+		GamesTimedOut:          a.gamesTimedOut.Load(),
+		GamesFatal:             a.gamesFatal.Load(),
+		TotalRetries:           a.totalRetries.Load(),
+		TotalConflicts:         a.totalConflicts.Load(),
+		TotalReconnects:        a.totalReconnects.Load(),
+		TotalReconnectFailures: a.totalReconnectFailures.Load(),
 		PhaseLatency:           phaseLatency,
 		PhaseEntries:           phaseEntries,
 		PhaseMoves:             phaseMoves,
@@ -424,11 +414,11 @@ func (c *Collector) Snapshot() *Snapshot {
 		ErrorBreakdown:         errorBreakdown,
 		ChaosEvents:            chaosEvents,
 		ThroughputBuckets:      throughputBuckets,
-		WarmUpComplete:         c.isWarmUpDone(),
+		WarmUpComplete:         a.isWarmUpDone(),
 	}
 }
 
-// Snapshot is a point-in-time copy of collector metrics.
+// Snapshot is a point-in-time copy of accumulator metrics.
 type Snapshot struct {
 	RESTLatency    map[string]HistogramSnapshot
 	WSDelivery     HistogramSnapshot

@@ -28,7 +28,7 @@ func makeAdaptiveExecutor(
 	}
 
 	deps := orchestrator.StepExecutorDeps{
-		RunnerFactory: func(c *metrics.Collector, _ orchestrator.GameObserver) orchestrator.RunFunc {
+		RunnerFactory: func(c *metrics.StepAccumulator, _ orchestrator.GameObserver) orchestrator.RunFunc {
 			return func(ctx context.Context, idx, players int) orchestrator.GameResult {
 				// Record a move to produce metrics — large latency to trigger
 				// SLO breach when failAbove > 0.
@@ -49,7 +49,7 @@ func makeAdaptiveExecutor(
 				return orchestrator.GameResult{GameIndex: idx}
 			}
 		},
-		NewCollector: metrics.NewCollector,
+		NewCollector: metrics.NewStepAccumulator,
 		CollectResources: func() resources.ServerResources {
 			return resources.ServerResources{}
 		},

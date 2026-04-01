@@ -6,18 +6,18 @@ import "time"
 type Session struct {
 	ID            string    `json:"id"`
 	Branch        string    `json:"branch"`
-	BaselineEntry string    `json:"baseline_entry"`
-	StartedAt     time.Time `json:"started_at"`
+	BaselineEntry string    `json:"baselineEntry"`
+	StartedAt     time.Time `json:"startedAt"`
 	Runs          []RunRef  `json:"runs"`
 	Status        string    `json:"status"` // "active", "merged", "abandoned"
 }
 
 // RunRef records a single staircase run within a session.
 type RunRef struct {
-	EntryPath    string    `json:"entry_path"`
-	CommitSHA    string    `json:"commit_sha"`
-	CeilingGames int       `json:"ceiling_games"`
-	CeilingDelta int       `json:"ceiling_delta"`
+	EntryPath    string    `json:"entryPath"`
+	CommitSHA    string    `json:"commitSha"`
+	CeilingGames int       `json:"ceilingGames"`
+	CeilingDelta int       `json:"ceilingDelta"`
 	Hypothesis   string    `json:"hypothesis,omitempty"`
 	Timestamp    time.Time `json:"timestamp"`
 }

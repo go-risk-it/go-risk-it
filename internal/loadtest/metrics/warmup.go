@@ -1,24 +1,24 @@
 package metrics
 
-// ConfigureWarmUp enables warm-up gating on the collector.
+// ConfigureWarmUp enables warm-up gating on the accumulator.
 // When configured, histogram recording is blocked until MarkWarmUpDone is called.
-// Counters and OTel instruments continue recording during warm-up.
+// Counters continue recording during warm-up.
 // Safe for concurrent use.
-func (c *Collector) ConfigureWarmUp() {
-	c.warmUpConfigured.Store(true)
+func (a *StepAccumulator) ConfigureWarmUp() {
+	a.warmUpConfigured.Store(true)
 }
 
 // MarkWarmUpDone opens the warm-up gate, allowing histograms to record.
 // Safe to call multiple times (idempotent).
-func (c *Collector) MarkWarmUpDone() {
-	c.warmUpDone.Store(true)
+func (a *StepAccumulator) MarkWarmUpDone() {
+	a.warmUpDone.Store(true)
 }
 
 // isWarmUpDone returns true if warm-up is not configured or has been marked done.
-func (c *Collector) isWarmUpDone() bool {
-	if !c.warmUpConfigured.Load() {
+func (a *StepAccumulator) isWarmUpDone() bool {
+	if !a.warmUpConfigured.Load() {
 		return true
 	}
 
-	return c.warmUpDone.Load()
+	return a.warmUpDone.Load()
 }

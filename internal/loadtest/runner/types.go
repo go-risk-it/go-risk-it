@@ -51,13 +51,13 @@ type PlayerInfo struct {
 
 // GameSession holds shared mutable state for a single game.
 type GameSession struct {
-	Ctx       context.Context
-	GameIndex int
-	GameID    int64
-	Players   []*PlayerInfo
-	UserIndex map[string]int
-	StartTime time.Time
-	Collector *metrics.Collector
+	Ctx         context.Context //nolint:containedctx // game session carries context by design
+	GameIndex   int
+	GameID      int64
+	Players     []*PlayerInfo
+	UserIndex   map[string]int
+	StartTime   time.Time
+	Accumulator *metrics.StepAccumulator
 }
 
 // AuthClient abstracts client.Auth for testability.

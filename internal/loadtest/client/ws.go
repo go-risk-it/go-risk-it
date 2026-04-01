@@ -1,16 +1,18 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"sync"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/metrics"
 	"github.com/gorilla/websocket"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const (
@@ -44,7 +46,7 @@ type WS struct {
 	// Closed by reconnect (to stop old pingLoop) or by Close (to stop all).
 	genDone chan struct{}
 
-	collector *metrics.Collector
+	collector *metrics.StepAccumulator
 }
 
 // ConnectWS establishes a WebSocket connection to a game.
@@ -52,14 +54,17 @@ func ConnectWS(
 	baseURL string,
 	gameID int64,
 	token string,
-	collector *metrics.Collector,
+	collector *metrics.StepAccumulator,
 ) (*WS, error) {
 	wsURL := fmt.Sprintf("%s/api/v1/games/%d/ws", baseURL, gameID)
 
 	header := http.Header{}
 	header.Set("Authorization", "Bearer "+token)
 
-	conn, _, err := websocket.DefaultDialer.Dial(wsURL, header)
+	conn, resp, err := websocket.DefaultDialer.Dial(wsURL, header)
+	if resp != nil && resp.Body != nil {
+		resp.Body.Close()
+	}
 	if err != nil {
 		return nil, fmt.Errorf("websocket dial: %w", err)
 	}
@@ -118,13 +123,19 @@ func (ws *WS) Close() error {
 	ws.closed = true
 	close(ws.genDone)
 
-	return ws.conn.Close()
+	if err := ws.conn.Close(); err != nil {
+		return fmt.Errorf("ws close: %w", err)
+	}
+
+	return nil
 }
 
 // readLoop reads messages from the WebSocket connection. Each readLoop
 // invocation is scoped to a connection generation: it takes its own
 // generation number, genDone channel, and connection reference as parameters
 // and never reads ws.conn directly.
+//
+//nolint:unparam,cyclop,funlen // interface conformance; connection lifecycle
 func (ws *WS) readLoop(myGen uint64, myGenDone <-chan struct{}, myConn *websocket.Conn) {
 	shouldCloseDone := true
 
@@ -160,7 +171,15 @@ func (ws *WS) readLoop(myGen uint64, myGenDone <-chan struct{}, myConn *websocke
 				websocket.CloseGoingAway,
 				websocket.CloseNormalClosure,
 			) {
-				log.Printf("ws read error (gen %d): %v", myGen, err)
+				observe.Warn(
+					context.Background(),
+					"ws read error",
+					attribute.Int64(
+						"gen",
+						int64(myGen), //nolint:gosec // intentional for loadtest tool
+					),
+					attribute.String("error", err.Error()),
+				)
 			}
 
 			// Attempt reconnection. If it succeeds, a new readLoop is
@@ -181,13 +200,17 @@ func (ws *WS) readLoop(myGen uint64, myGenDone <-chan struct{}, myConn *websocke
 
 		var msg gamestate.WSMessage
 		if err := json.Unmarshal(data, &msg); err != nil {
-			log.Printf("ws unmarshal error: %v", err)
+			observe.Warn(context.Background(), "ws unmarshal error",
+				attribute.String("error", err.Error()),
+			)
 
 			continue
 		}
 
 		if err := ws.view.Apply(msg); err != nil {
-			log.Printf("ws apply error: %v", err)
+			observe.Warn(context.Background(), "ws apply error",
+				attribute.String("error", err.Error()),
+			)
 		}
 	}
 }
@@ -195,6 +218,8 @@ func (ws *WS) readLoop(myGen uint64, myGenDone <-chan struct{}, myConn *websocke
 // reconnect attempts to re-establish the WebSocket connection with exponential
 // backoff. If successful, it spawns a new readLoop and pingLoop for the new
 // generation. Returns true if reconnection succeeded.
+//
+//nolint:funlen,cyclop // reconnect with exponential backoff
 func (ws *WS) reconnect(fromGen uint64) bool {
 	ws.mu.Lock()
 
@@ -220,8 +245,11 @@ func (ws *WS) reconnect(fromGen uint64) bool {
 	backoff := reconnectBase
 
 	for attempt := range reconnectRetries {
-		log.Printf("ws reconnecting (attempt %d/%d, backoff %v)",
-			attempt+1, reconnectRetries, backoff)
+		observe.Info(context.Background(), "ws reconnecting",
+			attribute.Int("attempt", attempt+1),
+			attribute.Int("max_attempts", reconnectRetries),
+			attribute.String("backoff", backoff.String()),
+		)
 
 		if ws.collector != nil {
 			ws.collector.RecordReconnect()
@@ -238,9 +266,14 @@ func (ws *WS) reconnect(fromGen uint64) bool {
 
 		ws.mu.Unlock()
 
-		conn, _, err := websocket.DefaultDialer.Dial(ws.wsURL, ws.header)
+		conn, dialResp, err := websocket.DefaultDialer.Dial(ws.wsURL, ws.header)
+		if dialResp != nil && dialResp.Body != nil {
+			dialResp.Body.Close()
+		}
 		if err != nil {
-			log.Printf("ws reconnect failed: %v", err)
+			observe.Warn(context.Background(), "ws reconnect failed",
+				attribute.String("error", err.Error()),
+			)
 
 			backoff *= 2
 			if backoff > reconnectMax {
@@ -271,12 +304,16 @@ func (ws *WS) reconnect(fromGen uint64) bool {
 		go ws.readLoop(newGen, newGenDone, conn)
 		go ws.pingLoop(newGenDone, conn)
 
-		log.Printf("ws reconnected successfully (gen %d)", newGen)
+		observe.Info(context.Background(), "ws reconnected successfully",
+			attribute.Int64("gen", int64(newGen)), //nolint:gosec // gen counter is always small
+		)
 
 		return true
 	}
 
-	log.Printf("ws reconnect failed after %d attempts, giving up", reconnectRetries)
+	observe.Warn(context.Background(), "ws reconnect failed after all attempts",
+		attribute.Int("max_attempts", reconnectRetries),
+	)
 
 	if ws.collector != nil {
 		ws.collector.RecordReconnectFailure()
@@ -295,7 +332,9 @@ func (ws *WS) pingLoop(myGenDone <-chan struct{}, myConn *websocket.Conn) {
 			if err := myConn.WriteControl(
 				websocket.PingMessage, nil, time.Now().Add(writeWait),
 			); err != nil {
-				log.Printf("ws ping failed, forcing reconnect: %v", err)
+				observe.Warn(context.Background(), "ws ping failed, forcing reconnect",
+					attribute.String("error", err.Error()),
+				)
 				myConn.Close()
 
 				return

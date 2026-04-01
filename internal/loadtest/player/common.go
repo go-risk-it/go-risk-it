@@ -6,6 +6,8 @@ import (
 
 // FindCardCombo finds a valid 3-card combination from the given hand.
 // Returns nil if no valid combination exists.
+//
+//nolint:cyclop // card combination search across 3 strategies
 func FindCardCombo(cards []gamestate.Card) []int64 {
 	byType := make(map[gamestate.CardType][]int64)
 	var jollyIDs []int64

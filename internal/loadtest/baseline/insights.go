@@ -43,7 +43,7 @@ type Insight struct {
 
 // Analyze examines a MetricsSnapshot and returns detected patterns.
 func Analyze(snap MetricsSnapshot) []Insight {
-	var insights []Insight
+	insights := make([]Insight, 0, 8)
 
 	insights = append(insights, detectFatalGames(snap)...)
 	insights = append(insights, detectGameTimeouts(snap)...)
@@ -117,7 +117,7 @@ func detectGameTimeouts(snap MetricsSnapshot) []Insight {
 }
 
 func detectTailLatencyBlowup(snap MetricsSnapshot) []Insight {
-	var insights []Insight
+	insights := make([]Insight, 0, 8)
 
 	if snap.E2E.P95 > 0 {
 		ratio := snap.E2E.P99 / snap.E2E.P95
@@ -232,6 +232,7 @@ func detectHighContentionRate(snap MetricsSnapshot) []Insight {
 				Severity: l.severity,
 				Title:    "High contention rate",
 				Detail: fmt.Sprintf(
+					//nolint:lll // long string literal
 					"%.0f%% of move attempts are contention (conflicts=%d, stale_state=%d, total_attempts=%d)",
 					rate*100,
 					conflicts,
@@ -304,7 +305,7 @@ func detectSlowPhase(snap MetricsSnapshot) []Insight {
 	}
 
 	threshold := snap.E2E.P95 * ThresholdSlowPhase
-	var insights []Insight
+	insights := make([]Insight, 0, 8)
 
 	for phase, profile := range snap.PhaseLatency {
 		if profile.P95 > threshold {
@@ -342,7 +343,7 @@ func detectRESTHotspot(snap MetricsSnapshot) []Insight {
 	}
 
 	threshold := median * ThresholdRESTHotspot
-	var insights []Insight
+	insights := make([]Insight, 0, 8)
 
 	for action, profile := range snap.RESTLatency {
 		if profile.P95 > threshold {

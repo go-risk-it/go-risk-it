@@ -7,7 +7,12 @@ import (
 )
 
 // PrintStaircaseReport writes a human-readable staircase result to w.
-func PrintStaircaseReport(w io.Writer, entry Entry) {
+//
+//nolint:cyclop // sequential orchestration logic
+func PrintStaircaseReport( //nolint:funlen,gocognit // sequential report formatting
+	w io.Writer,
+	entry Entry,
+) {
 	fmt.Fprintln(w, "\n=== Staircase SLO Ceiling ===")
 
 	if entry.SLOCeiling.Games == 0 {

@@ -1,24 +1,27 @@
 package resources
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os/exec"
 	"strconv"
 	"strings"
+
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // ContainerStats holds resource usage for a single Docker container.
 type ContainerStats struct {
-	CPUPercent  float64 `json:"cpu_percent"`
-	MemoryMB    float64 `json:"memory_mb"`
-	MemoryLimit float64 `json:"memory_limit_mb"`
+	CPUPercent  float64 `json:"cpuPercent"`
+	MemoryMB    float64 `json:"memoryMb"`
+	MemoryLimit float64 `json:"memoryLimitMb"`
 }
 
 // ServerResources holds resource snapshots for all monitored containers.
 type ServerResources struct {
-	RiskIt ContainerStats `json:"risk_it"`
+	RiskIt ContainerStats `json:"riskIt"`
 	DB     ContainerStats `json:"db"`
 }
 
@@ -27,17 +30,23 @@ type StatsFunc func(containerName string) ([]byte, error)
 
 // dockerStatsJSON matches the JSON output of docker stats --format '{{json .}}'.
 type dockerStatsJSON struct {
-	CPUPerc  string `json:"CPUPerc"`
-	MemUsage string `json:"MemUsage"`
+	CPUPerc  string `json:"cpuPerc"`
+	MemUsage string `json:"memUsage"`
 }
 
 // DefaultStatsFunc shells out to: docker stats <name> --no-stream --format '{{json .}}'.
 func DefaultStatsFunc(containerName string) ([]byte, error) {
-	return exec.Command(
+	out, err := exec.CommandContext(
+		context.Background(),
 		"docker", "stats", containerName,
 		"--no-stream",
 		"--format", "{{json .}}",
 	).Output()
+	if err != nil {
+		return nil, fmt.Errorf("docker stats: %w", err)
+	}
+
+	return out, nil
 }
 
 // ParseDockerStats parses raw docker stats JSON into ContainerStats.
@@ -102,18 +111,32 @@ func parseMemoryValue(s string) float64 {
 func CollectServerResources(statsFn StatsFunc) ServerResources {
 	var res ServerResources
 
+	ctx := context.Background()
+
 	if raw, err := statsFn("go-risk-it-risk-it-1"); err != nil {
-		log.Printf("docker stats go-risk-it-risk-it-1: %v", err)
+		observe.Warn(ctx, "docker stats failed",
+			attribute.String("container", "go-risk-it-risk-it-1"),
+			attribute.String("error", err.Error()),
+		)
 	} else if stats, err := ParseDockerStats(raw); err != nil {
-		log.Printf("parse docker stats go-risk-it-risk-it-1: %v", err)
+		observe.Warn(ctx, "docker stats parse failed",
+			attribute.String("container", "go-risk-it-risk-it-1"),
+			attribute.String("error", err.Error()),
+		)
 	} else {
 		res.RiskIt = stats
 	}
 
 	if raw, err := statsFn("supabase-db"); err != nil {
-		log.Printf("docker stats supabase-db: %v", err)
+		observe.Warn(ctx, "docker stats failed",
+			attribute.String("container", "supabase-db"),
+			attribute.String("error", err.Error()),
+		)
 	} else if stats, err := ParseDockerStats(raw); err != nil {
-		log.Printf("parse docker stats supabase-db: %v", err)
+		observe.Warn(ctx, "docker stats parse failed",
+			attribute.String("container", "supabase-db"),
+			attribute.String("error", err.Error()),
+		)
 	} else {
 		res.DB = stats
 	}

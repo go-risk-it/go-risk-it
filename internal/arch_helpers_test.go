@@ -197,8 +197,6 @@ func loadBaseline(t *testing.T) archBaseline {
 }
 
 // countExports counts exported symbols in a package using go/ast.
-//
-//nolint:gocognit,cyclop // AST traversal is inherently nested
 func countExports(
 	t *testing.T,
 	pkg goPackage,

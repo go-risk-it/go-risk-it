@@ -1,4 +1,4 @@
-package session
+package session //nolint:testpackage // whitebox tests access unexported helpers
 
 import (
 	"os"
@@ -17,7 +17,7 @@ func setupTestDir(t *testing.T) string {
 		t.Fatal(err)
 	}
 
-	if err := os.WriteFile(
+	if err := os.WriteFile( //nolint:gosec // intentional for loadtest tool
 		filepath.Join(entriesDir, "000-baseline.json"),
 		[]byte(`{}`),
 		0o644,
@@ -28,7 +28,10 @@ func setupTestDir(t *testing.T) string {
 	return dir
 }
 
+const statusActive = "active"
+
 func TestStore_NewSession(t *testing.T) {
+	t.Parallel()
 	dir := setupTestDir(t)
 	store := NewStore(filepath.Join(dir, "sessions"))
 	entriesDir := filepath.Join(dir, "entries")
@@ -42,7 +45,7 @@ func TestStore_NewSession(t *testing.T) {
 		t.Errorf("branch: expected feature/optimize-db, got %q", sess.Branch)
 	}
 
-	if sess.Status != "active" {
+	if sess.Status != statusActive {
 		t.Errorf("status: expected active, got %q", sess.Status)
 	}
 
@@ -56,6 +59,7 @@ func TestStore_NewSession(t *testing.T) {
 }
 
 func TestStore_ExistingSession(t *testing.T) {
+	t.Parallel()
 	dir := setupTestDir(t)
 	store := NewStore(filepath.Join(dir, "sessions"))
 	entriesDir := filepath.Join(dir, "entries")
@@ -80,6 +84,7 @@ func TestStore_ExistingSession(t *testing.T) {
 }
 
 func TestStore_AddRun(t *testing.T) {
+	t.Parallel()
 	dir := setupTestDir(t)
 	store := NewStore(filepath.Join(dir, "sessions"))
 	entriesDir := filepath.Join(dir, "entries")
@@ -122,6 +127,7 @@ func TestStore_AddRun(t *testing.T) {
 }
 
 func TestStore_Close(t *testing.T) {
+	t.Parallel()
 	dir := setupTestDir(t)
 	store := NewStore(filepath.Join(dir, "sessions"))
 	entriesDir := filepath.Join(dir, "entries")
@@ -150,12 +156,13 @@ func TestStore_Close(t *testing.T) {
 		t.Fatalf("GetOrCreate after close: %v", err)
 	}
 
-	if sess2.Status != "active" {
+	if sess2.Status != statusActive {
 		t.Errorf("new session status: expected active, got %q", sess2.Status)
 	}
 }
 
 func TestStore_NoBaseline(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	store := NewStore(filepath.Join(dir, "sessions"))
 	emptyDir := filepath.Join(dir, "empty-entries")
@@ -171,6 +178,7 @@ func TestStore_NoBaseline(t *testing.T) {
 }
 
 func TestSession_LastCeiling(t *testing.T) {
+	t.Parallel()
 	sess := &Session{
 		Runs: []RunRef{
 			{CeilingGames: 20},

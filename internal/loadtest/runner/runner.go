@@ -3,17 +3,18 @@ package runner
 import (
 	"context"
 	"errors"
-	"log"
 	"net"
 	"net/http"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/chaos"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/client"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/orchestrator"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/player"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // Config holds all dependencies for the event-driven runner.
@@ -23,7 +24,8 @@ type Config struct {
 	AnonKey       string
 	Strategy      player.Strategy
 	Timeout       time.Duration
-	Collector     *metrics.Collector
+	Accumulator   *metrics.StepAccumulator
+	LiveMetrics   *metrics.LiveMetrics
 	ThinkTime     time.Duration
 	Timeouts      Timeouts
 	ChaosInjector *chaos.Injector
@@ -67,19 +69,22 @@ func (r *Runner) ToRunFunc() orchestrator.RunFunc {
 }
 
 // Run executes a single game with the given number of players.
+//
+//nolint:funlen // sequential game lifecycle
 func (r *Runner) Run(ctx context.Context, gameIndex, numPlayers int) GameResult {
 	ctx, cancel := context.WithTimeout(ctx, r.cfg.Timeout)
 	defer cancel()
 
 	start := time.Now()
 	gameCtx := &GameSession{
-		Ctx:       ctx,
-		GameIndex: gameIndex,
-		StartTime: start,
-		Collector: r.cfg.Collector,
+		Ctx:         ctx,
+		GameIndex:   gameIndex,
+		StartTime:   start,
+		Accumulator: r.cfg.Accumulator,
 	}
 
-	r.cfg.Collector.RecordGameStarted()
+	r.cfg.LiveMetrics.RecordGameStarted()
+	defer r.cfg.LiveMetrics.RecordGameStopped()
 
 	bus := NewBus()
 	result := &GameResult{GameIndex: gameIndex}
@@ -104,7 +109,7 @@ func (r *Runner) Run(ctx context.Context, gameIndex, numPlayers int) GameResult 
 	// see GameComplete before Stop() kills the bus. Handlers fire in registration order,
 	// and Emit checks b.stopped between each — so this MUST be last.
 	bus.On(EventGameComplete, func(b *Bus, e Event) {
-		evt := e.(GameCompleteEvent)
+		evt := e.(GameCompleteEvent) //nolint:forcetypeassert // event bus guarantees type
 
 		if !captured {
 			captured = true
@@ -129,7 +134,9 @@ func (r *Runner) Run(ctx context.Context, gameIndex, numPlayers int) GameResult 
 		for _, p := range gameCtx.Players {
 			if p.WS != nil {
 				if err := p.WS.Close(); err != nil {
-					log.Printf("[game %d] ws close error: %v", gameIndex, err)
+					observe.Error(context.Background(), err, "ws close error",
+						attribute.Int("gameIndex", gameIndex),
+					)
 				}
 			}
 		}
@@ -153,7 +160,7 @@ func (r *Runner) wireHandlers(
 	tracingH.Register(bus)
 
 	// Side-effect handlers (observe events, no emissions).
-	metricsH := &MetricsHandler{collector: r.cfg.Collector}
+	metricsH := &MetricsHandler{collector: r.cfg.Accumulator}
 	metricsH.Register(bus)
 
 	healthH := NewHealthHandler(r.cfg.Observer, gameCtx)
@@ -203,7 +210,7 @@ func (r *Runner) buildProtocolHandler(gameCtx *GameSession) *ProtocolHandler {
 		newAuth: func(baseURL, anonKey string) AuthClient {
 			return client.NewAuth(baseURL, anonKey)
 		},
-		newREST: func(baseURL, token string, collector *metrics.Collector) RESTClient {
+		newREST: func(baseURL, token string, collector *metrics.StepAccumulator) RESTClient {
 			transport := &http.Transport{
 				MaxIdleConnsPerHost: 4,
 				IdleConnTimeout:     90 * time.Second,
@@ -222,7 +229,7 @@ func (r *Runner) buildProtocolHandler(gameCtx *GameSession) *ProtocolHandler {
 			)
 		},
 		newWS: func(
-			wsURL string, gameID int64, token string, collector *metrics.Collector,
+			wsURL string, gameID int64, token string, collector *metrics.StepAccumulator,
 		) (WSClient, error) {
 			return client.ConnectWS(wsURL, gameID, token, collector)
 		},

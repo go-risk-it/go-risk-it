@@ -8,18 +8,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const testMapFile = "map.json"
+
 func TestNewApp_MinimalConfig(t *testing.T) {
 	t.Parallel()
 
 	cfg := &Config{}
-	cfg.Server.MapFile = "map.json"
-	cfg.Game.Strategy = "heuristic"
+	cfg.Server.MapFile = testMapFile
+	cfg.Game.Strategy = strategyHeuristic
 
 	app, err := NewApp(cfg)
 	require.NoError(t, err)
 	assert.NotNil(t, app.graph)
 	assert.NotNil(t, app.strategy)
-	assert.Nil(t, app.otel)
+	assert.Nil(t, app.liveMetrics)
 	assert.Nil(t, app.dbStats)
 
 	app.Close()
@@ -30,10 +32,10 @@ func TestNewApp_InvalidMap(t *testing.T) {
 
 	cfg := &Config{}
 	cfg.Server.MapFile = "nonexistent.json"
-	cfg.Game.Strategy = "heuristic"
+	cfg.Game.Strategy = strategyHeuristic
 
 	_, err := NewApp(cfg)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "load map")
 }
 
@@ -46,7 +48,7 @@ func TestNewApp_AllStrategies(t *testing.T) {
 			t.Parallel()
 
 			cfg := &Config{}
-			cfg.Server.MapFile = "map.json"
+			cfg.Server.MapFile = testMapFile
 			cfg.Game.Strategy = s
 
 			app, err := NewApp(cfg)
@@ -62,8 +64,8 @@ func TestNewApp_ChaosConfig(t *testing.T) {
 	t.Parallel()
 
 	cfg := &Config{}
-	cfg.Server.MapFile = "map.json"
-	cfg.Game.Strategy = "heuristic"
+	cfg.Server.MapFile = testMapFile
+	cfg.Game.Strategy = strategyHeuristic
 	cfg.Chaos.DisconnectRate = 0.10
 	cfg.Chaos.SlowMoveRate = 0.05
 	cfg.Chaos.SlowMoveDelay = 1 * time.Second

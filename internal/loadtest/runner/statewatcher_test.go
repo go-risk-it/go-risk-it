@@ -1,4 +1,4 @@
-package runner
+package runner //nolint:testpackage // whitebox tests access unexported helpers
 
 import (
 	"context"
@@ -50,7 +50,8 @@ func TestStateWatcher_MoveSucceeded_EmitsState(t *testing.T) {
 	// Signal an update on the WS view so waitForAnyUpdate returns quickly.
 	go func() {
 		time.Sleep(10 * time.Millisecond)
-		data, _ := json.Marshal(
+		data, _ := json.Marshal( //nolint:errchkjson // RawMessage is always valid JSON
+
 			&gamestate.GameState{Turn: 1, Phase: gamestate.Phase{Type: gamestate.Deploy}},
 		)
 		_ = gameCtx.Players[0].WS.View().
@@ -77,7 +78,8 @@ func TestStateWatcher_TurnSkipped_EmitsState(t *testing.T) {
 
 	go func() {
 		time.Sleep(10 * time.Millisecond)
-		data, _ := json.Marshal(
+		data, _ := json.Marshal( //nolint:errchkjson // RawMessage is always valid JSON
+
 			&gamestate.GameState{Turn: 1, Phase: gamestate.Phase{Type: gamestate.Deploy}},
 		)
 		_ = gameCtx.Players[0].WS.View().
@@ -101,7 +103,8 @@ func TestStateWatcher_MoveConflict_WaitsForPhaseChange(t *testing.T) {
 	// Simulate a phase change after a short delay.
 	go func() {
 		time.Sleep(10 * time.Millisecond)
-		data, _ := json.Marshal(
+		data, _ := json.Marshal( //nolint:errchkjson // RawMessage is always valid JSON
+
 			&gamestate.GameState{Turn: 0, Phase: gamestate.Phase{Type: gamestate.Attack}},
 		)
 		_ = gameCtx.Players[0].WS.View().

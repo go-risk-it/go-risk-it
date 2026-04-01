@@ -2,10 +2,11 @@ package orchestrator
 
 import (
 	"context"
-	"log"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/baseline"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // AdaptiveConfig defines the TCP congestion control staircase parameters.
@@ -44,6 +45,8 @@ func (c AdaptiveConfig) cooldown() time.Duration {
 // 1. Probe up from InitialCeiling, adding AdditiveIncrease per passing step.
 // 2. On breach, binary search between lastGood and lastBad.
 // 3. Converge when |lastBad - lastGood| <= AdditiveIncrease.
+//
+//nolint:cyclop,funlen // probe + binary search orchestration
 func RunAdaptive(
 	ctx context.Context,
 	cfg AdaptiveConfig,
@@ -81,7 +84,10 @@ func RunAdaptive(
 		default:
 		}
 
-		log.Printf("[adaptive] probe step %d: %d games", stepNum+1, current)
+		observe.Info(ctx, "adaptive probe step",
+			attribute.Int("step", stepNum+1),
+			attribute.Int("games", current),
+		)
 
 		output, passed := executeAndEvaluate(ctx, executor, cfg.SLOs, current, indexOffset)
 		result.Steps = append(result.Steps, output)
@@ -89,7 +95,9 @@ func RunAdaptive(
 		stepNum++
 
 		if !passed {
-			log.Printf("[adaptive] breach at %d games, switching to binary search", current)
+			observe.Warn(ctx, "adaptive breach, switching to binary search",
+				attribute.Int("games", current),
+			)
 
 			// Phase 2: Binary search.
 			lastBad := current
@@ -134,12 +142,11 @@ func binarySearch(
 		}
 
 		mid := (lastGood + lastBad) / 2
-		log.Printf(
-			"[adaptive] bisect step %d: %d games (good=%d, bad=%d)",
-			stepNum+1,
-			mid,
-			lastGood,
-			lastBad,
+		observe.Info(ctx, "adaptive bisect step",
+			attribute.Int("step", stepNum+1),
+			attribute.Int("games", mid),
+			attribute.Int("good", lastGood),
+			attribute.Int("bad", lastBad),
 		)
 
 		output, passed := executeAndEvaluate(ctx, executor, cfg.SLOs, mid, indexOffset)
@@ -172,7 +179,7 @@ func executeAndEvaluate(
 ) (StepOutput, bool) {
 	output, err := executor.Execute(ctx, targetGames, indexOffset)
 	if err != nil {
-		log.Printf("[adaptive] execute: %v", err)
+		observe.Error(ctx, err, "adaptive execute failed")
 
 		return StepOutput{TargetGames: targetGames}, false
 	}

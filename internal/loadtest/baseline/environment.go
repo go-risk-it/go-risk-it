@@ -1,6 +1,7 @@
 package baseline
 
 import (
+	"context"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -8,12 +9,12 @@ import (
 
 // Environment captures the system context for reproducibility.
 type Environment struct {
-	GoVersion     string `json:"go_version"`
+	GoVersion     string `json:"goVersion"`
 	GOOS          string `json:"goos"`
 	GOARCH        string `json:"goarch"`
 	GOMAXPROCS    int    `json:"gomaxprocs"`
-	NumCPU        int    `json:"num_cpu"`
-	DockerVersion string `json:"docker_version,omitempty"`
+	NumCPU        int    `json:"numCpu"`
+	DockerVersion string `json:"dockerVersion,omitempty"`
 }
 
 // CaptureEnvironment collects runtime and system information.
@@ -26,7 +27,7 @@ func CaptureEnvironment() Environment {
 		NumCPU:     runtime.NumCPU(),
 	}
 
-	out, err := exec.Command("docker", "--version").Output()
+	out, err := exec.CommandContext(context.Background(), "docker", "--version").Output()
 	if err == nil {
 		env.DockerVersion = strings.TrimSpace(string(out))
 	}

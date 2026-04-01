@@ -2,13 +2,14 @@ package runner
 
 import (
 	"context"
-	"log"
 	"strings"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/player"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // StrategyHandler receives game state, decides what to do next.
@@ -24,8 +25,9 @@ func (h *StrategyHandler) Register(bus *Bus) {
 	bus.On(EventStateReceived, h.handle)
 }
 
+//nolint:funlen // sequential strategy dispatch
 func (h *StrategyHandler) handle(bus *Bus, e Event) {
-	evt := e.(StateReceivedEvent)
+	evt := e.(StateReceivedEvent) //nolint:forcetypeassert // event bus guarantees type
 	snap := evt.Snapshot
 
 	// Check context cancellation.
@@ -71,12 +73,10 @@ func (h *StrategyHandler) handle(bus *Bus, e Event) {
 	// Decide move.
 	action, err := h.strategy.DecideMove(activeSnap, activeUserID)
 	if err != nil {
-		log.Printf(
-			"[game %d] strategy error for %s (phase=%s): %v",
-			h.gameCtx.GameIndex,
-			h.gameCtx.Players[activeIdx].Name,
-			activeSnap.CurrentPhase(),
-			err,
+		observe.Error(h.gameCtx.Ctx, err, "strategy error",
+			attribute.Int("gameIndex", h.gameCtx.GameIndex),
+			attribute.String("player", h.gameCtx.Players[activeIdx].Name),
+			attribute.String("phase", string(activeSnap.CurrentPhase())),
 		)
 		bus.Emit(MoveFailedEvent{
 			Err:     err,

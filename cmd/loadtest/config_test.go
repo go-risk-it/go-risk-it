@@ -108,7 +108,7 @@ func TestConfig_ApplyPreset_Unknown(t *testing.T) {
 	cfg.Run.Preset = "nonexistent"
 
 	err := cfg.ApplyPreset()
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "nonexistent")
 }
 
@@ -119,7 +119,7 @@ func TestConfig_Validate_MissingAnonKey(t *testing.T) {
 	cfg.Server.AnonKey = ""
 
 	err := cfg.Validate()
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "anon-key")
 }
 
@@ -128,7 +128,7 @@ func TestConfig_Validate_BadStrategy(t *testing.T) {
 
 	cfg := parseTestFlags(t, "--anon-key", "test-key", "--strategy", "invalid")
 	err := cfg.Validate()
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid")
 }
 
@@ -145,7 +145,7 @@ func TestConfig_Validate_StaircaseNeedsSteps(t *testing.T) {
 
 	cfg := parseTestFlags(t, "--anon-key", "test-key", "--mode", "staircase")
 	err := cfg.Validate()
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "steps")
 }
 
@@ -192,7 +192,7 @@ func parseTestFlags(t *testing.T, args ...string) *Config {
 	savedKey := os.Getenv("ANON_KEY")
 	if savedKey != "" {
 		os.Unsetenv("ANON_KEY")
-		t.Cleanup(func() { os.Setenv("ANON_KEY", savedKey) })
+		t.Setenv("ANON_KEY", "test-key-from-env")
 	}
 
 	cfg.resolve()

@@ -61,6 +61,8 @@ func (h *StateWatcherHandler) handleConflict(bus *Bus, _ Event) {
 }
 
 // waitForAnyUpdate waits for a state update from any player's WS connection.
+//
+//nolint:cyclop // multi-player state coordination
 func waitForAnyUpdate(players []*PlayerInfo, timeout time.Duration, ctx context.Context) {
 	timer := time.NewTimer(timeout)
 	defer timer.Stop()

@@ -119,6 +119,8 @@ var validStrategies = map[string]bool{
 
 // registerFlags registers all CLI flags on the given FlagSet and wires them
 // to cfg's fields. Call fs.Parse() then cfg.resolve() after this.
+//
+//nolint:funlen // sequential CLI/report logic
 func registerFlags(fs *flag.FlagSet) *Config {
 	cfg := &Config{}
 
@@ -202,7 +204,8 @@ func registerFlags(fs *flag.FlagSet) *Config {
 		&cfg.Obs.OTelEndpoint,
 		"otel-endpoint",
 		"",
-		"OTLP HTTP endpoint for live metrics export (e.g., localhost:4318). Empty disables export.",
+		"OTLP HTTP endpoint for live metrics export "+
+			"(e.g., localhost:4318). Empty disables export.",
 	)
 	fs.StringVar(
 		&cfg.Obs.GrafanaURL,
@@ -286,6 +289,7 @@ func registerFlags(fs *flag.FlagSet) *Config {
 		&cfg.Run.Ramp.Multiplier,
 		"ramp-multiplier",
 		0,
+		//nolint:lll // long string literal
 		"Rate multiplier per minute for exponential ramp (e.g., 2.0 = double each minute). 0 = constant.",
 	)
 
@@ -339,14 +343,15 @@ func (c *Config) ApplyPreset() error {
 		return fmt.Errorf("preset: %w", err)
 	}
 
-	if s.StaircaseConfig != nil {
-		c.Run.Mode = "staircase"
+	switch {
+	case s.StaircaseConfig != nil:
+		c.Run.Mode = modeStaircase
 		c.Run.staircaseCfg = s.StaircaseConfig
-	} else if s.RampConfig != nil {
-		c.Run.Mode = "ramp"
+	case s.RampConfig != nil:
+		c.Run.Mode = modeRamp
 		c.Run.rampCfg = s.RampConfig
 		c.Game.GameTimeout = s.RampConfig.GameTimeout
-	} else {
+	default:
 		// Batch preset.
 		c.Run.Batch.NumGames = s.Config.NumGames
 		c.Game.NumPlayers = s.Config.NumPlayers
@@ -375,7 +380,7 @@ func (c *Config) Validate() error {
 		)
 	}
 
-	if c.Run.Mode == "staircase" && c.Run.staircaseCfg == nil && c.Run.Staircase.Steps == "" {
+	if c.Run.Mode == modeStaircase && c.Run.staircaseCfg == nil && c.Run.Staircase.Steps == "" {
 		return errors.New("staircase mode requires --preset or --steps flag")
 	}
 

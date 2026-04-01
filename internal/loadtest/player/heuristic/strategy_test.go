@@ -1,4 +1,4 @@
-package heuristic
+package heuristic //nolint:testpackage // whitebox tests access unexported helpers
 
 import (
 	"slices"

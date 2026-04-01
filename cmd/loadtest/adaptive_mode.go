@@ -2,17 +2,18 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/baseline"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/journal"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/journal/session"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/orchestrator"
+	"go.opentelemetry.io/otel/attribute"
 )
 
-//nolint:cyclop // orchestration function with sequential branches
+//nolint:funlen // sequential adaptive orchestration
 func (a *App) runAdaptive(ctx context.Context) error {
 	// Detect branch and read session's last ceiling.
 	_, branch := getGitInfo()
@@ -24,7 +25,9 @@ func (a *App) runAdaptive(ctx context.Context) error {
 		sess, err := store.Load(branch)
 		if err == nil && sess.LastCeiling() > 0 {
 			initialCeiling = sess.LastCeiling()
-			log.Printf("[adaptive] using session ceiling %d as starting point", initialCeiling)
+			observe.Info(ctx, "using session ceiling as starting point",
+				attribute.Int("ceiling", initialCeiling),
+			)
 		}
 	}
 
@@ -98,12 +101,10 @@ func (a *App) runAdaptive(ctx context.Context) error {
 		baseline.PrintInsights(os.Stdout, insights)
 	}
 
-	convergedStr := ""
-	if result.Converged {
-		convergedStr = " (converged)"
-	}
-
-	log.Printf("[adaptive] ceiling=%d games%s", ceiling.Games, convergedStr)
+	observe.Info(ctx, "adaptive ceiling",
+		attribute.Int("games", ceiling.Games),
+		attribute.Bool("converged", result.Converged),
+	)
 
 	// Save and compare.
 	a.handleJournalSaveAndCompare(entry, branch, commitSHA)

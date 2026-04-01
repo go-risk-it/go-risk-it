@@ -64,7 +64,7 @@ func GenerateDeploys(
 // GenerateAttacks generates all valid attack actions.
 // Each action attacks an enemy neighbour from an owned region with sufficient troops.
 func GenerateAttacks(
-	snap gamestate.ViewSnapshot,
+	snap gamestate.ViewSnapshot, //nolint:unparam // interface conformance / future use
 	bv *BoardView,
 	userID string,
 	graph *mapgraph.Graph,
@@ -153,7 +153,7 @@ func GenerateConquers(
 // GenerateReinforces generates all valid reinforce actions.
 // Source and target must both be owned and connected via owned regions.
 func GenerateReinforces(
-	snap gamestate.ViewSnapshot,
+	snap gamestate.ViewSnapshot, //nolint:unparam // interface conformance / future use
 	bv *BoardView,
 	userID string,
 	graph *mapgraph.Graph,

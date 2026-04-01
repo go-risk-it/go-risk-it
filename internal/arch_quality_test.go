@@ -301,8 +301,6 @@ func enclosingFuncReturnsError(lines []string, lineIdx int) bool {
 // Rule 25: defer done(nil) must only appear in void functions (no error return).
 // In error-returning functions, use `defer func() { done(err) }()` or
 // SpanFunc/SpanErr instead. This prevents silently dropping error status on spans.
-//
-//nolint:cyclop // file-scanning logic with nested line checks
 func TestArch_DoneNilOnlyInVoidFunctions(t *testing.T) {
 	t.Parallel()
 
@@ -420,8 +418,6 @@ func TestArch_TypedContextsImplementRebaseable(t *testing.T) {
 // findRebaseableAssertions scans a package's Go files for
 // `var _ ... Rebaseable = (*T)(nil)` assertions and returns a set of the
 // type names T found.
-//
-//nolint:cyclop // AST inspection with nested type checks
 func findRebaseableAssertions(
 	t *testing.T,
 	fset *token.FileSet,

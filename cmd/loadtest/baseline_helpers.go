@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/baseline"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // handleBaseline saves and/or compares baselines.
@@ -36,10 +38,12 @@ func handleBaseline(
 			path, err = baseline.Save("baselines", currentBaseline)
 		}
 
+		ctx := context.Background()
+
 		if err != nil {
-			log.Printf("failed to save baseline: %v", err)
+			observe.Error(ctx, err, "failed to save baseline")
 		} else {
-			log.Printf("baseline saved: %s", path)
+			observe.Info(ctx, "baseline saved", attribute.String("path", path))
 		}
 	}
 
@@ -49,7 +53,7 @@ func handleBaseline(
 			return fmt.Errorf("load baseline for comparison: %w", err)
 		}
 
-		fmt.Println()
+		os.Stdout.WriteString("\n")
 		baseline.PrintComparison(os.Stdout, referenceBaseline, currentBaseline)
 	}
 

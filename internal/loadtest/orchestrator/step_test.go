@@ -18,7 +18,7 @@ func TestNeverStop(t *testing.T) {
 	assert.False(t, ns.ShouldStop(&orchestrator.StepOutput{}))
 	assert.False(t, ns.ShouldStop(&orchestrator.StepOutput{
 		TargetGames: 100,
-		Snapshot:    metrics.NewCollector(time.Second).Snapshot(),
+		Snapshot:    metrics.NewStepAccumulator(time.Second).Snapshot(),
 		Duration:    time.Second,
 	}))
 }
@@ -30,7 +30,7 @@ func TestSLOStopCondition_Passing(t *testing.T) {
 	cond := &orchestrator.SLOStopCondition{SLOs: baseline.DefaultSLOs()}
 	output := &orchestrator.StepOutput{
 		TargetGames: 5,
-		Snapshot:    metrics.NewCollector(time.Second).Snapshot(),
+		Snapshot:    metrics.NewStepAccumulator(time.Second).Snapshot(),
 		Duration:    time.Second,
 	}
 
@@ -55,7 +55,7 @@ func TestSLOStopCondition_Breaching(t *testing.T) {
 	}
 
 	// Record latency that will breach.
-	collector := metrics.NewCollector(time.Second)
+	collector := metrics.NewStepAccumulator(time.Second)
 	collector.RecordMove()
 	collector.RecordTimedMove()
 	collector.RecordE2E(100 * time.Millisecond)

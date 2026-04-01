@@ -3,6 +3,8 @@
 package fileutil
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"regexp"
 	"strconv"
@@ -32,7 +34,11 @@ func SanitizeSlug(s string) string {
 func NextSequenceNumber(dir string) (int, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return 0, nil
+		if errors.Is(err, os.ErrNotExist) {
+			return 0, nil // Directory doesn't exist yet — start at 0.
+		}
+
+		return 0, fmt.Errorf("read dir: %w", err)
 	}
 
 	highest := -1

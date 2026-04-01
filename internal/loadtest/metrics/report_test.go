@@ -1,4 +1,4 @@
-package metrics
+package metrics //nolint:testpackage // whitebox tests access unexported helpers
 
 import (
 	"bytes"
@@ -47,6 +47,7 @@ func makeTestSnapshot() *Snapshot {
 }
 
 func TestPrintReport_ContainsNewSections(t *testing.T) {
+	t.Parallel()
 	snap := makeTestSnapshot()
 
 	var buf bytes.Buffer
@@ -74,6 +75,7 @@ func TestPrintReport_ContainsNewSections(t *testing.T) {
 }
 
 func TestPrintReport_PhaseFlowSkipsZeroPhases(t *testing.T) {
+	t.Parallel()
 	snap := makeTestSnapshot()
 
 	var buf bytes.Buffer
@@ -102,6 +104,7 @@ func TestPrintReport_PhaseFlowSkipsZeroPhases(t *testing.T) {
 }
 
 func TestPrintJSON_ContainsNewFields(t *testing.T) {
+	t.Parallel()
 	snap := makeTestSnapshot()
 
 	var buf bytes.Buffer
@@ -167,6 +170,7 @@ func TestPrintJSON_ContainsNewFields(t *testing.T) {
 }
 
 func TestPrintReport_EmptySnapshot(t *testing.T) {
+	t.Parallel()
 	snap := &Snapshot{
 		PhaseEntries:   map[string]int64{},
 		PhaseMoves:     map[string]int64{},

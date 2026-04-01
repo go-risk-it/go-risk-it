@@ -38,6 +38,8 @@ func (v *View) Updated() <-chan struct{} {
 }
 
 // Apply processes a raw WS message and updates the relevant state.
+//
+//nolint:cyclop // type-switch message dispatch
 func (v *View) Apply(msg WSMessage) error {
 	v.mu.Lock()
 	defer v.mu.Unlock()

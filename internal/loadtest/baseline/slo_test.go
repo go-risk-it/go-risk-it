@@ -65,5 +65,5 @@ func TestSLOs_BoundaryHealth(t *testing.T) {
 
 	slos := baseline.DefaultSLOs()
 	assert.Len(t, slos.BoundaryHealth, 1)
-	assert.Equal(t, "move_failure_rate", slos.BoundaryHealth[0].Metric)
+	assert.Equal(t, "moveFailureRate", slos.BoundaryHealth[0].Metric)
 }

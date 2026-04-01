@@ -1,4 +1,4 @@
-package runner
+package runner //nolint:testpackage // whitebox tests access unexported helpers
 
 import (
 	"context"
@@ -72,7 +72,7 @@ func makeErrorHandler(
 }
 
 func signalWSUpdate(p *PlayerInfo) {
-	data, _ := json.Marshal(
+	data, _ := json.Marshal( //nolint:errchkjson // known safe type
 		&gamestate.GameState{Turn: 1, Phase: gamestate.Phase{Type: gamestate.Deploy}},
 	)
 	_ = p.WS.View().Apply(gamestate.WSMessage{Type: "gameState", Payload: data})
@@ -189,6 +189,7 @@ func TestError_StaleState_AdvanceFails3x_Fatal(t *testing.T) {
 
 	completes := bus.EmittedOfType(EventGameComplete)
 	require.Len(t, completes, 1)
+	//nolint:forcetypeassert // test assertion
 	assert.Error(t, completes[0].(GameCompleteEvent).Result.FatalError)
 }
 
@@ -257,6 +258,7 @@ func TestError_ConsecutiveExceedMax_Fatal(t *testing.T) {
 
 	completes := bus.EmittedOfType(EventGameComplete)
 	require.Len(t, completes, 1)
+	//nolint:forcetypeassert // test assertion
 	assert.Error(t, completes[0].(GameCompleteEvent).Result.FatalError)
 }
 
@@ -325,5 +327,6 @@ func TestError_FatalFlag_SkipsRetry(t *testing.T) {
 
 	completes := bus.EmittedOfType(EventGameComplete)
 	require.Len(t, completes, 1)
+	//nolint:forcetypeassert // test assertion
 	assert.Error(t, completes[0].(GameCompleteEvent).Result.FatalError)
 }

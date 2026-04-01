@@ -1,4 +1,4 @@
-package runner
+package runner //nolint:testpackage // whitebox tests access unexported helpers
 
 import (
 	"context"
@@ -58,7 +58,7 @@ func newFakeWSForRunner(moveCount *atomic.Int32, gameOverAt int) *fakeWSForRunne
 	v := gamestate.NewView()
 	// Initialize with valid state.
 	gs := &gamestate.GameState{Turn: 0, Phase: gamestate.Phase{Type: gamestate.Deploy}}
-	data, _ := json.Marshal(gs)
+	data, _ := json.Marshal(gs) //nolint:errchkjson // known safe type
 	_ = v.Apply(gamestate.WSMessage{Type: "gameState", Payload: data})
 
 	ps := &gamestate.PlayersState{
@@ -67,7 +67,7 @@ func newFakeWSForRunner(moveCount *atomic.Int32, gameOverAt int) *fakeWSForRunne
 			{UserID: "user-1", Index: 1},
 		},
 	}
-	psData, _ := json.Marshal(ps)
+	psData, _ := json.Marshal(ps) //nolint:errchkjson // known safe type
 	_ = v.Apply(gamestate.WSMessage{Type: "playerState", Payload: psData})
 
 	return &fakeWSForRunner{
@@ -98,14 +98,14 @@ func (f *fakeWSForRunner) simulateUpdate() {
 			Phase:        gamestate.Phase{Type: gamestate.Deploy},
 			WinnerUserID: "user-0",
 		}
-		data, _ := json.Marshal(gs)
+		data, _ := json.Marshal(gs) //nolint:errchkjson // known safe type
 		_ = f.view.Apply(gamestate.WSMessage{Type: "gameState", Payload: data})
 	} else {
 		gs := &gamestate.GameState{
 			Turn:  int64(moves),
 			Phase: gamestate.Phase{Type: gamestate.Deploy},
 		}
-		data, _ := json.Marshal(gs)
+		data, _ := json.Marshal(gs) //nolint:errchkjson // known safe type
 		_ = f.view.Apply(gamestate.WSMessage{Type: "gameState", Payload: data})
 	}
 }
@@ -189,12 +189,12 @@ func TestRunner_HappyPath_CompletesGame(t *testing.T) {
 	rest1 := &fakeRESTForRunner{allWS: allWS}
 
 	cfg := Config{
-		BaseURL:   "http://localhost",
-		WSURL:     "ws://localhost",
-		AnonKey:   "test",
-		Strategy:  strategy,
-		Timeout:   10 * time.Second,
-		Collector: metrics.NewCollector(0),
+		BaseURL:     "http://localhost",
+		WSURL:       "ws://localhost",
+		AnonKey:     "test",
+		Strategy:    strategy,
+		Timeout:     10 * time.Second,
+		Accumulator: metrics.NewStepAccumulator(0),
 		Timeouts: Timeouts{
 			InitialStateWait:  1 * time.Millisecond,
 			UpdateWait:        50 * time.Millisecond,
@@ -228,7 +228,7 @@ func TestRunner_HappyPath_CompletesGame(t *testing.T) {
 	ctx := context.Background()
 	result := r.Run(ctx, 0, 2)
 
-	assert.NoError(t, result.FatalError)
+	require.NoError(t, result.FatalError)
 	assert.Equal(t, "user-0", result.Winner)
 	assert.GreaterOrEqual(t, result.Moves, 0)
 }
@@ -237,13 +237,13 @@ func TestRunner_SetupFailure_ReturnsFatal(t *testing.T) {
 	t.Parallel()
 
 	cfg := Config{
-		BaseURL:   "http://localhost",
-		WSURL:     "ws://localhost",
-		AnonKey:   "test",
-		Strategy:  &fakeStrategy{action: &player.Action{Type: player.ActionDeploy}},
-		Timeout:   5 * time.Second,
-		Collector: metrics.NewCollector(0),
-		Timeouts:  DefaultTimeouts(),
+		BaseURL:     "http://localhost",
+		WSURL:       "ws://localhost",
+		AnonKey:     "test",
+		Strategy:    &fakeStrategy{action: &player.Action{Type: player.ActionDeploy}},
+		Timeout:     5 * time.Second,
+		Accumulator: metrics.NewStepAccumulator(0),
+		Timeouts:    DefaultTimeouts(),
 	}
 
 	r := New(cfg)
@@ -258,8 +258,8 @@ func TestRunner_SetupFailure_ReturnsFatal(t *testing.T) {
 			newAuth: func(_, _ string) AuthClient {
 				return &fakeAuth{failAt: 0, err: errors.New("signup failed")}
 			},
-			newREST: func(_, _ string, _ *metrics.Collector) RESTClient { return nil },
-			newWS: func(_ string, _ int64, _ string, _ *metrics.Collector) (WSClient, error) {
+			newREST: func(_, _ string, _ *metrics.StepAccumulator) RESTClient { return nil },
+			newWS: func(_ string, _ int64, _ string, _ *metrics.StepAccumulator) (WSClient, error) {
 				return nil, nil
 			},
 		}
@@ -287,12 +287,12 @@ func TestRunner_Timeout_ReturnsTimedOut(t *testing.T) {
 	rest := &fakeRESTForRunner{allWS: []*fakeWSForRunner{ws}}
 
 	cfg := Config{
-		BaseURL:   "http://localhost",
-		WSURL:     "ws://localhost",
-		AnonKey:   "test",
-		Strategy:  neverEndStrategy,
-		Timeout:   50 * time.Millisecond, // Very short timeout.
-		Collector: metrics.NewCollector(0),
+		BaseURL:     "http://localhost",
+		WSURL:       "ws://localhost",
+		AnonKey:     "test",
+		Strategy:    neverEndStrategy,
+		Timeout:     50 * time.Millisecond, // Very short timeout.
+		Accumulator: metrics.NewStepAccumulator(0),
 		Timeouts: Timeouts{
 			InitialStateWait:  1 * time.Millisecond,
 			UpdateWait:        10 * time.Millisecond,
@@ -336,12 +336,12 @@ func TestRunner_WSConnectionsClosed(t *testing.T) {
 	rest := &fakeRESTForRunner{allWS: allWS}
 
 	cfg := Config{
-		BaseURL:   "http://localhost",
-		WSURL:     "ws://localhost",
-		AnonKey:   "test",
-		Strategy:  strategy,
-		Timeout:   5 * time.Second,
-		Collector: metrics.NewCollector(0),
+		BaseURL:     "http://localhost",
+		WSURL:       "ws://localhost",
+		AnonKey:     "test",
+		Strategy:    strategy,
+		Timeout:     5 * time.Second,
+		Accumulator: metrics.NewStepAccumulator(0),
 		Timeouts: Timeouts{
 			InitialStateWait:  1 * time.Millisecond,
 			UpdateWait:        50 * time.Millisecond,
@@ -383,8 +383,8 @@ func TestRunner_RunFuncSignature(t *testing.T) {
 	t.Parallel()
 
 	cfg := Config{
-		Collector: metrics.NewCollector(0),
-		Timeouts:  DefaultTimeouts(),
+		Accumulator: metrics.NewStepAccumulator(0),
+		Timeouts:    DefaultTimeouts(),
 	}
 	r := New(cfg)
 

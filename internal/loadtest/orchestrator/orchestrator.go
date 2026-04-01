@@ -2,15 +2,16 @@ package orchestrator
 
 import (
 	"context"
-	"log"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/annotations"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/metrics"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // Config holds orchestration parameters for running concurrent games.
@@ -23,11 +24,13 @@ type Config struct {
 
 // Run executes NumGames concurrently with ramp-up, collecting metrics.
 // It returns results for all games and handles graceful shutdown on SIGINT/SIGTERM.
+//
+//nolint:cyclop,funlen // batch orchestration with signal handling
 func Run(
 	ctx context.Context,
 	cfg Config,
 	runGame RunFunc,
-	collector *metrics.Collector,
+	collector *metrics.StepAccumulator,
 	annotator *annotations.Annotator,
 ) []GameResult {
 	ctx, cancel := context.WithCancel(ctx)
@@ -37,9 +40,12 @@ func Run(
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
-	go func() {
+	go func() { //nolint:gosec // G118: fire-and-forget signal handler
 		<-sigCh
-		log.Println("shutdown signal received, waiting for running games to finish...")
+		observe.Info(
+			context.Background(),
+			"shutdown signal received, waiting for games to finish",
+		)
 		cancel()
 	}()
 
@@ -60,7 +66,9 @@ func Run(
 		// Check if cancelled before launching.
 		select {
 		case <-ctx.Done():
-			log.Printf("cancelled before launching game %d", i)
+			observe.Info(ctx, "cancelled before launching game",
+				attribute.Int("game_index", i),
+			)
 
 			return results[:i]
 		default:
@@ -78,13 +86,16 @@ func Run(
 			results[idx] = runGame(ctx, idx, cfg.NumPlayers)
 		}(i)
 
-		log.Printf("launched game %d/%d", i+1, cfg.NumGames)
+		observe.Info(ctx, "launched game",
+			attribute.Int("game", i+1),
+			attribute.Int("total", cfg.NumGames),
+		)
 	}
 
 	// Progress reporting in background.
 	progressDone := make(chan struct{})
 
-	go func() {
+	go func() { //nolint:gosec // G118: intentional background goroutine
 		defer close(progressDone)
 
 		ticker := time.NewTicker(10 * time.Second)
@@ -97,13 +108,12 @@ func Run(
 				active := int64(
 					cfg.NumGames,
 				) - snap.GamesCompleted - snap.GamesTimedOut - snap.GamesFatal
-				log.Printf(
-					"[progress] active=%d completed=%d fatal=%d moves=%d errors=%d",
-					active,
-					snap.GamesCompleted,
-					snap.GamesFatal,
-					snap.TotalMoves,
-					snap.TotalErrors,
+				observe.Info(context.Background(), "batch progress",
+					attribute.Int64("active", active),
+					attribute.Int64("completed", snap.GamesCompleted),
+					attribute.Int64("fatal", snap.GamesFatal),
+					attribute.Int64("moves", snap.TotalMoves),
+					attribute.Int64("errors", snap.TotalErrors),
 				)
 			case <-ctx.Done():
 				return

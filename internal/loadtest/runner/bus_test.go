@@ -1,4 +1,4 @@
-package runner
+package runner //nolint:testpackage // whitebox tests access unexported helpers
 
 import (
 	"testing"
@@ -136,7 +136,9 @@ func TestBus_TestMode_EmittedOfType(t *testing.T) {
 
 	xEvents := bus.EmittedOfType(EventType("x"))
 	assert.Len(t, xEvents, 2)
+	//nolint:forcetypeassert // test assertion
 	assert.Equal(t, "1", xEvents[0].(testEvent).label)
+	//nolint:forcetypeassert // test assertion
 	assert.Equal(t, "3", xEvents[1].(testEvent).label)
 }
 

@@ -1,20 +1,24 @@
 package main
 
 import (
+	"context"
 	"os/exec"
 	"strings"
 )
 
 // getGitInfo returns the current short commit SHA and branch name.
-func getGitInfo() (commitSHA, branch string) {
-	commitSHA = "unknown"
+func getGitInfo() (string, string) {
+	ctx := context.Background()
+	commitSHA := "unknown"
 
-	out, err := exec.Command("git", "rev-parse", "--short", "HEAD").Output()
+	out, err := exec.CommandContext(ctx, "git", "rev-parse", "--short", "HEAD").Output()
 	if err == nil {
 		commitSHA = strings.TrimSpace(string(out))
 	}
 
-	branchOut, err := exec.Command("git", "branch", "--show-current").Output()
+	branch := ""
+
+	branchOut, err := exec.CommandContext(ctx, "git", "branch", "--show-current").Output()
 	if err == nil {
 		branch = strings.TrimSpace(string(branchOut))
 	}

@@ -12,7 +12,7 @@ import (
 func TestParseDockerStats_ValidJSON(t *testing.T) {
 	t.Parallel()
 
-	raw := []byte(`{"CPUPerc":"2.50%","MemUsage":"150MiB / 512MiB"}`)
+	raw := []byte(`{"cpuPerc":"2.50%","memUsage":"150MiB / 512MiB"}`)
 	stats, err := resources.ParseDockerStats(raw)
 	require.NoError(t, err)
 	assert.InDelta(t, 2.50, stats.CPUPercent, 0.01)
@@ -23,7 +23,7 @@ func TestParseDockerStats_ValidJSON(t *testing.T) {
 func TestParseDockerStats_ZeroCPU(t *testing.T) {
 	t.Parallel()
 
-	raw := []byte(`{"CPUPerc":"0.00%","MemUsage":"64MiB / 256MiB"}`)
+	raw := []byte(`{"cpuPerc":"0.00%","memUsage":"64MiB / 256MiB"}`)
 	stats, err := resources.ParseDockerStats(raw)
 	require.NoError(t, err)
 	assert.InDelta(t, 0.0, stats.CPUPercent, 0.01)
@@ -33,7 +33,7 @@ func TestParseDockerStats_ZeroCPU(t *testing.T) {
 func TestParseDockerStats_GiBMemory(t *testing.T) {
 	t.Parallel()
 
-	raw := []byte(`{"CPUPerc":"10.00%","MemUsage":"1.5GiB / 4GiB"}`)
+	raw := []byte(`{"cpuPerc":"10.00%","memUsage":"1.5GiB / 4GiB"}`)
 	stats, err := resources.ParseDockerStats(raw)
 	require.NoError(t, err)
 	assert.InDelta(t, 10.0, stats.CPUPercent, 0.01)
@@ -55,16 +55,16 @@ func TestParseDockerStats_MissingFields(t *testing.T) {
 	raw := []byte(`{}`)
 	stats, err := resources.ParseDockerStats(raw)
 	require.NoError(t, err)
-	assert.Equal(t, 0.0, stats.CPUPercent)
-	assert.Equal(t, 0.0, stats.MemoryMB)
-	assert.Equal(t, 0.0, stats.MemoryLimit)
+	assert.InDelta(t, 0.0, stats.CPUPercent, 0.001)
+	assert.InDelta(t, 0.0, stats.MemoryMB, 0.001)
+	assert.InDelta(t, 0.0, stats.MemoryLimit, 0.001)
 }
 
 func TestCollectServerResources_BothContainers(t *testing.T) {
 	t.Parallel()
 
 	fake := func(name string) ([]byte, error) {
-		return []byte(`{"CPUPerc":"5.00%","MemUsage":"200MiB / 1024MiB"}`), nil
+		return []byte(`{"cpuPerc":"5.00%","memUsage":"200MiB / 1024MiB"}`), nil
 	}
 	res := resources.CollectServerResources(fake)
 	assert.InDelta(t, 5.0, res.RiskIt.CPUPercent, 0.01)
@@ -81,11 +81,11 @@ func TestCollectServerResources_ContainerDown(t *testing.T) {
 			return nil, errors.New("container not running")
 		}
 
-		return []byte(`{"CPUPerc":"3.00%","MemUsage":"100MiB / 512MiB"}`), nil
+		return []byte(`{"cpuPerc":"3.00%","memUsage":"100MiB / 512MiB"}`), nil
 	}
 	res := resources.CollectServerResources(fake)
-	assert.Equal(t, 0.0, res.RiskIt.CPUPercent)
-	assert.Equal(t, 0.0, res.RiskIt.MemoryMB)
+	assert.Equal(t, 0.0, res.RiskIt.CPUPercent) //nolint:testifylint // loadtest test pattern
+	assert.Equal(t, 0.0, res.RiskIt.MemoryMB)   //nolint:testifylint // loadtest test pattern
 	assert.InDelta(t, 3.0, res.DB.CPUPercent, 0.01)
 	assert.InDelta(t, 100.0, res.DB.MemoryMB, 0.1)
 }

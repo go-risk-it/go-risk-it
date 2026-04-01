@@ -76,9 +76,7 @@ var expectedLayer = map[string]string{
 
 // layerFromPrefix derives the expected layer for a package suffix using prefix matching.
 // It first checks the explicit mapping, then falls back to prefix-based rules.
-//
-//nolint:cyclop,gocyclo,goconst // prefix matching requires branching per layer; string constants are clearer inline
-func layerFromPrefix(suffix string) string {
+func layerFromPrefix(suffix string) string { //nolint:gocyclo // exhaustive layer classification
 	if layer, ok := expectedLayer[suffix]; ok {
 		return layer
 	}
@@ -346,8 +344,6 @@ func TestArch_DocGoExists(t *testing.T) {
 // Rule 19: doc.go sections — full-tier packages must have Layer, Key Types, Dependencies headings.
 // Lightweight packages must have Layer. Only checks packages that HAVE a doc.go file with headings,
 // indicating they were written to the living architecture spec.
-//
-//nolint:cyclop // tier-aware section validation has inherent branching
 func TestArch_DocGoSections(t *testing.T) {
 	t.Parallel()
 

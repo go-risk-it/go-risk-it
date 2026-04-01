@@ -129,7 +129,7 @@ func TestSnapshotToMetrics_MoveFailureRate_ZeroBreakdown(t *testing.T) {
 
 	m := baseline.SnapshotToMetrics(snap, 60.0)
 
-	assert.Equal(t, 0.0, m.MoveFailureRate)
+	assert.InDelta(t, 0.0, m.MoveFailureRate, 0.001)
 }
 
 func TestSnapshotToMetrics_ZeroMoves(t *testing.T) {
@@ -142,8 +142,8 @@ func TestSnapshotToMetrics_ZeroMoves(t *testing.T) {
 
 	m := baseline.SnapshotToMetrics(snap, 60.0)
 
-	assert.Equal(t, 0.0, m.HTTPErrorRate, "zero moves should produce zero error rate")
-	assert.Equal(t, 0.0, m.ThroughputMPS, "zero moves should produce zero throughput")
+	assert.InDelta(t, 0.0, m.HTTPErrorRate, 0.001, "zero moves should produce zero error rate")
+	assert.InDelta(t, 0.0, m.ThroughputMPS, 0.001, "zero moves should produce zero throughput")
 }
 
 func TestSnapshotToMetrics_ZeroDuration(t *testing.T) {
@@ -156,7 +156,7 @@ func TestSnapshotToMetrics_ZeroDuration(t *testing.T) {
 
 	m := baseline.SnapshotToMetrics(snap, 0)
 
-	assert.Equal(t, 0.0, m.ThroughputMPS, "zero duration should produce zero throughput")
+	assert.InDelta(t, 0.0, m.ThroughputMPS, 0.001, "zero duration should produce zero throughput")
 	assert.InDelta(t, 0.01, m.HTTPErrorRate, 0.0001, "error rate should still work")
 }
 

@@ -9,65 +9,65 @@ type SLO struct {
 	Metric    string  `json:"metric"`
 	Threshold float64 `json:"threshold"`
 	Unit      string  `json:"unit"`
-	LowerBad  bool    `json:"lower_bad,omitempty"` // true if values below threshold are bad
+	LowerBad  bool    `json:"lowerBad,omitempty"` // true if values below threshold are bad
 }
 
 // SLOSet groups SLOs into user-experience and boundary-health tiers.
 type SLOSet struct {
-	UserExperience []SLO `json:"user_experience"`
-	BoundaryHealth []SLO `json:"boundary_health"`
+	UserExperience []SLO `json:"userExperience"`
+	BoundaryHealth []SLO `json:"boundaryHealth"`
 }
 
 // LatencyProfile holds percentile values for a latency distribution (in seconds).
 type LatencyProfile struct {
-	P50 float64 `json:"p50_s"`
-	P95 float64 `json:"p95_s"`
-	P99 float64 `json:"p99_s"`
-	Max float64 `json:"max_s"`
+	P50 float64 `json:"p50S"`
+	P95 float64 `json:"p95S"`
+	P99 float64 `json:"p99S"`
+	Max float64 `json:"maxS"`
 }
 
 // MetricsSnapshot holds key metrics captured at a point in time.
 type MetricsSnapshot struct {
 	// Core latency profiles.
 	E2E        LatencyProfile `json:"e2e"`
-	WSDelivery LatencyProfile `json:"ws_delivery"`
+	WSDelivery LatencyProfile `json:"wsDelivery"`
 
 	// Throughput.
-	ThroughputMPS     float64 `json:"throughput_moves_per_sec"`
-	ThroughputPeakMPS float64 `json:"throughput_peak_moves_per_sec"`
+	ThroughputMPS     float64 `json:"throughputMovesPerSec"`
+	ThroughputPeakMPS float64 `json:"throughputPeakMovesPerSec"`
 
 	// Error rate.
-	HTTPErrorRate   float64 `json:"http_error_rate"`
-	MoveFailureRate float64 `json:"move_failure_rate,omitempty"`
+	HTTPErrorRate   float64 `json:"httpErrorRate"`
+	MoveFailureRate float64 `json:"moveFailureRate,omitempty"`
 
 	// Counters.
-	TotalMoves     int64 `json:"total_moves"`
-	TotalErrors    int64 `json:"total_errors"`
-	GamesCompleted int64 `json:"games_completed"`
-	GamesTimedOut  int64 `json:"games_timed_out"`
-	GamesFatal     int64 `json:"games_fatal"`
+	TotalMoves     int64 `json:"totalMoves"`
+	TotalErrors    int64 `json:"totalErrors"`
+	GamesCompleted int64 `json:"gamesCompleted"`
+	GamesTimedOut  int64 `json:"gamesTimedOut"`
+	GamesFatal     int64 `json:"gamesFatal"`
 
 	// Resilience.
-	TotalRetries           int64 `json:"total_retries"`
-	TotalConflicts         int64 `json:"total_conflicts"`
-	TotalReconnects        int64 `json:"total_reconnects"`
-	TotalReconnectFailures int64 `json:"total_reconnect_failures"`
+	TotalRetries           int64 `json:"totalRetries"`
+	TotalConflicts         int64 `json:"totalConflicts"`
+	TotalReconnects        int64 `json:"totalReconnects"`
+	TotalReconnectFailures int64 `json:"totalReconnectFailures"`
 
 	// Phase latency (per game phase).
-	PhaseLatency map[string]LatencyProfile `json:"phase_latency,omitempty"`
+	PhaseLatency map[string]LatencyProfile `json:"phaseLatency,omitempty"`
 
 	// REST per-action latency.
-	RESTLatency map[string]LatencyProfile `json:"rest_latency,omitempty"`
+	RESTLatency map[string]LatencyProfile `json:"restLatency,omitempty"`
 
 	// Error breakdown by category.
-	ErrorBreakdown map[string]int64 `json:"error_breakdown,omitempty"`
+	ErrorBreakdown map[string]int64 `json:"errorBreakdown,omitempty"`
 
 	// Phase flow.
-	PhaseEntries map[string]int64 `json:"phase_entries,omitempty"`
-	PhaseMoves   map[string]int64 `json:"phase_moves,omitempty"`
+	PhaseEntries map[string]int64 `json:"phaseEntries,omitempty"`
+	PhaseMoves   map[string]int64 `json:"phaseMoves,omitempty"`
 
 	// Test duration.
-	DurationSec float64 `json:"duration_sec"`
+	DurationSec float64 `json:"durationSec"`
 }
 
 // Violation records an SLO that was breached, along with the actual value.
@@ -104,12 +104,12 @@ func DefaultSLOs() SLOSet {
 				Threshold: 0.2,
 				Unit:      "s",
 			},
-			{Name: "HTTP error rate", Metric: "http_error_rate", Threshold: 0.01, Unit: "ratio"},
+			{Name: "HTTP error rate", Metric: "httpErrorRate", Threshold: 0.01, Unit: "ratio"},
 		},
 		BoundaryHealth: []SLO{
 			{
 				Name:      "Move failure rate",
-				Metric:    "move_failure_rate",
+				Metric:    "moveFailureRate",
 				Threshold: 0.15,
 				Unit:      "ratio",
 			},
@@ -143,7 +143,7 @@ func metricValues(snap MetricsSnapshot) map[string]float64 {
 		"e2e_p99_s":         snap.E2E.P99,
 		"ws_delivery_p95_s": snap.WSDelivery.P95,
 		"ws_delivery_p99_s": snap.WSDelivery.P99,
-		"http_error_rate":   snap.HTTPErrorRate,
-		"move_failure_rate": snap.MoveFailureRate,
+		"httpErrorRate":     snap.HTTPErrorRate,
+		"moveFailureRate":   snap.MoveFailureRate,
 	}
 }

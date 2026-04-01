@@ -1,4 +1,4 @@
-package runner
+package runner //nolint:testpackage // whitebox tests access unexported helpers
 
 import (
 	"context"
@@ -80,6 +80,7 @@ func (f *fakeRESTForExecutor) Advance(_ context.Context, gameID int64, _ string)
 	return f.err
 }
 
+//nolint:unparam // interface conformance / future use
 func makeExecutorHandler(rest *fakeRESTForExecutor) (*ExecutorHandler, *GameSession) {
 	gameCtx := &GameSession{
 		Ctx:    context.Background(),
@@ -113,6 +114,7 @@ func TestExecutor_Success_EmitsMoveSucceeded(t *testing.T) {
 	succeeded := bus.EmittedOfType(EventMoveSucceeded)
 	require.Len(t, succeeded, 1)
 
+	//nolint:forcetypeassert // test assertion
 	ms := succeeded[0].(MoveSucceededEvent)
 	assert.NotNil(t, ms.Action)
 	assert.Positive(t, ms.RESTLatency.Nanoseconds())
@@ -135,6 +137,7 @@ func TestExecutor_Conflict_EmitsMoveConflict(t *testing.T) {
 
 	conflicts := bus.EmittedOfType(EventMoveConflict)
 	require.Len(t, conflicts, 1)
+	//nolint:forcetypeassert // test assertion
 	assert.NotNil(t, conflicts[0].(MoveConflictEvent).Action)
 }
 
@@ -154,6 +157,7 @@ func TestExecutor_StaleState_EmitsMoveFailed(t *testing.T) {
 
 	failures := bus.EmittedOfType(EventMoveFailed)
 	require.Len(t, failures, 1)
+	//nolint:forcetypeassert // test assertion
 	assert.Equal(t, metrics.ErrorTypeStaleState, failures[0].(MoveFailedEvent).ErrType)
 }
 
@@ -175,6 +179,7 @@ func TestExecutor_Transient_EmitsMoveFailed(t *testing.T) {
 
 	failures := bus.EmittedOfType(EventMoveFailed)
 	require.Len(t, failures, 1)
+	//nolint:forcetypeassert // test assertion
 	assert.Equal(t, metrics.ErrorTypeTransient, failures[0].(MoveFailedEvent).ErrType)
 }
 
@@ -194,6 +199,7 @@ func TestExecutor_GenericError_EmitsMoveFailed(t *testing.T) {
 
 	failures := bus.EmittedOfType(EventMoveFailed)
 	require.Len(t, failures, 1)
+	//nolint:forcetypeassert // test assertion
 	assert.Equal(t, metrics.ErrorTypeExecution, failures[0].(MoveFailedEvent).ErrType)
 }
 

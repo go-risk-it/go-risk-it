@@ -8,7 +8,7 @@ import (
 // All timing-dependent measurements (E2E, REST, WS delivery, phase latency)
 // are handled by TracingHandler via spans.
 type MetricsHandler struct {
-	collector *metrics.Collector
+	collector *metrics.StepAccumulator
 }
 
 // Register subscribes to events that produce HDR/counter metrics.
@@ -21,12 +21,18 @@ func (h *MetricsHandler) Register(bus *Bus) {
 }
 
 func (h *MetricsHandler) handleMoveDecided(_ *Bus, e Event) {
-	evt := e.(MoveDecidedEvent)
+	evt, ok := e.(MoveDecidedEvent)
+	if !ok {
+		return
+	}
 	h.collector.RecordPhaseEntry(evt.Phase)
 }
 
 func (h *MetricsHandler) handleMoveSucceeded(_ *Bus, e Event) {
-	evt := e.(MoveSucceededEvent)
+	evt, ok := e.(MoveSucceededEvent)
+	if !ok {
+		return
+	}
 
 	h.collector.RecordMove()
 	h.collector.RecordTimedMove()
@@ -38,13 +44,19 @@ func (h *MetricsHandler) handleMoveConflict(_ *Bus, _ Event) {
 }
 
 func (h *MetricsHandler) handleMoveFailed(_ *Bus, e Event) {
-	evt := e.(MoveFailedEvent)
+	evt, ok := e.(MoveFailedEvent)
+	if !ok {
+		return
+	}
 	h.collector.RecordError()
 	h.collector.RecordErrorType(evt.ErrType)
 }
 
 func (h *MetricsHandler) handleGameComplete(_ *Bus, e Event) {
-	evt := e.(GameCompleteEvent)
+	evt, ok := e.(GameCompleteEvent)
+	if !ok {
+		return
+	}
 	result := evt.Result
 
 	switch {

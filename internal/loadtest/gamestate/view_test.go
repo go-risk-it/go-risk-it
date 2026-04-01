@@ -115,7 +115,7 @@ func TestView_ApplyUnknownType(t *testing.T) {
 	v := gamestate.NewView()
 
 	err := v.Apply(gamestate.WSMessage{Type: "bogus", Payload: json.RawMessage(`{}`)})
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unknown message type")
 }
 
@@ -125,7 +125,7 @@ func TestView_ApplyInvalidJSON(t *testing.T) {
 	v := gamestate.NewView()
 
 	err := v.Apply(gamestate.WSMessage{Type: "gameState", Payload: json.RawMessage(`{bad json`)})
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unmarshal gameState")
 }
 
@@ -284,7 +284,8 @@ func TestView_ConcurrentAccess(t *testing.T) {
 			defer wg.Done()
 
 			gs := gamestate.GameState{Turn: int64(idx)}
-			data, _ := json.Marshal(gs)
+			data, marshalErr := json.Marshal(gs)
+			assert.NoError(t, marshalErr)
 			_ = v.Apply(gamestate.WSMessage{Type: "gameState", Payload: data})
 		}(i)
 	}

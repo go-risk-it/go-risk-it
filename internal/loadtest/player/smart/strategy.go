@@ -1,10 +1,11 @@
 package smart
 
 import (
+	"context"
 	"fmt"
-	"log"
 	"math/rand/v2"
 
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/mapgraph"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/player"
@@ -105,7 +106,10 @@ func (s *Strategy) decideConquer(
 	}
 
 	if len(actions) == 0 {
-		log.Printf("[smart] WARNING: no valid conquer moves generated, this should not happen")
+		observe.Warn(
+			context.Background(),
+			"no valid conquer moves generated, this should not happen",
+		)
 
 		return player.NewAdvanceAction(gamestate.Conquer), nil
 	}

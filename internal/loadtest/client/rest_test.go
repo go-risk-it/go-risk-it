@@ -1,4 +1,4 @@
-package client
+package client //nolint:testpackage // whitebox tests access unexported helpers
 
 import (
 	"context"
@@ -12,9 +12,10 @@ import (
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/metrics"
+	"github.com/stretchr/testify/require"
 )
 
-func newTestREST(baseURL string, collector *metrics.Collector) *REST {
+func newTestREST(baseURL string, collector *metrics.StepAccumulator) *REST {
 	return NewREST(baseURL, "test-token", nil, collector, DefaultRetryConfig())
 }
 
@@ -153,7 +154,8 @@ func TestDo_BodyReplay(t *testing.T) {
 		t.Fatalf("expected 200, got %d", resp.StatusCode)
 	}
 
-	expected, _ := json.Marshal(payload{Name: "test"})
+	expected, marshalErr := json.Marshal(payload{Name: "test"})
+	require.NoError(t, marshalErr)
 
 	for i, got := range bodiesReceived {
 		if got != string(expected) {
@@ -195,7 +197,7 @@ func TestDo_NetworkErrorRetry(t *testing.T) {
 	t.Parallel()
 
 	// Create a listener that immediately closes connections.
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	ln, err := (&net.ListenConfig{}).Listen(context.Background(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("listen: %v", err)
 	}
@@ -215,7 +217,10 @@ func TestDo_NetworkErrorRetry(t *testing.T) {
 
 	r := newTestREST("http://"+ln.Addr().String(), nil)
 
-	_, err = r.do(context.Background(), http.MethodGet, "/netfail", nil)
+	resp, err := r.do(context.Background(), http.MethodGet, "/netfail", nil)
+	if resp != nil {
+		resp.Body.Close()
+	}
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
@@ -238,7 +243,7 @@ func TestDo_CollectorRecordsRetries(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	collector := metrics.NewCollector(1 * time.Minute)
+	collector := metrics.NewStepAccumulator(1 * time.Minute)
 	r := newTestREST(srv.URL, collector)
 
 	resp, err := r.do(context.Background(), http.MethodGet, "/retries", nil)
@@ -270,7 +275,7 @@ func TestDo_CollectorRecordsHTTPStatus(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	collector := metrics.NewCollector(1 * time.Minute)
+	collector := metrics.NewStepAccumulator(1 * time.Minute)
 	r := newTestREST(srv.URL, collector)
 
 	resp, err := r.do(context.Background(), http.MethodGet, "/status", nil)

@@ -37,7 +37,7 @@ func TestStaircasePipeline_EndToEnd(t *testing.T) {
 	}
 
 	execDeps := orchestrator.StepExecutorDeps{
-		RunnerFactory: func(c *metrics.Collector, _ orchestrator.GameObserver) orchestrator.RunFunc {
+		RunnerFactory: func(c *metrics.StepAccumulator, _ orchestrator.GameObserver) orchestrator.RunFunc {
 			return func(ctx context.Context, idx, players int) orchestrator.GameResult {
 				c.RecordMove()
 				c.RecordTimedMove()
@@ -51,7 +51,7 @@ func TestStaircasePipeline_EndToEnd(t *testing.T) {
 				return orchestrator.GameResult{GameIndex: idx, Moves: 10}
 			}
 		},
-		NewCollector: metrics.NewCollector,
+		NewCollector: metrics.NewStepAccumulator,
 		CollectResources: func() resources.ServerResources {
 			return resources.ServerResources{
 				RiskIt: resources.ContainerStats{CPUPercent: 25.0, MemoryMB: 128},
@@ -137,7 +137,7 @@ func TestDockerStatsParsing(t *testing.T) {
 	t.Parallel()
 
 	// This mirrors real docker stats --no-stream --format json output.
-	jsonLine := `{"Name":"go-risk-it-risk-it-1","CPUPerc":"12.50%","MemUsage":"45.2MiB / 8GiB"}`
+	jsonLine := `{"Name":"go-risk-it-risk-it-1","cpuPerc":"12.50%","memUsage":"45.2MiB / 8GiB"}`
 
 	stats, err := resources.ParseDockerStats([]byte(jsonLine))
 	require.NoError(t, err)
@@ -193,7 +193,7 @@ func TestStaircase_StopOnBreach_ProducesPartialOutput(t *testing.T) {
 	}
 
 	execDeps := orchestrator.StepExecutorDeps{
-		RunnerFactory: func(c *metrics.Collector, _ orchestrator.GameObserver) orchestrator.RunFunc {
+		RunnerFactory: func(c *metrics.StepAccumulator, _ orchestrator.GameObserver) orchestrator.RunFunc {
 			return func(ctx context.Context, idx, players int) orchestrator.GameResult {
 				c.RecordMove()
 				c.RecordTimedMove()
@@ -207,7 +207,7 @@ func TestStaircase_StopOnBreach_ProducesPartialOutput(t *testing.T) {
 				return orchestrator.GameResult{GameIndex: idx}
 			}
 		},
-		NewCollector:     metrics.NewCollector,
+		NewCollector:     metrics.NewStepAccumulator,
 		CollectResources: func() resources.ServerResources { return resources.ServerResources{} },
 		Annotator:        annotations.NewAnnotator(""),
 	}

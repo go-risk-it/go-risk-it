@@ -25,7 +25,7 @@ func (f *fakeStrategy) DecideMove(
 func TestStrategy_Name(t *testing.T) {
 	t.Parallel()
 
-	collector := metrics.NewCollector(1 * time.Minute)
+	collector := metrics.NewStepAccumulator(1 * time.Minute)
 	s := chaos.WrapStrategy(&fakeStrategy{}, chaos.Config{}, collector)
 
 	if got := s.Name(); got != "chaos(fake)" {
@@ -36,7 +36,7 @@ func TestStrategy_Name(t *testing.T) {
 func TestStrategy_NoInjection(t *testing.T) {
 	t.Parallel()
 
-	collector := metrics.NewCollector(1 * time.Minute)
+	collector := metrics.NewStepAccumulator(1 * time.Minute)
 	cfg := chaos.Config{
 		ErrorMoveRate: 0,
 		SlowMoveRate:  0,
@@ -58,7 +58,7 @@ func TestStrategy_NoInjection(t *testing.T) {
 func TestStrategy_AlwaysError(t *testing.T) {
 	t.Parallel()
 
-	collector := metrics.NewCollector(1 * time.Minute)
+	collector := metrics.NewStepAccumulator(1 * time.Minute)
 	cfg := chaos.Config{
 		ErrorMoveRate: 1.0, // always inject error
 	}
@@ -82,7 +82,7 @@ func TestStrategy_AlwaysError(t *testing.T) {
 func TestStrategy_AlwaysSlow(t *testing.T) {
 	t.Parallel()
 
-	collector := metrics.NewCollector(1 * time.Minute)
+	collector := metrics.NewStepAccumulator(1 * time.Minute)
 	cfg := chaos.Config{
 		SlowMoveRate:  1.0, // always slow
 		SlowMoveDelay: 10 * time.Millisecond,
