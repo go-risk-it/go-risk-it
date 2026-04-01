@@ -19,6 +19,7 @@ func makeStateWatcherHandler(
 	ws0 := newFakeWSWithState(snap)
 
 	gameCtx := &GameSession{
+		Ctx:       ctx,
 		GameIndex: 1,
 		Players: []*PlayerInfo{
 			{UserID: "u0", Name: "p0", WS: ws0},
@@ -33,7 +34,6 @@ func makeStateWatcherHandler(
 			PhaseChangeWait: 100 * time.Millisecond,
 			PostMoveSettle:  10 * time.Millisecond,
 		},
-		ctx: ctx,
 	}
 
 	return h, gameCtx

@@ -119,12 +119,13 @@ type fakeRESTForRunner struct {
 }
 
 func (f *fakeRESTForRunner) CreateGame(
+	_ context.Context,
 	_ client.CreateGameRequest,
 ) (int64, error) {
 	return 42, nil
 }
 
-func (f *fakeRESTForRunner) Deploy(_ int64, _ client.DeployMove) error {
+func (f *fakeRESTForRunner) Deploy(_ context.Context, _ int64, _ client.DeployMove) error {
 	f.deployCalls++
 	// Simulate state update on all WS connections (mirrors server broadcast).
 	for _, ws := range f.allWS {
@@ -134,12 +135,39 @@ func (f *fakeRESTForRunner) Deploy(_ int64, _ client.DeployMove) error {
 	return nil
 }
 
-func (f *fakeRESTForRunner) Attack(int64, client.AttackMove) error       { return nil }
-func (f *fakeRESTForRunner) Conquer(int64, client.ConquerMove) error     { return nil }
-func (f *fakeRESTForRunner) Reinforce(int64, client.ReinforceMove) error { return nil }
-func (f *fakeRESTForRunner) PlayCards(int64, client.CardsMove) error     { return nil }
+func (f *fakeRESTForRunner) Attack(
+	context.Context,
+	int64,
+	client.AttackMove,
+) error {
+	return nil
+}
 
-func (f *fakeRESTForRunner) Advance(_ int64, _ string) error {
+func (f *fakeRESTForRunner) Conquer(
+	context.Context,
+	int64,
+	client.ConquerMove,
+) error {
+	return nil
+}
+
+func (f *fakeRESTForRunner) Reinforce(
+	context.Context,
+	int64,
+	client.ReinforceMove,
+) error {
+	return nil
+}
+
+func (f *fakeRESTForRunner) PlayCards(
+	context.Context,
+	int64,
+	client.CardsMove,
+) error {
+	return nil
+}
+
+func (f *fakeRESTForRunner) Advance(_ context.Context, _ int64, _ string) error {
 	f.advanceCalls++
 	for _, ws := range f.allWS {
 		ws.simulateUpdate()

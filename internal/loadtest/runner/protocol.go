@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
@@ -91,7 +92,10 @@ func (h *ProtocolHandler) handle(bus *Bus, e Event) {
 		}
 	}
 
-	gameID, err := players[0].REST.CreateGame(client.CreateGameRequest{Players: gamePlayers})
+	gameID, err := players[0].REST.CreateGame(
+		context.Background(),
+		client.CreateGameRequest{Players: gamePlayers},
+	)
 	if err != nil {
 		emitFatal(fmt.Errorf("create game: %w", err))
 

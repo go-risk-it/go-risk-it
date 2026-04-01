@@ -17,7 +17,6 @@ type ErrorHandler struct {
 	gameCtx                 *GameSession
 	timeouts                Timeouts
 	result                  *GameResult
-	ctx                     context.Context
 	consecutiveErrors       int
 	consecutiveStaleErrors  int
 	consecutiveAdvanceFails int
@@ -85,7 +84,7 @@ func (h *ErrorHandler) handleStale(bus *Bus, evt MoveFailedEvent) {
 		phase := h.currentPhase()
 		activeREST := h.activeREST()
 
-		if advErr := activeREST.Advance(h.gameCtx.GameID, phase); advErr != nil {
+		if advErr := activeREST.Advance(context.Background(), h.gameCtx.GameID, phase); advErr != nil {
 			h.consecutiveAdvanceFails++
 			log.Printf(
 				"[game %d] advance past %s failed (%d/%d): %v",
@@ -130,6 +129,7 @@ func (h *ErrorHandler) handleExecution(bus *Bus, evt MoveFailedEvent) {
 
 		activeREST := h.activeREST()
 		if advErr := activeREST.Advance(
+			context.Background(),
 			h.gameCtx.GameID,
 			string(gamestate.Cards),
 		); advErr != nil {
@@ -143,7 +143,7 @@ func (h *ErrorHandler) handleExecution(bus *Bus, evt MoveFailedEvent) {
 }
 
 func (h *ErrorHandler) waitAndEmitState(bus *Bus) {
-	waitForAnyUpdate(h.gameCtx.Players, h.timeouts.UpdateWait, h.ctx)
+	waitForAnyUpdate(h.gameCtx.Players, h.timeouts.UpdateWait, h.gameCtx.Ctx)
 	time.Sleep(h.timeouts.PostMoveSettle)
 
 	snap := h.gameCtx.Players[0].WS.View().Snapshot()

@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -19,47 +20,60 @@ type fakeRESTForExecutor struct {
 }
 
 func (f *fakeRESTForExecutor) CreateGame(
+	_ context.Context,
 	_ client.CreateGameRequest,
 ) (int64, error) {
 	return 0, nil
 }
 
-func (f *fakeRESTForExecutor) Deploy(gameID int64, _ client.DeployMove) error {
+func (f *fakeRESTForExecutor) Deploy(_ context.Context, gameID int64, _ client.DeployMove) error {
 	f.calledMethod = "deploy"
 	f.calledGameID = gameID
 
 	return f.err
 }
 
-func (f *fakeRESTForExecutor) Attack(gameID int64, _ client.AttackMove) error {
+func (f *fakeRESTForExecutor) Attack(_ context.Context, gameID int64, _ client.AttackMove) error {
 	f.calledMethod = "attack"
 	f.calledGameID = gameID
 
 	return f.err
 }
 
-func (f *fakeRESTForExecutor) Conquer(gameID int64, _ client.ConquerMove) error {
+func (f *fakeRESTForExecutor) Conquer(
+	_ context.Context,
+	gameID int64,
+	_ client.ConquerMove,
+) error {
 	f.calledMethod = "conquer"
 	f.calledGameID = gameID
 
 	return f.err
 }
 
-func (f *fakeRESTForExecutor) Reinforce(gameID int64, _ client.ReinforceMove) error {
+func (f *fakeRESTForExecutor) Reinforce(
+	_ context.Context,
+	gameID int64,
+	_ client.ReinforceMove,
+) error {
 	f.calledMethod = "reinforce"
 	f.calledGameID = gameID
 
 	return f.err
 }
 
-func (f *fakeRESTForExecutor) PlayCards(gameID int64, _ client.CardsMove) error {
+func (f *fakeRESTForExecutor) PlayCards(
+	_ context.Context,
+	gameID int64,
+	_ client.CardsMove,
+) error {
 	f.calledMethod = "cards"
 	f.calledGameID = gameID
 
 	return f.err
 }
 
-func (f *fakeRESTForExecutor) Advance(gameID int64, _ string) error {
+func (f *fakeRESTForExecutor) Advance(_ context.Context, gameID int64, _ string) error {
 	f.calledMethod = "advance"
 	f.calledGameID = gameID
 
@@ -68,6 +82,7 @@ func (f *fakeRESTForExecutor) Advance(gameID int64, _ string) error {
 
 func makeExecutorHandler(rest *fakeRESTForExecutor) (*ExecutorHandler, *GameSession) {
 	gameCtx := &GameSession{
+		Ctx:    context.Background(),
 		GameID: 42,
 		Players: []*PlayerInfo{
 			{UserID: "u0", Name: "p0", REST: rest},

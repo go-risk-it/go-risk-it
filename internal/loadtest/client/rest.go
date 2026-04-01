@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -53,7 +54,7 @@ type REST struct {
 // connection pooling; otherwise a default transport is created.
 func NewREST(
 	baseURL, token string,
-	transport *http.Transport,
+	transport http.RoundTripper,
 	collector *metrics.Collector,
 	retryCfg RetryConfig,
 ) *REST {
@@ -73,7 +74,7 @@ func NewREST(
 	}
 }
 
-func (r *REST) do(method, path string, body any) (*http.Response, error) {
+func (r *REST) do(ctx context.Context, method, path string, body any) (*http.Response, error) {
 	// Marshal body once so it can be replayed on retry.
 	var bodyBytes []byte
 
@@ -94,7 +95,7 @@ func (r *REST) do(method, path string, body any) (*http.Response, error) {
 			bodyReader = bytes.NewReader(bodyBytes)
 		}
 
-		req, err := http.NewRequest(method, r.baseURL+path, bodyReader)
+		req, err := http.NewRequestWithContext(ctx, method, r.baseURL+path, bodyReader)
 		if err != nil {
 			return nil, fmt.Errorf("create request: %w", err)
 		}
@@ -167,8 +168,8 @@ type CreateGameResponse struct {
 	GameID int64 `json:"gameId"`
 }
 
-func (r *REST) CreateGame(req CreateGameRequest) (int64, error) {
-	resp, err := r.do(http.MethodPost, "/api/v1/games", req)
+func (r *REST) CreateGame(ctx context.Context, req CreateGameRequest) (int64, error) {
+	resp, err := r.do(ctx, http.MethodPost, "/api/v1/games", req)
 	if err != nil {
 		return 0, fmt.Errorf("create game: %w", err)
 	}
@@ -196,8 +197,8 @@ type DeployMove struct {
 	DesiredTroops int64  `json:"desiredTroops"`
 }
 
-func (r *REST) Deploy(gameID int64, move DeployMove) error {
-	return r.doMove(gameID, "deployments", move)
+func (r *REST) Deploy(ctx context.Context, gameID int64, move DeployMove) error {
+	return r.doMove(ctx, gameID, "deployments", move)
 }
 
 type AttackMove struct {
@@ -208,16 +209,16 @@ type AttackMove struct {
 	AttackingTroops int64  `json:"attackingTroops"`
 }
 
-func (r *REST) Attack(gameID int64, move AttackMove) error {
-	return r.doMove(gameID, "attacks", move)
+func (r *REST) Attack(ctx context.Context, gameID int64, move AttackMove) error {
+	return r.doMove(ctx, gameID, "attacks", move)
 }
 
 type ConquerMove struct {
 	Troops int64 `json:"troops"`
 }
 
-func (r *REST) Conquer(gameID int64, move ConquerMove) error {
-	return r.doMove(gameID, "conquers", move)
+func (r *REST) Conquer(ctx context.Context, gameID int64, move ConquerMove) error {
+	return r.doMove(ctx, gameID, "conquers", move)
 }
 
 type ReinforceMove struct {
@@ -228,8 +229,8 @@ type ReinforceMove struct {
 	MovingTroops   int64  `json:"movingTroops"`
 }
 
-func (r *REST) Reinforce(gameID int64, move ReinforceMove) error {
-	return r.doMove(gameID, "reinforcements", move)
+func (r *REST) Reinforce(ctx context.Context, gameID int64, move ReinforceMove) error {
+	return r.doMove(ctx, gameID, "reinforcements", move)
 }
 
 type CardCombination struct {
@@ -240,16 +241,17 @@ type CardsMove struct {
 	Combinations []CardCombination `json:"combinations"`
 }
 
-func (r *REST) PlayCards(gameID int64, move CardsMove) error {
-	return r.doMove(gameID, "cards", move)
+func (r *REST) PlayCards(ctx context.Context, gameID int64, move CardsMove) error {
+	return r.doMove(ctx, gameID, "cards", move)
 }
 
 type Advancement struct {
 	CurrentPhase string `json:"currentPhase"`
 }
 
-func (r *REST) Advance(gameID int64, currentPhase string) error {
+func (r *REST) Advance(ctx context.Context, gameID int64, currentPhase string) error {
 	resp, err := r.do(
+		ctx,
 		http.MethodPost,
 		fmt.Sprintf("/api/v1/games/%d/advancements", gameID),
 		Advancement{CurrentPhase: currentPhase},
@@ -281,8 +283,9 @@ func (r *REST) Advance(gameID int64, currentPhase string) error {
 	return nil
 }
 
-func (r *REST) doMove(gameID int64, moveType string, move any) error {
+func (r *REST) doMove(ctx context.Context, gameID int64, moveType string, move any) error {
 	resp, err := r.do(
+		ctx,
 		http.MethodPost,
 		fmt.Sprintf("/api/v1/games/%d/moves/%s", gameID, moveType),
 		move,

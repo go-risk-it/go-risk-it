@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net"
@@ -28,7 +29,7 @@ func TestDo_Success(t *testing.T) {
 
 	r := newTestREST(srv.URL, nil)
 
-	resp, err := r.do(http.MethodGet, "/test", nil)
+	resp, err := r.do(context.Background(), http.MethodGet, "/test", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -65,7 +66,7 @@ func TestDo_RetryOnTransientHTTP(t *testing.T) {
 
 	r := newTestREST(srv.URL, nil)
 
-	resp, err := r.do(http.MethodGet, "/retry", nil)
+	resp, err := r.do(context.Background(), http.MethodGet, "/retry", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -94,7 +95,7 @@ func TestDo_RetryExhaustion(t *testing.T) {
 
 	r := newTestREST(srv.URL, nil)
 
-	resp, err := r.do(http.MethodGet, "/exhaust", nil)
+	resp, err := r.do(context.Background(), http.MethodGet, "/exhaust", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -142,7 +143,7 @@ func TestDo_BodyReplay(t *testing.T) {
 
 	r := newTestREST(srv.URL, nil)
 
-	resp, err := r.do(http.MethodPost, "/body", payload{Name: "test"})
+	resp, err := r.do(context.Background(), http.MethodPost, "/body", payload{Name: "test"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -175,7 +176,7 @@ func TestDo_ConflictNotRetried(t *testing.T) {
 
 	r := newTestREST(srv.URL, nil)
 
-	resp, err := r.do(http.MethodPost, "/conflict", nil)
+	resp, err := r.do(context.Background(), http.MethodPost, "/conflict", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -214,7 +215,7 @@ func TestDo_NetworkErrorRetry(t *testing.T) {
 
 	r := newTestREST("http://"+ln.Addr().String(), nil)
 
-	_, err = r.do(http.MethodGet, "/netfail", nil)
+	_, err = r.do(context.Background(), http.MethodGet, "/netfail", nil)
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
@@ -240,7 +241,7 @@ func TestDo_CollectorRecordsRetries(t *testing.T) {
 	collector := metrics.NewCollector(1 * time.Minute)
 	r := newTestREST(srv.URL, collector)
 
-	resp, err := r.do(http.MethodGet, "/retries", nil)
+	resp, err := r.do(context.Background(), http.MethodGet, "/retries", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -272,7 +273,7 @@ func TestDo_CollectorRecordsHTTPStatus(t *testing.T) {
 	collector := metrics.NewCollector(1 * time.Minute)
 	r := newTestREST(srv.URL, collector)
 
-	resp, err := r.do(http.MethodGet, "/status", nil)
+	resp, err := r.do(context.Background(), http.MethodGet, "/status", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

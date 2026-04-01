@@ -17,7 +17,6 @@ type StrategyHandler struct {
 	strategy  player.Strategy
 	thinkTime time.Duration
 	gameCtx   *GameSession
-	ctx       context.Context
 }
 
 // Register subscribes to EventStateReceived.
@@ -30,10 +29,10 @@ func (h *StrategyHandler) handle(bus *Bus, e Event) {
 	snap := evt.Snapshot
 
 	// Check context cancellation.
-	if h.ctx.Err() != nil {
+	if h.gameCtx.Ctx.Err() != nil {
 		bus.Emit(GameCompleteEvent{Result: GameResult{
 			GameIndex: h.gameCtx.GameIndex,
-			TimedOut:  h.ctx.Err() == context.DeadlineExceeded,
+			TimedOut:  h.gameCtx.Ctx.Err() == context.DeadlineExceeded,
 		}})
 
 		return

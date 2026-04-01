@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -55,7 +56,10 @@ type fakeRESTForProtocol struct {
 	createErr error
 }
 
-func (f *fakeRESTForProtocol) CreateGame(_ client.CreateGameRequest) (int64, error) {
+func (f *fakeRESTForProtocol) CreateGame(
+	_ context.Context,
+	_ client.CreateGameRequest,
+) (int64, error) {
 	if f.createErr != nil {
 		return 0, f.createErr
 	}
@@ -63,12 +67,49 @@ func (f *fakeRESTForProtocol) CreateGame(_ client.CreateGameRequest) (int64, err
 	return f.gameID, nil
 }
 
-func (f *fakeRESTForProtocol) Deploy(int64, client.DeployMove) error       { return nil }
-func (f *fakeRESTForProtocol) Attack(int64, client.AttackMove) error       { return nil }
-func (f *fakeRESTForProtocol) Conquer(int64, client.ConquerMove) error     { return nil }
-func (f *fakeRESTForProtocol) Reinforce(int64, client.ReinforceMove) error { return nil }
-func (f *fakeRESTForProtocol) PlayCards(int64, client.CardsMove) error     { return nil }
-func (f *fakeRESTForProtocol) Advance(int64, string) error                 { return nil }
+func (f *fakeRESTForProtocol) Deploy(
+	context.Context,
+	int64,
+	client.DeployMove,
+) error {
+	return nil
+}
+
+func (f *fakeRESTForProtocol) Attack(
+	context.Context,
+	int64,
+	client.AttackMove,
+) error {
+	return nil
+}
+
+func (f *fakeRESTForProtocol) Conquer(
+	context.Context,
+	int64,
+	client.ConquerMove,
+) error {
+	return nil
+}
+
+func (f *fakeRESTForProtocol) Reinforce(context.Context, int64, client.ReinforceMove) error {
+	return nil
+}
+
+func (f *fakeRESTForProtocol) PlayCards(
+	context.Context,
+	int64,
+	client.CardsMove,
+) error {
+	return nil
+}
+
+func (f *fakeRESTForProtocol) Advance(
+	context.Context,
+	int64,
+	string,
+) error {
+	return nil
+}
 
 // fakeWSForProtocol implements WSClient for protocol tests.
 type fakeWSForProtocol struct {

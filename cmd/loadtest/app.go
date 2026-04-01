@@ -57,7 +57,7 @@ func NewApp(cfg *Config) (*App, error) {
 		}
 
 		app.otel = otel
-		log.Printf("OTel metrics export enabled -> %s", cfg.Obs.OTelEndpoint)
+		log.Printf("OTel export enabled (metrics + traces) -> %s", cfg.Obs.OTelEndpoint)
 	}
 
 	// Initialize DB stats collector.

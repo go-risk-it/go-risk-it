@@ -13,6 +13,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/orchestrator"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/player"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 // Config holds all dependencies for the event-driven runner.
@@ -72,6 +73,7 @@ func (r *Runner) Run(ctx context.Context, gameIndex, numPlayers int) GameResult 
 
 	start := time.Now()
 	gameCtx := &GameSession{
+		Ctx:       ctx,
 		GameIndex: gameIndex,
 		StartTime: start,
 		Collector: r.cfg.Collector,
@@ -87,14 +89,14 @@ func (r *Runner) Run(ctx context.Context, gameIndex, numPlayers int) GameResult 
 	if r.setupOverride != nil {
 		// Test path: skip protocol, inject players directly.
 		r.setupOverride(gameCtx)
-		r.wireHandlers(bus, gameCtx, ctx, result)
+		r.wireHandlers(bus, gameCtx, result)
 	} else {
 		// Production path: wire side-effect handlers FIRST so HealthHandler
 		// registers the game before ProtocolHandler runs the entire game loop
 		// synchronously (ProtocolHandler.handle emits StateReceived which chains
 		// through the full move cycle until GameComplete + Stop).
 		protocol := r.buildProtocolHandler(gameCtx)
-		r.wireHandlers(bus, gameCtx, ctx, result)
+		r.wireHandlers(bus, gameCtx, result)
 		protocol.Register(bus)
 	}
 
@@ -144,9 +146,12 @@ func (r *Runner) Run(ctx context.Context, gameIndex, numPlayers int) GameResult 
 func (r *Runner) wireHandlers(
 	bus *Bus,
 	gameCtx *GameSession,
-	ctx context.Context,
 	result *GameResult,
 ) {
+	// TracingHandler MUST be first — it sets session.Ctx which other handlers read.
+	tracingH := &TracingHandler{session: gameCtx}
+	tracingH.Register(bus)
+
 	// Side-effect handlers (observe events, no emissions).
 	metricsH := &MetricsHandler{collector: r.cfg.Collector}
 	metricsH.Register(bus)
@@ -162,7 +167,6 @@ func (r *Runner) wireHandlers(
 		strategy:  r.cfg.Strategy,
 		thinkTime: r.cfg.ThinkTime,
 		gameCtx:   gameCtx,
-		ctx:       ctx,
 	}
 	strategyH.Register(bus)
 
@@ -172,7 +176,6 @@ func (r *Runner) wireHandlers(
 	stateWatcherH := &StateWatcherHandler{
 		gameCtx:  gameCtx,
 		timeouts: r.cfg.Timeouts,
-		ctx:      ctx,
 	}
 	stateWatcherH.Register(bus)
 
@@ -180,7 +183,6 @@ func (r *Runner) wireHandlers(
 		gameCtx:         gameCtx,
 		timeouts:        r.cfg.Timeouts,
 		result:          result,
-		ctx:             ctx,
 		maxStaleRetries: 5,
 		maxAdvanceFails: 3,
 	}
@@ -214,7 +216,7 @@ func (r *Runner) buildProtocolHandler(gameCtx *GameSession) *ProtocolHandler {
 			return client.NewREST(
 				baseURL,
 				token,
-				transport,
+				otelhttp.NewTransport(transport),
 				collector,
 				client.DefaultRetryConfig(),
 			)

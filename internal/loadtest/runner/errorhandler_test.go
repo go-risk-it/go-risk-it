@@ -20,14 +20,18 @@ type fakeRESTForError struct {
 	advanceErr   error
 }
 
-func (f *fakeRESTForError) CreateGame(_ client.CreateGameRequest) (int64, error) { return 0, nil }
-func (f *fakeRESTForError) Deploy(int64, client.DeployMove) error                { return nil }
-func (f *fakeRESTForError) Attack(int64, client.AttackMove) error                { return nil }
-func (f *fakeRESTForError) Conquer(int64, client.ConquerMove) error              { return nil }
-func (f *fakeRESTForError) Reinforce(int64, client.ReinforceMove) error          { return nil }
-func (f *fakeRESTForError) PlayCards(int64, client.CardsMove) error              { return nil }
+func (f *fakeRESTForError) CreateGame(context.Context, client.CreateGameRequest) (int64, error) {
+	return 0, nil
+}
+func (f *fakeRESTForError) Deploy(context.Context, int64, client.DeployMove) error   { return nil }
+func (f *fakeRESTForError) Attack(context.Context, int64, client.AttackMove) error   { return nil }
+func (f *fakeRESTForError) Conquer(context.Context, int64, client.ConquerMove) error { return nil }
+func (f *fakeRESTForError) Reinforce(context.Context, int64, client.ReinforceMove) error {
+	return nil
+}
+func (f *fakeRESTForError) PlayCards(context.Context, int64, client.CardsMove) error { return nil }
 
-func (f *fakeRESTForError) Advance(int64, string) error {
+func (f *fakeRESTForError) Advance(_ context.Context, _ int64, _ string) error {
 	f.advanceCalls++
 
 	return f.advanceErr
@@ -41,6 +45,7 @@ func makeErrorHandler(
 	ws := newFakeWSWithState(snap)
 
 	gameCtx := &GameSession{
+		Ctx:       ctx,
 		GameIndex: 1,
 		GameID:    42,
 		Players: []*PlayerInfo{
@@ -61,7 +66,6 @@ func makeErrorHandler(
 		result:          result,
 		maxStaleRetries: 5,
 		maxAdvanceFails: 3,
-		ctx:             ctx,
 	}
 
 	return h, result

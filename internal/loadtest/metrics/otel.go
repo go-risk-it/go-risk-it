@@ -2,15 +2,20 @@ package metrics
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/health"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/propagation"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
@@ -49,7 +54,8 @@ func (c *otelUpDownCounter) Add(delta int64) {
 // OTelExporter wraps OTel instruments that mirror the HDR histogram collector.
 // Each Record*() call on the Collector also records to these instruments for live export.
 type OTelExporter struct {
-	provider *sdkmetric.MeterProvider
+	meterProvider  *sdkmetric.MeterProvider
+	tracerProvider *sdktrace.TracerProvider
 
 	// Counters.
 	movesTotal      metric.Int64Counter
@@ -84,8 +90,76 @@ type OTelExporter struct {
 
 // NewOTelExporter creates an OTel metric exporter pointing at the given OTLP HTTP endpoint.
 func NewOTelExporter(ctx context.Context, endpoint string) (*OTelExporter, error) {
-	exporter, err := otlpmetrichttp.New(
-		ctx,
+	res, err := resource.New(ctx,
+		resource.WithAttributes(
+			semconv.ServiceName(serviceName),
+			semconv.ServiceVersion("0.1.0"),
+		),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("create resource: %w", err)
+	}
+
+	// Set up propagator for trace context propagation across HTTP boundaries.
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+		propagation.TraceContext{},
+		propagation.Baggage{},
+	))
+
+	// Set up TracerProvider.
+	tracerProvider, err := newTracerProvider(ctx, endpoint, res)
+	if err != nil {
+		return nil, err
+	}
+
+	otel.SetTracerProvider(tracerProvider)
+
+	// Set up MeterProvider.
+	meterProvider, err := newMeterProvider(ctx, endpoint, res)
+	if err != nil {
+		_ = tracerProvider.Shutdown(ctx)
+
+		return nil, err
+	}
+
+	meter := meterProvider.Meter("perftest")
+
+	o := &OTelExporter{meterProvider: meterProvider, tracerProvider: tracerProvider}
+	if err := o.initInstruments(meter); err != nil {
+		_ = tracerProvider.Shutdown(ctx)
+		_ = meterProvider.Shutdown(ctx)
+
+		return nil, err
+	}
+
+	return o, nil
+}
+
+func newTracerProvider(
+	ctx context.Context,
+	endpoint string,
+	res *resource.Resource,
+) (*sdktrace.TracerProvider, error) {
+	traceExporter, err := otlptracehttp.New(ctx,
+		otlptracehttp.WithEndpoint(endpoint),
+		otlptracehttp.WithInsecure(),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("create OTLP trace exporter: %w", err)
+	}
+
+	return sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(traceExporter),
+		sdktrace.WithResource(res),
+	), nil
+}
+
+func newMeterProvider(
+	ctx context.Context,
+	endpoint string,
+	res *resource.Resource,
+) (*sdkmetric.MeterProvider, error) {
+	metricExporter, err := otlpmetrichttp.New(ctx,
 		otlpmetrichttp.WithEndpoint(endpoint),
 		otlpmetrichttp.WithInsecure(),
 		otlpmetrichttp.WithTemporalitySelector(
@@ -98,33 +172,12 @@ func NewOTelExporter(ctx context.Context, endpoint string) (*OTelExporter, error
 		return nil, fmt.Errorf("create OTLP metric exporter: %w", err)
 	}
 
-	res, err := resource.New(ctx,
-		resource.WithAttributes(
-			semconv.ServiceName(serviceName),
-			semconv.ServiceVersion("0.1.0"),
-		),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("create resource: %w", err)
-	}
-
-	provider := sdkmetric.NewMeterProvider(
-		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(exporter,
+	return sdkmetric.NewMeterProvider(
+		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(metricExporter,
 			sdkmetric.WithInterval(otelFlushInterval),
 		)),
 		sdkmetric.WithResource(res),
-	)
-
-	meter := provider.Meter("perftest")
-
-	o := &OTelExporter{provider: provider}
-	if err := o.initInstruments(meter); err != nil {
-		_ = provider.Shutdown(ctx)
-
-		return nil, err
-	}
-
-	return o, nil
+	), nil
 }
 
 func (o *OTelExporter) initInstruments(meter metric.Meter) error {
@@ -293,7 +346,10 @@ func (o *OTelExporter) ResetHealthCounters() {
 	o.prevHealth = health.Distribution{}
 }
 
-// Shutdown flushes and stops the OTel provider.
+// Shutdown flushes and stops both the meter and tracer providers.
 func (o *OTelExporter) Shutdown(ctx context.Context) error {
-	return o.provider.Shutdown(ctx)
+	return errors.Join(
+		o.meterProvider.Shutdown(ctx),
+		o.tracerProvider.Shutdown(ctx),
+	)
 }

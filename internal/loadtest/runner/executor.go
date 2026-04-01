@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -38,7 +39,7 @@ func (h *ExecutorHandler) handle(bus *Bus, e Event) {
 	rest := h.gameCtx.Players[idx].REST
 
 	t1 := time.Now()
-	err := executeAction(rest, h.gameCtx.GameID, evt.Action)
+	err := executeAction(h.gameCtx.Ctx, rest, h.gameCtx.GameID, evt.Action)
 	t2 := time.Now()
 
 	if err == nil {
@@ -88,12 +89,17 @@ func (h *ExecutorHandler) handle(bus *Bus, e Event) {
 	})
 }
 
-func executeAction(rest RESTClient, gameID int64, action *player.Action) error {
+func executeAction(
+	ctx context.Context,
+	rest RESTClient,
+	gameID int64,
+	action *player.Action,
+) error {
 	switch action.Type {
 	case player.ActionDeploy:
 		a := action.Deploy
 
-		return rest.Deploy(gameID, client.DeployMove{
+		return rest.Deploy(ctx, gameID, client.DeployMove{
 			RegionID:      a.RegionID,
 			CurrentTroops: a.CurrentTroops,
 			DesiredTroops: a.DesiredTroops,
@@ -101,7 +107,7 @@ func executeAction(rest RESTClient, gameID int64, action *player.Action) error {
 	case player.ActionAttack:
 		a := action.Attack
 
-		return rest.Attack(gameID, client.AttackMove{
+		return rest.Attack(ctx, gameID, client.AttackMove{
 			SourceRegionID:  a.SourceRegionID,
 			TargetRegionID:  a.TargetRegionID,
 			TroopsInSource:  a.TroopsInSource,
@@ -109,13 +115,13 @@ func executeAction(rest RESTClient, gameID int64, action *player.Action) error {
 			AttackingTroops: a.AttackingTroops,
 		})
 	case player.ActionConquer:
-		return rest.Conquer(gameID, client.ConquerMove{
+		return rest.Conquer(ctx, gameID, client.ConquerMove{
 			Troops: action.Conquer.Troops,
 		})
 	case player.ActionReinforce:
 		a := action.Reinforce
 
-		return rest.Reinforce(gameID, client.ReinforceMove{
+		return rest.Reinforce(ctx, gameID, client.ReinforceMove{
 			SourceRegionID: a.SourceRegionID,
 			TargetRegionID: a.TargetRegionID,
 			TroopsInSource: a.TroopsInSource,
@@ -128,9 +134,9 @@ func executeAction(rest RESTClient, gameID int64, action *player.Action) error {
 			combos[i] = client.CardCombination{CardIDs: ids}
 		}
 
-		return rest.PlayCards(gameID, client.CardsMove{Combinations: combos})
+		return rest.PlayCards(ctx, gameID, client.CardsMove{Combinations: combos})
 	case player.ActionAdvance:
-		return rest.Advance(gameID, action.Advance.CurrentPhase)
+		return rest.Advance(ctx, gameID, action.Advance.CurrentPhase)
 	default:
 		return fmt.Errorf("unknown action type: %d", action.Type)
 	}

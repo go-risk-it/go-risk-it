@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"context"
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/client"
@@ -50,6 +51,7 @@ type PlayerInfo struct {
 
 // GameSession holds shared mutable state for a single game.
 type GameSession struct {
+	Ctx       context.Context
 	GameIndex int
 	GameID    int64
 	Players   []*PlayerInfo
@@ -65,13 +67,13 @@ type AuthClient interface {
 
 // RESTClient abstracts client.REST for testability.
 type RESTClient interface {
-	CreateGame(req client.CreateGameRequest) (int64, error)
-	Deploy(gameID int64, move client.DeployMove) error
-	Attack(gameID int64, move client.AttackMove) error
-	Conquer(gameID int64, move client.ConquerMove) error
-	Reinforce(gameID int64, move client.ReinforceMove) error
-	PlayCards(gameID int64, move client.CardsMove) error
-	Advance(gameID int64, currentPhase string) error
+	CreateGame(ctx context.Context, req client.CreateGameRequest) (int64, error)
+	Deploy(ctx context.Context, gameID int64, move client.DeployMove) error
+	Attack(ctx context.Context, gameID int64, move client.AttackMove) error
+	Conquer(ctx context.Context, gameID int64, move client.ConquerMove) error
+	Reinforce(ctx context.Context, gameID int64, move client.ReinforceMove) error
+	PlayCards(ctx context.Context, gameID int64, move client.CardsMove) error
+	Advance(ctx context.Context, gameID int64, currentPhase string) error
 }
 
 // WSClient abstracts client.WS for testability.

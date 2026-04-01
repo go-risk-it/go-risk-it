@@ -36,6 +36,7 @@ func makeStrategyHandler(
 	defaultSnap := mkSnap(0, gamestate.Deploy, "")
 
 	gameCtx := &GameSession{
+		Ctx:       ctx,
 		GameIndex: 1,
 		Players: []*PlayerInfo{
 			{UserID: "u0", Name: "p0", WS: newFakeWSWithState(defaultSnap)},
@@ -48,7 +49,6 @@ func makeStrategyHandler(
 	h := &StrategyHandler{
 		strategy: strategy,
 		gameCtx:  gameCtx,
-		ctx:      ctx,
 	}
 
 	return h, gameCtx

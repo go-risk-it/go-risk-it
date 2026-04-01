@@ -11,7 +11,6 @@ import (
 type StateWatcherHandler struct {
 	gameCtx  *GameSession
 	timeouts Timeouts
-	ctx      context.Context
 }
 
 // Register subscribes to EventMoveSucceeded, EventMoveConflict, EventTurnSkipped.
@@ -22,14 +21,14 @@ func (h *StateWatcherHandler) Register(bus *Bus) {
 }
 
 func (h *StateWatcherHandler) handleWaitAndEmit(bus *Bus, _ Event) {
-	if h.ctx.Err() != nil {
+	if h.gameCtx.Ctx.Err() != nil {
 		return
 	}
 
-	waitForAnyUpdate(h.gameCtx.Players, h.timeouts.UpdateWait, h.ctx)
+	waitForAnyUpdate(h.gameCtx.Players, h.timeouts.UpdateWait, h.gameCtx.Ctx)
 	time.Sleep(h.timeouts.PostMoveSettle)
 
-	if h.ctx.Err() != nil {
+	if h.gameCtx.Ctx.Err() != nil {
 		return
 	}
 
@@ -41,16 +40,16 @@ func (h *StateWatcherHandler) handleWaitAndEmit(bus *Bus, _ Event) {
 }
 
 func (h *StateWatcherHandler) handleConflict(bus *Bus, _ Event) {
-	if h.ctx.Err() != nil {
+	if h.gameCtx.Ctx.Err() != nil {
 		return
 	}
 
 	// Wait for phase to change (indicates server moved past the conflict).
 	activeView := h.gameCtx.Players[0].WS.View()
 	oldPhase := activeView.Snapshot().CurrentPhase()
-	waitForPhaseChange(activeView, oldPhase, h.timeouts.PhaseChangeWait, h.ctx)
+	waitForPhaseChange(activeView, oldPhase, h.timeouts.PhaseChangeWait, h.gameCtx.Ctx)
 
-	if h.ctx.Err() != nil {
+	if h.gameCtx.Ctx.Err() != nil {
 		return
 	}
 
