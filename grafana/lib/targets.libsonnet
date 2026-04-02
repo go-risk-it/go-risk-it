@@ -4,7 +4,7 @@
 //
 // Two metric families:
 //   1. Manual metrics (service_name label) — emitted by app code or perf-test client.
-//      Helpers: histogramQuantileTargets, histogramQuantileTargetsWithExemplars, phaseLatencyTargets.
+//      Helpers: histogramQuantileTargets, histogramQuantileTargetsWithExemplars.
 //   2. Spanmetrics (service_name label) — derived by the OTel Collector spanmetrics connector from traces.
 //      Helpers: spanDuration, spanRate, spanErrorRate.
 local colors = import 'colors.libsonnet';
@@ -96,19 +96,6 @@ local colors = import 'colors.libsonnet';
       for i in std.range(0, std.length(quantiles) - 1)
       for q in [quantiles[i]]
     ],
-
-  // Per-phase histogram quantile targets for game_phase_duration_seconds_bucket.
-  // phase: string (e.g. 'DEPLOY', 'ATTACK').
-  // Returns p50/p95/p99 targets for the given phase.
-  phaseLatencyTargets(phase):: [
-    {
-      expr: 'histogram_quantile(%s, sum(rate(game_phase_duration_seconds_bucket{service_name="%s",phase="%s"}[1m])) by (le))' % [q[0], $.serviceName, phase],
-      legendFormat: q[1],
-      refId: std.char(65 + i),
-    }
-    for i in std.range(0, 2)
-    for q in [[['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']][i]]
-  ],
 
   // ══════════════════════════════════════════════════════════════════
   // Spanmetrics helpers (service_name label)

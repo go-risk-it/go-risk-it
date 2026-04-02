@@ -348,15 +348,13 @@ Two metric families coexist, distinguished by their service name label:
 | Family       | Label         | Source                     | Helpers                      |
 |--------------|---------------|----------------------------|------------------------------|
 | Spanmetrics  | `service`     | OTel Collector connector   | `spanDuration`, `spanRate`, etc. |
-| Manual       | `service_name`| App code / perf-test client| `histogramQuantileTargets`, `phaseLatencyTargets` |
+| Manual       | `service_name`| App code / perf-test client| `histogramQuantileTargets` |
 
 Manual metric helpers in `targets.libsonnet`:
 
 - **`histogramQuantileTargets(metric, quantiles, serviceName)`** — histogram
   percentiles for manually instrumented histograms.
 - **`histogramQuantileTargetsWithExemplars(...)`** — same with exemplar support.
-- **`phaseLatencyTargets(phase)`** — per-phase p50/p95/p99 for
-  `game_phase_duration_seconds_bucket`.
 
 ---
 
@@ -494,7 +492,7 @@ upward dependencies; higher layers compose from lower ones.
 
 | File | Role |
 |------|------|
-| `targets.libsonnet` | Datasource UIDs, service name constants, span catalog (`spans::`), PromQL target constructors (`target()`, `lokiTarget()`, `tempoTarget()`, `heatmapTarget()`), spanmetrics helpers (`spanDuration`, `spanRate`, `spanDurationBy`, etc.), manual metric helpers (`histogramQuantileTargets`, `phaseLatencyTargets`), perf-test helpers, lifecycle boundary targets + overrides |
+| `targets.libsonnet` | Datasource UIDs, service name constants, span catalog (`spans::`), PromQL target constructors (`target()`, `lokiTarget()`, `tempoTarget()`, `heatmapTarget()`), spanmetrics helpers (`spanDuration`, `spanRate`, `spanDurationBy`, etc.), manual metric helpers (`histogramQuantileTargets`), perf-test helpers, lifecycle boundary targets + overrides |
 
 ### Layer 2: Panel Builders (imports: targets)
 
