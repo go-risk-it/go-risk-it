@@ -1,0 +1,58 @@
+{
+  "id": "worktree-game-observatory-dashboards",
+  "branch": "worktree-game-observatory-dashboards",
+  "baselineEntry": "perf-journal/entries/027-staircase-heavy-a617a2bc.json",
+  "startedAt": "2026-04-01T21:31:26.865532+02:00",
+  "runs": [
+    {
+      "entryPath": "perf-journal/entries/027-staircase-heavy-a617a2bc.json",
+      "commitSha": "a617a2bc",
+      "ceilingGames": 250,
+      "ceilingDelta": 250,
+      "timestamp": "2026-04-01T21:31:26.865979+02:00"
+    },
+    {
+      "entryPath": "perf-journal/entries/028-staircase-light-9bf74ef3.json",
+      "commitSha": "9bf74ef3",
+      "ceilingGames": 40,
+      "ceilingDelta": -210,
+      "timestamp": "2026-04-01T22:44:40.456323+02:00"
+    },
+    {
+      "entryPath": "perf-journal/entries/029-staircase-light-9bf74ef3.json",
+      "commitSha": "9bf74ef3",
+      "ceilingGames": 40,
+      "ceilingDelta": -210,
+      "timestamp": "2026-04-02T00:15:25.352254+02:00"
+    },
+    {
+      "entryPath": "perf-journal/entries/030-staircase-light-9bf74ef3.json",
+      "commitSha": "9bf74ef3",
+      "ceilingGames": 40,
+      "ceilingDelta": -210,
+      "timestamp": "2026-04-02T00:34:57.631504+02:00"
+    },
+    {
+      "entryPath": "perf-journal/entries/031-staircase-light-9bf74ef3.json",
+      "commitSha": "9bf74ef3",
+      "ceilingGames": 40,
+      "ceilingDelta": -210,
+      "timestamp": "2026-04-02T00:39:11.451756+02:00"
+    },
+    {
+      "entryPath": "perf-journal/entries/032-staircase-light-9bf74ef3.json",
+      "commitSha": "9bf74ef3",
+      "ceilingGames": 40,
+      "ceilingDelta": -210,
+      "timestamp": "2026-04-02T01:00:53.039053+02:00"
+    },
+    {
+      "entryPath": "perf-journal/entries/033-staircase-light-9bf74ef3.json",
+      "commitSha": "9bf74ef3",
+      "ceilingGames": 40,
+      "ceilingDelta": -210,
+      "timestamp": "2026-04-02T01:32:56.4109+02:00"
+    }
+  ],
+  "status": "active"
+}

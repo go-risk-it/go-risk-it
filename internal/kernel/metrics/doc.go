@@ -12,6 +12,10 @@
 // Game-domain state gauges live in internal/game/logic/metrics:
 //   - game.active (UpDownCounter) — number of in-progress games
 //   - game.duration (Histogram) — elapsed time of completed games
+//   - game.summary.moves (Histogram) — total moves per completed game
+//   - game.summary.attacks (Histogram) — total attack moves per completed game
+//   - game.summary.turns (Histogram) — total phase transitions per completed game
+//   - game.summary.headlines (Histogram) — total headline events per completed game
 //
 // These instruments track resource state that exists between requests. No span
 // can represent "how many WebSocket connections are open right now" because that

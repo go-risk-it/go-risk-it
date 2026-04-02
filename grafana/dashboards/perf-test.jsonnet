@@ -217,6 +217,7 @@ dashboard.new(
           title='E2E Latency Percentile Bands',
           targets=targets.perfTestMoveDurations(
             [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']],
+            exemplars=true,
           ),
           unit='s',
           overrides=[
@@ -262,7 +263,7 @@ dashboard.new(
     ],
 
     // ================================================================
-    // DECIDE — Where's the bottleneck? (7 always-visible + 2 collapsed)
+    // DECIDE — Where's the bottleneck? (8 always-visible + 1 collapsed)
     // ================================================================
     decide=[
       // E2E Move Latency P50/P95/P99 — move span duration (spanmetrics)
@@ -302,9 +303,9 @@ dashboard.new(
         panels.timeseriesPanel(
           title='Move Latency by Action (P50/P95/P99)',
           targets=[
-            targets.perfTestMoveDurationBy('0.5', 'action', '{{action}} p50'),
-            targets.perfTestMoveDurationBy('0.95', 'action', '{{action}} p95', filters='') + { refId: 'B' },
-            targets.perfTestMoveDurationBy('0.99', 'action', '{{action}} p99', filters='') + { refId: 'C' },
+            targets.perfTestMoveDurationBy('0.5', 'action', '{{action}} p50', exemplars=true),
+            targets.perfTestMoveDurationBy('0.95', 'action', '{{action}} p95', filters='', exemplars=true) + { refId: 'B' },
+            targets.perfTestMoveDurationBy('0.99', 'action', '{{action}} p99', filters='', exemplars=true) + { refId: 'C' },
           ],
           unit='s',
         ),
@@ -340,7 +341,7 @@ dashboard.new(
         panels.timeseriesPanel(
           title='E2E Latency vs Concurrency',
           targets=[
-            targets.perfTestMoveDuration('0.95') + { legendFormat: 'E2E p95' },
+            targets.perfTestMoveDuration('0.95') + { legendFormat: 'E2E p95', exemplar: true },
             targets.target(
               'perftest_games_active{service_name="%s"}' % perfSvc,
               'active games',
@@ -407,7 +408,53 @@ dashboard.new(
           ],
         ),
         w=12, h=8,
-        description='Normal: effective approximates active. Watch for: growing gap means games are getting stuck (stalled/zombie). Check next: Health Breakdown collapsed row for per-state waterfall.',
+        description='Normal: effective approximates active. Watch for: growing gap means games are getting stuck (stalled/zombie). Check next: Health Decomposition panel for per-state waterfall.',
+      ),
+
+      // Health Decomposition (stacked area) — manual gauges (survivor instruments)
+      layout.panel(
+        panels.timeseriesPanel(
+          title='Health Decomposition',
+          targets=[
+            targets.target(
+              'perftest_health_healthy{service_name="%s"}' % perfSvc,
+              'healthy',
+            ),
+            targets.target(
+              'perftest_health_slow{service_name="%s"}' % perfSvc,
+              'slow',
+              'B',
+            ),
+            targets.target(
+              'perftest_health_stalled{service_name="%s"}' % perfSvc,
+              'stalled',
+              'C',
+            ),
+            targets.target(
+              'perftest_health_zombie{service_name="%s"}' % perfSvc,
+              'zombie',
+              'D',
+            ),
+          ],
+          unit='short',
+        )
+        + modifiers.withStackedArea(40, 'scheme')
+        + modifiers.withSeriesColors({
+          healthy: colors.signal.ok,
+          slow: colors.signal.warning,
+          stalled: colors.signal['error'],
+          zombie: colors.signal.muted,
+        }) + {
+          options+: {
+            legend+: {
+              displayMode: 'table',
+              placement: 'bottom',
+              calcs: ['mean', 'last'],
+            },
+          },
+        },
+        w=12, h=8,
+        description='Normal: healthy dominates the stack, others near zero. Watch for: slow/stalled/zombie layers growing (games not making progress). Check next: Effective Concurrency panel for the gap metric, System Health for DB pool saturation.',
       ),
     ],
 
@@ -419,61 +466,12 @@ dashboard.new(
           panels.timeseriesPanel(
             title='Phase Duration by Phase',
             targets=[
-              targets.perfTestMoveDurationBy('0.95', 'phase', '{{phase}} p95'),
+              targets.perfTestMoveDurationBy('0.95', 'phase', '{{phase}} p95', exemplars=true),
             ],
             unit='s',
           ),
           w=24, h=8,
           description='Normal: deploy and attack phases are longest. Watch for: single phase P95 spiking while others stay flat. Check next: Move Latency by Action for per-action latency comparison.',
-        ),
-      ],
-
-      // ── Collapsed: Health Breakdown (1 showcase panel) ──
-      'Health Breakdown': [
-        // Health State Waterfall SHOWCASE — manual gauges (survivor instruments)
-        layout.panel(
-          panels.timeseriesPanel(
-            title='Health State Waterfall',
-            targets=[
-              targets.target(
-                'perftest_health_healthy{service_name="%s"}' % perfSvc,
-                'healthy',
-              ),
-              targets.target(
-                'perftest_health_slow{service_name="%s"}' % perfSvc,
-                'slow',
-                'B',
-              ),
-              targets.target(
-                'perftest_health_stalled{service_name="%s"}' % perfSvc,
-                'stalled',
-                'C',
-              ),
-              targets.target(
-                'perftest_health_zombie{service_name="%s"}' % perfSvc,
-                'zombie',
-                'D',
-              ),
-            ],
-            unit='short',
-          )
-          + modifiers.withStackedArea(40, 'scheme')
-          + modifiers.withSeriesColors({
-            healthy: '#56A64B',
-            slow: '#FADE2A',
-            stalled: '#FF9830',
-            zombie: '#E02F44',
-          }) + {
-            options+: {
-              legend+: {
-                displayMode: 'table',
-                placement: 'bottom',
-                calcs: ['mean', 'last'],
-              },
-            },
-          },
-          w=24, h=10,
-          description='Normal: healthy dominates the stack, others near zero. Watch for: slow/stalled/zombie layers growing (games not making progress). Check next: Effective Concurrency panel for the gap metric, System Health for DB pool saturation.',
         ),
       ],
     },

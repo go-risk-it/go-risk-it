@@ -223,8 +223,10 @@ creating players, assigning missions and regions, generating the card deck,
 and creating the initial deploy phase. The entire operation runs inside a
 single transaction, with post-commit events and metric recording.
 │   │   ├── metrics/            # Package metrics provides game-specific OTel metrics ([GameMetrics]) for
-tracking active games, moves, phase durations, and game lifecycle, plus
-[GameTiming] for recording game start times and computing elapsed duration.
+tracking active games, game duration, per-game summary histograms (moves,
+attacks, turns, headlines), and [GameTiming] for recording game start times
+and computing elapsed duration. [GameSummaryRecorder] subscribes to bus events
+and records summary histograms at game completion.
 │   │   ├── mission/            # Package mission manages game missions: creation, assignment to players,
 win-condition checking, and reassignment when a player is eliminated.
 Five mission types are supported — two continents, two continents plus one,

@@ -78,13 +78,13 @@ connectors:
     metrics_expiration: 6h
     aggregation_cardinality_limit: 10000
     # Verification checklist (run with live stack):
-    # (a) metric names: traces_spanmetrics_latency_bucket, traces_spanmetrics_calls_total
+    # (a) metric names: traces_span_metrics_duration_milliseconds_bucket, traces_span_metrics_calls_total
     # (b) label format: check whether it's "service" or "service_name"
     # (c) http_route dimension appears as expected label on metrics
     # (d) metrics_expiration cleans up stale series after 5m
     # (e) all 13 dimensions appear as labels on spanmetrics:
-    #     curl http://localhost:9090/api/v1/label/__name__/values | grep spanmetrics
-    #     curl 'http://localhost:9090/api/v1/series?match[]=traces_spanmetrics_calls_total' | jq '.data[0]'
+    #     curl http://localhost:9090/api/v1/label/__name__/values | grep span_metrics
+    #     curl 'http://localhost:9090/api/v1/series?match[]=traces_span_metrics_calls_total' | jq '.data[0]'
     #     → verify: http_route, http_method, http_status_code, event_type, handler,
     #              phase, isolation, error_category, db_outcome, ws_fanout,
     #              action, error_type, outcome

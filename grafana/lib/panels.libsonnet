@@ -3,7 +3,7 @@
 local targets = import 'targets.libsonnet';
 {
   // P1-datasource: every panel uses the same Prometheus datasource.
-  datasource():: { type: 'prometheus', uid: 'prometheus' },
+  datasource():: targets.datasources.prometheus,
 
   // P4-panel-style: standard timeseries visual settings.
   timeseriesDefaults():: {
@@ -271,7 +271,7 @@ local targets = import 'targets.libsonnet';
     {
       title: title,
       type: 'logs',
-      datasource: { type: 'loki', uid: 'loki' },
+      datasource: targets.datasources.loki,
       targets: [{
         refId: 'A',
         expr: expr,
@@ -285,6 +285,56 @@ local targets = import 'targets.libsonnet';
         enableLogDetails: true,
         sortOrder: sortOrder,
         dedupStrategy: 'none',
+      },
+    },
+
+  // Build a traces panel with Tempo datasource.
+  // title: string, query: TraceQL string.
+  tracesPanel(title, query)::
+    {
+      title: title,
+      type: 'traces',
+      datasource: targets.datasources.tempo,
+      targets: [{
+        refId: 'A',
+        queryType: 'traceql',
+        query: query,
+      }],
+    },
+
+  // Build a state timeline panel.
+  // title: string, targets: array, colorMap: object (optional, state->hex color mapping).
+  // When colorMap is provided, generates value mappings so each state gets a fixed color.
+  stateTimelinePanel(title, targets, colorMap={})::
+    {
+      title: title,
+      type: 'state-timeline',
+      datasource: $.datasource(),
+      targets: targets,
+      fieldConfig: {
+        defaults: {
+          color: { mode: 'fixed' },
+          custom: {
+            fillOpacity: 70,
+            lineWidth: 0,
+          },
+          [if std.length(colorMap) > 0 then 'mappings']: [{
+            type: 'value',
+            options: {
+              [state]: { text: state, color: colorMap[state] }
+              for state in std.objectFields(colorMap)
+            },
+          }],
+        },
+        overrides: [],
+      },
+      options: {
+        mergeValues: true,
+        showValue: 'auto',
+        alignValue: 'center',
+        rowHeight: 0.9,
+        legend: { displayMode: 'list', placement: 'bottom' },
+        tooltip: { mode: 'single' },
       },
     },
 

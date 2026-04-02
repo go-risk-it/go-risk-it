@@ -463,6 +463,8 @@ var approvedBusImporters = map[string]bool{
 	"lobby/consumers": true,
 	// Event observer (Subscriber)
 	"kernel/logger": true,
+	// Game summary recorder (Subscriber)
+	"game/logic/metrics": true,
 }
 
 // Rule N5: only approved packages may import kernel/bus.

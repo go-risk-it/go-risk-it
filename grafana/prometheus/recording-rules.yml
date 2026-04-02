@@ -1,0 +1,49 @@
+# Recording rules for game summary histogram metrics.
+# These pre-compute fleet averages and percentile boundaries from the
+# game.summary.* histograms emitted by GameSummaryRecorder.
+#
+# Metric naming convention: game:summary_<metric>:<aggregate>
+# where <aggregate> is avg, p84, or p975.
+groups:
+  - name: game_summary_rules
+    interval: 15s
+    rules:
+      # ── Moves ──
+      - record: game:summary_moves:avg
+        expr: game_summary_moves_sum / game_summary_moves_count
+
+      - record: game:summary_moves:p84
+        expr: histogram_quantile(0.84, game_summary_moves_bucket)
+
+      - record: game:summary_moves:p975
+        expr: histogram_quantile(0.975, game_summary_moves_bucket)
+
+      # ── Attacks ──
+      - record: game:summary_attacks:avg
+        expr: game_summary_attacks_sum / game_summary_attacks_count
+
+      - record: game:summary_attacks:p84
+        expr: histogram_quantile(0.84, game_summary_attacks_bucket)
+
+      - record: game:summary_attacks:p975
+        expr: histogram_quantile(0.975, game_summary_attacks_bucket)
+
+      # ── Turns ──
+      - record: game:summary_turns:avg
+        expr: game_summary_turns_sum / game_summary_turns_count
+
+      - record: game:summary_turns:p84
+        expr: histogram_quantile(0.84, game_summary_turns_bucket)
+
+      - record: game:summary_turns:p975
+        expr: histogram_quantile(0.975, game_summary_turns_bucket)
+
+      # ── Headlines ──
+      - record: game:summary_headlines:avg
+        expr: game_summary_headlines_sum / game_summary_headlines_count
+
+      - record: game:summary_headlines:p84
+        expr: histogram_quantile(0.84, game_summary_headlines_bucket)
+
+      - record: game:summary_headlines:p975
+        expr: histogram_quantile(0.975, game_summary_headlines_bucket)

@@ -14,6 +14,15 @@ local colors = import 'colors.libsonnet';
   serviceName:: 'risk-it',
   perfTestServiceName:: 'perftest',
 
+  // ── Datasource UIDs ──
+  // Single source of truth for all datasource references.
+  // Matches provisioned UIDs in grafana/provisioning/datasources/.
+  datasources:: {
+    prometheus: { type: 'prometheus', uid: 'prometheus' },
+    loki: { type: 'loki', uid: 'loki' },
+    tempo: { type: 'tempo', uid: 'tempo' },
+  },
+
   // ── Target constructors ──
 
   // Build a single Prometheus target.
@@ -24,6 +33,24 @@ local colors = import 'colors.libsonnet';
     legendFormat: legend,
     refId: refId,
     [if exemplar then 'exemplar']: true,
+  },
+
+  // Build a Loki log query target.
+  // expr: LogQL string, legend: legendFormat string.
+  lokiTarget(expr, legend, refId='A'):: {
+    datasource: $.datasources.loki,
+    expr: expr,
+    legendFormat: legend,
+    refId: refId,
+  },
+
+  // Build a Tempo trace query target.
+  // query: TraceQL string.
+  tempoTarget(query, refId='A'):: {
+    datasource: $.datasources.tempo,
+    queryType: 'traceql',
+    query: query,
+    refId: refId,
   },
 
   // Build a heatmap target (format:'heatmap', legendFormat:'{{le}}').
@@ -168,10 +195,12 @@ local colors = import 'colors.libsonnet';
   // groupBy: label to include in by clause alongside le.
   // legend: legendFormat template string.
   // extraLabels: string (optional) — additional label matchers.
-  spanDurationBy(spanNameFilter, quantile, groupBy, legend, extraLabels='')::
+  // exemplars: bool (default false) — enable trace exemplar support.
+  spanDurationBy(spanNameFilter, quantile, groupBy, legend, extraLabels='', exemplars=false)::
     $.target(
       'histogram_quantile(%s, sum(rate(%s{%s="%s", span_name=~"%s"%s}[1m])) by (le, %s)) / 1000' % [quantile, $.spanmetricsMetric.duration, $.serviceLabel, $.serviceName, spanNameFilter, extraLabels, groupBy],
       legend,
+      exemplar=exemplars,
     ),
 
   // ══════════════════════════════════════════════════════════════════
@@ -275,10 +304,12 @@ local colors = import 'colors.libsonnet';
   // groupBy: label to include in by clause alongside le.
   // legend: legendFormat template string.
   // filters: string (optional) — additional label matchers.
-  perfTestMoveDurationBy(quantile, groupBy, legend, filters='')::
+  // exemplars: bool (default false) — enable trace exemplar support.
+  perfTestMoveDurationBy(quantile, groupBy, legend, filters='', exemplars=false)::
     $.target(
       'histogram_quantile(%s, sum(rate(%s{%s="%s", span_name=~"%s"%s}[1m])) by (le, %s))' % [quantile, $.spanmetricsMetric.duration, $.serviceLabel, $.perfTestServiceName, $.perfTestSpans.move, filters, groupBy],
       legend,
+      exemplar=exemplars,
     ),
 
   // ── Lifecycle boundary targets (spanmetrics) ──

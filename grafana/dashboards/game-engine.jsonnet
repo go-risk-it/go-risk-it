@@ -26,6 +26,11 @@ local crossLinks = [
   links.toDashboard('Perf Test', links.dashboardUids.perfTest),
 ];
 
+// Link to Game Theater with $gameId pre-populated.
+local gameTheaterLink = links.toDashboardWithVar(
+  'Game Theater', links.dashboardUids.gameTheater, 'gameId', '${gameId}'
+);
+
 dashboard.new(
   uid='game-engine',
   title='Game Engine',
@@ -114,23 +119,54 @@ dashboard.new(
         description='Normal: created and finished rates roughly balanced. Watch for: created >> finished means games accumulating (stuck phases). Check next: Active Games stat for current count.',
       ),
 
-      // SHOWCASE: Game Event Heartbeat (stacked area, event type colors)
+      // Game Event Heartbeat (stacked area, semantic event colors)
       // Uses spanmetrics calls grouped by span_name for bus dispatch spans.
+      // Colors: move_executed=muted gray (dominant baseline), headlines=bright, lifecycle=info blue.
       layout.panel(
         panels.timeseriesPanel(
           title='Game Event Heartbeat',
           targets=[targets.spanRateBy(targets.spans.busDispatch, 'span_name', '{{span_name}}')],
           unit='ops',
-        ) + modifiers.withStackedArea(25, 'opacity'),
+        ) + modifiers.withStackedArea(25, 'opacity')
+          + modifiers.withSeriesColors({
+            'bus:move_executed': colors.signal.muted,
+            'bus:phase_transitioned': colors.eventTypes.phase_transitioned,
+            'bus:game_created': colors.eventTypes.game_created,
+            'bus:game_completed': colors.signal.info,
+            'bus:player_connected': colors.eventTypes.player_connected,
+            'bus:player_eliminated': colors.headline.elimination,
+            'bus:continent_captured': colors.headline.continent,
+            'bus:continent_lost': colors.eventTypes.continent_lost,
+          }),
         w=12, h=8,
-        description='Normal: bus:move_executed dominates, all event types visible. Watch for: any event type dropping to zero while others continue. Check next: Event Handler Latency in Decide for handler-level bottlenecks.',
+        description='Normal: bus:move_executed (gray) dominates, headline events (gold/red) visible as thin bands. Watch for: any event type dropping to zero while others continue. Check next: Headline Frequency stats or Event Handler Latency in Decide.',
       ),
     ],
 
     // ════════════════════════════════════════════════════════════════
-    // ORIENT — What's the shape? (4 always-visible, 2 rows of 2)
+    // ORIENT — What's the shape? (8 always-visible: hero + 2 heatmaps + phase P50/P99 + headline rates + 3 sparkline stats)
     // ════════════════════════════════════════════════════════════════
     orient=[
+      // ── Row 1: Phase × Latency hero (full-width) ──
+      // Orchestrate_move p95 broken down by phase — the single most diagnostic panel.
+      layout.panel(
+        panels.timeseriesPanel(
+          title='Phase × Latency p95',
+          targets=[targets.spanDurationBy(targets.spans.gameLogic, '0.95', 'phase', '{{phase}} p95', exemplars=true)],
+          unit='s',
+        ) + modifiers.withSeriesColors({
+          'DEPLOY p95': colors.phase.deploy,
+          'ATTACK p95': colors.phase.attack,
+          'CARDS p95': colors.phase.cards,
+          'CONQUER p95': colors.phase.conquer,
+          'REINFORCE p95': colors.phase.reinforce,
+        }) + modifiers.withLinks([gameTheaterLink]),
+        w=24, h=8,
+        description='Normal: DEPLOY and ATTACK p95 highest; REINFORCE and CONQUER lowest. Watch for: a single phase spiking while others stay flat (phase-specific regression). Check next: Phase Duration Heatmap for distribution shape, Moves per Second by Phase in Decide.',
+      ),
+
+      // ── Row 2: Heatmaps (w=12 each) ──
+
       // Phase Duration Heatmap (Oranges) — spanmetrics for game logic spans
       layout.panel(
         panels.heatmapPanel(
@@ -143,7 +179,7 @@ dashboard.new(
           colorFill='dark-orange',
         ),
         w=12, h=8,
-        description='Normal: dense band in low-seconds range (fast phases). Watch for: heat spreading to higher buckets over time. Check next: Phase Latency P50/P99 for per-phase breakdown.',
+        description='Normal: dense band in low-seconds range (fast phases). Watch for: heat spreading to higher buckets over time. Check next: Phase × Latency p95 hero for per-phase breakdown.',
       ),
 
       // Game Duration Heatmap (Blues) — manual metric, game lifecycle
@@ -161,13 +197,15 @@ dashboard.new(
         description='Normal: concentrated distribution showing consistent game lengths. Watch for: bimodal distribution (fast + very slow games). Check next: Game Duration P50/P95 in Decide for percentile trends.',
       ),
 
+      // ── Row 3: Phase P50/P99 + Headline rates (w=12 each) ──
+
       // Phase Latency P50/P99 by phase — spanmetrics grouped by phase
       layout.panel(
         panels.timeseriesPanel(
           title='Phase Latency P50/P99',
           targets=[
-            targets.spanDurationBy(targets.spans.gameLogic, '0.5', 'phase', '{{phase}} P50'),
-            targets.spanDurationBy(targets.spans.gameLogic, '0.99', 'phase', '{{phase}} P99') { refId: 'B' },
+            targets.spanDurationBy(targets.spans.gameLogic, '0.5', 'phase', '{{phase}} P50', exemplars=true),
+            targets.spanDurationBy(targets.spans.gameLogic, '0.99', 'phase', '{{phase}} P99', exemplars=true) { refId: 'B' },
           ],
           unit='s',
         ) + modifiers.withLinks([links.toDashboard('System Health', links.dashboardUids.systemHealth)]),
@@ -186,17 +224,64 @@ dashboard.new(
           ],
           unit='ops',
         ) + modifiers.withSeriesColors({
-          Captured: colors.http,
-          Lost: '#FF780A',
-          Eliminated: colors.errors,
+          Captured: colors.headline.continent,
+          Lost: colors.eventTypes.continent_lost,
+          Eliminated: colors.headline.elimination,
         }),
         w=12, h=8,
-        description='Normal: captured and lost rates correlated with game activity; elimination is lower steady rate. Watch for: captured >> lost (map consolidation), sudden elimination spikes (many games ending). Check next: Game Duration Heatmap for game length distribution.',
+        description='Normal: captured and lost rates correlated with game activity; elimination is lower steady rate. Watch for: captured >> lost (map consolidation), sudden elimination spikes (many games ending). Check next: Headline Frequency sparklines below.',
+      ),
+
+      // ── Row 4: Headline Frequency sparkline stats (3x w=8) ──
+
+      // Continent Captured rate sparkline
+      layout.panel(
+        panels.statPanel(
+          title='Continent Captured',
+          targets=[targets.spanRate('bus:continent_captured', 'captured/s')],
+          thresholds={
+            mode: 'absolute',
+            steps: [{ color: colors.headline.continent, value: null }],
+          },
+          unit='ops',
+        ),
+        w=8, h=6,
+        description='Normal: steady rate proportional to active games. Watch for: rate dropping to zero (no map consolidation happening). Check next: Headline Event Rates timeseries for trend.',
+      ),
+
+      // Player Eliminated rate sparkline
+      layout.panel(
+        panels.statPanel(
+          title='Player Eliminated',
+          targets=[targets.spanRate('bus:player_eliminated', 'eliminated/s')],
+          thresholds={
+            mode: 'absolute',
+            steps: [{ color: colors.headline.elimination, value: null }],
+          },
+          unit='ops',
+        ),
+        w=8, h=6,
+        description='Normal: low steady rate (eliminations are rare events). Watch for: sudden spikes (many games ending simultaneously). Check next: Game Duration Heatmap for game length distribution.',
+      ),
+
+      // Game Completed rate sparkline
+      layout.panel(
+        panels.statPanel(
+          title='Game Completed',
+          targets=[targets.spanRate('bus:game_completed', 'completed/s')],
+          thresholds={
+            mode: 'absolute',
+            steps: [{ color: colors.signal.info, value: null }],
+          },
+          unit='ops',
+        ),
+        w=8, h=6,
+        description='Normal: steady completions matching game creation rate. Watch for: rate dropping to zero while active games remain (stuck games). Check next: Active Games stat and Games Created/Finished Rate in Observe.',
       ),
     ],
 
     // ════════════════════════════════════════════════════════════════
-    // DECIDE — Where's the bottleneck? (4 always-visible + 2 collapsed rows)
+    // DECIDE — Where's the bottleneck? (5 always-visible + 2 collapsed rows)
     // ════════════════════════════════════════════════════════════════
     decide=[
       // Moves per Second by Phase — spanmetrics for game logic grouped by phase
@@ -205,7 +290,13 @@ dashboard.new(
           title='Moves per Second by Phase',
           targets=[targets.spanRateBy(targets.spans.gameLogic, 'phase', '{{phase}}')],
           unit='ops',
-        ) + modifiers.withLinks(crossLinks),
+        ) + modifiers.withSeriesColors({
+          DEPLOY: colors.phase.deploy,
+          ATTACK: colors.phase.attack,
+          CARDS: colors.phase.cards,
+          CONQUER: colors.phase.conquer,
+          REINFORCE: colors.phase.reinforce,
+        }) + modifiers.withLinks(crossLinks),
         w=12, h=8,
         description='Normal: deploy most frequent, then attack, then reinforce/conquer. Watch for: a phase dropping to zero while others continue (phase blocked). Check next: Event Handler Latency for downstream processing speed.',
       ),
@@ -222,14 +313,14 @@ dashboard.new(
           color=colors.fixedColor(colors.gameLogic),
         ) + modifiers.withPercentileColors('gameLogic'),
         w=12, h=8,
-        description='Normal: consistent P50 with P95 within 2-3x of P50. Watch for: P95 growing while P50 stays flat (subset of slow games). Check next: Phase Latency P50/P99 in Orient to identify which phase is slow.',
+        description='Normal: consistent P50 with P95 within 2-3x of P50. Watch for: P95 growing while P50 stays flat (subset of slow games). Check next: Phase × Latency p95 in Orient to identify which phase is slow.',
       ),
 
       // Event Handler Latency by handler (p95) — spanmetrics grouped by handler/span_name
       layout.panel(
         panels.timeseriesPanel(
           title='Event Handler Latency p95',
-          targets=[targets.spanDurationBy(targets.spans.eventHandler, '0.95', 'span_name', '{{span_name}} p95')],
+          targets=[targets.spanDurationBy(targets.spans.eventHandler, '0.95', 'span_name', '{{span_name}} p95', exemplars=true)],
           unit='s',
         ) + modifiers.withLinks([links.toDashboard('System Health', links.dashboardUids.systemHealth)]),
         w=12, h=8,
@@ -240,11 +331,32 @@ dashboard.new(
       layout.panel(
         panels.timeseriesPanel(
           title='Event Dispatch Duration p95',
-          targets=[targets.spanDurationBy(targets.spans.busDispatch, '0.95', 'span_name', '{{span_name}}')],
+          targets=[targets.spanDurationBy(targets.spans.busDispatch, '0.95', 'span_name', '{{span_name}}', exemplars=true)],
           unit='s',
         ),
         w=12, h=8,
         description='Normal: all event types dispatched < 50ms. Watch for: bus:move_executed dispatch exceeding 100ms (many handlers subscribed). Check next: Event Bus Detail collapsed row for throughput and errors.',
+      ),
+
+      // WS Fanout Cost — compare broadcast duration at different player counts
+      layout.panel(
+        panels.timeseriesPanel(
+          title='WS Fanout Cost',
+          targets=[
+            targets.spanDuration(targets.spans.wsBroadcast, [['0.95', 'fanout=3 p95']], exemplars=true, extraLabels=', ws_fanout="3"')[0],
+            targets.spanDuration(targets.spans.wsBroadcast, [['0.95', 'fanout=4 p95']], exemplars=true, extraLabels=', ws_fanout="4"')[0] { refId: 'B' },
+            targets.spanDuration(targets.spans.wsBroadcast, [['0.5', 'fanout=3 p50']], exemplars=true, extraLabels=', ws_fanout="3"')[0] { refId: 'C' },
+            targets.spanDuration(targets.spans.wsBroadcast, [['0.5', 'fanout=4 p50']], exemplars=true, extraLabels=', ws_fanout="4"')[0] { refId: 'D' },
+          ],
+          unit='s',
+        ) + modifiers.withSeriesColors({
+          'fanout=3 p95': colors.ws,
+          'fanout=4 p95': colors.eventBus,
+          'fanout=3 p50': colors.shades.ws.light,
+          'fanout=4 p50': colors.shades.eventBus.light,
+        }),
+        w=24, h=8,
+        description='Normal: fanout=4 slightly higher than fanout=3 (one extra WS write). Watch for: fanout=4 p95 disproportionately higher than fanout=3 (non-linear cost scaling). Check next: System Health for WS connection pool and DB pool pressure.',
       ),
     ],
 
