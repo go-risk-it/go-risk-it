@@ -64,6 +64,8 @@ services:
       - ./grafana/dashboards:/otel-lgtm/go-risk-it-dashboards
       - ./grafana/provisioning/datasources/tempo.yaml:/otel-lgtm/grafana/conf/provisioning/datasources/tempo.yaml
       - ./grafana/otelcol-extra.yaml:/otel-lgtm/otelcol-config.yaml
+      - ./grafana/prometheus/prometheus.yaml:/otel-lgtm/prometheus.yaml
+      - ./grafana/prometheus/recording-rules.yml:/otel-lgtm/prometheus-rules/recording-rules.yml
 
   postgres-exporter:
     image: quay.io/prometheuscommunity/postgres-exporter:v0.19.1@sha256:e96064f876226d94bb6ce48a4c4b3dd76edba91168ec1ab024e5c4b959310b0f

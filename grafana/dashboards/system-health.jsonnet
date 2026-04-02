@@ -171,9 +171,38 @@ dashboard.new(
           title='HTTP Latency Percentile Bands',
           spanNameFilter=targets.spans.http,
           unit='s',
+          exemplars=true,
         ),
         w=24, h=8,
         description='Normal: tight bands (p50-p95 close together). Watch for: p99 band widening (tail latency divergence). Check next: Server & HTTP collapsed row for per-route breakdown.',
+      ),
+
+      // Isolation Rhythm (w=12, h=8) — read committed vs repeatable read p95
+      layout.panel(
+        panels.timeseriesPanel(
+          title='Isolation Rhythm',
+          targets=[
+            targets.spanDuration(targets.spans.db, [['0.95', 'read committed p95']], exemplars=true, extraLabels=', isolation="read committed"')[0],
+            targets.spanDuration(targets.spans.db, [['0.95', 'repeatable read p95']], exemplars=true, extraLabels=', isolation="repeatable read"')[0] { refId: 'B' },
+          ],
+          unit='s',
+        ) + modifiers.withSeriesColors({
+          'read committed p95': colors.shades.db.light,
+          'repeatable read p95': colors.shades.db.dark,
+        }) + modifiers.withLinks([links.toDashboard('Game Engine', links.dashboardUids.gameEngine)]),
+        w=12, h=8,
+        description='Normal: both isolation levels < 50ms p95. Watch for: repeatable read diverging from read committed (serialization retries). Check next: Database collapsed row for pool pressure.',
+      ),
+
+      // Handler Performance (w=12, h=8) — p95 latency per bus handler
+      layout.panel(
+        panels.barGaugePanel(
+          title='Handler Performance',
+          targets=[targets.spanDurationBy(targets.spans.eventHandler, '0.95', 'span_name', '{{span_name}}')],
+          unit='s',
+        ) + modifiers.withLinks([links.toDashboard('Game Engine', links.dashboardUids.gameEngine)]),
+        w=12, h=8,
+        description='Normal: all handlers < 100ms p95. Watch for: individual handlers exceeding 200ms (slow consumer). Check next: Event Bus collapsed row for throughput.',
       ),
     ],
 
@@ -394,6 +423,7 @@ dashboard.new(
               'histogram_quantile(0.95, sum(rate(go_schedule_duration_seconds_bucket{service_name="%s"}[1m])) by (le))' % svc,
               'p95',
               'A',
+              exemplar=true,
             )],
             unit='s',
           ),
@@ -513,6 +543,81 @@ dashboard.new(
           ),
           w=12, h=8,
           description='Normal: 0 errors. Watch for: any sustained error rate (broken connections, write failures). Check next: WS Connections in Observe for connection count.',
+        ),
+      ],
+
+      // ── Collapsed: Event Bus (~2 panels) ──
+      'Event Bus': [
+        // Handler Throughput — rate of consumer spans by handler
+        layout.panel(
+          panels.timeseriesPanel(
+            title='Handler Throughput',
+            targets=[targets.spanRateBy(targets.spans.eventHandler, 'span_name', '{{span_name}}')],
+            unit='ops',
+            color=colors.fixedColor(colors.eventBus),
+          ),
+          w=12, h=8,
+          description='Normal: rate proportional to move rate (each move triggers multiple handlers). Watch for: rate dropping to zero while games are active. Check next: Handler Latency for slow consumers.',
+        ),
+
+        // Handler Latency P95 — p95 latency per handler
+        layout.panel(
+          panels.timeseriesPanel(
+            title='Handler Latency P95',
+            targets=[targets.spanDurationBy(targets.spans.eventHandler, '0.95', 'span_name', '{{span_name}}', exemplars=true)],
+            unit='s',
+            color=colors.fixedColor(colors.eventBus),
+          ),
+          w=12, h=8,
+          description='Normal: all handlers < 100ms p95. Watch for: individual handlers diverging (slow snapshot fetch or WS broadcast). Check next: Handler Performance bar gauge in Orient.',
+        ),
+      ],
+
+      // ── Collapsed: Postgres Advanced (~3 panels) ──
+      'Postgres Advanced': [
+        // Lock Activity — pg_locks by mode
+        layout.panel(
+          panels.timeseriesPanel(
+            title='Lock Activity',
+            targets=[targets.target(
+              'sum(pg_locks_count) by (mode)',
+              '{{mode}}',
+              'A',
+            )],
+            unit='short',
+          ) + modifiers.withSeriesColors(colors.lockModes),
+          w=8, h=8,
+          description='Normal: AccessShareLock dominates (read-heavy workload). Watch for: ExclusiveLock or RowExclusiveLock spikes (write contention). Check next: Postgres Internals in Decide for full lock breakdown.',
+        ),
+
+        // Dead Tuples — by table
+        layout.panel(
+          panels.timeseriesPanel(
+            title='Dead Tuples',
+            targets=[targets.target(
+              'sum(pg_stat_user_tables_n_dead_tup) by (relname)',
+              '{{relname}}',
+              'A',
+            )],
+            unit='short',
+          ),
+          w=8, h=8,
+          description='Normal: low dead tuple count (autovacuum keeping up). Watch for: monotonic growth on any table (vacuum falling behind). Check next: Postgres Internals in Decide for table scans.',
+        ),
+
+        // Cache Efficiency — per-table cache hit ratio
+        layout.panel(
+          panels.timeseriesPanel(
+            title='Cache Efficiency',
+            targets=[targets.target(
+              'pg_statio_user_tables_heap_blks_hit / clamp_min(pg_statio_user_tables_heap_blks_hit + pg_statio_user_tables_heap_blks_read, 1) * 100',
+              '{{relname}}',
+              'A',
+            )],
+            unit='percent',
+          ),
+          w=8, h=8,
+          description='Normal: > 99% per table. Watch for: individual tables dropping below 95% (hot table exceeding buffer cache). Check next: Per-Table Cache Hit in Postgres Internals for trend.',
         ),
       ],
     },
@@ -667,7 +772,7 @@ dashboard.new(
           panels.timeseriesPanel(
             title='Per-Table Cache Hit',
             targets=[targets.target(
-              'pg_statio_user_tables_heap_blks_hit_total / (pg_statio_user_tables_heap_blks_hit_total + pg_statio_user_tables_heap_blks_read_total) * 100',
+              'pg_statio_user_tables_heap_blks_hit / clamp_min(pg_statio_user_tables_heap_blks_hit + pg_statio_user_tables_heap_blks_read, 1) * 100',
               '{{relname}}',
               'A',
             )],
@@ -706,7 +811,7 @@ dashboard.new(
         {
           title: 'Slow Traces (> 250ms)',
           type: 'table',
-          datasource: { type: 'tempo', uid: 'tempo' },
+          datasource: targets.datasources.tempo,
           targets: [{
             refId: 'A',
             queryType: 'nativeSearch',
@@ -745,7 +850,7 @@ dashboard.new(
       layout.panel(
         panels.logPanel(
           title='WS Broadcast Logs',
-          expr='{service_name="%s"} |= "broadcast" |= "ws"' % svc,
+          expr='{service_name="%s"} | scope_name=`go-risk-it` |= "broadcast" or |= "ws"' % svc,
         ),
         w=24, h=8,
         description='Normal: broadcast log entries for each move. Watch for: error-level entries or timeouts. Check next: Trace Investigation collapsed row for correlated traces.',
@@ -760,7 +865,7 @@ dashboard.new(
           {
             title: 'Trace Waterfall',
             type: 'traces',
-            datasource: { type: 'tempo', uid: 'tempo' },
+            datasource: targets.datasources.tempo,
             targets: [{
               refId: 'A',
               queryType: 'traceql',

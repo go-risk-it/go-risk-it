@@ -24,6 +24,7 @@ const (
 	TypeGameCompleted     = "game_completed"
 	TypeGameCreated       = "game_created"
 	TypePlayerConnected   = "player_connected"
+	TypeTurnEnded         = "turn_ended"
 )
 
 // MoveExecuted is emitted after a move's transaction commits. It carries the complete
@@ -143,13 +144,14 @@ func (e *PhaseTransitioned) ScopeAttrs() []slog.Attr {
 
 func (e *PhaseTransitioned) ToRecord() map[string]any {
 	return map[string]any{
-		"event_type": TypePhaseTransitioned,
-		"game_id":    e.gameID,
-		"user_id":    e.userID,
-		"timestamp":  e.timestamp.Format(time.RFC3339),
-		"from_phase": string(e.FromPhase),
-		"to_phase":   string(e.ToPhase),
-		"turn":       e.Turn,
+		"event_type":  TypePhaseTransitioned,
+		"game_id":     e.gameID,
+		"user_id":     e.userID,
+		"timestamp":   e.timestamp.Format(time.RFC3339),
+		"from_phase":  string(e.FromPhase),
+		"to_phase":    string(e.ToPhase),
+		"turn":        e.Turn,
+		"action_type": string(e.FromPhase),
 	}
 }
 
@@ -191,6 +193,53 @@ func (e *GameCompleted) ToRecord() map[string]any {
 		"winner_user_id": e.winnerUserID,
 		"timestamp":      e.timestamp.Format(time.RFC3339),
 		"turn":           e.Turn,
+	}
+}
+
+// GameCreated is emitted when a new game starts.
+
+// TurnEnded is emitted reactively (via bus consumer) when a player's REINFORCE
+// phase completes, signaling the end of their turn. Derived from PhaseTransitioned
+// where FromPhase==REINFORCE. The "WAITING" action_type renders as transparent
+// in Game Theater's State Timeline, creating visual idle gaps between turns.
+type TurnEnded struct {
+	gameID    int64
+	userID    string
+	timestamp time.Time
+
+	Turn int64
+}
+
+func NewTurnEnded(
+	gameID int64,
+	userID string,
+	timestamp time.Time,
+	turn int64,
+) *TurnEnded {
+	return &TurnEnded{
+		gameID:    gameID,
+		userID:    userID,
+		timestamp: timestamp,
+		Turn:      turn,
+	}
+}
+
+func (*TurnEnded) EventType() string           { return TypeTurnEnded }
+func (e *TurnEnded) GameID() int64             { return e.gameID }
+func (e *TurnEnded) EventTimestamp() time.Time { return e.timestamp }
+
+func (e *TurnEnded) ScopeAttrs() []slog.Attr {
+	return []slog.Attr{slog.Int64("gameId", e.gameID)}
+}
+
+func (e *TurnEnded) ToRecord() map[string]any {
+	return map[string]any{
+		"event_type":  TypeTurnEnded,
+		"game_id":     e.gameID,
+		"user_id":     e.userID,
+		"timestamp":   e.timestamp.Format(time.RFC3339),
+		"turn":        e.Turn,
+		"action_type": "WAITING",
 	}
 }
 

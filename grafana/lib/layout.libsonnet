@@ -80,10 +80,11 @@
 
   // Main entry point. Produces a flat panels array with auto-assigned IDs and gridPos.
   // observe/orient/decide/act: arrays of layout.panel() outputs (always-visible).
-  // orientDepth/decideDepth/actDepth: objects mapping title -> panel arrays (collapsed rows).
+  // observeDepth/orientDepth/decideDepth/actDepth: objects mapping title -> panel arrays (collapsed rows).
   // Collapsed row order is alphabetical by title (std.objectFields sorts keys).
   ooda(
     observe=[],
+    observeDepth={},
     orient=[],
     orientDepth={},
     decide=[],
@@ -92,7 +93,7 @@
     actDepth={},
   )::
     local sections = [
-      { title: rowTitles.observe, visible: observe, depth: {} },
+      { title: rowTitles.observe, visible: observe, depth: observeDepth },
       { title: rowTitles.orient, visible: orient, depth: orientDepth },
       { title: rowTitles.decide, visible: decide, depth: decideDepth },
       { title: rowTitles.act, visible: act, depth: actDepth },

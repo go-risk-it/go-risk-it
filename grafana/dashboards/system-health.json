@@ -788,16 +788,19 @@
             },
             "targets": [
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.5, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*\"}[1m])) by (le)) / 1000",
                     "legendFormat": "p50",
                     "refId": "A"
                 },
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*\"}[1m])) by (le)) / 1000",
                     "legendFormat": "p95",
                     "refId": "B"
                 },
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.99, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"risk-it\", span_name=~\"(GET|POST|PUT|DELETE) .*\"}[1m])) by (le)) / 1000",
                     "legendFormat": "p99",
                     "refId": "C"
@@ -807,14 +810,172 @@
             "type": "timeseries"
         },
         {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: both isolation levels < 50ms p95. Watch for: repeatable read diverging from read committed (serialization retries). Check next: Database collapsed row for pool pressure.",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "Game Engine",
+                            "url": "/d/game-engine?from=${__from}&to=${__to}"
+                        }
+                    ],
+                    "unit": "s"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "read committed p95"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#73A9F2",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "repeatable read p95"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#1F4FA0",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 32
+            },
+            "id": 12,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "exemplar": true,
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"risk-it\", span_name=~\"db[.]transaction\", isolation=\"read committed\"}[1m])) by (le)) / 1000",
+                    "legendFormat": "read committed p95",
+                    "refId": "A"
+                },
+                {
+                    "exemplar": true,
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"risk-it\", span_name=~\"db[.]transaction\", isolation=\"repeatable read\"}[1m])) by (le)) / 1000",
+                    "legendFormat": "repeatable read p95",
+                    "refId": "B"
+                }
+            ],
+            "title": "Isolation Rhythm",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: all handlers < 100ms p95. Watch for: individual handlers exceeding 200ms (slow consumer). Check next: Event Bus collapsed row for throughput.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "Game Engine",
+                            "url": "/d/game-engine?from=${__from}&to=${__to}"
+                        }
+                    ],
+                    "unit": "s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 32
+            },
+            "id": 13,
+            "options": {
+                "displayMode": "gradient",
+                "maxVizHeight": 300,
+                "minVizHeight": 16,
+                "minVizWidth": 8,
+                "namePlacement": "auto",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showUnfilled": true,
+                "sizing": "auto",
+                "valueMode": "color"
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"risk-it\", span_name=~\"consumer[.].*\"}[1m])) by (le, span_name)) / 1000",
+                    "legendFormat": "{{span_name}}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Handler Performance",
+            "type": "bargauge"
+        },
+        {
             "collapsed": true,
             "gridPos": {
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 32
+                "y": 40
             },
-            "id": 12,
+            "id": 14,
             "panels": [
                 {
                     "datasource": {
@@ -849,9 +1010,9 @@
                         "h": 8,
                         "w": 12,
                         "x": 0,
-                        "y": 33
+                        "y": 41
                     },
-                    "id": 13,
+                    "id": 15,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -922,9 +1083,9 @@
                         "h": 8,
                         "w": 12,
                         "x": 12,
-                        "y": 33
+                        "y": 41
                     },
-                    "id": 14,
+                    "id": 16,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -992,9 +1153,9 @@
                         "h": 8,
                         "w": 12,
                         "x": 0,
-                        "y": 41
+                        "y": 49
                     },
-                    "id": 15,
+                    "id": 17,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -1068,9 +1229,9 @@
                         "h": 8,
                         "w": 12,
                         "x": 12,
-                        "y": 41
+                        "y": 49
                     },
-                    "id": 16,
+                    "id": 18,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -1128,9 +1289,9 @@
                         "h": 8,
                         "w": 12,
                         "x": 0,
-                        "y": 49
+                        "y": 57
                     },
-                    "id": 17,
+                    "id": 19,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -1188,9 +1349,9 @@
                         "h": 8,
                         "w": 12,
                         "x": 12,
-                        "y": 49
+                        "y": 57
                     },
-                    "id": 18,
+                    "id": 20,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -1248,9 +1409,9 @@
                         "h": 8,
                         "w": 8,
                         "x": 0,
-                        "y": 57
+                        "y": 65
                     },
-                    "id": 19,
+                    "id": 21,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -1304,9 +1465,9 @@
                         "h": 8,
                         "w": 8,
                         "x": 8,
-                        "y": 57
+                        "y": 65
                     },
-                    "id": 20,
+                    "id": 22,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -1365,9 +1526,9 @@
                         "h": 8,
                         "w": 8,
                         "x": 16,
-                        "y": 57
+                        "y": 65
                     },
-                    "id": 21,
+                    "id": 23,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -1417,9 +1578,447 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 33
+                "y": 41
             },
-            "id": 22,
+            "id": 24,
+            "panels": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "description": "Normal: rate proportional to move rate (each move triggers multiple handlers). Watch for: rate dropping to zero while games are active. Check next: Handler Latency for slow consumers.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "color": {
+                                "fixedColor": "#00BCD4",
+                                "mode": "fixed"
+                            },
+                            "custom": {
+                                "drawStyle": "line",
+                                "fillOpacity": 10,
+                                "lineInterpolation": "smooth",
+                                "lineWidth": 2,
+                                "pointSize": 5,
+                                "showPoints": "never",
+                                "spanNulls": false,
+                                "stacking": {
+                                    "group": "A",
+                                    "mode": "none"
+                                }
+                            },
+                            "unit": "ops"
+                        },
+                        "overrides": []
+                    },
+                    "gridPos": {
+                        "h": 8,
+                        "w": 12,
+                        "x": 0,
+                        "y": 42
+                    },
+                    "id": 25,
+                    "options": {
+                        "legend": {
+                            "calcs": [
+                                "mean",
+                                "max"
+                            ],
+                            "displayMode": "table",
+                            "placement": "bottom"
+                        },
+                        "tooltip": {
+                            "mode": "multi",
+                            "sort": "desc"
+                        }
+                    },
+                    "targets": [
+                        {
+                            "expr": "sum(rate(traces_span_metrics_calls_total{service_name=\"risk-it\", span_name=~\"consumer[.].*\"}[1m])) by (span_name)",
+                            "legendFormat": "{{span_name}}",
+                            "refId": "A"
+                        }
+                    ],
+                    "title": "Handler Throughput",
+                    "type": "timeseries"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "description": "Normal: all handlers < 100ms p95. Watch for: individual handlers diverging (slow snapshot fetch or WS broadcast). Check next: Handler Performance bar gauge in Orient.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "color": {
+                                "fixedColor": "#00BCD4",
+                                "mode": "fixed"
+                            },
+                            "custom": {
+                                "drawStyle": "line",
+                                "fillOpacity": 10,
+                                "lineInterpolation": "smooth",
+                                "lineWidth": 2,
+                                "pointSize": 5,
+                                "showPoints": "never",
+                                "spanNulls": false,
+                                "stacking": {
+                                    "group": "A",
+                                    "mode": "none"
+                                }
+                            },
+                            "unit": "s"
+                        },
+                        "overrides": []
+                    },
+                    "gridPos": {
+                        "h": 8,
+                        "w": 12,
+                        "x": 12,
+                        "y": 42
+                    },
+                    "id": 26,
+                    "options": {
+                        "legend": {
+                            "calcs": [
+                                "mean",
+                                "max"
+                            ],
+                            "displayMode": "table",
+                            "placement": "bottom"
+                        },
+                        "tooltip": {
+                            "mode": "multi",
+                            "sort": "desc"
+                        }
+                    },
+                    "targets": [
+                        {
+                            "exemplar": true,
+                            "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"risk-it\", span_name=~\"consumer[.].*\"}[1m])) by (le, span_name)) / 1000",
+                            "legendFormat": "{{span_name}}",
+                            "refId": "A"
+                        }
+                    ],
+                    "title": "Handler Latency P95",
+                    "type": "timeseries"
+                }
+            ],
+            "title": "Event Bus",
+            "type": "row"
+        },
+        {
+            "collapsed": true,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 42
+            },
+            "id": 27,
+            "panels": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "description": "Normal: AccessShareLock dominates (read-heavy workload). Watch for: ExclusiveLock or RowExclusiveLock spikes (write contention). Check next: Postgres Internals in Decide for full lock breakdown.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "custom": {
+                                "drawStyle": "line",
+                                "fillOpacity": 10,
+                                "lineInterpolation": "smooth",
+                                "lineWidth": 2,
+                                "pointSize": 5,
+                                "showPoints": "never",
+                                "spanNulls": false,
+                                "stacking": {
+                                    "group": "A",
+                                    "mode": "none"
+                                }
+                            },
+                            "unit": "short"
+                        },
+                        "overrides": [
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "AccessExclusiveLock"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#E02F44",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "AccessShareLock"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#73BF69",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "ExclusiveLock"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#FF780A",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "RowExclusiveLock"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#FF9830",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "RowShareLock"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#56A64B",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "ShareLock"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#3274D9",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "ShareRowExclusiveLock"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#8F3BB8",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "matcher": {
+                                    "id": "byName",
+                                    "options": "ShareUpdateExclusiveLock"
+                                },
+                                "properties": [
+                                    {
+                                        "id": "color",
+                                        "value": {
+                                            "fixedColor": "#FADE2A",
+                                            "mode": "fixed"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "gridPos": {
+                        "h": 8,
+                        "w": 8,
+                        "x": 0,
+                        "y": 43
+                    },
+                    "id": 28,
+                    "options": {
+                        "legend": {
+                            "calcs": [
+                                "mean",
+                                "max"
+                            ],
+                            "displayMode": "table",
+                            "placement": "bottom"
+                        },
+                        "tooltip": {
+                            "mode": "multi",
+                            "sort": "desc"
+                        }
+                    },
+                    "targets": [
+                        {
+                            "expr": "sum(pg_locks_count) by (mode)",
+                            "legendFormat": "{{mode}}",
+                            "refId": "A"
+                        }
+                    ],
+                    "title": "Lock Activity",
+                    "type": "timeseries"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "description": "Normal: low dead tuple count (autovacuum keeping up). Watch for: monotonic growth on any table (vacuum falling behind). Check next: Postgres Internals in Decide for table scans.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "custom": {
+                                "drawStyle": "line",
+                                "fillOpacity": 10,
+                                "lineInterpolation": "smooth",
+                                "lineWidth": 2,
+                                "pointSize": 5,
+                                "showPoints": "never",
+                                "spanNulls": false,
+                                "stacking": {
+                                    "group": "A",
+                                    "mode": "none"
+                                }
+                            },
+                            "unit": "short"
+                        },
+                        "overrides": []
+                    },
+                    "gridPos": {
+                        "h": 8,
+                        "w": 8,
+                        "x": 8,
+                        "y": 43
+                    },
+                    "id": 29,
+                    "options": {
+                        "legend": {
+                            "calcs": [
+                                "mean",
+                                "max"
+                            ],
+                            "displayMode": "table",
+                            "placement": "bottom"
+                        },
+                        "tooltip": {
+                            "mode": "multi",
+                            "sort": "desc"
+                        }
+                    },
+                    "targets": [
+                        {
+                            "expr": "sum(pg_stat_user_tables_n_dead_tup) by (relname)",
+                            "legendFormat": "{{relname}}",
+                            "refId": "A"
+                        }
+                    ],
+                    "title": "Dead Tuples",
+                    "type": "timeseries"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "description": "Normal: > 99% per table. Watch for: individual tables dropping below 95% (hot table exceeding buffer cache). Check next: Per-Table Cache Hit in Postgres Internals for trend.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "custom": {
+                                "drawStyle": "line",
+                                "fillOpacity": 10,
+                                "lineInterpolation": "smooth",
+                                "lineWidth": 2,
+                                "pointSize": 5,
+                                "showPoints": "never",
+                                "spanNulls": false,
+                                "stacking": {
+                                    "group": "A",
+                                    "mode": "none"
+                                }
+                            },
+                            "unit": "percent"
+                        },
+                        "overrides": []
+                    },
+                    "gridPos": {
+                        "h": 8,
+                        "w": 8,
+                        "x": 16,
+                        "y": 43
+                    },
+                    "id": 30,
+                    "options": {
+                        "legend": {
+                            "calcs": [
+                                "mean",
+                                "max"
+                            ],
+                            "displayMode": "table",
+                            "placement": "bottom"
+                        },
+                        "tooltip": {
+                            "mode": "multi",
+                            "sort": "desc"
+                        }
+                    },
+                    "targets": [
+                        {
+                            "expr": "pg_statio_user_tables_heap_blks_hit / clamp_min(pg_statio_user_tables_heap_blks_hit + pg_statio_user_tables_heap_blks_read, 1) * 100",
+                            "legendFormat": "{{relname}}",
+                            "refId": "A"
+                        }
+                    ],
+                    "title": "Cache Efficiency",
+                    "type": "timeseries"
+                }
+            ],
+            "title": "Postgres Advanced",
+            "type": "row"
+        },
+        {
+            "collapsed": true,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 43
+            },
+            "id": 31,
             "panels": [
                 {
                     "datasource": {
@@ -1454,9 +2053,9 @@
                         "h": 8,
                         "w": 12,
                         "x": 0,
-                        "y": 34
+                        "y": 44
                     },
-                    "id": 23,
+                    "id": 32,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -1534,9 +2133,9 @@
                         "h": 8,
                         "w": 12,
                         "x": 12,
-                        "y": 34
+                        "y": 44
                     },
-                    "id": 24,
+                    "id": 33,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -1594,9 +2193,9 @@
                         "h": 8,
                         "w": 24,
                         "x": 0,
-                        "y": 42
+                        "y": 52
                     },
-                    "id": 25,
+                    "id": 34,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -1667,9 +2266,9 @@
                         "h": 8,
                         "w": 24,
                         "x": 0,
-                        "y": 50
+                        "y": 60
                     },
-                    "id": 26,
+                    "id": 35,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -1727,9 +2326,9 @@
                         "h": 8,
                         "w": 8,
                         "x": 0,
-                        "y": 58
+                        "y": 68
                     },
-                    "id": 27,
+                    "id": 36,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -1783,9 +2382,9 @@
                         "h": 8,
                         "w": 8,
                         "x": 8,
-                        "y": 58
+                        "y": 68
                     },
-                    "id": 28,
+                    "id": 37,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -1802,6 +2401,7 @@
                     },
                     "targets": [
                         {
+                            "exemplar": true,
                             "expr": "histogram_quantile(0.95, sum(rate(go_schedule_duration_seconds_bucket{service_name=\"risk-it\"}[1m])) by (le))",
                             "legendFormat": "p95",
                             "refId": "A"
@@ -1843,9 +2443,9 @@
                         "h": 8,
                         "w": 8,
                         "x": 16,
-                        "y": 58
+                        "y": 68
                     },
-                    "id": 29,
+                    "id": 38,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -1899,9 +2499,9 @@
                         "h": 8,
                         "w": 8,
                         "x": 0,
-                        "y": 66
+                        "y": 76
                     },
-                    "id": 30,
+                    "id": 39,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -1960,9 +2560,9 @@
                         "h": 8,
                         "w": 8,
                         "x": 8,
-                        "y": 66
+                        "y": 76
                     },
-                    "id": 31,
+                    "id": 40,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -2021,9 +2621,9 @@
                         "h": 8,
                         "w": 8,
                         "x": 16,
-                        "y": 66
+                        "y": 76
                     },
-                    "id": 32,
+                    "id": 41,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -2058,9 +2658,9 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 34
+                "y": 44
             },
-            "id": 33,
+            "id": 42,
             "panels": [
                 {
                     "datasource": {
@@ -2095,9 +2695,9 @@
                         "h": 8,
                         "w": 12,
                         "x": 0,
-                        "y": 35
+                        "y": 45
                     },
-                    "id": 34,
+                    "id": 43,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -2168,9 +2768,9 @@
                         "h": 8,
                         "w": 12,
                         "x": 12,
-                        "y": 35
+                        "y": 45
                     },
-                    "id": 35,
+                    "id": 44,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -2228,9 +2828,9 @@
                         "h": 8,
                         "w": 12,
                         "x": 0,
-                        "y": 43
+                        "y": 53
                     },
-                    "id": 36,
+                    "id": 45,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -2288,9 +2888,9 @@
                         "h": 8,
                         "w": 12,
                         "x": 12,
-                        "y": 43
+                        "y": 53
                     },
-                    "id": 37,
+                    "id": 46,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -2325,9 +2925,9 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 35
+                "y": 45
             },
-            "id": 38,
+            "id": 47,
             "title": "Decide \u2014 Where\u2019s the bottleneck?",
             "type": "row"
         },
@@ -2384,9 +2984,9 @@
                 "h": 8,
                 "w": 8,
                 "x": 0,
-                "y": 36
+                "y": 46
             },
-            "id": 39,
+            "id": 48,
             "options": {
                 "legend": {
                     "calcs": [
@@ -2464,9 +3064,9 @@
                 "h": 8,
                 "w": 8,
                 "x": 8,
-                "y": 36
+                "y": 46
             },
-            "id": 40,
+            "id": 49,
             "options": {
                 "legend": {
                     "calcs": [
@@ -2520,9 +3120,9 @@
                 "h": 8,
                 "w": 8,
                 "x": 16,
-                "y": 36
+                "y": 46
             },
-            "id": 41,
+            "id": 50,
             "options": {
                 "legend": {
                     "calcs": [
@@ -2558,9 +3158,9 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 44
+                "y": 54
             },
-            "id": 42,
+            "id": 51,
             "panels": [
                 {
                     "datasource": {
@@ -2713,9 +3313,9 @@
                         "h": 10,
                         "w": 24,
                         "x": 0,
-                        "y": 45
+                        "y": 55
                     },
-                    "id": 43,
+                    "id": 52,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -2773,9 +3373,9 @@
                         "h": 8,
                         "w": 12,
                         "x": 0,
-                        "y": 55
+                        "y": 65
                     },
-                    "id": 44,
+                    "id": 53,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -2829,9 +3429,9 @@
                         "h": 8,
                         "w": 12,
                         "x": 12,
-                        "y": 55
+                        "y": 65
                     },
-                    "id": 45,
+                    "id": 54,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -2908,9 +3508,9 @@
                         "h": 8,
                         "w": 12,
                         "x": 0,
-                        "y": 63
+                        "y": 73
                     },
-                    "id": 46,
+                    "id": 55,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -2969,9 +3569,9 @@
                         "h": 8,
                         "w": 12,
                         "x": 12,
-                        "y": 63
+                        "y": 73
                     },
-                    "id": 47,
+                    "id": 56,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -3029,9 +3629,9 @@
                         "h": 8,
                         "w": 12,
                         "x": 0,
-                        "y": 71
+                        "y": 81
                     },
-                    "id": 48,
+                    "id": 57,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -3085,9 +3685,9 @@
                         "h": 8,
                         "w": 24,
                         "x": 0,
-                        "y": 79
+                        "y": 89
                     },
-                    "id": 49,
+                    "id": 58,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -3104,7 +3704,7 @@
                     },
                     "targets": [
                         {
-                            "expr": "pg_statio_user_tables_heap_blks_hit_total / (pg_statio_user_tables_heap_blks_hit_total + pg_statio_user_tables_heap_blks_read_total) * 100",
+                            "expr": "pg_statio_user_tables_heap_blks_hit / clamp_min(pg_statio_user_tables_heap_blks_hit + pg_statio_user_tables_heap_blks_read, 1) * 100",
                             "legendFormat": "{{relname}}",
                             "refId": "A"
                         }
@@ -3122,9 +3722,9 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 45
+                "y": 55
             },
-            "id": 50,
+            "id": 59,
             "panels": [
                 {
                     "datasource": {
@@ -3156,9 +3756,9 @@
                         "h": 10,
                         "w": 24,
                         "x": 0,
-                        "y": 46
+                        "y": 56
                     },
-                    "id": 51,
+                    "id": 60,
                     "options": {
                         "calculate": false,
                         "cellGap": 1,
@@ -3215,9 +3815,9 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 46
+                "y": 56
             },
-            "id": 52,
+            "id": 61,
             "title": "Act \u2014 What\u2019s the evidence?",
             "type": "row"
         },
@@ -3249,9 +3849,9 @@
                 "h": 10,
                 "w": 24,
                 "x": 0,
-                "y": 47
+                "y": 57
             },
-            "id": 53,
+            "id": 62,
             "options": {
                 "footer": {
                     "show": false
@@ -3294,9 +3894,9 @@
                 "h": 8,
                 "w": 24,
                 "x": 0,
-                "y": 57
+                "y": 67
             },
-            "id": 54,
+            "id": 63,
             "options": {
                 "dedupStrategy": "none",
                 "enableLogDetails": true,
@@ -3309,7 +3909,7 @@
             },
             "targets": [
                 {
-                    "expr": "{service_name=\"risk-it\"} |= \"broadcast\" |= \"ws\"",
+                    "expr": "{service_name=\"risk-it\"} | scope_name=`go-risk-it` |= \"broadcast\" or |= \"ws\"",
                     "refId": "A"
                 }
             ],
@@ -3322,9 +3922,9 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 65
+                "y": 75
             },
-            "id": 55,
+            "id": 64,
             "panels": [
                 {
                     "datasource": {
@@ -3336,9 +3936,9 @@
                         "h": 24,
                         "w": 24,
                         "x": 0,
-                        "y": 66
+                        "y": 76
                     },
-                    "id": 56,
+                    "id": 65,
                     "targets": [
                         {
                             "query": "${traceId}",
@@ -3359,9 +3959,9 @@
                         "h": 14,
                         "w": 24,
                         "x": 0,
-                        "y": 90
+                        "y": 100
                     },
-                    "id": 57,
+                    "id": 66,
                     "options": {
                         "dedupStrategy": "none",
                         "enableLogDetails": true,

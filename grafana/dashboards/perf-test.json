@@ -733,16 +733,19 @@
             },
             "targets": [
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.5, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le))",
                     "legendFormat": "p50",
                     "refId": "A"
                 },
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le))",
                     "legendFormat": "p95",
                     "refId": "B"
                 },
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.99, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le))",
                     "legendFormat": "p99",
                     "refId": "C"
@@ -1186,16 +1189,19 @@
             },
             "targets": [
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.5, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le, action))",
                     "legendFormat": "{{action}} p50",
                     "refId": "A"
                 },
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le, action))",
                     "legendFormat": "{{action}} p95",
                     "refId": "B"
                 },
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.99, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le, action))",
                     "legendFormat": "{{action}} p99",
                     "refId": "C"
@@ -1340,6 +1346,7 @@
             },
             "targets": [
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le))",
                     "legendFormat": "E2E p95",
                     "refId": "A"
@@ -1455,7 +1462,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Normal: effective approximates active. Watch for: growing gap means games are getting stuck (stalled/zombie). Check next: Health Breakdown collapsed row for per-state waterfall.",
+            "description": "Normal: effective approximates active. Watch for: growing gap means games are getting stuck (stalled/zombie). Check next: Health Decomposition panel for per-state waterfall.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -1557,6 +1564,139 @@
             "type": "timeseries"
         },
         {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: healthy dominates the stack, others near zero. Watch for: slow/stalled/zombie layers growing (games not making progress). Check next: Effective Concurrency panel for the gap metric, System Health for DB pool saturation.",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 40,
+                        "gradientMode": "scheme",
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "normal"
+                        }
+                    },
+                    "unit": "short"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "healthy"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#56A64B",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "slow"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#FF9830",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "stalled"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#E02F44",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "zombie"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#8D8D8D",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 61
+            },
+            "id": 22,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "last"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "perftest_health_healthy{service_name=\"perftest\"}",
+                    "legendFormat": "healthy",
+                    "refId": "A"
+                },
+                {
+                    "expr": "perftest_health_slow{service_name=\"perftest\"}",
+                    "legendFormat": "slow",
+                    "refId": "B"
+                },
+                {
+                    "expr": "perftest_health_stalled{service_name=\"perftest\"}",
+                    "legendFormat": "stalled",
+                    "refId": "C"
+                },
+                {
+                    "expr": "perftest_health_zombie{service_name=\"perftest\"}",
+                    "legendFormat": "zombie",
+                    "refId": "D"
+                }
+            ],
+            "title": "Health Decomposition",
+            "type": "timeseries"
+        },
+        {
             "collapsed": true,
             "gridPos": {
                 "h": 1,
@@ -1564,7 +1704,7 @@
                 "x": 0,
                 "y": 69
             },
-            "id": 22,
+            "id": 23,
             "panels": [
                 {
                     "datasource": {
@@ -1597,7 +1737,7 @@
                         "x": 0,
                         "y": 70
                     },
-                    "id": 23,
+                    "id": 24,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -1614,6 +1754,7 @@
                     },
                     "targets": [
                         {
+                            "exemplar": true,
                             "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le, phase))",
                             "legendFormat": "{{phase}} p95",
                             "refId": "A"
@@ -1627,161 +1768,14 @@
             "type": "row"
         },
         {
-            "collapsed": true,
+            "collapsed": false,
             "gridPos": {
                 "h": 1,
                 "w": 24,
                 "x": 0,
                 "y": 70
             },
-            "id": 24,
-            "panels": [
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "prometheus"
-                    },
-                    "description": "Normal: healthy dominates the stack, others near zero. Watch for: slow/stalled/zombie layers growing (games not making progress). Check next: Effective Concurrency panel for the gap metric, System Health for DB pool saturation.",
-                    "fieldConfig": {
-                        "defaults": {
-                            "custom": {
-                                "drawStyle": "line",
-                                "fillOpacity": 40,
-                                "gradientMode": "scheme",
-                                "lineInterpolation": "smooth",
-                                "lineWidth": 1,
-                                "pointSize": 5,
-                                "showPoints": "never",
-                                "spanNulls": false,
-                                "stacking": {
-                                    "group": "A",
-                                    "mode": "normal"
-                                }
-                            },
-                            "unit": "short"
-                        },
-                        "overrides": [
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "healthy"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#56A64B",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "slow"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#FADE2A",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "stalled"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#FF9830",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "matcher": {
-                                    "id": "byName",
-                                    "options": "zombie"
-                                },
-                                "properties": [
-                                    {
-                                        "id": "color",
-                                        "value": {
-                                            "fixedColor": "#E02F44",
-                                            "mode": "fixed"
-                                        }
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                    "gridPos": {
-                        "h": 10,
-                        "w": 24,
-                        "x": 0,
-                        "y": 71
-                    },
-                    "id": 25,
-                    "options": {
-                        "legend": {
-                            "calcs": [
-                                "mean",
-                                "last"
-                            ],
-                            "displayMode": "table",
-                            "placement": "bottom"
-                        },
-                        "tooltip": {
-                            "mode": "multi",
-                            "sort": "desc"
-                        }
-                    },
-                    "targets": [
-                        {
-                            "expr": "perftest_health_healthy{service_name=\"perftest\"}",
-                            "legendFormat": "healthy",
-                            "refId": "A"
-                        },
-                        {
-                            "expr": "perftest_health_slow{service_name=\"perftest\"}",
-                            "legendFormat": "slow",
-                            "refId": "B"
-                        },
-                        {
-                            "expr": "perftest_health_stalled{service_name=\"perftest\"}",
-                            "legendFormat": "stalled",
-                            "refId": "C"
-                        },
-                        {
-                            "expr": "perftest_health_zombie{service_name=\"perftest\"}",
-                            "legendFormat": "zombie",
-                            "refId": "D"
-                        }
-                    ],
-                    "title": "Health State Waterfall",
-                    "type": "timeseries"
-                }
-            ],
-            "title": "Health Breakdown",
-            "type": "row"
-        },
-        {
-            "collapsed": false,
-            "gridPos": {
-                "h": 1,
-                "w": 24,
-                "x": 0,
-                "y": 71
-            },
-            "id": 26,
+            "id": 25,
             "title": "Act \u2014 What\u2019s the evidence?",
             "type": "row"
         },
@@ -1817,9 +1811,9 @@
                 "h": 8,
                 "w": 8,
                 "x": 0,
-                "y": 72
+                "y": 71
             },
-            "id": 27,
+            "id": 26,
             "options": {
                 "legend": {
                     "calcs": [
@@ -1877,9 +1871,9 @@
                 "h": 8,
                 "w": 8,
                 "x": 8,
-                "y": 72
+                "y": 71
             },
-            "id": 28,
+            "id": 27,
             "options": {
                 "legend": {
                     "calcs": [
@@ -1944,9 +1938,9 @@
                 "h": 8,
                 "w": 8,
                 "x": 16,
-                "y": 72
+                "y": 71
             },
-            "id": 29,
+            "id": 28,
             "options": {
                 "legend": {
                     "calcs": [
@@ -2038,9 +2032,9 @@
                 "h": 8,
                 "w": 24,
                 "x": 0,
-                "y": 80
+                "y": 79
             },
-            "id": 30,
+            "id": 29,
             "options": {
                 "legend": {
                     "calcs": [

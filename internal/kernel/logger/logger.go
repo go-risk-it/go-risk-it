@@ -48,11 +48,12 @@ func Register(params Params) {
 
 		attrs = append(attrs, slog.Group("payload", payloadAttrs...))
 
-		log.LogAttrs(
-			ctx,
-			slog.LevelInfo,
-			"game_event",
-			attrs...,
-		)
+		// Use event.EventTimestamp() as the log record timestamp so OTLP/Loki
+		// sorts entries by domain event time, not goroutine-scheduling time.
+		// Critical for TurnEnded: its 1ms offset must reach the actual log
+		// timestamp to guarantee it sorts AFTER the preceding REINFORCE move.
+		logRecord := slog.NewRecord(event.EventTimestamp(), slog.LevelInfo, "game_event", 0)
+		logRecord.AddAttrs(attrs...)
+		_ = log.Handler().Handle(ctx, logRecord)
 	})
 }

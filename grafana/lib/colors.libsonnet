@@ -39,6 +39,31 @@
     continent_lost: '#FF780A',      // dark orange
   },
 
+  // Game phase colors — keyed by phase name
+  phase: {
+    deploy: '#3274D9',     // blue — placing troops
+    attack: '#E02F44',     // red — combat
+    cards: '#FADE2A',      // gold — card exchange
+    conquer: '#56A64B',    // green — claiming territory
+    reinforce: '#8F3BB8',  // purple — troop movement
+  },
+
+  // Operational signal colors — severity/status semantics
+  signal: {
+    ok: '#56A64B',         // green — healthy/passing
+    warning: '#FF9830',    // amber — degraded/attention
+    'error': '#E02F44',    // red — failure/breach
+    info: '#3274D9',       // blue — informational
+    muted: '#8D8D8D',      // gray — inactive/disabled
+  },
+
+  // Event headline colors — notable game moments
+  headline: {
+    continent: '#FADE2A',  // gold — continent captured/lost
+    elimination: '#E02F44', // red — player eliminated
+    victory: '#56A64B',    // green — game won
+  },
+
   // Shade variants for percentile panels (p50=light, p95=medium, p99=dark).
   // Used by modifiers.withPercentileColors().
   shades: {

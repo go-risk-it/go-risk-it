@@ -1,0 +1,1435 @@
+{
+    "annotations": {
+        "list": []
+    },
+    "description": "Single-game deep dive: phase tapestry, event chronicle, and trace forensics",
+    "editable": true,
+    "panels": [
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 0
+            },
+            "id": 1,
+            "title": "Observe \u2014 Am I OK?",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "loki",
+                "uid": "loki"
+            },
+            "description": "Normal: 1 (green) means game completed. Watch for: 0 (yellow) on a game that should have finished. Check next: Event Chronicle for last event.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "System Health",
+                            "url": "/d/system-health?from=${__from}&to=${__to}"
+                        },
+                        {
+                            "targetBlank": true,
+                            "title": "Compare in Game Engine",
+                            "url": "/d/game-engine?from=${__from}&to=${__to}"
+                        }
+                    ],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "yellow",
+                                "value": null
+                            },
+                            {
+                                "color": "green",
+                                "value": 1
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 0,
+                "y": 1
+            },
+            "id": 2,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "loki",
+                        "uid": "loki"
+                    },
+                    "expr": "sum(count_over_time({service_name=\"risk-it\"} |= \"game_event\" | gameId=`$gameId` | eventType=`game_completed`[$__range]))",
+                    "legendFormat": "completed",
+                    "refId": "A"
+                }
+            ],
+            "title": "Game Completed",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "loki",
+                "uid": "loki"
+            },
+            "description": "Normal: 20-150 total moves (green). Watch for: > 150 (yellow) above fleet p84; > 400 (red) above fleet p97.5. Check next: Fleet Move Distribution for percentiles.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "System Health",
+                            "url": "/d/system-health?from=${__from}&to=${__to}"
+                        },
+                        {
+                            "targetBlank": true,
+                            "title": "Compare in Game Engine",
+                            "url": "/d/game-engine?from=${__from}&to=${__to}"
+                        }
+                    ],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 150
+                            },
+                            {
+                                "color": "red",
+                                "value": 400
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 4,
+                "y": 1
+            },
+            "id": 3,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "loki",
+                        "uid": "loki"
+                    },
+                    "expr": "sum(count_over_time({service_name=\"risk-it\"} |= \"game_event\" | gameId=`$gameId` | eventType=`move_executed`[$__range]))",
+                    "legendFormat": "moves",
+                    "refId": "A"
+                }
+            ],
+            "title": "Move Count",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "loki",
+                "uid": "loki"
+            },
+            "description": "Normal: attack moves proportional to total moves. Watch for: > 75 (yellow) above fleet p84. Check next: Fleet Attack Distribution for percentiles.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "System Health",
+                            "url": "/d/system-health?from=${__from}&to=${__to}"
+                        },
+                        {
+                            "targetBlank": true,
+                            "title": "Compare in Game Engine",
+                            "url": "/d/game-engine?from=${__from}&to=${__to}"
+                        }
+                    ],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 75
+                            },
+                            {
+                                "color": "red",
+                                "value": 200
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 8,
+                "y": 1
+            },
+            "id": 4,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "loki",
+                        "uid": "loki"
+                    },
+                    "expr": "sum(count_over_time({service_name=\"risk-it\"} |= \"game_event\" | gameId=`$gameId` | eventType=`move_executed` | payload_action_type=`ATTACK`[$__range]))",
+                    "legendFormat": "attacks",
+                    "refId": "A"
+                }
+            ],
+            "title": "Attack Count",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "loki",
+                "uid": "loki"
+            },
+            "description": "Normal: a few eliminations and continent events per game. Watch for: > 8 (yellow) above fleet p84; > 20 (red) above fleet p97.5. Check next: Fleet Headline Distribution.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "System Health",
+                            "url": "/d/system-health?from=${__from}&to=${__to}"
+                        },
+                        {
+                            "targetBlank": true,
+                            "title": "Compare in Game Engine",
+                            "url": "/d/game-engine?from=${__from}&to=${__to}"
+                        }
+                    ],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 8
+                            },
+                            {
+                                "color": "red",
+                                "value": 20
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 12,
+                "y": 1
+            },
+            "id": 5,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "loki",
+                        "uid": "loki"
+                    },
+                    "expr": "sum(count_over_time({service_name=\"risk-it\"} |= \"game_event\" | gameId=`$gameId` | eventType=~`player_eliminated|continent_captured|continent_lost`[$__range]))",
+                    "legendFormat": "headlines",
+                    "refId": "A"
+                }
+            ],
+            "title": "Headline Count",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: < 200ms fleet average (green). Watch for: > 200ms (yellow) degraded performance; > 500ms (red) severe. Check next: Move Forensics trace for slow move detail.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "System Health",
+                            "url": "/d/system-health?from=${__from}&to=${__to}"
+                        },
+                        {
+                            "targetBlank": true,
+                            "title": "Compare in Game Engine",
+                            "url": "/d/game-engine?from=${__from}&to=${__to}"
+                        }
+                    ],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 200
+                            },
+                            {
+                                "color": "red",
+                                "value": 500
+                            }
+                        ]
+                    },
+                    "unit": "ms"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 16,
+                "y": 1
+            },
+            "id": 6,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "avg(rate(traces_span_metrics_duration_milliseconds_sum{service_name=\"risk-it\", span_name=\"game.orchestrate_move\"}[$__rate_interval])) / avg(rate(traces_span_metrics_duration_milliseconds_count{service_name=\"risk-it\", span_name=\"game.orchestrate_move\"}[$__rate_interval]))",
+                    "legendFormat": "avg ms",
+                    "refId": "A"
+                }
+            ],
+            "title": "Avg Move Latency",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "loki",
+                "uid": "loki"
+            },
+            "description": "Normal: phase transitions proportional to player count and game length. Watch for: > 40 (yellow) above fleet p84; > 100 (red) above fleet p97.5. Check next: Fleet Turn Distribution.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "System Health",
+                            "url": "/d/system-health?from=${__from}&to=${__to}"
+                        },
+                        {
+                            "targetBlank": true,
+                            "title": "Compare in Game Engine",
+                            "url": "/d/game-engine?from=${__from}&to=${__to}"
+                        }
+                    ],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 40
+                            },
+                            {
+                                "color": "red",
+                                "value": 100
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 20,
+                "y": 1
+            },
+            "id": 7,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "loki",
+                        "uid": "loki"
+                    },
+                    "expr": "sum(count_over_time({service_name=\"risk-it\"} |= \"game_event\" | gameId=`$gameId` | eventType=`phase_transitioned`[$__range]))",
+                    "legendFormat": "phase transitions",
+                    "refId": "A"
+                }
+            ],
+            "title": "Turn Count",
+            "type": "stat"
+        },
+        {
+            "collapsed": true,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 7
+            },
+            "id": 8,
+            "panels": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "description": "Normal: p50 moves 30-80, p95 under 200. Watch for: percentile curves trending upward (games getting longer). Check next: compare with this game's Move Count stat tile above.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "custom": {
+                                "drawStyle": "line",
+                                "fillOpacity": 10,
+                                "lineInterpolation": "smooth",
+                                "lineWidth": 2,
+                                "pointSize": 5,
+                                "showPoints": "never",
+                                "spanNulls": false,
+                                "stacking": {
+                                    "group": "A",
+                                    "mode": "none"
+                                }
+                            },
+                            "unit": "short"
+                        },
+                        "overrides": []
+                    },
+                    "gridPos": {
+                        "h": 8,
+                        "w": 12,
+                        "x": 0,
+                        "y": 8
+                    },
+                    "id": 9,
+                    "options": {
+                        "legend": {
+                            "calcs": [
+                                "mean",
+                                "max"
+                            ],
+                            "displayMode": "table",
+                            "placement": "bottom"
+                        },
+                        "tooltip": {
+                            "mode": "multi",
+                            "sort": "desc"
+                        }
+                    },
+                    "targets": [
+                        {
+                            "exemplar": true,
+                            "expr": "histogram_quantile(0.5, sum(rate(game_summary_moves_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                            "legendFormat": "p50",
+                            "refId": "A"
+                        },
+                        {
+                            "exemplar": true,
+                            "expr": "histogram_quantile(0.75, sum(rate(game_summary_moves_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                            "legendFormat": "p75",
+                            "refId": "B"
+                        },
+                        {
+                            "exemplar": true,
+                            "expr": "histogram_quantile(0.95, sum(rate(game_summary_moves_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                            "legendFormat": "p95",
+                            "refId": "C"
+                        },
+                        {
+                            "exemplar": true,
+                            "expr": "histogram_quantile(0.99, sum(rate(game_summary_moves_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                            "legendFormat": "p99",
+                            "refId": "D"
+                        }
+                    ],
+                    "title": "Fleet Move Distribution",
+                    "type": "timeseries"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "description": "Normal: p50 attacks 15-40, p95 under 100. Watch for: attack percentiles growing faster than move percentiles (more combat-heavy meta). Check next: compare with Attack Count tile.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "custom": {
+                                "drawStyle": "line",
+                                "fillOpacity": 10,
+                                "lineInterpolation": "smooth",
+                                "lineWidth": 2,
+                                "pointSize": 5,
+                                "showPoints": "never",
+                                "spanNulls": false,
+                                "stacking": {
+                                    "group": "A",
+                                    "mode": "none"
+                                }
+                            },
+                            "unit": "short"
+                        },
+                        "overrides": []
+                    },
+                    "gridPos": {
+                        "h": 8,
+                        "w": 12,
+                        "x": 12,
+                        "y": 8
+                    },
+                    "id": 10,
+                    "options": {
+                        "legend": {
+                            "calcs": [
+                                "mean",
+                                "max"
+                            ],
+                            "displayMode": "table",
+                            "placement": "bottom"
+                        },
+                        "tooltip": {
+                            "mode": "multi",
+                            "sort": "desc"
+                        }
+                    },
+                    "targets": [
+                        {
+                            "exemplar": true,
+                            "expr": "histogram_quantile(0.5, sum(rate(game_summary_attacks_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                            "legendFormat": "p50",
+                            "refId": "A"
+                        },
+                        {
+                            "exemplar": true,
+                            "expr": "histogram_quantile(0.75, sum(rate(game_summary_attacks_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                            "legendFormat": "p75",
+                            "refId": "B"
+                        },
+                        {
+                            "exemplar": true,
+                            "expr": "histogram_quantile(0.95, sum(rate(game_summary_attacks_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                            "legendFormat": "p95",
+                            "refId": "C"
+                        },
+                        {
+                            "exemplar": true,
+                            "expr": "histogram_quantile(0.99, sum(rate(game_summary_attacks_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                            "legendFormat": "p99",
+                            "refId": "D"
+                        }
+                    ],
+                    "title": "Fleet Attack Distribution",
+                    "type": "timeseries"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "description": "Normal: p50 turns 10-30, p95 under 80. Watch for: rising turn counts suggest games taking more rounds. Check next: compare with Turn Count tile above.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "custom": {
+                                "drawStyle": "line",
+                                "fillOpacity": 10,
+                                "lineInterpolation": "smooth",
+                                "lineWidth": 2,
+                                "pointSize": 5,
+                                "showPoints": "never",
+                                "spanNulls": false,
+                                "stacking": {
+                                    "group": "A",
+                                    "mode": "none"
+                                }
+                            },
+                            "unit": "short"
+                        },
+                        "overrides": []
+                    },
+                    "gridPos": {
+                        "h": 8,
+                        "w": 12,
+                        "x": 0,
+                        "y": 16
+                    },
+                    "id": 11,
+                    "options": {
+                        "legend": {
+                            "calcs": [
+                                "mean",
+                                "max"
+                            ],
+                            "displayMode": "table",
+                            "placement": "bottom"
+                        },
+                        "tooltip": {
+                            "mode": "multi",
+                            "sort": "desc"
+                        }
+                    },
+                    "targets": [
+                        {
+                            "exemplar": true,
+                            "expr": "histogram_quantile(0.5, sum(rate(game_summary_turns_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                            "legendFormat": "p50",
+                            "refId": "A"
+                        },
+                        {
+                            "exemplar": true,
+                            "expr": "histogram_quantile(0.75, sum(rate(game_summary_turns_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                            "legendFormat": "p75",
+                            "refId": "B"
+                        },
+                        {
+                            "exemplar": true,
+                            "expr": "histogram_quantile(0.95, sum(rate(game_summary_turns_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                            "legendFormat": "p95",
+                            "refId": "C"
+                        },
+                        {
+                            "exemplar": true,
+                            "expr": "histogram_quantile(0.99, sum(rate(game_summary_turns_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                            "legendFormat": "p99",
+                            "refId": "D"
+                        }
+                    ],
+                    "title": "Fleet Turn Distribution",
+                    "type": "timeseries"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "description": "Normal: p50 headlines 2-5, p95 under 15. Watch for: unusually flat distribution (all games similar) or extreme outliers. Check next: compare with Headline Count tile.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "custom": {
+                                "drawStyle": "line",
+                                "fillOpacity": 10,
+                                "lineInterpolation": "smooth",
+                                "lineWidth": 2,
+                                "pointSize": 5,
+                                "showPoints": "never",
+                                "spanNulls": false,
+                                "stacking": {
+                                    "group": "A",
+                                    "mode": "none"
+                                }
+                            },
+                            "unit": "short"
+                        },
+                        "overrides": []
+                    },
+                    "gridPos": {
+                        "h": 8,
+                        "w": 12,
+                        "x": 12,
+                        "y": 16
+                    },
+                    "id": 12,
+                    "options": {
+                        "legend": {
+                            "calcs": [
+                                "mean",
+                                "max"
+                            ],
+                            "displayMode": "table",
+                            "placement": "bottom"
+                        },
+                        "tooltip": {
+                            "mode": "multi",
+                            "sort": "desc"
+                        }
+                    },
+                    "targets": [
+                        {
+                            "exemplar": true,
+                            "expr": "histogram_quantile(0.5, sum(rate(game_summary_headlines_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                            "legendFormat": "p50",
+                            "refId": "A"
+                        },
+                        {
+                            "exemplar": true,
+                            "expr": "histogram_quantile(0.75, sum(rate(game_summary_headlines_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                            "legendFormat": "p75",
+                            "refId": "B"
+                        },
+                        {
+                            "exemplar": true,
+                            "expr": "histogram_quantile(0.95, sum(rate(game_summary_headlines_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                            "legendFormat": "p95",
+                            "refId": "C"
+                        },
+                        {
+                            "exemplar": true,
+                            "expr": "histogram_quantile(0.99, sum(rate(game_summary_headlines_bucket{service_name=\"risk-it\"}[1m])) by (le))",
+                            "legendFormat": "p99",
+                            "refId": "D"
+                        }
+                    ],
+                    "title": "Fleet Headline Distribution",
+                    "type": "timeseries"
+                }
+            ],
+            "title": "Fleet Game Summary Distribution",
+            "type": "row"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 8
+            },
+            "id": 13,
+            "title": "Orient \u2014 What\u2019s the shape?",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "loki",
+                "uid": "loki"
+            },
+            "description": "Normal: colored markers per player at each phase transition (DEPLOY=blue, ATTACK=red, CARDS=gold, CONQUER=green, REINFORCE=purple). Gaps = idle (not their turn). Dense markers = active turn. Watch for: long gaps (eliminated player) or stuck phases. Check next: Event Chronicle for detailed event sequence.",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "fillOpacity": 80,
+                        "lineWidth": 0
+                    },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "Compare in Game Engine",
+                            "url": "/d/game-engine?from=${__from}&to=${__to}"
+                        }
+                    ],
+                    "mappings": [
+                        {
+                            "options": {
+                                "pattern": "/^DEPLOY/",
+                                "result": {
+                                    "color": "#3274D9",
+                                    "index": 0,
+                                    "text": "DEPLOY"
+                                }
+                            },
+                            "type": "regex"
+                        },
+                        {
+                            "options": {
+                                "pattern": "/^ATTACK/",
+                                "result": {
+                                    "color": "#E02F44",
+                                    "index": 1,
+                                    "text": "ATTACK"
+                                }
+                            },
+                            "type": "regex"
+                        },
+                        {
+                            "options": {
+                                "pattern": "/^CARDS/",
+                                "result": {
+                                    "color": "#FADE2A",
+                                    "index": 2,
+                                    "text": "CARDS"
+                                }
+                            },
+                            "type": "regex"
+                        },
+                        {
+                            "options": {
+                                "pattern": "/^CONQUER/",
+                                "result": {
+                                    "color": "#56A64B",
+                                    "index": 3,
+                                    "text": "CONQUER"
+                                }
+                            },
+                            "type": "regex"
+                        },
+                        {
+                            "options": {
+                                "pattern": "/^REINFORCE/",
+                                "result": {
+                                    "color": "#8F3BB8",
+                                    "index": 4,
+                                    "text": "REINFORCE"
+                                }
+                            },
+                            "type": "regex"
+                        },
+                        {
+                            "options": {
+                                "pattern": "/^WAITING/",
+                                "result": {
+                                    "color": "#111217",
+                                    "index": 5,
+                                    "text": " "
+                                }
+                            },
+                            "type": "regex"
+                        }
+                    ]
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 10,
+                "w": 24,
+                "x": 0,
+                "y": 9
+            },
+            "id": 14,
+            "options": {
+                "alignValue": "center",
+                "legend": {
+                    "displayMode": "list",
+                    "placement": "bottom"
+                },
+                "mergeValues": true,
+                "rowHeight": 0.85,
+                "showValue": "auto",
+                "tooltip": {
+                    "mode": "single"
+                }
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "loki",
+                        "uid": "loki"
+                    },
+                    "expr": "{service_name=\"risk-it\"} |= \"game_event\" | gameId=`$gameId` | eventType=~`move_executed|phase_transitioned|turn_ended` | keep payload_user_id, payload_action_type, payload_turn | line_format \"{{ if eq .payload_action_type \\\"WAITING\\\" }}WAITING{{ else }}{{.payload_action_type}}_{{.payload_turn}}{{ end }}\" | drop payload_action_type, payload_turn",
+                    "legendFormat": "{{payload_user_id}}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Phase Tapestry",
+            "transformations": [
+                {
+                    "id": "extractFields",
+                    "options": {
+                        "format": "auto",
+                        "source": "labels"
+                    }
+                },
+                {
+                    "id": "organize",
+                    "options": {
+                        "excludeByName": {
+                            "id": true,
+                            "labelTypes": true,
+                            "labels": true,
+                            "trace_id": true,
+                            "tsNs": true
+                        },
+                        "renameByName": {
+                            "Line": ""
+                        }
+                    }
+                },
+                {
+                    "id": "partitionByValues",
+                    "options": {
+                        "fields": [
+                            "payload_user_id"
+                        ],
+                        "keepFields": false
+                    }
+                }
+            ],
+            "type": "state-timeline"
+        },
+        {
+            "collapsed": true,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 19
+            },
+            "id": 15,
+            "panels": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "description": "Normal: dense band in low-millisecond range (fast moves). Watch for: heat spreading to higher buckets over time. Check next: Move Forensics for individual slow traces.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "color": {
+                                "mode": "scheme",
+                                "schemeName": "Oranges"
+                            },
+                            "custom": {
+                                "fillOpacity": 80,
+                                "hideFrom": {
+                                    "legend": false,
+                                    "tooltip": false,
+                                    "viz": false
+                                },
+                                "scaleDistribution": {
+                                    "type": "linear"
+                                }
+                            }
+                        },
+                        "overrides": []
+                    },
+                    "gridPos": {
+                        "h": 8,
+                        "w": 24,
+                        "x": 0,
+                        "y": 20
+                    },
+                    "id": 16,
+                    "options": {
+                        "calculate": false,
+                        "cellGap": 1,
+                        "color": {
+                            "exponent": 0.5,
+                            "fill": "dark-orange",
+                            "mode": "scheme",
+                            "reverse": false,
+                            "scale": "exponential",
+                            "scheme": "Oranges",
+                            "steps": 64
+                        },
+                        "exemplars": {
+                            "color": "rgba(255,0,255,0.7)"
+                        },
+                        "filterValues": {
+                            "le": 1e-09
+                        },
+                        "legend": {
+                            "show": true
+                        },
+                        "rowsFrame": {
+                            "layout": "auto"
+                        },
+                        "tooltip": {
+                            "mode": "single",
+                            "showColorScale": false,
+                            "yHistogram": false
+                        },
+                        "yAxis": {
+                            "axisPlacement": "left",
+                            "reverse": false,
+                            "unit": "ms"
+                        }
+                    },
+                    "targets": [
+                        {
+                            "expr": "sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"risk-it\", span_name=~\"game[.]orchestrate_move\"}[1m])) by (le)",
+                            "format": "heatmap",
+                            "legendFormat": "{{le}}",
+                            "refId": "A"
+                        }
+                    ],
+                    "title": "Move Latency Distribution",
+                    "type": "heatmap"
+                }
+            ],
+            "title": "Move Latency Distribution",
+            "type": "row"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 20
+            },
+            "id": 17,
+            "title": "Decide \u2014 Where\u2019s the bottleneck?",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "loki",
+                "uid": "loki"
+            },
+            "description": "Normal: player eliminations and continent captures during gameplay. Watch for: rapid consecutive eliminations (one player dominating) or no headlines (passive game). Check next: Event Chronicle for full event log.",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "align": "auto",
+                        "cellOptions": {
+                            "type": "auto"
+                        }
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Event Type"
+                        },
+                        "properties": [
+                            {
+                                "id": "mappings",
+                                "value": [
+                                    {
+                                        "options": {
+                                            "continent_captured": {
+                                                "color": "#FADE2A",
+                                                "text": "Continent Captured"
+                                            },
+                                            "continent_lost": {
+                                                "color": "#FADE2A",
+                                                "text": "Continent Lost"
+                                            },
+                                            "game_completed": {
+                                                "color": "#56A64B",
+                                                "text": "Game Completed"
+                                            },
+                                            "player_eliminated": {
+                                                "color": "#E02F44",
+                                                "text": "Player Eliminated"
+                                            }
+                                        },
+                                        "type": "value"
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "custom.cellOptions",
+                                "value": {
+                                    "type": "color-text"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 21
+            },
+            "id": 18,
+            "options": {
+                "footer": {
+                    "show": false
+                },
+                "showHeader": true
+            },
+            "targets": [
+                {
+                    "expr": "{service_name=\"risk-it\"} |= \"game_event\" | gameId=`$gameId` | eventType=~`player_eliminated|continent_captured|continent_lost|game_completed`",
+                    "refId": "A"
+                }
+            ],
+            "title": "Headline Moments",
+            "transformations": [
+                {
+                    "id": "extractFields",
+                    "options": {
+                        "format": "auto",
+                        "source": "labels"
+                    }
+                },
+                {
+                    "id": "organize",
+                    "options": {
+                        "excludeByName": {
+                            "Line": true,
+                            "detected_level": true,
+                            "eventTimestamp": true,
+                            "flags": true,
+                            "gameId": true,
+                            "game_id": true,
+                            "id": true,
+                            "labelTypes": true,
+                            "labels": true,
+                            "observed_timestamp": true,
+                            "payload_game_id": true,
+                            "payload_timestamp": true,
+                            "scope_name": true,
+                            "service_name": true,
+                            "service_version": true,
+                            "severity_number": true,
+                            "severity_text": true,
+                            "span_id": true,
+                            "telemetry_sdk_language": true,
+                            "telemetry_sdk_name": true,
+                            "telemetry_sdk_version": true,
+                            "tsNs": true
+                        },
+                        "renameByName": {
+                            "Time": "Time",
+                            "eventType": "Event Type",
+                            "payload_event_type": "Detail",
+                            "payload_user_id": "Player",
+                            "trace_id": "Trace ID"
+                        }
+                    }
+                },
+                {
+                    "id": "sortBy",
+                    "options": {
+                        "fields": {},
+                        "sort": [
+                            {
+                                "desc": false,
+                                "field": "Time"
+                            }
+                        ]
+                    }
+                }
+            ],
+            "type": "table"
+        },
+        {
+            "datasource": {
+                "type": "loki",
+                "uid": "loki"
+            },
+            "description": "Normal: chronological event log for this game. Watch for: gaps in event sequence or repeated errors. Check next: click a trace ID to load Move Forensics below.",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "align": "auto",
+                        "cellOptions": {
+                            "type": "auto"
+                        }
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "trace_id"
+                        },
+                        "properties": [
+                            {
+                                "id": "links",
+                                "value": [
+                                    {
+                                        "targetBlank": false,
+                                        "title": "Investigate Trace",
+                                        "url": "/d/game-theater/?var-traceId=${__value.raw}&var-gameId=${gameId}&from=${__from}&to=${__to}"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 12,
+                "w": 24,
+                "x": 0,
+                "y": 29
+            },
+            "id": 19,
+            "options": {
+                "footer": {
+                    "show": false
+                },
+                "showHeader": true
+            },
+            "targets": [
+                {
+                    "expr": "{service_name=\"risk-it\"} |= \"game_event\" | gameId=`$gameId`",
+                    "refId": "A"
+                }
+            ],
+            "title": "Event Chronicle",
+            "transformations": [
+                {
+                    "id": "extractFields",
+                    "options": {
+                        "format": "auto",
+                        "source": "labels"
+                    }
+                },
+                {
+                    "id": "organize",
+                    "options": {
+                        "excludeByName": {
+                            "Line": true,
+                            "detected_level": true,
+                            "eventTimestamp": true,
+                            "flags": true,
+                            "gameId": true,
+                            "game_id": true,
+                            "id": true,
+                            "labelTypes": true,
+                            "labels": true,
+                            "observed_timestamp": true,
+                            "payload_game_id": true,
+                            "payload_game_over": true,
+                            "payload_move_log_id": true,
+                            "payload_timestamp": true,
+                            "scope_name": true,
+                            "service_name": true,
+                            "service_version": true,
+                            "severity_number": true,
+                            "severity_text": true,
+                            "span_id": true,
+                            "telemetry_sdk_language": true,
+                            "telemetry_sdk_name": true,
+                            "telemetry_sdk_version": true,
+                            "tsNs": true
+                        },
+                        "renameByName": {
+                            "Time": "Time",
+                            "eventType": "Event Type",
+                            "payload_action_type": "Action",
+                            "payload_event_type": "Event Detail",
+                            "payload_from_phase": "From Phase",
+                            "payload_target_phase": "Target Phase",
+                            "payload_to_phase": "Phase",
+                            "payload_turn": "Turn",
+                            "payload_user_id": "Player",
+                            "trace_id": "Trace ID"
+                        }
+                    }
+                },
+                {
+                    "id": "sortBy",
+                    "options": {
+                        "fields": {},
+                        "sort": [
+                            {
+                                "desc": false,
+                                "field": "Time"
+                            }
+                        ]
+                    }
+                }
+            ],
+            "type": "table"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 41
+            },
+            "id": 20,
+            "title": "Act \u2014 What\u2019s the evidence?",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "tempo",
+                "uid": "tempo"
+            },
+            "description": "Normal: complete span tree for the selected trace. Watch for: missing spans (instrumentation gaps) or long gaps between spans (contention). Check next: Correlated Logs below.",
+            "fieldConfig": {
+                "defaults": {
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "System Health",
+                            "url": "/d/system-health?from=${__from}&to=${__to}"
+                        }
+                    ]
+                }
+            },
+            "gridPos": {
+                "h": 20,
+                "w": 24,
+                "x": 0,
+                "y": 42
+            },
+            "id": 21,
+            "targets": [
+                {
+                    "query": "${traceId}",
+                    "queryType": "traceql",
+                    "refId": "A"
+                }
+            ],
+            "title": "Move Forensics",
+            "type": "traces"
+        },
+        {
+            "datasource": {
+                "type": "loki",
+                "uid": "loki"
+            },
+            "description": "Normal: log lines matching the traced request. Watch for: error-level entries or unexpected patterns. Check next: return to Phase Tapestry for game-level context.",
+            "gridPos": {
+                "h": 10,
+                "w": 24,
+                "x": 0,
+                "y": 62
+            },
+            "id": 22,
+            "options": {
+                "dedupStrategy": "none",
+                "enableLogDetails": true,
+                "prettifyLogMessage": true,
+                "showCommonLabels": false,
+                "showLabels": true,
+                "showTime": true,
+                "sortOrder": "Descending",
+                "wrapLogMessage": true
+            },
+            "targets": [
+                {
+                    "expr": "{service_name=\"risk-it\"} | trace_id=`${traceId}`",
+                    "refId": "A"
+                }
+            ],
+            "title": "Correlated Logs",
+            "type": "logs"
+        }
+    ],
+    "refresh": "",
+    "schemaVersion": 39,
+    "tags": [
+        "risk-it",
+        "game-theater"
+    ],
+    "templating": {
+        "list": [
+            {
+                "current": {
+                    "value": ""
+                },
+                "label": "Game ID",
+                "name": "gameId",
+                "type": "textbox"
+            },
+            {
+                "current": {
+                    "value": ""
+                },
+                "label": "Trace ID",
+                "name": "traceId",
+                "type": "textbox"
+            }
+        ]
+    },
+    "time": {
+        "from": "now-1h",
+        "to": "now"
+    },
+    "timezone": "browser",
+    "title": "Game Theater",
+    "uid": "game-theater",
+    "version": 1
+}

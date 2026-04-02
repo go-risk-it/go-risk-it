@@ -4,7 +4,7 @@
 //
 // Two metric families:
 //   1. Manual metrics (service_name label) — emitted by app code or perf-test client.
-//      Helpers: histogramQuantileTargets, histogramQuantileTargetsWithExemplars, phaseLatencyTargets.
+//      Helpers: histogramQuantileTargets, histogramQuantileTargetsWithExemplars.
 //   2. Spanmetrics (service_name label) — derived by the OTel Collector spanmetrics connector from traces.
 //      Helpers: spanDuration, spanRate, spanErrorRate.
 local colors = import 'colors.libsonnet';
@@ -13,6 +13,15 @@ local colors = import 'colors.libsonnet';
   // Use these instead of hardcoding service names in PromQL expressions.
   serviceName:: 'risk-it',
   perfTestServiceName:: 'perftest',
+
+  // ── Datasource UIDs ──
+  // Single source of truth for all datasource references.
+  // Matches provisioned UIDs in grafana/provisioning/datasources/.
+  datasources:: {
+    prometheus: { type: 'prometheus', uid: 'prometheus' },
+    loki: { type: 'loki', uid: 'loki' },
+    tempo: { type: 'tempo', uid: 'tempo' },
+  },
 
   // ── Target constructors ──
 
@@ -24,6 +33,24 @@ local colors = import 'colors.libsonnet';
     legendFormat: legend,
     refId: refId,
     [if exemplar then 'exemplar']: true,
+  },
+
+  // Build a Loki log query target.
+  // expr: LogQL string, legend: legendFormat string.
+  lokiTarget(expr, legend, refId='A'):: {
+    datasource: $.datasources.loki,
+    expr: expr,
+    legendFormat: legend,
+    refId: refId,
+  },
+
+  // Build a Tempo trace query target.
+  // query: TraceQL string.
+  tempoTarget(query, refId='A'):: {
+    datasource: $.datasources.tempo,
+    queryType: 'traceql',
+    query: query,
+    refId: refId,
   },
 
   // Build a heatmap target (format:'heatmap', legendFormat:'{{le}}').
@@ -69,19 +96,6 @@ local colors = import 'colors.libsonnet';
       for i in std.range(0, std.length(quantiles) - 1)
       for q in [quantiles[i]]
     ],
-
-  // Per-phase histogram quantile targets for game_phase_duration_seconds_bucket.
-  // phase: string (e.g. 'DEPLOY', 'ATTACK').
-  // Returns p50/p95/p99 targets for the given phase.
-  phaseLatencyTargets(phase):: [
-    {
-      expr: 'histogram_quantile(%s, sum(rate(game_phase_duration_seconds_bucket{service_name="%s",phase="%s"}[1m])) by (le))' % [q[0], $.serviceName, phase],
-      legendFormat: q[1],
-      refId: std.char(65 + i),
-    }
-    for i in std.range(0, 2)
-    for q in [[['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']][i]]
-  ],
 
   // ══════════════════════════════════════════════════════════════════
   // Spanmetrics helpers (service_name label)
@@ -168,10 +182,12 @@ local colors = import 'colors.libsonnet';
   // groupBy: label to include in by clause alongside le.
   // legend: legendFormat template string.
   // extraLabels: string (optional) — additional label matchers.
-  spanDurationBy(spanNameFilter, quantile, groupBy, legend, extraLabels='')::
+  // exemplars: bool (default false) — enable trace exemplar support.
+  spanDurationBy(spanNameFilter, quantile, groupBy, legend, extraLabels='', exemplars=false)::
     $.target(
       'histogram_quantile(%s, sum(rate(%s{%s="%s", span_name=~"%s"%s}[1m])) by (le, %s)) / 1000' % [quantile, $.spanmetricsMetric.duration, $.serviceLabel, $.serviceName, spanNameFilter, extraLabels, groupBy],
       legend,
+      exemplar=exemplars,
     ),
 
   // ══════════════════════════════════════════════════════════════════
@@ -275,10 +291,12 @@ local colors = import 'colors.libsonnet';
   // groupBy: label to include in by clause alongside le.
   // legend: legendFormat template string.
   // filters: string (optional) — additional label matchers.
-  perfTestMoveDurationBy(quantile, groupBy, legend, filters='')::
+  // exemplars: bool (default false) — enable trace exemplar support.
+  perfTestMoveDurationBy(quantile, groupBy, legend, filters='', exemplars=false)::
     $.target(
       'histogram_quantile(%s, sum(rate(%s{%s="%s", span_name=~"%s"%s}[1m])) by (le, %s))' % [quantile, $.spanmetricsMetric.duration, $.serviceLabel, $.perfTestServiceName, $.perfTestSpans.move, filters, groupBy],
       legend,
+      exemplar=exemplars,
     ),
 
   // ── Lifecycle boundary targets (spanmetrics) ──

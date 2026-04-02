@@ -335,7 +335,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Normal: bus:move_executed dominates, all event types visible. Watch for: any event type dropping to zero while others continue. Check next: Event Handler Latency in Decide for handler-level bottlenecks.",
+            "description": "Normal: bus:move_executed (gray) dominates, headline events (gold/red) visible as thin bands. Watch for: any event type dropping to zero while others continue. Check next: Headline Frequency stats or Event Handler Latency in Decide.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -354,7 +354,128 @@
                     },
                     "unit": "ops"
                 },
-                "overrides": []
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "bus:continent_captured"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#FADE2A",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "bus:continent_lost"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#FF780A",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "bus:game_completed"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#3274D9",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "bus:game_created"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#73BF69",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "bus:move_executed"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#8D8D8D",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "bus:phase_transitioned"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#73BF69",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "bus:player_connected"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#8AB8FF",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "bus:player_eliminated"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#E02F44",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
             },
             "gridPos": {
                 "h": 8,
@@ -404,7 +525,147 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Normal: dense band in low-seconds range (fast phases). Watch for: heat spreading to higher buckets over time. Check next: Phase Latency P50/P99 for per-phase breakdown.",
+            "description": "Normal: DEPLOY and ATTACK p95 highest; REINFORCE and CONQUER lowest. Watch for: a single phase spiking while others stay flat (phase-specific regression). Check next: Phase Duration Heatmap for distribution shape, Moves per Second by Phase in Decide.",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "links": [
+                        {
+                            "targetBlank": true,
+                            "title": "Game Theater",
+                            "url": "/d/game-theater?from=${__from}&to=${__to}&var-gameId=${gameId}"
+                        }
+                    ],
+                    "unit": "s"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "ATTACK p95"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#E02F44",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "CARDS p95"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#FADE2A",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "CONQUER p95"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#56A64B",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "DEPLOY p95"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#3274D9",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "REINFORCE p95"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#8F3BB8",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 18
+            },
+            "id": 9,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "exemplar": true,
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"risk-it\", span_name=~\"game[.]orchestrate_move\"}[1m])) by (le, phase)) / 1000",
+                    "legendFormat": "{{phase}} p95",
+                    "refId": "A"
+                }
+            ],
+            "title": "Phase \u00d7 Latency p95",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: dense band in low-seconds range (fast phases). Watch for: heat spreading to higher buckets over time. Check next: Phase \u00d7 Latency p95 hero for per-phase breakdown.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -429,9 +690,9 @@
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 18
+                "y": 26
             },
-            "id": 9,
+            "id": 10,
             "options": {
                 "calculate": false,
                 "cellGap": 1,
@@ -508,9 +769,9 @@
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 18
+                "y": 26
             },
-            "id": 10,
+            "id": 11,
             "options": {
                 "calculate": false,
                 "cellGap": 1,
@@ -593,9 +854,9 @@
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 26
+                "y": 34
             },
-            "id": 11,
+            "id": 12,
             "options": {
                 "legend": {
                     "calcs": [
@@ -612,11 +873,13 @@
             },
             "targets": [
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.5, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"risk-it\", span_name=~\"game[.]orchestrate_move\"}[1m])) by (le, phase)) / 1000",
                     "legendFormat": "{{phase}} P50",
                     "refId": "A"
                 },
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.99, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"risk-it\", span_name=~\"game[.]orchestrate_move\"}[1m])) by (le, phase)) / 1000",
                     "legendFormat": "{{phase}} P99",
                     "refId": "B"
@@ -630,7 +893,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Normal: captured and lost rates correlated with game activity; elimination is lower steady rate. Watch for: captured >> lost (map consolidation), sudden elimination spikes (many games ending). Check next: Game Duration Heatmap for game length distribution.",
+            "description": "Normal: captured and lost rates correlated with game activity; elimination is lower steady rate. Watch for: captured >> lost (map consolidation), sudden elimination spikes (many games ending). Check next: Headline Frequency sparklines below.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -658,7 +921,7 @@
                             {
                                 "id": "color",
                                 "value": {
-                                    "fixedColor": "#FF9830",
+                                    "fixedColor": "#FADE2A",
                                     "mode": "fixed"
                                 }
                             }
@@ -700,9 +963,9 @@
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 26
+                "y": 34
             },
-            "id": 12,
+            "id": 13,
             "options": {
                 "legend": {
                     "calcs": [
@@ -738,14 +1001,167 @@
             "type": "timeseries"
         },
         {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: steady rate proportional to active games. Watch for: rate dropping to zero (no map consolidation happening). Check next: Headline Event Rates timeseries for trend.",
+            "fieldConfig": {
+                "defaults": {
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "#FADE2A",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "ops"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 8,
+                "x": 0,
+                "y": 42
+            },
+            "id": 14,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "sum(rate(traces_span_metrics_calls_total{service_name=\"risk-it\", span_name=~\"bus:continent_captured\", status_code!=\"STATUS_CODE_ERROR\"}[1m]))",
+                    "legendFormat": "captured/s",
+                    "refId": "A"
+                }
+            ],
+            "title": "Continent Captured",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: low steady rate (eliminations are rare events). Watch for: sudden spikes (many games ending simultaneously). Check next: Game Duration Heatmap for game length distribution.",
+            "fieldConfig": {
+                "defaults": {
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "#E02F44",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "ops"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 8,
+                "x": 8,
+                "y": 42
+            },
+            "id": 15,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "sum(rate(traces_span_metrics_calls_total{service_name=\"risk-it\", span_name=~\"bus:player_eliminated\", status_code!=\"STATUS_CODE_ERROR\"}[1m]))",
+                    "legendFormat": "eliminated/s",
+                    "refId": "A"
+                }
+            ],
+            "title": "Player Eliminated",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: steady completions matching game creation rate. Watch for: rate dropping to zero while active games remain (stuck games). Check next: Active Games stat and Games Created/Finished Rate in Observe.",
+            "fieldConfig": {
+                "defaults": {
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "#3274D9",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "ops"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 8,
+                "x": 16,
+                "y": 42
+            },
+            "id": 16,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "sum(rate(traces_span_metrics_calls_total{service_name=\"risk-it\", span_name=~\"bus:game_completed\", status_code!=\"STATUS_CODE_ERROR\"}[1m]))",
+                    "legendFormat": "completed/s",
+                    "refId": "A"
+                }
+            ],
+            "title": "Game Completed",
+            "type": "stat"
+        },
+        {
             "collapsed": false,
             "gridPos": {
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 34
+                "y": 48
             },
-            "id": 13,
+            "id": 17,
             "title": "Decide \u2014 Where\u2019s the bottleneck?",
             "type": "row"
         },
@@ -784,15 +1200,91 @@
                     ],
                     "unit": "ops"
                 },
-                "overrides": []
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "ATTACK"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#E02F44",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "CARDS"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#FADE2A",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "CONQUER"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#56A64B",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "DEPLOY"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#3274D9",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "REINFORCE"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#8F3BB8",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
             },
             "gridPos": {
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 35
+                "y": 49
             },
-            "id": 14,
+            "id": 18,
             "options": {
                 "legend": {
                     "calcs": [
@@ -822,7 +1314,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Normal: consistent P50 with P95 within 2-3x of P50. Watch for: P95 growing while P50 stays flat (subset of slow games). Check next: Phase Latency P50/P99 in Orient to identify which phase is slow.",
+            "description": "Normal: consistent P50 with P95 within 2-3x of P50. Watch for: P95 growing while P50 stays flat (subset of slow games). Check next: Phase \u00d7 Latency p95 in Orient to identify which phase is slow.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -896,9 +1388,9 @@
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 35
+                "y": 49
             },
-            "id": 15,
+            "id": 19,
             "options": {
                 "legend": {
                     "calcs": [
@@ -966,9 +1458,9 @@
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 43
+                "y": 57
             },
-            "id": 16,
+            "id": 20,
             "options": {
                 "legend": {
                     "calcs": [
@@ -985,6 +1477,7 @@
             },
             "targets": [
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"risk-it\", span_name=~\"consumer[.].*\"}[1m])) by (le, span_name)) / 1000",
                     "legendFormat": "{{span_name}} p95",
                     "refId": "A"
@@ -1022,9 +1515,9 @@
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 43
+                "y": 57
             },
-            "id": 17,
+            "id": 21,
             "options": {
                 "legend": {
                     "calcs": [
@@ -1041,6 +1534,7 @@
             },
             "targets": [
                 {
+                    "exemplar": true,
                     "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"risk-it\", span_name=~\"bus:.*\"}[1m])) by (le, span_name)) / 1000",
                     "legendFormat": "{{span_name}}",
                     "refId": "A"
@@ -1050,14 +1544,150 @@
             "type": "timeseries"
         },
         {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Normal: fanout=4 slightly higher than fanout=3 (one extra WS write). Watch for: fanout=4 p95 disproportionately higher than fanout=3 (non-linear cost scaling). Check next: System Health for WS connection pool and DB pool pressure.",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        }
+                    },
+                    "unit": "s"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "fanout=3 p50"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#B57ADB",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "fanout=3 p95"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#8F3BB8",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "fanout=4 p50"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#4DD9E8",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "fanout=4 p95"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#00BCD4",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 65
+            },
+            "id": 22,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "exemplar": true,
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"risk-it\", span_name=~\"ws[.]broadcast\", ws_fanout=\"3\"}[1m])) by (le)) / 1000",
+                    "legendFormat": "fanout=3 p95",
+                    "refId": "A"
+                },
+                {
+                    "exemplar": true,
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"risk-it\", span_name=~\"ws[.]broadcast\", ws_fanout=\"4\"}[1m])) by (le)) / 1000",
+                    "legendFormat": "fanout=4 p95",
+                    "refId": "B"
+                },
+                {
+                    "exemplar": true,
+                    "expr": "histogram_quantile(0.5, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"risk-it\", span_name=~\"ws[.]broadcast\", ws_fanout=\"3\"}[1m])) by (le)) / 1000",
+                    "legendFormat": "fanout=3 p50",
+                    "refId": "C"
+                },
+                {
+                    "exemplar": true,
+                    "expr": "histogram_quantile(0.5, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"risk-it\", span_name=~\"ws[.]broadcast\", ws_fanout=\"4\"}[1m])) by (le)) / 1000",
+                    "legendFormat": "fanout=4 p50",
+                    "refId": "D"
+                }
+            ],
+            "title": "WS Fanout Cost",
+            "type": "timeseries"
+        },
+        {
             "collapsed": true,
             "gridPos": {
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 51
+                "y": 73
             },
-            "id": 18,
+            "id": 23,
             "panels": [
                 {
                     "datasource": {
@@ -1088,9 +1718,9 @@
                         "h": 8,
                         "w": 12,
                         "x": 0,
-                        "y": 52
+                        "y": 74
                     },
-                    "id": 19,
+                    "id": 24,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -1139,9 +1769,9 @@
                         "h": 8,
                         "w": 12,
                         "x": 12,
-                        "y": 52
+                        "y": 74
                     },
-                    "id": 20,
+                    "id": 25,
                     "options": {
                         "colorMode": "value",
                         "graphMode": "area",
@@ -1175,9 +1805,9 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 52
+                "y": 74
             },
-            "id": 21,
+            "id": 26,
             "panels": [
                 {
                     "datasource": {
@@ -1197,9 +1827,9 @@
                         "h": 8,
                         "w": 12,
                         "x": 0,
-                        "y": 53
+                        "y": 75
                     },
-                    "id": 22,
+                    "id": 27,
                     "options": {
                         "displayMode": "gradient",
                         "maxVizHeight": 300,
@@ -1257,9 +1887,9 @@
                         "h": 8,
                         "w": 12,
                         "x": 12,
-                        "y": 53
+                        "y": 75
                     },
-                    "id": 23,
+                    "id": 28,
                     "options": {
                         "legend": {
                             "calcs": [
@@ -1294,9 +1924,9 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 53
+                "y": 75
             },
-            "id": 24,
+            "id": 29,
             "title": "Act \u2014 What\u2019s the evidence?",
             "type": "row"
         },
@@ -1310,9 +1940,9 @@
                 "h": 8,
                 "w": 24,
                 "x": 0,
-                "y": 54
+                "y": 76
             },
-            "id": 25,
+            "id": 30,
             "options": {
                 "dedupStrategy": "none",
                 "enableLogDetails": true,

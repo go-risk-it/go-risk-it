@@ -57,7 +57,7 @@
     },
     "game/logic/metrics": {
         "layer": "Logic",
-        "summary": "Package metrics provides game-specific OTel metrics ([GameMetrics]) for\ntracking active games, moves, phase durations, and game lifecycle, plus\n[GameTiming] for recording game start times and computing elapsed duration."
+        "summary": "Package metrics provides game-specific OTel metrics ([GameMetrics]) for\ntracking active games, game duration, per-game summary histograms (moves,\nattacks, turns, headlines), and [GameTiming] for recording game start times\nand computing elapsed duration. [GameSummaryRecorder] subscribes to bus events\nand records summary histograms at game completion."
     },
     "game/logic/mission": {
         "layer": "Logic",
