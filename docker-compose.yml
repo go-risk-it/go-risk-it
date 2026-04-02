@@ -58,6 +58,8 @@ services:
       - "3000:3000"
       - "4317:4317"
       - "4318:4318"
+    environment:
+      - PROMETHEUS_EXTRA_ARGS=--storage.tsdb.retention.time=6h
     volumes:
       - lgtm-data:/data
       - ./grafana/dashboards/dashboards.yml:/otel-lgtm/grafana/conf/provisioning/dashboards/go-risk-it.yaml
@@ -66,6 +68,8 @@ services:
       - ./grafana/otelcol-extra.yaml:/otel-lgtm/otelcol-config.yaml
       - ./grafana/prometheus/prometheus.yaml:/otel-lgtm/prometheus.yaml
       - ./grafana/prometheus/recording-rules.yml:/otel-lgtm/prometheus-rules/recording-rules.yml
+      - ./grafana/tempo/tempo-config.yaml:/otel-lgtm/tempo-config.yaml
+      - ./grafana/loki/loki-config.yaml:/otel-lgtm/loki-config.yaml
 
   postgres-exporter:
     image: quay.io/prometheuscommunity/postgres-exporter:v0.19.1@sha256:e96064f876226d94bb6ce48a4c4b3dd76edba91168ec1ab024e5c4b959310b0f
