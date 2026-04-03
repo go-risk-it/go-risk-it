@@ -452,13 +452,14 @@ dashboard.new(
           panels.timeseriesPanel(
             title='Heap Memory',
             targets=[
-              targets.target('go_memory_allocated_bytes_total{service_name="%s"}' % svc, 'Allocated', 'A'),
-              targets.target('go_memory_used_bytes{service_name="%s"}' % svc, 'Used', 'B'),
+              targets.target('go_memstats_heap_alloc_bytes{service_name="%s"}' % svc, 'Heap Alloc', 'A'),
+              targets.target('go_memstats_heap_sys_bytes{service_name="%s"}' % svc, 'Heap Sys', 'B'),
+              targets.target('go_memory_used_bytes{service_name="%s"}' % svc, 'Used', 'C'),
             ],
             unit='bytes',
           ),
           w=8, h=8,
-          description='Normal: allocated tracks used with sawtooth GC pattern. Watch for: used growing without release (heap pressure). Check next: GC Goal for tuning.',
+          description='Normal: heap alloc tracks used with sawtooth GC pattern. Watch for: used growing without release (heap pressure). Check next: GC Goal for tuning.',
         ),
 
         // GC Goal — runtime metric, keep
@@ -664,12 +665,12 @@ dashboard.new(
           title='Runtime Memory',
           targets=[
             targets.target('go_memory_used_bytes{service_name="%s"}' % svc, 'Used', 'A'),
-            targets.target('go_memory_allocated_bytes_total{service_name="%s"}' % svc, 'Allocated', 'B'),
+            targets.target('go_memstats_heap_alloc_bytes{service_name="%s"}' % svc, 'Heap Alloc', 'B'),
           ],
           unit='bytes',
         ),
         w=8, h=8,
-        description='Normal: used memory tracks allocated with stable overhead. Watch for: used growing without GC reclaiming (heap leak). Check next: Goroutines in Server & HTTP row.',
+        description='Normal: used memory tracks heap alloc with stable overhead. Watch for: used growing without GC reclaiming (heap leak). Check next: Goroutines in Server & HTTP row.',
       ),
     ],
 

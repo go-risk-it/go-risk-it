@@ -2475,7 +2475,7 @@
                         "type": "prometheus",
                         "uid": "prometheus"
                     },
-                    "description": "Normal: allocated tracks used with sawtooth GC pattern. Watch for: used growing without release (heap pressure). Check next: GC Goal for tuning.",
+                    "description": "Normal: heap alloc tracks used with sawtooth GC pattern. Watch for: used growing without release (heap pressure). Check next: GC Goal for tuning.",
                     "fieldConfig": {
                         "defaults": {
                             "custom": {
@@ -2518,14 +2518,19 @@
                     },
                     "targets": [
                         {
-                            "expr": "go_memory_allocated_bytes_total{service_name=\"risk-it\"}",
-                            "legendFormat": "Allocated",
+                            "expr": "go_memstats_heap_alloc_bytes{service_name=\"risk-it\"}",
+                            "legendFormat": "Heap Alloc",
                             "refId": "A"
+                        },
+                        {
+                            "expr": "go_memstats_heap_sys_bytes{service_name=\"risk-it\"}",
+                            "legendFormat": "Heap Sys",
+                            "refId": "B"
                         },
                         {
                             "expr": "go_memory_used_bytes{service_name=\"risk-it\"}",
                             "legendFormat": "Used",
-                            "refId": "B"
+                            "refId": "C"
                         }
                     ],
                     "title": "Heap Memory",
@@ -3096,7 +3101,7 @@
                 "type": "prometheus",
                 "uid": "prometheus"
             },
-            "description": "Normal: used memory tracks allocated with stable overhead. Watch for: used growing without GC reclaiming (heap leak). Check next: Goroutines in Server & HTTP row.",
+            "description": "Normal: used memory tracks heap alloc with stable overhead. Watch for: used growing without GC reclaiming (heap leak). Check next: Goroutines in Server & HTTP row.",
             "fieldConfig": {
                 "defaults": {
                     "custom": {
@@ -3144,8 +3149,8 @@
                     "refId": "A"
                 },
                 {
-                    "expr": "go_memory_allocated_bytes_total{service_name=\"risk-it\"}",
-                    "legendFormat": "Allocated",
+                    "expr": "go_memstats_heap_alloc_bytes{service_name=\"risk-it\"}",
+                    "legendFormat": "Heap Alloc",
                     "refId": "B"
                 }
             ],

@@ -7,38 +7,44 @@ import (
 
 // BoardView provides derived board analysis rebuilt from each snapshot.
 type BoardView struct {
-	RegionMap         map[string]*gamestate.Region
-	MyRegions         []*gamestate.Region
-	BorderRegions     map[string]bool     // my regions with at least one enemy neighbour
-	InteriorRegions   map[string]bool     // my regions with no enemy neighbours
-	ContinentProgress map[string]float64  // continent ID -> fraction owned (0.0-1.0)
-	ContinentRegions  map[string][]string // continent ID -> all region IDs in it
+	RegionMap          map[string]*gamestate.Region
+	MyRegions          []*gamestate.Region
+	BorderRegions      map[string]bool     // my regions with at least one enemy neighbour
+	InteriorRegions    map[string]bool     // my regions with no enemy neighbours
+	ContinentProgress  map[string]float64  // continent ID -> fraction owned (0.0-1.0)
+	ContinentRegions   map[string][]string // continent ID -> all region IDs in it
+	PlayerRegionCounts map[string]int      // playerID -> number of regions owned
 }
 
 // NewBoardView builds a BoardView from the current snapshot for a given player.
 //
-//nolint:cyclop // board analysis with region + continent classification
+//nolint:cyclop,funlen // board analysis with region + continent classification
 func NewBoardView(
 	snap gamestate.ViewSnapshot,
 	userID string,
 	graph *mapgraph.Graph,
 ) *BoardView {
 	bv := &BoardView{
-		RegionMap:         make(map[string]*gamestate.Region),
-		BorderRegions:     make(map[string]bool),
-		InteriorRegions:   make(map[string]bool),
-		ContinentProgress: make(map[string]float64),
-		ContinentRegions:  make(map[string][]string),
+		RegionMap:          make(map[string]*gamestate.Region),
+		BorderRegions:      make(map[string]bool),
+		InteriorRegions:    make(map[string]bool),
+		ContinentProgress:  make(map[string]float64),
+		ContinentRegions:   make(map[string][]string),
+		PlayerRegionCounts: make(map[string]int),
 	}
 
 	if snap.BoardState == nil {
 		return bv
 	}
 
-	// Build region map.
+	// Build region map and count regions per player.
 	for i := range snap.BoardState.Regions {
 		r := &snap.BoardState.Regions[i]
 		bv.RegionMap[r.ID] = r
+
+		if r.OwnerID != "" {
+			bv.PlayerRegionCounts[r.OwnerID]++
+		}
 	}
 
 	// Identify my regions and classify border vs interior.
@@ -118,6 +124,28 @@ func (bv *BoardView) ConnectedOwned(
 	}
 
 	return false
+}
+
+// BestEnemyNeighborTroops returns the highest troop count among enemy neighbors
+// of the given region. Returns 0 if no enemy neighbors exist (interior region).
+func (bv *BoardView) BestEnemyNeighborTroops(
+	regionID, userID string,
+	graph *mapgraph.Graph,
+) int64 {
+	var best int64
+
+	for _, neighbourID := range graph.NeighboursOf(regionID) {
+		r, ok := bv.RegionMap[neighbourID]
+		if !ok || r.OwnerID == userID {
+			continue
+		}
+
+		if r.Troops > best {
+			best = r.Troops
+		}
+	}
+
+	return best
 }
 
 func hasEnemyNeighbour(
