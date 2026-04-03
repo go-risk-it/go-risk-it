@@ -36,6 +36,15 @@ exporters:
     endpoint: http://127.0.0.1:9090/api/v1/otlp
     tls:
       insecure: true
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+    sending_queue:
+      enabled: true
+      num_consumers: 10
+      queue_size: 1000
   otlphttp/traces:
     endpoint: http://127.0.0.1:4418
     tls:
@@ -44,6 +53,11 @@ exporters:
     endpoint: http://127.0.0.1:3100/otlp
     tls:
       insecure: true
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
   otlp/profiles:
     endpoint: http://127.0.0.1:4040
     tls:
