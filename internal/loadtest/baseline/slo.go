@@ -103,7 +103,6 @@ func DefaultSLOs() SLOSet {
 				Threshold: 0.2,
 				Unit:      "s",
 			},
-			{Name: "HTTP error rate", Metric: "httpErrorRate", Threshold: 0.01, Unit: "ratio"},
 		},
 		BoundaryHealth: []SLO{
 			{
