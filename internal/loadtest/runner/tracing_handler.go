@@ -131,8 +131,8 @@ func (h *TracingHandler) handleStateReceived(_ *Bus, e Event) {
 		return
 	}
 
-	if !h.lastRESTEndTime.IsZero() && evt.Timestamp.After(h.lastRESTEndTime) {
-		wsDelivery := evt.Timestamp.Sub(h.lastRESTEndTime)
+	if !h.lastRESTEndTime.IsZero() && evt.WSReceivedAt.After(h.lastRESTEndTime) {
+		wsDelivery := evt.WSReceivedAt.Sub(h.lastRESTEndTime)
 		observe.SpanEvent(
 			h.session.Ctx,
 			"ws.delivery",

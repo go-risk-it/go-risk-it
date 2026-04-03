@@ -30,8 +30,9 @@ func (GameStartedEvent) Type() EventType { return EventGameStarted }
 
 // StateReceivedEvent carries a fresh game state snapshot.
 type StateReceivedEvent struct {
-	Snapshot  gamestate.ViewSnapshot
-	Timestamp time.Time
+	Snapshot     gamestate.ViewSnapshot
+	Timestamp    time.Time // after settle sleep — used for E2E latency
+	WSReceivedAt time.Time // before settle sleep — used for WS delivery latency
 }
 
 func (StateReceivedEvent) Type() EventType { return EventStateReceived }
