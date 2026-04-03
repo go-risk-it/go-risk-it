@@ -12,6 +12,11 @@ import (
 // TracingHandler creates two span levels: a root game span and per-move child spans.
 // It must be registered BEFORE MetricsHandler so that session.Ctx carries the
 // trace-enriched context for all downstream handlers.
+
+// maxRecordableLatency caps E2E/WS histogram recordings.
+// Values above this threshold indicate a WS wait timeout, not real latency.
+const maxRecordableLatency = 2 * time.Second
+
 type TracingHandler struct {
 	session         *GameSession
 	gameDone        func(error)
@@ -134,12 +139,19 @@ func (h *TracingHandler) handleStateReceived(_ *Bus, e Event) {
 			attribute.Float64("ws.delivery.duration_ms", float64(wsDelivery.Milliseconds())),
 		)
 
-		h.session.Accumulator.RecordWSDelivery(wsDelivery)
+		// Only record to histogram if within timeout bounds (excludes WS wait timeouts).
+		if wsDelivery < maxRecordableLatency {
+			h.session.Accumulator.RecordWSDelivery(wsDelivery)
+		}
 	}
 
 	// Record E2E latency: move decision → WS state update.
+	// Exclude timeout cases where the WS wait timed out.
 	if !h.moveStartTime.IsZero() && evt.Timestamp.After(h.moveStartTime) {
-		h.session.Accumulator.RecordE2E(evt.Timestamp.Sub(h.moveStartTime))
+		e2e := evt.Timestamp.Sub(h.moveStartTime)
+		if e2e < maxRecordableLatency {
+			h.session.Accumulator.RecordE2E(e2e)
+		}
 	}
 }
 
