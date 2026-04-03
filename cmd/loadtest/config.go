@@ -141,7 +141,7 @@ func registerFlags(fs *flag.FlagSet) *Config {
 	fs.StringVar(
 		&cfg.Game.Strategy,
 		"strategy",
-		"heuristic",
+		"expert",
 		"Bot strategy: heuristic, beginner, normal, or expert",
 	)
 
