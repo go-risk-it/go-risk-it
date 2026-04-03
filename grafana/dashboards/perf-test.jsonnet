@@ -57,20 +57,22 @@ dashboard.new(
         description='Normal: < 500ms (green). Watch for: crossing 500ms (yellow) or 1s (red) sustained. Check next: E2E Move Latency panel for percentile trend over time.',
       ),
 
-      // WS Delivery p95 (stat bg) — manual metric (span event timing, not span duration)
+      // WS Delivery p95 (stat bg) — requires client-side instrumentation (not yet available)
       layout.panel(
         panels.statPanel(
           title='WS Delivery p95',
           targets=[
             targets.target(
-              'histogram_quantile(0.95, sum(rate(perftest_ws_delivery_duration_seconds_bucket{service_name="%s"}[1m])) by (le))' % perfSvc,
-              'WS Delivery p95',
+              'vector(0)',
+              'no data (needs client instrumentation)',
             ),
           ],
           thresholds=thresholds.wsDeliveryP95,
           unit='s',
           colorMode='background',
-        ) + modifiers.withLinks([crossLinksSystemHealth]),
+        ) + modifiers.withLinks([crossLinksSystemHealth]) + {
+          description: 'Not yet instrumented. Requires client-side WS delivery timing metric (perftest_ws_delivery_duration_seconds_bucket). Normal: < 200ms (green). Watch for: crossing 200ms (yellow) or 500ms (red) sustained.',
+        },
         w=6, h=4,
         description='Normal: < 200ms (green). Watch for: crossing 200ms (yellow) or 500ms (red) sustained. Check next: WS Delivery Latency panel for percentile breakdown.',
       ),
@@ -160,14 +162,14 @@ dashboard.new(
         description='Normal: > 95% (green). Watch for: dropping below 80% (yellow) means too many timeouts or fatals. Check next: Error Breakdown for error types causing failures.',
       ),
 
-      // Error Breakdown (timeseries stacked) — manual metric (error_type is span event attr)
+      // Error Breakdown (timeseries stacked) — spanmetrics outcome!=success grouped by error_type
       layout.panel(
         panels.timeseriesPanel(
           title='Error Breakdown',
           targets=[
             targets.target(
-              'sum(rate(perftest_errors_total{service_name="%s"}[1m])) by (type)' % perfSvc,
-              '{{type}}',
+              'sum(rate(%s{%s="%s", span_name=~"%s", outcome!="success"}[1m])) by (error_type)' % [targets.spanmetricsMetric.calls, targets.serviceLabel, perfSvc, targets.perfTestSpans.move],
+              '{{error_type}}',
             ),
           ],
           unit='ops',
@@ -281,19 +283,22 @@ dashboard.new(
         description='Normal: P95 < 500ms, P99 < 1s. Watch for: P95 crossing the threshold line (SLO breach). Check next: REST Latency by Action to identify which move type is slowest.',
       ),
 
-      // WS Delivery Latency P50/P95/P99 — manual metric (span event timing, not span duration)
+      // WS Delivery Latency P50/P95/P99 — requires client-side instrumentation (not yet available)
       layout.panel(
         panels.timeseriesPanel(
           title='WS Delivery Latency (P50/P95/P99)',
-          targets=targets.histogramQuantileTargetsWithExemplars(
-            'perftest_ws_delivery_duration_seconds_bucket',
-            [['0.5', 'p50'], ['0.95', 'p95'], ['0.99', 'p99']],
-            perfSvc,
-          ),
+          targets=[
+            targets.target(
+              'vector(0)',
+              'no data (needs client instrumentation)',
+            ),
+          ],
           unit='s',
           color=colors.fixedColor(colors.ws),
         ) + modifiers.withSloThreshold(thresholds.wsDeliveryP95)
-        + modifiers.withLinks([crossLinksSystemHealth]),
+        + modifiers.withLinks([crossLinksSystemHealth]) + {
+          description: 'Not yet instrumented. Requires client-side WS delivery timing metric (perftest_ws_delivery_duration_seconds_bucket). Normal: P95 < 200ms. Watch for: P95 crossing the threshold line (WS delivery SLO breach).',
+        },
         w=12, h=8,
         description='Normal: P95 < 200ms. Watch for: P95 crossing the threshold line (WS delivery SLO breach). Check next: WebSocket dashboard for connection and broadcast details.',
       ),
@@ -313,13 +318,13 @@ dashboard.new(
         description='Normal: all actions < 200ms at P95. Watch for: single action diverging (e.g. attack P95 spiking while others stay flat). Check next: Database dashboard for query-level latency.',
       ),
 
-      // Conflicts/sec — manual counter (conflict is span error, not a distinct dimension)
+      // Conflicts/sec — spanmetrics outcome=conflict dimension on move span
       layout.panel(
         panels.timeseriesPanel(
           title='Conflicts/sec',
           targets=[
             targets.target(
-              'rate(perftest_conflicts_total{service_name="%s"}[30s])' % perfSvc,
+              'sum(rate(%s{%s="%s", span_name=~"%s", outcome="conflict"}[1m]))' % [targets.spanmetricsMetric.calls, targets.serviceLabel, perfSvc, targets.perfTestSpans.move],
               'conflicts/s',
             ),
           ],
@@ -480,14 +485,14 @@ dashboard.new(
     // ACT — What's the evidence? (4 panels)
     // ================================================================
     act=[
-      // Error Rate by Type (timeseries stacked) — manual metric (error_type is span event attr)
+      // Error Rate by Type (timeseries stacked) — spanmetrics outcome!=success grouped by error_type
       layout.panel(
         panels.timeseriesPanel(
           title='Error Rate by Type',
           targets=[
             targets.target(
-              'sum(rate(perftest_errors_total{service_name="%s"}[1m])) by (type)' % perfSvc,
-              '{{type}}',
+              'sum(rate(%s{%s="%s", span_name=~"%s", outcome!="success"}[1m])) by (error_type)' % [targets.spanmetricsMetric.calls, targets.serviceLabel, perfSvc, targets.perfTestSpans.move],
+              '{{error_type}}',
             ),
           ],
           unit='ops',
@@ -520,14 +525,14 @@ dashboard.new(
         description='Normal: consistent across the test run. Watch for: game duration growing over time (server slowing down under sustained load). Check next: Moves per Game to check if duration increase is from more moves or slower moves.',
       ),
 
-      // Moves per Game P50/P95 (timeseries) — manual histogram (game move count, not span duration)
+      // Moves per Game P50/P95 (timeseries) — server-side histogram (game_summary_moves_bucket)
       layout.panel(
         panels.timeseriesPanel(
           title='Moves per Game (P50/P95)',
           targets=targets.histogramQuantileTargetsWithExemplars(
-            'perftest_game_moves_bucket',
+            'game_summary_moves_bucket',
             [['0.5', 'p50'], ['0.95', 'p95']],
-            perfSvc,
+            svc,
           ),
           unit='short',
           color=colors.fixedColor(colors.client),
@@ -536,35 +541,26 @@ dashboard.new(
         description='Normal: stable distribution determined by game logic, not server performance. Watch for: sudden changes in move count (game logic bug or strategy change). Check next: Game Duration to correlate move count with total time.',
       ),
 
-      // Game Completion cumulative (timeseries) — manual counters (absolute totals)
+      // Game Completion cumulative (timeseries) — spanmetrics on perftest.game.run span
       layout.panel(
         panels.timeseriesPanel(
           title='Game Completion',
           targets=[
             targets.target(
-              'perftest_games_completed_total{service_name="%s"}' % perfSvc,
+              'sum(increase(%s{%s="%s", span_name=~"%s", status_code="STATUS_CODE_OK"}[1m]))' % [targets.spanmetricsMetric.calls, targets.serviceLabel, perfSvc, targets.perfTestSpans.game],
               'completed',
             ),
             targets.target(
-              'perftest_games_timed_out_total{service_name="%s"}' % perfSvc,
-              'timed out',
+              'sum(increase(%s{%s="%s", span_name=~"%s", status_code="STATUS_CODE_ERROR"}[1m]))' % [targets.spanmetricsMetric.calls, targets.serviceLabel, perfSvc, targets.perfTestSpans.game],
+              'failed',
               'B',
-            ),
-            targets.target(
-              'perftest_games_fatal_total{service_name="%s"}' % perfSvc,
-              'fatal',
-              'C',
             ),
           ],
           unit='short',
           overrides=[
             {
-              matcher: { id: 'byName', options: 'fatal' },
+              matcher: { id: 'byName', options: 'failed' },
               properties: [{ id: 'color', value: colors.fixedColor(colors.errors) }],
-            },
-            {
-              matcher: { id: 'byName', options: 'timed out' },
-              properties: [{ id: 'color', value: colors.fixedColor(colors.http) }],
             },
           ],
         ) + {

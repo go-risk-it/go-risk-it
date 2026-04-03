@@ -1998,7 +1998,7 @@
                     },
                     "targets": [
                         {
-                            "expr": "pg_statio_user_tables_heap_blks_hit / clamp_min(pg_statio_user_tables_heap_blks_hit + pg_statio_user_tables_heap_blks_read, 1) * 100",
+                            "expr": "rate(pg_statio_user_tables_heap_blocks_hit_total[1m]) / clamp_min(rate(pg_statio_user_tables_heap_blocks_hit_total[1m]) + rate(pg_statio_user_tables_heap_blocks_read_total[1m]), 0.001) * 100",
                             "legendFormat": "{{relname}}",
                             "refId": "A"
                         }
@@ -3709,7 +3709,7 @@
                     },
                     "targets": [
                         {
-                            "expr": "pg_statio_user_tables_heap_blks_hit / clamp_min(pg_statio_user_tables_heap_blks_hit + pg_statio_user_tables_heap_blks_read, 1) * 100",
+                            "expr": "rate(pg_statio_user_tables_heap_blocks_hit_total[1m]) / clamp_min(rate(pg_statio_user_tables_heap_blocks_hit_total[1m]) + rate(pg_statio_user_tables_heap_blocks_read_total[1m]), 0.001) * 100",
                             "legendFormat": "{{relname}}",
                             "refId": "A"
                         }
@@ -3914,11 +3914,43 @@
             },
             "targets": [
                 {
-                    "expr": "{service_name=\"risk-it\"} | scope_name=`go-risk-it` |= \"broadcast\" or |= \"ws\"",
+                    "expr": "{service_name=\"risk-it\"} | scope_name=`go-risk-it` |~ \"broadcast|ws\"",
                     "refId": "A"
                 }
             ],
             "title": "WS Broadcast Logs",
+            "type": "logs"
+        },
+        {
+            "datasource": {
+                "type": "loki",
+                "uid": "loki"
+            },
+            "description": "Normal: event stream showing game lifecycle (moves, phase transitions, completions). Watch for: gaps in event flow or unexpected event types. Check next: Event Bus collapsed row in Orient for handler performance.",
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 75
+            },
+            "id": 64,
+            "options": {
+                "dedupStrategy": "none",
+                "enableLogDetails": true,
+                "prettifyLogMessage": true,
+                "showCommonLabels": false,
+                "showLabels": false,
+                "showTime": true,
+                "sortOrder": "Descending",
+                "wrapLogMessage": true
+            },
+            "targets": [
+                {
+                    "expr": "{service_name=\"risk-it\"} | json | eventType != \"\" | line_format \"{{.eventType}} game={{.gameId}} {{.payload_action_type}} \u2192 {{.payload_to_phase}}\"",
+                    "refId": "A"
+                }
+            ],
+            "title": "Game Event Logs",
             "type": "logs"
         },
         {
@@ -3927,9 +3959,9 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 75
+                "y": 83
             },
-            "id": 64,
+            "id": 65,
             "panels": [
                 {
                     "datasource": {
@@ -3941,9 +3973,9 @@
                         "h": 24,
                         "w": 24,
                         "x": 0,
-                        "y": 76
+                        "y": 84
                     },
-                    "id": 65,
+                    "id": 66,
                     "targets": [
                         {
                             "query": "${traceId}",
@@ -3964,9 +3996,9 @@
                         "h": 14,
                         "w": 24,
                         "x": 0,
-                        "y": 100
+                        "y": 108
                     },
-                    "id": 66,
+                    "id": 67,
                     "options": {
                         "dedupStrategy": "none",
                         "enableLogDetails": true,

@@ -1955,7 +1955,7 @@
             },
             "targets": [
                 {
-                    "expr": "{service_name=\"risk-it\"} |= \"game\" ${gameId:pipe}",
+                    "expr": "{service_name=\"risk-it\"} |= \"game_event\" ${gameId:pipe} | json | eventType != \"\" | line_format \"{{.eventType}} game={{.gameId}} {{.payload_action_type}} \u2192 {{.payload_to_phase}}\"",
                     "refId": "A"
                 }
             ],

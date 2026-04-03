@@ -611,7 +611,7 @@ dashboard.new(
           panels.timeseriesPanel(
             title='Cache Efficiency',
             targets=[targets.target(
-              'pg_statio_user_tables_heap_blks_hit / clamp_min(pg_statio_user_tables_heap_blks_hit + pg_statio_user_tables_heap_blks_read, 1) * 100',
+              'rate(pg_statio_user_tables_heap_blocks_hit_total[1m]) / clamp_min(rate(pg_statio_user_tables_heap_blocks_hit_total[1m]) + rate(pg_statio_user_tables_heap_blocks_read_total[1m]), 0.001) * 100',
               '{{relname}}',
               'A',
             )],
@@ -773,7 +773,7 @@ dashboard.new(
           panels.timeseriesPanel(
             title='Per-Table Cache Hit',
             targets=[targets.target(
-              'pg_statio_user_tables_heap_blks_hit / clamp_min(pg_statio_user_tables_heap_blks_hit + pg_statio_user_tables_heap_blks_read, 1) * 100',
+              'rate(pg_statio_user_tables_heap_blocks_hit_total[1m]) / clamp_min(rate(pg_statio_user_tables_heap_blocks_hit_total[1m]) + rate(pg_statio_user_tables_heap_blocks_read_total[1m]), 0.001) * 100',
               '{{relname}}',
               'A',
             )],
@@ -851,10 +851,20 @@ dashboard.new(
       layout.panel(
         panels.logPanel(
           title='WS Broadcast Logs',
-          expr='{service_name="%s"} | scope_name=`go-risk-it` |= "broadcast" or |= "ws"' % svc,
+          expr='{service_name="%s"} | scope_name=`go-risk-it` |~ "broadcast|ws"' % svc,
         ),
         w=24, h=8,
         description='Normal: broadcast log entries for each move. Watch for: error-level entries or timeouts. Check next: Trace Investigation collapsed row for correlated traces.',
+      ),
+
+      // Game Event Logs
+      layout.panel(
+        panels.logPanel(
+          title='Game Event Logs',
+          expr='{service_name="%s"} | json | eventType != "" | line_format "{{.eventType}} game={{.gameId}} {{.payload_action_type}} → {{.payload_to_phase}}"' % svc,
+        ),
+        w=24, h=8,
+        description='Normal: event stream showing game lifecycle (moves, phase transitions, completions). Watch for: gaps in event flow or unexpected event types. Check next: Event Bus collapsed row in Orient for handler performance.',
       ),
     ],
 

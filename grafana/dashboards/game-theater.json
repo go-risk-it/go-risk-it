@@ -1390,7 +1390,7 @@
             },
             "targets": [
                 {
-                    "expr": "{service_name=\"risk-it\"} | trace_id=`${traceId}`",
+                    "expr": "{service_name=\"risk-it\"} | trace_id=`${traceId}` | json | line_format \"{{if .eventType}}{{.eventType}} game={{.gameId}} {{.payload_action_type}} \u2192 {{.payload_to_phase}}{{else}}{{.__line__}}{{end}}\"",
                     "refId": "A"
                 }
             ],

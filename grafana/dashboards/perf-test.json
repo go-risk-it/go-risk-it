@@ -173,8 +173,8 @@
             },
             "targets": [
                 {
-                    "expr": "histogram_quantile(0.95, sum(rate(perftest_ws_delivery_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
-                    "legendFormat": "WS Delivery p95",
+                    "expr": "vector(0)",
+                    "legendFormat": "no data (needs client instrumentation)",
                     "refId": "A"
                 }
             ],
@@ -553,8 +553,8 @@
             },
             "targets": [
                 {
-                    "expr": "sum(rate(perftest_errors_total{service_name=\"perftest\"}[1m])) by (type)",
-                    "legendFormat": "{{type}}",
+                    "expr": "sum(rate(traces_span_metrics_calls_total{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\", outcome!=\"success\"}[1m])) by (error_type)",
+                    "legendFormat": "{{error_type}}",
                     "refId": "A"
                 }
             ],
@@ -1120,22 +1120,9 @@
             },
             "targets": [
                 {
-                    "exemplar": true,
-                    "expr": "histogram_quantile(0.5, sum(rate(perftest_ws_delivery_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
-                    "legendFormat": "p50",
+                    "expr": "vector(0)",
+                    "legendFormat": "no data (needs client instrumentation)",
                     "refId": "A"
-                },
-                {
-                    "exemplar": true,
-                    "expr": "histogram_quantile(0.95, sum(rate(perftest_ws_delivery_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
-                    "legendFormat": "p95",
-                    "refId": "B"
-                },
-                {
-                    "exemplar": true,
-                    "expr": "histogram_quantile(0.99, sum(rate(perftest_ws_delivery_duration_seconds_bucket{service_name=\"perftest\"}[1m])) by (le))",
-                    "legendFormat": "p99",
-                    "refId": "C"
                 }
             ],
             "title": "WS Delivery Latency (P50/P95/P99)",
@@ -1262,7 +1249,7 @@
             },
             "targets": [
                 {
-                    "expr": "rate(perftest_conflicts_total{service_name=\"perftest\"}[30s])",
+                    "expr": "sum(rate(traces_span_metrics_calls_total{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\", outcome=\"conflict\"}[1m]))",
                     "legendFormat": "conflicts/s",
                     "refId": "A"
                 }
@@ -1830,8 +1817,8 @@
             },
             "targets": [
                 {
-                    "expr": "sum(rate(perftest_errors_total{service_name=\"perftest\"}[1m])) by (type)",
-                    "legendFormat": "{{type}}",
+                    "expr": "sum(rate(traces_span_metrics_calls_total{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\", outcome!=\"success\"}[1m])) by (error_type)",
+                    "legendFormat": "{{error_type}}",
                     "refId": "A"
                 }
             ],
@@ -1958,13 +1945,13 @@
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.5, sum(rate(perftest_game_moves_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.5, sum(rate(game_summary_moves_bucket{service_name=\"risk-it\"}[1m])) by (le))",
                     "legendFormat": "p50",
                     "refId": "A"
                 },
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.95, sum(rate(perftest_game_moves_bucket{service_name=\"perftest\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.95, sum(rate(game_summary_moves_bucket{service_name=\"risk-it\"}[1m])) by (le))",
                     "legendFormat": "p95",
                     "refId": "B"
                 }
@@ -1999,28 +1986,13 @@
                     {
                         "matcher": {
                             "id": "byName",
-                            "options": "fatal"
+                            "options": "failed"
                         },
                         "properties": [
                             {
                                 "id": "color",
                                 "value": {
                                     "fixedColor": "#E02F44",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "timed out"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#FF9830",
                                     "mode": "fixed"
                                 }
                             }
@@ -2050,19 +2022,14 @@
             },
             "targets": [
                 {
-                    "expr": "perftest_games_completed_total{service_name=\"perftest\"}",
+                    "expr": "sum(increase(traces_span_metrics_calls_total{service_name=\"perftest\", span_name=~\"perftest[.]game[.]run\", status_code=\"STATUS_CODE_OK\"}[1m]))",
                     "legendFormat": "completed",
                     "refId": "A"
                 },
                 {
-                    "expr": "perftest_games_timed_out_total{service_name=\"perftest\"}",
-                    "legendFormat": "timed out",
+                    "expr": "sum(increase(traces_span_metrics_calls_total{service_name=\"perftest\", span_name=~\"perftest[.]game[.]run\", status_code=\"STATUS_CODE_ERROR\"}[1m]))",
+                    "legendFormat": "failed",
                     "refId": "B"
-                },
-                {
-                    "expr": "perftest_games_fatal_total{service_name=\"perftest\"}",
-                    "legendFormat": "fatal",
-                    "refId": "C"
                 }
             ],
             "title": "Game Completion",
