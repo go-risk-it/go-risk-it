@@ -133,6 +133,13 @@ func (h *TracingHandler) handleStateReceived(_ *Bus, e Event) {
 			"ws.delivery",
 			attribute.Float64("ws.delivery.duration_ms", float64(wsDelivery.Milliseconds())),
 		)
+
+		h.session.Accumulator.RecordWSDelivery(wsDelivery)
+	}
+
+	// Record E2E latency: move decision → WS state update.
+	if !h.moveStartTime.IsZero() && evt.Timestamp.After(h.moveStartTime) {
+		h.session.Accumulator.RecordE2E(evt.Timestamp.Sub(h.moveStartTime))
 	}
 }
 
