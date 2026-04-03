@@ -396,7 +396,7 @@ local moveForensics =
 local correlatedLogs =
   panels.logPanel(
     title='Correlated Logs',
-    expr='{service_name="%s"} | trace_id=`${traceId}`' % svc,
+    expr='{service_name="%s"} | trace_id=`${traceId}` | json | line_format "{{if .eventType}}{{.eventType}} game={{.gameId}} {{.payload_action_type}} → {{.payload_to_phase}}{{else}}{{.__line__}}{{end}}"' % svc,
     showLabels=true,
   );
 

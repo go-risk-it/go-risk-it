@@ -452,13 +452,14 @@ dashboard.new(
           panels.timeseriesPanel(
             title='Heap Memory',
             targets=[
-              targets.target('go_memory_allocated_bytes_total{service_name="%s"}' % svc, 'Allocated', 'A'),
-              targets.target('go_memory_used_bytes{service_name="%s"}' % svc, 'Used', 'B'),
+              targets.target('go_memstats_heap_alloc_bytes{service_name="%s"}' % svc, 'Heap Alloc', 'A'),
+              targets.target('go_memstats_heap_sys_bytes{service_name="%s"}' % svc, 'Heap Sys', 'B'),
+              targets.target('go_memory_used_bytes{service_name="%s"}' % svc, 'Used', 'C'),
             ],
             unit='bytes',
           ),
           w=8, h=8,
-          description='Normal: allocated tracks used with sawtooth GC pattern. Watch for: used growing without release (heap pressure). Check next: GC Goal for tuning.',
+          description='Normal: heap alloc tracks used with sawtooth GC pattern. Watch for: used growing without release (heap pressure). Check next: GC Goal for tuning.',
         ),
 
         // GC Goal — runtime metric, keep
@@ -610,7 +611,7 @@ dashboard.new(
           panels.timeseriesPanel(
             title='Cache Efficiency',
             targets=[targets.target(
-              'pg_statio_user_tables_heap_blks_hit / clamp_min(pg_statio_user_tables_heap_blks_hit + pg_statio_user_tables_heap_blks_read, 1) * 100',
+              'rate(pg_statio_user_tables_heap_blocks_hit_total[1m]) / clamp_min(rate(pg_statio_user_tables_heap_blocks_hit_total[1m]) + rate(pg_statio_user_tables_heap_blocks_read_total[1m]), 0.001) * 100',
               '{{relname}}',
               'A',
             )],
@@ -664,12 +665,12 @@ dashboard.new(
           title='Runtime Memory',
           targets=[
             targets.target('go_memory_used_bytes{service_name="%s"}' % svc, 'Used', 'A'),
-            targets.target('go_memory_allocated_bytes_total{service_name="%s"}' % svc, 'Allocated', 'B'),
+            targets.target('go_memstats_heap_alloc_bytes{service_name="%s"}' % svc, 'Heap Alloc', 'B'),
           ],
           unit='bytes',
         ),
         w=8, h=8,
-        description='Normal: used memory tracks allocated with stable overhead. Watch for: used growing without GC reclaiming (heap leak). Check next: Goroutines in Server & HTTP row.',
+        description='Normal: used memory tracks heap alloc with stable overhead. Watch for: used growing without GC reclaiming (heap leak). Check next: Goroutines in Server & HTTP row.',
       ),
     ],
 
@@ -772,7 +773,7 @@ dashboard.new(
           panels.timeseriesPanel(
             title='Per-Table Cache Hit',
             targets=[targets.target(
-              'pg_statio_user_tables_heap_blks_hit / clamp_min(pg_statio_user_tables_heap_blks_hit + pg_statio_user_tables_heap_blks_read, 1) * 100',
+              'rate(pg_statio_user_tables_heap_blocks_hit_total[1m]) / clamp_min(rate(pg_statio_user_tables_heap_blocks_hit_total[1m]) + rate(pg_statio_user_tables_heap_blocks_read_total[1m]), 0.001) * 100',
               '{{relname}}',
               'A',
             )],
@@ -850,10 +851,20 @@ dashboard.new(
       layout.panel(
         panels.logPanel(
           title='WS Broadcast Logs',
-          expr='{service_name="%s"} | scope_name=`go-risk-it` |= "broadcast" or |= "ws"' % svc,
+          expr='{service_name="%s"} | scope_name=`go-risk-it` |~ "broadcast|ws"' % svc,
         ),
         w=24, h=8,
         description='Normal: broadcast log entries for each move. Watch for: error-level entries or timeouts. Check next: Trace Investigation collapsed row for correlated traces.',
+      ),
+
+      // Game Event Logs
+      layout.panel(
+        panels.logPanel(
+          title='Game Event Logs',
+          expr='{service_name="%s"} | json | eventType != "" | line_format "{{.eventType}} game={{.gameId}} {{.payload_action_type}} → {{.payload_to_phase}}"' % svc,
+        ),
+        w=24, h=8,
+        description='Normal: event stream showing game lifecycle (moves, phase transitions, completions). Watch for: gaps in event flow or unexpected event types. Check next: Event Bus collapsed row in Orient for handler performance.',
       ),
     ],
 

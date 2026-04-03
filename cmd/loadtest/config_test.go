@@ -25,7 +25,7 @@ func TestConfig_Defaults(t *testing.T) {
 	assert.Equal(t, 4, cfg.Game.NumPlayers)
 	assert.Equal(t, 10*time.Minute, cfg.Game.GameTimeout)
 	assert.Equal(t, time.Duration(0), cfg.Game.ThinkTime)
-	assert.Equal(t, "heuristic", cfg.Game.Strategy)
+	assert.Equal(t, "expert", cfg.Game.Strategy)
 
 	// Mode defaults.
 	assert.Equal(t, "batch", cfg.Run.Mode)

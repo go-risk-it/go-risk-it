@@ -431,7 +431,7 @@ dashboard.new(
       layout.panel(
         panels.logPanel(
           title='Game Event Logs',
-          expr='{service_name="%s"} |= "game" ${gameId:pipe}' % svc,
+          expr='{service_name="%s"} |= "game_event" ${gameId:pipe} | json | eventType != "" | line_format "{{.eventType}} game={{.gameId}} {{.payload_action_type}} → {{.payload_to_phase}}"' % svc,
         ),
         w=24, h=8,
         description='Normal: game creation, move execution, phase transitions. Watch for: error-level entries, panic recoveries. Check next: filter by Game ID using the $gameId variable above.',
