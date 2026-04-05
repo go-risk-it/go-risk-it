@@ -9,16 +9,34 @@ import (
 )
 
 // StateWatcherHandler waits for fresh game state via WebSocket after moves.
+// It captures pre-move view versions on MoveDecided (before the REST call),
+// then uses them after MoveSucceeded to detect updates that may have arrived
+// during the REST roundtrip.
 type StateWatcherHandler struct {
 	gameCtx  *GameSession
 	timeouts Timeouts
+
+	// preVersions holds each player's View version captured before the REST
+	// call. Set by handleMoveDecided, consumed by handleWaitAndEmit.
+	preVersions []uint64
 }
 
-// Register subscribes to EventMoveSucceeded, EventMoveConflict, EventTurnSkipped.
+// Register subscribes to the events that drive state watching.
 func (h *StateWatcherHandler) Register(bus *Bus) {
+	bus.On(EventMoveDecided, h.handleMoveDecided)
 	bus.On(EventMoveSucceeded, h.handleWaitAndEmit)
 	bus.On(EventTurnSkipped, h.handleWaitAndEmit)
 	bus.On(EventMoveConflict, h.handleConflict)
+}
+
+func (h *StateWatcherHandler) handleMoveDecided(_ *Bus, _ Event) {
+	// Snapshot each player's current view version BEFORE the REST call.
+	// This ensures AwaitUpdateSince detects updates even if the WS message
+	// arrives before waitForAllUpdates runs.
+	h.preVersions = make([]uint64, len(h.gameCtx.Players))
+	for i, p := range h.gameCtx.Players {
+		h.preVersions[i] = p.WS.View().Version()
+	}
 }
 
 func (h *StateWatcherHandler) handleWaitAndEmit(bus *Bus, _ Event) {
@@ -26,7 +44,7 @@ func (h *StateWatcherHandler) handleWaitAndEmit(bus *Bus, _ Event) {
 		return
 	}
 
-	waitSettleAndEmitState(bus, h.gameCtx, h.timeouts)
+	waitAndEmitState(bus, h.gameCtx, h.timeouts, h.preVersions)
 }
 
 func (h *StateWatcherHandler) handleConflict(bus *Bus, _ Event) {
@@ -50,15 +68,20 @@ func (h *StateWatcherHandler) handleConflict(bus *Bus, _ Event) {
 	})
 }
 
-// waitSettleAndEmitState waits for all players' WS views to update, snapshots
-// player 0, and emits a StateReceivedEvent.
+// waitAndEmitState waits for all players' WS views to update past
+// their pre-move versions, snapshots player 0, and emits a StateReceivedEvent.
 //
 // We wait for ALL players (not just one) because the unified playerView protocol
 // sends exactly one WS message per player per move. Waiting on "any" single player
 // could return before the others have processed their messages, yielding a stale
 // snapshot when reading a different player's view later in the pipeline.
-func waitSettleAndEmitState(bus *Bus, gameCtx *GameSession, timeouts Timeouts) {
-	waitForAllUpdates(gameCtx.Players, timeouts.UpdateWait, gameCtx.Ctx)
+func waitAndEmitState(
+	bus *Bus,
+	gameCtx *GameSession,
+	timeouts Timeouts,
+	preVersions []uint64,
+) {
+	waitForAllUpdates(gameCtx.Players, preVersions, timeouts.UpdateWait, gameCtx.Ctx)
 
 	now := time.Now()
 	snap := gameCtx.Players[0].WS.View().Snapshot()
@@ -69,15 +92,27 @@ func waitSettleAndEmitState(bus *Bus, gameCtx *GameSession, timeouts Timeouts) {
 	})
 }
 
-// waitForAllUpdates waits until every player's WS connection has received at
-// least one update, or the timeout/context expires.
-func waitForAllUpdates(players []*PlayerInfo, timeout time.Duration, ctx context.Context) {
+// waitForAllUpdates waits until every player's WS connection has received an
+// update after the pre-move version snapshot, or the timeout/context expires.
+// Using version-based detection eliminates the race where a WS message arrives
+// between the REST response and the start of the wait.
+func waitForAllUpdates(
+	players []*PlayerInfo,
+	preVersions []uint64,
+	timeout time.Duration,
+	ctx context.Context,
+) {
 	timer := time.NewTimer(timeout)
 	defer timer.Stop()
 
-	for _, p := range players {
+	for i, p := range players {
+		var version uint64
+		if i < len(preVersions) {
+			version = preVersions[i]
+		}
+
 		select {
-		case <-p.WS.View().Updated():
+		case <-p.WS.View().AwaitUpdateSince(version):
 		case <-p.WS.Done():
 		case <-timer.C:
 			return
@@ -97,13 +132,16 @@ func waitForPhaseChange(
 	deadline := time.After(timeout)
 
 	for {
+		currentVersion := v.Version()
+
+		if v.Snapshot().CurrentPhase() != oldPhase {
+			return
+		}
+
 		select {
 		case <-deadline:
 			return
-		case <-v.Updated():
-			if v.Snapshot().CurrentPhase() != oldPhase {
-				return
-			}
+		case <-v.AwaitUpdateSince(currentVersion):
 		case <-ctx.Done():
 			return
 		}

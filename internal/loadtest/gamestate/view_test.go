@@ -136,22 +136,24 @@ func TestView_ApplyInvalidJSON(t *testing.T) {
 	assert.Contains(t, err.Error(), "unmarshal playerView")
 }
 
-func TestView_UpdatedChannel(t *testing.T) {
+func TestView_VersionAndAwaitUpdateSince(t *testing.T) {
 	t.Parallel()
 
 	v := gamestate.NewView()
-	ch := v.Updated()
+	require.Equal(t, uint64(0), v.Version())
 
-	// Channel should be open.
+	// AwaitUpdateSince(0) should block (no update yet).
+	ch := v.AwaitUpdateSince(0)
 	select {
 	case <-ch:
 		t.Fatal("channel should not be closed yet")
 	default:
 	}
 
-	// Apply triggers close.
+	// Apply triggers version bump and channel close.
 	err := v.Apply(gamestate.WSMessage{Type: "playerConnection", Payload: json.RawMessage(`{}`)})
 	require.NoError(t, err)
+	require.Equal(t, uint64(1), v.Version())
 
 	select {
 	case <-ch:
@@ -160,11 +162,20 @@ func TestView_UpdatedChannel(t *testing.T) {
 		t.Fatal("channel should be closed after Apply")
 	}
 
-	// New channel should be open.
-	ch2 := v.Updated()
+	// AwaitUpdateSince(0) now returns immediately (version 1 > 0).
+	ch2 := v.AwaitUpdateSince(0)
 	select {
 	case <-ch2:
-		t.Fatal("new channel should not be closed")
+		// OK — pre-closed channel.
+	default:
+		t.Fatal("should return immediately when version already advanced")
+	}
+
+	// AwaitUpdateSince(1) should block (waiting for version > 1).
+	ch3 := v.AwaitUpdateSince(1)
+	select {
+	case <-ch3:
+		t.Fatal("should block when waiting for future version")
 	default:
 	}
 }
@@ -340,8 +351,9 @@ func TestView_ConcurrentAccess(t *testing.T) {
 	for range 10 {
 		wg.Go(func() {
 			_ = v.Snapshot()
-			_ = v.Updated()
+			_ = v.AwaitUpdateSince(0)
 			_ = v.LastUpdateTime()
+			_ = v.Version()
 		})
 	}
 

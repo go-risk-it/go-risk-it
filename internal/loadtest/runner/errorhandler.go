@@ -151,7 +151,7 @@ func (h *ErrorHandler) handleExecution(bus *Bus, evt MoveFailedEvent) {
 }
 
 func (h *ErrorHandler) waitAndEmitState(bus *Bus) {
-	waitSettleAndEmitState(bus, h.gameCtx, h.timeouts)
+	waitAndEmitState(bus, h.gameCtx, h.timeouts, nil)
 }
 
 func (h *ErrorHandler) currentPhase() string {

@@ -19,6 +19,10 @@ type View struct {
 	// lastUpdateTime records when the most recent Apply() was called.
 	lastUpdateTime time.Time
 
+	// version is a monotonically increasing counter incremented on each Apply().
+	// Used by AwaitUpdateSince to detect updates that arrived before the wait started.
+	version uint64
+
 	// updated is closed and re-created on each state update.
 	updated chan struct{}
 }
@@ -29,10 +33,29 @@ func NewView() *View {
 	}
 }
 
-// Updated returns a channel that is closed when a new state update arrives.
-func (v *View) Updated() <-chan struct{} {
+// Version returns the current update counter. Callers snapshot this before
+// triggering a server-side action, then pass it to AwaitUpdateSince to wait
+// for the resulting WS update — even if it arrives before the wait starts.
+func (v *View) Version() uint64 {
 	v.mu.RLock()
 	defer v.mu.RUnlock()
+
+	return v.version
+}
+
+// AwaitUpdateSince returns a channel that is closed when the version exceeds
+// sinceVersion. If the update has already arrived (version > sinceVersion),
+// returns a pre-closed channel for immediate consumption.
+func (v *View) AwaitUpdateSince(sinceVersion uint64) <-chan struct{} {
+	v.mu.RLock()
+	defer v.mu.RUnlock()
+
+	if v.version > sinceVersion {
+		ch := make(chan struct{})
+		close(ch)
+
+		return ch
+	}
 
 	return v.updated
 }
@@ -58,6 +81,7 @@ func (v *View) Apply(msg WSMessage) error {
 		return nil
 	}
 
+	v.version++
 	close(v.updated)
 	v.updated = make(chan struct{})
 	v.lastUpdateTime = time.Now()
