@@ -203,15 +203,14 @@ func registerFlags(fs *flag.FlagSet) *Config {
 	fs.StringVar(
 		&cfg.Obs.OTelEndpoint,
 		"otel-endpoint",
-		"",
-		"OTLP HTTP endpoint for live metrics export "+
-			"(e.g., localhost:4318). Empty disables export.",
+		"localhost:4318",
+		"OTLP HTTP endpoint for live metrics export. Empty disables export.",
 	)
 	fs.StringVar(
 		&cfg.Obs.GrafanaURL,
 		"grafana-url",
-		"",
-		"Grafana URL for annotations (e.g., http://localhost:3000). Empty disables annotations.",
+		"http://localhost:3000",
+		"Grafana URL for annotations. Empty disables annotations.",
 	)
 	fs.StringVar(
 		&cfg.Obs.DBDSN,
