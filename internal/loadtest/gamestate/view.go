@@ -74,7 +74,8 @@ func (v *View) Apply(msg WSMessage) error {
 
 		v.playerView = &pv
 	case "playerConnection":
-		// Connection status updates are not needed for perf testing.
+		// Connection status updates don't affect game state — skip version bump.
+		return nil
 	default:
 		slog.Warn("unknown ws message type", "type", msg.Type)
 

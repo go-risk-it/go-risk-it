@@ -150,8 +150,16 @@ func TestView_VersionAndAwaitUpdateSince(t *testing.T) {
 	default:
 	}
 
-	// Apply triggers version bump and channel close.
+	// playerConnection does NOT bump version.
 	err := v.Apply(gamestate.WSMessage{Type: "playerConnection", Payload: json.RawMessage(`{}`)})
+	require.NoError(t, err)
+	require.Equal(t, uint64(0), v.Version())
+
+	// playerView DOES bump version.
+	data, err2 := json.Marshal(testPlayerView())
+	require.NoError(t, err2)
+
+	err = v.Apply(gamestate.WSMessage{Type: "playerView", Payload: data})
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), v.Version())
 
@@ -186,9 +194,17 @@ func TestView_LastUpdateTime(t *testing.T) {
 	v := gamestate.NewView()
 	assert.True(t, v.LastUpdateTime().IsZero())
 
+	// playerConnection messages don't update timestamp.
 	err := v.Apply(gamestate.WSMessage{Type: "playerConnection", Payload: json.RawMessage(`{}`)})
 	require.NoError(t, err)
+	assert.True(t, v.LastUpdateTime().IsZero())
 
+	// playerView messages do.
+	data, err2 := json.Marshal(testPlayerView())
+	require.NoError(t, err2)
+
+	err = v.Apply(gamestate.WSMessage{Type: "playerView", Payload: data})
+	require.NoError(t, err)
 	assert.False(t, v.LastUpdateTime().IsZero())
 }
 
