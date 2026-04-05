@@ -16,7 +16,8 @@ const (
 	// DefaultFillConcurrency is the default number of games launched in parallel
 	// during the initial pool fill. Higher values fill faster but increase
 	// server-side contention (signup + game creation + WS connect).
-	DefaultFillConcurrency = 20
+	// Kept moderate to avoid exhausting Supabase auth's DB connection pool.
+	DefaultFillConcurrency = 10
 
 	// DefaultCooldownSec is the default cooldown between staircase steps.
 	DefaultCooldownSec = 5

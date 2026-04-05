@@ -41,12 +41,12 @@ type Pool struct {
 
 // NewPool creates a new game pool.
 func NewPool(cfg PoolConfig, runFunc RunFunc) *Pool {
-	if cfg.StaggerDelay == 0 {
-		cfg.StaggerDelay = 100 * time.Millisecond
-	}
-
 	if cfg.FillConcurrency <= 0 {
 		cfg.FillConcurrency = DefaultFillConcurrency
+	}
+
+	if cfg.StaggerDelay == 0 {
+		cfg.StaggerDelay = adaptiveStagger(cfg.TargetGames, cfg.FillConcurrency)
 	}
 
 	p := &Pool{
@@ -200,4 +200,32 @@ func (p *Pool) LogProgress(stepNum int, targetGames int) {
 		attribute.Int("completed", completed),
 		attribute.Int("target", p.cfg.TargetGames),
 	)
+}
+
+// adaptiveStagger computes a stagger delay that fills the pool in roughly
+// targetFillTime regardless of pool size. The stagger is clamped between
+// minStagger and maxStagger to avoid either hammering the server (too low)
+// or wasting the hold window (too high).
+//
+// Fill time ≈ targetGames × stagger / fillConcurrency.
+func adaptiveStagger(targetGames, fillConcurrency int) time.Duration {
+	const (
+		targetFillTime = 45 * time.Second
+		minStagger     = 10 * time.Millisecond
+		maxStagger     = 200 * time.Millisecond
+	)
+
+	if targetGames <= 0 {
+		return DefaultStaggerDelay
+	}
+
+	// stagger = targetFillTime * fillConcurrency / targetGames
+	stagger := time.Duration(
+		int64(targetFillTime) * int64(fillConcurrency) / int64(targetGames),
+	)
+
+	stagger = max(stagger, minStagger)
+	stagger = min(stagger, maxStagger)
+
+	return stagger
 }
