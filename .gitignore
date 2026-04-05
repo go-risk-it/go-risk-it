@@ -328,3 +328,4 @@ perf-test/loadtest
 # Grafana/Jsonnet
 grafana/vendor/
 !grafana/lib/
+mocks/internal_/lobby/internal_/

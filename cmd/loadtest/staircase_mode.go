@@ -129,6 +129,7 @@ func (a *App) buildStepExecutorDeps(gameTimeout time.Duration) orchestrator.Step
 				Timeouts:      runner.DefaultTimeouts(),
 				ChaosInjector: injector,
 				Observer:      obs,
+				UserPool:      a.userPool,
 			}).ToRunFunc()
 		},
 		NewCollector: metrics.NewStepAccumulator,
