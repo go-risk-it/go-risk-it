@@ -23,20 +23,13 @@ func newTestPool() (*userpool.Pool, *atomic.Int64) {
 			id := counter.Add(1)
 
 			return &client.AuthResult{
-				UserID:      fakeUserID(id),
-				AccessToken: fakeToken(id),
+				UserID:      fmt.Sprintf("user-%d", id),
+				AccessToken: fmt.Sprintf("token-%d", id),
 			}, nil
 		},
 	})
 
 	return pool, &counter
-}
-
-func fakeUserID(id int64) string { return "user-" + itoa(id) }
-func fakeToken(id int64) string  { return "token-" + itoa(id) }
-
-func itoa(i int64) string {
-	return []string{"", "1", "2", "3", "4", "5", "6", "7", "8"}[i]
 }
 
 func TestAcquire_LazyCreation(t *testing.T) {
@@ -156,6 +149,61 @@ func TestRelease_NilSafe(t *testing.T) {
 	// Should not panic.
 	pool.Release(nil)
 	pool.Release([]*userpool.Entry{})
+}
+
+// TestGameReplacementPattern simulates the staircase game replacement cycle:
+// maintain N concurrent games, each acquiring 4 users. When a game finishes
+// (release 4), a replacement immediately acquires 4. Pool should stabilize
+// at N*4/maxConcurrent users and stop growing.
+func TestGameReplacementPattern(t *testing.T) {
+	t.Parallel()
+
+	pool, counter := newTestPool()
+	const concurrentGames = 10
+	const playersPerGame = 4
+	const replacements = 50
+
+	// Initial fill: 10 games × 4 players = 40 users (maxConcurrent=2, so 20 users).
+	activeGames := make([][]*userpool.Entry, concurrentGames)
+
+	for i := range concurrentGames {
+		entries, err := pool.Acquire(context.Background(), playersPerGame)
+		require.NoError(t, err)
+		activeGames[i] = entries
+	}
+
+	usersAfterFill := counter.Load()
+
+	// Replacement cycle: finish game[i%10], start a new one.
+	for i := range replacements {
+		slot := i % concurrentGames
+		pool.Release(activeGames[slot])
+
+		entries, err := pool.Acquire(context.Background(), playersPerGame)
+		require.NoError(t, err)
+		activeGames[slot] = entries
+	}
+
+	usersAfterReplacements := counter.Load()
+
+	// Pool should NOT have grown during replacements — all users reused.
+	assert.Equal(
+		t,
+		usersAfterFill,
+		usersAfterReplacements,
+		"pool should not grow during replacement cycle (created %d users for fill, %d after %d replacements)",
+		usersAfterFill,
+		usersAfterReplacements,
+		replacements,
+	)
+
+	// Cleanup.
+	for _, entries := range activeGames {
+		pool.Release(entries)
+	}
+
+	stats := pool.Stats()
+	assert.Equal(t, 0, stats.ActiveSlots)
 }
 
 func TestConcurrentAcquireRelease(t *testing.T) {
