@@ -52,7 +52,7 @@ func signalWSUpdatePlayerView(t *testing.T, p *PlayerInfo, pv *snapshot.PlayerVi
 	}
 
 	data, err := json.Marshal(pv)
-	require.NoError(t, err)
+	assert.NoError(t, err) //nolint:testifylint // Called from test goroutines - safe with assert
 
 	_ = p.WS.View().Apply(gamestate.WSMessage{Type: "playerView", Payload: data})
 }

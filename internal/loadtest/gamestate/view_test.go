@@ -76,8 +76,12 @@ func TestView_ApplyPlayerView_PhaseState(t *testing.T) {
 	v := gamestate.NewView()
 	pv := &snapshot.PlayerView{
 		Phase: snapshot.Phase{
-			Type:  snapshot.PhaseConquer,
-			State: snapshot.ConquerPhaseState{AttackingRegionID: "a1", DefendingRegionID: "a2", MinTroopsToMove: 2},
+			Type: snapshot.PhaseConquer,
+			State: snapshot.ConquerPhaseState{
+				AttackingRegionID: "a1",
+				DefendingRegionID: "a2",
+				MinTroopsToMove:   2,
+			},
 		},
 		Mission: snapshot.PlayerMission{
 			Type:   snapshot.MissionTwentyFourTerritories,

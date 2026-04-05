@@ -15,7 +15,8 @@ import (
 func NewReinforceOrchestrator(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *ReinforceOrchestrator {
+},
+) *ReinforceOrchestrator {
 	mock := &ReinforceOrchestrator{}
 	mock.Mock.Test(t)
 

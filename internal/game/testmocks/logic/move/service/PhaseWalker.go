@@ -15,7 +15,8 @@ import (
 func NewPhaseWalker(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *PhaseWalker {
+},
+) *PhaseWalker {
 	mock := &PhaseWalker{}
 	mock.Mock.Test(t)
 

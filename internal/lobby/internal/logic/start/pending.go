@@ -62,7 +62,7 @@ func (p *PendingStarts) Register(lobbyID int64) (<-chan StartResult, error) {
 func (p *PendingStarts) Await(
 	ctx context.Context,
 	lobbyID int64,
-	ch <-chan StartResult,
+	resultChan <-chan StartResult,
 	timeout time.Duration,
 ) (int64, error) {
 	defer p.remove(lobbyID)
@@ -71,7 +71,7 @@ func (p *PendingStarts) Await(
 	defer timer.Stop()
 
 	select {
-	case result := <-ch:
+	case result := <-resultChan:
 		if result.Err != nil {
 			return 0, fmt.Errorf("game creation failed: %w", result.Err)
 		}
@@ -80,7 +80,7 @@ func (p *PendingStarts) Await(
 	case <-timer.C:
 		return 0, ErrStartTimedOut
 	case <-ctx.Done():
-		return 0, ctx.Err()
+		return 0, fmt.Errorf("context cancelled: %w", ctx.Err())
 	}
 }
 
@@ -89,7 +89,7 @@ func (p *PendingStarts) Await(
 // timeout or cancellation), the call is a no-op.
 func (p *PendingStarts) Resolve(lobbyID int64, gameID int64, err error) {
 	p.mu.Lock()
-	ch, exists := p.pending[lobbyID]
+	resultChan, exists := p.pending[lobbyID]
 	p.mu.Unlock()
 
 	if !exists {
@@ -97,7 +97,7 @@ func (p *PendingStarts) Resolve(lobbyID int64, gameID int64, err error) {
 	}
 
 	// Channel is buffered(1), so this never blocks even if nobody is listening.
-	ch <- StartResult{GameID: gameID, Err: err}
+	resultChan <- StartResult{GameID: gameID, Err: err}
 }
 
 // Cancel removes the pending start entry for lobbyID without sending a result.

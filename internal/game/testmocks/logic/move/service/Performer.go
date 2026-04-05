@@ -17,7 +17,8 @@ import (
 func NewPerformer[T any, R any](t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *Performer[T, R] {
+},
+) *Performer[T, R] {
 	mock := &Performer[T, R]{}
 	mock.Mock.Test(t)
 

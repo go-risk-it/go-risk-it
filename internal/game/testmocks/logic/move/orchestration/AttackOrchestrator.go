@@ -15,7 +15,8 @@ import (
 func NewAttackOrchestrator(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *AttackOrchestrator {
+},
+) *AttackOrchestrator {
 	mock := &AttackOrchestrator{}
 	mock.Mock.Test(t)
 

@@ -402,16 +402,16 @@ func setupTransactionalQuerier(
 
 	poolQuerier := db.NewQuerier(t)
 	txQuerier := db.NewQuerier(t)
-	tx := db.NewTransaction(t)
+	transaction := db.NewTransaction(t)
 
 	// Transaction lifecycle
 	poolQuerier.EXPECT().
 		BeginTx(mock.Anything, mock.Anything).
-		Return(tx, nil)
+		Return(transaction, nil)
 	poolQuerier.EXPECT().
-		WithTx(tx).
+		WithTx(transaction).
 		Return(txQuerier)
-	tx.EXPECT().
+	transaction.EXPECT().
 		Commit(mock.Anything).
 		Return(nil)
 
@@ -462,8 +462,20 @@ func testPublicSnapshot(gameID int64) *snapshot.GameSnapshot {
 			{ID: "italy", OwnerID: "user-2", Troops: 1},
 		},
 		Players: []snapshot.PlayerState{
-			{UserID: "user-1", Name: "Giovanni", Index: 0, CardCount: 0, Status: snapshot.PlayerAlive},
-			{UserID: "user-2", Name: "Gabriele", Index: 1, CardCount: 0, Status: snapshot.PlayerAlive},
+			{
+				UserID:    "user-1",
+				Name:      "Giovanni",
+				Index:     0,
+				CardCount: 0,
+				Status:    snapshot.PlayerAlive,
+			},
+			{
+				UserID:    "user-2",
+				Name:      "Gabriele",
+				Index:     1,
+				CardCount: 0,
+				Status:    snapshot.PlayerAlive,
+			},
 		},
 	}
 }

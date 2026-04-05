@@ -95,8 +95,8 @@ func TestWalk(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
 			// Construct a real service (deps unused by Walk).
@@ -108,12 +108,12 @@ func TestWalk(t *testing.T) {
 			)
 
 			wctx := moveservice.WalkContext{
-				Voluntary: tt.voluntary,
+				Voluntary: testCase.voluntary,
 				PrevSnapshot: &snapshot.GameSnapshot{
-					Regions: tt.prevRegions,
+					Regions: testCase.prevRegions,
 				},
 				Effect: moveservice.MoveEffect{
-					RegionUpdates: tt.regionUpdates,
+					RegionUpdates: testCase.regionUpdates,
 				},
 				CurrentUserID: currentUser,
 			}
@@ -121,7 +121,7 @@ func TestWalk(t *testing.T) {
 			got, err := svc.Walk(wctx)
 
 			require.NoError(t, err)
-			require.Equal(t, tt.expectedPhase, got)
+			require.Equal(t, testCase.expectedPhase, got)
 		})
 	}
 }

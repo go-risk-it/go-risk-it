@@ -56,13 +56,18 @@ func (p Phase) MarshalJSON() ([]byte, error) {
 		return nil, fmt.Errorf("marshaling phase state: %w", err)
 	}
 
-	return json.Marshal(struct {
+	result, err := json.Marshal(struct {
 		Type  PhaseType       `json:"type"`
 		State json.RawMessage `json:"state"`
 	}{
 		Type:  p.Type,
 		State: stateBytes,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("marshaling phase: %w", err)
+	}
+
+	return result, nil
 }
 
 // UnmarshalJSON deserializes a Phase by first reading the type discriminator,

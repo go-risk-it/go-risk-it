@@ -44,13 +44,13 @@ var _ Service = (*service)(nil)
 func NewService(
 	querier db.Querier,
 	bus eventbus.Publisher,
-	m *metrics.StateMetrics,
+	stateMetrics *metrics.StateMetrics,
 	stateService state.Service,
 ) Service {
 	return &service{
 		querier:      querier,
 		bus:          bus,
-		metrics:      m,
+		metrics:      stateMetrics,
 		stateService: stateService,
 	}
 }

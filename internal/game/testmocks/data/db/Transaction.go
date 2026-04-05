@@ -17,7 +17,8 @@ import (
 func NewTransaction(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *Transaction {
+},
+) *Transaction {
 	mock := &Transaction{}
 	mock.Mock.Test(t)
 

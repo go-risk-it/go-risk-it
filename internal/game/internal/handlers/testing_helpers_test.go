@@ -25,15 +25,15 @@ const (
 //nolint:gochecknoglobals // test-only
 var fixedTime = time.Date(2026, 4, 4, 12, 0, 0, 0, time.UTC)
 
-// gameCtx creates a minimal GameContext carrying the given gameID and testAttacker
+// gameCtx creates a minimal GameContext carrying testGameID and testAttacker
 // as the userID. Used by handler tests that emit events via a reentrantBus.
-func gameCtx(gameID int64) gamectx.GameContext {
+func gameCtx() gamectx.GameContext {
 	return gamectx.WithGameID(
 		kernelctx.WithUserID(
 			kernelctx.WithSpan(context.Background(), noop.Span{}),
 			testAttacker,
 		),
-		gameID,
+		testGameID,
 	)
 }
 
@@ -106,7 +106,7 @@ func testContinents(t *testing.T, defs map[string][]string) board.Continents {
 
 	var regions []board.RegionDto
 
-	var continentDtos []board.ContinentDto
+	continentDtos := make([]board.ContinentDto, 0, len(defs))
 
 	for name, regionIDs := range defs {
 		continentDtos = append(continentDtos, board.ContinentDto{

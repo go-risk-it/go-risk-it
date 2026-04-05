@@ -44,8 +44,8 @@ func RenderStats(ruleCount, invariantCount int) string {
 	buf.WriteString(
 		"- **Type-Safe Move Pipeline** -- Generic `Service[T, R]` interface with compile-time " +
 			"enforcement across 5 move types. The [orchestration pipeline]" +
-			"(internal/game/internal/logic/move/orchestration/doc.go) runs validate, perform, log, " +
-			"check mission, and advance in a single transaction.",
+			"(internal/game/internal/logic/move/orchestration/doc.go) runs validate, " +
+			"perform, log, check mission, and advance in a single transaction.",
 	)
 	buf.WriteString("\n\n")
 

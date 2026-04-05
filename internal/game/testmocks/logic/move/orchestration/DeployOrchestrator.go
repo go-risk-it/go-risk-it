@@ -15,7 +15,8 @@ import (
 func NewDeployOrchestrator(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *DeployOrchestrator {
+},
+) *DeployOrchestrator {
 	mock := &DeployOrchestrator{}
 	mock.Mock.Test(t)
 

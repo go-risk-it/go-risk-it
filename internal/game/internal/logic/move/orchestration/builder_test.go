@@ -32,9 +32,27 @@ func basePrevState() *snapshot.CachedGameState {
 				{ID: "brazil", OwnerID: "player3", Troops: 1},
 			},
 			Players: []snapshot.PlayerState{
-				{UserID: "player1", Name: "Alice", Index: 0, CardCount: 2, Status: snapshot.PlayerAlive},
-				{UserID: "player2", Name: "Bob", Index: 1, CardCount: 1, Status: snapshot.PlayerAlive},
-				{UserID: "player3", Name: "Charlie", Index: 2, CardCount: 0, Status: snapshot.PlayerAlive},
+				{
+					UserID:    "player1",
+					Name:      "Alice",
+					Index:     0,
+					CardCount: 2,
+					Status:    snapshot.PlayerAlive,
+				},
+				{
+					UserID:    "player2",
+					Name:      "Bob",
+					Index:     1,
+					CardCount: 1,
+					Status:    snapshot.PlayerAlive,
+				},
+				{
+					UserID:    "player3",
+					Name:      "Charlie",
+					Index:     2,
+					CardCount: 0,
+					Status:    snapshot.PlayerAlive,
+				},
 			},
 		},
 		PrivateSnapshots: map[string]*snapshot.PlayerPrivate{
@@ -58,8 +76,14 @@ func basePrevState() *snapshot.CachedGameState {
 				},
 			},
 			"player3": {
-				Cards:   []snapshot.CardState{},
-				Mission: snapshot.PlayerMission{Type: snapshot.MissionTwoContinents, Detail: snapshot.TwoContinentsMission{Continent1: "europe", Continent2: "asia"}},
+				Cards: []snapshot.CardState{},
+				Mission: snapshot.PlayerMission{
+					Type: snapshot.MissionTwoContinents,
+					Detail: snapshot.TwoContinentsMission{
+						Continent1: "europe",
+						Continent2: "asia",
+					},
+				},
 			},
 		},
 	}
@@ -86,7 +110,7 @@ func TestBuildNewState_DeployRegionTroopIncrease(t *testing.T) {
 	}
 
 	result := orchestration.BuildNewState(
-		prev, effect, nil, sqlc.GamePhaseTypeDEPLOY, false, "",
+		prev, effect, nil, sqlc.GamePhaseTypeDEPLOY, "",
 	)
 
 	require.Equal(t, int64(6), findRegion(t, result, "western-europe").Troops)
@@ -111,7 +135,7 @@ func TestBuildNewState_AttackConquestOwnershipChange(t *testing.T) {
 	}
 
 	result := orchestration.BuildNewState(
-		prev, effect, nil, sqlc.GamePhaseTypeCONQUER, false, "",
+		prev, effect, nil, sqlc.GamePhaseTypeCONQUER, "",
 	)
 
 	// eastern-europe should now belong to player1.
@@ -141,7 +165,7 @@ func TestBuildNewState_CardDeltaApplied(t *testing.T) {
 	}
 
 	result := orchestration.BuildNewState(
-		prev, effect, nil, sqlc.GamePhaseTypeATTACK, false, "",
+		prev, effect, nil, sqlc.GamePhaseTypeATTACK, "",
 	)
 
 	priv := result.PrivateSnapshots["player1"]
@@ -173,13 +197,15 @@ func TestBuildNewState_CardDeltaFromAdvanceEffect(t *testing.T) {
 		CardDeltas: []service.CardDelta{
 			{
 				PlayerUserID: "player1",
-				Gained:       []snapshot.CardState{{ID: 50, Type: snapshot.CardArtillery, Region: "brazil"}},
+				Gained: []snapshot.CardState{
+					{ID: 50, Type: snapshot.CardArtillery, Region: "brazil"},
+				},
 			},
 		},
 	}
 
 	result := orchestration.BuildNewState(
-		prev, emptyMoveEffect(), advEffect, sqlc.GamePhaseTypeDEPLOY, false, "",
+		prev, emptyMoveEffect(), advEffect, sqlc.GamePhaseTypeDEPLOY, "",
 	)
 
 	priv := result.PrivateSnapshots["player1"]
@@ -204,7 +230,7 @@ func TestBuildNewState_PlayerElimination(t *testing.T) {
 	}
 
 	result := orchestration.BuildNewState(
-		prev, effect, nil, sqlc.GamePhaseTypeCONQUER, false, "",
+		prev, effect, nil, sqlc.GamePhaseTypeCONQUER, "",
 	)
 
 	p3 := findPlayer(t, result, "player3")
@@ -223,7 +249,7 @@ func TestBuildNewState_TurnIncrement(t *testing.T) {
 	}
 
 	result := orchestration.BuildNewState(
-		prev, emptyMoveEffect(), advEffect, sqlc.GamePhaseTypeDEPLOY, false, "",
+		prev, emptyMoveEffect(), advEffect, sqlc.GamePhaseTypeDEPLOY, "",
 	)
 
 	require.Equal(t, int64(6), result.Turn)
@@ -259,7 +285,7 @@ func TestBuildNewState_Immutability(t *testing.T) {
 	}
 
 	_ = orchestration.BuildNewState(
-		prev, effect, advEffect, sqlc.GamePhaseTypeDEPLOY, false, "",
+		prev, effect, advEffect, sqlc.GamePhaseTypeDEPLOY, "",
 	)
 
 	// Verify prev is completely untouched.
@@ -273,7 +299,7 @@ func TestBuildNewState_IdentityOnEmptyEffects(t *testing.T) {
 	prev := basePrevState()
 
 	result := orchestration.BuildNewState(
-		prev, emptyMoveEffect(), nil, sqlc.GamePhaseTypeATTACK, false, "",
+		prev, emptyMoveEffect(), nil, sqlc.GamePhaseTypeATTACK, "",
 	)
 
 	// State should be semantically identical to prev.
@@ -332,13 +358,13 @@ func TestBuildNewState_ConqueredInTurnLifecycle(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
 			prev := basePrevState()
-			prev.ConqueredInTurn = tt.prevCIT
+			prev.ConqueredInTurn = testCase.prevCIT
 
 			var advEffect *service.AdvanceEffect
-			if tt.turnEnded {
+			if testCase.turnEnded {
 				advEffect = &service.AdvanceEffect{
 					NewPhase:  snapshot.DeployPhaseState{DeployableTroops: 10},
 					TurnEnded: true,
@@ -346,10 +372,10 @@ func TestBuildNewState_ConqueredInTurnLifecycle(t *testing.T) {
 			}
 
 			result := orchestration.BuildNewState(
-				prev, emptyMoveEffect(), advEffect, tt.targetPhase, false, "",
+				prev, emptyMoveEffect(), advEffect, testCase.targetPhase, "",
 			)
 
-			require.Equal(t, tt.wantCIT, result.ConqueredInTurn)
+			require.Equal(t, testCase.wantCIT, result.ConqueredInTurn)
 		})
 	}
 }
@@ -366,7 +392,7 @@ func TestBuildNewState_PhaseSelection(t *testing.T) {
 		}
 
 		result := orchestration.BuildNewState(
-			prev, effect, advEffect, sqlc.GamePhaseTypeDEPLOY, false, "",
+			prev, effect, advEffect, sqlc.GamePhaseTypeDEPLOY, "",
 		)
 
 		require.Equal(t, snapshot.PhaseDeploy, result.PublicSnapshot.Phase.Type)
@@ -387,7 +413,7 @@ func TestBuildNewState_PhaseSelection(t *testing.T) {
 		}
 
 		result := orchestration.BuildNewState(
-			prev, effect, nil, sqlc.GamePhaseTypeCONQUER, false, "",
+			prev, effect, nil, sqlc.GamePhaseTypeCONQUER, "",
 		)
 
 		require.Equal(t, snapshot.PhaseConquer, result.PublicSnapshot.Phase.Type)
@@ -398,7 +424,7 @@ func TestBuildNewState_GameOver(t *testing.T) {
 	prev := basePrevState()
 
 	result := orchestration.BuildNewState(
-		prev, emptyMoveEffect(), nil, sqlc.GamePhaseTypeATTACK, true, "player1",
+		prev, emptyMoveEffect(), nil, sqlc.GamePhaseTypeATTACK, "player1",
 	)
 
 	require.Equal(t, "player1", result.PublicSnapshot.Game.WinnerUserID)
@@ -421,7 +447,7 @@ func TestBuildNewState_MissionChange(t *testing.T) {
 	}
 
 	result := orchestration.BuildNewState(
-		prev, effect, nil, sqlc.GamePhaseTypeATTACK, false, "",
+		prev, effect, nil, sqlc.GamePhaseTypeATTACK, "",
 	)
 
 	require.Equal(t,
@@ -446,20 +472,26 @@ func TestBuildNewState_PanicsOnUnknownRegion(t *testing.T) {
 	}
 
 	require.Panics(t, func() {
-		orchestration.BuildNewState(prev, effect, nil, sqlc.GamePhaseTypeATTACK, false, "")
+		orchestration.BuildNewState(prev, effect, nil, sqlc.GamePhaseTypeATTACK, "")
 	})
 }
 
 func TestBuildNewState_PanicsOnNilPrev(t *testing.T) {
 	require.Panics(t, func() {
-		orchestration.BuildNewState(nil, emptyMoveEffect(), nil, sqlc.GamePhaseTypeATTACK, false, "")
+		orchestration.BuildNewState(
+			nil,
+			emptyMoveEffect(),
+			nil,
+			sqlc.GamePhaseTypeATTACK,
+			"",
+		)
 	})
 }
 
 func TestBuildNewState_PanicsOnNilMoveEffect(t *testing.T) {
 	prev := basePrevState()
 	require.Panics(t, func() {
-		orchestration.BuildNewState(prev, nil, nil, sqlc.GamePhaseTypeATTACK, false, "")
+		orchestration.BuildNewState(prev, nil, nil, sqlc.GamePhaseTypeATTACK, "")
 	})
 }
 
@@ -473,7 +505,11 @@ func TestBuildNewState_MultipleRegionUpdatesConquerScenario(t *testing.T) {
 
 	effect := &service.MoveEffect{
 		RegionUpdates: []service.RegionUpdate{
-			{RegionID: "western-europe", NewOwner: "player1", NewTroops: 1}, // attacker spent troops
+			{
+				RegionID:  "western-europe",
+				NewOwner:  "player1",
+				NewTroops: 1,
+			}, // attacker spent troops
 			{RegionID: "eastern-europe", NewOwner: "player1", NewTroops: 3}, // conquered
 			{RegionID: "north-africa", NewOwner: "player1", NewTroops: 2},   // redistributed
 		},
@@ -485,7 +521,7 @@ func TestBuildNewState_MultipleRegionUpdatesConquerScenario(t *testing.T) {
 	}
 
 	result := orchestration.BuildNewState(
-		prev, effect, nil, sqlc.GamePhaseTypeCONQUER, false, "",
+		prev, effect, nil, sqlc.GamePhaseTypeCONQUER, "",
 	)
 
 	require.Equal(t, int64(1), findRegion(t, result, "western-europe").Troops)
@@ -542,7 +578,7 @@ func TestBuildNewState_CardTransferMultipleCardsOnElimination(t *testing.T) {
 	}
 
 	result := orchestration.BuildNewState(
-		prev, effect, nil, sqlc.GamePhaseTypeCONQUER, false, "",
+		prev, effect, nil, sqlc.GamePhaseTypeCONQUER, "",
 	)
 
 	// player3 should have 0 cards and be dead.
@@ -596,7 +632,7 @@ func TestBuildNewState_MoveAndAdvanceCardDeltasAppliedInOrder(t *testing.T) {
 	}
 
 	result := orchestration.BuildNewState(
-		prev, moveEffect, advEffect, sqlc.GamePhaseTypeDEPLOY, false, "",
+		prev, moveEffect, advEffect, sqlc.GamePhaseTypeDEPLOY, "",
 	)
 
 	p1Priv := result.PrivateSnapshots["player1"]
@@ -615,7 +651,9 @@ func TestBuildNewState_AdvanceCardDeltaSeesPostMoveState(t *testing.T) {
 		CardDeltas: []service.CardDelta{
 			{
 				PlayerUserID: "player1",
-				Gained:       []snapshot.CardState{{ID: 70, Type: snapshot.CardInfantry, Region: "brazil"}},
+				Gained: []snapshot.CardState{
+					{ID: 70, Type: snapshot.CardInfantry, Region: "brazil"},
+				},
 			},
 		},
 		UpdatedPhase: snapshot.EmptyPhaseState{},
@@ -634,7 +672,7 @@ func TestBuildNewState_AdvanceCardDeltaSeesPostMoveState(t *testing.T) {
 	}
 
 	result := orchestration.BuildNewState(
-		prev, moveEffect, advEffect, sqlc.GamePhaseTypeATTACK, false, "",
+		prev, moveEffect, advEffect, sqlc.GamePhaseTypeATTACK, "",
 	)
 
 	p1Priv := result.PrivateSnapshots["player1"]
@@ -702,25 +740,25 @@ func TestBuildNewState_RecomputePlayersAliveDeadMixed(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
 			prev := basePrevState()
 
 			effect := &service.MoveEffect{
-				RegionUpdates: tt.regionUpdates,
+				RegionUpdates: testCase.regionUpdates,
 				UpdatedPhase:  snapshot.EmptyPhaseState{},
 			}
 
 			result := orchestration.BuildNewState(
-				prev, effect, nil, sqlc.GamePhaseTypeATTACK, false, "",
+				prev, effect, nil, sqlc.GamePhaseTypeATTACK, "",
 			)
 
-			for userID, wantSt := range tt.wantStatus {
+			for userID, wantSt := range testCase.wantStatus {
 				p := findPlayer(t, result, userID)
 				require.Equal(t, wantSt, p.Status, "player %s status", userID)
 			}
 
-			for userID, wantCC := range tt.wantCards {
+			for userID, wantCC := range testCase.wantCards {
 				p := findPlayer(t, result, userID)
 				require.Equal(t, wantCC, p.CardCount, "player %s card count", userID)
 			}
@@ -740,15 +778,15 @@ func TestBuildNewState_AllPhaseTypeMappings(t *testing.T) {
 		{sqlc.GamePhaseTypeREINFORCE, snapshot.PhaseReinforce},
 	}
 
-	for _, tt := range tests {
-		t.Run(string(tt.sqlcPhase), func(t *testing.T) {
+	for _, testCase := range tests {
+		t.Run(string(testCase.sqlcPhase), func(t *testing.T) {
 			prev := basePrevState()
 
 			result := orchestration.BuildNewState(
-				prev, emptyMoveEffect(), nil, tt.sqlcPhase, false, "",
+				prev, emptyMoveEffect(), nil, testCase.sqlcPhase, "",
 			)
 
-			require.Equal(t, tt.wantSnapshot, result.PublicSnapshot.Phase.Type)
+			require.Equal(t, testCase.wantSnapshot, result.PublicSnapshot.Phase.Type)
 		})
 	}
 }
@@ -758,7 +796,7 @@ func TestBuildNewState_PanicsOnUnknownPhaseType(t *testing.T) {
 
 	require.Panics(t, func() {
 		orchestration.BuildNewState(
-			prev, emptyMoveEffect(), nil, "INVALID_PHASE", false, "",
+			prev, emptyMoveEffect(), nil, "INVALID_PHASE", "",
 		)
 	})
 }
@@ -783,7 +821,9 @@ func TestBuildNewState_ImmutabilityPrivateSnapshotMap(t *testing.T) {
 			},
 			{
 				PlayerUserID: "player3",
-				Gained:       []snapshot.CardState{{ID: 98, Type: snapshot.CardInfantry, Region: "brazil"}},
+				Gained: []snapshot.CardState{
+					{ID: 98, Type: snapshot.CardInfantry, Region: "brazil"},
+				},
 			},
 		},
 		Missions: []service.MissionChange{
@@ -804,13 +844,15 @@ func TestBuildNewState_ImmutabilityPrivateSnapshotMap(t *testing.T) {
 		CardDeltas: []service.CardDelta{
 			{
 				PlayerUserID: "player1",
-				Gained:       []snapshot.CardState{{ID: 97, Type: snapshot.CardCavalry, Region: "eastern-europe"}},
+				Gained: []snapshot.CardState{
+					{ID: 97, Type: snapshot.CardCavalry, Region: "eastern-europe"},
+				},
 			},
 		},
 	}
 
 	result := orchestration.BuildNewState(
-		prev, effect, advEffect, sqlc.GamePhaseTypeDEPLOY, false, "",
+		prev, effect, advEffect, sqlc.GamePhaseTypeDEPLOY, "",
 	)
 
 	// Result should have different map entries.
@@ -823,8 +865,16 @@ func TestBuildNewState_ImmutabilityPrivateSnapshotMap(t *testing.T) {
 	require.Equal(t, origP3Cards, prev.PrivateSnapshots["player3"].Cards)
 
 	// Verify result has the right mutations applied.
-	require.Len(t, result.PrivateSnapshots["player1"].Cards, 3) // 2 - 1 + 1(adv) + 1(move gain) = 3
-	require.Equal(t, snapshot.MissionTwentyFourTerritories, result.PrivateSnapshots["player2"].Mission.Type)
+	require.Len(
+		t,
+		result.PrivateSnapshots["player1"].Cards,
+		3,
+	) // 2 - 1 + 1(adv) + 1(move gain) = 3
+	require.Equal(
+		t,
+		snapshot.MissionTwentyFourTerritories,
+		result.PrivateSnapshots["player2"].Mission.Type,
+	)
 }
 
 func TestBuildNewState_MissionChangeMultipleTypes(t *testing.T) {
@@ -842,15 +892,21 @@ func TestBuildNewState_MissionChangeMultipleTypes(t *testing.T) {
 		{
 			name: "two continents mission",
 			newMission: snapshot.PlayerMission{
-				Type:   snapshot.MissionTwoContinents,
-				Detail: snapshot.TwoContinentsMission{Continent1: "africa", Continent2: "south-america"},
+				Type: snapshot.MissionTwoContinents,
+				Detail: snapshot.TwoContinentsMission{
+					Continent1: "africa",
+					Continent2: "south-america",
+				},
 			},
 		},
 		{
 			name: "two continents plus one mission",
 			newMission: snapshot.PlayerMission{
-				Type:   snapshot.MissionTwoContinentsPlusOne,
-				Detail: snapshot.TwoContinentsPlusOneMission{Continent1: "europe", Continent2: "north-america"},
+				Type: snapshot.MissionTwoContinentsPlusOne,
+				Detail: snapshot.TwoContinentsPlusOneMission{
+					Continent1: "europe",
+					Continent2: "north-america",
+				},
 			},
 		},
 		{
@@ -869,28 +925,40 @@ func TestBuildNewState_MissionChangeMultipleTypes(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
 			prev := basePrevState()
 
 			effect := &service.MoveEffect{
 				Missions: []service.MissionChange{
 					{
 						PlayerUserID: "player2",
-						NewMission:   tt.newMission,
+						NewMission:   testCase.newMission,
 					},
 				},
 				UpdatedPhase: snapshot.EmptyPhaseState{},
 			}
 
 			result := orchestration.BuildNewState(
-				prev, effect, nil, sqlc.GamePhaseTypeATTACK, false, "",
+				prev, effect, nil, sqlc.GamePhaseTypeATTACK, "",
 			)
 
-			require.Equal(t, tt.newMission.Type, result.PrivateSnapshots["player2"].Mission.Type)
-			require.Equal(t, tt.newMission.Detail, result.PrivateSnapshots["player2"].Mission.Detail)
+			require.Equal(
+				t,
+				testCase.newMission.Type,
+				result.PrivateSnapshots["player2"].Mission.Type,
+			)
+			require.Equal(
+				t,
+				testCase.newMission.Detail,
+				result.PrivateSnapshots["player2"].Mission.Detail,
+			)
 			// Prev should be untouched.
-			require.Equal(t, snapshot.MissionEliminatePlayer, prev.PrivateSnapshots["player2"].Mission.Type)
+			require.Equal(
+				t,
+				snapshot.MissionEliminatePlayer,
+				prev.PrivateSnapshots["player2"].Mission.Type,
+			)
 		})
 	}
 }
@@ -912,7 +980,7 @@ func TestBuildNewState_CardDeltaForUnknownPlayerSkipped(t *testing.T) {
 
 	// Should not panic.
 	result := orchestration.BuildNewState(
-		prev, effect, nil, sqlc.GamePhaseTypeATTACK, false, "",
+		prev, effect, nil, sqlc.GamePhaseTypeATTACK, "",
 	)
 
 	// All existing players should be unaffected.
@@ -930,7 +998,7 @@ func TestBuildNewState_TurnNotIncrementedWithoutTurnEnded(t *testing.T) {
 	}
 
 	result := orchestration.BuildNewState(
-		prev, emptyMoveEffect(), advEffect, sqlc.GamePhaseTypeATTACK, false, "",
+		prev, emptyMoveEffect(), advEffect, sqlc.GamePhaseTypeATTACK, "",
 	)
 
 	require.Equal(t, int64(5), result.Turn)
@@ -941,7 +1009,7 @@ func TestBuildNewState_GameIDPreserved(t *testing.T) {
 	prev := basePrevState()
 
 	result := orchestration.BuildNewState(
-		prev, emptyMoveEffect(), nil, sqlc.GamePhaseTypeATTACK, false, "",
+		prev, emptyMoveEffect(), nil, sqlc.GamePhaseTypeATTACK, "",
 	)
 
 	require.Equal(t, int64(42), result.PublicSnapshot.Game.ID)
@@ -951,13 +1019,19 @@ func TestBuildNewState_PlayerNameAndIndexPreserved(t *testing.T) {
 	prev := basePrevState()
 
 	result := orchestration.BuildNewState(
-		prev, emptyMoveEffect(), nil, sqlc.GamePhaseTypeATTACK, false, "",
+		prev, emptyMoveEffect(), nil, sqlc.GamePhaseTypeATTACK, "",
 	)
 
 	for _, origPlayer := range prev.PublicSnapshot.Players {
 		resultPlayer := findPlayer(t, result, origPlayer.UserID)
 		require.Equal(t, origPlayer.Name, resultPlayer.Name, "player %s name", origPlayer.UserID)
-		require.Equal(t, origPlayer.Index, resultPlayer.Index, "player %s index", origPlayer.UserID)
+		require.Equal(
+			t,
+			origPlayer.Index,
+			resultPlayer.Index,
+			"player %s index",
+			origPlayer.UserID,
+		)
 	}
 }
 
@@ -973,7 +1047,7 @@ func TestBuildNewState_ConqueredInTurnResetTakesPriorityOverConquerPhase(t *test
 	}
 
 	result := orchestration.BuildNewState(
-		prev, emptyMoveEffect(), advEffect, sqlc.GamePhaseTypeCONQUER, false, "",
+		prev, emptyMoveEffect(), advEffect, sqlc.GamePhaseTypeCONQUER, "",
 	)
 
 	// TurnEnded wins: should be false even though targetPhase is CONQUER.
@@ -982,21 +1056,29 @@ func TestBuildNewState_ConqueredInTurnResetTakesPriorityOverConquerPhase(t *test
 
 // --- Helpers ---
 
-func findRegion(t *testing.T, state *snapshot.CachedGameState, id string) snapshot.RegionState {
+func findRegion(
+	t *testing.T,
+	state *snapshot.CachedGameState,
+	regionID string,
+) snapshot.RegionState {
 	t.Helper()
 
 	for _, r := range state.PublicSnapshot.Regions {
-		if r.ID == id {
+		if r.ID == regionID {
 			return r
 		}
 	}
 
-	t.Fatalf("region %q not found", id)
+	t.Fatalf("region %q not found", regionID)
 
 	return snapshot.RegionState{}
 }
 
-func findPlayer(t *testing.T, state *snapshot.CachedGameState, userID string) snapshot.PlayerState {
+func findPlayer(
+	t *testing.T,
+	state *snapshot.CachedGameState,
+	userID string,
+) snapshot.PlayerState {
 	t.Helper()
 
 	for _, p := range state.PublicSnapshot.Players {

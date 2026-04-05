@@ -44,17 +44,20 @@ func (s *service) Advance(
 	if targetPhase == sqlc.GamePhaseTypeDEPLOY {
 		cardsEffect, err := s.cardsService.Advance(ctx, querier, targetPhase, nil, advCtx)
 		if err != nil {
-			return moveservice.AdvanceEffect{}, fmt.Errorf("failed to advance cards phase: %w", err)
+			return moveservice.AdvanceEffect{}, fmt.Errorf(
+				"failed to advance cards phase: %w",
+				err,
+			)
 		}
 
 		// The turn ends when advancing to DEPLOY (turn boundary).
 		// Merge card deltas from the draw with whatever cards.Advance produced.
-		allDeltas := append(cardDeltas, cardsEffect.CardDeltas...)
+		cardDeltas = append(cardDeltas, cardsEffect.CardDeltas...)
 
 		return moveservice.AdvanceEffect{
 			NewPhase:   cardsEffect.NewPhase,
 			TurnEnded:  true,
-			CardDeltas: allDeltas,
+			CardDeltas: cardDeltas,
 		}, nil
 	}
 

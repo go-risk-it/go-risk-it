@@ -50,7 +50,7 @@ func TestLifecycleManager_RemovesOnGameOver(t *testing.T) {
 	})
 
 	event := moveCompletedGameOver(testGameID, true)
-	bus.Emit(gameCtx(testGameID), event)
+	bus.Emit(gameCtx(), event)
 
 	require.Len(t, lifecycle.removed, 1)
 	assert.Equal(t, testGameID, lifecycle.removed[0])
@@ -73,7 +73,7 @@ func TestLifecycleManager_IgnoresNonGameOver(t *testing.T) {
 	})
 
 	event := moveCompletedGameOver(testGameID, false)
-	bus.Emit(gameCtx(testGameID), event)
+	bus.Emit(gameCtx(), event)
 
 	require.Empty(t, lifecycle.removed)
 	assert.NotNil(t, store.Get(testGameID))

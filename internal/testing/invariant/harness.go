@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/internal/config"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
+	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/internal/config"
 	gamedb "github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
 	game "github.com/go-risk-it/go-risk-it/internal/game/internal/logic"

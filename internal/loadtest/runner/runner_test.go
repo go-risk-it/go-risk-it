@@ -85,8 +85,8 @@ func newFakeWSForRunner(moveCount *atomic.Int32, gameOverAt int) *fakeWSForRunne
 }
 
 func (f *fakeWSForRunner) View() *gamestate.View { return f.view }
-func (f *fakeWSForRunner) Done() <-chan struct{}  { return f.done }
-func (f *fakeWSForRunner) Disrupt()               {}
+func (f *fakeWSForRunner) Done() <-chan struct{} { return f.done }
+func (f *fakeWSForRunner) Disrupt()              {}
 
 func (f *fakeWSForRunner) Close() error {
 	f.closeCalls++

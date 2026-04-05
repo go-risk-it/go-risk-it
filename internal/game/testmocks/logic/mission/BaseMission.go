@@ -16,7 +16,8 @@ import (
 func NewBaseMission(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *BaseMission {
+},
+) *BaseMission {
 	mock := &BaseMission{}
 	mock.Mock.Test(t)
 

@@ -118,24 +118,24 @@ func TestStateStore_ConcurrentAccess(t *testing.T) {
 	const numGames = 20
 	const numOps = 100
 
-	var wg sync.WaitGroup
+	var waitGroup sync.WaitGroup
 
-	wg.Add(numGames)
+	waitGroup.Add(numGames)
 
 	for gameID := range int64(numGames) {
-		go func(id int64) {
-			defer wg.Done()
+		go func(gameID int64) {
+			defer waitGroup.Done()
 
 			for i := range int64(numOps) {
-				store.Store(id, &snapshot.CachedGameState{Turn: i})
-				store.Get(id)
+				store.Store(gameID, &snapshot.CachedGameState{Turn: i})
+				store.Get(gameID)
 			}
 
-			store.Remove(id)
+			store.Remove(gameID)
 		}(gameID)
 	}
 
-	wg.Wait()
+	waitGroup.Wait()
 
 	// All games were removed — store should be empty.
 	for gameID := range int64(numGames) {

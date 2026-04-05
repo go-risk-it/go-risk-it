@@ -60,19 +60,19 @@ func TestPlayerMission_RoundTrip(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			data, err := json.Marshal(tt.mission)
+			data, err := json.Marshal(testCase.mission)
 			require.NoError(t, err)
 
 			var got snapshot.PlayerMission
 			err = json.Unmarshal(data, &got)
 			require.NoError(t, err)
 
-			require.Equal(t, tt.mission.Type, got.Type)
-			require.Equal(t, tt.mission.Detail, got.Detail)
+			require.Equal(t, testCase.mission.Type, got.Type)
+			require.Equal(t, testCase.mission.Detail, got.Detail)
 		})
 	}
 }
@@ -176,14 +176,14 @@ func TestPlayerMission_WireCompatibility(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			existingJSON, err := json.Marshal(tt.anonymousJSON)
+			existingJSON, err := json.Marshal(testCase.anonymousJSON)
 			require.NoError(t, err)
 
-			sealedJSON, err := json.Marshal(tt.sealedMission)
+			sealedJSON, err := json.Marshal(testCase.sealedMission)
 			require.NoError(t, err)
 
 			require.JSONEq(t, string(existingJSON), string(sealedJSON),

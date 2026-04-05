@@ -1,7 +1,3 @@
-// Package cards contains the cards move result DTOs used in event payloads.
-//
-// These types originated in game/logic/move/cards/ and were migrated to game/api/
-// to break game/events/ dependencies on the logic layer.
 package cards
 
 // MoveResult carries the outcome of a cards move.

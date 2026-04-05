@@ -45,12 +45,11 @@ func (p *recordingPublisher) PublishState(
 }
 
 func newMoveCompletedForBroadcast(
-	gameID int64,
 	public *snapshot.GameSnapshot,
 	privates map[string]*snapshot.PlayerPrivate,
 ) *gameevt.MoveCompleted {
 	return gameevt.NewMoveCompleted(
-		gameID, testAttacker, fixedTime,
+		testGameID, testAttacker, fixedTime,
 		gameapi.GamePhaseTypeDEPLOY,
 		1,
 		gameapi.GamePhaseTypeDEPLOY,
@@ -93,7 +92,7 @@ func TestStateBroadcaster_SendsPlayerViewToEachConnectedPlayer(t *testing.T) {
 		},
 	}
 
-	event := newMoveCompletedForBroadcast(testGameID, public, privates)
+	event := newMoveCompletedForBroadcast(public, privates)
 
 	ctx := gamectx.WithGameID(
 		kernelctx.WithUserID(kernelctx.WithSpan(context.Background(), noop.Span{}), testAttacker),
@@ -138,8 +137,8 @@ func TestStateBroadcaster_SkipsMissingPrivateSnapshot(t *testing.T) {
 		// "unknown" not in privates — should be skipped
 	}
 
-	event := newMoveCompletedForBroadcast(testGameID, public, privates)
-	bus.Emit(gameCtx(testGameID), event)
+	event := newMoveCompletedForBroadcast(public, privates)
+	bus.Emit(gameCtx(), event)
 
 	// Only alice gets a message
 	require.Len(t, publisher.calls, 1)
@@ -159,8 +158,8 @@ func TestStateBroadcaster_NoPlayersConnected(t *testing.T) {
 		Presence:  presence,
 	})
 
-	event := newMoveCompletedForBroadcast(testGameID, &snapshot.GameSnapshot{}, nil)
-	bus.Emit(gameCtx(testGameID), event)
+	event := newMoveCompletedForBroadcast(&snapshot.GameSnapshot{}, nil)
+	bus.Emit(gameCtx(), event)
 
 	require.Empty(t, publisher.calls)
 }
@@ -194,8 +193,8 @@ func TestStateBroadcaster_PlayerViewHasCorrectPrivateData(t *testing.T) {
 		"alice": {Cards: expectedCards, Mission: expectedMission},
 	}
 
-	event := newMoveCompletedForBroadcast(testGameID, public, privates)
-	bus.Emit(gameCtx(testGameID), event)
+	event := newMoveCompletedForBroadcast(public, privates)
+	bus.Emit(gameCtx(), event)
 
 	require.Len(t, publisher.calls, 1)
 	assert.Equal(t, expectedCards, publisher.calls[0].view.Cards)

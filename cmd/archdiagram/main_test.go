@@ -22,9 +22,13 @@ func TestSetSubsystemLayers(t *testing.T) {
 		},
 		Subsystems: map[string]*model.SubsystemInfo{
 			"game_services": {
-				ID:       "game_services",
-				Label:    "Game Services",
-				Packages: []string{"game/internal/logic/board", "game/internal/logic/card", "game/internal/logic/phase"},
+				ID:    "game_services",
+				Label: "Game Services",
+				Packages: []string{
+					"game/internal/logic/board",
+					"game/internal/logic/card",
+					"game/internal/logic/phase",
+				},
 			},
 			"game_handlers": {
 				ID:       "game_handlers",

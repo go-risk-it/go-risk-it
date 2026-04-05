@@ -112,8 +112,12 @@ func (s *service) CreateGame(
 		// Snapshot read failure is non-fatal: the game is already committed.
 		// PlayerConnected will fall back to a fresh DB read if StateStore is empty.
 		// Emit a lean event without snapshots.
-		s.bus.Emit(userCtx, gameevt.NewGameCreated(gameID, lobbyID, time.Now(), len(players), nil, nil))
+		s.bus.Emit(
+			userCtx,
+			gameevt.NewGameCreated(gameID, lobbyID, time.Now(), len(players), nil, nil),
+		)
 
+		//nolint:nilerr // snapshot read failure is non-fatal (see comment above)
 		return gameID, nil
 	}
 
@@ -125,7 +129,14 @@ func (s *service) CreateGame(
 
 	s.bus.Emit(
 		userCtx,
-		gameevt.NewGameCreated(gameID, lobbyID, time.Now(), len(players), publicSnap, privateSnaps),
+		gameevt.NewGameCreated(
+			gameID,
+			lobbyID,
+			time.Now(),
+			len(players),
+			publicSnap,
+			privateSnaps,
+		),
 	)
 
 	return gameID, nil

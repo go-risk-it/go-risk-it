@@ -195,7 +195,10 @@ func TestGameSummaryRecorder_RecordsOnCompletion(t *testing.T) {
 	// Create game and emit some events without GameOver
 	bus.Emit(gCtx, gameevt.NewGameCreated(testGameID, 0, fixedTime, 4, nil, nil))
 	bus.Emit(gCtx, moveEvent(gameapi.GamePhaseTypeDEPLOY))
-	bus.Emit(gCtx, moveEventWithTransition(gameapi.GamePhaseTypeDEPLOY, gameapi.GamePhaseTypeATTACK))
+	bus.Emit(
+		gCtx,
+		moveEventWithTransition(gameapi.GamePhaseTypeDEPLOY, gameapi.GamePhaseTypeATTACK),
+	)
 
 	histogramsBefore := collectHistograms(t, reader)
 	if h, ok := histogramsBefore["game.summary.moves"]; ok {

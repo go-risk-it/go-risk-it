@@ -14,7 +14,8 @@ import (
 func NewOrchestrator[T any, R any](t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *Orchestrator[T, R] {
+},
+) *Orchestrator[T, R] {
 	mock := &Orchestrator[T, R]{}
 	mock.Mock.Test(t)
 

@@ -17,7 +17,8 @@ import (
 func NewAdvancer[R any](t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *Advancer[R] {
+},
+) *Advancer[R] {
 	mock := &Advancer[R]{}
 	mock.Mock.Test(t)
 

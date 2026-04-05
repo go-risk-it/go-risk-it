@@ -25,19 +25,18 @@ func regionStates(ownership map[string]string) []snapshot.RegionState {
 }
 
 func moveCompletedAttack(
-	gameID int64,
 	prevRegions []snapshot.RegionState,
 	curRegions []snapshot.RegionState,
 ) *gameevt.MoveCompleted {
 	return gameevt.NewMoveCompleted(
-		gameID, testAttacker, time.Now(),
+		testGameID, testAttacker, time.Now(),
 		gameapi.GamePhaseTypeATTACK,
 		testTurn,
 		gameapi.GamePhaseTypeATTACK,
 		gameapi.GamePhaseTypeATTACK,
 		false,
 		&snapshot.GameSnapshot{
-			Game:    snapshot.GameMeta{ID: gameID, Turn: testTurn},
+			Game:    snapshot.GameMeta{ID: testGameID, Turn: testTurn},
 			Regions: curRegions,
 		},
 		nil,
@@ -82,7 +81,7 @@ func TestHeadlinesDetectorV2_IgnoresNonAttackMoves(t *testing.T) {
 		false, nil, nil, nil,
 	)
 
-	bus.Emit(gameCtx(testGameID), event)
+	bus.Emit(gameCtx(), event)
 
 	allEvents := bus.allEvents()
 	require.Len(t, allEvents, 1)
@@ -100,9 +99,9 @@ func TestHeadlinesDetectorV2_IgnoresAttackWithoutConquest(t *testing.T) {
 	})
 	cur := prev // no change — attack did not conquer
 
-	event := moveCompletedAttack(testGameID, prev, cur)
+	event := moveCompletedAttack(prev, cur)
 
-	bus.Emit(gameCtx(testGameID), event)
+	bus.Emit(gameCtx(), event)
 
 	allEvents := bus.allEvents()
 	require.Len(t, allEvents, 1)
@@ -128,7 +127,7 @@ func TestHeadlinesDetectorV2_SkipsNilPreviousRegions(t *testing.T) {
 		nil, // no previous regions
 	)
 
-	bus.Emit(gameCtx(testGameID), event)
+	bus.Emit(gameCtx(), event)
 
 	allEvents := bus.allEvents()
 	require.Len(t, allEvents, 1)
@@ -150,9 +149,9 @@ func TestHeadlinesDetectorV2_PlayerEliminated(t *testing.T) {
 		"china": testAttacker, "japan": testAttacker,
 	})
 
-	event := moveCompletedAttack(testGameID, prev, cur)
+	event := moveCompletedAttack(prev, cur)
 
-	bus.Emit(gameCtx(testGameID), event)
+	bus.Emit(gameCtx(), event)
 
 	eliminated := eventsOfType[*gameevt.PlayerEliminated](bus)
 	require.Len(t, eliminated, 1)
@@ -176,9 +175,9 @@ func TestHeadlinesDetectorV2_ContinentCaptured(t *testing.T) {
 		"china": testDefender, "japan": testDefender,
 	})
 
-	event := moveCompletedAttack(testGameID, prev, cur)
+	event := moveCompletedAttack(prev, cur)
 
-	bus.Emit(gameCtx(testGameID), event)
+	bus.Emit(gameCtx(), event)
 
 	captured := eventsOfType[*gameevt.ContinentCaptured](bus)
 	require.Len(t, captured, 1)
@@ -201,9 +200,9 @@ func TestHeadlinesDetectorV2_ContinentLost(t *testing.T) {
 		"japan": testDefender,
 	})
 
-	event := moveCompletedAttack(testGameID, prev, cur)
+	event := moveCompletedAttack(prev, cur)
 
-	bus.Emit(gameCtx(testGameID), event)
+	bus.Emit(gameCtx(), event)
 
 	lost := eventsOfType[*gameevt.ContinentLost](bus)
 	require.Len(t, lost, 1)
@@ -230,9 +229,9 @@ func TestHeadlinesDetectorV2_ContinentCapturedAndLost(t *testing.T) {
 		"north": testAttacker, "south": testAttacker,
 	})
 
-	event := moveCompletedAttack(testGameID, prev, cur)
+	event := moveCompletedAttack(prev, cur)
 
-	bus.Emit(gameCtx(testGameID), event)
+	bus.Emit(gameCtx(), event)
 
 	captured := eventsOfType[*gameevt.ContinentCaptured](bus)
 	require.Len(t, captured, 1)
@@ -260,9 +259,9 @@ func TestHeadlinesDetectorV2_NoEliminationWhenDefenderHasRegions(t *testing.T) {
 		"china":   testDefender, "japan": testDefender,
 	})
 
-	event := moveCompletedAttack(testGameID, prev, cur)
+	event := moveCompletedAttack(prev, cur)
 
-	bus.Emit(gameCtx(testGameID), event)
+	bus.Emit(gameCtx(), event)
 
 	eliminated := eventsOfType[*gameevt.PlayerEliminated](bus)
 	require.Empty(t, eliminated)

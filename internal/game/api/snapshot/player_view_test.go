@@ -26,7 +26,13 @@ func TestBuildPlayerView_MergesPublicAndPrivate(t *testing.T) {
 			{ID: "brazil", OwnerID: "user-2", Troops: 3},
 		},
 		Players: []snapshot.PlayerState{
-			{UserID: "user-1", Name: "Alice", Index: 0, CardCount: 2, Status: snapshot.PlayerAlive},
+			{
+				UserID:    "user-1",
+				Name:      "Alice",
+				Index:     0,
+				CardCount: 2,
+				Status:    snapshot.PlayerAlive,
+			},
 			{UserID: "user-2", Name: "Bob", Index: 1, CardCount: 1, Status: snapshot.PlayerAlive},
 		},
 	}
@@ -79,7 +85,13 @@ func TestPlayerView_JSON_RoundTrip(t *testing.T) {
 			{ID: "alaska", OwnerID: "user-1", Troops: 10},
 		},
 		Players: []snapshot.PlayerState{
-			{UserID: "user-1", Name: "Alice", Index: 0, CardCount: 3, Status: snapshot.PlayerAlive},
+			{
+				UserID:    "user-1",
+				Name:      "Alice",
+				Index:     0,
+				CardCount: 3,
+				Status:    snapshot.PlayerAlive,
+			},
 		},
 		Cards: []snapshot.CardState{
 			{ID: 5, Type: snapshot.CardArtillery, Region: "congo"},
@@ -126,7 +138,13 @@ func TestPlayerView_AllFieldsPresent(t *testing.T) {
 			{ID: "alaska", OwnerID: "user-1", Troops: 1},
 		},
 		Players: []snapshot.PlayerState{
-			{UserID: "user-1", Name: "Alice", Index: 0, CardCount: 0, Status: snapshot.PlayerAlive},
+			{
+				UserID:    "user-1",
+				Name:      "Alice",
+				Index:     0,
+				CardCount: 0,
+				Status:    snapshot.PlayerAlive,
+			},
 		},
 	}
 
@@ -199,6 +217,12 @@ func TestPlayerView_JSON_NoOmitEmpty(t *testing.T) {
 	// All 6 fields must be present even when slices are empty
 	expectedFields := []string{"game", "phase", "regions", "players", "cards", "mission"}
 	for _, field := range expectedFields {
-		require.Contains(t, raw, field, "PlayerView JSON must always include %q even when empty", field)
+		require.Contains(
+			t,
+			raw,
+			field,
+			"PlayerView JSON must always include %q even when empty",
+			field,
+		)
 	}
 }

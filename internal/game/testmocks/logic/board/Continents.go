@@ -14,7 +14,8 @@ import (
 func NewContinents(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *Continents {
+},
+) *Continents {
 	mock := &Continents{}
 	mock.Mock.Test(t)
 

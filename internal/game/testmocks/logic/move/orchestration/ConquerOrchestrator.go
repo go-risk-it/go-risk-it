@@ -15,7 +15,8 @@ import (
 func NewConquerOrchestrator(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *ConquerOrchestrator {
+},
+) *ConquerOrchestrator {
 	mock := &ConquerOrchestrator{}
 	mock.Mock.Test(t)
 

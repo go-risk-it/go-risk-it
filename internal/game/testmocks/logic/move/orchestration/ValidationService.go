@@ -16,7 +16,8 @@ import (
 func NewValidationService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *ValidationService {
+},
+) *ValidationService {
 	mock := &ValidationService{}
 	mock.Mock.Test(t)
 

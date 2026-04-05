@@ -15,7 +15,8 @@ import (
 func NewCardsOrchestrator(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *CardsOrchestrator {
+},
+) *CardsOrchestrator {
 	mock := &CardsOrchestrator{}
 	mock.Mock.Test(t)
 

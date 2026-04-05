@@ -65,7 +65,7 @@ func (m *manager) ConnectPlayer(ctx ctx.GameContext, connection *websocket.Conn)
 
 	msg := buildPresenceMessage(ctx.UserID(), messaging.Connected)
 	if msg != nil {
-		playerConns.BroadcastOthers(ctx, ctx.UserID(), msg)
+		playerConns.BroadcastOthers(ctx.UserID(), msg)
 	}
 
 	m.bus.Emit(ctx, gameevt.NewPlayerConnected(ctx.GameID(), ctx.UserID(), time.Now()))

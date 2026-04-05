@@ -28,7 +28,11 @@ func FindCardCombo(cards []snapshot.CardState) []int64 {
 	}
 
 	// Try one-of-each (cavalry + infantry + artillery).
-	types := []snapshot.CardType{snapshot.CardCavalry, snapshot.CardInfantry, snapshot.CardArtillery}
+	types := []snapshot.CardType{
+		snapshot.CardCavalry,
+		snapshot.CardInfantry,
+		snapshot.CardArtillery,
+	}
 	var oneOfEach []int64
 
 	for _, t := range types {

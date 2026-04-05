@@ -86,7 +86,6 @@ func (p *PlayerConnections) Broadcast(ctx ctx.UserContext, message json.RawMessa
 // identified by exclude. Used for presence signals where the originating
 // player should not receive their own notification.
 func (p *PlayerConnections) BroadcastOthers(
-	ctx ctx.UserContext,
 	exclude string,
 	message json.RawMessage,
 ) {

@@ -138,7 +138,7 @@ func newFakeWSWithState(snap gamestate.ViewSnapshot) *fakeWSForProtocol {
 }
 
 func (f *fakeWSForProtocol) View() *gamestate.View { return f.view }
-func (f *fakeWSForProtocol) Done() <-chan struct{}  { return f.done }
+func (f *fakeWSForProtocol) Done() <-chan struct{} { return f.done }
 func (f *fakeWSForProtocol) Close() error {
 	f.closed = true
 

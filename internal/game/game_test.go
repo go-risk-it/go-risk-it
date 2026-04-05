@@ -1,4 +1,4 @@
-package game
+package game //nolint:testpackage // Tests unexported fx adapters
 
 import (
 	"context"

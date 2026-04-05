@@ -43,11 +43,9 @@ Single-file packages whose sole purpose is fx.Module aggregation:
 | Package | File |
 |---------|------|
 | `game` | `game.go` |
-| `game/logic/move` | `move.go` |
 | `loadtest/fileutil` | `fileutil.go` |
 | `loadtest/scenario` | `scenario.go` |
 | `lobby` | `lobby.go` |
-| `web` | `web.go` |
 
 Detection rule: `len(GoFiles) == 1` AND the single file is named after the
 last path segment (e.g., `game/logic/game.go`).
@@ -65,26 +63,25 @@ Required doc.go sections:
 
 | Package | Layer | GoFiles |
 |---------|-------|---------|
-| `game/logic/advancement` | logic | 3 |
-| `game/logic/board` | logic | 6 |
-| `game/logic/card` | logic | 3 |
-| `game/logic/creation` | logic | 3 |
-| `game/logic/mission` | logic | 4 |
-| `game/logic/move/attack` | logic | 5 |
-| `game/logic/move/attack/dice` | logic | 6 |
-| `game/logic/move/cards` | logic | 5 |
-| `game/logic/move/conquer` | logic | 5 |
-| `game/logic/move/deploy` | logic | 5 |
-| `game/logic/move/reinforce` | logic | 5 |
-| `game/logic/phase` | logic | 4 |
-| `game/logic/player` | logic | 4 |
-| `game/logic/region` | logic | 3 |
-| `game/logic/state` | logic | 3 |
-| `game/snapshot` | game-support | 3 |
-| `lobby/logic/creation` | logic | 3 |
-| `lobby/logic/management` | logic | 3 |
-| `lobby/logic/start` | logic | 3 |
-| `lobby/logic/state` | logic | 3 |
+| `game/internal/logic/board` | logic | 6 |
+| `game/internal/logic/card` | logic | 3 |
+| `game/internal/logic/creation` | logic | 3 |
+| `game/internal/logic/mission` | logic | 4 |
+| `game/internal/logic/move/attack` | logic | 6 |
+| `game/internal/logic/move/attack/dice` | logic | 6 |
+| `game/internal/logic/move/cards` | logic | 5 |
+| `game/internal/logic/move/conquer` | logic | 5 |
+| `game/internal/logic/move/deploy` | logic | 5 |
+| `game/internal/logic/move/reinforce` | logic | 5 |
+| `game/internal/logic/phase` | logic | 4 |
+| `game/internal/logic/player` | logic | 4 |
+| `game/internal/logic/region` | logic | 3 |
+| `game/internal/logic/state` | logic | 3 |
+| `game/internal/snapshot` | game-support | 4 |
+| `lobby/internal/logic/creation` | logic | 3 |
+| `lobby/internal/logic/management` | logic | 3 |
+| `lobby/internal/logic/start` | logic | 4 |
+| `lobby/internal/logic/state` | logic | 3 |
 | `testonly` | test | 6 |
 
 ### Lightweight-tier packages
@@ -97,21 +94,24 @@ All other non-excluded packages. Required doc.go sections:
 |---------|-------|
 | `game/api` | api |
 | `game/api/messaging` | api |
+| `game/api/moves/attack` | api |
+| `game/api/moves/cards` | api |
 | `game/api/rest/request` | api |
 | `game/api/rest/response` | api |
-| `game/config` | game-support |
-| `game/consumers` | web |
+| `game/api/snapshot` | api |
 | `game/ctx` | game-domain |
-| `game/data/db` | data |
 | `game/events` | events-domain |
-| `game/headlines` | game-support |
-| `game/logic/metrics` | logic |
-| `game/logic/mission/checker` | logic |
-| `game/logic/move/orchestration` | logic |
-| `game/logic/move/validation` | logic |
-| `game/logic/region/assignment` | logic |
-| `game/rand` | logic |
-| `game/routes` | web |
+| `game/internal/config` | game-support |
+| `game/internal/data/db` | data |
+| `game/internal/handlers` | game-support |
+| `game/internal/logic/metrics` | logic |
+| `game/internal/logic/mission/checker` | logic |
+| `game/internal/logic/move/orchestration` | logic |
+| `game/internal/logic/move/validation` | logic |
+| `game/internal/logic/region/assignment` | logic |
+| `game/internal/rand` | logic |
+| `game/web` | web |
+| `game/web/routes` | web |
 | `game/ws` | web |
 | `kernel/bus` | kernel |
 | `kernel/config` | kernel |
@@ -124,16 +124,18 @@ All other non-excluded packages. Required doc.go sections:
 | `kernel/metrics` | kernel |
 | `kernel/observe` | kernel |
 | `kernel/otelsetup` | kernel |
+| `kernel/safego` | kernel |
 | `kernel/slog` | kernel |
 | `kernel/upgradablerw_mutex` | kernel |
 | `lobby/api/messaging` | api |
 | `lobby/api/rest/request` | api |
 | `lobby/api/rest/response` | api |
-| `lobby/consumers` | web |
+| `lobby/api/snapshot` | api |
 | `lobby/ctx` | lobby-domain |
-| `lobby/data/db` | data |
 | `lobby/events` | events-domain |
-| `lobby/routes` | web |
+| `lobby/internal/data/db` | data |
+| `lobby/web` | web |
+| `lobby/web/routes` | web |
 | `lobby/ws` | web |
 | `testing/invariant` | test |
 | `web/middleware` | web |

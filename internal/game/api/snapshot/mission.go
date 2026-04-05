@@ -70,13 +70,18 @@ func (m PlayerMission) MarshalJSON() ([]byte, error) {
 		return nil, fmt.Errorf("marshaling mission detail: %w", err)
 	}
 
-	return json.Marshal(struct {
+	result, err := json.Marshal(struct {
 		Type   MissionType     `json:"type"`
 		Detail json.RawMessage `json:"details"`
 	}{
 		Type:   m.Type,
 		Detail: detailBytes,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("marshaling player mission: %w", err)
+	}
+
+	return result, nil
 }
 
 // UnmarshalJSON deserializes a PlayerMission by first reading the type
@@ -92,44 +97,49 @@ func (m *PlayerMission) UnmarshalJSON(data []byte) error {
 
 	m.Type = raw.Type
 
-	switch raw.Type {
+	return m.unmarshalDetail(raw.Type, raw.Detail)
+}
+
+// unmarshalDetail unmarshals the mission detail based on type.
+//
+//nolint:cyclop // Type discriminator pattern requires one case per type
+func (m *PlayerMission) unmarshalDetail(
+	missionType MissionType,
+	data []byte,
+) error {
+	switch missionType {
 	case MissionTwoContinents:
-		var d TwoContinentsMission
-		if err := json.Unmarshal(raw.Detail, &d); err != nil {
+		var detail TwoContinentsMission
+		if err := json.Unmarshal(data, &detail); err != nil {
 			return fmt.Errorf("unmarshaling two continents mission: %w", err)
 		}
-
-		m.Detail = d
+		m.Detail = detail
 	case MissionTwoContinentsPlusOne:
-		var d TwoContinentsPlusOneMission
-		if err := json.Unmarshal(raw.Detail, &d); err != nil {
+		var detail TwoContinentsPlusOneMission
+		if err := json.Unmarshal(data, &detail); err != nil {
 			return fmt.Errorf("unmarshaling two continents plus one mission: %w", err)
 		}
-
-		m.Detail = d
+		m.Detail = detail
 	case MissionEighteenTerritoriesTwoTroops:
-		var d EighteenTerritoriesTwoTroopsMission
-		if err := json.Unmarshal(raw.Detail, &d); err != nil {
+		var detail EighteenTerritoriesTwoTroopsMission
+		if err := json.Unmarshal(data, &detail); err != nil {
 			return fmt.Errorf("unmarshaling eighteen territories mission: %w", err)
 		}
-
-		m.Detail = d
+		m.Detail = detail
 	case MissionTwentyFourTerritories:
-		var d TwentyFourTerritoriesMission
-		if err := json.Unmarshal(raw.Detail, &d); err != nil {
+		var detail TwentyFourTerritoriesMission
+		if err := json.Unmarshal(data, &detail); err != nil {
 			return fmt.Errorf("unmarshaling twenty four territories mission: %w", err)
 		}
-
-		m.Detail = d
+		m.Detail = detail
 	case MissionEliminatePlayer:
-		var d EliminatePlayerMission
-		if err := json.Unmarshal(raw.Detail, &d); err != nil {
+		var detail EliminatePlayerMission
+		if err := json.Unmarshal(data, &detail); err != nil {
 			return fmt.Errorf("unmarshaling eliminate player mission: %w", err)
 		}
-
-		m.Detail = d
+		m.Detail = detail
 	default:
-		return fmt.Errorf("unknown mission type: %q", raw.Type)
+		return fmt.Errorf("unknown mission type: %q", missionType)
 	}
 
 	return nil

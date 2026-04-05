@@ -231,7 +231,11 @@ func TestGroupPackages_OverrideTakesPrecedenceOverRoot(t *testing.T) {
 	// game/config has prefix "game/" but is overridden to game_support.
 	// Without the override, it would match no root (no "game" root exists).
 	// game/snapshot also overridden to game_support instead of falling through.
-	archModel := makeModel("game/internal/config", "game/internal/snapshot", "game/internal/logic/board")
+	archModel := makeModel(
+		"game/internal/config",
+		"game/internal/snapshot",
+		"game/internal/logic/board",
+	)
 
 	GroupPackages(archModel)
 

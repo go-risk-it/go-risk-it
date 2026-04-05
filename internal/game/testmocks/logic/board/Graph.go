@@ -13,7 +13,8 @@ import (
 func NewGraph(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *Graph {
+},
+) *Graph {
 	mock := &Graph{}
 	mock.Mock.Test(t)
 

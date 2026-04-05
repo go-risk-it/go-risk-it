@@ -808,16 +808,16 @@ func TestOrchestrateMove_EmitsMoveCompleted(t *testing.T) {
 	mcEvents := eventbus.EventsOfType[*gameevt.MoveCompleted](bus)
 	require.Len(t, mcEvents, 1, "MoveCompleted must be emitted")
 
-	mc := mcEvents[0]
-	require.Equal(t, testGameID, mc.GameID())
-	require.Equal(t, gameapi.GamePhaseTypeDEPLOY, mc.ActionType)
-	require.Equal(t, gameapi.GamePhaseTypeDEPLOY, mc.TargetPhase)
-	require.Equal(t, testTurn, mc.Turn)
-	require.False(t, mc.GameOver)
-	require.NotNil(t, mc.PublicSnapshot)
-	require.Equal(t, testGameID, mc.PublicSnapshot.Game.ID)
-	require.NotNil(t, mc.PrivateSnapshots)
-	require.Contains(t, mc.PrivateSnapshots, testUserID)
+	moveCompleted := mcEvents[0]
+	require.Equal(t, testGameID, moveCompleted.GameID())
+	require.Equal(t, gameapi.GamePhaseTypeDEPLOY, moveCompleted.ActionType)
+	require.Equal(t, gameapi.GamePhaseTypeDEPLOY, moveCompleted.TargetPhase)
+	require.Equal(t, testTurn, moveCompleted.Turn)
+	require.False(t, moveCompleted.GameOver)
+	require.NotNil(t, moveCompleted.PublicSnapshot)
+	require.Equal(t, testGameID, moveCompleted.PublicSnapshot.Game.ID)
+	require.NotNil(t, moveCompleted.PrivateSnapshots)
+	require.Contains(t, moveCompleted.PrivateSnapshots, testUserID)
 }
 
 func TestOrchestrateMove_StoresStateAfterCommit(t *testing.T) {

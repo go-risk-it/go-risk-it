@@ -83,7 +83,7 @@ var expectedLayer = map[string]string{
 
 // layerFromPrefix derives the expected layer for a package suffix using prefix matching.
 // It first checks the explicit mapping, then falls back to prefix-based rules.
-func layerFromPrefix(suffix string) string { //nolint:gocyclo // exhaustive layer classification
+func layerFromPrefix(suffix string) string {
 	if layer, ok := expectedLayer[suffix]; ok {
 		return layer
 	}
@@ -153,18 +153,18 @@ func layerFromPrefix(suffix string) string { //nolint:gocyclo // exhaustive laye
 //
 //nolint:gochecknoglobals // test-only set used by doc.go validation rules
 var wiringRoots = map[string]bool{
-	"":                                  true, // internal root
-	"kernel":                            true,
-	"game":                              true,
-	"game/internal/data":                true,
-	"game/internal/logic":               true,
-	"game/internal/logic/move":          true,
-	"game/internal/logic/move/service":  true,
-	"game/web":                          true,
-	"lobby":                             true,
-	"lobby/internal/data":               true,
-	"lobby/internal/logic":              true,
-	"web":                               true,
+	"":                                 true, // internal root
+	"kernel":                           true,
+	"game":                             true,
+	"game/internal/data":               true,
+	"game/internal/logic":              true,
+	"game/internal/logic/move":         true,
+	"game/internal/logic/move/service": true,
+	"game/web":                         true,
+	"lobby":                            true,
+	"lobby/internal/data":              true,
+	"lobby/internal/logic":             true,
+	"web":                              true,
 }
 
 // isWiringRoot returns true for known fx.Module aggregation packages.

@@ -303,13 +303,13 @@ func TestManager_PlayerCount(t *testing.T) {
 
 // --- Presence broadcast tests ---
 
-func gameContextForUser(gameID int64, userID string) ctx.GameContext {
+func gameContextForUser(userID string) ctx.GameContext {
 	userContext := kernelctx.WithUserID(
 		kernelctx.WithSpan(context.Background(), noop.Span{}),
 		userID,
 	)
 
-	return ctx.WithGameID(userContext, gameID)
+	return ctx.WithGameID(userContext, 1) // gameID constant from line 364
 }
 
 // writableWSConn creates a WS server connection backed by a net.Pipe.
@@ -336,13 +336,16 @@ func readWSMessage(t *testing.T, reader net.Conn) []byte {
 
 	// Read up to 4KB — more than enough for a presence message.
 	buf := make([]byte, 4096)
-	n, err := reader.Read(buf)
-	require.NoError(t, err)
-	require.Positive(t, n)
+	bytesRead, err := reader.Read(buf)
+	assert.NoError(t, err) // nolint:testifylint // Called from goroutines - safe with assert
+	assert.Positive(
+		t,
+		bytesRead,
+	) // nolint:testifylint // Called from goroutines - safe with assert
 
 	// nbio writes raw WS frames. Parse the frame to extract the payload.
 	// Frame format: [opcode byte] [length byte(s)] [payload]
-	frame := buf[:n]
+	frame := buf[:bytesRead]
 
 	// Skip the first byte (FIN + opcode).
 	payloadStart := 2
@@ -361,12 +364,10 @@ func TestManager_ConnectBroadcastsPresence(t *testing.T) {
 
 	manager, bus := connectableManager(t, testMetrics(t))
 
-	const gameID = int64(1)
-
 	// Player A connects first — no one else to receive presence yet.
 	bus.EXPECT().Emit(mock.Anything, mock.Anything).Return()
 
-	ctxA := gameContextForUser(gameID, "player-A")
+	ctxA := gameContextForUser("player-A")
 	connA, clientA := writableWSConn(t)
 	manager.ConnectPlayer(ctxA, connA)
 
@@ -381,7 +382,7 @@ func TestManager_ConnectBroadcastsPresence(t *testing.T) {
 		received <- readWSMessage(t, clientA)
 	}()
 
-	ctxB := gameContextForUser(gameID, "player-B")
+	ctxB := gameContextForUser("player-B")
 	connB, _ := writableWSConn(t)
 	manager.ConnectPlayer(ctxB, connB)
 
@@ -411,12 +412,10 @@ func TestManager_NoSelfPresence(t *testing.T) {
 
 	manager, bus := connectableManager(t, testMetrics(t))
 
-	const gameID = int64(1)
-
 	// Player A connects.
 	bus.EXPECT().Emit(mock.Anything, mock.Anything).Return()
 
-	ctxA := gameContextForUser(gameID, "player-A")
+	ctxA := gameContextForUser("player-A")
 	connA, clientA := writableWSConn(t)
 	manager.ConnectPlayer(ctxA, connA)
 
@@ -430,7 +429,7 @@ func TestManager_NoSelfPresence(t *testing.T) {
 		receivedA <- readWSMessage(t, clientA)
 	}()
 
-	ctxB := gameContextForUser(gameID, "player-B")
+	ctxB := gameContextForUser("player-B")
 	connB, clientB := writableWSConn(t)
 	manager.ConnectPlayer(ctxB, connB)
 
@@ -486,12 +485,10 @@ func TestManager_DisconnectBroadcastsPresence(t *testing.T) {
 
 	manager, bus := connectableManager(t, testMetrics(t))
 
-	const gameID = int64(1)
-
 	// Connect player A with a readable pipe.
 	bus.EXPECT().Emit(mock.Anything, mock.Anything).Return()
 
-	ctxA := gameContextForUser(gameID, "player-A")
+	ctxA := gameContextForUser("player-A")
 	connA, clientA := writableWSConn(t)
 	manager.ConnectPlayer(ctxA, connA)
 
@@ -505,7 +502,7 @@ func TestManager_DisconnectBroadcastsPresence(t *testing.T) {
 		drainCh <- readWSMessage(t, clientA)
 	}()
 
-	ctxB := gameContextForUser(gameID, "player-B")
+	ctxB := gameContextForUser("player-B")
 
 	// Use closableConn so Close() makes writes return net.ErrClosed,
 	// matching production TCP behavior and triggering the cleanup path.
@@ -536,7 +533,7 @@ func TestManager_DisconnectBroadcastsPresence(t *testing.T) {
 	}()
 
 	manager.Broadcast(
-		gameContextForUser(gameID, "any"),
+		gameContextForUser("any"),
 		json.RawMessage(`{"type":"test","data":{}}`),
 	)
 

@@ -13,15 +13,14 @@ import (
 // takes no context, touches no I/O, and panics only on invariant violations
 // (nil inputs, unknown region IDs).
 //
-// The caller must supply the resolved targetPhase from the walker, plus gameOver
-// and winnerUserID from the mission check. When advEffect is nil, no advance
-// occurred and only the move effect is applied.
+// The caller must supply the resolved targetPhase from the walker and winnerUserID
+// from the mission check. When advEffect is nil, no advance occurred and only the
+// move effect is applied.
 func BuildNewState(
 	prev *snapshot.CachedGameState,
 	effect *service.MoveEffect,
 	advEffect *service.AdvanceEffect,
 	targetPhase sqlc.GamePhaseType,
-	gameOver bool,
 	winnerUserID string,
 ) *snapshot.CachedGameState {
 	if prev == nil {
@@ -84,16 +83,16 @@ func ApplyRegionUpdates(
 		index[r.ID] = i
 	}
 
-	for _, u := range updates {
-		idx, ok := index[u.RegionID]
+	for _, update := range updates {
+		idx, ok := index[update.RegionID]
 		if !ok {
-			panic(fmt.Sprintf("ApplyRegionUpdates: unknown region ID %q", u.RegionID))
+			panic(fmt.Sprintf("ApplyRegionUpdates: unknown region ID %q", update.RegionID))
 		}
 
 		cloned[idx] = snapshot.RegionState{
-			ID:      u.RegionID,
-			OwnerID: u.NewOwner,
-			Troops:  u.NewTroops,
+			ID:      update.RegionID,
+			OwnerID: update.NewOwner,
+			Troops:  update.NewTroops,
 		}
 	}
 
@@ -128,22 +127,22 @@ func RecomputePlayers(
 	}
 
 	result := make([]snapshot.PlayerState, len(players))
-	for i, p := range players {
+	for index, player := range players {
 		cardCount := int64(0)
 
-		if priv, ok := privates[p.UserID]; ok {
+		if priv, ok := privates[player.UserID]; ok {
 			cardCount = int64(len(priv.Cards))
 		}
 
 		status := snapshot.PlayerAlive
-		if ownershipCount[p.UserID] == 0 {
+		if ownershipCount[player.UserID] == 0 {
 			status = snapshot.PlayerDead
 		}
 
-		result[i] = snapshot.PlayerState{
-			UserID:    p.UserID,
-			Name:      p.Name,
-			Index:     p.Index,
+		result[index] = snapshot.PlayerState{
+			UserID:    player.UserID,
+			Name:      player.Name,
+			Index:     player.Index,
 			CardCount: cardCount,
 			Status:    status,
 		}
@@ -275,13 +274,13 @@ func applyMissions(
 	privates map[string]*snapshot.PlayerPrivate,
 	missions []service.MissionChange,
 ) map[string]*snapshot.PlayerPrivate {
-	for _, mc := range missions {
-		priv, ok := privates[mc.PlayerUserID]
+	for _, missionChange := range missions {
+		priv, ok := privates[missionChange.PlayerUserID]
 		if !ok {
 			continue
 		}
 
-		priv.Mission = mc.NewMission
+		priv.Mission = missionChange.NewMission
 	}
 
 	return privates

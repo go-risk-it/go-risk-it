@@ -28,11 +28,23 @@ web: "🌐 Web" {
     game_consumers: "Game Consumers" {
       style.border-radius: 6
     }
+    game_web: "Web" {
+      style.border-radius: 6
+    }
+    game_web_routes: "Routes" {
+      style.border-radius: 6
+    }
   }
   lobby: "Lobby" {
     style.fill: "#C8E6C9"
     style.border-radius: 8
     lobby_consumers: "Lobby Consumers" {
+      style.border-radius: 6
+    }
+    lobby_web: "Web" {
+      style.border-radius: 6
+    }
+    lobby_web_routes: "Routes" {
       style.border-radius: 6
     }
   }
@@ -55,19 +67,8 @@ events: "📡 Events" {
   style.fill: "#FCE4EC"
   style.stroke: "#AD1457"
   style.border-radius: 12
-  game: "Game" {
-    style.fill: "#BBDEFB"
-    style.border-radius: 8
-    game_events: "Events" {
-      style.border-radius: 6
-    }
-  }
-  lobby: "Lobby" {
-    style.fill: "#C8E6C9"
-    style.border-radius: 8
-    lobby_events: "Events" {
-      style.border-radius: 6
-    }
+  lobby_events: "Events" {
+    style.border-radius: 6
   }
 }
 
@@ -94,7 +95,16 @@ logic: "⚙️ Logic" {
     lobby_ctx: "Ctx" {
       style.border-radius: 6
     }
-    lobby_logic: "Lobby Logic" {
+    lobby_internal_logic_creation: "Creation" {
+      style.border-radius: 6
+    }
+    lobby_internal_logic_management: "Management" {
+      style.border-radius: 6
+    }
+    lobby_internal_logic_start: "Start" {
+      style.border-radius: 6
+    }
+    lobby_internal_logic_state: "State" {
       style.border-radius: 6
     }
   }
@@ -114,7 +124,7 @@ data: "💾 Data" {
   lobby: "Lobby" {
     style.fill: "#C8E6C9"
     style.border-radius: 8
-    lobby_data: "Lobby Data" {
+    lobby_internal_data_db: "Db" {
       style.border-radius: 6
     }
   }
@@ -142,15 +152,21 @@ kernel: "🔧 Kernel" {
   kernel_observability: "Observability" {
     style.border-radius: 6
   }
+  kernel_safego: "Safego" {
+    style.border-radius: 6
+  }
   kernel_utils: "Utils" {
     style.border-radius: 6
   }
 }
 
 # Cross-layer dependencies (container-to-container)
+api -> logic
 data -> kernel
+events -> api
 events -> kernel
 events -> logic
+logic -> api
 logic -> data
 logic -> events
 logic -> kernel

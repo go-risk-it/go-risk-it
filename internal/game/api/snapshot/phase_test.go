@@ -56,19 +56,19 @@ func TestPhase_RoundTrip(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			data, err := json.Marshal(tt.phase)
+			data, err := json.Marshal(testCase.phase)
 			require.NoError(t, err)
 
 			var got snapshot.Phase
 			err = json.Unmarshal(data, &got)
 			require.NoError(t, err)
 
-			require.Equal(t, tt.phase.Type, got.Type)
-			require.Equal(t, tt.phase.State, got.State)
+			require.Equal(t, testCase.phase.Type, got.Type)
+			require.Equal(t, testCase.phase.State, got.State)
 		})
 	}
 }
@@ -164,14 +164,14 @@ func TestPhase_WireCompatibility(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			existingJSON, err := json.Marshal(tt.anonymousJSON)
+			existingJSON, err := json.Marshal(testCase.anonymousJSON)
 			require.NoError(t, err)
 
-			sealedJSON, err := json.Marshal(tt.sealedPhase)
+			sealedJSON, err := json.Marshal(testCase.sealedPhase)
 			require.NoError(t, err)
 
 			require.JSONEq(t, string(existingJSON), string(sealedJSON),

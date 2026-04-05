@@ -73,8 +73,20 @@ func TestEventTypes_EventType(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "MoveCompleted",
-			event:    gameevt.NewMoveCompleted(1, "u", now, "DEPLOY", 1, "DEPLOY", "DEPLOY", false, nil, nil, nil),
+			name: "MoveCompleted",
+			event: gameevt.NewMoveCompleted(
+				1,
+				"u",
+				now,
+				"DEPLOY",
+				1,
+				"DEPLOY",
+				"DEPLOY",
+				false,
+				nil,
+				nil,
+				nil,
+			),
 			expected: gameevt.TypeMoveCompleted,
 		},
 		{

@@ -31,12 +31,9 @@ func (s *service) Perform(
 		attribute.Int64("troops", move.Troops),
 	)
 
-	conquerState, ok := prev.PublicSnapshot.Phase.State.(snapshot.ConquerPhaseState)
-	if !ok {
-		return struct{}{}, zero, fmt.Errorf(
-			"expected ConquerPhaseState, got %T",
-			prev.PublicSnapshot.Phase.State,
-		)
+	conquerState, err := s.extractConquerState(prev)
+	if err != nil {
+		return struct{}{}, zero, err
 	}
 
 	if conquerState.MinTroopsToMove > move.Troops {
@@ -46,14 +43,9 @@ func (s *service) Perform(
 		)
 	}
 
-	sourceRegion, err := s.regionService.GetRegion(ctx, querier, conquerState.AttackingRegionID)
+	sourceRegion, targetRegion, err := s.loadRegions(ctx, querier, conquerState)
 	if err != nil {
-		return struct{}{}, zero, fmt.Errorf("unable to get attacking region: %w", err)
-	}
-
-	targetRegion, err := s.regionService.GetRegion(ctx, querier, conquerState.DefendingRegionID)
-	if err != nil {
-		return struct{}{}, zero, fmt.Errorf("unable to get defending region: %w", err)
+		return struct{}{}, zero, err
 	}
 
 	if sourceRegion.Troops-move.Troops < minTroopsToRetain {
@@ -69,7 +61,59 @@ func (s *service) Perform(
 		return struct{}{}, zero, fmt.Errorf("failed to update region troops: %w", err)
 	}
 
-	effect := moveservice.MoveEffect{
+	effect := s.buildMoveEffect(ctx, sourceRegion, targetRegion, move)
+
+	return s.applyEliminationIfNeeded(
+		ctx,
+		querier,
+		prev,
+		defeatedPlayerID,
+		eliminatedUserID,
+		effect,
+	)
+}
+
+// extractConquerState validates that phase state is ConquerPhaseState and returns it.
+func (s *service) extractConquerState(
+	prev *snapshot.CachedGameState,
+) (snapshot.ConquerPhaseState, error) {
+	conquerState, ok := prev.PublicSnapshot.Phase.State.(snapshot.ConquerPhaseState)
+	if !ok {
+		return snapshot.ConquerPhaseState{}, fmt.Errorf(
+			"expected ConquerPhaseState, got %T",
+			prev.PublicSnapshot.Phase.State,
+		)
+	}
+
+	return conquerState, nil
+}
+
+// loadRegions fetches both attacking and defending regions.
+func (s *service) loadRegions(
+	ctx ctx.GameContext,
+	querier db.Querier,
+	state snapshot.ConquerPhaseState,
+) (*sqlc.GetRegionsByGameRow, *sqlc.GetRegionsByGameRow, error) {
+	sourceRegion, err := s.regionService.GetRegion(ctx, querier, state.AttackingRegionID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to get attacking region: %w", err)
+	}
+
+	targetRegion, err := s.regionService.GetRegion(ctx, querier, state.DefendingRegionID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to get defending region: %w", err)
+	}
+
+	return sourceRegion, targetRegion, nil
+}
+
+// buildMoveEffect constructs the MoveEffect for region updates.
+func (s *service) buildMoveEffect(
+	ctx ctx.GameContext,
+	sourceRegion, targetRegion *sqlc.GetRegionsByGameRow,
+	move Move,
+) moveservice.MoveEffect {
+	return moveservice.MoveEffect{
 		RegionUpdates: []moveservice.RegionUpdate{
 			{
 				RegionID:  sourceRegion.ExternalReference,
@@ -84,10 +128,23 @@ func (s *service) Perform(
 		},
 		UpdatedPhase: snapshot.EmptyPhaseState{},
 	}
+}
 
+// applyEliminationIfNeeded checks if defender was eliminated and applies elimination logic.
+func (s *service) applyEliminationIfNeeded(
+	ctx ctx.GameContext,
+	querier db.Querier,
+	prev *snapshot.CachedGameState,
+	defeatedPlayerID int64,
+	eliminatedUserID string,
+	effect moveservice.MoveEffect,
+) (struct{}, moveservice.MoveEffect, error) {
 	isDefenderEliminated, err := s.isDefenderEliminated(ctx, querier, defeatedPlayerID)
 	if err != nil {
-		return struct{}{}, zero, fmt.Errorf("failed to check if defender is eliminated: %w", err)
+		return struct{}{}, moveservice.MoveEffect{}, fmt.Errorf(
+			"failed to check if defender is eliminated: %w",
+			err,
+		)
 	}
 
 	if isDefenderEliminated {
@@ -95,12 +152,11 @@ func (s *service) Perform(
 		// DB transfer mutates ownership.
 		eliminationEffect := s.buildEliminationEffect(prev, eliminatedUserID)
 
-		if err := s.handlePlayerEliminated(
-			ctx,
-			querier,
-			defeatedPlayerID,
-		); err != nil {
-			return struct{}{}, zero, fmt.Errorf("unable to handle player eliminated: %w", err)
+		if err := s.handlePlayerEliminated(ctx, querier, defeatedPlayerID); err != nil {
+			return struct{}{}, moveservice.MoveEffect{}, fmt.Errorf(
+				"unable to handle player eliminated: %w",
+				err,
+			)
 		}
 
 		effect.CardDeltas = eliminationEffect.cardDeltas

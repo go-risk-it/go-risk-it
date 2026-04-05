@@ -16,7 +16,8 @@ import (
 func NewLoggingService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *LoggingService {
+},
+) *LoggingService {
 	mock := &LoggingService{}
 	mock.Mock.Test(t)
 

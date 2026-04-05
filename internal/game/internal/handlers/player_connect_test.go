@@ -37,10 +37,10 @@ func (s *stubSnapshotReader) GetAllPrivateSnapshots(
 
 var _ gameapi.SnapshotReader = (*stubSnapshotReader)(nil)
 
-func playerConnectedCtx(gameID int64, userID string) gamectx.GameContext {
+func playerConnectedCtx(userID string) gamectx.GameContext {
 	return gamectx.WithGameID(
 		kernelctx.WithUserID(kernelctx.WithSpan(context.Background(), noop.Span{}), userID),
-		gameID,
+		testGameID,
 	)
 }
 
@@ -74,7 +74,7 @@ func TestPlayerConnect_CacheHit(t *testing.T) {
 	})
 
 	event := gameevt.NewPlayerConnected(testGameID, "alice", fixedTime)
-	bus.Emit(playerConnectedCtx(testGameID, "alice"), event)
+	bus.Emit(playerConnectedCtx("alice"), event)
 
 	require.Len(t, publisher.calls, 1)
 	assert.Equal(t, "alice", publisher.calls[0].playerID)
@@ -110,7 +110,7 @@ func TestPlayerConnect_CacheMiss_FallsBackToDB(t *testing.T) {
 	})
 
 	event := gameevt.NewPlayerConnected(testGameID, "bob", fixedTime)
-	bus.Emit(playerConnectedCtx(testGameID, "bob"), event)
+	bus.Emit(playerConnectedCtx("bob"), event)
 
 	require.Len(t, publisher.calls, 1)
 	assert.Equal(t, "bob", publisher.calls[0].playerID)
@@ -135,7 +135,7 @@ func TestPlayerConnect_CacheMiss_DBError(t *testing.T) {
 	event := gameevt.NewPlayerConnected(testGameID, "alice", fixedTime)
 
 	require.NotPanics(t, func() {
-		bus.Emit(playerConnectedCtx(testGameID, "alice"), event)
+		bus.Emit(playerConnectedCtx("alice"), event)
 	})
 
 	require.Empty(t, publisher.calls)
@@ -177,7 +177,7 @@ func TestPlayerConnect_CacheHit_PlayerNotInPrivate(t *testing.T) {
 	})
 
 	event := gameevt.NewPlayerConnected(testGameID, "alice", fixedTime)
-	bus.Emit(playerConnectedCtx(testGameID, "alice"), event)
+	bus.Emit(playerConnectedCtx("alice"), event)
 
 	// Falls back to DB, sends view for alice
 	require.Len(t, publisher.calls, 1)

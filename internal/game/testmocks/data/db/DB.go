@@ -17,7 +17,8 @@ import (
 func NewDB(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *DB {
+},
+) *DB {
 	mock := &DB{}
 	mock.Mock.Test(t)
 

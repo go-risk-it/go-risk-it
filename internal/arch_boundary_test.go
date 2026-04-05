@@ -168,7 +168,8 @@ func TestArch_GameCtxImportIsolation(t *testing.T) {
 		short := strings.TrimPrefix(pkg.ImportPath, modulePrefix)
 
 		// Allow: game, game/**, testing/**
-		if short == "game" || strings.HasPrefix(short, "game/") || strings.HasPrefix(short, "testing/") {
+		if short == "game" || strings.HasPrefix(short, "game/") ||
+			strings.HasPrefix(short, "testing/") {
 			continue
 		}
 
@@ -730,8 +731,11 @@ func TestArch_GameAPISnapshotIsPureDTO(t *testing.T) {
 				modulePrefix+"lobby/web/",
 				modulePrefix+"web/",
 			) || strings.Contains(imp, "/sqlc") || strings.Contains(imp, "/route") {
-				t.Errorf("%s imports forbidden package %s (snapshot DTOs must be pure domain types)",
-					pkg.ImportPath, imp)
+				t.Errorf(
+					"%s imports forbidden package %s (snapshot DTOs must be pure domain types)",
+					pkg.ImportPath,
+					imp,
+				)
 			}
 		}
 	}
@@ -754,8 +758,11 @@ func TestArch_LobbyAPISnapshotIsPureDTO(t *testing.T) {
 				modulePrefix+"lobby/web/",
 				modulePrefix+"web/",
 			) || strings.Contains(imp, "/sqlc") || strings.Contains(imp, "/route") {
-				t.Errorf("%s imports forbidden package %s (snapshot DTOs must be pure domain types)",
-					pkg.ImportPath, imp)
+				t.Errorf(
+					"%s imports forbidden package %s (snapshot DTOs must be pure domain types)",
+					pkg.ImportPath,
+					imp,
+				)
 			}
 		}
 	}

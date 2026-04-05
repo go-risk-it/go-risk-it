@@ -141,7 +141,6 @@ func (s *orchestrator[T, R]) buildOutcome(
 		&effect,
 		advEffectPtr,
 		targetPhase,
-		gameOver,
 		winnerUserID,
 	)
 

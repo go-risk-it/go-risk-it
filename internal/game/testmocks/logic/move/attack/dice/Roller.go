@@ -13,7 +13,8 @@ import (
 func NewRoller(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *Roller {
+},
+) *Roller {
 	mock := &Roller{}
 	mock.Mock.Test(t)
 

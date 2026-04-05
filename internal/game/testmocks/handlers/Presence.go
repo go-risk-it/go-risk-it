@@ -13,7 +13,8 @@ import (
 func NewPresence(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *Presence {
+},
+) *Presence {
 	mock := &Presence{}
 	mock.Mock.Test(t)
 

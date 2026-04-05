@@ -30,7 +30,7 @@ func (t *tracedService[T, R]) Perform(
 	move T,
 	prev *snapshot.CachedGameState,
 ) (R, MoveEffect, error) {
-	pr, err := observe.Span(
+	performResult, err := observe.Span(
 		gameCtx,
 		"game.move.perform",
 		func(gameCtx ctx.GameContext) (performResult[R], error) {
@@ -41,7 +41,7 @@ func (t *tracedService[T, R]) Perform(
 		attribute.String("phase", string(t.inner.PhaseType())),
 	)
 
-	return pr.result, pr.effect, err
+	return performResult.result, performResult.effect, err
 }
 
 // Walk is a pure function (no context, no DB) — tracing is not applicable.

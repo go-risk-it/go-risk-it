@@ -703,7 +703,7 @@ func TestDecideConquer(t *testing.T) {
 			PlayerView: &snapshot.PlayerView{
 				Game: snapshot.GameMeta{},
 				Phase: snapshot.Phase{
-					Type:  snapshot.PhaseConquer,
+					Type: snapshot.PhaseConquer,
 					State: snapshot.ConquerPhaseState{
 						AttackingRegionID: "a1",
 						DefendingRegionID: "a2",
@@ -802,14 +802,14 @@ func TestDecideConquer(t *testing.T) {
 			PlayerView: &snapshot.PlayerView{
 				Game: snapshot.GameMeta{},
 				Phase: snapshot.Phase{
-					Type:  snapshot.PhaseConquer,
+					Type: snapshot.PhaseConquer,
 					State: snapshot.ConquerPhaseState{
 						AttackingRegionID: "a1",
 						DefendingRegionID: "a2",
 						MinTroopsToMove:   1,
 					},
 				},
-			Regions: []snapshot.RegionState{
+				Regions: []snapshot.RegionState{
 					{ID: "a1", OwnerID: "me", Troops: 2},
 					{ID: "a2", OwnerID: "me", Troops: 1},
 					{ID: "a3", OwnerID: "me", Troops: 1},
@@ -853,8 +853,11 @@ func TestDecideAttack(t *testing.T) {
 		snap := gamestate.ViewSnapshot{
 			PlayerView: &snapshot.PlayerView{
 				Game: snapshot.GameMeta{},
-				Phase: snapshot.Phase{Type: snapshot.PhaseAttack, State: snapshot.EmptyPhaseState{}},
-			Regions: []snapshot.RegionState{
+				Phase: snapshot.Phase{
+					Type:  snapshot.PhaseAttack,
+					State: snapshot.EmptyPhaseState{},
+				},
+				Regions: []snapshot.RegionState{
 					{ID: "a1", OwnerID: "me", Troops: 1},
 					{ID: "a2", OwnerID: "me", Troops: 2},
 					{ID: "a3", OwnerID: "me", Troops: 1},
@@ -886,8 +889,11 @@ func TestDecideAttack(t *testing.T) {
 		snap := gamestate.ViewSnapshot{
 			PlayerView: &snapshot.PlayerView{
 				Game: snapshot.GameMeta{},
-				Phase: snapshot.Phase{Type: snapshot.PhaseAttack, State: snapshot.EmptyPhaseState{}},
-			Regions: []snapshot.RegionState{
+				Phase: snapshot.Phase{
+					Type:  snapshot.PhaseAttack,
+					State: snapshot.EmptyPhaseState{},
+				},
+				Regions: []snapshot.RegionState{
 					{ID: "a1", OwnerID: "me", Troops: 1},
 					{ID: "a2", OwnerID: "me", Troops: 1},
 					{ID: "a3", OwnerID: "me", Troops: 1},
@@ -921,8 +927,11 @@ func TestDecideAttack(t *testing.T) {
 		snap := gamestate.ViewSnapshot{
 			PlayerView: &snapshot.PlayerView{
 				Game: snapshot.GameMeta{},
-				Phase: snapshot.Phase{Type: snapshot.PhaseAttack, State: snapshot.EmptyPhaseState{}},
-			Regions: []snapshot.RegionState{
+				Phase: snapshot.Phase{
+					Type:  snapshot.PhaseAttack,
+					State: snapshot.EmptyPhaseState{},
+				},
+				Regions: []snapshot.RegionState{
 					{ID: "a1", OwnerID: "me", Troops: 1},
 					{ID: "a2", OwnerID: "me", Troops: 10},
 					{ID: "a3", OwnerID: "me", Troops: 10},
@@ -982,9 +991,12 @@ func TestDecideAttack(t *testing.T) {
 			// a2->b1: ratio=4/2=2.0, beta 0/3=0.0 -> bonus=1.0 -> score=2.0
 			snap := gamestate.ViewSnapshot{
 				PlayerView: &snapshot.PlayerView{
-				Game: snapshot.GameMeta{},
-					Phase: snapshot.Phase{Type: snapshot.PhaseAttack, State: snapshot.EmptyPhaseState{}},
-				Regions: []snapshot.RegionState{
+					Game: snapshot.GameMeta{},
+					Phase: snapshot.Phase{
+						Type:  snapshot.PhaseAttack,
+						State: snapshot.EmptyPhaseState{},
+					},
+					Regions: []snapshot.RegionState{
 						{ID: "a1", OwnerID: "me", Troops: 1},
 						{ID: "a2", OwnerID: "me", Troops: 4},
 						{ID: "a3", OwnerID: "me", Troops: 4},
@@ -1038,12 +1050,12 @@ func TestDecideDeploy(t *testing.T) {
 			PlayerView: &snapshot.PlayerView{
 				Game: snapshot.GameMeta{},
 				Phase: snapshot.Phase{
-					Type:  snapshot.PhaseDeploy,
+					Type: snapshot.PhaseDeploy,
 					State: snapshot.DeployPhaseState{
 						DeployableTroops: 5,
 					},
 				},
-			Regions: []snapshot.RegionState{
+				Regions: []snapshot.RegionState{
 					{ID: "a1", OwnerID: "me", Troops: 3},
 					{ID: "a2", OwnerID: "me", Troops: 3},
 					{ID: "a3", OwnerID: "me", Troops: 3},
@@ -1081,12 +1093,12 @@ func TestDecideDeploy(t *testing.T) {
 			PlayerView: &snapshot.PlayerView{
 				Game: snapshot.GameMeta{},
 				Phase: snapshot.Phase{
-					Type:  snapshot.PhaseDeploy,
+					Type: snapshot.PhaseDeploy,
 					State: snapshot.DeployPhaseState{
 						DeployableTroops: 5,
 					},
 				},
-			Regions: []snapshot.RegionState{
+				Regions: []snapshot.RegionState{
 					{ID: "a1", OwnerID: "me", Troops: 3},
 					{ID: "a2", OwnerID: "me", Troops: 3},
 					{ID: "a3", OwnerID: "me", Troops: 3},
@@ -1119,12 +1131,12 @@ func TestDecideDeploy(t *testing.T) {
 			PlayerView: &snapshot.PlayerView{
 				Game: snapshot.GameMeta{},
 				Phase: snapshot.Phase{
-					Type:  snapshot.PhaseDeploy,
+					Type: snapshot.PhaseDeploy,
 					State: snapshot.DeployPhaseState{
 						DeployableTroops: 0,
 					},
 				},
-			Regions: []snapshot.RegionState{
+				Regions: []snapshot.RegionState{
 					{ID: "a1", OwnerID: "me", Troops: 3},
 					{ID: "a2", OwnerID: "me", Troops: 3},
 					{ID: "a3", OwnerID: "me", Troops: 3},

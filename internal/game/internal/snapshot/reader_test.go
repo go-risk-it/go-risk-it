@@ -35,7 +35,12 @@ func (m *mockMissionQuerier) GetTwoContinentsMission(
 ) (snapshot.TwoContinentsResult, error) {
 	args := m.Called(ctx, missionID)
 
-	return args.Get(0).(snapshot.TwoContinentsResult), args.Error(1)
+	result, ok := args.Get(0).(snapshot.TwoContinentsResult)
+	if !ok && args.Get(0) != nil {
+		panic("GetTwoContinentsMission mock: args.Get(0) is not snapshot.TwoContinentsResult")
+	}
+
+	return result, args.Error(1)
 }
 
 func (m *mockMissionQuerier) GetTwoContinentsPlusOneMission(
@@ -44,7 +49,14 @@ func (m *mockMissionQuerier) GetTwoContinentsPlusOneMission(
 ) (snapshot.TwoContinentsPlusOneResult, error) {
 	args := m.Called(ctx, missionID)
 
-	return args.Get(0).(snapshot.TwoContinentsPlusOneResult), args.Error(1)
+	result, ok := args.Get(0).(snapshot.TwoContinentsPlusOneResult)
+	if !ok && args.Get(0) != nil {
+		panic(
+			"GetTwoContinentsPlusOneMission mock: args.Get(0) is not snapshot.TwoContinentsPlusOneResult",
+		)
+	}
+
+	return result, args.Error(1)
 }
 
 func (m *mockMissionQuerier) GetEliminatePlayerMission(
@@ -98,11 +110,10 @@ func TestReader_GetPublicSnapshot_DeployPhase(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, apisnapshot.PhaseDeploy, result.Phase.Type)
 	require.IsType(t, apisnapshot.DeployPhaseState{}, result.Phase.State)
-	require.Equal(
-		t,
-		int64(7),
-		result.Phase.State.(apisnapshot.DeployPhaseState).DeployableTroops,
-	)
+
+	deployState, ok := result.Phase.State.(apisnapshot.DeployPhaseState)
+	require.True(t, ok, "Phase.State should be DeployPhaseState")
+	require.Equal(t, int64(7), deployState.DeployableTroops)
 }
 
 func TestReader_GetPublicSnapshot_ConquerPhase(t *testing.T) {
@@ -140,7 +151,8 @@ func TestReader_GetPublicSnapshot_ConquerPhase(t *testing.T) {
 	require.Equal(t, apisnapshot.PhaseConquer, result.Phase.Type)
 	require.IsType(t, apisnapshot.ConquerPhaseState{}, result.Phase.State)
 
-	conquer := result.Phase.State.(apisnapshot.ConquerPhaseState)
+	conquer, ok := result.Phase.State.(apisnapshot.ConquerPhaseState)
+	require.True(t, ok, "Phase.State should be ConquerPhaseState")
 	require.Equal(t, "alaska", conquer.AttackingRegionID)
 	require.Equal(t, "kamchatka", conquer.DefendingRegionID)
 	require.Equal(t, int64(2), conquer.MinTroopsToMove)
@@ -353,7 +365,8 @@ func TestReader_GetAllPrivateSnapshots_TwoContinents(t *testing.T) {
 	require.Equal(t, apisnapshot.MissionTwoContinents, alice.Mission.Type)
 	require.IsType(t, apisnapshot.TwoContinentsMission{}, alice.Mission.Detail)
 
-	detail := alice.Mission.Detail.(apisnapshot.TwoContinentsMission)
+	detail, ok := alice.Mission.Detail.(apisnapshot.TwoContinentsMission)
+	require.True(t, ok, "Mission.Detail should be TwoContinentsMission")
 	require.Equal(t, "europe", detail.Continent1)
 	require.Equal(t, "asia", detail.Continent2)
 }
@@ -400,7 +413,8 @@ func TestReader_GetAllPrivateSnapshots_AllMissionTypes(t *testing.T) {
 	// TwoContinentsPlusOne
 	require.Equal(t, apisnapshot.MissionTwoContinentsPlusOne, result["user-a"].Mission.Type)
 
-	detail := result["user-a"].Mission.Detail.(apisnapshot.TwoContinentsPlusOneMission)
+	detail, found := result["user-a"].Mission.Detail.(apisnapshot.TwoContinentsPlusOneMission)
+	require.True(t, found, "Mission.Detail should be TwoContinentsPlusOneMission")
 	require.Equal(t, "europe", detail.Continent1)
 	require.Equal(t, "south_america", detail.Continent2)
 
@@ -431,7 +445,8 @@ func TestReader_GetAllPrivateSnapshots_AllMissionTypes(t *testing.T) {
 	// EliminatePlayer
 	require.Equal(t, apisnapshot.MissionEliminatePlayer, result["user-d"].Mission.Type)
 
-	elimDetail := result["user-d"].Mission.Detail.(apisnapshot.EliminatePlayerMission)
+	elimDetail, ok := result["user-d"].Mission.Detail.(apisnapshot.EliminatePlayerMission)
+	require.True(t, ok, "Mission.Detail should be EliminatePlayerMission")
 	require.Equal(t, "user-target", elimDetail.TargetUserID)
 }
 

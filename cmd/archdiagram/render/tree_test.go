@@ -20,10 +20,19 @@ func TestRenderProjectTree_Basic(t *testing.T) {
 
 	archModel := &model.ArchModel{
 		Packages: map[string]*model.PackageInfo{
-			"kernel/config":             {Suffix: "kernel/config", Summary: "Configuration management"},
-			"kernel/ctx":                {Suffix: "kernel/ctx", Summary: "Typed contexts"},
-			"game/internal/logic/board": {Suffix: "game/internal/logic/board", Summary: "Board topology"},
-			"game/internal/logic/phase": {Suffix: "game/internal/logic/phase", Summary: "Phase transitions"},
+			"kernel/config": {
+				Suffix:  "kernel/config",
+				Summary: "Configuration management",
+			},
+			"kernel/ctx": {Suffix: "kernel/ctx", Summary: "Typed contexts"},
+			"game/internal/logic/board": {
+				Suffix:  "game/internal/logic/board",
+				Summary: "Board topology",
+			},
+			"game/internal/logic/phase": {
+				Suffix:  "game/internal/logic/phase",
+				Summary: "Phase transitions",
+			},
 		},
 		Subsystems: map[string]*model.SubsystemInfo{},
 		Layers:     map[string]*model.LayerInfo{},

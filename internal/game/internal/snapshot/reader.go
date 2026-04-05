@@ -177,8 +177,8 @@ func mapPhase(phase PhaseState) (apisnapshot.Phase, error) {
 	}, nil
 }
 
-func mapPhaseType(t sqlc.GamePhaseType) (apisnapshot.PhaseType, error) {
-	switch t {
+func mapPhaseType(cardType sqlc.GamePhaseType) (apisnapshot.PhaseType, error) {
+	switch cardType {
 	case sqlc.GamePhaseTypeDEPLOY:
 		return apisnapshot.PhaseDeploy, nil
 	case sqlc.GamePhaseTypeATTACK:
@@ -190,7 +190,7 @@ func mapPhaseType(t sqlc.GamePhaseType) (apisnapshot.PhaseType, error) {
 	case sqlc.GamePhaseTypeCARDS:
 		return apisnapshot.PhaseCards, nil
 	default:
-		return "", fmt.Errorf("unknown phase type: %s", t)
+		return "", fmt.Errorf("unknown phase type: %s", cardType)
 	}
 }
 
@@ -236,13 +236,13 @@ func mapRegions(regions []sqlc.GetRegionsByGameRow) []apisnapshot.RegionState {
 
 func mapPlayers(players []sqlc.GetPlayersStateRow) []apisnapshot.PlayerState {
 	result := make([]apisnapshot.PlayerState, len(players))
-	for i, p := range players {
-		result[i] = apisnapshot.PlayerState{
-			UserID:    p.UserID,
-			Name:      p.Name,
-			Index:     p.TurnIndex,
-			CardCount: p.CardCount,
-			Status:    mapPlayerStatus(p.RegionCount),
+	for index, player := range players {
+		result[index] = apisnapshot.PlayerState{
+			UserID:    player.UserID,
+			Name:      player.Name,
+			Index:     player.TurnIndex,
+			CardCount: player.CardCount,
+			Status:    mapPlayerStatus(player.RegionCount),
 		}
 	}
 
@@ -283,19 +283,19 @@ func (r *reader) mapPrivateSnapshot(
 
 func mapCards(cards []sqlc.GetCardsForPlayerRow) ([]apisnapshot.CardState, error) {
 	result := make([]apisnapshot.CardState, len(cards))
-	for i, c := range cards {
-		cardType, err := mapCardType(c.CardType)
+	for index, card := range cards {
+		cardType, err := mapCardType(card.CardType)
 		if err != nil {
 			return nil, err
 		}
 
 		region := ""
-		if c.Region.Valid {
-			region = c.Region.String
+		if card.Region.Valid {
+			region = card.Region.String
 		}
 
-		result[i] = apisnapshot.CardState{
-			ID:     c.ID,
+		result[index] = apisnapshot.CardState{
+			ID:     card.ID,
 			Type:   cardType,
 			Region: region,
 		}
@@ -304,8 +304,8 @@ func mapCards(cards []sqlc.GetCardsForPlayerRow) ([]apisnapshot.CardState, error
 	return result, nil
 }
 
-func mapCardType(t sqlc.GameCardType) (apisnapshot.CardType, error) {
-	switch t {
+func mapCardType(cardType sqlc.GameCardType) (apisnapshot.CardType, error) {
+	switch cardType {
 	case sqlc.GameCardTypeINFANTRY:
 		return apisnapshot.CardInfantry, nil
 	case sqlc.GameCardTypeCAVALRY:
@@ -315,7 +315,7 @@ func mapCardType(t sqlc.GameCardType) (apisnapshot.CardType, error) {
 	case sqlc.GameCardTypeJOLLY:
 		return apisnapshot.CardJolly, nil
 	default:
-		return "", fmt.Errorf("unknown card type: %s", t)
+		return "", fmt.Errorf("unknown card type: %s", cardType)
 	}
 }
 
@@ -326,52 +326,11 @@ func (r *reader) resolveMission(
 ) (apisnapshot.PlayerMission, error) {
 	switch missionType {
 	case sqlc.GameMissionTypeTWOCONTINENTS:
-		m, err := r.missionQuerier.GetTwoContinentsMission(ctx, missionID)
-		if err != nil {
-			return apisnapshot.PlayerMission{}, fmt.Errorf(
-				"fetching two continents mission: %w",
-				err,
-			)
-		}
-
-		return apisnapshot.PlayerMission{
-			Type: apisnapshot.MissionTwoContinents,
-			Detail: apisnapshot.TwoContinentsMission{
-				Continent1: m.Continent1,
-				Continent2: m.Continent2,
-			},
-		}, nil
+		return r.resolveTwoContinentsMission(ctx, missionID)
 	case sqlc.GameMissionTypeTWOCONTINENTSPLUSONE:
-		m, err := r.missionQuerier.GetTwoContinentsPlusOneMission(ctx, missionID)
-		if err != nil {
-			return apisnapshot.PlayerMission{}, fmt.Errorf(
-				"fetching two continents plus one mission: %w",
-				err,
-			)
-		}
-
-		return apisnapshot.PlayerMission{
-			Type: apisnapshot.MissionTwoContinentsPlusOne,
-			Detail: apisnapshot.TwoContinentsPlusOneMission{
-				Continent1: m.Continent1,
-				Continent2: m.Continent2,
-			},
-		}, nil
+		return r.resolveTwoContinentsPlusOneMission(ctx, missionID)
 	case sqlc.GameMissionTypeELIMINATEPLAYER:
-		targetUser, err := r.missionQuerier.GetEliminatePlayerMission(ctx, missionID)
-		if err != nil {
-			return apisnapshot.PlayerMission{}, fmt.Errorf(
-				"fetching eliminate player mission: %w",
-				err,
-			)
-		}
-
-		return apisnapshot.PlayerMission{
-			Type: apisnapshot.MissionEliminatePlayer,
-			Detail: apisnapshot.EliminatePlayerMission{
-				TargetUserID: targetUser,
-			},
-		}, nil
+		return r.resolveEliminatePlayerMission(ctx, missionID)
 	case sqlc.GameMissionTypeEIGHTEENTERRITORIESTWOTROOPS:
 		return apisnapshot.PlayerMission{
 			Type:   apisnapshot.MissionEighteenTerritoriesTwoTroops,
@@ -385,4 +344,63 @@ func (r *reader) resolveMission(
 	default:
 		return apisnapshot.PlayerMission{}, fmt.Errorf("unknown mission type: %s", missionType)
 	}
+}
+
+func (r *reader) resolveTwoContinentsMission(
+	ctx gamectx.GameContext,
+	missionID int64,
+) (apisnapshot.PlayerMission, error) {
+	mission, err := r.missionQuerier.GetTwoContinentsMission(ctx, missionID)
+	if err != nil {
+		return apisnapshot.PlayerMission{}, fmt.Errorf("fetching two continents mission: %w", err)
+	}
+
+	return apisnapshot.PlayerMission{
+		Type: apisnapshot.MissionTwoContinents,
+		Detail: apisnapshot.TwoContinentsMission{
+			Continent1: mission.Continent1,
+			Continent2: mission.Continent2,
+		},
+	}, nil
+}
+
+func (r *reader) resolveTwoContinentsPlusOneMission(
+	ctx gamectx.GameContext,
+	missionID int64,
+) (apisnapshot.PlayerMission, error) {
+	mission, err := r.missionQuerier.GetTwoContinentsPlusOneMission(ctx, missionID)
+	if err != nil {
+		return apisnapshot.PlayerMission{}, fmt.Errorf(
+			"fetching two continents plus one mission: %w",
+			err,
+		)
+	}
+
+	return apisnapshot.PlayerMission{
+		Type: apisnapshot.MissionTwoContinentsPlusOne,
+		Detail: apisnapshot.TwoContinentsPlusOneMission{
+			Continent1: mission.Continent1,
+			Continent2: mission.Continent2,
+		},
+	}, nil
+}
+
+func (r *reader) resolveEliminatePlayerMission(
+	ctx gamectx.GameContext,
+	missionID int64,
+) (apisnapshot.PlayerMission, error) {
+	targetUser, err := r.missionQuerier.GetEliminatePlayerMission(ctx, missionID)
+	if err != nil {
+		return apisnapshot.PlayerMission{}, fmt.Errorf(
+			"fetching eliminate player mission: %w",
+			err,
+		)
+	}
+
+	return apisnapshot.PlayerMission{
+		Type: apisnapshot.MissionEliminatePlayer,
+		Detail: apisnapshot.EliminatePlayerMission{
+			TargetUserID: targetUser,
+		},
+	}, nil
 }

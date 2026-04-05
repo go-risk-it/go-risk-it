@@ -135,14 +135,14 @@ func (a *missionQuerierAdapter) GetTwoContinentsMission(
 	ctx gamectx.GameContext,
 	missionID int64,
 ) (intsnapshot.TwoContinentsResult, error) {
-	m, err := a.svc.GetTwoContinentsMission(ctx, missionID)
+	mission, err := a.svc.GetTwoContinentsMission(ctx, missionID)
 	if err != nil {
 		return intsnapshot.TwoContinentsResult{}, err
 	}
 
 	return intsnapshot.TwoContinentsResult{
-		Continent1: m.Continent1,
-		Continent2: m.Continent2,
+		Continent1: mission.Continent1,
+		Continent2: mission.Continent2,
 	}, nil
 }
 
@@ -150,14 +150,14 @@ func (a *missionQuerierAdapter) GetTwoContinentsPlusOneMission(
 	ctx gamectx.GameContext,
 	missionID int64,
 ) (intsnapshot.TwoContinentsPlusOneResult, error) {
-	m, err := a.svc.GetTwoContinentsPlusOneMission(ctx, missionID)
+	mission, err := a.svc.GetTwoContinentsPlusOneMission(ctx, missionID)
 	if err != nil {
 		return intsnapshot.TwoContinentsPlusOneResult{}, err
 	}
 
 	return intsnapshot.TwoContinentsPlusOneResult{
-		Continent1: m.Continent1,
-		Continent2: m.Continent2,
+		Continent1: mission.Continent1,
+		Continent2: mission.Continent2,
 	}, nil
 }
 

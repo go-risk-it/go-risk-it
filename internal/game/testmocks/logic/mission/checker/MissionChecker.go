@@ -16,7 +16,8 @@ import (
 func NewMissionChecker(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *MissionChecker {
+},
+) *MissionChecker {
 	mock := &MissionChecker{}
 	mock.Mock.Test(t)
 

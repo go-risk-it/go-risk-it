@@ -23,12 +23,14 @@ type PhaseAdvancer interface {
 	AdvancePhase(ctx gamectx.GameContext) error
 }
 
-// Wrapper types for FX disambiguation — each is a distinct Go type so that
-// fx.Provide can distinguish AttackPhaseAdvancer from ReinforcePhaseAdvancer.
+// AttackPhaseAdvancer is a wrapper type for FX disambiguation.
+// It allows fx.Provide to distinguish AttackPhaseAdvancer from ReinforcePhaseAdvancer.
 type AttackPhaseAdvancer struct{ PhaseAdvancer }
 
+// ReinforcePhaseAdvancer is a wrapper type for FX disambiguation.
 type ReinforcePhaseAdvancer struct{ PhaseAdvancer }
 
+// CardsPhaseAdvancer is a wrapper type for FX disambiguation.
 type CardsPhaseAdvancer struct{ PhaseAdvancer }
 
 // AdvancePhase performs a voluntary phase advancement using the same
@@ -154,8 +156,7 @@ func (s *orchestrator[T, R]) buildAdvanceOutcome(
 		&effect,
 		&advEffect,
 		targetPhase,
-		false, // advancements never end the game
-		"",    // no winner
+		"", // no winner - advancements never end the game
 	)
 
 	var zero R
@@ -172,19 +173,19 @@ func (s *orchestrator[T, R]) buildAdvanceOutcome(
 }
 
 // NewAttackPhaseAdvancer creates an AttackPhaseAdvancer from the existing
-// AttackOrchestrator.
+// AttackOrchestrator. No type assertion needed — Orchestrator[T,R] embeds PhaseAdvancer.
 func NewAttackPhaseAdvancer(orch AttackOrchestrator) AttackPhaseAdvancer {
-	return AttackPhaseAdvancer{PhaseAdvancer: orch.(PhaseAdvancer)}
+	return AttackPhaseAdvancer{PhaseAdvancer: orch}
 }
 
 // NewReinforcePhaseAdvancer creates a ReinforcePhaseAdvancer from the existing
-// ReinforceOrchestrator.
+// ReinforceOrchestrator. No type assertion needed — Orchestrator[T,R] embeds PhaseAdvancer.
 func NewReinforcePhaseAdvancer(orch ReinforceOrchestrator) ReinforcePhaseAdvancer {
-	return ReinforcePhaseAdvancer{PhaseAdvancer: orch.(PhaseAdvancer)}
+	return ReinforcePhaseAdvancer{PhaseAdvancer: orch}
 }
 
 // NewCardsPhaseAdvancer creates a CardsPhaseAdvancer from the existing
-// CardsOrchestrator.
+// CardsOrchestrator. No type assertion needed — Orchestrator[T,R] embeds PhaseAdvancer.
 func NewCardsPhaseAdvancer(orch CardsOrchestrator) CardsPhaseAdvancer {
-	return CardsPhaseAdvancer{PhaseAdvancer: orch.(PhaseAdvancer)}
+	return CardsPhaseAdvancer{PhaseAdvancer: orch}
 }

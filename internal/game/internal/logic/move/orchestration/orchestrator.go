@@ -7,6 +7,8 @@ import (
 )
 
 type Orchestrator[T, R any] interface {
+	PhaseAdvancer // orchestrators can advance phases voluntarily
+
 	OrchestrateMove(ctx gamectx.GameContext, move T) error
 }
 

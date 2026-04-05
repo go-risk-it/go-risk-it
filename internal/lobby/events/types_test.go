@@ -107,9 +107,14 @@ func TestEventTypes_LobbyIDAndTimestamp(t *testing.T) {
 		},
 		{
 			name: "CreateGameRequested",
-			event: lobbyevt.NewCreateGameRequested(42, "user-7", time.Now(), []lobbyevt.LobbyPlayer{
-				{UserID: "user-1", Name: "Alice"},
-			}),
+			event: lobbyevt.NewCreateGameRequested(
+				42,
+				"user-7",
+				time.Now(),
+				[]lobbyevt.LobbyPlayer{
+					{UserID: "user-1", Name: "Alice"},
+				},
+			),
 			lobbyID: 42,
 		},
 	}

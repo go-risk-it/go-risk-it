@@ -1,6 +1,7 @@
 package heuristic
 
 import (
+	"errors"
 	"fmt"
 	"math"
 
@@ -79,8 +80,29 @@ func (s *Strategy) decideDeploy(
 		return player.NewAdvanceAction(snapshot.PhaseDeploy), nil
 	}
 
+	bestRegion := s.selectDeployTarget(userID, snap.MyRegions(userID), regionMap)
+	if bestRegion == nil {
+		return player.NewAdvanceAction(snapshot.PhaseDeploy), nil
+	}
+
+	return &player.Action{
+		Type: player.ActionDeploy,
+		Deploy: &player.DeployAction{
+			RegionID:      bestRegion.ID,
+			CurrentTroops: bestRegion.Troops,
+			DesiredTroops: bestRegion.Troops + state.DeployableTroops,
+		},
+	}, nil
+}
+
+// selectDeployTarget finds the best region to deploy troops to.
+// Prefers weakest border regions (adjacent to enemies), falls back to any weak region.
+func (s *Strategy) selectDeployTarget(
+	userID string,
+	myRegions []snapshot.RegionState,
+	regionMap map[string]*snapshot.RegionState,
+) *snapshot.RegionState {
 	// Find the weakest border region (lowest troops adjacent to enemy).
-	myRegions := snap.MyRegions(userID)
 	var bestRegion *snapshot.RegionState
 	bestScore := int64(math.MaxInt64)
 
@@ -103,18 +125,7 @@ func (s *Strategy) decideDeploy(
 		}
 	}
 
-	if bestRegion == nil {
-		return player.NewAdvanceAction(snapshot.PhaseDeploy), nil
-	}
-
-	return &player.Action{
-		Type: player.ActionDeploy,
-		Deploy: &player.DeployAction{
-			RegionID:      bestRegion.ID,
-			CurrentTroops: bestRegion.Troops,
-			DesiredTroops: bestRegion.Troops + state.DeployableTroops,
-		},
-	}, nil
+	return bestRegion
 }
 
 func (s *Strategy) decideAttack(
@@ -168,7 +179,7 @@ func (s *Strategy) decideAttack(
 
 func (s *Strategy) decideConquer(snap gamestate.ViewSnapshot) (*player.Action, error) {
 	if snap.PlayerView == nil {
-		return nil, fmt.Errorf("nil PlayerView in conquer phase")
+		return nil, errors.New("nil PlayerView in conquer phase")
 	}
 
 	state, ok := snap.PlayerView.Phase.State.(snapshot.ConquerPhaseState)

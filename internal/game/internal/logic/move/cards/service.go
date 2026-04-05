@@ -101,20 +101,20 @@ func (s *service) Draw(ctx ctx.GameContext, querier db.Querier) (snapshot.CardSt
 		return snapshot.CardState{}, fmt.Errorf("failed to get cards for player: %w", err)
 	}
 
-	for _, pc := range playerCards {
-		if pc.ID == card.ID {
-			cardType, err := mapCardType(pc.CardType)
+	for _, playerCard := range playerCards {
+		if playerCard.ID == card.ID {
+			cardType, err := mapCardType(playerCard.CardType)
 			if err != nil {
 				return snapshot.CardState{}, fmt.Errorf("failed to map card type: %w", err)
 			}
 
 			regionName := ""
-			if pc.Region.Valid {
-				regionName = pc.Region.String
+			if playerCard.Region.Valid {
+				regionName = playerCard.Region.String
 			}
 
 			return snapshot.CardState{
-				ID:     pc.ID,
+				ID:     playerCard.ID,
 				Type:   cardType,
 				Region: regionName,
 			}, nil
@@ -174,8 +174,8 @@ func (s *service) NextPlayerHasValidCombination(
 
 // mapCardType converts a sqlc.GameCardType to the snapshot.CardType
 // used in the public API.
-func mapCardType(t sqlc.GameCardType) (snapshot.CardType, error) {
-	switch t {
+func mapCardType(cardType sqlc.GameCardType) (snapshot.CardType, error) {
+	switch cardType {
 	case sqlc.GameCardTypeINFANTRY:
 		return snapshot.CardInfantry, nil
 	case sqlc.GameCardTypeCAVALRY:
@@ -185,6 +185,6 @@ func mapCardType(t sqlc.GameCardType) (snapshot.CardType, error) {
 	case sqlc.GameCardTypeJOLLY:
 		return snapshot.CardJolly, nil
 	default:
-		return "", fmt.Errorf("unknown card type: %s", t)
+		return "", fmt.Errorf("unknown card type: %s", cardType)
 	}
 }

@@ -22,7 +22,6 @@ import (
 
 func setup(t *testing.T) (
 	*db.Querier,
-	*attack.Service,
 	*card.Service,
 	*mission.Service,
 	*region.Service,
@@ -45,7 +44,7 @@ func setup(t *testing.T) (
 		regionService,
 	)
 
-	return querier, attackService, cardService, missionService, regionService, service
+	return querier, cardService, missionService, regionService, service
 }
 
 func input() ctx.GameContext {
@@ -111,7 +110,7 @@ func TestServiceImpl_Perform_ShouldFailValidation(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, _, _, _, regionService, service := setup(t)
+			querier, _, _, regionService, service := setup(t)
 			ctx := input()
 
 			prev := prevWithConquerState("greenland", "iceland", test.minimumTroops)
@@ -151,7 +150,7 @@ func TestServiceImpl_Perform_ShouldFailValidation(t *testing.T) {
 func TestServiceImpl_Perform_ShouldTransferTroopsAndOwnership(t *testing.T) {
 	t.Parallel()
 
-	querier, _, _, _, regionService, service := setup(t)
+	querier, _, _, regionService, service := setup(t)
 	ctx := input()
 
 	sourceRegion := &sqlc.GetRegionsByGameRow{
@@ -223,7 +222,7 @@ func TestServiceImpl_Perform_ShouldTransferTroopsAndOwnership(t *testing.T) {
 func TestServiceImpl_Perform_ShouldHandlePlayerElimination(t *testing.T) {
 	t.Parallel()
 
-	querier, _, cardService, missionService, regionService, service := setup(t)
+	querier, cardService, missionService, regionService, service := setup(t)
 	ctx := input()
 
 	sourceRegion := &sqlc.GetRegionsByGameRow{
@@ -265,8 +264,11 @@ func TestServiceImpl_Perform_ShouldHandlePlayerElimination(t *testing.T) {
 			"giovanni": {
 				Cards: []snapshot.CardState{},
 				Mission: snapshot.PlayerMission{
-					Type:   snapshot.MissionTwoContinents,
-					Detail: snapshot.TwoContinentsMission{Continent1: "europe", Continent2: "asia"},
+					Type: snapshot.MissionTwoContinents,
+					Detail: snapshot.TwoContinentsMission{
+						Continent1: "europe",
+						Continent2: "asia",
+					},
 				},
 			},
 			"paolo": {
@@ -337,7 +339,7 @@ func TestServiceImpl_Perform_ShouldHandlePlayerElimination(t *testing.T) {
 func TestServiceImpl_Perform_ShouldHandleEliminationWithNoCards(t *testing.T) {
 	t.Parallel()
 
-	querier, _, cardService, missionService, regionService, service := setup(t)
+	querier, cardService, missionService, regionService, service := setup(t)
 	ctx := input()
 
 	sourceRegion := &sqlc.GetRegionsByGameRow{
@@ -421,7 +423,7 @@ func TestServiceImpl_Perform_ShouldHandleEliminationWithNoCards(t *testing.T) {
 func TestServiceImpl_GetPhaseStateWithQuerier(t *testing.T) {
 	t.Parallel()
 
-	querier, _, _, _, _, service := setup(t)
+	querier, _, _, _, service := setup(t)
 	ctx := input()
 
 	expected := sqlc.GetConquerPhaseStateRow{
@@ -444,7 +446,7 @@ func TestServiceImpl_GetPhaseStateWithQuerier(t *testing.T) {
 func TestServiceImpl_PhaseType(t *testing.T) {
 	t.Parallel()
 
-	_, _, _, _, _, service := setup(t)
+	_, _, _, _, service := setup(t)
 
 	require.Equal(t, sqlc.GamePhaseTypeCONQUER, service.PhaseType())
 }

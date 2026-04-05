@@ -40,13 +40,13 @@ type GameCreationHandlerParams struct {
 // RegisterGameCreationHandler subscribes the game creation handler to
 // CreateGameRequested events from the lobby module.
 func RegisterGameCreationHandler(params GameCreationHandlerParams) {
-	h := &gameCreationHandler{
+	handler := &gameCreationHandler{
 		bus:             params.Bus,
 		boardService:    params.BoardService,
 		creationService: params.CreationService,
 	}
 
-	eventbus.OnEvent(params.Sub, h.handleCreateGameRequested)
+	eventbus.OnEvent(params.Sub, handler.handleCreateGameRequested)
 }
 
 func (h *gameCreationHandler) handleCreateGameRequested(
@@ -57,7 +57,11 @@ func (h *gameCreationHandler) handleCreateGameRequested(
 		userCtx, ok := ctx.(kernelctx.UserContext)
 		if !ok {
 			reason := "context is not UserContext"
-			observe.Error(ctx, errors.New(reason), "game creation handler: context assertion failed")
+			observe.Error(
+				ctx,
+				errors.New(reason),
+				"game creation handler: context assertion failed",
+			)
 			h.bus.Emit(ctx, gameevt.NewGameCreationFailed(
 				event.LobbyID(), time.Now(), reason,
 			))
@@ -65,10 +69,10 @@ func (h *gameCreationHandler) handleCreateGameRequested(
 			return nil
 		}
 
-		regions, err := h.boardService.GetBoardRegions(userCtx)
+		regions, err := h.boardService.GetBoardRegions(ctx)
 		if err != nil {
-			observe.Error(userCtx, err, "game creation handler: failed to get board regions")
-			h.bus.Emit(userCtx, gameevt.NewGameCreationFailed(
+			observe.Error(ctx, err, "game creation handler: failed to get board regions")
+			h.bus.Emit(ctx, gameevt.NewGameCreationFailed(
 				event.LobbyID(), time.Now(), err.Error(),
 			))
 
@@ -85,8 +89,8 @@ func (h *gameCreationHandler) handleCreateGameRequested(
 
 		_, err = h.creationService.CreateGame(userCtx, event.LobbyID(), regions, players)
 		if err != nil {
-			observe.Error(userCtx, err, "game creation handler: failed to create game")
-			h.bus.Emit(userCtx, gameevt.NewGameCreationFailed(
+			observe.Error(ctx, err, "game creation handler: failed to create game")
+			h.bus.Emit(ctx, gameevt.NewGameCreationFailed(
 				event.LobbyID(), time.Now(), err.Error(),
 			))
 

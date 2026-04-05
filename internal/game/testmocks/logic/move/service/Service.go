@@ -18,7 +18,8 @@ import (
 func NewService[T any, R any](t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *Service[T, R] {
+},
+) *Service[T, R] {
 	mock := &Service[T, R]{}
 	mock.Mock.Test(t)
 

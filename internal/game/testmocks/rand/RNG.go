@@ -13,7 +13,8 @@ import (
 func NewRNG(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *RNG {
+},
+) *RNG {
 	mock := &RNG{}
 	mock.Mock.Test(t)
 

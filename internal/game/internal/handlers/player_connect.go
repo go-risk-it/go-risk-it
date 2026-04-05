@@ -34,13 +34,13 @@ type PlayerConnectHandlerParams struct {
 // RegisterPlayerConnectHandler subscribes the player connect handler to
 // PlayerConnected events.
 func RegisterPlayerConnectHandler(params PlayerConnectHandlerParams) {
-	h := &playerConnectHandler{
+	handler := &playerConnectHandler{
 		stateStore:     params.StateStore,
 		snapshotReader: params.SnapshotReader,
 		publisher:      params.Publisher,
 	}
 
-	gameevt.OnGameEvent[*gameevt.PlayerConnected](params.Sub, h.handlePlayerConnected)
+	gameevt.OnGameEvent[*gameevt.PlayerConnected](params.Sub, handler.handlePlayerConnected)
 }
 
 func (h *playerConnectHandler) handlePlayerConnected(

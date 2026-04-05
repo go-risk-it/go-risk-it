@@ -22,8 +22,6 @@ import (
 func setup(t *testing.T) (
 	*db.Querier,
 	*board.Service,
-	*cards.Service,
-	*phase.Service,
 	*region.Service,
 	reinforce.Service,
 ) {
@@ -41,7 +39,7 @@ func setup(t *testing.T) (
 		regionService,
 	)
 
-	return querier, boardService, cardsService, phaseService, regionService, service
+	return querier, boardService, regionService, service
 }
 
 func input() ctx.GameContext {
@@ -179,7 +177,7 @@ func TestServiceImpl_Perform_ShouldFailValidation(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, boardService, _, _, regionService, service := setup(t)
+			querier, boardService, regionService, service := setup(t)
 			ctx := input()
 
 			regionService.
@@ -225,7 +223,7 @@ func TestServiceImpl_Perform_ShouldFailValidation(t *testing.T) {
 func TestServiceImpl_Perform_ShouldMoveTroops(t *testing.T) {
 	t.Parallel()
 
-	querier, boardService, _, _, regionService, service := setup(t)
+	querier, boardService, regionService, service := setup(t)
 	ctx := input()
 
 	sourceRegion := &sqlc.GetRegionsByGameRow{

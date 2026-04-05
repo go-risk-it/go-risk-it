@@ -1,6 +1,7 @@
 package smart
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
@@ -118,7 +119,7 @@ func GenerateConquers(
 	bv *BoardView,
 ) ([]*player.Action, error) {
 	if snap.PlayerView == nil {
-		return nil, fmt.Errorf("nil PlayerView in conquer phase")
+		return nil, errors.New("nil PlayerView in conquer phase")
 	}
 
 	state, ok := snap.PlayerView.Phase.State.(snapshot.ConquerPhaseState)

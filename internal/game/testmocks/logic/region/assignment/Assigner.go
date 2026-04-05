@@ -15,7 +15,8 @@ import (
 func NewAssigner(t interface {
 	mock.TestingT
 	Cleanup(func())
-}) *Assigner {
+},
+) *Assigner {
 	mock := &Assigner{}
 	mock.Mock.Test(t)
 

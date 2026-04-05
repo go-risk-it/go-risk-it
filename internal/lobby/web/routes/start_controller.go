@@ -48,7 +48,7 @@ func (c *StartController) StartGame(lobbyCtx ctx.LobbyContext) (response.StartGa
 
 	lobbyID := lobbyCtx.LobbyID()
 
-	ch, err := c.pending.Register(lobbyID)
+	resultChan, err := c.pending.Register(lobbyID)
 	if err != nil {
 		return response.StartGame{}, fmt.Errorf("failed to register pending start: %w", err)
 	}
@@ -75,7 +75,7 @@ func (c *StartController) StartGame(lobbyCtx ctx.LobbyContext) (response.StartGa
 		players,
 	))
 
-	gameID, err := c.pending.Await(lobbyCtx, lobbyID, ch, startTimeout)
+	gameID, err := c.pending.Await(lobbyCtx, lobbyID, resultChan, startTimeout)
 	if err != nil {
 		return response.StartGame{}, fmt.Errorf("failed to start game: %w", err)
 	}
