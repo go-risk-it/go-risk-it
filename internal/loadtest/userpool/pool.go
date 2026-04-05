@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/client"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // Entry is a pooled user that can participate in games.
@@ -60,40 +62,57 @@ func New(cfg Config) *Pool {
 // Acquire returns n users that are not at their concurrency limit.
 // Creates new users lazily when all existing users are at capacity.
 func (p *Pool) Acquire(ctx context.Context, n int) ([]*Entry, error) {
+	result := p.acquireExisting(n)
+	needed := n - len(result)
+
+	if needed == 0 {
+		return result, nil
+	}
+
+	created, err := p.createUsers(ctx, needed)
+	if err != nil {
+		p.Release(result)
+
+		return nil, err
+	}
+
+	return append(result, created...), nil
+}
+
+// acquireExisting scans the pool for users with available capacity.
+func (p *Pool) acquireExisting(n int) []*Entry {
 	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	result := make([]*Entry, 0, n)
-	needed := n
 
-	// Scan existing users for available capacity.
 	for _, pe := range p.entries {
-		if needed == 0 {
+		if len(result) == n {
 			break
 		}
 
 		if pe.activeGames < p.cfg.MaxConcurrentGames {
 			pe.activeGames++
 			result = append(result, pe.entry)
-			needed--
 		}
 	}
 
-	p.mu.Unlock()
+	return result
+}
 
-	// Create new users for the deficit (outside lock — HTTP calls).
-	// Semaphore limits concurrent signups to avoid overwhelming the auth service.
-	for range needed {
+// createUsers signs up new users via the auth factory, throttled by the signup
+// semaphore. Logs progress every 50 users and on completion.
+func (p *Pool) createUsers(ctx context.Context, needed int) ([]*Entry, error) {
+	result := make([]*Entry, 0, needed)
+
+	for i := range needed {
 		if ctx.Err() != nil {
-			p.Release(result)
-
 			return nil, fmt.Errorf("userpool acquire cancelled: %w", ctx.Err())
 		}
 
 		select {
 		case p.signupSem <- struct{}{}:
 		case <-ctx.Done():
-			p.Release(result)
-
 			return nil, fmt.Errorf("userpool acquire cancelled: %w", ctx.Err())
 		}
 
@@ -101,8 +120,6 @@ func (p *Pool) Acquire(ctx context.Context, n int) ([]*Entry, error) {
 		<-p.signupSem
 
 		if err != nil {
-			p.Release(result)
-
 			return nil, fmt.Errorf("userpool create user: %w", err)
 		}
 
@@ -110,7 +127,16 @@ func (p *Pool) Acquire(ctx context.Context, n int) ([]*Entry, error) {
 
 		p.mu.Lock()
 		p.entries = append(p.entries, &poolEntry{entry: entry, activeGames: 1})
+		totalUsers := len(p.entries)
 		p.mu.Unlock()
+
+		if (i+1)%50 == 0 || i == needed-1 {
+			observe.Info(ctx, "userpool: creating users",
+				attribute.Int("created", i+1),
+				attribute.Int("needed", needed),
+				attribute.Int("totalUsers", totalUsers),
+			)
+		}
 
 		result = append(result, entry)
 	}

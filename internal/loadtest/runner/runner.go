@@ -131,7 +131,14 @@ func (r *Runner) Run(ctx context.Context, gameIndex, numPlayers int) GameResult 
 		bus.Emit(GameStartedEvent{GameIndex: gameIndex, NumPlayers: numPlayers})
 	}
 
-	// Cleanup: close all WS connections.
+	// Release pooled users after WS cleanup (registered first = runs last in LIFO).
+	defer func() {
+		if r.cfg.UserPool != nil && len(gameCtx.AcquiredUsers) > 0 {
+			r.cfg.UserPool.Release(gameCtx.AcquiredUsers)
+		}
+	}()
+
+	// Cleanup: close all WS connections (registered second = runs first in LIFO).
 	defer func() {
 		for _, p := range gameCtx.Players {
 			if p.WS != nil {
@@ -141,13 +148,6 @@ func (r *Runner) Run(ctx context.Context, gameIndex, numPlayers int) GameResult 
 					)
 				}
 			}
-		}
-	}()
-
-	// Release pooled users after WS cleanup.
-	defer func() {
-		if r.cfg.UserPool != nil && len(gameCtx.AcquiredUsers) > 0 {
-			r.cfg.UserPool.Release(gameCtx.AcquiredUsers)
 		}
 	}()
 
