@@ -553,8 +553,8 @@
             },
             "targets": [
                 {
-                    "expr": "sum(rate(traces_span_metrics_calls_total{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\", outcome!=\"success\"}[1m])) by (error_type)",
-                    "legendFormat": "{{error_type}}",
+                    "expr": "sum(rate(traces_span_metrics_calls_total{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\", status_code=\"STATUS_CODE_ERROR\"}[1m])) by (action)",
+                    "legendFormat": "{{action}}",
                     "refId": "A"
                 }
             ],
@@ -1817,8 +1817,8 @@
             },
             "targets": [
                 {
-                    "expr": "sum(rate(traces_span_metrics_calls_total{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\", outcome!=\"success\"}[1m])) by (error_type)",
-                    "legendFormat": "{{error_type}}",
+                    "expr": "sum(rate(traces_span_metrics_calls_total{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\", status_code=\"STATUS_CODE_ERROR\"}[1m])) by (action)",
+                    "legendFormat": "{{action}}",
                     "refId": "A"
                 }
             ],
