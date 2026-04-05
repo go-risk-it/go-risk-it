@@ -60,14 +60,12 @@ func (h *StateWatcherHandler) handleConflict(bus *Bus, _ Event) {
 func waitSettleAndEmitState(bus *Bus, gameCtx *GameSession, timeouts Timeouts) {
 	waitForAllUpdates(gameCtx.Players, timeouts.UpdateWait, gameCtx.Ctx)
 
-	wsReceivedAt := time.Now()
-	time.Sleep(timeouts.PostMoveSettle)
-
+	now := time.Now()
 	snap := gameCtx.Players[0].WS.View().Snapshot()
 	bus.Emit(StateReceivedEvent{
 		Snapshot:     snap,
-		Timestamp:    time.Now(),
-		WSReceivedAt: wsReceivedAt,
+		Timestamp:    now,
+		WSReceivedAt: now,
 	})
 }
 

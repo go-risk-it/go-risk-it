@@ -37,6 +37,7 @@ dashboard.new(
   description='Game engine observability: game lifecycle, phase timing, event bus health, and move analytics',
   tags=['risk-it', 'game-engine'],
   templating={ list: [gameIdVar] },
+  annotations={ list: [dashboard.perfTestAnnotation] },
   panels=layout.ooda(
 
     // ════════════════════════════════════════════════════════════════
