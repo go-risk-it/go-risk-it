@@ -13,6 +13,11 @@ const (
 	// DefaultStaggerDelay is the default delay between starting games within a step.
 	DefaultStaggerDelay = 100 * time.Millisecond
 
+	// DefaultFillConcurrency is the default number of games launched in parallel
+	// during the initial pool fill. Higher values fill faster but increase
+	// server-side contention (signup + game creation + WS connect).
+	DefaultFillConcurrency = 20
+
 	// DefaultCooldownSec is the default cooldown between staircase steps.
 	DefaultCooldownSec = 5
 
