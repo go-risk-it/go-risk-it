@@ -515,7 +515,7 @@ func TestOrchestrateMove_GameCompletionEmitsAllEvents(t *testing.T) {
 	require.NoError(t, err)
 
 	allEvents := bus.Events()
-	require.Len(t, allEvents, 1, "game completion should emit single MoveCompleted")
+	require.Len(t, allEvents, 2, "game completion should emit MoveCompleted + GameCompleted")
 
 	completedEvents := eventbus.EventsOfType[*gameevt.MoveCompleted](bus)
 	require.Len(t, completedEvents, 1)
@@ -523,6 +523,11 @@ func TestOrchestrateMove_GameCompletionEmitsAllEvents(t *testing.T) {
 	require.Equal(t, gameapi.GamePhaseTypeREINFORCE, completedEvents[0].TargetPhase)
 	require.Equal(t, testGameID, completedEvents[0].GameID())
 	require.Equal(t, testTurn, completedEvents[0].Turn)
+
+	gameCompletedEvents := eventbus.EventsOfType[*gameevt.GameCompleted](bus)
+	require.Len(t, gameCompletedEvents, 1)
+	require.Equal(t, testGameID, gameCompletedEvents[0].GameID())
+	require.Equal(t, testTurn, gameCompletedEvents[0].Turn)
 }
 
 func TestOrchestrateMove_ErrorDoesNotEmit(t *testing.T) {

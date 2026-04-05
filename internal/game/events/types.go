@@ -18,6 +18,7 @@ const (
 	TypeMoveCompleted      = "move_completed"
 	TypeGameCreated        = "game_created"
 	TypeGameCreationFailed = "game_creation_failed"
+	TypeGameCompleted      = "game_completed"
 	TypePlayerConnected    = "player_connected"
 	TypeTurnEnded          = "turn_ended"
 )
@@ -255,5 +256,47 @@ func (e *TurnEnded) ToRecord() map[string]any {
 		"timestamp":   e.timestamp.Format(time.RFC3339),
 		"turn":        e.Turn,
 		"action_type": "WAITING",
+	}
+}
+
+// GameCompleted is emitted when a player accomplishes their mission and wins
+// the game. Downstream consumers use this for metrics (game.active gauge,
+// game.duration histogram) and dashboard visibility (Grafana span rate).
+type GameCompleted struct {
+	gameID       int64
+	winnerUserID string
+	timestamp    time.Time
+	Turn         int64
+}
+
+func NewGameCompleted(
+	gameID int64,
+	winnerUserID string,
+	timestamp time.Time,
+	turn int64,
+) *GameCompleted {
+	return &GameCompleted{
+		gameID:       gameID,
+		winnerUserID: winnerUserID,
+		timestamp:    timestamp,
+		Turn:         turn,
+	}
+}
+
+func (*GameCompleted) EventType() string           { return TypeGameCompleted }
+func (e *GameCompleted) GameID() int64             { return e.gameID }
+func (e *GameCompleted) EventTimestamp() time.Time { return e.timestamp }
+
+func (e *GameCompleted) ScopeAttrs() []slog.Attr {
+	return []slog.Attr{slog.Int64("gameId", e.gameID)}
+}
+
+func (e *GameCompleted) ToRecord() map[string]any {
+	return map[string]any{
+		"event_type":     TypeGameCompleted,
+		"game_id":        e.gameID,
+		"winner_user_id": e.winnerUserID,
+		"timestamp":      e.timestamp.Format(time.RFC3339),
+		"turn":           e.Turn,
 	}
 }

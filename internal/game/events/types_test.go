@@ -49,6 +49,10 @@ func TestEventTypes_NilPointerSafety(t *testing.T) {
 			name:     "TurnEnded nil pointer",
 			callType: (*gameevt.TurnEnded)(nil).EventType,
 		},
+		{
+			name:     "GameCompleted nil pointer",
+			callType: (*gameevt.GameCompleted)(nil).EventType,
+		},
 	}
 
 	for _, test := range tests {
@@ -108,6 +112,11 @@ func TestEventTypes_EventType(t *testing.T) {
 			name:     "TurnEnded",
 			event:    gameevt.NewTurnEnded(1, "u", now, 1),
 			expected: gameevt.TypeTurnEnded,
+		},
+		{
+			name:     "GameCompleted",
+			event:    gameevt.NewGameCompleted(1, "u", now, 1),
+			expected: gameevt.TypeGameCompleted,
 		},
 	}
 

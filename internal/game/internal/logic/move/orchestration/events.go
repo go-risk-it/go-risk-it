@@ -14,6 +14,9 @@ import (
 // (BuildNewState output), and previousRegions come from the immutable prevState
 // captured before the move. This is the single post-commit event for the
 // orchestration pipeline — all downstream handlers consume MoveCompleted.
+//
+// When the game is over, a GameCompleted event is emitted after MoveCompleted
+// to produce the bus:game_completed span for dashboard metrics.
 func (s *orchestrator[T, R]) emitMoveCompleted(
 	ctx gamectx.GameContext,
 	outcome moveOutcome[R],
@@ -31,6 +34,15 @@ func (s *orchestrator[T, R]) emitMoveCompleted(
 		outcome.newState.PrivateSnapshots,
 		outcome.prevRegions,
 	))
+
+	if outcome.gameOver {
+		s.bus.Emit(ctx, gameevt.NewGameCompleted(
+			ctx.GameID(),
+			ctx.UserID(),
+			time.Now(),
+			outcome.turn,
+		))
+	}
 }
 
 // toAPIPhase converts a sqlc.GamePhaseType to the api GamePhaseType.
