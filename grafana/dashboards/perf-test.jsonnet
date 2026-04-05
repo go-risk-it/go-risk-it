@@ -205,7 +205,7 @@ dashboard.new(
               'sum(rate(%s{%s="%s", span_name=~"%s"}[$__rate_interval])) by (le)' % [targets.spanmetricsMetric.duration, targets.serviceLabel, targets.perfTestServiceName, targets.perfTestSpans.move],
             ),
           ],
-          unit='s',
+          unit='ms',
           colorScheme='YlOrRd',
           colorFill='dark-red',
         ),

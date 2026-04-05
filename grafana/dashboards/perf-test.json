@@ -104,7 +104,7 @@
             },
             "targets": [
                 {
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le)) / 1000",
                     "legendFormat": "p95",
                     "refId": "A"
                 }
@@ -638,7 +638,7 @@
                 "yAxis": {
                     "axisPlacement": "left",
                     "reverse": false,
-                    "unit": "s"
+                    "unit": "ms"
                 }
             },
             "targets": [
@@ -734,19 +734,19 @@
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.5, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.5, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le)) / 1000",
                     "legendFormat": "p50",
                     "refId": "A"
                 },
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le)) / 1000",
                     "legendFormat": "p95",
                     "refId": "B"
                 },
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.99, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.99, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le)) / 1000",
                     "legendFormat": "p99",
                     "refId": "C"
                 }
@@ -1021,19 +1021,19 @@
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.5, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.5, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le)) / 1000",
                     "legendFormat": "p50",
                     "refId": "A"
                 },
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le)) / 1000",
                     "legendFormat": "p95",
                     "refId": "B"
                 },
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.99, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.99, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le)) / 1000",
                     "legendFormat": "p99",
                     "refId": "C"
                 }
@@ -1177,19 +1177,19 @@
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.5, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le, action))",
+                    "expr": "histogram_quantile(0.5, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le, action)) / 1000",
                     "legendFormat": "{{action}} p50",
                     "refId": "A"
                 },
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le, action))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le, action)) / 1000",
                     "legendFormat": "{{action}} p95",
                     "refId": "B"
                 },
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.99, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le, action))",
+                    "expr": "histogram_quantile(0.99, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le, action)) / 1000",
                     "legendFormat": "{{action}} p99",
                     "refId": "C"
                 }
@@ -1334,7 +1334,7 @@
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le)) / 1000",
                     "legendFormat": "E2E p95",
                     "refId": "A"
                 },
@@ -1742,7 +1742,7 @@
                     "targets": [
                         {
                             "exemplar": true,
-                            "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le, phase))",
+                            "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]move[.]execute\"}[1m])) by (le, phase)) / 1000",
                             "legendFormat": "{{phase}} p95",
                             "refId": "A"
                         }
@@ -1878,13 +1878,13 @@
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.5, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]game[.]run\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.5, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]game[.]run\"}[1m])) by (le)) / 1000",
                     "legendFormat": "p50",
                     "refId": "A"
                 },
                 {
                     "exemplar": true,
-                    "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]game[.]run\"}[1m])) by (le))",
+                    "expr": "histogram_quantile(0.95, sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"perftest\", span_name=~\"perftest[.]game[.]run\"}[1m])) by (le)) / 1000",
                     "legendFormat": "p95",
                     "refId": "B"
                 }
