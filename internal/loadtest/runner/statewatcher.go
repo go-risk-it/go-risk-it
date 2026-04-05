@@ -24,18 +24,17 @@ func (h *StateWatcherHandler) Register(bus *Bus) {
 	bus.On(EventMoveConflict, h.handleConflict)
 }
 
-func (h *StateWatcherHandler) handleWaitAndEmit(bus *Bus, _ Event) {
+func (h *StateWatcherHandler) handleWaitAndEmit(bus *Bus, e Event) {
 	if h.gameCtx.Ctx.Err() != nil {
 		return
 	}
 
-	// Capture versions NOW — after the REST call succeeded but before
-	// waiting for the WS broadcast. The server has committed the move
-	// and will broadcast imminently; any version bump from here onward
-	// is the update we're waiting for.
-	preVersions := make([]uint64, len(h.gameCtx.Players))
-	for i, p := range h.gameCtx.Players {
-		preVersions[i] = p.WS.View().Version()
+	// Use pre-REST versions from the event when available. These were
+	// captured before the REST call, guaranteeing we don't miss WS
+	// updates that arrive during or after the HTTP roundtrip.
+	var preVersions []uint64
+	if evt, ok := e.(MoveSucceededEvent); ok {
+		preVersions = evt.PreVersions
 	}
 
 	waitAndEmitState(bus, h.gameCtx, h.timeouts, preVersions)

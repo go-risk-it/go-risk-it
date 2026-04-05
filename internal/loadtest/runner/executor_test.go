@@ -6,11 +6,27 @@ import (
 	"testing"
 
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/client"
+	"github.com/go-risk-it/go-risk-it/internal/loadtest/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/player"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// fakeWSForExecutor provides a minimal WSClient for executor tests.
+type fakeWSForExecutor struct {
+	view *gamestate.View
+	done chan struct{}
+}
+
+func newFakeWSForExecutor() *fakeWSForExecutor {
+	return &fakeWSForExecutor{view: gamestate.NewView(), done: make(chan struct{})}
+}
+
+func (f *fakeWSForExecutor) View() *gamestate.View { return f.view }
+func (f *fakeWSForExecutor) Done() <-chan struct{} { return f.done }
+func (f *fakeWSForExecutor) Close() error          { return nil }
+func (f *fakeWSForExecutor) Disrupt()              {}
 
 // fakeRESTForExecutor tracks which method was called and returns a configurable error.
 type fakeRESTForExecutor struct {
@@ -82,11 +98,12 @@ func (f *fakeRESTForExecutor) Advance(_ context.Context, gameID int64, _ string)
 
 //nolint:unparam // interface conformance / future use
 func makeExecutorHandler(rest *fakeRESTForExecutor) (*ExecutorHandler, *GameSession) {
+	ws := newFakeWSForExecutor()
 	gameCtx := &GameSession{
 		Ctx:    context.Background(),
 		GameID: 42,
 		Players: []*PlayerInfo{
-			{UserID: "u0", Name: "p0", REST: rest},
+			{UserID: "u0", Name: "p0", REST: rest, WS: ws},
 		},
 		UserIndex: map[string]int{"u0": 0},
 	}

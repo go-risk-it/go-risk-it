@@ -56,6 +56,11 @@ type MoveSucceededEvent struct {
 	Action      *player.Action
 	RESTLatency time.Duration
 	RESTEndTime time.Time
+
+	// PreVersions captures each player's WS View version before the REST call.
+	// The server may broadcast the WS update before the HTTP response arrives,
+	// so versions must be captured before the call to avoid missing the update.
+	PreVersions []uint64
 }
 
 func (MoveSucceededEvent) Type() EventType { return EventMoveSucceeded }
