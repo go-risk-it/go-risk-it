@@ -15,28 +15,13 @@ import (
 type StateWatcherHandler struct {
 	gameCtx  *GameSession
 	timeouts Timeouts
-
-	// preVersions holds each player's View version captured before the REST
-	// call. Set by handleMoveDecided, consumed by handleWaitAndEmit.
-	preVersions []uint64
 }
 
 // Register subscribes to the events that drive state watching.
 func (h *StateWatcherHandler) Register(bus *Bus) {
-	bus.On(EventMoveDecided, h.handleMoveDecided)
 	bus.On(EventMoveSucceeded, h.handleWaitAndEmit)
 	bus.On(EventTurnSkipped, h.handleWaitAndEmit)
 	bus.On(EventMoveConflict, h.handleConflict)
-}
-
-func (h *StateWatcherHandler) handleMoveDecided(_ *Bus, _ Event) {
-	// Snapshot each player's current view version BEFORE the REST call.
-	// This ensures AwaitUpdateSince detects updates even if the WS message
-	// arrives before waitForAllUpdates runs.
-	h.preVersions = make([]uint64, len(h.gameCtx.Players))
-	for i, p := range h.gameCtx.Players {
-		h.preVersions[i] = p.WS.View().Version()
-	}
 }
 
 func (h *StateWatcherHandler) handleWaitAndEmit(bus *Bus, _ Event) {
@@ -44,7 +29,16 @@ func (h *StateWatcherHandler) handleWaitAndEmit(bus *Bus, _ Event) {
 		return
 	}
 
-	waitAndEmitState(bus, h.gameCtx, h.timeouts, h.preVersions)
+	// Capture versions NOW — after the REST call succeeded but before
+	// waiting for the WS broadcast. The server has committed the move
+	// and will broadcast imminently; any version bump from here onward
+	// is the update we're waiting for.
+	preVersions := make([]uint64, len(h.gameCtx.Players))
+	for i, p := range h.gameCtx.Players {
+		preVersions[i] = p.WS.View().Version()
+	}
+
+	waitAndEmitState(bus, h.gameCtx, h.timeouts, preVersions)
 }
 
 func (h *StateWatcherHandler) handleConflict(bus *Bus, _ Event) {

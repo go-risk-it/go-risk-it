@@ -83,6 +83,7 @@ func (h *StrategyHandler) handle(bus *Bus, e Event) {
 			attribute.String("player", h.gameCtx.Players[activeIdx].Name),
 			attribute.String("phase", string(activeSnap.CurrentPhase())),
 		)
+
 		bus.Emit(MoveFailedEvent{
 			Err:     err,
 			Fatal:   false,
