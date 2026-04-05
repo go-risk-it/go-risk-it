@@ -19,6 +19,10 @@ type Config struct {
 	// When all users are at capacity, new users are created lazily.
 	MaxConcurrentGames int
 
+	// MaxConcurrentSignups limits parallel auth requests to avoid overwhelming
+	// the auth service. Default 5.
+	MaxConcurrentSignups int
+
 	// AuthFactory creates a new authenticated user. Called under no lock —
 	// safe to make HTTP calls.
 	AuthFactory func(ctx context.Context) (*client.AuthResult, error)
@@ -31,9 +35,10 @@ type poolEntry struct {
 
 // Pool manages reusable authenticated users with bounded concurrency per user.
 type Pool struct {
-	mu      sync.Mutex
-	entries []*poolEntry
-	cfg     Config
+	mu        sync.Mutex
+	entries   []*poolEntry
+	cfg       Config
+	signupSem chan struct{} // limits concurrent auth requests
 }
 
 // New creates a user pool. Users are created lazily on first Acquire.
@@ -42,7 +47,14 @@ func New(cfg Config) *Pool {
 		cfg.MaxConcurrentGames = 2
 	}
 
-	return &Pool{cfg: cfg}
+	if cfg.MaxConcurrentSignups <= 0 {
+		cfg.MaxConcurrentSignups = 5
+	}
+
+	return &Pool{
+		cfg:       cfg,
+		signupSem: make(chan struct{}, cfg.MaxConcurrentSignups),
+	}
 }
 
 // Acquire returns n users that are not at their concurrency limit.
@@ -69,15 +81,25 @@ func (p *Pool) Acquire(ctx context.Context, n int) ([]*Entry, error) {
 	p.mu.Unlock()
 
 	// Create new users for the deficit (outside lock — HTTP calls).
+	// Semaphore limits concurrent signups to avoid overwhelming the auth service.
 	for range needed {
 		if ctx.Err() != nil {
-			// Release any already-acquired users before returning error.
+			p.Release(result)
+
+			return nil, fmt.Errorf("userpool acquire cancelled: %w", ctx.Err())
+		}
+
+		select {
+		case p.signupSem <- struct{}{}:
+		case <-ctx.Done():
 			p.Release(result)
 
 			return nil, fmt.Errorf("userpool acquire cancelled: %w", ctx.Err())
 		}
 
 		auth, err := p.cfg.AuthFactory(ctx)
+		<-p.signupSem
+
 		if err != nil {
 			p.Release(result)
 

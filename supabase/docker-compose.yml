@@ -118,6 +118,8 @@ services:
       - full_page_writes=off
       - -c
       - max_connections=200
+      - -c
+      - idle_in_transaction_session_timeout=10s
     restart: unless-stopped
     ports:
       # Pass down internal port because it's set dynamically by other services
