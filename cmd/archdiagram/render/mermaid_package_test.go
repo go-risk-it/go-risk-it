@@ -13,16 +13,16 @@ func TestRenderPackageArch_Basic(t *testing.T) {
 
 	archModel := &model.ArchModel{
 		Packages: map[string]*model.PackageInfo{
-			"game/logic/board": {Suffix: "game/logic/board", Layer: "Logic"},
-			"web/game/rest":    {Suffix: "web/game/rest", Layer: "Web"},
-			"data/game/db":     {Suffix: "data/game/db", Layer: "Data"},
+			"game/internal/logic/board": {Suffix: "game/internal/logic/board", Layer: "Logic"},
+			"web/game/rest":             {Suffix: "web/game/rest", Layer: "Web"},
+			"data/game/db":              {Suffix: "data/game/db", Layer: "Data"},
 		},
 		Subsystems: map[string]*model.SubsystemInfo{
 			"game_services": {
 				ID:       "game_services",
 				Label:    "Game Services",
 				Layer:    "Logic",
-				Packages: []string{"game/logic/board"},
+				Packages: []string{"game/internal/logic/board"},
 			},
 			"rest_utils": {
 				ID:       "rest_utils",

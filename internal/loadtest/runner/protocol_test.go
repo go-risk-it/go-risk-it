@@ -127,34 +127,18 @@ func newFakeWS() *fakeWSForProtocol {
 // newFakeWSWithState creates a fakeWS pre-populated with game state.
 func newFakeWSWithState(snap gamestate.ViewSnapshot) *fakeWSForProtocol {
 	v := gamestate.NewView()
-	// Apply state by populating the view fields directly via Apply.
-	// We use a simpler approach: create a view that has the state already set.
-	// Since View is mutex-protected, we apply messages to set state.
-	if snap.GameState != nil {
-		data, _ := json.Marshal(snap.GameState) //nolint:errchkjson // known safe type
-		_ = v.Apply(gamestate.WSMessage{Type: "gameState", Payload: data})
-	}
 
-	if snap.PlayersState != nil {
-		data, _ := json.Marshal(snap.PlayersState) //nolint:errchkjson // known safe type
-		_ = v.Apply(gamestate.WSMessage{Type: "playerState", Payload: data})
-	}
-
-	if snap.BoardState != nil {
-		data, _ := json.Marshal(snap.BoardState) //nolint:errchkjson // known safe type
-		_ = v.Apply(gamestate.WSMessage{Type: "boardState", Payload: data})
-	}
-
-	if snap.CardState != nil {
-		data, _ := json.Marshal(snap.CardState) //nolint:errchkjson // known safe type
-		_ = v.Apply(gamestate.WSMessage{Type: "cardState", Payload: data})
+	// Apply state by marshaling the PlayerView and applying as a playerView message.
+	if snap.PlayerView != nil {
+		data, _ := json.Marshal(snap.PlayerView) //nolint:errchkjson // known safe type
+		_ = v.Apply(gamestate.WSMessage{Type: "playerView", Payload: data})
 	}
 
 	return &fakeWSForProtocol{view: v, done: make(chan struct{})}
 }
 
 func (f *fakeWSForProtocol) View() *gamestate.View { return f.view }
-func (f *fakeWSForProtocol) Done() <-chan struct{} { return f.done }
+func (f *fakeWSForProtocol) Done() <-chan struct{}  { return f.done }
 func (f *fakeWSForProtocol) Close() error {
 	f.closed = true
 

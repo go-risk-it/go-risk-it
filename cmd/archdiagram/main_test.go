@@ -15,16 +15,16 @@ func TestSetSubsystemLayers(t *testing.T) {
 
 	archModel := &model.ArchModel{
 		Packages: map[string]*model.PackageInfo{
-			"game/logic/board": {Suffix: "game/logic/board", Layer: layerLogic},
-			"game/logic/card":  {Suffix: "game/logic/card", Layer: layerLogic},
-			"game/logic/phase": {Suffix: "game/logic/phase", Layer: layerLogic},
-			"web/game/rest":    {Suffix: "web/game/rest", Layer: "Web"},
+			"game/internal/logic/board": {Suffix: "game/internal/logic/board", Layer: layerLogic},
+			"game/internal/logic/card":  {Suffix: "game/internal/logic/card", Layer: layerLogic},
+			"game/internal/logic/phase": {Suffix: "game/internal/logic/phase", Layer: layerLogic},
+			"web/game/rest":             {Suffix: "web/game/rest", Layer: "Web"},
 		},
 		Subsystems: map[string]*model.SubsystemInfo{
 			"game_services": {
 				ID:       "game_services",
 				Label:    "Game Services",
-				Packages: []string{"game/logic/board", "game/logic/card", "game/logic/phase"},
+				Packages: []string{"game/internal/logic/board", "game/internal/logic/card", "game/internal/logic/phase"},
 			},
 			"game_handlers": {
 				ID:       "game_handlers",
@@ -117,7 +117,7 @@ func TestBuildSuffixToDirMap(t *testing.T) {
 
 	pkgs := []model.GoPackage{
 		{
-			ImportPath: model.ModulePrefix + "game/logic/board",
+			ImportPath: model.ModulePrefix + "game/internal/logic/board",
 			Dir:        "/src/internal/game/logic/board",
 		},
 		{ImportPath: model.ModulePrefix + "config", Dir: "/src/internal/config"},
@@ -134,9 +134,9 @@ func TestBuildSuffixToDirMap(t *testing.T) {
 		t.Errorf("expected 2 entries, got %d", len(got))
 	}
 
-	if got["game/logic/board"] != "/src/internal/game/logic/board" {
-		t.Errorf("game/logic/board = %q, want %q",
-			got["game/logic/board"], "/src/internal/game/logic/board")
+	if got["game/internal/logic/board"] != "/src/internal/game/logic/board" {
+		t.Errorf("game/internal/logic/board = %q, want %q",
+			got["game/internal/logic/board"], "/src/internal/game/logic/board")
 	}
 
 	if got["config"] != "/src/internal/config" {
@@ -149,8 +149,8 @@ func TestGenerateD2(t *testing.T) {
 
 	archModel := &model.ArchModel{
 		Packages: map[string]*model.PackageInfo{
-			"game/logic/board": {
-				Suffix: "game/logic/board",
+			"game/internal/logic/board": {
+				Suffix: "game/internal/logic/board",
 				Layer:  "Logic",
 			},
 		},
@@ -159,7 +159,7 @@ func TestGenerateD2(t *testing.T) {
 				ID:       "game_services",
 				Label:    "Game Services",
 				Layer:    "Logic",
-				Packages: []string{"game/logic/board"},
+				Packages: []string{"game/internal/logic/board"},
 			},
 			"lobby_logic": {
 				ID:       "lobby_logic",
@@ -277,7 +277,7 @@ func TestLayerOrdering(t *testing.T) {
 				ID:       "game_services",
 				Label:    "Game Services",
 				Layer:    "Logic",
-				Packages: []string{"game/logic/board"},
+				Packages: []string{"game/internal/logic/board"},
 			},
 			"lobby_logic": {
 				ID:       "lobby_logic",
@@ -413,13 +413,13 @@ func TestGenerateD2_SubsystemsSortedWithinLayer(t *testing.T) {
 				ID:       "zebra",
 				Label:    "Zebra",
 				Layer:    "Logic",
-				Packages: []string{"game/logic/zebra"},
+				Packages: []string{"game/internal/logic/zebra"},
 			},
 			"alpha": {
 				ID:       "alpha",
 				Label:    "Alpha",
 				Layer:    "Logic",
-				Packages: []string{"game/logic/alpha"},
+				Packages: []string{"game/internal/logic/alpha"},
 			},
 		},
 		Layers: map[string]*model.LayerInfo{
@@ -572,7 +572,7 @@ func TestDetectModule(t *testing.T) {
 	}{
 		{
 			name:     "all game packages",
-			packages: []string{"game/logic/board", "game/logic/card"},
+			packages: []string{"game/internal/logic/board", "game/internal/logic/card"},
 			want:     "game",
 		},
 		{
@@ -673,7 +673,7 @@ func TestVisualContainerNesting(t *testing.T) {
 				ID:       "game_services",
 				Label:    "Game Services",
 				Layer:    "Logic",
-				Packages: []string{"game/logic/board", "game/logic/card"},
+				Packages: []string{"game/internal/logic/board", "game/internal/logic/card"},
 			},
 			"lobby_logic": {
 				ID:       "lobby_logic",

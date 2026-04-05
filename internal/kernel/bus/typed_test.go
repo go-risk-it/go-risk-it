@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
+	gameapi "github.com/go-risk-it/go-risk-it/internal/game/api"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/game/events"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	"github.com/stretchr/testify/require"
@@ -30,9 +30,9 @@ func TestOnEvent_RegistersCorrectType(t *testing.T) {
 
 	spy := &spyBus{}
 
-	bus.OnEvent[*gameevt.MoveExecuted](spy, func(_ context.Context, _ *gameevt.MoveExecuted) {})
+	bus.OnEvent[*gameevt.MoveCompleted](spy, func(_ context.Context, _ *gameevt.MoveCompleted) {})
 
-	require.Equal(t, gameevt.TypeMoveExecuted, spy.registeredType)
+	require.Equal(t, gameevt.TypeMoveCompleted, spy.registeredType)
 }
 
 func TestOnEvent_TypedHandlerCalledWithCorrectEvent(t *testing.T) {
@@ -41,19 +41,17 @@ func TestOnEvent_TypedHandlerCalledWithCorrectEvent(t *testing.T) {
 	spy := &spyBus{}
 	now := time.Date(2026, 3, 26, 12, 0, 0, 0, time.UTC)
 
-	var received *gameevt.MoveExecuted
+	var received *gameevt.MoveCompleted
 
-	bus.OnEvent[*gameevt.MoveExecuted](spy, func(_ context.Context, evt *gameevt.MoveExecuted) {
+	bus.OnEvent[*gameevt.MoveCompleted](spy, func(_ context.Context, evt *gameevt.MoveCompleted) {
 		received = evt
 	})
 
-	// Invoke the wrapped handler directly with the correct event type.
-	event := gameevt.NewMoveExecuted(
+	event := gameevt.NewMoveCompleted(
 		42, "user1", now,
-		sqlc.GamePhaseTypeDEPLOY,
-		sqlc.GameMoveLog{},
-		sqlc.GamePhaseTypeDEPLOY,
-		false, 1, nil, nil,
+		gameapi.GamePhaseTypeDEPLOY, 1,
+		gameapi.GamePhaseTypeDEPLOY, gameapi.GamePhaseTypeDEPLOY,
+		false, nil, nil, nil,
 	)
 	spy.registeredHandler(context.Background(), event)
 
@@ -67,12 +65,10 @@ func TestOnEvent_TypeAssertionMismatchDoesNotCallHandler(t *testing.T) {
 	spy := &spyBus{}
 	called := false
 
-	bus.OnEvent[*gameevt.MoveExecuted](spy, func(_ context.Context, _ *gameevt.MoveExecuted) {
+	bus.OnEvent[*gameevt.MoveCompleted](spy, func(_ context.Context, _ *gameevt.MoveCompleted) {
 		called = true
 	})
 
-	// Invoke the wrapped handler with a different event type.
-	// The type assertion inside the wrapper should fail silently.
 	wrongEvent := gameevt.NewPlayerConnected(42, "user1", time.Now())
 	spy.registeredHandler(context.Background(), wrongEvent)
 
@@ -88,34 +84,14 @@ func TestOnEvent_MultipleTypes(t *testing.T) {
 		expectedType string
 	}{
 		{
-			name: "MoveExecuted",
+			name: "MoveCompleted",
 			register: func(spy *spyBus) {
-				bus.OnEvent[*gameevt.MoveExecuted](
+				bus.OnEvent[*gameevt.MoveCompleted](
 					spy,
-					func(_ context.Context, _ *gameevt.MoveExecuted) {},
+					func(_ context.Context, _ *gameevt.MoveCompleted) {},
 				)
 			},
-			expectedType: gameevt.TypeMoveExecuted,
-		},
-		{
-			name: "PhaseTransitioned",
-			register: func(spy *spyBus) {
-				bus.OnEvent[*gameevt.PhaseTransitioned](
-					spy,
-					func(_ context.Context, _ *gameevt.PhaseTransitioned) {},
-				)
-			},
-			expectedType: gameevt.TypePhaseTransitioned,
-		},
-		{
-			name: "GameCompleted",
-			register: func(spy *spyBus) {
-				bus.OnEvent[*gameevt.GameCompleted](
-					spy,
-					func(_ context.Context, _ *gameevt.GameCompleted) {},
-				)
-			},
-			expectedType: gameevt.TypeGameCompleted,
+			expectedType: gameevt.TypeMoveCompleted,
 		},
 		{
 			name: "GameCreated",
@@ -136,6 +112,16 @@ func TestOnEvent_MultipleTypes(t *testing.T) {
 				)
 			},
 			expectedType: gameevt.TypePlayerConnected,
+		},
+		{
+			name: "TurnEnded",
+			register: func(spy *spyBus) {
+				bus.OnEvent[*gameevt.TurnEnded](
+					spy,
+					func(_ context.Context, _ *gameevt.TurnEnded) {},
+				)
+			},
+			expectedType: gameevt.TypeTurnEnded,
 		},
 	}
 

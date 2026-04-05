@@ -10,17 +10,17 @@ import (
 //
 //nolint:gochecknoglobals // package-level lookup table for subsystem classification
 var SubsystemRoots = map[string]string{
-	"game/api":        "api_dtos",
-	"game/data":       "game_data",
-	"game/logic":      "game_services",
-	"game/logic/move": "move_pipeline", // longest-prefix wins over game/logic
-	"game/consumers":  "game_consumers",
-	"kernel/data":     "kernel_data",
-	"lobby/api":       "api_dtos",
-	"lobby/data":      "lobby_data",
-	"lobby/logic":     "lobby_logic",
-	"testing":         "testing",
-	"web/rest":        "rest_utils",
+	"game/api":                 "api_dtos",
+	"game/internal/data":       "game_data",
+	"game/internal/logic":      "game_services",
+	"game/internal/logic/move": "move_pipeline", // longest-prefix wins over game/internal/logic
+	"game/consumers":           "game_consumers",
+	"kernel/data":              "kernel_data",
+	"lobby/api":                "api_dtos",
+	"lobby/data":               "lobby_data",
+	"lobby/logic":              "lobby_logic",
+	"testing":                  "testing",
+	"web/rest":                 "rest_utils",
 }
 
 // SubsystemOverrides maps individual package suffixes to subsystem IDs.
@@ -31,7 +31,6 @@ var SubsystemRoots = map[string]string{
 //   - game/consumers → game_consumers (not a root child — consumers is a top-level game module)
 //   - game/config, game/headlines, game/snapshot → game_support (cross-cutting game modules)
 //   - game/ctx, game/rand, game/tracing → game_services (tiny game packages consolidated)
-//   - game/commands → api_dtos (command DTOs live alongside API types)
 //   - game/routes, game/ws → game_consumers (web-facing game infra)
 //   - kernel/* → kernel_{bus,config,ctx,errors,observability,utils} (meaningful sub-subsystems)
 //   - web/middleware, web/mux, web/nbio → middleware (web infra, not matched by web/rest root)
@@ -41,12 +40,12 @@ var SubsystemRoots = map[string]string{
 //
 //nolint:gochecknoglobals // package-level lookup table for subsystem overrides
 var SubsystemOverrides = map[string]string{
-	"game/commands":             "api_dtos",
-	"game/config":               "game_support",
+	"game/internal/config":      "game_support",
 	"game/ctx":                  "game_services",
-	"game/headlines":            "game_support",
-	"game/rand":                 "game_services",
-	"game/snapshot":             "game_support",
+	"game/events":               "game_services",
+	"game/internal/handlers":    "game_support",
+	"game/internal/rand":        "game_services",
+	"game/internal/snapshot":    "game_support",
 	"game/tracing":              "game_services",
 	"game/routes":               "game_consumers",
 	"game/ws":                   "game_consumers",

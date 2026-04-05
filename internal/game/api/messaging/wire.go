@@ -9,12 +9,8 @@ import (
 type Type string
 
 const (
-	GameStateType    Type = "gameState"
-	BoardStateType   Type = "boardState"
-	PlayerStateType  Type = "playerState"
-	CardStateType    Type = "cardState"
-	MissionStateType Type = "missionState"
-	MoveHistoryType  Type = "moveHistory"
+	PlayerConnectionType Type = "playerConnection"
+	PlayerViewType       Type = "playerView"
 )
 
 // Message is the WebSocket envelope sent to game clients.

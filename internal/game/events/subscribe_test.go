@@ -39,12 +39,12 @@ func TestOnGameEvent_RegistersCorrectType(t *testing.T) {
 
 	spy := &spyBus{}
 
-	gameevt.OnGameEvent[*gameevt.MoveExecuted](
+	gameevt.OnGameEvent[*gameevt.MoveCompleted](
 		spy,
-		func(_ ctx.GameContext, _ *gameevt.MoveExecuted) {},
+		func(_ ctx.GameContext, _ *gameevt.MoveCompleted) {},
 	)
 
-	require.Equal(t, gameevt.TypeMoveExecuted, spy.registeredType)
+	require.Equal(t, gameevt.TypeMoveCompleted, spy.registeredType)
 }
 
 func TestOnGameEvent_GameContextPassed(t *testing.T) {
@@ -90,7 +90,6 @@ func TestOnGameEvent_NonGameContext_Skips(t *testing.T) {
 		},
 	)
 
-	// Dispatch with a plain context.Background() — not a GameContext.
 	event := gameevt.NewPlayerConnected(42, "user1", time.Now())
 	spy.registeredHandler(context.Background(), event)
 
@@ -103,15 +102,13 @@ func TestOnGameEvent_TypeMismatch_Skips(t *testing.T) {
 	spy := &spyBus{}
 	called := false
 
-	gameevt.OnGameEvent[*gameevt.MoveExecuted](
+	gameevt.OnGameEvent[*gameevt.MoveCompleted](
 		spy,
-		func(_ ctx.GameContext, _ *gameevt.MoveExecuted) {
+		func(_ ctx.GameContext, _ *gameevt.MoveCompleted) {
 			called = true
 		},
 	)
 
-	// Dispatch with the correct context but a wrong event type.
-	// The inner OnEvent type assertion will fail silently.
 	gameCtx := newTestGameContext(42)
 	wrongEvent := gameevt.NewPlayerConnected(42, "user1", time.Now())
 

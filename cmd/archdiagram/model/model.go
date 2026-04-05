@@ -29,7 +29,7 @@ type Classifier func(suffix string) (layer, summary string)
 // PackageInfo represents a parsed Go package with its architectural metadata.
 type PackageInfo struct {
 	ImportPath   string   // full import path
-	Suffix       string   // path after module prefix (e.g., "game/logic/board")
+	Suffix       string   // path after module prefix (e.g., "game/internal/logic/board")
 	Layer        string   // architectural layer from doc.go (e.g., "Logic", "Web")
 	Summary      string   // first paragraph of doc.go
 	GoFiles      []string // non-test Go source files from go list
@@ -70,17 +70,17 @@ type ArchModel struct {
 //
 //nolint:gochecknoglobals // package-level lookup table for exclusion
 var wiringRoots = map[string]bool{
-	"":                        true, // internal root
-	"kernel":                  true,
-	"game":                    true,
-	"game/logic":              true,
-	"game/logic/move":         true,
-	"game/logic/move/service": true,
-	"game/data":               true,
-	"lobby":                   true,
-	"lobby/logic":             true,
-	"lobby/data":              true,
-	"web":                     true,
+	"":                                 true, // internal root
+	"kernel":                           true,
+	"game":                             true,
+	"game/internal/logic":              true,
+	"game/internal/logic/move":         true,
+	"game/internal/logic/move/service": true,
+	"game/internal/data":               true,
+	"lobby":                            true,
+	"lobby/internal/logic":             true,
+	"lobby/internal/data":              true,
+	"web":                              true,
 }
 
 // PackageSuffix returns the import path after the module internal prefix.
@@ -95,7 +95,8 @@ func IsExcluded(suffix string) bool {
 		return true
 	}
 
-	if strings.Contains(suffix, "/sqlc") || strings.Contains(suffix, "/mocks") {
+	if strings.Contains(suffix, "/sqlc") || strings.Contains(suffix, "/mocks") ||
+		strings.Contains(suffix, "/testmocks") {
 		return true
 	}
 

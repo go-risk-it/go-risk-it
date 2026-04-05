@@ -5,8 +5,8 @@ package invariant
 import (
 	"testing"
 
-	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/phase"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/phase"
 	"github.com/stretchr/testify/assert"
 )
 

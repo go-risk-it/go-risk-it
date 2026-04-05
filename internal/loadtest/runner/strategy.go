@@ -42,16 +42,21 @@ func (h *StrategyHandler) handle(bus *Bus, e Event) {
 
 	// Check game over.
 	if snap.IsGameOver() {
+		winner := ""
+		if snap.PlayerView != nil {
+			winner = snap.PlayerView.Game.WinnerUserID
+		}
+
 		bus.Emit(GameCompleteEvent{Result: GameResult{
 			GameIndex: h.gameCtx.GameIndex,
-			Winner:    snap.GameState.WinnerUserID,
+			Winner:    winner,
 		}})
 
 		return
 	}
 
 	// Check nil state.
-	if snap.GameState == nil || snap.PlayersState == nil {
+	if snap.PlayerView == nil {
 		bus.Emit(TurnSkippedEvent{})
 
 		return
@@ -105,17 +110,17 @@ func findActivePlayer(
 	snap gamestate.ViewSnapshot,
 	userIndex map[string]int,
 ) (int, string) {
-	if snap.GameState == nil || snap.PlayersState == nil {
+	if snap.PlayerView == nil {
 		return -1, ""
 	}
 
-	numPlayers := int64(len(snap.PlayersState.Players))
+	numPlayers := int64(len(snap.PlayerView.Players))
 	if numPlayers == 0 {
 		return -1, ""
 	}
 
-	currentIndex := snap.GameState.Turn % numPlayers
-	for _, p := range snap.PlayersState.Players {
+	currentIndex := snap.PlayerView.Game.Turn % numPlayers
+	for _, p := range snap.PlayerView.Players {
 		if p.Index == currentIndex {
 			if idx, ok := userIndex[p.UserID]; ok {
 				return idx, p.UserID

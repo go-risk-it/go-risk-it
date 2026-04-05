@@ -1,10 +1,10 @@
 package smart //nolint:testpackage // whitebox tests for unexported functions
 
 import (
-	"encoding/json"
 	"math"
 	"testing"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/mapgraph"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/player"
@@ -38,17 +38,6 @@ func testGraph7() *mapgraph.Graph {
 
 func floatEq(a, b float64) bool {
 	return math.Abs(a-b) < 1e-9
-}
-
-func mustMarshal(t *testing.T, v any) json.RawMessage {
-	t.Helper()
-
-	data, err := json.Marshal(v)
-	if err != nil {
-		t.Fatalf("marshal: %v", err)
-	}
-
-	return data
 }
 
 // --- shouldAttack tests ------------------------------------------------------
@@ -372,7 +361,7 @@ func TestScoreAttack(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			targetRegion := &gamestate.Region{
+			targetRegion := &snapshot.RegionState{
 				ID:      tt.action.TargetRegionID,
 				OwnerID: "enemy",
 				Troops:  tt.action.TroopsInTarget,
@@ -380,7 +369,7 @@ func TestScoreAttack(t *testing.T) {
 
 			bv := &BoardView{
 				ContinentProgress: tt.continentProgress,
-				RegionMap: map[string]*gamestate.Region{
+				RegionMap: map[string]*snapshot.RegionState{
 					tt.action.TargetRegionID: targetRegion,
 				},
 				PlayerRegionCounts: map[string]int{"enemy": 20},
@@ -490,7 +479,7 @@ func TestScoreAttack_EliminationBonus(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			targetRegion := &gamestate.Region{
+			targetRegion := &snapshot.RegionState{
 				ID:      tt.action.TargetRegionID,
 				OwnerID: tt.targetOwner,
 				Troops:  tt.action.TroopsInTarget,
@@ -498,7 +487,7 @@ func TestScoreAttack_EliminationBonus(t *testing.T) {
 
 			bv := &BoardView{
 				ContinentProgress: tt.continentProgress,
-				RegionMap: map[string]*gamestate.Region{
+				RegionMap: map[string]*snapshot.RegionState{
 					tt.action.TargetRegionID: targetRegion,
 				},
 				PlayerRegionCounts: map[string]int{tt.targetOwner: tt.targetRegions},
@@ -540,7 +529,7 @@ func TestShouldAttackAfterCard_KillShot(t *testing.T) {
 		}
 
 		bv := &BoardView{
-			RegionMap: map[string]*gamestate.Region{
+			RegionMap: map[string]*snapshot.RegionState{
 				"b1": {ID: "b1", OwnerID: "weak-enemy", Troops: 3},
 			},
 			ContinentProgress:  map[string]float64{"beta": 0.0},
@@ -574,7 +563,7 @@ func TestShouldAttackAfterCard_KillShot(t *testing.T) {
 		}
 
 		bv := &BoardView{
-			RegionMap: map[string]*gamestate.Region{
+			RegionMap: map[string]*snapshot.RegionState{
 				"b1": {ID: "b1", OwnerID: "enemy", Troops: 3},
 			},
 			ContinentProgress:  map[string]float64{"beta": 0.0},
@@ -598,19 +587,19 @@ func TestScoreDeploy(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		region     *gamestate.Region
+		region     *snapshot.RegionState
 		deployable int64
 		userID     string
-		regions    []gamestate.Region // to populate RegionMap
+		regions    []snapshot.RegionState // to populate RegionMap
 		contProg   map[string]float64
 		wantScore  float64
 	}{
 		{
 			name:       "border region with enemy neighbor gets positive score",
-			region:     &gamestate.Region{ID: "a2", OwnerID: "me", Troops: 5},
+			region:     &snapshot.RegionState{ID: "a2", OwnerID: "me", Troops: 5},
 			deployable: 3,
 			userID:     "me",
-			regions: []gamestate.Region{
+			regions: []snapshot.RegionState{
 				{ID: "a1", OwnerID: "me", Troops: 4},
 				{ID: "a2", OwnerID: "me", Troops: 5},
 				{ID: "b1", OwnerID: "enemy", Troops: 6},
@@ -622,10 +611,10 @@ func TestScoreDeploy(t *testing.T) {
 		},
 		{
 			name:       "interior region with no enemy neighbor returns 0",
-			region:     &gamestate.Region{ID: "a1", OwnerID: "me", Troops: 5},
+			region:     &snapshot.RegionState{ID: "a1", OwnerID: "me", Troops: 5},
 			deployable: 3,
 			userID:     "me",
-			regions: []gamestate.Region{
+			regions: []snapshot.RegionState{
 				{ID: "a1", OwnerID: "me", Troops: 5},
 				{ID: "a2", OwnerID: "me", Troops: 3},
 				{ID: "a3", OwnerID: "me", Troops: 4},
@@ -635,10 +624,10 @@ func TestScoreDeploy(t *testing.T) {
 		},
 		{
 			name:       "higher deployable troops gives higher score",
-			region:     &gamestate.Region{ID: "a2", OwnerID: "me", Troops: 5},
+			region:     &snapshot.RegionState{ID: "a2", OwnerID: "me", Troops: 5},
 			deployable: 10,
 			userID:     "me",
-			regions: []gamestate.Region{
+			regions: []snapshot.RegionState{
 				{ID: "a1", OwnerID: "me", Troops: 4},
 				{ID: "a2", OwnerID: "me", Troops: 5},
 				{ID: "b1", OwnerID: "enemy", Troops: 6},
@@ -649,10 +638,10 @@ func TestScoreDeploy(t *testing.T) {
 		},
 		{
 			name:       "continent progress boosts score",
-			region:     &gamestate.Region{ID: "a2", OwnerID: "me", Troops: 5},
+			region:     &snapshot.RegionState{ID: "a2", OwnerID: "me", Troops: 5},
 			deployable: 3,
 			userID:     "me",
-			regions: []gamestate.Region{
+			regions: []snapshot.RegionState{
 				{ID: "a1", OwnerID: "me", Troops: 4},
 				{ID: "a2", OwnerID: "me", Troops: 5},
 				{ID: "b1", OwnerID: "enemy", Troops: 6},
@@ -664,10 +653,10 @@ func TestScoreDeploy(t *testing.T) {
 		},
 		{
 			name:       "full continent progress gives maximum boost",
-			region:     &gamestate.Region{ID: "a2", OwnerID: "me", Troops: 5},
+			region:     &snapshot.RegionState{ID: "a2", OwnerID: "me", Troops: 5},
 			deployable: 3,
 			userID:     "me",
-			regions: []gamestate.Region{
+			regions: []snapshot.RegionState{
 				{ID: "a1", OwnerID: "me", Troops: 4},
 				{ID: "a2", OwnerID: "me", Troops: 5},
 				{ID: "b1", OwnerID: "enemy", Troops: 6},
@@ -682,7 +671,7 @@ func TestScoreDeploy(t *testing.T) {
 			t.Parallel()
 
 			bv := &BoardView{
-				RegionMap:         make(map[string]*gamestate.Region),
+				RegionMap:         make(map[string]*snapshot.RegionState),
 				ContinentProgress: tt.contProg,
 			}
 			for i := range tt.regions {
@@ -711,18 +700,17 @@ func TestDecideConquer(t *testing.T) {
 		t.Helper()
 
 		return gamestate.ViewSnapshot{
-			GameState: &gamestate.GameState{
-				Phase: gamestate.Phase{
-					Type: gamestate.Conquer,
-					State: mustMarshal(t, gamestate.ConquerPhaseState{
+			PlayerView: &snapshot.PlayerView{
+				Game: snapshot.GameMeta{},
+				Phase: snapshot.Phase{
+					Type:  snapshot.PhaseConquer,
+					State: snapshot.ConquerPhaseState{
 						AttackingRegionID: "a1",
 						DefendingRegionID: "a2",
 						MinTroopsToMove:   1,
-					}),
+					},
 				},
-			},
-			BoardState: &gamestate.BoardState{
-				Regions: []gamestate.Region{
+				Regions: []snapshot.RegionState{
 					{ID: "a1", OwnerID: "me", Troops: 5},
 					{ID: "a2", OwnerID: "me", Troops: 1},
 					{ID: "a3", OwnerID: "me", Troops: 3},
@@ -811,18 +799,17 @@ func TestDecideConquer(t *testing.T) {
 
 		// Source has 2 troops, min 1 -> only action is troops=1
 		snap := gamestate.ViewSnapshot{
-			GameState: &gamestate.GameState{
-				Phase: gamestate.Phase{
-					Type: gamestate.Conquer,
-					State: mustMarshal(t, gamestate.ConquerPhaseState{
+			PlayerView: &snapshot.PlayerView{
+				Game: snapshot.GameMeta{},
+				Phase: snapshot.Phase{
+					Type:  snapshot.PhaseConquer,
+					State: snapshot.ConquerPhaseState{
 						AttackingRegionID: "a1",
 						DefendingRegionID: "a2",
 						MinTroopsToMove:   1,
-					}),
+					},
 				},
-			},
-			BoardState: &gamestate.BoardState{
-				Regions: []gamestate.Region{
+			Regions: []snapshot.RegionState{
 					{ID: "a1", OwnerID: "me", Troops: 2},
 					{ID: "a2", OwnerID: "me", Troops: 1},
 					{ID: "a3", OwnerID: "me", Troops: 1},
@@ -864,11 +851,10 @@ func TestDecideAttack(t *testing.T) {
 		// me has 2 troops in a2 (border), enemy has 10 in b1.
 		// ratio=2/10=0.2 < any threshold -> all filtered
 		snap := gamestate.ViewSnapshot{
-			GameState: &gamestate.GameState{
-				Phase: gamestate.Phase{Type: gamestate.Attack},
-			},
-			BoardState: &gamestate.BoardState{
-				Regions: []gamestate.Region{
+			PlayerView: &snapshot.PlayerView{
+				Game: snapshot.GameMeta{},
+				Phase: snapshot.Phase{Type: snapshot.PhaseAttack, State: snapshot.EmptyPhaseState{}},
+			Regions: []snapshot.RegionState{
 					{ID: "a1", OwnerID: "me", Troops: 1},
 					{ID: "a2", OwnerID: "me", Troops: 2},
 					{ID: "a3", OwnerID: "me", Troops: 1},
@@ -898,11 +884,10 @@ func TestDecideAttack(t *testing.T) {
 
 		// All my regions have 1 troop -> can't attack
 		snap := gamestate.ViewSnapshot{
-			GameState: &gamestate.GameState{
-				Phase: gamestate.Phase{Type: gamestate.Attack},
-			},
-			BoardState: &gamestate.BoardState{
-				Regions: []gamestate.Region{
+			PlayerView: &snapshot.PlayerView{
+				Game: snapshot.GameMeta{},
+				Phase: snapshot.Phase{Type: snapshot.PhaseAttack, State: snapshot.EmptyPhaseState{}},
+			Regions: []snapshot.RegionState{
 					{ID: "a1", OwnerID: "me", Troops: 1},
 					{ID: "a2", OwnerID: "me", Troops: 1},
 					{ID: "a3", OwnerID: "me", Troops: 1},
@@ -934,11 +919,10 @@ func TestDecideAttack(t *testing.T) {
 		// a3 can attack a4(enemy,8) -> ratio=10/8=1.25
 		// Expert base=1.0 -> both pass, but a2->b1 scores higher
 		snap := gamestate.ViewSnapshot{
-			GameState: &gamestate.GameState{
-				Phase: gamestate.Phase{Type: gamestate.Attack},
-			},
-			BoardState: &gamestate.BoardState{
-				Regions: []gamestate.Region{
+			PlayerView: &snapshot.PlayerView{
+				Game: snapshot.GameMeta{},
+				Phase: snapshot.Phase{Type: snapshot.PhaseAttack, State: snapshot.EmptyPhaseState{}},
+			Regions: []snapshot.RegionState{
 					{ID: "a1", OwnerID: "me", Troops: 1},
 					{ID: "a2", OwnerID: "me", Troops: 10},
 					{ID: "a3", OwnerID: "me", Troops: 10},
@@ -997,11 +981,10 @@ func TestDecideAttack(t *testing.T) {
 			// a3->a4: ratio=4/3=1.33, bonus=7.5 -> score=10.0
 			// a2->b1: ratio=4/2=2.0, beta 0/3=0.0 -> bonus=1.0 -> score=2.0
 			snap := gamestate.ViewSnapshot{
-				GameState: &gamestate.GameState{
-					Phase: gamestate.Phase{Type: gamestate.Attack},
-				},
-				BoardState: &gamestate.BoardState{
-					Regions: []gamestate.Region{
+				PlayerView: &snapshot.PlayerView{
+				Game: snapshot.GameMeta{},
+					Phase: snapshot.Phase{Type: snapshot.PhaseAttack, State: snapshot.EmptyPhaseState{}},
+				Regions: []snapshot.RegionState{
 						{ID: "a1", OwnerID: "me", Troops: 1},
 						{ID: "a2", OwnerID: "me", Troops: 4},
 						{ID: "a3", OwnerID: "me", Troops: 4},
@@ -1052,16 +1035,15 @@ func TestDecideDeploy(t *testing.T) {
 		// a3: enemyTroops=8 (a4), score=(3+5)/8 * (1+0) = 1.0
 		// a2 wins
 		snap := gamestate.ViewSnapshot{
-			GameState: &gamestate.GameState{
-				Phase: gamestate.Phase{
-					Type: gamestate.Deploy,
-					State: mustMarshal(t, gamestate.DeployPhaseState{
+			PlayerView: &snapshot.PlayerView{
+				Game: snapshot.GameMeta{},
+				Phase: snapshot.Phase{
+					Type:  snapshot.PhaseDeploy,
+					State: snapshot.DeployPhaseState{
 						DeployableTroops: 5,
-					}),
+					},
 				},
-			},
-			BoardState: &gamestate.BoardState{
-				Regions: []gamestate.Region{
+			Regions: []snapshot.RegionState{
 					{ID: "a1", OwnerID: "me", Troops: 3},
 					{ID: "a2", OwnerID: "me", Troops: 3},
 					{ID: "a3", OwnerID: "me", Troops: 3},
@@ -1096,16 +1078,15 @@ func TestDecideDeploy(t *testing.T) {
 		// me owns everything -> all interior -> scoreDeploy returns 0 for all
 		// but 0 > bestScore(-1.0) -> first region wins with score 0
 		snap := gamestate.ViewSnapshot{
-			GameState: &gamestate.GameState{
-				Phase: gamestate.Phase{
-					Type: gamestate.Deploy,
-					State: mustMarshal(t, gamestate.DeployPhaseState{
+			PlayerView: &snapshot.PlayerView{
+				Game: snapshot.GameMeta{},
+				Phase: snapshot.Phase{
+					Type:  snapshot.PhaseDeploy,
+					State: snapshot.DeployPhaseState{
 						DeployableTroops: 5,
-					}),
+					},
 				},
-			},
-			BoardState: &gamestate.BoardState{
-				Regions: []gamestate.Region{
+			Regions: []snapshot.RegionState{
 					{ID: "a1", OwnerID: "me", Troops: 3},
 					{ID: "a2", OwnerID: "me", Troops: 3},
 					{ID: "a3", OwnerID: "me", Troops: 3},
@@ -1135,16 +1116,15 @@ func TestDecideDeploy(t *testing.T) {
 		t.Parallel()
 
 		snap := gamestate.ViewSnapshot{
-			GameState: &gamestate.GameState{
-				Phase: gamestate.Phase{
-					Type: gamestate.Deploy,
-					State: mustMarshal(t, gamestate.DeployPhaseState{
+			PlayerView: &snapshot.PlayerView{
+				Game: snapshot.GameMeta{},
+				Phase: snapshot.Phase{
+					Type:  snapshot.PhaseDeploy,
+					State: snapshot.DeployPhaseState{
 						DeployableTroops: 0,
-					}),
+					},
 				},
-			},
-			BoardState: &gamestate.BoardState{
-				Regions: []gamestate.Region{
+			Regions: []snapshot.RegionState{
 					{ID: "a1", OwnerID: "me", Troops: 3},
 					{ID: "a2", OwnerID: "me", Troops: 3},
 					{ID: "a3", OwnerID: "me", Troops: 3},
@@ -1404,9 +1384,11 @@ func TestHasConqueredThisTurn(t *testing.T) {
 			}
 
 			snap := gamestate.ViewSnapshot{
-				GameState: &gamestate.GameState{
-					ID:   tt.snapGame,
-					Turn: tt.snapTurn,
+				PlayerView: &snapshot.PlayerView{
+					Game: snapshot.GameMeta{
+						ID:   tt.snapGame,
+						Turn: tt.snapTurn,
+					},
 				},
 			}
 
@@ -1557,7 +1539,7 @@ func TestShouldAttackAfterCard(t *testing.T) {
 
 			s := New(graph, tt.personality)
 
-			targetRegion := &gamestate.Region{
+			targetRegion := &snapshot.RegionState{
 				ID:      tt.attack.TargetRegionID,
 				OwnerID: "enemy",
 				Troops:  tt.attack.TroopsInTarget,
@@ -1565,7 +1547,7 @@ func TestShouldAttackAfterCard(t *testing.T) {
 
 			bv := &BoardView{
 				ContinentProgress: tt.continentProgress,
-				RegionMap: map[string]*gamestate.Region{
+				RegionMap: map[string]*snapshot.RegionState{
 					tt.attack.TargetRegionID: targetRegion,
 				},
 				PlayerRegionCounts: map[string]int{"enemy": 20},
@@ -1595,15 +1577,16 @@ func TestDecideAttack_CardFarming(t *testing.T) {
 		// Both continent progresses are below the 0.50 override threshold,
 		// so card farming decisions are purely ratio-based.
 		return gamestate.ViewSnapshot{
-			GameState: &gamestate.GameState{
-				ID:   gameID,
-				Turn: turn,
-				Phase: gamestate.Phase{
-					Type: gamestate.Attack,
+			PlayerView: &snapshot.PlayerView{
+				Game: snapshot.GameMeta{
+					ID:   gameID,
+					Turn: turn,
 				},
-			},
-			BoardState: &gamestate.BoardState{
-				Regions: []gamestate.Region{
+				Phase: snapshot.Phase{
+					Type:  snapshot.PhaseAttack,
+					State: snapshot.EmptyPhaseState{},
+				},
+				Regions: []snapshot.RegionState{
 					{ID: "a1", OwnerID: "me", Troops: 10},
 					{ID: "a2", OwnerID: "enemy", Troops: 2},
 					{ID: "a3", OwnerID: "enemy", Troops: 2},
@@ -1750,15 +1733,16 @@ func TestDecideAttack_CardFarming(t *testing.T) {
 		// me owns c1-c5 (5/6 gamma = 0.833 >= 0.80). c6 is enemy.
 		// c5 can attack c6 with 10 troops vs 2 -> ratio=5.0
 		snap := gamestate.ViewSnapshot{
-			GameState: &gamestate.GameState{
-				ID:   1,
-				Turn: 5,
-				Phase: gamestate.Phase{
-					Type: gamestate.Attack,
+			PlayerView: &snapshot.PlayerView{
+				Game: snapshot.GameMeta{
+					ID:   1,
+					Turn: 5,
 				},
-			},
-			BoardState: &gamestate.BoardState{
-				Regions: []gamestate.Region{
+				Phase: snapshot.Phase{
+					Type:  snapshot.PhaseAttack,
+					State: snapshot.EmptyPhaseState{},
+				},
+				Regions: []snapshot.RegionState{
 					{ID: "c1", OwnerID: "me", Troops: 1},
 					{ID: "c2", OwnerID: "me", Troops: 1},
 					{ID: "c3", OwnerID: "me", Troops: 1},
@@ -1844,20 +1828,20 @@ func TestDecideConquer_RecordsConquest(t *testing.T) {
 	graph := testGraph7()
 
 	snap := gamestate.ViewSnapshot{
-		GameState: &gamestate.GameState{
-			ID:   42,
-			Turn: 7,
-			Phase: gamestate.Phase{
-				Type: gamestate.Conquer,
-				State: mustMarshal(t, gamestate.ConquerPhaseState{
+		PlayerView: &snapshot.PlayerView{
+			Game: snapshot.GameMeta{
+				ID:   42,
+				Turn: 7,
+			},
+			Phase: snapshot.Phase{
+				Type: snapshot.PhaseConquer,
+				State: snapshot.ConquerPhaseState{
 					AttackingRegionID: "a1",
 					DefendingRegionID: "a2",
 					MinTroopsToMove:   1,
-				}),
+				},
 			},
-		},
-		BoardState: &gamestate.BoardState{
-			Regions: []gamestate.Region{
+			Regions: []snapshot.RegionState{
 				{ID: "a1", OwnerID: "me", Troops: 5},
 				{ID: "a2", OwnerID: "me", Troops: 1},
 				{ID: "a3", OwnerID: "me", Troops: 1},
@@ -1889,9 +1873,11 @@ func TestDecideConquer_RecordsConquest(t *testing.T) {
 
 	// Different game should still be false.
 	otherSnap := gamestate.ViewSnapshot{
-		GameState: &gamestate.GameState{
-			ID:   99,
-			Turn: 7,
+		PlayerView: &snapshot.PlayerView{
+			Game: snapshot.GameMeta{
+				ID:   99,
+				Turn: 7,
+			},
 		},
 	}
 	if s.hasConqueredThisTurn(otherSnap) {

@@ -49,21 +49,21 @@ func TestBuildModel_ExcludesWiringRoots(t *testing.T) {
 
 	pkgs := []GoPackage{
 		// Wiring roots — should be excluded
-		{ImportPath: ModulePrefix},                             // empty suffix ""
-		{ImportPath: ModulePrefix + "logic"},                   // wiring root
-		{ImportPath: ModulePrefix + "logic/game"},              // wiring root
-		{ImportPath: ModulePrefix + "logic/game/move"},         // wiring root
-		{ImportPath: ModulePrefix + "logic/game/move/service"}, // wiring root
-		{ImportPath: ModulePrefix + "data"},                    // wiring root
-		{ImportPath: ModulePrefix + "data/game"},               // wiring root
-		{ImportPath: ModulePrefix + "web"},                     // wiring root
-		{ImportPath: ModulePrefix + "web/game"},                // wiring root
-		{ImportPath: ModulePrefix + "web/lobby"},               // wiring root
-		{ImportPath: ModulePrefix + "lobby/logic"},             // wiring root
-		{ImportPath: ModulePrefix + "lobby/data"},              // wiring root
-		{ImportPath: ModulePrefix + "data/game/sqlc"},          // sqlc — excluded
-		{ImportPath: ModulePrefix + "lobby/data/sqlc"},         // sqlc — excluded
-		{ImportPath: ModulePrefix + "something/mocks"},         // mocks — excluded
+		{ImportPath: ModulePrefix},                              // empty suffix ""
+		{ImportPath: ModulePrefix + "logic"},                    // wiring root
+		{ImportPath: ModulePrefix + "logic/game"},               // wiring root
+		{ImportPath: ModulePrefix + "logic/game/move"},          // wiring root
+		{ImportPath: ModulePrefix + "logic/game/move/service"},  // wiring root
+		{ImportPath: ModulePrefix + "data"},                     // wiring root
+		{ImportPath: ModulePrefix + "data/game"},                // wiring root
+		{ImportPath: ModulePrefix + "web"},                      // wiring root
+		{ImportPath: ModulePrefix + "web/game"},                 // wiring root
+		{ImportPath: ModulePrefix + "web/lobby"},                // wiring root
+		{ImportPath: ModulePrefix + "lobby/internal/logic"},     // wiring root
+		{ImportPath: ModulePrefix + "lobby/internal/data"},      // wiring root
+		{ImportPath: ModulePrefix + "data/game/sqlc"},           // sqlc — excluded
+		{ImportPath: ModulePrefix + "lobby/internal/data/sqlc"}, // sqlc — excluded
+		{ImportPath: ModulePrefix + "something/mocks"},          // mocks — excluded
 		{
 			ImportPath: ModulePrefix + "logic/game/board",
 		}, // real package — should be included
@@ -101,8 +101,8 @@ func TestBuildModel_ExcludesWiringRoots(t *testing.T) {
 	excluded := []string{
 		"", "logic", "logic/game", "logic/game/move", "logic/game/move/service",
 		"data", "data/game", "web", "web/game", "web/lobby",
-		"lobby/logic", "lobby/data",
-		"data/game/sqlc", "lobby/data/sqlc", "something/mocks",
+		"lobby/internal/logic", "lobby/internal/data",
+		"data/game/sqlc", "lobby/internal/data/sqlc", "something/mocks",
 	}
 	for _, suffix := range excluded {
 		if _, ok := archModel.Packages[suffix]; ok {
@@ -399,21 +399,21 @@ func TestIsExcluded(t *testing.T) {
 		{"", true},
 		{"kernel", true},
 		{"game", true},
-		{"game/logic", true},
-		{"game/logic/move", true},
-		{"game/logic/move/service", true},
-		{"game/data", true},
+		{"game/internal/logic", true},
+		{"game/internal/logic/move", true},
+		{"game/internal/logic/move/service", true},
+		{"game/internal/data", true},
 		{"lobby", true},
-		{"lobby/logic", true},
-		{"lobby/data", true},
+		{"lobby/internal/logic", true},
+		{"lobby/internal/data", true},
 		{"web", true},
 		// generated packages
-		{"game/data/sqlc", true},
-		{"lobby/data/sqlc", true},
+		{"game/internal/data/sqlc", true},
+		{"lobby/internal/data/sqlc", true},
 		{"something/mocks", true},
 		// real packages
 		{"kernel/config", false},
-		{"game/logic/board", false},
+		{"game/internal/logic/board", false},
 		{"game/consumers", false},
 		{"game/events", false},
 	}

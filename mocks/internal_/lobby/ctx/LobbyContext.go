@@ -280,6 +280,50 @@ func (_c *LobbyContext_Rebase_Call) RunAndReturn(run func(base context.Context) 
 	return _c
 }
 
+// ScopeID provides a mock function for the type LobbyContext
+func (_mock *LobbyContext) ScopeID() int64 {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for ScopeID")
+	}
+
+	var r0 int64
+	if returnFunc, ok := ret.Get(0).(func() int64); ok {
+		r0 = returnFunc()
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+	return r0
+}
+
+// LobbyContext_ScopeID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ScopeID'
+type LobbyContext_ScopeID_Call struct {
+	*mock.Call
+}
+
+// ScopeID is a helper method to define mock.On call
+func (_e *LobbyContext_Expecter) ScopeID() *LobbyContext_ScopeID_Call {
+	return &LobbyContext_ScopeID_Call{Call: _e.mock.On("ScopeID")}
+}
+
+func (_c *LobbyContext_ScopeID_Call) Run(run func()) *LobbyContext_ScopeID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *LobbyContext_ScopeID_Call) Return(n int64) *LobbyContext_ScopeID_Call {
+	_c.Call.Return(n)
+	return _c
+}
+
+func (_c *LobbyContext_ScopeID_Call) RunAndReturn(run func() int64) *LobbyContext_ScopeID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // SlogAttrs provides a mock function for the type LobbyContext
 func (_mock *LobbyContext) SlogAttrs() []slog.Attr {
 	ret := _mock.Called()

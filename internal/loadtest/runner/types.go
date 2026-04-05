@@ -25,7 +25,6 @@ type Timeouts struct {
 	InitialStateWait  time.Duration
 	UpdateWait        time.Duration
 	PhaseChangeWait   time.Duration
-	PostMoveSettle    time.Duration
 	MaxConsecutiveErr int
 }
 
@@ -35,7 +34,6 @@ func DefaultTimeouts() Timeouts {
 		InitialStateWait:  1 * time.Second,
 		UpdateWait:        3 * time.Second,
 		PhaseChangeWait:   3 * time.Second,
-		PostMoveSettle:    50 * time.Millisecond,
 		MaxConsecutiveErr: 20,
 	}
 }

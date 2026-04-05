@@ -88,7 +88,7 @@ func TestOnLobbyEvent_LobbyContextPassed(t *testing.T) {
 	userCtx := kernelctx.WithUserID(traceCtx, "user-42")
 	lobbyCtx := ctx.WithLobbyID(userCtx, 99)
 
-	event := lobbyevt.NewLobbyStateChanged(99, "user-42")
+	event := lobbyevt.NewLobbyStateChanged(99, "user-42", nil)
 	spy.registeredHandler(lobbyCtx, event)
 
 	require.NotNil(t, receivedCtx)
@@ -132,7 +132,7 @@ func TestOnLobbyEvent_NonLobbyContext_Skips(t *testing.T) {
 	})
 
 	// Dispatch with a plain context.Background() — not a LobbyContext.
-	event := lobbyevt.NewLobbyStateChanged(99, "user-42")
+	event := lobbyevt.NewLobbyStateChanged(99, "user-42", nil)
 	spy.registeredHandler(context.Background(), event)
 
 	require.False(t, called, "handler should not be called when context is not LobbyContext")

@@ -520,6 +520,83 @@ func TestDomainVoid_HandlerError(t *testing.T) {
 	assert.Equal(t, "CONFLICT", resp.Code)
 }
 
+// --- DomainResult ---
+
+type resultResponse struct {
+	Status string `json:"status"`
+}
+
+func TestDomainResult_Success(t *testing.T) {
+	t.Parallel()
+
+	var captured testHandlerCtx
+
+	resultRoute := route.DomainResult(
+		"GET /api/v1/things/{id}/status",
+		buildTestHandlerCtx,
+		func(ctx testHandlerCtx) (resultResponse, error) {
+			captured = ctx
+
+			return resultResponse{Status: "active"}, nil
+		},
+	)
+
+	assert.True(t, resultRoute.RequiresAuth())
+
+	userCtx := newUserContext(t)
+	req := httptest.NewRequestWithContext(
+		userCtx,
+		http.MethodGet,
+		"/api/v1/things/9/status",
+		nil,
+	)
+	req.SetPathValue("id", "9")
+	rec := httptest.NewRecorder()
+
+	resultRoute.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, "application/json", rec.Header().Get("Content-Type"))
+	assert.Equal(t, "user-123", captured.userID)
+	assert.Equal(t, int64(9), captured.id)
+
+	var resp resultResponse
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+	assert.Equal(t, "active", resp.Status)
+}
+
+func TestDomainResult_HandlerError(t *testing.T) {
+	t.Parallel()
+
+	spanCtx := newTracedContext(t)
+	userCtx := newUserContextWithTrace(t, spanCtx)
+
+	resultRoute := route.DomainResult(
+		"GET /api/v1/things/{id}/status",
+		buildTestHandlerCtx,
+		func(_ testHandlerCtx) (resultResponse, error) {
+			return resultResponse{}, domainerrors.NewNotFoundError("thing not found")
+		},
+	)
+
+	req := httptest.NewRequestWithContext(
+		userCtx,
+		http.MethodGet,
+		"/api/v1/things/9/status",
+		nil,
+	)
+	req.SetPathValue("id", "9")
+	rec := httptest.NewRecorder()
+
+	resultRoute.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+
+	var resp restutils.ErrorResponse
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+	assert.Equal(t, "NOT_FOUND", resp.Code)
+}
+
 // --- helpers ---
 
 // newUserContextWithTrace creates a UserContext from an existing traced context,

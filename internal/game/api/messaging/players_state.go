@@ -1,5 +1,6 @@
 package messaging
 
+// ConnectionStatus indicates whether a player is currently connected via WebSocket.
 type ConnectionStatus string
 
 const (
@@ -7,22 +8,9 @@ const (
 	Disconnected ConnectionStatus = "disconnected"
 )
 
-type PlayerStatus string
-
-const (
-	Alive PlayerStatus = "alive"
-	Dead  PlayerStatus = "dead"
-)
-
-type Player struct {
-	UserID           string           `json:"userId"`
-	Name             string           `json:"name"`
-	Index            int64            `json:"index"`
-	CardCount        int64            `json:"cardCount"`
-	Status           PlayerStatus     `json:"status"`
-	ConnectionStatus ConnectionStatus `json:"connectionStatus"`
-}
-
-type PlayersState struct {
-	Players []Player `json:"players"`
+// PresencePayload is the data field of a playerConnection message, broadcast
+// to other connected players when a player connects or disconnects.
+type PresencePayload struct {
+	UserID string           `json:"userId"`
+	Status ConnectionStatus `json:"status"`
 }

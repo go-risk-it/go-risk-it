@@ -11,20 +11,19 @@ import (
 	"testing"
 	"time"
 
-	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/config"
+	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/internal/config"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
-	gamedb "github.com/go-risk-it/go-risk-it/internal/game/data/db"
-	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
-	game "github.com/go-risk-it/go-risk-it/internal/game/logic"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/advancement"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/board"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/creation"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/conquer"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/deploy"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/orchestration"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/player"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/state"
-	"github.com/go-risk-it/go-risk-it/internal/game/rand"
+	gamedb "github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
+	game "github.com/go-risk-it/go-risk-it/internal/game/internal/logic"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/board"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/creation"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/conquer"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/deploy"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/orchestration"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/player"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/state"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/rand"
 	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"github.com/golang-migrate/migrate/v4"
@@ -57,9 +56,9 @@ type Harness struct {
 	ConquerOrchestrator   orchestration.ConquerOrchestrator
 	ReinforceOrchestrator orchestration.ReinforceOrchestrator
 	CardsOrchestrator     orchestration.CardsOrchestrator
-	AttackAdvancer        advancement.AttackAdvancer
-	CardsAdvancer         advancement.CardsAdvancer
-	ReinforceAdvancer     advancement.ReinforceAdvancer
+	AttackAdvancer        orchestration.AttackPhaseAdvancer
+	CardsAdvancer         orchestration.CardsPhaseAdvancer
+	ReinforceAdvancer     orchestration.ReinforcePhaseAdvancer
 	StateService          state.Service
 	DeployService         deploy.Service
 	ConquerService        conquer.Service
@@ -158,7 +157,7 @@ func (h *Harness) CreateGame(
 	userCtx := h.userCtx(players[0].UserID)
 
 	gameID, err := h.CreationService.CreateGame(
-		userCtx, regions, players,
+		userCtx, 0, regions, players,
 	)
 	if err != nil {
 		tb.Fatalf("failed to create game: %v", err)

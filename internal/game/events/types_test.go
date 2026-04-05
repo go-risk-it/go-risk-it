@@ -4,20 +4,22 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
+	gameapi "github.com/go-risk-it/go-risk-it/internal/game/api"
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/game/events"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/attack"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/cards"
+	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	"github.com/stretchr/testify/require"
 )
 
 // Compile-time interface compliance guards.
 var (
-	_ gameevt.GameEvent = (*gameevt.MoveExecuted)(nil)
-	_ gameevt.GameEvent = (*gameevt.PhaseTransitioned)(nil)
-	_ gameevt.GameEvent = (*gameevt.GameCompleted)(nil)
+	_ gameevt.GameEvent = (*gameevt.MoveCompleted)(nil)
 	_ gameevt.GameEvent = (*gameevt.GameCreated)(nil)
 	_ gameevt.GameEvent = (*gameevt.PlayerConnected)(nil)
+	_ gameevt.GameEvent = (*gameevt.TurnEnded)(nil)
+
+	// GameCreationFailed implements bus.Event but NOT GameEvent.
+	_ eventbus.Event = (*gameevt.GameCreationFailed)(nil)
 )
 
 func TestEventTypes_NilPointerSafety(t *testing.T) {
@@ -28,24 +30,24 @@ func TestEventTypes_NilPointerSafety(t *testing.T) {
 		callType func() string
 	}{
 		{
-			name:     "MoveExecuted nil pointer",
-			callType: (*gameevt.MoveExecuted)(nil).EventType,
-		},
-		{
-			name:     "PhaseTransitioned nil pointer",
-			callType: (*gameevt.PhaseTransitioned)(nil).EventType,
-		},
-		{
-			name:     "GameCompleted nil pointer",
-			callType: (*gameevt.GameCompleted)(nil).EventType,
+			name:     "MoveCompleted nil pointer",
+			callType: (*gameevt.MoveCompleted)(nil).EventType,
 		},
 		{
 			name:     "GameCreated nil pointer",
 			callType: (*gameevt.GameCreated)(nil).EventType,
 		},
 		{
+			name:     "GameCreationFailed nil pointer",
+			callType: (*gameevt.GameCreationFailed)(nil).EventType,
+		},
+		{
 			name:     "PlayerConnected nil pointer",
 			callType: (*gameevt.PlayerConnected)(nil).EventType,
+		},
+		{
+			name:     "TurnEnded nil pointer",
+			callType: (*gameevt.TurnEnded)(nil).EventType,
 		},
 	}
 
@@ -63,35 +65,37 @@ func TestEventTypes_NilPointerSafety(t *testing.T) {
 func TestEventTypes_EventType(t *testing.T) {
 	t.Parallel()
 
+	now := time.Now()
+
 	tests := []struct {
 		name     string
-		event    gameevt.GameEvent
+		event    eventbus.Event
 		expected string
 	}{
 		{
-			name:     "MoveExecuted",
-			event:    &gameevt.MoveExecuted{},
-			expected: gameevt.TypeMoveExecuted,
-		},
-		{
-			name:     "PhaseTransitioned",
-			event:    &gameevt.PhaseTransitioned{},
-			expected: gameevt.TypePhaseTransitioned,
-		},
-		{
-			name:     "GameCompleted",
-			event:    &gameevt.GameCompleted{},
-			expected: gameevt.TypeGameCompleted,
+			name:     "MoveCompleted",
+			event:    gameevt.NewMoveCompleted(1, "u", now, "DEPLOY", 1, "DEPLOY", "DEPLOY", false, nil, nil, nil),
+			expected: gameevt.TypeMoveCompleted,
 		},
 		{
 			name:     "GameCreated",
-			event:    &gameevt.GameCreated{},
+			event:    gameevt.NewGameCreated(1, 0, now, 4, nil, nil),
 			expected: gameevt.TypeGameCreated,
 		},
 		{
+			name:     "GameCreationFailed",
+			event:    gameevt.NewGameCreationFailed(1, now, "boom"),
+			expected: gameevt.TypeGameCreationFailed,
+		},
+		{
 			name:     "PlayerConnected",
-			event:    &gameevt.PlayerConnected{},
+			event:    gameevt.NewPlayerConnected(1, "u", now),
 			expected: gameevt.TypePlayerConnected,
+		},
+		{
+			name:     "TurnEnded",
+			event:    gameevt.NewTurnEnded(1, "u", now, 1),
+			expected: gameevt.TypeTurnEnded,
 		},
 	}
 
@@ -104,7 +108,7 @@ func TestEventTypes_EventType(t *testing.T) {
 	}
 }
 
-func TestEventTypes_GameIDAndTimestamp(t *testing.T) {
+func TestGameEvents_GameIDAndTimestamp(t *testing.T) {
 	t.Parallel()
 
 	now := time.Now()
@@ -116,45 +120,33 @@ func TestEventTypes_GameIDAndTimestamp(t *testing.T) {
 		timestamp time.Time
 	}{
 		{
-			name: "MoveExecuted",
-			event: gameevt.NewMoveExecuted(
+			name: "MoveCompleted",
+			event: gameevt.NewMoveCompleted(
 				42, "user1", now,
-				sqlc.GamePhaseTypeDEPLOY,
-				sqlc.GameMoveLog{},
-				sqlc.GamePhaseTypeDEPLOY,
-				false, 1, nil, nil,
-			),
-			gameID:    42,
-			timestamp: now,
-		},
-		{
-			name: "PhaseTransitioned",
-			event: gameevt.NewPhaseTransitioned(
-				42,
-				"user1",
-				now,
-				sqlc.GamePhaseTypeDEPLOY,
-				sqlc.GamePhaseTypeATTACK,
+				gameapi.GamePhaseTypeDEPLOY,
 				1,
+				gameapi.GamePhaseTypeDEPLOY,
+				gameapi.GamePhaseTypeDEPLOY,
+				false, nil, nil, nil,
 			),
-			gameID:    42,
-			timestamp: now,
-		},
-		{
-			name:      "GameCompleted",
-			event:     gameevt.NewGameCompleted(42, "winner", now, 10),
 			gameID:    42,
 			timestamp: now,
 		},
 		{
 			name:      "GameCreated",
-			event:     gameevt.NewGameCreated(42, now, 4),
+			event:     gameevt.NewGameCreated(42, 10, now, 4, nil, nil),
 			gameID:    42,
 			timestamp: now,
 		},
 		{
 			name:      "PlayerConnected",
 			event:     gameevt.NewPlayerConnected(42, "user1", now),
+			gameID:    42,
+			timestamp: now,
+		},
+		{
+			name:      "TurnEnded",
+			event:     gameevt.NewTurnEnded(42, "user1", now, 5),
 			gameID:    42,
 			timestamp: now,
 		},
@@ -170,243 +162,88 @@ func TestEventTypes_GameIDAndTimestamp(t *testing.T) {
 	}
 }
 
-func TestMoveExecuted_ToRecord_Attack(t *testing.T) {
+func TestGameCreated_LobbyID(t *testing.T) {
 	t.Parallel()
 
-	now := time.Date(2026, 3, 26, 12, 0, 0, 0, time.UTC)
-	moveLog := sqlc.GameMoveLog{ID: 99, GameID: 42, PlayerID: 7}
-	attackResult := &attack.MoveResult{
-		AttackingRegionID: "brazil",
-		DefendingRegionID: "argentina",
-		ConqueringTroops:  3,
-	}
+	now := time.Now()
+	event := gameevt.NewGameCreated(42, 99, now, 4, nil, nil)
+	require.Equal(t, int64(99), event.LobbyID())
+}
 
-	event := gameevt.NewMoveExecuted(
+func TestGameCreationFailed_LobbyIDAndTimestamp(t *testing.T) {
+	t.Parallel()
+
+	now := time.Now()
+	event := gameevt.NewGameCreationFailed(77, now, "out of memory")
+
+	require.Equal(t, int64(77), event.LobbyID())
+	require.Equal(t, now, event.EventTimestamp())
+}
+
+func TestGameCreationFailed_DoesNotImplementGameEvent(t *testing.T) {
+	t.Parallel()
+
+	event := gameevt.NewGameCreationFailed(1, time.Now(), "reason")
+
+	// GameCreationFailed implements bus.Event ...
+	var busEvent eventbus.Event = event
+	require.NotNil(t, busEvent)
+
+	// ... but NOT GameEvent (no GameID method).
+	_, ok := busEvent.(gameevt.GameEvent)
+	require.False(t, ok, "GameCreationFailed must not implement GameEvent")
+}
+
+func TestMoveCompleted_ToRecord(t *testing.T) {
+	t.Parallel()
+
+	now := time.Date(2026, 4, 5, 12, 0, 0, 0, time.UTC)
+
+	event := gameevt.NewMoveCompleted(
 		42, "attacker", now,
-		sqlc.GamePhaseTypeATTACK,
-		moveLog,
-		sqlc.GamePhaseTypeATTACK,
-		false, 5,
-		attackResult, nil,
+		gameapi.GamePhaseTypeATTACK,
+		5,
+		gameapi.GamePhaseTypeDEPLOY,
+		gameapi.GamePhaseTypeATTACK,
+		false, nil, nil, nil,
 	)
 
 	record := event.ToRecord()
 
-	require.Equal(t, gameevt.TypeMoveExecuted, record["event_type"])
+	require.Equal(t, gameevt.TypeMoveCompleted, record["event_type"])
 	require.Equal(t, int64(42), record["game_id"])
 	require.Equal(t, "attacker", record["user_id"])
 	require.Equal(t, now.Format(time.RFC3339), record["timestamp"])
 	require.Equal(t, "ATTACK", record["action_type"])
+	require.Equal(t, int64(5), record["turn"])
+	require.Equal(t, "DEPLOY", record["from_phase"])
 	require.Equal(t, "ATTACK", record["target_phase"])
 	require.Equal(t, false, record["game_over"])
-	require.Equal(t, int64(5), record["turn"])
-	require.Equal(t, int64(99), record["move_log_id"])
-
-	// Attack-specific fields
-	require.Equal(t, "brazil", record["attacking_region_id"])
-	require.Equal(t, "argentina", record["defending_region_id"])
-	require.Equal(t, int64(3), record["conquering_troops"])
-
-	// Cards-specific fields must be absent
-	require.NotContains(t, record, "extra_deployable_troops")
-	require.NotContains(t, record, "region_troop_grants")
 }
 
-func TestMoveExecuted_ToRecord_Cards(t *testing.T) {
+func TestMoveCompleted_ToRecord_GameOver(t *testing.T) {
 	t.Parallel()
 
-	now := time.Date(2026, 3, 26, 12, 0, 0, 0, time.UTC)
-	moveLog := sqlc.GameMoveLog{ID: 100, GameID: 42, PlayerID: 7}
-	cardsResult := &cards.MoveResult{
-		ExtraDeployableTroops: 6,
-		RegionTroopGrants: []cards.RegionTroopGrant{
-			{RegionID: 1, RegionExternalReference: "brazil"},
-			{RegionID: 2, RegionExternalReference: "argentina"},
-		},
-	}
+	now := time.Date(2026, 4, 5, 12, 0, 0, 0, time.UTC)
 
-	event := gameevt.NewMoveExecuted(
-		42, "player1", now,
-		sqlc.GamePhaseTypeCARDS,
-		moveLog,
-		sqlc.GamePhaseTypeDEPLOY,
-		false, 3,
-		nil, cardsResult,
+	event := gameevt.NewMoveCompleted(
+		42, "winner", now,
+		gameapi.GamePhaseTypeATTACK,
+		10,
+		gameapi.GamePhaseTypeATTACK,
+		gameapi.GamePhaseTypeATTACK,
+		true, nil, nil, nil,
 	)
 
 	record := event.ToRecord()
-
-	require.Equal(t, gameevt.TypeMoveExecuted, record["event_type"])
-	require.Equal(t, "CARDS", record["action_type"])
-	require.Equal(t, int64(6), record["extra_deployable_troops"])
-	require.Equal(t, 2, record["region_troop_grants"])
-
-	// Attack-specific fields must be absent
-	require.NotContains(t, record, "attacking_region_id")
-	require.NotContains(t, record, "defending_region_id")
-	require.NotContains(t, record, "conquering_troops")
-}
-
-func TestMoveExecuted_ToRecord_Deploy(t *testing.T) {
-	t.Parallel()
-
-	now := time.Date(2026, 3, 26, 12, 0, 0, 0, time.UTC)
-	event := gameevt.NewMoveExecuted(
-		42, "player1", now,
-		sqlc.GamePhaseTypeDEPLOY,
-		sqlc.GameMoveLog{ID: 101},
-		sqlc.GamePhaseTypeDEPLOY,
-		false, 2,
-		nil, nil,
-	)
-
-	record := event.ToRecord()
-
-	require.Equal(t, "DEPLOY", record["action_type"])
-
-	// No action-specific keys
-	require.NotContains(t, record, "attacking_region_id")
-	require.NotContains(t, record, "defending_region_id")
-	require.NotContains(t, record, "conquering_troops")
-	require.NotContains(t, record, "extra_deployable_troops")
-	require.NotContains(t, record, "region_troop_grants")
-}
-
-func TestMoveExecuted_ToRecord_Conquer(t *testing.T) {
-	t.Parallel()
-
-	now := time.Date(2026, 3, 26, 12, 0, 0, 0, time.UTC)
-	event := gameevt.NewMoveExecuted(
-		42, "player1", now,
-		sqlc.GamePhaseTypeCONQUER,
-		sqlc.GameMoveLog{ID: 102},
-		sqlc.GamePhaseTypeCONQUER,
-		false, 2,
-		nil, nil,
-	)
-
-	record := event.ToRecord()
-
-	require.Equal(t, "CONQUER", record["action_type"])
-
-	require.NotContains(t, record, "attacking_region_id")
-	require.NotContains(t, record, "defending_region_id")
-	require.NotContains(t, record, "conquering_troops")
-	require.NotContains(t, record, "extra_deployable_troops")
-	require.NotContains(t, record, "region_troop_grants")
-}
-
-func TestMoveExecuted_ToRecord_Reinforce(t *testing.T) {
-	t.Parallel()
-
-	now := time.Date(2026, 3, 26, 12, 0, 0, 0, time.UTC)
-	event := gameevt.NewMoveExecuted(
-		42, "player1", now,
-		sqlc.GamePhaseTypeREINFORCE,
-		sqlc.GameMoveLog{ID: 103},
-		sqlc.GamePhaseTypeREINFORCE,
-		false, 2,
-		nil, nil,
-	)
-
-	record := event.ToRecord()
-
-	require.Equal(t, "REINFORCE", record["action_type"])
-
-	require.NotContains(t, record, "attacking_region_id")
-	require.NotContains(t, record, "defending_region_id")
-	require.NotContains(t, record, "conquering_troops")
-	require.NotContains(t, record, "extra_deployable_troops")
-	require.NotContains(t, record, "region_troop_grants")
-}
-
-func TestMoveExecuted_ToRecord_CommonFields(t *testing.T) {
-	t.Parallel()
-
-	now := time.Date(2026, 3, 26, 12, 0, 0, 0, time.UTC)
-	moveLog := sqlc.GameMoveLog{ID: 77, GameID: 42, PlayerID: 5}
-
-	phases := []sqlc.GamePhaseType{
-		sqlc.GamePhaseTypeDEPLOY,
-		sqlc.GamePhaseTypeATTACK,
-		sqlc.GamePhaseTypeCONQUER,
-		sqlc.GamePhaseTypeREINFORCE,
-		sqlc.GamePhaseTypeCARDS,
-	}
-
-	commonKeys := []string{
-		"event_type", "game_id", "user_id", "timestamp",
-		"action_type", "target_phase", "game_over", "turn", "move_log_id",
-	}
-
-	for _, phase := range phases {
-		t.Run(string(phase), func(t *testing.T) {
-			t.Parallel()
-
-			event := gameevt.NewMoveExecuted(
-				42, "player1", now,
-				phase, moveLog, phase, false, 1,
-				nil, nil,
-			)
-
-			record := event.ToRecord()
-
-			for _, key := range commonKeys {
-				require.Contains(
-					t,
-					record,
-					key,
-					"missing common key: %s for phase: %s",
-					key,
-					phase,
-				)
-			}
-		})
-	}
-}
-
-func TestPhaseTransitioned_ToRecord(t *testing.T) {
-	t.Parallel()
-
-	now := time.Date(2026, 3, 26, 12, 0, 0, 0, time.UTC)
-	event := gameevt.NewPhaseTransitioned(
-		42, "player1", now,
-		sqlc.GamePhaseTypeDEPLOY,
-		sqlc.GamePhaseTypeATTACK,
-		5,
-	)
-
-	record := event.ToRecord()
-
-	require.Equal(t, gameevt.TypePhaseTransitioned, record["event_type"])
-	require.Equal(t, int64(42), record["game_id"])
-	require.Equal(t, "player1", record["user_id"])
-	require.Equal(t, now.Format(time.RFC3339), record["timestamp"])
-	require.Equal(t, "DEPLOY", record["from_phase"])
-	require.Equal(t, "ATTACK", record["to_phase"])
-	require.Equal(t, int64(5), record["turn"])
-}
-
-func TestGameCompleted_ToRecord(t *testing.T) {
-	t.Parallel()
-
-	now := time.Date(2026, 3, 26, 12, 0, 0, 0, time.UTC)
-	event := gameevt.NewGameCompleted(42, "winner", now, 10)
-
-	record := event.ToRecord()
-
-	require.Equal(t, gameevt.TypeGameCompleted, record["event_type"])
-	require.Equal(t, int64(42), record["game_id"])
-	require.Equal(t, "winner", record["winner_user_id"])
-	require.Equal(t, now.Format(time.RFC3339), record["timestamp"])
-	require.Equal(t, int64(10), record["turn"])
+	require.Equal(t, true, record["game_over"])
 }
 
 func TestGameCreated_ToRecord(t *testing.T) {
 	t.Parallel()
 
-	now := time.Date(2026, 3, 26, 12, 0, 0, 0, time.UTC)
-	event := gameevt.NewGameCreated(42, now, 4)
+	now := time.Date(2026, 4, 5, 12, 0, 0, 0, time.UTC)
+	event := gameevt.NewGameCreated(42, 99, now, 4, nil, nil)
 
 	record := event.ToRecord()
 
@@ -414,12 +251,43 @@ func TestGameCreated_ToRecord(t *testing.T) {
 	require.Equal(t, int64(42), record["game_id"])
 	require.Equal(t, now.Format(time.RFC3339), record["timestamp"])
 	require.Equal(t, 4, record["num_players"])
+	require.Equal(t, int64(99), record["lobby_id"])
+}
+
+func TestGameCreated_ToRecord_ZeroLobbyIDOmitted(t *testing.T) {
+	t.Parallel()
+
+	now := time.Date(2026, 4, 5, 12, 0, 0, 0, time.UTC)
+	event := gameevt.NewGameCreated(42, 0, now, 4, nil, nil)
+
+	record := event.ToRecord()
+
+	require.NotContains(t, record, "lobby_id", "lobby_id should be omitted when zero")
+	require.Equal(t, int64(42), record["game_id"])
+	require.Equal(t, 4, record["num_players"])
+}
+
+func TestGameCreationFailed_ToRecord(t *testing.T) {
+	t.Parallel()
+
+	now := time.Date(2026, 4, 5, 12, 0, 0, 0, time.UTC)
+	event := gameevt.NewGameCreationFailed(77, now, "out of memory")
+
+	record := event.ToRecord()
+
+	require.Equal(t, gameevt.TypeGameCreationFailed, record["event_type"])
+	require.Equal(t, int64(77), record["lobby_id"])
+	require.Equal(t, now.Format(time.RFC3339), record["timestamp"])
+	require.Equal(t, "out of memory", record["reason"])
+
+	// Must not have game_id (not a GameEvent).
+	require.NotContains(t, record, "game_id")
 }
 
 func TestPlayerConnected_ToRecord(t *testing.T) {
 	t.Parallel()
 
-	now := time.Date(2026, 3, 26, 12, 0, 0, 0, time.UTC)
+	now := time.Date(2026, 4, 5, 12, 0, 0, 0, time.UTC)
 	event := gameevt.NewPlayerConnected(42, "player1", now)
 
 	record := event.ToRecord()
@@ -430,41 +298,83 @@ func TestPlayerConnected_ToRecord(t *testing.T) {
 	require.Equal(t, now.Format(time.RFC3339), record["timestamp"])
 }
 
-func TestMoveExecuted_ToRecord_NilFieldsOmitted(t *testing.T) {
+func TestMoveCompleted_ToRecord_ExcludesSnapshots(t *testing.T) {
 	t.Parallel()
 
-	now := time.Date(2026, 3, 26, 12, 0, 0, 0, time.UTC)
+	now := time.Date(2026, 4, 5, 12, 0, 0, 0, time.UTC)
 
-	// Explicitly pass nil for both result pointers
-	event := gameevt.NewMoveExecuted(
-		42, "player1", now,
-		sqlc.GamePhaseTypeDEPLOY,
-		sqlc.GameMoveLog{ID: 200},
-		sqlc.GamePhaseTypeDEPLOY,
-		false, 1,
-		nil, nil,
+	event := gameevt.NewMoveCompleted(
+		42, "attacker", now,
+		gameapi.GamePhaseTypeATTACK,
+		5,
+		gameapi.GamePhaseTypeDEPLOY,
+		gameapi.GamePhaseTypeATTACK,
+		false,
+		&snapshot.GameSnapshot{
+			Game:    snapshot.GameMeta{ID: 42, Turn: 5},
+			Regions: []snapshot.RegionState{{ID: "r1", OwnerID: "attacker", Troops: 3}},
+		},
+		map[string]*snapshot.PlayerPrivate{
+			"attacker": {Cards: []snapshot.CardState{{ID: 1}}},
+		},
+		[]snapshot.RegionState{{ID: "r1", OwnerID: "defender", Troops: 5}},
 	)
 
 	record := event.ToRecord()
 
-	// Attack-specific keys must not exist
-	_, hasAttacking := record["attacking_region_id"]
-	require.False(t, hasAttacking, "attacking_region_id should be absent when AttackResult is nil")
+	require.NotContains(t, record, "public_snapshot",
+		"ToRecord must exclude public_snapshot to avoid logging large payloads")
+	require.NotContains(t, record, "private_snapshots",
+		"ToRecord must exclude private_snapshots to avoid logging large payloads")
+	require.NotContains(t, record, "previous_regions",
+		"ToRecord must exclude previous_regions to avoid logging large payloads")
 
-	_, hasDefending := record["defending_region_id"]
-	require.False(t, hasDefending, "defending_region_id should be absent when AttackResult is nil")
+	// Sanity: scalar fields are still present.
+	require.Equal(t, gameevt.TypeMoveCompleted, record["event_type"])
+	require.Equal(t, int64(42), record["game_id"])
+}
 
-	_, hasConquering := record["conquering_troops"]
-	require.False(t, hasConquering, "conquering_troops should be absent when AttackResult is nil")
+func TestGameCreated_ToRecord_ExcludesSnapshots(t *testing.T) {
+	t.Parallel()
 
-	// Cards-specific keys must not exist
-	_, hasExtraTroops := record["extra_deployable_troops"]
-	require.False(
-		t,
-		hasExtraTroops,
-		"extra_deployable_troops should be absent when CardsResult is nil",
+	now := time.Date(2026, 4, 5, 12, 0, 0, 0, time.UTC)
+
+	event := gameevt.NewGameCreated(
+		42, 99, now, 4,
+		&snapshot.GameSnapshot{
+			Game:    snapshot.GameMeta{ID: 42, Turn: 1},
+			Regions: []snapshot.RegionState{{ID: "r1", OwnerID: "p1", Troops: 1}},
+		},
+		map[string]*snapshot.PlayerPrivate{
+			"p1": {Cards: []snapshot.CardState{{ID: 1}}},
+		},
 	)
 
-	_, hasGrants := record["region_troop_grants"]
-	require.False(t, hasGrants, "region_troop_grants should be absent when CardsResult is nil")
+	record := event.ToRecord()
+
+	require.NotContains(t, record, "public_snapshot",
+		"ToRecord must exclude public_snapshot to avoid logging large payloads")
+	require.NotContains(t, record, "private_snapshots",
+		"ToRecord must exclude private_snapshots to avoid logging large payloads")
+
+	// Sanity: scalar fields are still present.
+	require.Equal(t, gameevt.TypeGameCreated, record["event_type"])
+	require.Equal(t, int64(42), record["game_id"])
+	require.Equal(t, 4, record["num_players"])
+}
+
+func TestTurnEnded_ToRecord(t *testing.T) {
+	t.Parallel()
+
+	now := time.Date(2026, 4, 5, 12, 0, 0, 0, time.UTC)
+	event := gameevt.NewTurnEnded(42, "player1", now, 7)
+
+	record := event.ToRecord()
+
+	require.Equal(t, gameevt.TypeTurnEnded, record["event_type"])
+	require.Equal(t, int64(42), record["game_id"])
+	require.Equal(t, "player1", record["user_id"])
+	require.Equal(t, now.Format(time.RFC3339), record["timestamp"])
+	require.Equal(t, int64(7), record["turn"])
+	require.Equal(t, "WAITING", record["action_type"])
 }

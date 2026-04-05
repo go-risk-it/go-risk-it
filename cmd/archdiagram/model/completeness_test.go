@@ -34,9 +34,7 @@ var completenessLayers = map[string]*model.LayerInfo{
 // the classifier returns empty strings for them, causing BuildModel to skip them.
 //
 //nolint:gochecknoglobals // test-only exclusion set
-var packagesWithoutDocGo = map[string]bool{
-	"game/consumers/converter": true,
-}
+var packagesWithoutDocGo = map[string]bool{}
 
 // loadLivePackages runs `go list -json ./internal/...` against the real codebase
 // and returns parsed GoPackage values. Requires the codebase to compile.

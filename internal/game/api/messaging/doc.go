@@ -1,11 +1,9 @@
-// Package messaging defines the WebSocket message types sent to game clients.
+// Package messaging defines the WebSocket message envelope and type constants
+// for real-time communication with game clients.
 //
-// Each state type represents one slice of the game state that is broadcast
-// to connected players: board (regions and troops), cards (hand contents),
-// game (phase and turn), missions (objective details), players (connection
-// and alive/dead status), and move history. Generic types [GameState] and
-// [MissionState] are parameterized over their phase- or mission-specific
-// payloads using Go type-set constraints.
+// The protocol uses two message types: [PlayerViewType] delivers the full
+// per-player game snapshot (board, cards, mission, phase, players, move log),
+// and [PlayerConnectionType] notifies other players of connect/disconnect events.
 //
 // # Layer
 //

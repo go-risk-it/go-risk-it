@@ -7,11 +7,11 @@ import (
 	"testing"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/attack"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/cards"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/conquer"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/deploy"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/attack"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/cards"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/conquer"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/deploy"
 )
 
 // Generator produces valid moves for each game phase.

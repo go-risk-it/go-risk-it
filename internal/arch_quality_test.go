@@ -637,8 +637,8 @@ func TestArch_RouteFileCountCeiling(t *testing.T) {
 //
 //nolint:gochecknoglobals // test-only list
 var routeModuleDirs = []string{
-	"./internal/game/routes",
-	"./internal/lobby/routes",
+	"./internal/game/web/routes",
+	"./internal/lobby/web/routes",
 }
 
 // Rule M1: module shape ratchet — both game/routes/ and lobby/routes/ must

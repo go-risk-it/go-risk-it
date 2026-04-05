@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
-	"github.com/go-risk-it/go-risk-it/internal/loadtest/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/player"
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -137,7 +137,7 @@ func (h *ErrorHandler) handleExecution(bus *Bus, evt MoveFailedEvent) {
 		if advErr := activeREST.Advance(
 			context.Background(),
 			h.gameCtx.GameID,
-			string(gamestate.Cards),
+			string(snapshot.PhaseCards),
 		); advErr != nil {
 			observe.Error(h.gameCtx.Ctx, advErr, "advance past cards also failed",
 				attribute.Int("gameIndex", h.gameCtx.GameIndex),

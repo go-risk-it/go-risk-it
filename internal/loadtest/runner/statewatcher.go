@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/gamestate"
 )
 
@@ -49,11 +50,16 @@ func (h *StateWatcherHandler) handleConflict(bus *Bus, _ Event) {
 	})
 }
 
-// waitSettleAndEmitState waits for a WS state update, sleeps the settle time,
-// snapshots player 0, and emits a StateReceivedEvent. Shared by ErrorHandler
-// and StateWatcherHandler.
+// waitSettleAndEmitState waits for all players' WS views to update, snapshots
+// player 0, and emits a StateReceivedEvent.
+//
+// We wait for ALL players (not just one) because the unified playerView protocol
+// sends exactly one WS message per player per move. Waiting on "any" single player
+// could return before the others have processed their messages, yielding a stale
+// snapshot when reading a different player's view later in the pipeline.
 func waitSettleAndEmitState(bus *Bus, gameCtx *GameSession, timeouts Timeouts) {
-	waitForAnyUpdate(gameCtx.Players, timeouts.UpdateWait, gameCtx.Ctx)
+	waitForAllUpdates(gameCtx.Players, timeouts.UpdateWait, gameCtx.Ctx)
+
 	wsReceivedAt := time.Now()
 	time.Sleep(timeouts.PostMoveSettle)
 
@@ -65,46 +71,28 @@ func waitSettleAndEmitState(bus *Bus, gameCtx *GameSession, timeouts Timeouts) {
 	})
 }
 
-// waitForAnyUpdate waits for a state update from any player's WS connection.
-//
-//nolint:cyclop // multi-player state coordination
-func waitForAnyUpdate(players []*PlayerInfo, timeout time.Duration, ctx context.Context) {
+// waitForAllUpdates waits until every player's WS connection has received at
+// least one update, or the timeout/context expires.
+func waitForAllUpdates(players []*PlayerInfo, timeout time.Duration, ctx context.Context) {
 	timer := time.NewTimer(timeout)
 	defer timer.Stop()
 
-	done := make(chan struct{})
-	defer close(done)
-
-	signal := make(chan struct{}, 1)
 	for _, p := range players {
-		go func(updated <-chan struct{}, wsDone <-chan struct{}) {
-			select {
-			case <-updated:
-				select {
-				case signal <- struct{}{}:
-				default:
-				}
-			case <-wsDone:
-				select {
-				case signal <- struct{}{}:
-				default:
-				}
-			case <-done:
-			}
-		}(p.WS.View().Updated(), p.WS.Done())
-	}
-
-	select {
-	case <-signal:
-	case <-timer.C:
-	case <-ctx.Done():
+		select {
+		case <-p.WS.View().Updated():
+		case <-p.WS.Done():
+		case <-timer.C:
+			return
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 
 // waitForPhaseChange waits until the view shows a different phase than oldPhase.
 func waitForPhaseChange(
 	v *gamestate.View,
-	oldPhase gamestate.PhaseType,
+	oldPhase snapshot.PhaseType,
 	timeout time.Duration,
 	ctx context.Context,
 ) {

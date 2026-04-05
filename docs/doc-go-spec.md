@@ -99,7 +99,6 @@ All other non-excluded packages. Required doc.go sections:
 | `game/api/messaging` | api |
 | `game/api/rest/request` | api |
 | `game/api/rest/response` | api |
-| `game/commands` | api |
 | `game/config` | game-support |
 | `game/consumers` | web |
 | `game/ctx` | game-domain |

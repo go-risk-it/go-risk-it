@@ -31,10 +31,10 @@ func TestGroupPackages_BasicGrouping(t *testing.T) {
 
 	// Packages under game/logic should land in game_services (not move_pipeline).
 	archModel := makeModel(
-		"game/logic/board",
-		"game/logic/card",
-		"game/logic/phase",
-		"game/logic/player",
+		"game/internal/logic/board",
+		"game/internal/logic/card",
+		"game/internal/logic/phase",
+		"game/internal/logic/player",
 	)
 
 	GroupPackages(archModel)
@@ -45,10 +45,10 @@ func TestGroupPackages_BasicGrouping(t *testing.T) {
 	}
 
 	for _, suffix := range []string{
-		"game/logic/board",
-		"game/logic/card",
-		"game/logic/phase",
-		"game/logic/player",
+		"game/internal/logic/board",
+		"game/internal/logic/card",
+		"game/internal/logic/phase",
+		"game/internal/logic/player",
 	} {
 		if !slices.Contains(sub.Packages, suffix) {
 			t.Errorf("expected %q in game_services, got packages: %v", suffix, sub.Packages)
@@ -66,10 +66,10 @@ func TestGroupPackages_LongestPrefixWins(t *testing.T) {
 	// game/logic/move/attack should match game/logic/move (move_pipeline),
 	// not game/logic (game_services).
 	archModel := makeModel(
-		"game/logic/board",
-		"game/logic/move/attack",
-		"game/logic/move/deploy",
-		"game/logic/move/orchestration",
+		"game/internal/logic/board",
+		"game/internal/logic/move/attack",
+		"game/internal/logic/move/deploy",
+		"game/internal/logic/move/orchestration",
 	)
 
 	GroupPackages(archModel)
@@ -82,9 +82,9 @@ func TestGroupPackages_LongestPrefixWins(t *testing.T) {
 	}
 
 	for _, suffix := range []string{
-		"game/logic/move/attack",
-		"game/logic/move/deploy",
-		"game/logic/move/orchestration",
+		"game/internal/logic/move/attack",
+		"game/internal/logic/move/deploy",
+		"game/internal/logic/move/orchestration",
 	} {
 		if !slices.Contains(moveSub.Packages, suffix) {
 			t.Errorf("expected %q in move_pipeline, got: %v", suffix, moveSub.Packages)
@@ -99,7 +99,7 @@ func TestGroupPackages_LongestPrefixWins(t *testing.T) {
 		return
 	}
 
-	if !slices.Contains(gameSub.Packages, "game/logic/board") {
+	if !slices.Contains(gameSub.Packages, "game/internal/logic/board") {
 		t.Errorf("expected game/logic/board in game_services, got: %v", gameSub.Packages)
 	}
 }
@@ -120,8 +120,8 @@ func TestGroupPackages_Overrides(t *testing.T) {
 			wantLabel: "Game Consumers",
 		},
 		{
-			name:      "game/config routes to game_support",
-			suffix:    "game/config",
+			name:      "game/internal/config routes to game_support",
+			suffix:    "game/internal/config",
 			wantSubID: "game_support",
 			wantLabel: "Game Support",
 		},
@@ -132,20 +132,20 @@ func TestGroupPackages_Overrides(t *testing.T) {
 			wantLabel: "Game Services",
 		},
 		{
-			name:      "game/headlines routes to game_support",
-			suffix:    "game/headlines",
+			name:      "game/internal/handlers routes to game_support",
+			suffix:    "game/internal/handlers",
 			wantSubID: "game_support",
 			wantLabel: "Game Support",
 		},
 		{
-			name:      "game/rand routes to game_services",
-			suffix:    "game/rand",
+			name:      "game/internal/rand routes to game_services",
+			suffix:    "game/internal/rand",
 			wantSubID: "game_services",
 			wantLabel: "Game Services",
 		},
 		{
-			name:      "game/snapshot routes to game_support",
-			suffix:    "game/snapshot",
+			name:      "game/internal/snapshot routes to game_support",
+			suffix:    "game/internal/snapshot",
 			wantSubID: "game_support",
 			wantLabel: "Game Support",
 		},
@@ -231,7 +231,7 @@ func TestGroupPackages_OverrideTakesPrecedenceOverRoot(t *testing.T) {
 	// game/config has prefix "game/" but is overridden to game_support.
 	// Without the override, it would match no root (no "game" root exists).
 	// game/snapshot also overridden to game_support instead of falling through.
-	archModel := makeModel("game/config", "game/snapshot", "game/logic/board")
+	archModel := makeModel("game/internal/config", "game/internal/snapshot", "game/internal/logic/board")
 
 	GroupPackages(archModel)
 
@@ -242,17 +242,17 @@ func TestGroupPackages_OverrideTakesPrecedenceOverRoot(t *testing.T) {
 		return
 	}
 
-	if !slices.Contains(support.Packages, "game/config") {
+	if !slices.Contains(support.Packages, "game/internal/config") {
 		t.Errorf("expected game/config in game_support")
 	}
 
-	if !slices.Contains(support.Packages, "game/snapshot") {
+	if !slices.Contains(support.Packages, "game/internal/snapshot") {
 		t.Errorf("expected game/snapshot in game_support")
 	}
 
 	// game/logic/board should NOT be in game_support
-	if slices.Contains(support.Packages, "game/logic/board") {
-		t.Error("game/logic/board should not be in game_support")
+	if slices.Contains(support.Packages, "game/internal/logic/board") {
+		t.Error("game/internal/logic/board should not be in game_support")
 	}
 }
 
@@ -261,7 +261,7 @@ func TestGroupPackages_NewPackage(t *testing.T) {
 
 	// A new package under game/logic/ should automatically land in game_services
 	// without any map update.
-	archModel := makeModel("game/logic/foo", "game/logic/board")
+	archModel := makeModel("game/internal/logic/foo", "game/internal/logic/board")
 
 	GroupPackages(archModel)
 
@@ -272,7 +272,7 @@ func TestGroupPackages_NewPackage(t *testing.T) {
 		return
 	}
 
-	if !slices.Contains(sub.Packages, "game/logic/foo") {
+	if !slices.Contains(sub.Packages, "game/internal/logic/foo") {
 		t.Errorf("expected game/logic/foo in game_services, got: %v", sub.Packages)
 	}
 }
@@ -281,7 +281,7 @@ func TestGroupPackages_NewMovePackage(t *testing.T) {
 	t.Parallel()
 
 	// A new package under game/logic/move/ should land in move_pipeline.
-	archModel := makeModel("game/logic/move/newmove")
+	archModel := makeModel("game/internal/logic/move/newmove")
 
 	GroupPackages(archModel)
 
@@ -292,7 +292,7 @@ func TestGroupPackages_NewMovePackage(t *testing.T) {
 		return
 	}
 
-	if !slices.Contains(sub.Packages, "game/logic/move/newmove") {
+	if !slices.Contains(sub.Packages, "game/internal/logic/move/newmove") {
 		t.Errorf("expected game/logic/move/newmove in move_pipeline")
 	}
 }
@@ -347,7 +347,7 @@ func TestGroupPackages_LabelGeneration(t *testing.T) {
 		{
 			name:      "explicit label for move_pipeline",
 			subsystem: "move_pipeline",
-			suffix:    "game/logic/move/attack",
+			suffix:    "game/internal/logic/move/attack",
 			wantLabel: "Move Pipeline",
 		},
 	}
@@ -440,18 +440,16 @@ func TestGroupPackages_AllPackagesAssigned(t *testing.T) {
 	suffixes := []string{
 		"game/api",
 		"game/api/messaging",
-		"game/commands",
-		"game/config",
+		"game/internal/config",
 		"game/ctx",
-		"game/data/db",
+		"game/internal/data/db",
 		"game/events",
-		"game/headlines",
-		"game/logic/board",
-		"game/logic/move/attack",
+		"game/internal/handlers",
+		"game/internal/logic/board",
+		"game/internal/logic/move/attack",
 		"game/consumers",
-		"game/consumers/converter",
 		"game/routes",
-		"game/snapshot",
+		"game/internal/snapshot",
 		"game/ws",
 		"kernel/config",
 		"kernel/bus",
@@ -498,12 +496,12 @@ func TestGroupPackages_SubsystemIDsAreD2Safe(t *testing.T) {
 
 	// D2 identifiers cannot contain slashes. Verify all IDs use underscores.
 	archModel := makeModel(
-		"lobby/ctx",         // standalone
-		"game/logic/board",  // root match
-		"game/consumers",    // override
-		"web/middleware",    // override
-		"kernel/config",     // override → kernel_config
-		"game/logic/move/x", // longest-prefix
+		"lobby/ctx",                  // standalone
+		"game/internal/logic/board",  // root match
+		"game/consumers",             // override
+		"web/middleware",             // override
+		"kernel/config",              // override → kernel_config
+		"game/internal/logic/move/x", // longest-prefix
 	)
 
 	GroupPackages(archModel)
@@ -524,10 +522,10 @@ func TestGroupPackages_PackagesSorted(t *testing.T) {
 
 	// Packages within a subsystem should be sorted for deterministic output.
 	archModel := makeModel(
-		"game/logic/player",
-		"game/logic/board",
-		"game/logic/card",
-		"game/logic/phase",
+		"game/internal/logic/player",
+		"game/internal/logic/board",
+		"game/internal/logic/card",
+		"game/internal/logic/phase",
 	)
 
 	GroupPackages(archModel)

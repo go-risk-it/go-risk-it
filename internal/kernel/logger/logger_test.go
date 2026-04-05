@@ -8,12 +8,9 @@ import (
 	"testing"
 	"time"
 
+	gameapi "github.com/go-risk-it/go-risk-it/internal/game/api"
 	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/game/events"
-	"github.com/go-risk-it/go-risk-it/internal/game/headlines"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/attack"
-	"github.com/go-risk-it/go-risk-it/internal/game/logic/move/cards"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/logger"
@@ -81,109 +78,28 @@ func TestRegister_LogsAllEventTypes(t *testing.T) {
 		expectedPayload   map[string]any
 	}{
 		{
-			name: "MoveExecuted/deploy_no_result",
-			event: gameevt.NewMoveExecuted(
+			name: "MoveCompleted/deploy",
+			event: gameevt.NewMoveCompleted(
 				42, "player1", fixedTime,
-				sqlc.GamePhaseTypeDEPLOY,
-				sqlc.GameMoveLog{ID: 101},
-				sqlc.GamePhaseTypeDEPLOY,
-				false, 2,
-				nil, nil,
+				gameapi.GamePhaseTypeDEPLOY, 2,
+				gameapi.GamePhaseTypeDEPLOY, gameapi.GamePhaseTypeDEPLOY,
+				false, nil, nil, nil,
 			),
 			expectedGameID:    42,
-			expectedEventType: gameevt.TypeMoveExecuted,
+			expectedEventType: gameevt.TypeMoveCompleted,
 			expectedPayload: map[string]any{
-				"event_type":   gameevt.TypeMoveExecuted,
+				"event_type":   gameevt.TypeMoveCompleted,
 				"game_id":      float64(42),
 				"user_id":      "player1",
-				"action_type":  string(sqlc.GamePhaseTypeDEPLOY),
-				"target_phase": string(sqlc.GamePhaseTypeDEPLOY),
+				"action_type":  string(gameapi.GamePhaseTypeDEPLOY),
+				"target_phase": string(gameapi.GamePhaseTypeDEPLOY),
 				"game_over":    false,
 				"turn":         float64(2),
-				"move_log_id":  float64(101),
-			},
-		},
-		{
-			name: "MoveExecuted/attack_result",
-			event: gameevt.NewMoveExecuted(
-				42, "attacker", fixedTime,
-				sqlc.GamePhaseTypeATTACK,
-				sqlc.GameMoveLog{ID: 99},
-				sqlc.GamePhaseTypeATTACK,
-				false, 5,
-				&attack.MoveResult{
-					AttackingRegionID: "brazil",
-					DefendingRegionID: "argentina",
-					ConqueringTroops:  3,
-				},
-				nil,
-			),
-			expectedGameID:    42,
-			expectedEventType: gameevt.TypeMoveExecuted,
-			expectedPayload: map[string]any{
-				"attacking_region_id": "brazil",
-				"defending_region_id": "argentina",
-				"conquering_troops":   float64(3),
-			},
-		},
-		{
-			name: "MoveExecuted/cards_result",
-			event: gameevt.NewMoveExecuted(
-				42, "player1", fixedTime,
-				sqlc.GamePhaseTypeCARDS,
-				sqlc.GameMoveLog{ID: 100},
-				sqlc.GamePhaseTypeDEPLOY,
-				false, 3,
-				nil,
-				&cards.MoveResult{
-					ExtraDeployableTroops: 6,
-					RegionTroopGrants: []cards.RegionTroopGrant{
-						{RegionID: 1, RegionExternalReference: "brazil"},
-						{RegionID: 2, RegionExternalReference: "argentina"},
-					},
-				},
-			),
-			expectedGameID:    42,
-			expectedEventType: gameevt.TypeMoveExecuted,
-			expectedPayload: map[string]any{
-				"extra_deployable_troops": float64(6),
-				"region_troop_grants":     float64(2),
-			},
-		},
-		{
-			name: "PhaseTransitioned",
-			event: gameevt.NewPhaseTransitioned(
-				42, "player1", fixedTime,
-				sqlc.GamePhaseTypeDEPLOY,
-				sqlc.GamePhaseTypeATTACK,
-				5,
-			),
-			expectedGameID:    42,
-			expectedEventType: gameevt.TypePhaseTransitioned,
-			expectedPayload: map[string]any{
-				"event_type": gameevt.TypePhaseTransitioned,
-				"game_id":    float64(42),
-				"user_id":    "player1",
-				"from_phase": string(sqlc.GamePhaseTypeDEPLOY),
-				"to_phase":   string(sqlc.GamePhaseTypeATTACK),
-				"turn":       float64(5),
-			},
-		},
-		{
-			name:              "GameCompleted",
-			event:             gameevt.NewGameCompleted(42, "winner", fixedTime, 10),
-			expectedGameID:    42,
-			expectedEventType: gameevt.TypeGameCompleted,
-			expectedPayload: map[string]any{
-				"event_type":     gameevt.TypeGameCompleted,
-				"game_id":        float64(42),
-				"winner_user_id": "winner",
-				"turn":           float64(10),
 			},
 		},
 		{
 			name:              "GameCreated",
-			event:             gameevt.NewGameCreated(42, fixedTime, 4),
+			event:             gameevt.NewGameCreated(42, 0, fixedTime, 4, nil, nil),
 			expectedGameID:    42,
 			expectedEventType: gameevt.TypeGameCreated,
 			expectedPayload: map[string]any{
@@ -205,7 +121,7 @@ func TestRegister_LogsAllEventTypes(t *testing.T) {
 		},
 		{
 			name: "PlayerEliminated",
-			event: headlines.NewPlayerEliminated(
+			event: gameevt.NewPlayerEliminated(
 				42,
 				"victim",
 				"attacker",
@@ -213,9 +129,9 @@ func TestRegister_LogsAllEventTypes(t *testing.T) {
 				7,
 			),
 			expectedGameID:    42,
-			expectedEventType: headlines.TypePlayerEliminated,
+			expectedEventType: gameevt.TypePlayerEliminated,
 			expectedPayload: map[string]any{
-				"event_type":         headlines.TypePlayerEliminated,
+				"event_type":         gameevt.TypePlayerEliminated,
 				"game_id":            float64(42),
 				"eliminated_user_id": "victim",
 				"eliminator_user_id": "attacker",
@@ -224,7 +140,7 @@ func TestRegister_LogsAllEventTypes(t *testing.T) {
 		},
 		{
 			name: "ContinentCaptured",
-			event: headlines.NewContinentCaptured(
+			event: gameevt.NewContinentCaptured(
 				42,
 				"player1",
 				fixedTime,
@@ -232,9 +148,9 @@ func TestRegister_LogsAllEventTypes(t *testing.T) {
 				3,
 			),
 			expectedGameID:    42,
-			expectedEventType: headlines.TypeContinentCaptured,
+			expectedEventType: gameevt.TypeContinentCaptured,
 			expectedPayload: map[string]any{
-				"event_type":   headlines.TypeContinentCaptured,
+				"event_type":   gameevt.TypeContinentCaptured,
 				"game_id":      float64(42),
 				"user_id":      "player1",
 				"continent_id": "europe",
@@ -243,11 +159,11 @@ func TestRegister_LogsAllEventTypes(t *testing.T) {
 		},
 		{
 			name:              "ContinentLost",
-			event:             headlines.NewContinentLost(42, "player1", fixedTime, "asia", 5),
+			event:             gameevt.NewContinentLost(42, "player1", fixedTime, "asia", 5),
 			expectedGameID:    42,
-			expectedEventType: headlines.TypeContinentLost,
+			expectedEventType: gameevt.TypeContinentLost,
 			expectedPayload: map[string]any{
-				"event_type":   headlines.TypeContinentLost,
+				"event_type":   gameevt.TypeContinentLost,
 				"game_id":      float64(42),
 				"user_id":      "player1",
 				"continent_id": "asia",
@@ -337,7 +253,7 @@ func TestRegister_LogsTraceIDFromLinkedSpan(
 	})
 
 	// Emit a game event with the GameContext as parent.
-	evt := gameevt.NewGameCreated(42, fixedTime, 4)
+	evt := gameevt.NewGameCreated(42, 0, fixedTime, 4, nil, nil)
 	bus.Emit(gameCtx, evt)
 
 	// Wait for handlers to complete.

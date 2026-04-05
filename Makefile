@@ -30,8 +30,14 @@ sqlc: ## Generate SQLC code to interact with the database
 
 mock: destroy ## Generate mocks
 	@echo "Building..."
-	@rm -rf mocks
+	@rm -rf mocks internal/game/testmocks
 	@docker compose run --rm mockery
+	@# Relocate game/internal mocks inside the game module (Go internal/ visibility)
+	@if [ -d mocks/internal_/game/internal_ ]; then \
+		mkdir -p internal/game/testmocks && \
+		cp -r mocks/internal_/game/internal_/* internal/game/testmocks/ && \
+		rm -rf mocks/internal_/game/internal_; \
+	fi
 
 destroy:
 	@echo "Destroying existing environment..."

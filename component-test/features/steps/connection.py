@@ -4,12 +4,10 @@ import logging
 from behave import *
 from websockets.sync.client import connect
 
-from src.game.api.board_state_message import BoardStateMessage
-from src.game.api.card_state_message import CardStateMessage
-from src.game.api.game_state_message import GameStateMessage
-from src.game.api.mission_state_message import MissionStateMessage
-from src.game.api.player_state_message import PlayerStateMessage
-from src.game.api.move_history_message import MoveHistoryMessage
+from src.game.api.player_view_message import PlayerViewMessage
+from src.game.api.game_state_message import GameStateData
+from src.game.api.player_state_message import PlayerStateData
+from src.game.api.card_state_message import CardStateData
 from src.core.context import RiskItContext, IndexedBoardStateData
 from src.lobby.api.lobby_state_message import LobbyStateMessage
 
@@ -26,32 +24,48 @@ def step_impl(context: RiskItContext, player: str):
     context.players[player].connection = conn
 
 
+def _decompose_player_view(context: RiskItContext, parsed_message: dict, player: str) -> None:
+    """Decompose a playerView message into the legacy context fields.
+
+    The server sends a single playerView message. To avoid rewriting every step
+    definition, we split it back into the individual context fields that steps
+    already access: game_state, board_state, player_state, card_state.
+    """
+    pv = PlayerViewMessage.model_validate(parsed_message)
+    data = pv.data
+
+    # game_state: reconstruct GameStateData from game meta + phase
+    context.game_state = GameStateData(
+        id=data.game.id,
+        turn=data.game.turn,
+        phase=data.phase,
+        winnerUserId=data.game.winnerUserId,
+    )
+
+    # board_state: indexed by region id
+    context.board_state = IndexedBoardStateData(data.regions)
+
+    # player_state: wrap in PlayerStateData
+    context.player_state = PlayerStateData(players=data.players)
+
+    # card_state: per-player, keyed by player name
+    if not hasattr(context, "card_state"):
+        context.card_state = {}
+    context.card_state[player] = CardStateData(cards=data.cards)
+
+
 def deserialize(context: RiskItContext, message: str, player: str) -> None:
     parsed_message = json.loads(message)
     message_type = parsed_message["type"]
 
     match message_type:
-        case "gameState":
-            game_state_message = GameStateMessage.model_validate(parsed_message)
-            context.game_state = game_state_message.data
-        case "playerState":
-            player_state_message = PlayerStateMessage.model_validate(parsed_message)
-            context.player_state = player_state_message.data
-        case "boardState":
-            board_state_message = BoardStateMessage.model_validate(parsed_message)
-            context.board_state = IndexedBoardStateData(board_state_message.data.regions)
-        case "cardState":
-            card_state_message = CardStateMessage.model_validate(parsed_message)
-            if not hasattr(context, "card_state"):
-                context.card_state = {}
-            context.card_state[player] = card_state_message.data
-        case "moveHistory":
-            MoveHistoryMessage.model_validate(parsed_message)
+        case "playerView":
+            _decompose_player_view(context, parsed_message, player)
+        case "playerConnection":
+            pass  # presence notification, no state to store
         case "lobbyState":
             lobby_state_message = LobbyStateMessage.model_validate(parsed_message)
             context.lobby_state = lobby_state_message.data
-        case "missionState":
-            _ = MissionStateMessage.model_validate(parsed_message)
         case _:
             raise ValueError(f"Unknown message type: {message_type}")
 

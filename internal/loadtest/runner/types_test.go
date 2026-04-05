@@ -23,6 +23,5 @@ func TestDefaultTimeouts(t *testing.T) {
 	assert.Equal(t, 1*time.Second, got.InitialStateWait)
 	assert.Equal(t, 3*time.Second, got.UpdateWait)
 	assert.Equal(t, 3*time.Second, got.PhaseChangeWait)
-	assert.Equal(t, 50*time.Millisecond, got.PostMoveSettle)
 	assert.Equal(t, 20, got.MaxConsecutiveErr)
 }

@@ -1,14 +1,15 @@
 package smart
 
 import (
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/mapgraph"
 )
 
 // BoardView provides derived board analysis rebuilt from each snapshot.
 type BoardView struct {
-	RegionMap          map[string]*gamestate.Region
-	MyRegions          []*gamestate.Region
+	RegionMap          map[string]*snapshot.RegionState
+	MyRegions          []*snapshot.RegionState
 	BorderRegions      map[string]bool     // my regions with at least one enemy neighbour
 	InteriorRegions    map[string]bool     // my regions with no enemy neighbours
 	ContinentProgress  map[string]float64  // continent ID -> fraction owned (0.0-1.0)
@@ -25,7 +26,7 @@ func NewBoardView(
 	graph *mapgraph.Graph,
 ) *BoardView {
 	bv := &BoardView{
-		RegionMap:          make(map[string]*gamestate.Region),
+		RegionMap:          make(map[string]*snapshot.RegionState),
 		BorderRegions:      make(map[string]bool),
 		InteriorRegions:    make(map[string]bool),
 		ContinentProgress:  make(map[string]float64),
@@ -33,13 +34,13 @@ func NewBoardView(
 		PlayerRegionCounts: make(map[string]int),
 	}
 
-	if snap.BoardState == nil {
+	if snap.PlayerView == nil {
 		return bv
 	}
 
 	// Build region map and count regions per player.
-	for i := range snap.BoardState.Regions {
-		r := &snap.BoardState.Regions[i]
+	for i := range snap.PlayerView.Regions {
+		r := &snap.PlayerView.Regions[i]
 		bv.RegionMap[r.ID] = r
 
 		if r.OwnerID != "" {
@@ -48,8 +49,8 @@ func NewBoardView(
 	}
 
 	// Identify my regions and classify border vs interior.
-	for i := range snap.BoardState.Regions {
-		r := &snap.BoardState.Regions[i]
+	for i := range snap.PlayerView.Regions {
+		r := &snap.PlayerView.Regions[i]
 		if r.OwnerID != userID {
 			continue
 		}
@@ -150,7 +151,7 @@ func (bv *BoardView) BestEnemyNeighborTroops(
 
 func hasEnemyNeighbour(
 	regionID, userID string,
-	regionMap map[string]*gamestate.Region,
+	regionMap map[string]*snapshot.RegionState,
 	graph *mapgraph.Graph,
 ) bool {
 	for _, neighbourID := range graph.NeighboursOf(regionID) {

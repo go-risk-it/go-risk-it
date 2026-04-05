@@ -20,6 +20,11 @@ type Gateway interface {
 
 // Manager composes all narrow lobby WebSocket interfaces.
 // Consumers should depend on the narrowest interface they need.
+//
+// See game/ws/interfaces.go for the Generic Manager[C] evaluation (DROP).
+// Lobby's 2-interface surface (Writer + Gateway, ~56 LOC) vs game's
+// 4-interface surface (+ Presence + Lifecycle, ~139 LOC) is the structural
+// asymmetry that makes a generic abstraction counterproductive.
 type Manager interface {
 	Writer
 	Gateway

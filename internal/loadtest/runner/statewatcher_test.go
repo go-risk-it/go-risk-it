@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/player"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +16,7 @@ import (
 func makeStateWatcherHandler(
 	ctx context.Context,
 ) (*StateWatcherHandler, *GameSession) {
-	snap := mkSnap(0, gamestate.Deploy, "")
+	snap := mkSnap(0, snapshot.PhaseDeploy, "")
 	ws0 := newFakeWSWithState(snap)
 
 	gameCtx := &GameSession{
@@ -32,11 +33,28 @@ func makeStateWatcherHandler(
 		timeouts: Timeouts{
 			UpdateWait:      100 * time.Millisecond,
 			PhaseChangeWait: 100 * time.Millisecond,
-			PostMoveSettle:  10 * time.Millisecond,
 		},
 	}
 
 	return h, gameCtx
+}
+
+func signalWSUpdatePlayerView(t *testing.T, p *PlayerInfo, pv *snapshot.PlayerView) {
+	t.Helper()
+
+	// Ensure Mission is set for JSON round-trip (PlayerMission.UnmarshalJSON
+	// errors on empty type).
+	if pv.Mission.Type == "" {
+		pv.Mission = snapshot.PlayerMission{
+			Type:   snapshot.MissionTwentyFourTerritories,
+			Detail: snapshot.TwentyFourTerritoriesMission{},
+		}
+	}
+
+	data, err := json.Marshal(pv)
+	require.NoError(t, err)
+
+	_ = p.WS.View().Apply(gamestate.WSMessage{Type: "playerView", Payload: data})
 }
 
 func TestStateWatcher_MoveSucceeded_EmitsState(t *testing.T) {
@@ -50,12 +68,13 @@ func TestStateWatcher_MoveSucceeded_EmitsState(t *testing.T) {
 	// Signal an update on the WS view so waitForAnyUpdate returns quickly.
 	go func() {
 		time.Sleep(10 * time.Millisecond)
-		data, _ := json.Marshal( //nolint:errchkjson // RawMessage is always valid JSON
-
-			&gamestate.GameState{Turn: 1, Phase: gamestate.Phase{Type: gamestate.Deploy}},
-		)
-		_ = gameCtx.Players[0].WS.View().
-			Apply(gamestate.WSMessage{Type: "gameState", Payload: data})
+		signalWSUpdatePlayerView(t, gameCtx.Players[0], &snapshot.PlayerView{
+			Game: snapshot.GameMeta{Turn: 1},
+			Phase: snapshot.Phase{
+				Type:  snapshot.PhaseDeploy,
+				State: snapshot.DeployPhaseState{DeployableTroops: 3},
+			},
+		})
 	}()
 
 	bus.Emit(MoveSucceededEvent{
@@ -78,12 +97,13 @@ func TestStateWatcher_TurnSkipped_EmitsState(t *testing.T) {
 
 	go func() {
 		time.Sleep(10 * time.Millisecond)
-		data, _ := json.Marshal( //nolint:errchkjson // RawMessage is always valid JSON
-
-			&gamestate.GameState{Turn: 1, Phase: gamestate.Phase{Type: gamestate.Deploy}},
-		)
-		_ = gameCtx.Players[0].WS.View().
-			Apply(gamestate.WSMessage{Type: "gameState", Payload: data})
+		signalWSUpdatePlayerView(t, gameCtx.Players[0], &snapshot.PlayerView{
+			Game: snapshot.GameMeta{Turn: 1},
+			Phase: snapshot.Phase{
+				Type:  snapshot.PhaseDeploy,
+				State: snapshot.DeployPhaseState{DeployableTroops: 3},
+			},
+		})
 	}()
 
 	bus.Emit(TurnSkippedEvent{})
@@ -103,12 +123,13 @@ func TestStateWatcher_MoveConflict_WaitsForPhaseChange(t *testing.T) {
 	// Simulate a phase change after a short delay.
 	go func() {
 		time.Sleep(10 * time.Millisecond)
-		data, _ := json.Marshal( //nolint:errchkjson // RawMessage is always valid JSON
-
-			&gamestate.GameState{Turn: 0, Phase: gamestate.Phase{Type: gamestate.Attack}},
-		)
-		_ = gameCtx.Players[0].WS.View().
-			Apply(gamestate.WSMessage{Type: "gameState", Payload: data})
+		signalWSUpdatePlayerView(t, gameCtx.Players[0], &snapshot.PlayerView{
+			Game: snapshot.GameMeta{Turn: 0},
+			Phase: snapshot.Phase{
+				Type:  snapshot.PhaseAttack,
+				State: snapshot.EmptyPhaseState{},
+			},
+		})
 	}()
 
 	bus.Emit(MoveConflictEvent{

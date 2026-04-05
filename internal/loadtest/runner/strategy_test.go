@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/player"
@@ -33,7 +34,7 @@ func makeStrategyHandler(
 	strategy player.Strategy,
 ) (*StrategyHandler, *GameSession) { //nolint:unparam // interface conformance / future use
 	// Default state for the WS views — deploy phase, turn 0.
-	defaultSnap := mkSnap(0, gamestate.Deploy, "")
+	defaultSnap := mkSnap(0, snapshot.PhaseDeploy, "")
 
 	gameCtx := &GameSession{
 		Ctx:       ctx,
@@ -55,21 +56,39 @@ func makeStrategyHandler(
 }
 
 //nolint:unparam // interface conformance / future use
-func mkSnap(turn int64, phase gamestate.PhaseType, winner string) gamestate.ViewSnapshot {
-	gs := &gamestate.GameState{
-		Turn:         turn,
-		Phase:        gamestate.Phase{Type: phase},
-		WinnerUserID: winner,
+func mkSnap(turn int64, phase snapshot.PhaseType, winner string) gamestate.ViewSnapshot {
+	// Determine phase state based on type.
+	var phaseState snapshot.PhaseState
+	switch phase {
+	case snapshot.PhaseDeploy:
+		phaseState = snapshot.DeployPhaseState{DeployableTroops: 3}
+	case snapshot.PhaseConquer:
+		phaseState = snapshot.ConquerPhaseState{}
+	default:
+		phaseState = snapshot.EmptyPhaseState{}
 	}
-	ps := &gamestate.PlayersState{
-		Players: []gamestate.Player{
+
+	pv := &snapshot.PlayerView{
+		Game: snapshot.GameMeta{
+			Turn:         turn,
+			WinnerUserID: winner,
+		},
+		Phase: snapshot.Phase{
+			Type:  phase,
+			State: phaseState,
+		},
+		Players: []snapshot.PlayerState{
 			{UserID: "u0", Index: 0},
 			{UserID: "u1", Index: 1},
 			{UserID: "u2", Index: 2},
 		},
+		Mission: snapshot.PlayerMission{
+			Type:   snapshot.MissionTwentyFourTerritories,
+			Detail: snapshot.TwentyFourTerritoriesMission{},
+		},
 	}
 
-	return gamestate.ViewSnapshot{GameState: gs, PlayersState: ps}
+	return gamestate.ViewSnapshot{PlayerView: pv}
 }
 
 func TestStrategy_GameOver_EmitsGameComplete(t *testing.T) {
@@ -80,7 +99,7 @@ func TestStrategy_GameOver_EmitsGameComplete(t *testing.T) {
 	bus := NewTestBus()
 	h.Register(bus)
 
-	snap := mkSnap(0, gamestate.Deploy, "u1")
+	snap := mkSnap(0, snapshot.PhaseDeploy, "u1")
 	bus.Emit(StateReceivedEvent{Snapshot: snap, Timestamp: time.Now()})
 
 	completes := bus.EmittedOfType(EventGameComplete)
@@ -97,7 +116,7 @@ func TestStrategy_NilGameState_EmitsTurnSkipped(t *testing.T) {
 	bus := NewTestBus()
 	h.Register(bus)
 
-	snap := gamestate.ViewSnapshot{GameState: nil, PlayersState: nil}
+	snap := gamestate.ViewSnapshot{PlayerView: nil}
 	bus.Emit(StateReceivedEvent{Snapshot: snap, Timestamp: time.Now()})
 
 	assert.Len(t, bus.EmittedOfType(EventTurnSkipped), 1)
@@ -112,12 +131,15 @@ func TestStrategy_NilPlayersState_EmitsTurnSkipped(t *testing.T) {
 	bus := NewTestBus()
 	h.Register(bus)
 
+	// PlayerView with empty Players slice.
 	snap := gamestate.ViewSnapshot{
-		GameState: &gamestate.GameState{
-			Turn:  0,
-			Phase: gamestate.Phase{Type: gamestate.Deploy},
+		PlayerView: &snapshot.PlayerView{
+			Game: snapshot.GameMeta{Turn: 0},
+			Phase: snapshot.Phase{
+				Type:  snapshot.PhaseDeploy,
+				State: snapshot.DeployPhaseState{DeployableTroops: 3},
+			},
 		},
-		PlayersState: nil,
 	}
 	bus.Emit(StateReceivedEvent{Snapshot: snap, Timestamp: time.Now()})
 
@@ -134,7 +156,7 @@ func TestStrategy_NotMyTurn_EmitsTurnSkipped(t *testing.T) {
 	bus := NewTestBus()
 	h.Register(bus)
 
-	snap := mkSnap(0, gamestate.Deploy, "")
+	snap := mkSnap(0, snapshot.PhaseDeploy, "")
 	bus.Emit(StateReceivedEvent{Snapshot: snap, Timestamp: time.Now()})
 
 	assert.Len(t, bus.EmittedOfType(EventTurnSkipped), 1)
@@ -152,7 +174,7 @@ func TestStrategy_DecideMove_EmitsMoveDecided(t *testing.T) {
 	bus := NewTestBus()
 	h.Register(bus)
 
-	snap := mkSnap(0, gamestate.Deploy, "")
+	snap := mkSnap(0, snapshot.PhaseDeploy, "")
 	bus.Emit(StateReceivedEvent{Snapshot: snap, Timestamp: time.Now()})
 
 	moves := bus.EmittedOfType(EventMoveDecided)
@@ -173,7 +195,7 @@ func TestStrategy_DecideError_EmitsMoveFailed(t *testing.T) {
 	bus := NewTestBus()
 	h.Register(bus)
 
-	snap := mkSnap(0, gamestate.Deploy, "")
+	snap := mkSnap(0, snapshot.PhaseDeploy, "")
 	bus.Emit(StateReceivedEvent{Snapshot: snap, Timestamp: time.Now()})
 
 	failures := bus.EmittedOfType(EventMoveFailed)
@@ -195,7 +217,7 @@ func TestStrategy_ContextCancelled_EmitsGameComplete(t *testing.T) {
 	bus := NewTestBus()
 	h.Register(bus)
 
-	snap := mkSnap(0, gamestate.Deploy, "")
+	snap := mkSnap(0, snapshot.PhaseDeploy, "")
 	bus.Emit(StateReceivedEvent{Snapshot: snap, Timestamp: time.Now()})
 
 	completes := bus.EmittedOfType(EventGameComplete)
@@ -214,7 +236,7 @@ func TestStrategy_ContextDeadlineExceeded_EmitsTimedOut(t *testing.T) {
 	bus := NewTestBus()
 	h.Register(bus)
 
-	snap := mkSnap(0, gamestate.Deploy, "")
+	snap := mkSnap(0, snapshot.PhaseDeploy, "")
 	bus.Emit(StateReceivedEvent{Snapshot: snap, Timestamp: time.Now()})
 
 	completes := bus.EmittedOfType(EventGameComplete)
@@ -244,26 +266,16 @@ func TestStrategy_FindActivePlayer(t *testing.T) {
 		return idx
 	}
 
-	type entry struct {
-		userID string
-		index  int64
-	}
-
-	mkPlayersState := func(entries ...entry) *gamestate.PlayersState {
-		ps := &gamestate.PlayersState{Players: make([]gamestate.Player, len(entries))}
-		for i, e := range entries {
-			ps.Players[i] = gamestate.Player{UserID: e.userID, Index: e.index}
-		}
-
-		return ps
+	mkPlayerStates := func(entries ...snapshot.PlayerState) []snapshot.PlayerState {
+		return entries
 	}
 
 	players3 := mkPlayers("u0", "u1", "u2")
 	index3 := mkIndex(players3)
-	ps3 := mkPlayersState(
-		entry{"u0", 0},
-		entry{"u1", 1},
-		entry{"u2", 2},
+	ps3 := mkPlayerStates(
+		snapshot.PlayerState{UserID: "u0", Index: 0},
+		snapshot.PlayerState{UserID: "u1", Index: 1},
+		snapshot.PlayerState{UserID: "u2", Index: 2},
 	)
 
 	tests := []struct {
@@ -276,8 +288,10 @@ func TestStrategy_FindActivePlayer(t *testing.T) {
 		{
 			name: "turn 0 returns player 0",
 			snap: gamestate.ViewSnapshot{
-				GameState:    &gamestate.GameState{Turn: 0},
-				PlayersState: ps3,
+				PlayerView: &snapshot.PlayerView{
+					Game:    snapshot.GameMeta{Turn: 0},
+					Players: ps3,
+				},
 			},
 			userIndex: index3,
 			wantIdx:   0,
@@ -285,8 +299,10 @@ func TestStrategy_FindActivePlayer(t *testing.T) {
 		{
 			name: "turn 1 returns player 1",
 			snap: gamestate.ViewSnapshot{
-				GameState:    &gamestate.GameState{Turn: 1},
-				PlayersState: ps3,
+				PlayerView: &snapshot.PlayerView{
+					Game:    snapshot.GameMeta{Turn: 1},
+					Players: ps3,
+				},
 			},
 			userIndex: index3,
 			wantIdx:   1,
@@ -294,8 +310,10 @@ func TestStrategy_FindActivePlayer(t *testing.T) {
 		{
 			name: "turn 3 wraps to player 0",
 			snap: gamestate.ViewSnapshot{
-				GameState:    &gamestate.GameState{Turn: 3},
-				PlayersState: ps3,
+				PlayerView: &snapshot.PlayerView{
+					Game:    snapshot.GameMeta{Turn: 3},
+					Players: ps3,
+				},
 			},
 			userIndex: index3,
 			wantIdx:   0,
@@ -303,32 +321,27 @@ func TestStrategy_FindActivePlayer(t *testing.T) {
 		{
 			name: "turn 7 wraps to player 1",
 			snap: gamestate.ViewSnapshot{
-				GameState:    &gamestate.GameState{Turn: 7},
-				PlayersState: ps3,
+				PlayerView: &snapshot.PlayerView{
+					Game:    snapshot.GameMeta{Turn: 7},
+					Players: ps3,
+				},
 			},
 			userIndex: index3,
 			wantIdx:   1,
 		},
 		{
-			name:      "nil gameState returns nil",
-			snap:      gamestate.ViewSnapshot{GameState: nil, PlayersState: ps3},
-			userIndex: index3,
-			wantNil:   true,
-		},
-		{
-			name: "nil playersState returns nil",
-			snap: gamestate.ViewSnapshot{
-				GameState:    &gamestate.GameState{Turn: 0},
-				PlayersState: nil,
-			},
+			name:      "nil PlayerView returns nil",
+			snap:      gamestate.ViewSnapshot{PlayerView: nil},
 			userIndex: index3,
 			wantNil:   true,
 		},
 		{
 			name: "empty players returns nil",
 			snap: gamestate.ViewSnapshot{
-				GameState:    &gamestate.GameState{Turn: 0},
-				PlayersState: &gamestate.PlayersState{Players: []gamestate.Player{}},
+				PlayerView: &snapshot.PlayerView{
+					Game:    snapshot.GameMeta{Turn: 0},
+					Players: []snapshot.PlayerState{},
+				},
 			},
 			userIndex: index3,
 			wantNil:   true,
@@ -336,17 +349,19 @@ func TestStrategy_FindActivePlayer(t *testing.T) {
 		{
 			name: "unknown user returns nil",
 			snap: gamestate.ViewSnapshot{
-				GameState: &gamestate.GameState{Turn: 0},
-				PlayersState: &gamestate.PlayersState{
-					Players: []gamestate.Player{{UserID: "unknown", Index: 0}},
+				PlayerView: &snapshot.PlayerView{
+					Game: snapshot.GameMeta{Turn: 0},
+					Players: []snapshot.PlayerState{
+						{UserID: "unknown", Index: 0},
+					},
 				},
 			},
 			userIndex: index3,
 			wantNil:   true,
 		},
 		{
-			name:      "both nil returns nil",
-			snap:      gamestate.ViewSnapshot{GameState: nil, PlayersState: nil},
+			name:      "nil PlayerView returns nil (both nil)",
+			snap:      gamestate.ViewSnapshot{PlayerView: nil},
 			userIndex: index3,
 			wantNil:   true,
 		},

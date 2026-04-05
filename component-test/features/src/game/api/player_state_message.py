@@ -8,18 +8,12 @@ class PlayerStatus(str, enum.Enum):
     DEAD = 'dead'
 
 
-class ConnectionStatus(str, enum.Enum):
-    CONNECTED = 'connected'
-    DISCONNECTED = 'disconnected'
-
-
 class Player(BaseModel):
     userId: str
     name: str
     index: int
     cardCount: int
     status: PlayerStatus
-    connectionStatus: ConnectionStatus
 
 
 class PlayerStateData(BaseModel):

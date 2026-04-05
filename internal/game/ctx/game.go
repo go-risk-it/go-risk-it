@@ -14,6 +14,7 @@ import (
 type GameContext interface {
 	kernelctx.UserContext
 	kernelctx.Rebaseable
+	kernelctx.Scoped
 	GameID() int64
 }
 
@@ -27,9 +28,14 @@ var (
 	_ GameContext           = (*gameContext)(nil)
 	_ kernelctx.LogEnricher = (*gameContext)(nil)
 	_ kernelctx.Rebaseable  = (*gameContext)(nil)
+	_ kernelctx.Scoped      = (*gameContext)(nil)
 )
 
 func (c *gameContext) GameID() int64 {
+	return c.gameID
+}
+
+func (c *gameContext) ScopeID() int64 {
 	return c.gameID
 }
 

@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/client"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/player"
@@ -41,7 +42,7 @@ func makeErrorHandler(
 	ctx context.Context,
 	rest *fakeRESTForError,
 ) (*ErrorHandler, *GameResult) {
-	snap := mkSnap(0, gamestate.Deploy, "")
+	snap := mkSnap(0, snapshot.PhaseDeploy, "")
 	ws := newFakeWSWithState(snap)
 
 	gameCtx := &GameSession{
@@ -60,7 +61,6 @@ func makeErrorHandler(
 		gameCtx: gameCtx,
 		timeouts: Timeouts{
 			UpdateWait:        10 * time.Millisecond,
-			PostMoveSettle:    1 * time.Millisecond,
 			MaxConsecutiveErr: 20,
 		},
 		result:          result,
@@ -72,10 +72,19 @@ func makeErrorHandler(
 }
 
 func signalWSUpdate(p *PlayerInfo) {
-	data, _ := json.Marshal( //nolint:errchkjson // known safe type
-		&gamestate.GameState{Turn: 1, Phase: gamestate.Phase{Type: gamestate.Deploy}},
-	)
-	_ = p.WS.View().Apply(gamestate.WSMessage{Type: "gameState", Payload: data})
+	pv := &snapshot.PlayerView{
+		Game: snapshot.GameMeta{Turn: 1},
+		Phase: snapshot.Phase{
+			Type:  snapshot.PhaseDeploy,
+			State: snapshot.DeployPhaseState{DeployableTroops: 3},
+		},
+		Mission: snapshot.PlayerMission{
+			Type:   snapshot.MissionTwentyFourTerritories,
+			Detail: snapshot.TwentyFourTerritoriesMission{},
+		},
+	}
+	data, _ := json.Marshal(pv) //nolint:errchkjson // known safe type
+	_ = p.WS.View().Apply(gamestate.WSMessage{Type: "playerView", Payload: data})
 }
 
 func TestError_StaleState_RetriesUnderThreshold(t *testing.T) {

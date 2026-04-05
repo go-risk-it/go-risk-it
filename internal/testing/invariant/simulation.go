@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
 )
 
 // SimulationConfig controls a game simulation run.
@@ -143,7 +143,7 @@ func executeAttack(
 
 	attackMove, canAttack := gen.AttackMove(tb, gCtx, snap)
 	if !canAttack {
-		err := harness.AttackAdvancer.Advance(gCtx)
+		err := harness.AttackAdvancer.AdvancePhase(gCtx)
 		if err != nil {
 			tb.Fatalf("attack advance failed: %v", err)
 		}
@@ -184,7 +184,7 @@ func executeReinforce(
 ) {
 	tb.Helper()
 
-	err := harness.ReinforceAdvancer.Advance(gCtx)
+	err := harness.ReinforceAdvancer.AdvancePhase(gCtx)
 	if err != nil {
 		tb.Fatalf("reinforce advance failed: %v", err)
 	}

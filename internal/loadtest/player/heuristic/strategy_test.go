@@ -4,6 +4,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/mapgraph"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/player"
@@ -33,71 +34,71 @@ func TestFindCardCombo(t *testing.T) {
 
 	tests := []struct {
 		name  string
-		cards []gamestate.Card
+		cards []snapshot.CardState
 		want  []int64 // nil means no combo; otherwise sorted IDs
 	}{
 		{
 			name: "3 cavalry returns 3-of-a-kind",
-			cards: []gamestate.Card{
-				{ID: 1, Type: gamestate.Cavalry},
-				{ID: 2, Type: gamestate.Cavalry},
-				{ID: 3, Type: gamestate.Cavalry},
+			cards: []snapshot.CardState{
+				{ID: 1, Type: snapshot.CardCavalry},
+				{ID: 2, Type: snapshot.CardCavalry},
+				{ID: 3, Type: snapshot.CardCavalry},
 			},
 			want: []int64{1, 2, 3},
 		},
 		{
 			name: "one-of-each",
-			cards: []gamestate.Card{
-				{ID: 10, Type: gamestate.Cavalry},
-				{ID: 20, Type: gamestate.Infantry},
-				{ID: 30, Type: gamestate.Artillery},
+			cards: []snapshot.CardState{
+				{ID: 10, Type: snapshot.CardCavalry},
+				{ID: 20, Type: snapshot.CardInfantry},
+				{ID: 30, Type: snapshot.CardArtillery},
 			},
 			want: []int64{10, 20, 30},
 		},
 		{
 			name: "2 cavalry + jolly",
-			cards: []gamestate.Card{
-				{ID: 1, Type: gamestate.Cavalry},
-				{ID: 2, Type: gamestate.Cavalry},
-				{ID: 99, Type: gamestate.Jolly},
+			cards: []snapshot.CardState{
+				{ID: 1, Type: snapshot.CardCavalry},
+				{ID: 2, Type: snapshot.CardCavalry},
+				{ID: 99, Type: snapshot.CardJolly},
 			},
 			want: []int64{1, 2, 99},
 		},
 		{
 			name: "only 2 cards returns nil",
-			cards: []gamestate.Card{
-				{ID: 1, Type: gamestate.Cavalry},
-				{ID: 2, Type: gamestate.Infantry},
+			cards: []snapshot.CardState{
+				{ID: 1, Type: snapshot.CardCavalry},
+				{ID: 2, Type: snapshot.CardInfantry},
 			},
 			want: nil,
 		},
 		{
 			name: "no valid combo: 2 cavalry + 1 infantry, no jolly",
-			cards: []gamestate.Card{
-				{ID: 1, Type: gamestate.Cavalry},
-				{ID: 2, Type: gamestate.Cavalry},
-				{ID: 3, Type: gamestate.Infantry},
+			cards: []snapshot.CardState{
+				{ID: 1, Type: snapshot.CardCavalry},
+				{ID: 2, Type: snapshot.CardCavalry},
+				{ID: 3, Type: snapshot.CardInfantry},
 			},
 			want: nil,
 		},
 		{
 			name: "4 of same type returns first 3",
-			cards: []gamestate.Card{
-				{ID: 1, Type: gamestate.Infantry},
-				{ID: 2, Type: gamestate.Infantry},
-				{ID: 3, Type: gamestate.Infantry},
-				{ID: 4, Type: gamestate.Infantry},
+			cards: []snapshot.CardState{
+				{ID: 1, Type: snapshot.CardInfantry},
+				{ID: 2, Type: snapshot.CardInfantry},
+				{ID: 3, Type: snapshot.CardInfantry},
+				{ID: 4, Type: snapshot.CardInfantry},
 			},
 			want: []int64{1, 2, 3},
 		},
 		{
 			name: "prefers 3-of-a-kind over one-of-each",
-			cards: []gamestate.Card{
-				{ID: 1, Type: gamestate.Cavalry},
-				{ID: 2, Type: gamestate.Cavalry},
-				{ID: 3, Type: gamestate.Cavalry},
-				{ID: 4, Type: gamestate.Infantry},
-				{ID: 5, Type: gamestate.Artillery},
+			cards: []snapshot.CardState{
+				{ID: 1, Type: snapshot.CardCavalry},
+				{ID: 2, Type: snapshot.CardCavalry},
+				{ID: 3, Type: snapshot.CardCavalry},
+				{ID: 4, Type: snapshot.CardInfantry},
+				{ID: 5, Type: snapshot.CardArtillery},
 			},
 			want: []int64{1, 2, 3},
 		},
@@ -155,8 +156,8 @@ func TestBuildRegionMap(t *testing.T) {
 		t.Parallel()
 
 		snap := gamestate.ViewSnapshot{
-			BoardState: &gamestate.BoardState{
-				Regions: []gamestate.Region{
+			PlayerView: &snapshot.PlayerView{
+				Regions: []snapshot.RegionState{
 					{ID: "r1", OwnerID: "u1", Troops: 5},
 					{ID: "r2", OwnerID: "u2", Troops: 3},
 				},
@@ -178,10 +179,10 @@ func TestBuildRegionMap(t *testing.T) {
 		}
 	})
 
-	t.Run("nil BoardState returns empty map", func(t *testing.T) {
+	t.Run("nil PlayerView returns empty map", func(t *testing.T) {
 		t.Parallel()
 
-		snap := gamestate.ViewSnapshot{BoardState: nil}
+		snap := gamestate.ViewSnapshot{PlayerView: nil}
 		m := buildRegionMap(snap)
 
 		if len(m) != 0 {
@@ -196,7 +197,7 @@ func TestIsBorderRegion(t *testing.T) {
 	g := testGraph()
 	s := New(g)
 
-	regionMap := map[string]*gamestate.Region{
+	regionMap := map[string]*snapshot.RegionState{
 		"A": {ID: "A", OwnerID: "me", Troops: 5},
 		"B": {ID: "B", OwnerID: "enemy", Troops: 3},
 		"C": {ID: "C", OwnerID: "me", Troops: 4},
@@ -253,7 +254,7 @@ func TestCountEnemyNeighbours(t *testing.T) {
 	g := testGraph()
 	s := New(g)
 
-	regionMap := map[string]*gamestate.Region{
+	regionMap := map[string]*snapshot.RegionState{
 		"A": {ID: "A", OwnerID: "me", Troops: 5},
 		"B": {ID: "B", OwnerID: "enemy", Troops: 3},
 		"C": {ID: "C", OwnerID: "me", Troops: 4},

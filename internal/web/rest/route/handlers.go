@@ -119,3 +119,29 @@ func DomainVoid[C any](
 		return nil
 	})
 }
+
+// DomainResult returns an authenticated [Route] that builds a domain context C
+// from the [kernelctx.UserContext] and the {id} path parameter, calls perform
+// with no request body, and writes the result as a 200 JSON response.
+// Context-building and handler errors are translated to HTTP responses via
+// [WrapErrors].
+func DomainResult[C, Resp any](
+	pattern string,
+	withID func(kernelctx.UserContext, int64) C,
+	perform func(C) (Resp, error),
+) *Route {
+	return Domain(pattern, func(r *http.Request) (C, error) {
+		return BuildDomainContext(r, withID)
+	}, func(
+		writer http.ResponseWriter,
+		_ *http.Request,
+		ctx C,
+	) error {
+		resp, err := perform(ctx)
+		if err != nil {
+			return err
+		}
+
+		return restutils.WriteJSON(writer, http.StatusOK, resp)
+	})
+}

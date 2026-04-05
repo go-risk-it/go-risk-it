@@ -16,11 +16,21 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+// DisconnectFunc is called for each player whose connection is removed during
+// cleanup. It receives the removed user ID and a writeToOthers function that
+// sends a raw message to all remaining connected players.
+//
+// writeToOthers is safe to call because cleanup already holds the write lock.
+// The DisconnectFunc itself MUST NOT call any PlayerConnections methods that
+// acquire locks — only writeToOthers.
+type DisconnectFunc func(removedUserID string, writeToOthers func(message []byte))
+
 type PlayerConnections struct {
 	mu upgradablerwmutex.UpgradableRWMutex
 
 	playerConnections map[string]*websocket.Conn
 	metrics           *metrics.StateMetrics
+	onDisconnect      DisconnectFunc
 }
 
 func NewPlayerConnections(m *metrics.StateMetrics) *PlayerConnections {
@@ -28,6 +38,13 @@ func NewPlayerConnections(m *metrics.StateMetrics) *PlayerConnections {
 		playerConnections: make(map[string]*websocket.Conn),
 		metrics:           m,
 	}
+}
+
+// SetOnDisconnect registers a callback invoked when a player's connection
+// is removed during cleanup. Must be called before the PlayerConnections
+// is shared across goroutines (typically right after creation).
+func (p *PlayerConnections) SetOnDisconnect(fn DisconnectFunc) {
+	p.onDisconnect = fn
 }
 
 func (p *PlayerConnections) Broadcast(ctx ctx.UserContext, message json.RawMessage) {
@@ -65,6 +82,20 @@ func (p *PlayerConnections) Broadcast(ctx ctx.UserContext, message json.RawMessa
 	p.cleanUpConnections(ctx, toCleanup)
 }
 
+// BroadcastOthers sends a message to all connected players except the one
+// identified by exclude. Used for presence signals where the originating
+// player should not receive their own notification.
+func (p *PlayerConnections) BroadcastOthers(
+	ctx ctx.UserContext,
+	exclude string,
+	message json.RawMessage,
+) {
+	p.mu.UpgradableRLock()
+	defer p.mu.UpgradableRUnlock()
+
+	p.writeToOthersLocked(exclude, message)
+}
+
 func (p *PlayerConnections) Write(ctx ctx.UserContext, message json.RawMessage) {
 	p.mu.UpgradableRLock()
 	defer p.mu.UpgradableRUnlock()
@@ -100,6 +131,27 @@ func (p *PlayerConnections) cleanUpConnections(ctx ctx.UserContext, toCleanup []
 	}
 
 	p.metrics.ActiveConnections.Add(ctx, -int64(len(toCleanup)))
+
+	if p.onDisconnect != nil {
+		for _, player := range toCleanup {
+			removed := player
+			p.onDisconnect(removed, func(message []byte) {
+				p.writeToOthersLocked(removed, message)
+			})
+		}
+	}
+}
+
+// writeToOthersLocked writes a message to all connected players except
+// exclude. The caller MUST hold at least a read lock on p.mu.
+func (p *PlayerConnections) writeToOthersLocked(exclude string, message []byte) {
+	for player, connection := range p.playerConnections {
+		if player == exclude {
+			continue
+		}
+
+		_ = connection.WriteMessage(websocket.TextMessage, message)
+	}
 }
 
 func (p *PlayerConnections) ConnectPlayer(ctx ctx.UserContext, connection *websocket.Conn) {
