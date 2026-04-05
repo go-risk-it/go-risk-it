@@ -35,7 +35,7 @@ class TwentyFourTerritoriesMission(EmptyState):
 
 
 class EliminatePlayerMission(BaseModel):
-    targetUserId: int
+    targetUserId: str
 
 
 # Type variable for mission details

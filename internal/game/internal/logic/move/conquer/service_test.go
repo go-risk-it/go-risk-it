@@ -324,10 +324,12 @@ func TestServiceImpl_Perform_ShouldHandlePlayerElimination(t *testing.T) {
 	require.Len(t, effect.RegionUpdates, 2)
 	require.Equal(t, snapshot.EmptyPhaseState{}, effect.UpdatedPhase)
 
-	// Verify card deltas: eliminated player loses their cards
-	require.Len(t, effect.CardDeltas, 1)
+	// Verify card deltas: eliminated player loses their cards, conqueror gains them
+	require.Len(t, effect.CardDeltas, 2)
 	require.Equal(t, "gabriele", effect.CardDeltas[0].PlayerUserID)
 	require.ElementsMatch(t, []int64{100, 101}, effect.CardDeltas[0].Lost)
+	require.Equal(t, "giovanni", effect.CardDeltas[1].PlayerUserID)
+	require.Len(t, effect.CardDeltas[1].Gained, 2)
 
 	// Verify mission changes: paolo's eliminate-player mission becomes 24 territories
 	require.Len(t, effect.Missions, 1)

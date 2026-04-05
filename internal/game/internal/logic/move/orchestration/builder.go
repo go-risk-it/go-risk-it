@@ -38,13 +38,15 @@ func BuildNewState(
 		privates = applyCardDeltas(privates, advEffect.CardDeltas)
 	}
 
+	// Recompute players first — we need alive/dead status for turn skip logic.
+	players := RecomputePlayers(prev.PublicSnapshot.Players, regions, privates)
+
 	turn := prev.Turn
 	if advEffect != nil && advEffect.TurnEnded {
-		turn++
+		turn = nextAliveTurn(turn, players)
 	}
 
 	phase := resolvePhase(targetPhase, effect.UpdatedPhase, advEffect)
-	players := RecomputePlayers(prev.PublicSnapshot.Players, regions, privates)
 	conqueredInTurn := resolveConqueredInTurn(prev.ConqueredInTurn, targetPhase, advEffect)
 
 	return &snapshot.CachedGameState{
@@ -149,6 +151,35 @@ func RecomputePlayers(
 	}
 
 	return result
+}
+
+// nextAliveTurn computes the next turn number, skipping dead players.
+// This mirrors the DB-side logic in phase.Service.getNextTurn to keep
+// the cached state consistent with the database turn sequence.
+func nextAliveTurn(currentTurn int64, players []snapshot.PlayerState) int64 {
+	count := int64(len(players))
+	if count == 0 {
+		return currentTurn + 1
+	}
+
+	// Build status-by-index for O(1) lookup.
+	statusByIndex := make(map[int64]snapshot.PlayerStatus, len(players))
+	for _, p := range players {
+		statusByIndex[p.Index] = p.Status
+	}
+
+	turn := currentTurn + 1
+
+	for range count {
+		if statusByIndex[turn%count] == snapshot.PlayerAlive {
+			return turn
+		}
+
+		turn++
+	}
+
+	// All players dead — shouldn't happen in practice.
+	return currentTurn + 1
 }
 
 // resolveConqueredInTurn determines the ConqueredInTurn flag for the new state:

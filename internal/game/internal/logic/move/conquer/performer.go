@@ -150,7 +150,7 @@ func (s *service) applyEliminationIfNeeded(
 	if isDefenderEliminated {
 		// Pre-read the eliminated player's cards for the MoveEffect before the
 		// DB transfer mutates ownership.
-		eliminationEffect := s.buildEliminationEffect(prev, eliminatedUserID)
+		eliminationEffect := s.buildEliminationEffect(prev, eliminatedUserID, ctx.UserID())
 
 		if err := s.handlePlayerEliminated(ctx, querier, defeatedPlayerID); err != nil {
 			return struct{}{}, moveservice.MoveEffect{}, fmt.Errorf(
@@ -178,6 +178,7 @@ type eliminationEffect struct {
 func (s *service) buildEliminationEffect(
 	prev *snapshot.CachedGameState,
 	eliminatedUserID string,
+	conquerorUserID string,
 ) eliminationEffect {
 	var result eliminationEffect
 
@@ -194,6 +195,10 @@ func (s *service) buildEliminationEffect(
 				{
 					PlayerUserID: eliminatedUserID,
 					Lost:         lostCardIDs,
+				},
+				{
+					PlayerUserID: conquerorUserID,
+					Gained:       eliminatedPrivate.Cards,
 				},
 			}
 		}

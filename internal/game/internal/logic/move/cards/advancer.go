@@ -31,12 +31,21 @@ func (s *service) Advance(
 		return moveservice.AdvanceEffect{}, fmt.Errorf("invalid phase transition: %w", err)
 	}
 
+	// InsertPhase advances the turn in the DB when transitioning from REINFORCE.
+	// After this call, GetCurrentPlayer returns the next player.
 	dbPhase, err := s.phaseService.InsertPhase(ctx, querier, targetPhase)
 	if err != nil {
 		return moveservice.AdvanceEffect{}, fmt.Errorf("failed to create phase: %w", err)
 	}
 
-	deployableTroops := computeDeployableTroops(ctx, advCtx, performResult)
+	// Resolve the deploy-for player from the DB. After InsertPhase, the turn
+	// has been advanced, so GetCurrentPlayer returns the correct next player.
+	currentPlayer, err := s.playerService.GetCurrentPlayer(ctx, querier)
+	if err != nil {
+		return moveservice.AdvanceEffect{}, fmt.Errorf("failed to get current player: %w", err)
+	}
+
+	deployableTroops := computeDeployableTroops(ctx, advCtx, currentPlayer.UserID, performResult)
 
 	if _, err = querier.InsertDeployPhase(ctx, sqlc.InsertDeployPhaseParams{
 		PhaseID:          dbPhase.ID,
@@ -46,24 +55,29 @@ func (s *service) Advance(
 	}
 
 	return moveservice.AdvanceEffect{
-		NewPhase:  snapshot.DeployPhaseState{DeployableTroops: deployableTroops},
-		TurnEnded: true,
+		NewPhase: snapshot.DeployPhaseState{DeployableTroops: deployableTroops},
+		// TurnEnded is false here: when cards.Advance is called directly
+		// (CARDS→DEPLOY), the turn was already incremented at the REINFORCE→CARDS
+		// boundary. When called via reinforce.Advance delegation (REINFORCE→DEPLOY),
+		// the reinforce advancer overrides TurnEnded to true in its own return.
+		TurnEnded: false,
 	}, nil
 }
 
 // computeDeployableTroops calculates the total deployable troops from pure
 // in-memory data: region ownership from AdvanceContext.UpdatedRegions,
 // continent bonuses from AdvanceContext.Continents, and card bonuses from
-// the perform result. Zero DB reads.
+// the perform result.
 func computeDeployableTroops(
 	ctx ctx.GameContext,
 	advCtx moveservice.AdvanceContext,
+	deployForUserID string,
 	performResult *MoveResult,
 ) int64 {
-	// Count regions owned by the current player.
+	// Count regions owned by the player who will deploy.
 	playerRegions := make([]string, 0)
 	for _, r := range advCtx.UpdatedRegions {
-		if r.OwnerID == advCtx.CurrentUserID {
+		if r.OwnerID == deployForUserID {
 			playerRegions = append(playerRegions, r.ID)
 		}
 	}
