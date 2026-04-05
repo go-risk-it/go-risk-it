@@ -1091,3 +1091,63 @@ func findPlayer(
 
 	return snapshot.PlayerState{}
 }
+
+func TestBuildNewState_TurnSkipsDeadPlayers(t *testing.T) {
+	tests := []struct {
+		name          string
+		currentTurn   int64
+		regionUpdates []service.RegionUpdate
+		wantTurn      int64
+	}{
+		{
+			name:          "no dead players increments by 1",
+			currentTurn:   5,
+			regionUpdates: nil,
+			wantTurn:      6,
+		},
+		{
+			name:        "skips dead player at next index",
+			currentTurn: 5, // 5%3=2 is player3's turn; next is 6%3=0 (player1)
+			// Kill player1 (index 0) by taking their regions
+			regionUpdates: []service.RegionUpdate{
+				{RegionID: "western-europe", NewOwner: "player2", NewTroops: 3},
+				{RegionID: "north-africa", NewOwner: "player2", NewTroops: 5},
+			},
+			wantTurn: 7, // skip 6 (player1 dead at index 0), land on 7%3=1 (player2)
+		},
+		{
+			name:        "skips two dead players",
+			currentTurn: 3, // 3%3=0 is player1's turn
+			// Kill player2 (index 1) and player3 (index 2)
+			regionUpdates: []service.RegionUpdate{
+				{RegionID: "eastern-europe", NewOwner: "player1", NewTroops: 3},
+				{RegionID: "brazil", NewOwner: "player1", NewTroops: 2},
+			},
+			wantTurn: 6, // skip 4 (player2 dead), skip 5 (player3 dead), land on 6%3=0 (player1)
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			prev := basePrevState()
+			prev.Turn = testCase.currentTurn
+			prev.PublicSnapshot.Game.Turn = testCase.currentTurn
+
+			advEffect := &service.AdvanceEffect{
+				NewPhase:  snapshot.DeployPhaseState{DeployableTroops: 3},
+				TurnEnded: true,
+			}
+
+			result := orchestration.BuildNewState(
+				prev,
+				&service.MoveEffect{RegionUpdates: testCase.regionUpdates},
+				advEffect,
+				sqlc.GamePhaseTypeDEPLOY,
+				"",
+			)
+
+			require.Equal(t, testCase.wantTurn, result.Turn, "cached turn")
+			require.Equal(t, testCase.wantTurn, result.PublicSnapshot.Game.Turn, "snapshot turn")
+		})
+	}
+}
