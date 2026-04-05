@@ -7,6 +7,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/client"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/metrics"
+	"github.com/go-risk-it/go-risk-it/internal/loadtest/userpool"
 )
 
 // GameResult holds stats from a completed game.
@@ -49,13 +50,14 @@ type PlayerInfo struct {
 
 // GameSession holds shared mutable state for a single game.
 type GameSession struct {
-	Ctx         context.Context //nolint:containedctx // game session carries context by design
-	GameIndex   int
-	GameID      int64
-	Players     []*PlayerInfo
-	UserIndex   map[string]int
-	StartTime   time.Time
-	Accumulator *metrics.StepAccumulator
+	Ctx           context.Context //nolint:containedctx // game session carries context by design
+	GameIndex     int
+	GameID        int64
+	Players       []*PlayerInfo
+	UserIndex     map[string]int
+	StartTime     time.Time
+	Accumulator   *metrics.StepAccumulator
+	AcquiredUsers []*userpool.Entry // set by protocol handler, released by runner
 }
 
 // AuthClient abstracts client.Auth for testability.

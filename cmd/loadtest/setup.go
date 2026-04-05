@@ -44,5 +44,6 @@ func (a *App) newRunFunc(
 		ThinkTime:     a.cfg.Game.ThinkTime,
 		Timeouts:      runner.DefaultTimeouts(),
 		ChaosInjector: injector,
+		UserPool:      a.userPool,
 	}).ToRunFunc()
 }

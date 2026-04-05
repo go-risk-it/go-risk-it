@@ -4,16 +4,19 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sync/atomic"
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/annotations"
+	"github.com/go-risk-it/go-risk-it/internal/loadtest/client"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/dbstats"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/mapgraph"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/player"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/player/heuristic"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/player/smart"
+	"github.com/go-risk-it/go-risk-it/internal/loadtest/userpool"
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -37,6 +40,7 @@ type App struct {
 	annotator   *annotations.Annotator
 	liveMetrics *metrics.LiveMetrics // nil if OTel not configured
 	dbStats     *dbstats.Collector   // nil if not configured
+	userPool    *userpool.Pool
 }
 
 // NewApp loads the map, builds the strategy, and initializes optional
@@ -66,6 +70,7 @@ func NewApp(cfg *Config) (*App, error) {
 		graph:     graph,
 		strategy:  strategy,
 		annotator: annotations.NewAnnotator(cfg.Obs.GrafanaURL),
+		userPool:  buildUserPool(cfg),
 	}
 
 	// Initialize OTel exporter and LiveMetrics facade.
@@ -152,4 +157,20 @@ func buildStrategy(
 			name,
 		)
 	}
+}
+
+func buildUserPool(cfg *Config) *userpool.Pool {
+	var nextID atomic.Int64
+
+	return userpool.New(userpool.Config{
+		MaxConcurrentGames: 2,
+		AuthFactory: func(_ context.Context) (*client.AuthResult, error) {
+			id := nextID.Add(1)
+			email := fmt.Sprintf("perf-pool-%d@test.local", id)
+
+			auth := client.NewAuth(cfg.Server.URL, cfg.Server.AnonKey)
+
+			return auth.Signup(email, "perftest123")
+		},
+	})
 }

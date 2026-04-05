@@ -13,6 +13,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/orchestrator"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/player"
+	"github.com/go-risk-it/go-risk-it/internal/loadtest/userpool"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -30,6 +31,7 @@ type Config struct {
 	Timeouts      Timeouts
 	ChaosInjector *chaos.Injector
 	Observer      orchestrator.GameObserver
+	UserPool      *userpool.Pool // nil = legacy per-game signup
 }
 
 // Runner wires all event handlers and exposes Run().
@@ -142,6 +144,13 @@ func (r *Runner) Run(ctx context.Context, gameIndex, numPlayers int) GameResult 
 		}
 	}()
 
+	// Release pooled users after WS cleanup.
+	defer func() {
+		if r.cfg.UserPool != nil && len(gameCtx.AcquiredUsers) > 0 {
+			r.cfg.UserPool.Release(gameCtx.AcquiredUsers)
+		}
+	}()
+
 	if !captured {
 		result.FatalError = errors.New("no result captured (event chain stalled)")
 		result.Duration = time.Since(start)
@@ -207,6 +216,7 @@ func (r *Runner) buildProtocolHandler(gameCtx *GameSession) *ProtocolHandler {
 		anonKey:  r.cfg.AnonKey,
 		timeouts: r.cfg.Timeouts,
 		gameCtx:  gameCtx,
+		userPool: r.cfg.UserPool,
 		newAuth: func(baseURL, anonKey string) AuthClient {
 			return client.NewAuth(baseURL, anonKey)
 		},

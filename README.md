@@ -370,7 +370,8 @@ lock without releasing it first.
 │   │   └── smart/
 │   ├── resources/
 │   ├── runner/
-│   └── scenario/
+│   ├── scenario/
+│   └── userpool/
 ├── lobby/
 │   ├── api/
 │   │   ├── messaging/          # Package messaging defines the WebSocket message types sent to lobby clients.
