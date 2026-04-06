@@ -72,10 +72,14 @@ func makeErrorHandler(
 }
 
 func signalWSUpdate(p *PlayerInfo) {
+	signalWSUpdateWithPhase(p, snapshot.PhaseDeploy)
+}
+
+func signalWSUpdateWithPhase(p *PlayerInfo, phase snapshot.PhaseType) {
 	pv := &snapshot.PlayerView{
 		Game: snapshot.GameMeta{Turn: 1},
 		Phase: snapshot.Phase{
-			Type:  snapshot.PhaseDeploy,
+			Type:  phase,
 			State: snapshot.DeployPhaseState{DeployableTroops: 3},
 		},
 		Mission: snapshot.PlayerMission{
@@ -129,6 +133,8 @@ func TestError_StaleState_ExhaustedRetries_Advances(t *testing.T) {
 	go func() {
 		time.Sleep(5 * time.Millisecond)
 		signalWSUpdate(h.gameCtx.Players[0])
+		time.Sleep(5 * time.Millisecond)
+		signalWSUpdate(h.gameCtx.Players[0])
 	}()
 
 	bus.Emit(MoveFailedEvent{
@@ -150,7 +156,11 @@ func TestError_StaleState_AdvanceSucceeds_ResetsCounters(t *testing.T) {
 	bus := NewTestBus()
 	h.Register(bus)
 
+	// Two updates: one for waitForFreshState (before advance), one for
+	// waitFreshAndEmitState (after advance, re-enters strategy loop).
 	go func() {
+		time.Sleep(5 * time.Millisecond)
+		signalWSUpdate(h.gameCtx.Players[0])
 		time.Sleep(5 * time.Millisecond)
 		signalWSUpdate(h.gameCtx.Players[0])
 	}()
@@ -176,12 +186,21 @@ func TestError_StaleState_AdvanceFails3x_Fatal(t *testing.T) {
 	h.Register(bus)
 
 	// Each iteration: staleErrors=4, emit stale → triggers advance → fails.
+	// Iterations 0,1: need 2 updates (waitForFreshState + waitFreshAndEmitState).
+	// Iteration 2: need 1 update (waitForFreshState), then goes fatal.
 	for i := range 3 {
 		h.consecutiveStaleErrors = 4
 
+		updates := 1
+		if i < 2 {
+			updates = 2
+		}
+
 		go func() {
-			time.Sleep(5 * time.Millisecond)
-			signalWSUpdate(h.gameCtx.Players[0])
+			for range updates {
+				time.Sleep(5 * time.Millisecond)
+				signalWSUpdate(h.gameCtx.Players[0])
+			}
 		}()
 
 		bus.Emit(MoveFailedEvent{
@@ -235,9 +254,14 @@ func TestError_Execution_PlayCards_TriesAdvance(t *testing.T) {
 	bus := NewTestBus()
 	h.Register(bus)
 
+	// Signal two updates: one for waitForFreshState (before phase check),
+	// one for waitFreshAndEmitState (after advance).
+	// Both must show CARDS phase so the handler proceeds with advance.
 	go func() {
 		time.Sleep(5 * time.Millisecond)
-		signalWSUpdate(h.gameCtx.Players[0])
+		signalWSUpdateWithPhase(h.gameCtx.Players[0], snapshot.PhaseCards)
+		time.Sleep(5 * time.Millisecond)
+		signalWSUpdateWithPhase(h.gameCtx.Players[0], snapshot.PhaseDeploy)
 	}()
 
 	bus.Emit(MoveFailedEvent{

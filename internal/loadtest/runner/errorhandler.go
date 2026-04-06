@@ -67,25 +67,31 @@ func (h *ErrorHandler) handleFailed(bus *Bus, e Event) {
 
 	switch evt.ErrType {
 	case "stale_state":
-		h.handleStale(bus, evt)
+		h.handleStale(bus)
 	case "execution":
 		h.handleExecution(bus, evt)
 	default:
-		// strategy, transient, etc. — just wait and retry.
-		h.waitAndEmitState(bus)
+		// strategy, transient, etc. — wait for fresh state and retry.
+		h.waitFreshAndEmitState(bus)
 	}
 }
 
-func (h *ErrorHandler) handleStale(bus *Bus, evt MoveFailedEvent) {
+func (h *ErrorHandler) handleStale(bus *Bus) {
 	h.consecutiveStaleErrors++
 
 	if h.consecutiveStaleErrors >= h.maxStaleRetries {
+		// Wait for a fresh WS update before reading the phase. The view
+		// is stale (that's why we got stale_state errors). Reading it now
+		// would send an advance for the wrong phase.
+		h.waitForFreshState()
+		phase := h.currentPhase()
+
 		observe.Warn(h.gameCtx.Ctx, "stale retries exhausted, advancing",
 			attribute.Int("gameIndex", h.gameCtx.GameIndex),
 			attribute.Int("max_retries", h.maxStaleRetries),
+			attribute.String("phase", phase),
 		)
 
-		phase := h.currentPhase()
 		activeREST := h.activeREST()
 
 		if advErr := activeREST.Advance(
@@ -116,42 +122,66 @@ func (h *ErrorHandler) handleStale(bus *Bus, evt MoveFailedEvent) {
 		}
 
 		h.consecutiveStaleErrors = 0
-		h.waitAndEmitState(bus)
+		h.waitFreshAndEmitState(bus)
 
 		return
 	}
 
-	// Below threshold: wait for update and re-decide.
-	_ = evt
-	h.waitAndEmitState(bus)
+	// Below threshold: wait for fresh update and re-decide.
+	h.waitFreshAndEmitState(bus)
 }
 
 func (h *ErrorHandler) handleExecution(bus *Bus, evt MoveFailedEvent) {
-	// If card play failed, advance past cards phase.
 	if evt.Action != nil && evt.Action.Type == player.ActionPlayCards {
-		observe.Warn(h.gameCtx.Ctx, "card play failed, advancing past cards phase",
-			attribute.Int("gameIndex", h.gameCtx.GameIndex),
-		)
+		// Wait for fresh state before deciding whether to advance —
+		// the server may have already moved past CARDS.
+		h.waitForFreshState()
+		phase := h.currentPhase()
 
-		activeREST := h.activeREST()
-		if advErr := activeREST.Advance(
-			context.Background(),
-			h.gameCtx.GameID,
-			string(snapshot.PhaseCards),
-		); advErr != nil {
-			observe.Error(h.gameCtx.Ctx, advErr, "advance past cards also failed",
+		if phase == strings.ToLower(string(snapshot.PhaseCards)) {
+			observe.Warn(h.gameCtx.Ctx, "card play failed, advancing past cards phase",
 				attribute.Int("gameIndex", h.gameCtx.GameIndex),
 			)
-		} else {
-			h.result.Moves++
+
+			activeREST := h.activeREST()
+			if advErr := activeREST.Advance(
+				context.Background(),
+				h.gameCtx.GameID,
+				string(snapshot.PhaseCards),
+			); advErr != nil {
+				observe.Error(h.gameCtx.Ctx, advErr, "advance past cards also failed",
+					attribute.Int("gameIndex", h.gameCtx.GameIndex),
+				)
+			} else {
+				h.result.Moves++
+			}
 		}
 	}
 
-	h.waitAndEmitState(bus)
+	h.waitFreshAndEmitState(bus)
 }
 
-func (h *ErrorHandler) waitAndEmitState(bus *Bus) {
-	waitAndEmitState(bus, h.gameCtx, h.timeouts, nil)
+// waitForFreshState blocks until a new WS update arrives for all players.
+// Does NOT emit StateReceivedEvent — use this for mid-recovery state refresh
+// before taking actions like Advance.
+func (h *ErrorHandler) waitForFreshState() {
+	preVersions := make([]uint64, len(h.gameCtx.Players))
+	for i, p := range h.gameCtx.Players {
+		preVersions[i] = p.WS.View().Version()
+	}
+
+	waitForAllUpdates(h.gameCtx.Players, preVersions, h.timeouts.UpdateWait, h.gameCtx.Ctx)
+}
+
+// waitFreshAndEmitState waits for a fresh WS update and emits StateReceivedEvent
+// to re-enter the strategy loop.
+func (h *ErrorHandler) waitFreshAndEmitState(bus *Bus) {
+	preVersions := make([]uint64, len(h.gameCtx.Players))
+	for i, p := range h.gameCtx.Players {
+		preVersions[i] = p.WS.View().Version()
+	}
+
+	waitAndEmitState(bus, h.gameCtx, h.timeouts, preVersions)
 }
 
 func (h *ErrorHandler) currentPhase() string {
