@@ -10,6 +10,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// neverDone returns N done channels that never close (no WS death in tests).
+func neverDone(n int) []<-chan struct{} {
+	chs := make([]<-chan struct{}, n)
+	for i := range chs {
+		chs[i] = make(chan struct{})
+	}
+
+	return chs
+}
+
 func TestUpdateBarrier_SignalsWhenAllPlayersUpdate(t *testing.T) {
 	t.Parallel()
 
@@ -19,6 +29,7 @@ func TestUpdateBarrier_SignalsWhenAllPlayersUpdate(t *testing.T) {
 	barrier := gamestate.NewUpdateBarrier(
 		context.Background(),
 		[]<-chan struct{}{ch1, ch2},
+		neverDone(2),
 	)
 	defer barrier.Stop()
 
@@ -58,6 +69,7 @@ func TestUpdateBarrier_ResetsAfterSignal(t *testing.T) {
 	barrier := gamestate.NewUpdateBarrier(
 		context.Background(),
 		[]<-chan struct{}{ch1, ch2},
+		neverDone(2),
 	)
 	defer barrier.Stop()
 
@@ -96,11 +108,11 @@ func TestUpdateBarrier_StopCancelsGoroutine(t *testing.T) {
 	barrier := gamestate.NewUpdateBarrier(
 		context.Background(),
 		[]<-chan struct{}{ch1},
+		neverDone(1),
 	)
 
 	barrier.Stop()
 
-	// Signal channel is closed when goroutine exits.
 	select {
 	case _, ok := <-barrier.Signal():
 		assert.False(t, ok, "signal channel should be closed after stop")
@@ -115,12 +127,11 @@ func TestUpdateBarrier_ContextCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	ch1 := make(chan struct{}, 1)
 
-	barrier := gamestate.NewUpdateBarrier(ctx, []<-chan struct{}{ch1})
+	barrier := gamestate.NewUpdateBarrier(ctx, []<-chan struct{}{ch1}, neverDone(1))
 	defer barrier.Stop()
 
 	cancel()
 
-	// Signal channel is closed when goroutine exits.
 	select {
 	case _, ok := <-barrier.Signal():
 		assert.False(t, ok, "signal channel should be closed after cancel")
@@ -137,6 +148,7 @@ func TestUpdateBarrier_SinglePlayer(t *testing.T) {
 	barrier := gamestate.NewUpdateBarrier(
 		context.Background(),
 		[]<-chan struct{}{ch},
+		neverDone(1),
 	)
 	defer barrier.Stop()
 
@@ -160,7 +172,7 @@ func TestUpdateBarrier_FourPlayers(t *testing.T) {
 		readOnly[i] = channels[i]
 	}
 
-	barrier := gamestate.NewUpdateBarrier(context.Background(), readOnly)
+	barrier := gamestate.NewUpdateBarrier(context.Background(), readOnly, neverDone(4))
 	defer barrier.Stop()
 
 	// Update 3 of 4 — should not signal.
@@ -183,7 +195,7 @@ func TestUpdateBarrier_FourPlayers(t *testing.T) {
 		t.Fatal("should signal when all 4 updated")
 	}
 
-	// Verify stats: 3 more rounds of 4 updates.
+	// Verify: 3 more rounds of 4 updates.
 	for range 3 {
 		for _, ch := range channels {
 			ch <- struct{}{}
@@ -194,5 +206,33 @@ func TestUpdateBarrier_FourPlayers(t *testing.T) {
 		case <-time.After(time.Second):
 			require.Fail(t, "subsequent round should signal")
 		}
+	}
+}
+
+func TestUpdateBarrier_WSDeath_ClosesBarrier(t *testing.T) {
+	t.Parallel()
+
+	ch1 := make(chan struct{}, 1)
+	ch2 := make(chan struct{}, 1)
+	done1 := make(chan struct{})
+	done2 := make(chan struct{})
+
+	barrier := gamestate.NewUpdateBarrier(
+		context.Background(),
+		[]<-chan struct{}{ch1, ch2},
+		[]<-chan struct{}{done1, done2},
+	)
+	defer barrier.Stop()
+
+	// Player 1 updates, but player 2's WS dies.
+	ch1 <- struct{}{}
+	close(done2)
+
+	// Barrier should close (WS death).
+	select {
+	case _, ok := <-barrier.Signal():
+		assert.False(t, ok, "barrier should close on WS death")
+	case <-time.After(time.Second):
+		t.Fatal("barrier should detect WS death promptly")
 	}
 }

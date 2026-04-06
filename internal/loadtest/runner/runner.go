@@ -224,12 +224,15 @@ func (r *Runner) buildBarrier(
 	ctx context.Context,
 	gameCtx *GameSession,
 ) *gamestate.UpdateBarrier {
-	channels := make([]<-chan struct{}, len(gameCtx.Players))
+	notifyChannels := make([]<-chan struct{}, len(gameCtx.Players))
+	doneChannels := make([]<-chan struct{}, len(gameCtx.Players))
+
 	for i, p := range gameCtx.Players {
-		channels[i] = p.WS.View().Notify()
+		notifyChannels[i] = p.WS.View().Notify()
+		doneChannels[i] = p.WS.Done()
 	}
 
-	return gamestate.NewUpdateBarrier(ctx, channels)
+	return gamestate.NewUpdateBarrier(ctx, notifyChannels, doneChannels)
 }
 
 func (r *Runner) wireHandlers(
