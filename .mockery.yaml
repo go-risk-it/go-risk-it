@@ -6,6 +6,9 @@ pkgname: '{{.SrcPackageName}}'
 template: testify
 template-data:
   unroll-variadic: true
+exclude:
+  - github.com/go-risk-it/go-risk-it/internal/game/internal
+  - github.com/go-risk-it/go-risk-it/internal/lobby/internal
 packages:
   github.com/go-risk-it/go-risk-it/internal:
     config:

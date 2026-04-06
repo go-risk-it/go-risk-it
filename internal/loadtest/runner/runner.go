@@ -182,6 +182,8 @@ func (r *Runner) gameLoop(
 	captured *bool,
 	start time.Time,
 ) GameResult {
+	barrierSeq := int64(0)
+
 	for {
 		select {
 		case _, ok := <-barrier.Signal():
@@ -194,8 +196,19 @@ func (r *Runner) gameLoop(
 				return *result
 			}
 
+			barrierSeq++
+
 			now := time.Now()
 			snap := gameCtx.Players[0].WS.View().Snapshot()
+
+			observe.Info(ctx, "barrier_signal",
+				attribute.Int("game_index", gameCtx.GameIndex),
+				attribute.Int64("barrier_seq", barrierSeq),
+				attribute.Int64("turn", snap.PlayerView.Game.Turn),
+				attribute.Int64("state_seq", snap.PlayerView.Game.Seq),
+				attribute.String("phase", string(snap.CurrentPhase())),
+			)
+
 			bus.Emit(StateReceivedEvent{
 				Snapshot:     snap,
 				Timestamp:    now,

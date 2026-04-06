@@ -19,7 +19,7 @@ func (s *service) Perform(
 	ctx ctx.GameContext,
 	querier db.Querier,
 	move Move,
-	_ *snapshot.CachedGameState,
+	prev *snapshot.CachedGameState,
 ) (*MoveResult, moveservice.MoveEffect, error) {
 	var zero moveservice.MoveEffect
 
@@ -59,11 +59,20 @@ func (s *service) Perform(
 	}
 
 	// Add region updates for each granted region (each gets DefaultTroopGrant bonus troops).
+	// Use the cached prev state to get the current troop count so the MoveEffect carries
+	// the correct absolute value (currentTroops + bonus), not just the bonus amount.
+	cachedTroops := make(map[string]int64, 0)
+	if prev != nil && prev.PublicSnapshot != nil {
+		for _, r := range prev.PublicSnapshot.Regions {
+			cachedTroops[r.ID] = r.Troops
+		}
+	}
+
 	for _, grant := range regionTroopGrants {
 		effect.RegionUpdates = append(effect.RegionUpdates, moveservice.RegionUpdate{
 			RegionID:  grant.RegionExternalReference,
 			NewOwner:  ctx.UserID(),
-			NewTroops: DefaultTroopGrant,
+			NewTroops: cachedTroops[grant.RegionExternalReference] + DefaultTroopGrant,
 		})
 	}
 

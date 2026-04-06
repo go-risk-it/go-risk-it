@@ -47,18 +47,8 @@ func (s *service) Perform(
 		return struct{}{}, zero, fmt.Errorf("failed to get region: %w", err)
 	}
 
-	if troops < minTroopsToDeploy {
-		return struct{}{}, zero, domainerrors.NewValidationError("must deploy at least 1 troop")
-	}
-
-	if err := validation.CheckSourceOwnedByPlayer(ctx, thisRegion, "deploy"); err != nil {
+	if err := s.validate(ctx, thisRegion, move, troops); err != nil {
 		return struct{}{}, zero, err
-	}
-
-	if thisRegion.Troops != move.CurrentTroops {
-		return struct{}{}, zero, domainerrors.NewValidationError(
-			"region has different number of troops than declared",
-		)
 	}
 
 	if err := s.executeDeploy(ctx, querier, thisRegion, troops); err != nil {
@@ -79,6 +69,36 @@ func (s *service) Perform(
 	}
 
 	return struct{}{}, effect, nil
+}
+
+func (s *service) validate(
+	ctx ctx.GameContext,
+	thisRegion *sqlc.GetRegionsByGameRow,
+	move Move,
+	troops int64,
+) error {
+	if troops < minTroopsToDeploy {
+		return domainerrors.NewValidationError("must deploy at least 1 troop")
+	}
+
+	if err := validation.CheckSourceOwnedByPlayer(ctx, thisRegion, "deploy"); err != nil {
+		return err
+	}
+
+	if thisRegion.Troops != move.CurrentTroops {
+		observe.Warn(ctx, "declared troops mismatch",
+			attribute.String("move_type", "deploy"),
+			attribute.String("region", thisRegion.ExternalReference),
+			attribute.Int64("actual_troops", thisRegion.Troops),
+			attribute.Int64("declared_troops", move.CurrentTroops),
+		)
+
+		return domainerrors.NewValidationError(
+			"region has different number of troops than declared",
+		)
+	}
+
+	return nil
 }
 
 func (s *service) executeDeploy(

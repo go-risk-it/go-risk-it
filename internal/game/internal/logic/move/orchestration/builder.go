@@ -56,6 +56,7 @@ func BuildNewState(
 			Game: snapshot.GameMeta{
 				ID:           prev.PublicSnapshot.Game.ID,
 				Turn:         turn,
+				Seq:          0, // assigned by stateStore.Store()
 				WinnerUserID: winnerUserID,
 			},
 			Phase:   phase,

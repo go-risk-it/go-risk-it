@@ -110,6 +110,16 @@ func (s *service) validate(
 	}
 
 	if err := checkTroops(sourceRegion, targetRegion, move); err != nil {
+		observe.Warn(ctx, "declared troops mismatch",
+			attribute.String("move_type", "reinforce"),
+			attribute.String("source_region", sourceRegion.ExternalReference),
+			attribute.String("target_region", targetRegion.ExternalReference),
+			attribute.Int64("actual_source", sourceRegion.Troops),
+			attribute.Int64("actual_target", targetRegion.Troops),
+			attribute.Int64("declared_source", move.TroopsInSource),
+			attribute.Int64("declared_target", move.TroopsInTarget),
+		)
+
 		return fmt.Errorf("troops check failed: %w", err)
 	}
 

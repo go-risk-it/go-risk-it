@@ -51,6 +51,19 @@ func (h *ErrorHandler) handleFailed(bus *Bus, e Event) {
 	h.consecutiveErrors++
 	h.result.Errors++
 
+	// Log stale state errors with full context for race condition diagnosis.
+	if evt.ErrType == "stale_state" && h.gameCtx.Players[0].WS != nil {
+		snap := h.gameCtx.Players[0].WS.View().Snapshot()
+
+		observe.Warn(h.gameCtx.Ctx, "stale_state_error",
+			attribute.Int("game_index", h.gameCtx.GameIndex),
+			attribute.Int64("turn", snap.PlayerView.Game.Turn),
+			attribute.Int64("state_seq", snap.PlayerView.Game.Seq),
+			attribute.String("phase", string(snap.CurrentPhase())),
+			attribute.String("error", evt.Err.Error()),
+		)
+	}
+
 	if h.consecutiveErrors > h.maxConsecutiveErr {
 		h.result.FatalError = errors.New("too many consecutive errors")
 		h.result.Duration = time.Since(h.gameCtx.StartTime)

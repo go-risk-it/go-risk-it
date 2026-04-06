@@ -13,6 +13,7 @@ type GameSnapshot struct {
 type GameMeta struct {
 	ID           int64  `json:"id"`
 	Turn         int64  `json:"turn"`
+	Seq          int64  `json:"seq"`
 	WinnerUserID string `json:"winnerUserId"`
 }
 

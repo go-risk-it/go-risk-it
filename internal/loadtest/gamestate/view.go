@@ -20,6 +20,9 @@ type View struct {
 
 	playerView *snapshot.PlayerView
 
+	// seq tracks the last applied sequence number for monotonicity detection.
+	seq int64
+
 	// lastUpdateTime records when the most recent Apply() was called.
 	lastUpdateTime time.Time
 
@@ -54,6 +57,20 @@ func (v *View) Apply(msg WSMessage) error {
 		var pv snapshot.PlayerView
 		if err := json.Unmarshal(msg.Payload, &pv); err != nil {
 			return fmt.Errorf("unmarshal playerView: %w", err)
+		}
+
+		incomingSeq := pv.Game.Seq
+		if incomingSeq > 0 && incomingSeq < v.seq {
+			slog.Warn("view_seq_regression",
+				"incoming_seq", incomingSeq,
+				"current_seq", v.seq,
+				"incoming_turn", pv.Game.Turn,
+				"phase", pv.Phase.Type,
+			)
+		}
+
+		if incomingSeq > 0 {
+			v.seq = incomingSeq
 		}
 
 		v.playerView = &pv

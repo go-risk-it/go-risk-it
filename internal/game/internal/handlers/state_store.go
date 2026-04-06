@@ -10,9 +10,12 @@ import (
 // stateStore is an in-memory cache of game snapshots keyed by game ID.
 // Writes are guarded by turn monotonicity: a Store call is silently
 // ignored when the incoming turn is strictly less than the stored turn.
+// Each accepted Store increments a per-game sequence counter (Seq) that
+// uniquely identifies the snapshot version across all moves.
 type stateStore struct {
 	mu    sync.RWMutex
 	cache map[int64]*snapshot.CachedGameState
+	seq   map[int64]int64 // per-game monotonic sequence counter
 }
 
 var _ gameapi.StateStore = (*stateStore)(nil)
@@ -21,6 +24,7 @@ var _ gameapi.StateStore = (*stateStore)(nil)
 func NewStateStore() gameapi.StateStore {
 	return &stateStore{
 		cache: make(map[int64]*snapshot.CachedGameState),
+		seq:   make(map[int64]int64),
 	}
 }
 
@@ -42,6 +46,13 @@ func (s *stateStore) Store(gameID int64, state *snapshot.CachedGameState) {
 
 	if existing, ok := s.cache[gameID]; ok && state.Turn < existing.Turn {
 		return
+	}
+
+	s.seq[gameID]++
+	state.Seq = s.seq[gameID]
+
+	if state.PublicSnapshot != nil {
+		state.PublicSnapshot.Game.Seq = state.Seq
 	}
 
 	s.cache[gameID] = state
