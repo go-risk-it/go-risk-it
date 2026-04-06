@@ -192,10 +192,12 @@ func (r *Runner) gameLoop(
 				return *result
 			}
 
+			now := time.Now()
 			snap := gameCtx.Players[0].WS.View().Snapshot()
 			bus.Emit(StateReceivedEvent{
-				Snapshot:  snap,
-				Timestamp: time.Now(),
+				Snapshot:     snap,
+				Timestamp:    now,
+				WSReceivedAt: now,
 			})
 
 			if *captured {

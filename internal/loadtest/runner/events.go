@@ -31,8 +31,8 @@ func (GameStartedEvent) Type() EventType { return EventGameStarted }
 // StateReceivedEvent carries a fresh game state snapshot.
 type StateReceivedEvent struct {
 	Snapshot     gamestate.ViewSnapshot
-	Timestamp    time.Time // after settle sleep — used for E2E latency
-	WSReceivedAt time.Time // before settle sleep — used for WS delivery latency
+	Timestamp    time.Time // when the barrier signaled (all players updated)
+	WSReceivedAt time.Time // same as Timestamp in event-driven model (barrier = WS arrival)
 }
 
 func (StateReceivedEvent) Type() EventType { return EventStateReceived }
