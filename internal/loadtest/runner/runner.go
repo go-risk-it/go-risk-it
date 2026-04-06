@@ -125,14 +125,19 @@ func (r *Runner) Run(ctx context.Context, gameIndex, numPlayers int) GameResult 
 	})
 
 	if r.setupOverride != nil {
-		// Emit initial state from player 0.
+		// Test path: emit initial state directly, then enter barrier loop.
 		snap := gameCtx.Players[0].WS.View().Snapshot()
 		bus.Emit(StateReceivedEvent{Snapshot: snap, Timestamp: time.Now()})
 	} else {
-		// GameStartedEvent triggers ProtocolHandler which sets up the game
-		// and emits the initial StateReceivedEvent (first move cycle).
+		// Production path: ProtocolHandler sets up auth, game, WS connections.
+		// No initial state emission — the barrier loop drives ALL moves,
+		// including the first one, from WS notifications.
 		bus.Emit(GameStartedEvent{GameIndex: gameIndex, NumPlayers: numPlayers})
 	}
+
+	// Build barrier after protocol setup (needs players' WS views).
+	barrier := r.buildBarrier(ctx, gameCtx)
+	defer barrier.Stop()
 
 	// Release pooled users after WS cleanup (registered first = runs last in LIFO).
 	defer func() {
@@ -163,9 +168,6 @@ func (r *Runner) Run(ctx context.Context, gameIndex, numPlayers int) GameResult 
 	// Event-driven game loop: the UpdateBarrier waits for ALL players to
 	// receive their WS broadcast after each move, then triggers the next
 	// strategy cycle. This guarantees fresh state — no polling, no races.
-	barrier := r.buildBarrier(ctx, gameCtx)
-	defer barrier.Stop()
-
 	return r.gameLoop(ctx, bus, barrier, gameCtx, result, &captured, start)
 }
 

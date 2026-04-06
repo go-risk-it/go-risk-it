@@ -179,7 +179,7 @@ func TestView_NotifyChannel(t *testing.T) {
 	default:
 	}
 
-	// Multiple rapid updates coalesce into one notification.
+	// Multiple rapid updates each produce a notification (buffered channel).
 	for range 5 {
 		err = v.Apply(gamestate.WSMessage{Type: "playerView", Payload: data})
 		require.NoError(t, err)
@@ -196,7 +196,7 @@ func TestView_NotifyChannel(t *testing.T) {
 	}
 done:
 
-	assert.Equal(t, 1, count, "rapid updates should coalesce into 1 notification")
+	assert.Equal(t, 5, count, "each update should produce a notification")
 }
 
 func TestView_LastUpdateTime(t *testing.T) {

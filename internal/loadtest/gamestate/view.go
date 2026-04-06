@@ -23,14 +23,16 @@ type View struct {
 	// lastUpdateTime records when the most recent Apply() was called.
 	lastUpdateTime time.Time
 
-	// notify signals that a new playerView has been applied. Buffered(1) with
-	// non-blocking send — at most one pending notification at a time.
+	// notify signals that a new playerView has been applied. Buffered to
+	// absorb bursts without dropping notifications (the barrier needs every
+	// update to count). Non-blocking send — drops only if 32 updates are
+	// unprocessed, which indicates a stalled consumer.
 	notify chan struct{}
 }
 
 func NewView() *View {
 	return &View{
-		notify: make(chan struct{}, 1),
+		notify: make(chan struct{}, 32),
 	}
 }
 

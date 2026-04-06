@@ -80,7 +80,8 @@ func (h *ProtocolHandler) handle(bus *Bus, e Event) {
 	}
 
 	h.populateSession(gameID, players)
-	h.emitInitialState(bus, players)
+	// No initial state emission — the barrier-driven game loop handles the
+	// first move via the initial playerView WS notification from game creation.
 }
 
 // signupPlayers authenticates all players and returns their info.
@@ -217,13 +218,4 @@ func (h *ProtocolHandler) populateSession(gameID int64, players []*PlayerInfo) {
 	h.gameCtx.GameID = gameID
 	h.gameCtx.Players = players
 	h.gameCtx.UserIndex = userIndex
-}
-
-// emitInitialState publishes the first state snapshot to the bus.
-func (h *ProtocolHandler) emitInitialState(bus *Bus, players []*PlayerInfo) {
-	snap := players[0].WS.View().Snapshot()
-	bus.Emit(StateReceivedEvent{
-		Snapshot:  snap,
-		Timestamp: time.Now(),
-	})
 }

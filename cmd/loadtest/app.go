@@ -162,13 +162,14 @@ func buildStrategy(
 func buildUserPool(cfg *Config) *userpool.Pool {
 	var nextID atomic.Int64
 
+	epoch := time.Now().UnixNano()
 	auth := client.NewAuth(cfg.Server.URL, cfg.Server.AnonKey)
 
 	return userpool.New(userpool.Config{
 		MaxConcurrentGames: 2,
 		AuthFactory: func(_ context.Context) (*client.AuthResult, error) {
 			id := nextID.Add(1)
-			email := fmt.Sprintf("perf-pool-%d@test.local", id)
+			email := fmt.Sprintf("perf-%d-%d@test.local", epoch, id)
 
 			return auth.Signup(email, "perftest123")
 		},

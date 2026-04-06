@@ -181,7 +181,7 @@ func makeProtocolHandler(
 	return h, gameCtx
 }
 
-func TestProtocol_HappyPath_EmitsStateReceived(t *testing.T) {
+func TestProtocol_HappyPath_PopulatesSession(t *testing.T) {
 	t.Parallel()
 
 	auth := newFakeAuth(4)
@@ -193,8 +193,13 @@ func TestProtocol_HappyPath_EmitsStateReceived(t *testing.T) {
 
 	bus.Emit(GameStartedEvent{GameIndex: 1, NumPlayers: 4})
 
+	// Protocol handler no longer emits StateReceived — the barrier loop does.
 	stateEvents := bus.EmittedOfType(EventStateReceived)
-	require.Len(t, stateEvents, 1)
+	assert.Empty(t, stateEvents)
+
+	// Session should be populated.
+	assert.Equal(t, int64(42), h.gameCtx.GameID)
+	assert.Len(t, h.gameCtx.Players, 4)
 
 	completeEvents := bus.EmittedOfType(EventGameComplete)
 	assert.Empty(t, completeEvents)
