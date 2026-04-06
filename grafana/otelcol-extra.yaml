@@ -30,6 +30,22 @@ extensions:
 
 processors:
   batch:
+  tail_sampling:
+    decision_wait: 5s
+    num_traces: 50000
+    policies:
+      # Always keep error traces (debugging value: critical)
+      - name: errors
+        type: status_code
+        status_code: {status_codes: [ERROR]}
+      # Always keep slow traces >200ms (system-health dashboard queries >250ms)
+      - name: slow-traces
+        type: latency
+        latency: {threshold_ms: 200}
+      # Keep 5% of normal traces (representative sample for ad-hoc debugging)
+      - name: normal-sample
+        type: probabilistic
+        probabilistic: {sampling_percentage: 5}
 
 exporters:
   otlphttp/metrics:
@@ -107,10 +123,16 @@ connectors:
 service:
   extensions: [health_check]
   pipelines:
-    traces:
+    # Metrics pipeline: spanmetrics sees 100% of spans for accurate RED metrics.
+    traces/metrics:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlphttp/traces, spanmetrics]
+      exporters: [spanmetrics]
+    # Storage pipeline: tail-sampled subset to Tempo (errors + slow + 5%).
+    traces/storage:
+      receivers: [otlp]
+      processors: [batch, tail_sampling]
+      exporters: [otlphttp/traces]
     metrics:
       receivers: [otlp, prometheus/collector, prometheus/postgres, spanmetrics]
       processors: [batch]
