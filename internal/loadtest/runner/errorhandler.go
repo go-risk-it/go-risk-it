@@ -1,7 +1,6 @@
 package runner
 
 import (
-	"context"
 	"errors"
 	"strings"
 	"time"
@@ -84,7 +83,7 @@ func (h *ErrorHandler) tryAdvancePastCards() {
 
 	activeREST := h.activeREST()
 	if advErr := activeREST.Advance(
-		context.Background(),
+		h.gameCtx.Ctx,
 		h.gameCtx.GameID,
 		string(snapshot.PhaseCards),
 	); advErr != nil {

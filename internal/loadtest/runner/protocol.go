@@ -169,7 +169,7 @@ func (h *ProtocolHandler) createGame(
 	}
 
 	gameID, err := players[0].REST.CreateGame(
-		context.Background(),
+		h.gameCtx.Ctx,
 		client.CreateGameRequest{Players: gamePlayers},
 	)
 	if err != nil {
