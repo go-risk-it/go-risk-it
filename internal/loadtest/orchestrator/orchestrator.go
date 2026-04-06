@@ -107,7 +107,8 @@ func Run(
 				snap := collector.Snapshot()
 				active := int64(
 					cfg.NumGames,
-				) - snap.GamesCompleted - snap.GamesTimedOut - snap.GamesFatal
+				) - snap.GamesCompleted - snap.GamesTimedOut -
+					snap.GamesFatal - snap.GamesCancelled
 				observe.Info(context.Background(), "batch progress",
 					attribute.Int64("active", active),
 					attribute.Int64("completed", snap.GamesCompleted),

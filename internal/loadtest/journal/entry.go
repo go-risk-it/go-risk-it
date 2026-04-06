@@ -62,7 +62,8 @@ func FindSLOCeiling(steps []StepResult) SLOCeiling {
 			break
 		}
 
-		total := step.Metrics.GamesCompleted + step.Metrics.GamesTimedOut + step.Metrics.GamesFatal
+		total := step.Metrics.GamesCompleted + step.Metrics.GamesTimedOut +
+			step.Metrics.GamesFatal + step.Metrics.GamesCancelled
 
 		var completionRate float64
 		if total > 0 {

@@ -66,6 +66,7 @@ func (r *Runner) ToRunFunc() orchestrator.RunFunc {
 			Errors:     result.Errors,
 			Winner:     result.Winner,
 			TimedOut:   result.TimedOut,
+			Cancelled:  result.Cancelled,
 			FatalError: result.FatalError,
 		}
 	}
@@ -173,6 +174,8 @@ func (r *Runner) Run(ctx context.Context, gameIndex, numPlayers int) GameResult 
 
 // gameLoop runs the event-driven select loop: barrier signal → emit
 // StateReceivedEvent → bus processes one move cycle → wait for next signal.
+//
+//nolint:cyclop,funlen // sequential select loop with context handling
 func (r *Runner) gameLoop(
 	ctx context.Context,
 	bus *Bus,
@@ -220,12 +223,16 @@ func (r *Runner) gameLoop(
 			}
 		case <-ctx.Done():
 			if !*captured {
-				result.TimedOut = ctx.Err() == context.DeadlineExceeded
-				result.Duration = time.Since(start)
-
-				if !result.TimedOut {
+				switch ctx.Err() {
+				case context.DeadlineExceeded:
+					result.TimedOut = true
+				case context.Canceled:
+					result.Cancelled = true
+				default:
 					result.FatalError = ctx.Err()
 				}
+
+				result.Duration = time.Since(start)
 			}
 
 			return *result

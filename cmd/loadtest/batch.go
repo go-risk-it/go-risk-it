@@ -62,11 +62,16 @@ func (a *App) printBatchReport(
 	totalDuration time.Duration,
 ) error {
 	fatalErrors := 0
+	cancelledGames := 0
 	reportResults := make([]metrics.GameResult, len(results))
 
 	for i, r := range results {
 		if r.FatalError != nil {
 			fatalErrors++
+		}
+
+		if r.Cancelled {
+			cancelledGames++
 		}
 
 		reportResults[i] = metrics.GameResult{
@@ -76,6 +81,7 @@ func (a *App) printBatchReport(
 			Errors:     r.Errors,
 			Winner:     r.Winner,
 			TimedOut:   r.TimedOut,
+			Cancelled:  r.Cancelled,
 			FatalError: r.FatalError,
 		}
 	}

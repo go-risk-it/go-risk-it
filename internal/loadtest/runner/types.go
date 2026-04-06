@@ -18,6 +18,7 @@ type GameResult struct {
 	Errors     int
 	Winner     string
 	TimedOut   bool
+	Cancelled  bool
 	FatalError error
 }
 
