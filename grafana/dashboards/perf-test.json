@@ -1578,6 +1578,21 @@
                     {
                         "matcher": {
                             "id": "byName",
+                            "options": "cancelled/s"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#73BF69",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
                             "options": "healthy"
                         },
                         "properties": [
@@ -1678,6 +1693,11 @@
                     "expr": "perftest_health_zombie{service_name=\"perftest\"}",
                     "legendFormat": "zombie",
                     "refId": "D"
+                },
+                {
+                    "expr": "rate(perftest_games_cancelled_total{service_name=\"perftest\"}[$__rate_interval])",
+                    "legendFormat": "cancelled/s",
+                    "refId": "E"
                 }
             ],
             "title": "Health Decomposition",

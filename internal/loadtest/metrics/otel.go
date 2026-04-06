@@ -53,7 +53,8 @@ type OTelExporter struct {
 	logProvider    *sdklog.LoggerProvider
 
 	// UpDown counters — resource state with no span equivalent.
-	gamesActive metric.Int64UpDownCounter
+	gamesActive    metric.Int64UpDownCounter
+	gamesCancelled metric.Int64Counter
 
 	// Health classification gauges.
 	healthHealthy healthCounter
@@ -179,6 +180,12 @@ func (o *OTelExporter) initInstruments(meter metric.Meter) error {
 		return fmt.Errorf("create games.active counter: %w", err)
 	}
 
+	if o.gamesCancelled, err = meter.Int64Counter("perftest.games.cancelled",
+		metric.WithDescription("Games cancelled by step transition"),
+	); err != nil {
+		return fmt.Errorf("create games.cancelled counter: %w", err)
+	}
+
 	healthHealthy, err := meter.Int64UpDownCounter("perftest.health.healthy",
 		metric.WithDescription("Games classified as healthy"),
 	)
@@ -216,6 +223,11 @@ func (o *OTelExporter) initInstruments(meter metric.Meter) error {
 	o.healthZombie = &otelUpDownCounter{counter: healthZombie}
 
 	return nil
+}
+
+// RecordGameCancelled increments the cancelled games counter.
+func (o *OTelExporter) RecordGameCancelled() {
+	o.gamesCancelled.Add(context.Background(), 1)
 }
 
 // RecordHealthDistribution reports health classification changes to OTel.

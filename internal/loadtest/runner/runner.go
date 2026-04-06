@@ -74,7 +74,7 @@ func (r *Runner) ToRunFunc() orchestrator.RunFunc {
 
 // Run executes a single game with the given number of players.
 //
-//nolint:funlen // sequential game lifecycle
+//nolint:funlen,cyclop // sequential game lifecycle
 func (r *Runner) Run(ctx context.Context, gameIndex, numPlayers int) GameResult {
 	ctx, cancel := context.WithTimeout(ctx, r.cfg.Timeout)
 	defer cancel()
@@ -169,7 +169,13 @@ func (r *Runner) Run(ctx context.Context, gameIndex, numPlayers int) GameResult 
 	// Event-driven game loop: the UpdateBarrier waits for ALL players to
 	// receive their WS broadcast after each move, then triggers the next
 	// strategy cycle. This guarantees fresh state — no polling, no races.
-	return r.gameLoop(ctx, bus, barrier, gameCtx, result, &captured, start)
+	loopResult := r.gameLoop(ctx, bus, barrier, gameCtx, result, &captured, start)
+
+	if loopResult.Cancelled {
+		r.cfg.LiveMetrics.RecordGameCancelled()
+	}
+
+	return loopResult
 }
 
 // gameLoop runs the event-driven select loop: barrier signal → emit

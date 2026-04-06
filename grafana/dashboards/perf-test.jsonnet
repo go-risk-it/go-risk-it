@@ -440,6 +440,11 @@ dashboard.new(
               'zombie',
               'D',
             ),
+            targets.target(
+              'rate(perftest_games_cancelled_total{service_name="%s"}[$__rate_interval])' % perfSvc,
+              'cancelled/s',
+              'E',
+            ),
           ],
           unit='short',
         )
@@ -449,6 +454,7 @@ dashboard.new(
           slow: colors.signal.warning,
           stalled: colors.signal['error'],
           zombie: colors.signal.muted,
+          'cancelled/s': colors.client,
         }) + {
           options+: {
             legend+: {
