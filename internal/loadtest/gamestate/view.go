@@ -11,6 +11,10 @@ import (
 )
 
 // View holds the latest game state received via WebSocket. Thread-safe.
+//
+// The push model: Apply() sends a non-blocking notification on a buffered(1)
+// channel for each playerView update. Consumers read from Notify() to detect
+// state changes without polling or version tracking.
 type View struct {
 	mu sync.RWMutex
 
@@ -19,45 +23,23 @@ type View struct {
 	// lastUpdateTime records when the most recent Apply() was called.
 	lastUpdateTime time.Time
 
-	// version is a monotonically increasing counter incremented on each Apply().
-	// Used by AwaitUpdateSince to detect updates that arrived before the wait started.
-	version uint64
-
-	// updated is closed and re-created on each state update.
-	updated chan struct{}
+	// notify signals that a new playerView has been applied. Buffered(1) with
+	// non-blocking send — at most one pending notification at a time.
+	notify chan struct{}
 }
 
 func NewView() *View {
 	return &View{
-		updated: make(chan struct{}),
+		notify: make(chan struct{}, 1),
 	}
 }
 
-// Version returns the current update counter. Callers snapshot this before
-// triggering a server-side action, then pass it to AwaitUpdateSince to wait
-// for the resulting WS update — even if it arrives before the wait starts.
-func (v *View) Version() uint64 {
-	v.mu.RLock()
-	defer v.mu.RUnlock()
-
-	return v.version
-}
-
-// AwaitUpdateSince returns a channel that is closed when the version exceeds
-// sinceVersion. If the update has already arrived (version > sinceVersion),
-// returns a pre-closed channel for immediate consumption.
-func (v *View) AwaitUpdateSince(sinceVersion uint64) <-chan struct{} {
-	v.mu.RLock()
-	defer v.mu.RUnlock()
-
-	if v.version > sinceVersion {
-		ch := make(chan struct{})
-		close(ch)
-
-		return ch
-	}
-
-	return v.updated
+// Notify returns a channel that receives a signal when a new playerView
+// is applied. The channel is buffered(1) — multiple rapid updates coalesce
+// into a single notification. Consumers should read from this channel and
+// then call Snapshot() to get the latest state.
+func (v *View) Notify() <-chan struct{} {
+	return v.notify
 }
 
 // Apply processes a raw WS message and updates the relevant state.
@@ -74,7 +56,7 @@ func (v *View) Apply(msg WSMessage) error {
 
 		v.playerView = &pv
 	case "playerConnection":
-		// Connection status updates don't affect game state — skip version bump.
+		// Connection status updates don't affect game state.
 		return nil
 	default:
 		slog.Warn("unknown ws message type", "type", msg.Type)
@@ -82,10 +64,13 @@ func (v *View) Apply(msg WSMessage) error {
 		return nil
 	}
 
-	v.version++
-	close(v.updated)
-	v.updated = make(chan struct{})
 	v.lastUpdateTime = time.Now()
+
+	// Non-blocking send: coalesce rapid updates into one notification.
+	select {
+	case v.notify <- struct{}{}:
+	default:
+	}
 
 	return nil
 }

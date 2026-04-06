@@ -42,14 +42,6 @@ func (h *ExecutorHandler) handle(bus *Bus, e Event) {
 
 	rest := h.gameCtx.Players[idx].REST
 
-	// Capture WS versions BEFORE the REST call. The server commits and
-	// broadcasts the WS update before the HTTP response reaches us, so
-	// the version may already be bumped by the time MoveSucceeded fires.
-	preVersions := make([]uint64, len(h.gameCtx.Players))
-	for i, p := range h.gameCtx.Players {
-		preVersions[i] = p.WS.View().Version()
-	}
-
 	t1 := time.Now()
 	err := executeAction(h.gameCtx.Ctx, rest, h.gameCtx.GameID, evt.Action)
 	t2 := time.Now()
@@ -59,7 +51,6 @@ func (h *ExecutorHandler) handle(bus *Bus, e Event) {
 			Action:      evt.Action,
 			RESTLatency: t2.Sub(t1),
 			RESTEndTime: t2,
-			PreVersions: preVersions,
 		})
 
 		return

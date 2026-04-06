@@ -136,56 +136,67 @@ func TestView_ApplyInvalidJSON(t *testing.T) {
 	assert.Contains(t, err.Error(), "unmarshal playerView")
 }
 
-func TestView_VersionAndAwaitUpdateSince(t *testing.T) {
+func TestView_NotifyChannel(t *testing.T) {
 	t.Parallel()
 
 	v := gamestate.NewView()
-	require.Equal(t, uint64(0), v.Version())
 
-	// AwaitUpdateSince(0) should block (no update yet).
-	ch := v.AwaitUpdateSince(0)
+	// No notification yet.
 	select {
-	case <-ch:
-		t.Fatal("channel should not be closed yet")
+	case <-v.Notify():
+		t.Fatal("should not notify before any update")
 	default:
 	}
 
-	// playerConnection does NOT bump version.
+	// playerConnection does NOT notify.
 	err := v.Apply(gamestate.WSMessage{Type: "playerConnection", Payload: json.RawMessage(`{}`)})
 	require.NoError(t, err)
-	require.Equal(t, uint64(0), v.Version())
 
-	// playerView DOES bump version.
+	select {
+	case <-v.Notify():
+		t.Fatal("playerConnection should not trigger notification")
+	default:
+	}
+
+	// playerView DOES notify.
 	data, err2 := json.Marshal(testPlayerView())
 	require.NoError(t, err2)
 
 	err = v.Apply(gamestate.WSMessage{Type: "playerView", Payload: data})
 	require.NoError(t, err)
-	require.Equal(t, uint64(1), v.Version())
 
 	select {
-	case <-ch:
-		// OK — channel was closed.
+	case <-v.Notify():
+		// OK
 	default:
-		t.Fatal("channel should be closed after Apply")
+		t.Fatal("playerView should trigger notification")
 	}
 
-	// AwaitUpdateSince(0) now returns immediately (version 1 > 0).
-	ch2 := v.AwaitUpdateSince(0)
+	// After consuming, channel is empty again.
 	select {
-	case <-ch2:
-		// OK — pre-closed channel.
+	case <-v.Notify():
+		t.Fatal("should not have second notification")
 	default:
-		t.Fatal("should return immediately when version already advanced")
 	}
 
-	// AwaitUpdateSince(1) should block (waiting for version > 1).
-	ch3 := v.AwaitUpdateSince(1)
-	select {
-	case <-ch3:
-		t.Fatal("should block when waiting for future version")
-	default:
+	// Multiple rapid updates coalesce into one notification.
+	for range 5 {
+		err = v.Apply(gamestate.WSMessage{Type: "playerView", Payload: data})
+		require.NoError(t, err)
 	}
+
+	count := 0
+	for {
+		select {
+		case <-v.Notify():
+			count++
+		default:
+			goto done
+		}
+	}
+done:
+
+	assert.Equal(t, 1, count, "rapid updates should coalesce into 1 notification")
 }
 
 func TestView_LastUpdateTime(t *testing.T) {
@@ -367,9 +378,13 @@ func TestView_ConcurrentAccess(t *testing.T) {
 	for range 10 {
 		wg.Go(func() {
 			_ = v.Snapshot()
-			_ = v.AwaitUpdateSince(0)
 			_ = v.LastUpdateTime()
-			_ = v.Version()
+
+			// Non-blocking read from Notify.
+			select {
+			case <-v.Notify():
+			default:
+			}
 		})
 	}
 
