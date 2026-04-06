@@ -92,6 +92,7 @@ func testPublicSnapshot() *apisnapshot.GameSnapshot {
 		},
 		Regions: []apisnapshot.RegionState{
 			{ID: "brazil", OwnerID: testUserID, Troops: 5},
+			{ID: "argentina", OwnerID: "player2", Troops: 3},
 		},
 		Players: []apisnapshot.PlayerState{
 			{
@@ -1047,7 +1048,7 @@ func TestOrchestrateMove_PrevRegionsFromPrevState(t *testing.T) {
 
 	// PreviousRegions should match the pre-mutation snapshot regions
 	prevRegions := mcEvents[0].PreviousRegions
-	require.Len(t, prevRegions, 1)
+	require.Len(t, prevRegions, 2)
 	require.Equal(t, "brazil", prevRegions[0].ID)
 	require.Equal(t, testUserID, prevRegions[0].OwnerID)
 	require.Equal(t, int64(5), prevRegions[0].Troops)

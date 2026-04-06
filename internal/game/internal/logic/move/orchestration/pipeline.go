@@ -197,6 +197,16 @@ func (s *orchestrator[T, R]) resolveTargetPhase(
 		return s.service.PhaseType(), true, moveservice.AdvanceEffect{}, nil
 	}
 
+	// Universal domination: if the player owns all regions after the move,
+	// the game is won regardless of their specific mission.
+	if IsDomination(prevState, effect, ctx.UserID()) {
+		if err := s.assignWinner(ctx, querier); err != nil {
+			return "", false, moveservice.AdvanceEffect{}, err
+		}
+
+		return s.service.PhaseType(), true, moveservice.AdvanceEffect{}, nil
+	}
+
 	targetPhase, advEffect, err := s.walkAndAdvance(
 		ctx, querier, performResult, prevState, effect,
 	)

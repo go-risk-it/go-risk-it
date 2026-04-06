@@ -1151,3 +1151,62 @@ func TestBuildNewState_TurnSkipsDeadPlayers(t *testing.T) {
 		})
 	}
 }
+
+func TestIsDomination(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name          string
+		regionUpdates []service.RegionUpdate
+		userID        string
+		want          bool
+	}{
+		{
+			name:          "no domination with mixed ownership",
+			regionUpdates: nil,
+			userID:        "player1",
+			want:          false,
+		},
+		{
+			name: "domination after conquering all remaining regions",
+			regionUpdates: []service.RegionUpdate{
+				{RegionID: "eastern-europe", NewOwner: "player1", NewTroops: 3},
+				{RegionID: "brazil", NewOwner: "player1", NewTroops: 2},
+			},
+			userID: "player1",
+			want:   true,
+		},
+		{
+			name: "not domination when one region still belongs to another player",
+			regionUpdates: []service.RegionUpdate{
+				{RegionID: "eastern-europe", NewOwner: "player1", NewTroops: 3},
+			},
+			userID: "player1",
+			want:   false,
+		},
+		{
+			name: "not domination for the wrong player",
+			regionUpdates: []service.RegionUpdate{
+				{RegionID: "eastern-europe", NewOwner: "player1", NewTroops: 3},
+				{RegionID: "brazil", NewOwner: "player1", NewTroops: 2},
+			},
+			userID: "player2",
+			want:   false,
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			prev := basePrevState()
+			effect := service.MoveEffect{
+				RegionUpdates: testCase.regionUpdates,
+				UpdatedPhase:  snapshot.EmptyPhaseState{},
+			}
+
+			got := orchestration.IsDomination(prev, effect, testCase.userID)
+			require.Equal(t, testCase.want, got)
+		})
+	}
+}
