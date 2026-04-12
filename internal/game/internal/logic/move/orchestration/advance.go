@@ -121,7 +121,7 @@ func (s *orchestrator[T, R]) buildAndPersistAdvance(
 	}
 
 	persistEffect := buildPersistenceEffect(
-		moveCtx, nil, &advEffect, prevState, false,
+		moveCtx, nil, &advEffect, prevState, targetPhase, false,
 	)
 
 	if err := Persist(ctx, s.querier, s.phaseService, persistEffect); err != nil {

@@ -45,8 +45,14 @@ func (s *service) Advance(
 
 	// When advancing to DEPLOY, delegate to cards.Advance to create the deploy
 	// phase with the correct deployable troops calculation.
+	// The turn ends here (REINFORCE→DEPLOY), so advance the turn to the next
+	// alive player before delegating — cards.Advance uses advCtx.Turn to
+	// determine the deploy-for player.
 	if targetPhase == sqlc.GamePhaseTypeDEPLOY {
-		cardsEffect, err := s.cardsService.Advance(ctx, targetPhase, nil, advCtx)
+		nextAdvCtx := advCtx
+		nextAdvCtx.Turn = nextAliveTurn(advCtx.Turn, advCtx.Players)
+
+		cardsEffect, err := s.cardsService.Advance(ctx, targetPhase, nil, nextAdvCtx)
 		if err != nil {
 			return moveservice.AdvanceEffect{}, fmt.Errorf(
 				"failed to advance cards phase: %w",
@@ -73,4 +79,34 @@ func (s *service) Advance(
 		CardDeltas: cardDeltas,
 		DeckDelta:  deckDelta,
 	}, nil
+}
+
+// nextAliveTurn finds the next turn index (wrapping around) that corresponds
+// to an alive player. Mirrors orchestration.nextAliveTurn but is local to
+// avoid a cross-package dependency.
+func nextAliveTurn(
+	currentTurn int64,
+	players []snapshot.PlayerState,
+) int64 {
+	count := int64(len(players))
+	if count == 0 {
+		return currentTurn + 1
+	}
+
+	statusByIndex := make(map[int64]snapshot.PlayerStatus, len(players))
+	for _, p := range players {
+		statusByIndex[p.Index] = p.Status
+	}
+
+	turn := currentTurn + 1
+
+	for range count {
+		if statusByIndex[turn%count] == snapshot.PlayerAlive {
+			return turn
+		}
+
+		turn++
+	}
+
+	return currentTurn + 1
 }

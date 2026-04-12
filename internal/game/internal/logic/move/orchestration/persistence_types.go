@@ -127,9 +127,10 @@ type CardDraw struct {
 // ConquerData and DeployData are optional pointers — present only when transitioning
 // to CONQUER or DEPLOY phases respectively.
 type PhaseTransition struct {
-	Turn      int64
-	PhaseType string
-	Players   []PlayerRef
+	Turn             int64
+	PhaseType        string
+	CurrentPhaseType string
+	Players          []PlayerRef
 	// ConquerData is present when transitioning to CONQUER phase.
 	ConquerData *ConquerData
 	// DeployData is present when transitioning to DEPLOY phase.

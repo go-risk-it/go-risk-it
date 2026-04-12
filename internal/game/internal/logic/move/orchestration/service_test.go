@@ -236,6 +236,7 @@ func setupHappyPath[T, R any](
 	svc *mockservice.Service[T, R],
 	missionSvc *mockmission.Service,
 	boardSvc *mockboard.Service,
+	phaseSvc *mockphase.Service,
 	move T,
 	performResult R,
 	currentPhase sqlc.GamePhaseType,
@@ -287,6 +288,13 @@ func setupHappyPath[T, R any](
 	txQuerier.EXPECT().
 		CreateMoveLog(mock.Anything, mock.Anything).
 		Return(sqlc.GameMoveLog{}, nil).Maybe()
+
+	// Phase transition writes (when phase changes)
+	if targetPhase != currentPhase && !missionAccomplished {
+		phaseSvc.EXPECT().
+			InsertPhase(mock.Anything, txQuerier, mock.Anything).
+			Return(&sqlc.GamePhase{ID: 999}, nil).Maybe()
+	}
 }
 
 func testContinents(t *testing.T) board.Continents {
@@ -354,7 +362,7 @@ func TestOrchestrateMove_DeployEmitsMoveCompleted(t *testing.T) {
 
 	setupHappyPath(
 		t, txQuerier,
-		validationSvc, svc, missionSvc, boardSvc,
+		validationSvc, svc, missionSvc, boardSvc, phaseSvc,
 		move, struct{}{},
 		sqlc.GamePhaseTypeDEPLOY, sqlc.GamePhaseTypeDEPLOY, false,
 	)
@@ -410,7 +418,7 @@ func TestOrchestrateMove_AttackEmitsMoveCompleted(t *testing.T) {
 
 	setupHappyPath(
 		t, txQuerier,
-		validationSvc, svc, missionSvc, boardSvc,
+		validationSvc, svc, missionSvc, boardSvc, phaseSvc,
 		move, attackResult,
 		sqlc.GamePhaseTypeATTACK, sqlc.GamePhaseTypeATTACK, false,
 	)
@@ -452,7 +460,7 @@ func TestOrchestrateMove_PhaseTransitionInMoveCompleted(t *testing.T) {
 
 	setupHappyPath(
 		t, txQuerier,
-		validationSvc, svc, missionSvc, boardSvc,
+		validationSvc, svc, missionSvc, boardSvc, phaseSvc,
 		move, struct{}{},
 		sqlc.GamePhaseTypeDEPLOY, sqlc.GamePhaseTypeATTACK, false,
 	)
@@ -505,7 +513,7 @@ func TestOrchestrateMove_GameCompletionEmitsAllEvents(t *testing.T) {
 
 	setupHappyPath(
 		t, txQuerier,
-		validationSvc, svc, missionSvc, boardSvc,
+		validationSvc, svc, missionSvc, boardSvc, phaseSvc,
 		move, struct{}{},
 		sqlc.GamePhaseTypeREINFORCE, sqlc.GamePhaseTypeREINFORCE, true,
 	)
@@ -614,7 +622,7 @@ func TestOrchestrateMove_CardsEmitsMoveCompleted(t *testing.T) {
 
 	setupHappyPath(
 		t, txQuerier,
-		validationSvc, svc, missionSvc, boardSvc,
+		validationSvc, svc, missionSvc, boardSvc, phaseSvc,
 		move, cardsResult,
 		sqlc.GamePhaseTypeCARDS, sqlc.GamePhaseTypeDEPLOY, false,
 	)
@@ -751,7 +759,7 @@ func runOrchestration[T, R any](
 
 	setupHappyPath(
 		t, txQuerier,
-		validationSvc, svc, missionSvc, boardSvc,
+		validationSvc, svc, missionSvc, boardSvc, phaseSvc,
 		move, result,
 		phase, phase, false,
 	)
@@ -795,7 +803,7 @@ func TestOrchestrateMove_EmitsMoveCompleted(t *testing.T) {
 
 	setupHappyPath(
 		t, txQuerier,
-		validationSvc, svc, missionSvc, boardSvc,
+		validationSvc, svc, missionSvc, boardSvc, phaseSvc,
 		move, struct{}{},
 		sqlc.GamePhaseTypeDEPLOY, sqlc.GamePhaseTypeDEPLOY, false,
 	)
@@ -847,7 +855,7 @@ func TestOrchestrateMove_StoresStateAfterCommit(t *testing.T) {
 
 	setupHappyPath(
 		t, txQuerier,
-		validationSvc, svc, missionSvc, boardSvc,
+		validationSvc, svc, missionSvc, boardSvc, phaseSvc,
 		move, struct{}{},
 		sqlc.GamePhaseTypeDEPLOY, sqlc.GamePhaseTypeDEPLOY, false,
 	)
@@ -893,7 +901,7 @@ func TestOrchestrateMove_WarmOnMiss(t *testing.T) {
 
 	setupHappyPath(
 		t, txQuerier,
-		validationSvc, svc, missionSvc, boardSvc,
+		validationSvc, svc, missionSvc, boardSvc, phaseSvc,
 		move, struct{}{},
 		sqlc.GamePhaseTypeDEPLOY, sqlc.GamePhaseTypeDEPLOY, false,
 	)
@@ -962,7 +970,7 @@ func TestOrchestrateMove_CacheHitDoesNotReadDB(t *testing.T) {
 
 	setupHappyPath(
 		t, txQuerier,
-		validationSvc, svc, missionSvc, boardSvc,
+		validationSvc, svc, missionSvc, boardSvc, phaseSvc,
 		move, struct{}{},
 		sqlc.GamePhaseTypeDEPLOY, sqlc.GamePhaseTypeDEPLOY, false,
 	)
@@ -1003,7 +1011,7 @@ func TestOrchestrateMove_PrevRegionsFromPrevState(t *testing.T) {
 
 	setupHappyPath(
 		t, txQuerier,
-		validationSvc, svc, missionSvc, boardSvc,
+		validationSvc, svc, missionSvc, boardSvc, phaseSvc,
 		move, struct{}{},
 		sqlc.GamePhaseTypeDEPLOY, sqlc.GamePhaseTypeDEPLOY, false,
 	)

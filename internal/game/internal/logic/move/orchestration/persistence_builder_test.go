@@ -48,7 +48,14 @@ func TestBuildPersistenceEffect_Deploy(t *testing.T) {
 	}
 
 	// advEffect has EmptyPhaseState which is same type as current → no phase transition
-	result := orchestration.BuildPersistenceEffect(moveCtx, moveEffect, nil, prevState, false)
+	result := orchestration.BuildPersistenceEffect(
+		moveCtx,
+		moveEffect,
+		nil,
+		prevState,
+		sqlc.GamePhaseTypeDEPLOY,
+		false,
+	)
 
 	require.NotNil(t, result)
 	require.NotNil(t, result.MoveLog)
@@ -106,7 +113,14 @@ func TestBuildPersistenceEffect_Attack(t *testing.T) {
 		},
 	}
 
-	result := orchestration.BuildPersistenceEffect(moveCtx, moveEffect, nil, prevState, false)
+	result := orchestration.BuildPersistenceEffect(
+		moveCtx,
+		moveEffect,
+		nil,
+		prevState,
+		sqlc.GamePhaseTypeDEPLOY,
+		false,
+	)
 
 	require.NotNil(t, result)
 	require.NotNil(t, result.MoveLog)
@@ -156,7 +170,14 @@ func TestBuildPersistenceEffect_Conquer(t *testing.T) {
 		},
 	}
 
-	result := orchestration.BuildPersistenceEffect(moveCtx, moveEffect, nil, prevState, false)
+	result := orchestration.BuildPersistenceEffect(
+		moveCtx,
+		moveEffect,
+		nil,
+		prevState,
+		sqlc.GamePhaseTypeDEPLOY,
+		false,
+	)
 
 	require.NotNil(t, result)
 	require.NotNil(t, result.MoveExecution)
@@ -195,7 +216,14 @@ func TestBuildPersistenceEffect_ConquerWithElimination(t *testing.T) {
 		},
 	}
 
-	result := orchestration.BuildPersistenceEffect(moveCtx, moveEffect, nil, prevState, false)
+	result := orchestration.BuildPersistenceEffect(
+		moveCtx,
+		moveEffect,
+		nil,
+		prevState,
+		sqlc.GamePhaseTypeDEPLOY,
+		false,
+	)
 
 	require.NotNil(t, result)
 
@@ -227,7 +255,14 @@ func TestBuildPersistenceEffect_Reinforce(t *testing.T) {
 		},
 	}
 
-	result := orchestration.BuildPersistenceEffect(moveCtx, moveEffect, nil, prevState, false)
+	result := orchestration.BuildPersistenceEffect(
+		moveCtx,
+		moveEffect,
+		nil,
+		prevState,
+		sqlc.GamePhaseTypeDEPLOY,
+		false,
+	)
 
 	require.NotNil(t, result)
 	require.NotNil(t, result.MoveExecution)
@@ -268,7 +303,14 @@ func TestBuildPersistenceEffect_ReinforceWithCardDraw(t *testing.T) {
 		},
 	}
 
-	result := orchestration.BuildPersistenceEffect(moveCtx, moveEffect, nil, prevState, false)
+	result := orchestration.BuildPersistenceEffect(
+		moveCtx,
+		moveEffect,
+		nil,
+		prevState,
+		sqlc.GamePhaseTypeDEPLOY,
+		false,
+	)
 
 	require.NotNil(t, result)
 
@@ -304,7 +346,14 @@ func TestBuildPersistenceEffect_Cards(t *testing.T) {
 		},
 	}
 
-	result := orchestration.BuildPersistenceEffect(moveCtx, moveEffect, nil, prevState, false)
+	result := orchestration.BuildPersistenceEffect(
+		moveCtx,
+		moveEffect,
+		nil,
+		prevState,
+		sqlc.GamePhaseTypeDEPLOY,
+		false,
+	)
 
 	require.NotNil(t, result)
 	require.NotNil(t, result.MoveExecution)
@@ -346,7 +395,14 @@ func TestBuildPersistenceEffect_VoluntaryAdvance(t *testing.T) {
 		},
 	}
 
-	result := orchestration.BuildPersistenceEffect(moveCtx, nil, advEffect, prevState, false)
+	result := orchestration.BuildPersistenceEffect(
+		moveCtx,
+		nil,
+		advEffect,
+		prevState,
+		sqlc.GamePhaseTypeDEPLOY,
+		false,
+	)
 
 	require.NotNil(t, result)
 
@@ -384,7 +440,14 @@ func TestBuildPersistenceEffect_GameOver(t *testing.T) {
 		},
 	}
 
-	result := orchestration.BuildPersistenceEffect(moveCtx, moveEffect, nil, prevState, true)
+	result := orchestration.BuildPersistenceEffect(
+		moveCtx,
+		moveEffect,
+		nil,
+		prevState,
+		sqlc.GamePhaseTypeDEPLOY,
+		true,
+	)
 
 	require.NotNil(t, result)
 
@@ -442,6 +505,7 @@ func TestBuildPersistenceEffect_PhaseTransition(t *testing.T) {
 		moveEffect,
 		advEffect,
 		prevState,
+		sqlc.GamePhaseTypeCONQUER,
 		false,
 	)
 

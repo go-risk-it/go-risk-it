@@ -126,8 +126,9 @@ func TestPersist_PhaseTransitionWithConquer(t *testing.T) {
 
 	effect := &orchestration.PersistenceEffect{
 		PhaseTransition: &orchestration.PhaseTransition{
-			Turn:      1,
-			PhaseType: "CONQUER",
+			Turn:             1,
+			PhaseType:        "CONQUER",
+			CurrentPhaseType: "ATTACK",
 			Players: []orchestration.PlayerRef{
 				{UserID: "user1", InternalID: 10},
 			},
@@ -175,8 +176,9 @@ func TestPersist_PhaseTransitionWithDeploy(t *testing.T) {
 
 	effect := &orchestration.PersistenceEffect{
 		PhaseTransition: &orchestration.PhaseTransition{
-			Turn:      1,
-			PhaseType: "DEPLOY",
+			Turn:             1,
+			PhaseType:        "DEPLOY",
+			CurrentPhaseType: "REINFORCE",
 			Players: []orchestration.PlayerRef{
 				{UserID: "user1", InternalID: 10},
 			},

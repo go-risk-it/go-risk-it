@@ -29,8 +29,9 @@ func (s *service) Advance(
 		return moveservice.AdvanceEffect{}, fmt.Errorf("invalid phase transition: %w", err)
 	}
 
-	// Resolve the deploy-for player from cached state. The turn already
-	// accounts for dead-player skipping.
+	// Resolve the deploy-for player from cached state. When called via
+	// reinforce.Advance delegation (REINFORCE→DEPLOY), the caller advances
+	// advCtx.Turn to the next alive player before delegating.
 	playerCount := int64(len(advCtx.Players))
 	deployForUserID := advCtx.Players[advCtx.Turn%playerCount].UserID
 

@@ -29,7 +29,8 @@ func BuildPersistenceEffect(
 	moveEffect *moveservice.MoveEffect,
 	advEffect *moveservice.AdvanceEffect,
 	prevState *snapshot.CachedGameState,
+	targetPhase sqlc.GamePhaseType,
 	gameOver bool,
 ) *PersistenceEffect {
-	return buildPersistenceEffect(moveCtx, moveEffect, advEffect, prevState, gameOver)
+	return buildPersistenceEffect(moveCtx, moveEffect, advEffect, prevState, targetPhase, gameOver)
 }

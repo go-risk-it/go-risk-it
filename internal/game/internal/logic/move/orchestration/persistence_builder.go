@@ -25,6 +25,7 @@ func buildPersistenceEffect(
 	moveEffect *moveservice.MoveEffect,
 	advEffect *moveservice.AdvanceEffect,
 	prevState *snapshot.CachedGameState,
+	targetPhase sqlc.GamePhaseType,
 	gameOver bool,
 ) *PersistenceEffect {
 	if prevState == nil {
@@ -53,10 +54,12 @@ func buildPersistenceEffect(
 	}
 
 	// 4. PhaseTransition — when advEffect triggers a phase change
-	if advEffect != nil && phaseTypeChanged(prevState, advEffect.NewPhase) {
+	if advEffect != nil && targetPhase != moveCtx.phaseType {
 		result.PhaseTransition = buildPhaseTransition(
 			advEffect,
 			prevState,
+			string(targetPhase),
+			string(moveCtx.phaseType),
 		)
 	}
 
@@ -173,39 +176,13 @@ func extractCardDraw(
 	return nil
 }
 
-// phaseTypeChanged returns true if the new phase state represents a different
-// phase type than the current phase.
-func phaseTypeChanged(
-	prevState *snapshot.CachedGameState,
-	newPhase snapshot.PhaseState,
-) bool {
-	currentType := getPhaseStateType(prevState.PublicSnapshot.Phase.State)
-	newType := getPhaseStateType(newPhase)
-
-	return currentType != newType
-}
-
-// getPhaseStateType returns the PhaseType discriminator for a PhaseState.
-func getPhaseStateType(state snapshot.PhaseState) snapshot.PhaseType {
-	switch state.(type) {
-	case snapshot.EmptyPhaseState:
-		return "" // EmptyPhaseState has no type
-	case snapshot.DeployPhaseState:
-		return snapshot.PhaseDeploy
-	case snapshot.ConquerPhaseState:
-		return snapshot.PhaseConquer
-	default:
-		return ""
-	}
-}
-
 // buildPhaseTransition constructs PhaseTransition from AdvanceEffect and prevState.
 func buildPhaseTransition(
 	advEffect *moveservice.AdvanceEffect,
 	prevState *snapshot.CachedGameState,
+	phaseType string,
+	currentPhaseType string,
 ) *PhaseTransition {
-	phaseType := getPhaseStateType(advEffect.NewPhase)
-
 	// Compute turn — increment if TurnEnded
 	turn := prevState.Turn
 	if advEffect.TurnEnded {
@@ -222,9 +199,10 @@ func buildPhaseTransition(
 	}
 
 	transition := &PhaseTransition{
-		Turn:      turn,
-		PhaseType: snapshotPhaseToString(phaseType),
-		Players:   players,
+		Turn:             turn,
+		PhaseType:        phaseType,
+		CurrentPhaseType: currentPhaseType,
+		Players:          players,
 	}
 
 	// Populate ConquerData or DeployData if applicable
@@ -273,23 +251,5 @@ func sqlcPhaseToString(phase sqlc.GamePhaseType) string {
 		return "REINFORCE"
 	default:
 		panic(fmt.Sprintf("sqlcPhaseToString: unknown phase %q", phase))
-	}
-}
-
-// snapshotPhaseToString converts a snapshot.PhaseType to its string representation.
-func snapshotPhaseToString(phase snapshot.PhaseType) string {
-	switch phase {
-	case snapshot.PhaseCards:
-		return "CARDS"
-	case snapshot.PhaseDeploy:
-		return "DEPLOY"
-	case snapshot.PhaseAttack:
-		return "ATTACK"
-	case snapshot.PhaseConquer:
-		return "CONQUER"
-	case snapshot.PhaseReinforce:
-		return "REINFORCE"
-	default:
-		panic(fmt.Sprintf("snapshotPhaseToString: unknown phase %q", phase))
 	}
 }

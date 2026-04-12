@@ -404,7 +404,7 @@ func persistPhaseTransition(
 	// 1. InsertPhase
 	phaseRecord, err := phaseService.InsertPhase(gameCtx, querier, phase.PhaseInsertParams{
 		PhaseType:    sqlc.GamePhaseType(transition.PhaseType),
-		CurrentPhase: sqlc.GamePhaseType("ATTACK"), // Placeholder — phase.Service handles logic
+		CurrentPhase: sqlc.GamePhaseType(transition.CurrentPhaseType),
 		Turn:         transition.Turn,
 		Players:      players,
 	})
