@@ -7,7 +7,6 @@ package attack
 import (
 	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/attack"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/service"
@@ -43,8 +42,8 @@ func (_m *Service) EXPECT() *Service_Expecter {
 }
 
 // Advance provides a mock function for the type Service
-func (_mock *Service) Advance(ctx1 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType, performResult *attack.MoveResult, advCtx service.AdvanceContext) (service.AdvanceEffect, error) {
-	ret := _mock.Called(ctx1, querier, targetPhase, performResult, advCtx)
+func (_mock *Service) Advance(ctx1 ctx.GameContext, targetPhase sqlc.GamePhaseType, performResult *attack.MoveResult, advCtx service.AdvanceContext) (service.AdvanceEffect, error) {
+	ret := _mock.Called(ctx1, targetPhase, performResult, advCtx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Advance")
@@ -52,16 +51,16 @@ func (_mock *Service) Advance(ctx1 ctx.GameContext, querier db.Querier, targetPh
 
 	var r0 service.AdvanceEffect
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, sqlc.GamePhaseType, *attack.MoveResult, service.AdvanceContext) (service.AdvanceEffect, error)); ok {
-		return returnFunc(ctx1, querier, targetPhase, performResult, advCtx)
+	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, sqlc.GamePhaseType, *attack.MoveResult, service.AdvanceContext) (service.AdvanceEffect, error)); ok {
+		return returnFunc(ctx1, targetPhase, performResult, advCtx)
 	}
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, sqlc.GamePhaseType, *attack.MoveResult, service.AdvanceContext) service.AdvanceEffect); ok {
-		r0 = returnFunc(ctx1, querier, targetPhase, performResult, advCtx)
+	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, sqlc.GamePhaseType, *attack.MoveResult, service.AdvanceContext) service.AdvanceEffect); ok {
+		r0 = returnFunc(ctx1, targetPhase, performResult, advCtx)
 	} else {
 		r0 = ret.Get(0).(service.AdvanceEffect)
 	}
-	if returnFunc, ok := ret.Get(1).(func(ctx.GameContext, db.Querier, sqlc.GamePhaseType, *attack.MoveResult, service.AdvanceContext) error); ok {
-		r1 = returnFunc(ctx1, querier, targetPhase, performResult, advCtx)
+	if returnFunc, ok := ret.Get(1).(func(ctx.GameContext, sqlc.GamePhaseType, *attack.MoveResult, service.AdvanceContext) error); ok {
+		r1 = returnFunc(ctx1, targetPhase, performResult, advCtx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -75,42 +74,36 @@ type Service_Advance_Call struct {
 
 // Advance is a helper method to define mock.On call
 //   - ctx1 ctx.GameContext
-//   - querier db.Querier
 //   - targetPhase sqlc.GamePhaseType
 //   - performResult *attack.MoveResult
 //   - advCtx service.AdvanceContext
-func (_e *Service_Expecter) Advance(ctx1 interface{}, querier interface{}, targetPhase interface{}, performResult interface{}, advCtx interface{}) *Service_Advance_Call {
-	return &Service_Advance_Call{Call: _e.mock.On("Advance", ctx1, querier, targetPhase, performResult, advCtx)}
+func (_e *Service_Expecter) Advance(ctx1 interface{}, targetPhase interface{}, performResult interface{}, advCtx interface{}) *Service_Advance_Call {
+	return &Service_Advance_Call{Call: _e.mock.On("Advance", ctx1, targetPhase, performResult, advCtx)}
 }
 
-func (_c *Service_Advance_Call) Run(run func(ctx1 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType, performResult *attack.MoveResult, advCtx service.AdvanceContext)) *Service_Advance_Call {
+func (_c *Service_Advance_Call) Run(run func(ctx1 ctx.GameContext, targetPhase sqlc.GamePhaseType, performResult *attack.MoveResult, advCtx service.AdvanceContext)) *Service_Advance_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 ctx.GameContext
 		if args[0] != nil {
 			arg0 = args[0].(ctx.GameContext)
 		}
-		var arg1 db.Querier
+		var arg1 sqlc.GamePhaseType
 		if args[1] != nil {
-			arg1 = args[1].(db.Querier)
+			arg1 = args[1].(sqlc.GamePhaseType)
 		}
-		var arg2 sqlc.GamePhaseType
+		var arg2 *attack.MoveResult
 		if args[2] != nil {
-			arg2 = args[2].(sqlc.GamePhaseType)
+			arg2 = args[2].(*attack.MoveResult)
 		}
-		var arg3 *attack.MoveResult
+		var arg3 service.AdvanceContext
 		if args[3] != nil {
-			arg3 = args[3].(*attack.MoveResult)
-		}
-		var arg4 service.AdvanceContext
-		if args[4] != nil {
-			arg4 = args[4].(service.AdvanceContext)
+			arg3 = args[3].(service.AdvanceContext)
 		}
 		run(
 			arg0,
 			arg1,
 			arg2,
 			arg3,
-			arg4,
 		)
 	})
 	return _c
@@ -121,146 +114,14 @@ func (_c *Service_Advance_Call) Return(advanceEffect service.AdvanceEffect, err 
 	return _c
 }
 
-func (_c *Service_Advance_Call) RunAndReturn(run func(ctx1 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType, performResult *attack.MoveResult, advCtx service.AdvanceContext) (service.AdvanceEffect, error)) *Service_Advance_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// CanContinueAttacking provides a mock function for the type Service
-func (_mock *Service) CanContinueAttacking(ctx1 ctx.GameContext, querier db.Querier) (bool, error) {
-	ret := _mock.Called(ctx1, querier)
-
-	if len(ret) == 0 {
-		panic("no return value specified for CanContinueAttacking")
-	}
-
-	var r0 bool
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) (bool, error)); ok {
-		return returnFunc(ctx1, querier)
-	}
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) bool); ok {
-		r0 = returnFunc(ctx1, querier)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-	if returnFunc, ok := ret.Get(1).(func(ctx.GameContext, db.Querier) error); ok {
-		r1 = returnFunc(ctx1, querier)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Service_CanContinueAttacking_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CanContinueAttacking'
-type Service_CanContinueAttacking_Call struct {
-	*mock.Call
-}
-
-// CanContinueAttacking is a helper method to define mock.On call
-//   - ctx1 ctx.GameContext
-//   - querier db.Querier
-func (_e *Service_Expecter) CanContinueAttacking(ctx1 interface{}, querier interface{}) *Service_CanContinueAttacking_Call {
-	return &Service_CanContinueAttacking_Call{Call: _e.mock.On("CanContinueAttacking", ctx1, querier)}
-}
-
-func (_c *Service_CanContinueAttacking_Call) Run(run func(ctx1 ctx.GameContext, querier db.Querier)) *Service_CanContinueAttacking_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 ctx.GameContext
-		if args[0] != nil {
-			arg0 = args[0].(ctx.GameContext)
-		}
-		var arg1 db.Querier
-		if args[1] != nil {
-			arg1 = args[1].(db.Querier)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Service_CanContinueAttacking_Call) Return(b bool, err error) *Service_CanContinueAttacking_Call {
-	_c.Call.Return(b, err)
-	return _c
-}
-
-func (_c *Service_CanContinueAttacking_Call) RunAndReturn(run func(ctx1 ctx.GameContext, querier db.Querier) (bool, error)) *Service_CanContinueAttacking_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// HasConquered provides a mock function for the type Service
-func (_mock *Service) HasConquered(ctx1 ctx.GameContext, querier db.Querier) (bool, error) {
-	ret := _mock.Called(ctx1, querier)
-
-	if len(ret) == 0 {
-		panic("no return value specified for HasConquered")
-	}
-
-	var r0 bool
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) (bool, error)); ok {
-		return returnFunc(ctx1, querier)
-	}
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) bool); ok {
-		r0 = returnFunc(ctx1, querier)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-	if returnFunc, ok := ret.Get(1).(func(ctx.GameContext, db.Querier) error); ok {
-		r1 = returnFunc(ctx1, querier)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Service_HasConquered_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HasConquered'
-type Service_HasConquered_Call struct {
-	*mock.Call
-}
-
-// HasConquered is a helper method to define mock.On call
-//   - ctx1 ctx.GameContext
-//   - querier db.Querier
-func (_e *Service_Expecter) HasConquered(ctx1 interface{}, querier interface{}) *Service_HasConquered_Call {
-	return &Service_HasConquered_Call{Call: _e.mock.On("HasConquered", ctx1, querier)}
-}
-
-func (_c *Service_HasConquered_Call) Run(run func(ctx1 ctx.GameContext, querier db.Querier)) *Service_HasConquered_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 ctx.GameContext
-		if args[0] != nil {
-			arg0 = args[0].(ctx.GameContext)
-		}
-		var arg1 db.Querier
-		if args[1] != nil {
-			arg1 = args[1].(db.Querier)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Service_HasConquered_Call) Return(b bool, err error) *Service_HasConquered_Call {
-	_c.Call.Return(b, err)
-	return _c
-}
-
-func (_c *Service_HasConquered_Call) RunAndReturn(run func(ctx1 ctx.GameContext, querier db.Querier) (bool, error)) *Service_HasConquered_Call {
+func (_c *Service_Advance_Call) RunAndReturn(run func(ctx1 ctx.GameContext, targetPhase sqlc.GamePhaseType, performResult *attack.MoveResult, advCtx service.AdvanceContext) (service.AdvanceEffect, error)) *Service_Advance_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Perform provides a mock function for the type Service
-func (_mock *Service) Perform(ctx1 ctx.GameContext, querier db.Querier, move attack.Move, prev *snapshot.CachedGameState) (*attack.MoveResult, service.MoveEffect, error) {
-	ret := _mock.Called(ctx1, querier, move, prev)
+func (_mock *Service) Perform(ctx1 ctx.GameContext, move attack.Move, prev *snapshot.CachedGameState) (*attack.MoveResult, service.MoveEffect, error) {
+	ret := _mock.Called(ctx1, move, prev)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Perform")
@@ -269,23 +130,23 @@ func (_mock *Service) Perform(ctx1 ctx.GameContext, querier db.Querier, move att
 	var r0 *attack.MoveResult
 	var r1 service.MoveEffect
 	var r2 error
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, attack.Move, *snapshot.CachedGameState) (*attack.MoveResult, service.MoveEffect, error)); ok {
-		return returnFunc(ctx1, querier, move, prev)
+	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, attack.Move, *snapshot.CachedGameState) (*attack.MoveResult, service.MoveEffect, error)); ok {
+		return returnFunc(ctx1, move, prev)
 	}
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, attack.Move, *snapshot.CachedGameState) *attack.MoveResult); ok {
-		r0 = returnFunc(ctx1, querier, move, prev)
+	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, attack.Move, *snapshot.CachedGameState) *attack.MoveResult); ok {
+		r0 = returnFunc(ctx1, move, prev)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*attack.MoveResult)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(ctx.GameContext, db.Querier, attack.Move, *snapshot.CachedGameState) service.MoveEffect); ok {
-		r1 = returnFunc(ctx1, querier, move, prev)
+	if returnFunc, ok := ret.Get(1).(func(ctx.GameContext, attack.Move, *snapshot.CachedGameState) service.MoveEffect); ok {
+		r1 = returnFunc(ctx1, move, prev)
 	} else {
 		r1 = ret.Get(1).(service.MoveEffect)
 	}
-	if returnFunc, ok := ret.Get(2).(func(ctx.GameContext, db.Querier, attack.Move, *snapshot.CachedGameState) error); ok {
-		r2 = returnFunc(ctx1, querier, move, prev)
+	if returnFunc, ok := ret.Get(2).(func(ctx.GameContext, attack.Move, *snapshot.CachedGameState) error); ok {
+		r2 = returnFunc(ctx1, move, prev)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -299,36 +160,30 @@ type Service_Perform_Call struct {
 
 // Perform is a helper method to define mock.On call
 //   - ctx1 ctx.GameContext
-//   - querier db.Querier
 //   - move attack.Move
 //   - prev *snapshot.CachedGameState
-func (_e *Service_Expecter) Perform(ctx1 interface{}, querier interface{}, move interface{}, prev interface{}) *Service_Perform_Call {
-	return &Service_Perform_Call{Call: _e.mock.On("Perform", ctx1, querier, move, prev)}
+func (_e *Service_Expecter) Perform(ctx1 interface{}, move interface{}, prev interface{}) *Service_Perform_Call {
+	return &Service_Perform_Call{Call: _e.mock.On("Perform", ctx1, move, prev)}
 }
 
-func (_c *Service_Perform_Call) Run(run func(ctx1 ctx.GameContext, querier db.Querier, move attack.Move, prev *snapshot.CachedGameState)) *Service_Perform_Call {
+func (_c *Service_Perform_Call) Run(run func(ctx1 ctx.GameContext, move attack.Move, prev *snapshot.CachedGameState)) *Service_Perform_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 ctx.GameContext
 		if args[0] != nil {
 			arg0 = args[0].(ctx.GameContext)
 		}
-		var arg1 db.Querier
+		var arg1 attack.Move
 		if args[1] != nil {
-			arg1 = args[1].(db.Querier)
+			arg1 = args[1].(attack.Move)
 		}
-		var arg2 attack.Move
+		var arg2 *snapshot.CachedGameState
 		if args[2] != nil {
-			arg2 = args[2].(attack.Move)
-		}
-		var arg3 *snapshot.CachedGameState
-		if args[3] != nil {
-			arg3 = args[3].(*snapshot.CachedGameState)
+			arg2 = args[2].(*snapshot.CachedGameState)
 		}
 		run(
 			arg0,
 			arg1,
 			arg2,
-			arg3,
 		)
 	})
 	return _c
@@ -339,7 +194,7 @@ func (_c *Service_Perform_Call) Return(v *attack.MoveResult, moveEffect service.
 	return _c
 }
 
-func (_c *Service_Perform_Call) RunAndReturn(run func(ctx1 ctx.GameContext, querier db.Querier, move attack.Move, prev *snapshot.CachedGameState) (*attack.MoveResult, service.MoveEffect, error)) *Service_Perform_Call {
+func (_c *Service_Perform_Call) RunAndReturn(run func(ctx1 ctx.GameContext, move attack.Move, prev *snapshot.CachedGameState) (*attack.MoveResult, service.MoveEffect, error)) *Service_Perform_Call {
 	_c.Call.Return(run)
 	return _c
 }

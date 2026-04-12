@@ -6,29 +6,19 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/deploy"
 	moveservice "github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/service"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/data/db"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/phase"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/region"
 	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
 
-func setup(t *testing.T) (
-	*db.Querier,
-	*region.Service,
-	deploy.Service,
-) {
+func setup(t *testing.T) deploy.Service {
 	t.Helper()
-	querier := db.NewQuerier(t)
-	phaseService := phase.NewService(t)
-	regionService := region.NewService(t)
-	service, _ := deploy.NewService(querier, phaseService, regionService)
 
-	return querier, regionService, service
+	service, _ := deploy.NewService(nil)
+
+	return service
 }
 
 func input() (string, int64, int64, ctx.GameContext) {
@@ -51,15 +41,35 @@ func input() (string, int64, int64, ctx.GameContext) {
 		), gameContext
 }
 
+func cachedRegions(owner string, troops int64) []snapshot.RegionState {
+	return []snapshot.RegionState{
+		{
+			InternalID: 1,
+			ID:         "greenland",
+			OwnerID:    owner,
+			Troops:     troops,
+		},
+	}
+}
+
 func prevWithDeployableTroops(troops int64) *snapshot.CachedGameState {
+	return prevWithDeployableTroopsAndRegions(troops, "Giovanni", 0)
+}
+
+func prevWithDeployableTroopsAndRegions(
+	deployableTroops int64,
+	regionOwner string,
+	regionTroops int64,
+) *snapshot.CachedGameState {
 	return &snapshot.CachedGameState{
 		PublicSnapshot: &snapshot.GameSnapshot{
 			Phase: snapshot.Phase{
 				Type: snapshot.PhaseDeploy,
 				State: snapshot.DeployPhaseState{
-					DeployableTroops: troops,
+					DeployableTroops: deployableTroops,
 				},
 			},
+			Regions: cachedRegions(regionOwner, regionTroops),
 		},
 	}
 }
@@ -67,12 +77,12 @@ func prevWithDeployableTroops(troops int64) *snapshot.CachedGameState {
 func TestService_DeployShouldFailWhenPlayerDoesntHaveEnoughDeployableTroops(t *testing.T) {
 	t.Parallel()
 
-	_, _, service := setup(t)
+	service := setup(t)
 	regionReference, currentTroops, desiredTroops, ctx := input()
 
 	prev := prevWithDeployableTroops(0)
 
-	_, _, err := service.Perform(ctx, nil, deploy.Move{
+	_, _, err := service.Perform(ctx, deploy.Move{
 		RegionID:      regionReference,
 		CurrentTroops: currentTroops,
 		DesiredTroops: desiredTroops,
@@ -110,24 +120,14 @@ func TestService_DeployShouldFail(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, regionService, service := setup(t)
+			service := setup(t)
 			regionReference, _, desiredTroops, ctx := input()
 
 			currentTroops := test.declaredTroops
 
-			prev := prevWithDeployableTroops(5)
+			prev := prevWithDeployableTroopsAndRegions(5, test.regionOwner, 0)
 
-			regionService.
-				EXPECT().
-				GetRegion(ctx, querier, regionReference).
-				Return(&sqlc.GetRegionsByGameRow{
-					ID:                1,
-					ExternalReference: "greenland",
-					UserID:            test.regionOwner,
-					Troops:            0,
-				}, nil)
-
-			_, _, err := service.Perform(ctx, querier, deploy.Move{
+			_, _, err := service.Perform(ctx, deploy.Move{
 				RegionID:      regionReference,
 				CurrentTroops: currentTroops,
 				DesiredTroops: desiredTroops,
@@ -137,6 +137,40 @@ func TestService_DeployShouldFail(t *testing.T) {
 			require.EqualError(t, err, test.expectedError)
 		})
 	}
+}
+
+func TestService_DeployShouldFailWhenRegionNotInCache(t *testing.T) {
+	t.Parallel()
+
+	service := setup(t)
+	_, _, _, ctx := input()
+
+	prev := &snapshot.CachedGameState{
+		PublicSnapshot: &snapshot.GameSnapshot{
+			Phase: snapshot.Phase{
+				Type: snapshot.PhaseDeploy,
+				State: snapshot.DeployPhaseState{
+					DeployableTroops: 10,
+				},
+			},
+			Regions: []snapshot.RegionState{
+				{InternalID: 99, ID: "brazil", OwnerID: "Giovanni", Troops: 3},
+			},
+		},
+	}
+
+	_, _, err := service.Perform(ctx, deploy.Move{
+		RegionID:      "greenland",
+		CurrentTroops: 0,
+		DesiredTroops: 5,
+	}, prev)
+
+	require.Error(t, err)
+	require.EqualError(
+		t,
+		err,
+		"failed to find region in cache: region greenland not found in cached state",
+	)
 }
 
 func TestService_DeployShouldSucceed(t *testing.T) {
@@ -161,38 +195,17 @@ func TestService_DeployShouldSucceed(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, regionService, service := setup(
-				t,
-			)
+			service := setup(t)
 			regionReference, currentTroops, desiredTroops, ctx := input()
 			troops := desiredTroops - currentTroops
 
-			prev := prevWithDeployableTroops(test.deployableTroops)
+			prev := prevWithDeployableTroopsAndRegions(
+				test.deployableTroops,
+				"Giovanni",
+				currentTroops,
+			)
 
-			region := &sqlc.GetRegionsByGameRow{
-				ID:                1,
-				ExternalReference: "greenland",
-				UserID:            "Giovanni",
-				Troops:            currentTroops,
-			}
-
-			regionService.
-				EXPECT().
-				GetRegion(ctx, querier, regionReference).
-				Return(region, nil)
-			regionService.
-				EXPECT().
-				UpdateTroopsInRegion(ctx, querier, region, troops).
-				Return(nil)
-			querier.
-				EXPECT().
-				DecreaseDeployableTroops(ctx, sqlc.DecreaseDeployableTroopsParams{
-					ID:               ctx.GameID(),
-					DeployableTroops: desiredTroops - currentTroops,
-				}).
-				Return(nil)
-
-			_, effect, err := service.Perform(ctx, querier, deploy.Move{
+			_, effect, err := service.Perform(ctx, deploy.Move{
 				RegionID:      regionReference,
 				CurrentTroops: currentTroops,
 				DesiredTroops: desiredTroops,

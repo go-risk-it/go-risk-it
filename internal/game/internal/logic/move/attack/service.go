@@ -2,14 +2,10 @@ package attack
 
 import (
 	attackapi "github.com/go-risk-it/go-risk-it/internal/game/api/moves/attack"
-	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/board"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/attack/dice"
 	moveservice "github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/service"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/phase"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/region"
 )
 
 type Move struct {
@@ -26,16 +22,11 @@ type MoveResult = attackapi.MoveResult
 
 type Service interface {
 	moveservice.Service[Move, *MoveResult]
-
-	HasConquered(ctx ctx.GameContext, querier db.Querier) (bool, error)
-	CanContinueAttacking(ctx ctx.GameContext, querier db.Querier) (bool, error)
 }
 
 type service struct {
-	boardService  board.Service
-	diceService   dice.Service
-	phaseService  phase.Service
-	regionService region.Service
+	boardService board.Service
+	diceService  dice.Service
 }
 
 var _ Service = (*service)(nil)
@@ -43,14 +34,10 @@ var _ Service = (*service)(nil)
 func NewService(
 	boardService board.Service,
 	diceService dice.Service,
-	phaseService phase.Service,
-	regionService region.Service,
 ) (Service, moveservice.Service[Move, *MoveResult]) {
 	svc := &service{
-		boardService:  boardService,
-		diceService:   diceService,
-		phaseService:  phaseService,
-		regionService: regionService,
+		boardService: boardService,
+		diceService:  diceService,
 	}
 
 	return svc, moveservice.NewTracedService[Move, *MoveResult](svc)

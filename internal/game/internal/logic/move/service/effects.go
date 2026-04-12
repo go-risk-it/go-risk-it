@@ -25,6 +25,15 @@ type MissionChange struct {
 	NewMission   snapshot.PlayerMission
 }
 
+// DeckDelta records changes to the available (unowned) card deck during a move
+// or advance step. Drawn lists card IDs removed from the deck (given to a
+// player), Returned lists full CardState values added back (played cards
+// returning to the deck).
+type DeckDelta struct {
+	Drawn    []int64
+	Returned []snapshot.CardState
+}
+
 // MoveEffect is the aggregate side-effect bundle produced by a performer. It
 // captures every observable state change so downstream consumers can diff
 // without re-querying the database.
@@ -33,6 +42,15 @@ type MoveEffect struct {
 	CardDeltas    []CardDelta
 	Missions      []MissionChange
 	UpdatedPhase  snapshot.PhaseState
+	DeckDelta     DeckDelta
+	// EliminatedUserID is set by conquer performer when the defender is
+	// eliminated (owns exactly one region being conquered). Empty for all
+	// other moves.
+	EliminatedUserID string
+	// DeployableDelta is the change to DeployableTroops during a deploy move.
+	// Negative values indicate troops deployed from the pool. Zero for all
+	// other moves.
+	DeployableDelta int64
 }
 
 // AdvanceEffect is the side-effect bundle produced by an advancer after a phase
@@ -42,4 +60,5 @@ type AdvanceEffect struct {
 	NewPhase   snapshot.PhaseState
 	TurnEnded  bool
 	CardDeltas []CardDelta
+	DeckDelta  DeckDelta
 }

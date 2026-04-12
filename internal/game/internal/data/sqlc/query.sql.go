@@ -48,18 +48,16 @@ INSERT INTO game.move_log (game_id,
                       result)
 VALUES ($1,
         (SELECT id FROM game.player WHERE game_id = $1 AND user_id = $2),
-        (SELECT p.type
-         FROM game.phase p
-                  join game.game g on g.current_phase_id = p.id
-         WHERE g.id = $1),
         $3,
-        $4)
+        $4,
+        $5)
 RETURNING id, game_id, player_id, phase, move_data, result, created
 `
 
 type CreateMoveLogParams struct {
 	GameID   int64
 	UserID   string
+	Phase    GamePhaseType
 	MoveData []byte
 	Result   []byte
 }
@@ -68,6 +66,7 @@ func (q *Queries) CreateMoveLog(ctx context.Context, arg CreateMoveLogParams) (G
 	row := q.db.QueryRow(ctx, createMoveLog,
 		arg.GameID,
 		arg.UserID,
+		arg.Phase,
 		arg.MoveData,
 		arg.Result,
 	)
@@ -231,6 +230,42 @@ func (q *Queries) GetAvailableCards(ctx context.Context, id int64) ([]GameCard, 
 			&i.OwnerID,
 			&i.CardType,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getAvailableDeck = `-- name: GetAvailableDeck :many
+SELECT c.id, c.card_type, r.external_reference AS region
+FROM game.card c
+         LEFT JOIN game.region r ON c.region_id = r.id
+WHERE c.game_id = $1
+  AND c.owner_id IS NULL
+`
+
+type GetAvailableDeckRow struct {
+	ID       int64
+	CardType GameCardType
+	Region   pgtype.Text
+}
+
+// Fetch all unowned cards for a game with region info, for cache warming.
+// Used by getOrWarmPrevState to populate CachedGameState.AvailableDeck.
+func (q *Queries) GetAvailableDeck(ctx context.Context, gameID int64) ([]GetAvailableDeckRow, error) {
+	rows, err := q.db.Query(ctx, getAvailableDeck, gameID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAvailableDeckRow
+	for rows.Next() {
+		var i GetAvailableDeckRow
+		if err := rows.Scan(&i.ID, &i.CardType, &i.Region); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

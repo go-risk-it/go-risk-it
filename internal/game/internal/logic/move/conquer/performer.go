@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
 	moveservice "github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/service"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
@@ -21,7 +20,6 @@ const (
 
 func (s *service) Perform(
 	ctx ctx.GameContext,
-	querier db.Querier,
 	move Move,
 	prev *snapshot.CachedGameState,
 ) (struct{}, moveservice.MoveEffect, error) {
@@ -43,34 +41,36 @@ func (s *service) Perform(
 		)
 	}
 
-	sourceRegion, targetRegion, err := s.loadRegions(ctx, querier, conquerState)
+	sourceRegion, targetRegion, err := s.loadRegionsFromCache(prev, conquerState)
 	if err != nil {
 		return struct{}{}, zero, err
 	}
 
-	if sourceRegion.Troops-move.Troops < minTroopsToRetain {
+	sourceDBRegion := moveservice.ToDBRegion(sourceRegion)
+	targetDBRegion := moveservice.ToDBRegion(targetRegion)
+
+	if sourceDBRegion.Troops-move.Troops < minTroopsToRetain {
 		return struct{}{}, zero, domainerrors.NewValidationError(
 			"source region does not have enough troops",
 		)
 	}
 
-	eliminatedUserID := targetRegion.UserID
+	effect := s.buildMoveEffect(ctx, sourceDBRegion, targetDBRegion, move)
 
-	defeatedPlayerID, err := s.updateRegionTroops(ctx, querier, move, sourceRegion, targetRegion)
-	if err != nil {
-		return struct{}{}, zero, fmt.Errorf("failed to update region troops: %w", err)
+	isEliminated := s.isDefenderEliminatedFromCache(prev, targetDBRegion.UserID)
+	if isEliminated {
+		// Set EliminatedUserID so the persistence layer knows to trigger
+		// card transfer and mission reassignment.
+		effect.EliminatedUserID = targetDBRegion.UserID
+
+		// Pre-compute card deltas and mission changes for the MoveEffect
+		// before the DB mutations occur.
+		eliminationEffect := s.buildEliminationEffect(prev, targetDBRegion.UserID, ctx.UserID())
+		effect.CardDeltas = eliminationEffect.cardDeltas
+		effect.Missions = eliminationEffect.missionChanges
 	}
 
-	effect := s.buildMoveEffect(ctx, sourceRegion, targetRegion, move)
-
-	return s.applyEliminationIfNeeded(
-		ctx,
-		querier,
-		prev,
-		defeatedPlayerID,
-		eliminatedUserID,
-		effect,
-	)
+	return struct{}{}, effect, nil
 }
 
 // extractConquerState validates that phase state is ConquerPhaseState and returns it.
@@ -88,20 +88,29 @@ func (s *service) extractConquerState(
 	return conquerState, nil
 }
 
-// loadRegions fetches both attacking and defending regions.
-func (s *service) loadRegions(
-	ctx ctx.GameContext,
-	querier db.Querier,
+// loadRegionsFromCache fetches both attacking and defending regions from the cached state.
+func (s *service) loadRegionsFromCache(
+	prev *snapshot.CachedGameState,
 	state snapshot.ConquerPhaseState,
-) (*sqlc.GetRegionsByGameRow, *sqlc.GetRegionsByGameRow, error) {
-	sourceRegion, err := s.regionService.GetRegion(ctx, querier, state.AttackingRegionID)
+) (snapshot.RegionState, snapshot.RegionState, error) {
+	sourceRegion, err := moveservice.FindRegion(
+		prev.PublicSnapshot.Regions,
+		state.AttackingRegionID,
+	)
 	if err != nil {
-		return nil, nil, fmt.Errorf("unable to get attacking region: %w", err)
+		return snapshot.RegionState{}, snapshot.RegionState{}, fmt.Errorf(
+			"unable to get attacking region: %w", err,
+		)
 	}
 
-	targetRegion, err := s.regionService.GetRegion(ctx, querier, state.DefendingRegionID)
+	targetRegion, err := moveservice.FindRegion(
+		prev.PublicSnapshot.Regions,
+		state.DefendingRegionID,
+	)
 	if err != nil {
-		return nil, nil, fmt.Errorf("unable to get defending region: %w", err)
+		return snapshot.RegionState{}, snapshot.RegionState{}, fmt.Errorf(
+			"unable to get defending region: %w", err,
+		)
 	}
 
 	return sourceRegion, targetRegion, nil
@@ -128,42 +137,6 @@ func (s *service) buildMoveEffect(
 		},
 		UpdatedPhase: snapshot.EmptyPhaseState{},
 	}
-}
-
-// applyEliminationIfNeeded checks if defender was eliminated and applies elimination logic.
-func (s *service) applyEliminationIfNeeded(
-	ctx ctx.GameContext,
-	querier db.Querier,
-	prev *snapshot.CachedGameState,
-	defeatedPlayerID int64,
-	eliminatedUserID string,
-	effect moveservice.MoveEffect,
-) (struct{}, moveservice.MoveEffect, error) {
-	isDefenderEliminated, err := s.isDefenderEliminated(ctx, querier, defeatedPlayerID)
-	if err != nil {
-		return struct{}{}, moveservice.MoveEffect{}, fmt.Errorf(
-			"failed to check if defender is eliminated: %w",
-			err,
-		)
-	}
-
-	if isDefenderEliminated {
-		// Pre-read the eliminated player's cards for the MoveEffect before the
-		// DB transfer mutates ownership.
-		eliminationEffect := s.buildEliminationEffect(prev, eliminatedUserID, ctx.UserID())
-
-		if err := s.handlePlayerEliminated(ctx, querier, defeatedPlayerID); err != nil {
-			return struct{}{}, moveservice.MoveEffect{}, fmt.Errorf(
-				"unable to handle player eliminated: %w",
-				err,
-			)
-		}
-
-		effect.CardDeltas = eliminationEffect.cardDeltas
-		effect.Missions = eliminationEffect.missionChanges
-	}
-
-	return struct{}{}, effect, nil
 }
 
 // eliminationEffect holds the pre-computed deltas for player elimination.
@@ -232,76 +205,21 @@ func (s *service) buildEliminationEffect(
 	return result
 }
 
-func (s *service) updateRegionTroops(
-	ctx ctx.GameContext,
-	querier db.Querier,
-	move Move,
-	sourceRegion *sqlc.GetRegionsByGameRow,
-	targetRegion *sqlc.GetRegionsByGameRow,
-) (int64, error) {
-	if err := s.regionService.UpdateTroopsInRegion(
-		ctx,
-		querier,
-		sourceRegion,
-		-move.Troops,
-	); err != nil {
-		return 0, fmt.Errorf("failed to decrease troops in source region: %w", err)
+// isDefenderEliminatedFromCache checks if the defender is eliminated by counting
+// their regions in the pre-move cached state. If they own exactly 1 region (the
+// one being conquered), they have no regions left after the conquer.
+func (s *service) isDefenderEliminatedFromCache(
+	prev *snapshot.CachedGameState,
+	eliminatedUserID string,
+) bool {
+	count := 0
+
+	for _, r := range prev.PublicSnapshot.Regions {
+		if r.OwnerID == eliminatedUserID {
+			count++
+		}
 	}
 
-	if err := s.regionService.UpdateTroopsInRegion(
-		ctx,
-		querier,
-		targetRegion,
-		move.Troops,
-	); err != nil {
-		return 0, fmt.Errorf("failed to increase troops in target region: %w", err)
-	}
-
-	defeatedPlayerID, err := s.regionService.UpdateRegionOwner(
-		ctx,
-		querier,
-		targetRegion,
-	)
-	if err != nil {
-		return 0, fmt.Errorf("failed to update region owner: %w", err)
-	}
-
-	return defeatedPlayerID, nil
-}
-
-func (s *service) isDefenderEliminated(
-	ctx ctx.GameContext,
-	querier db.Querier,
-	defeatedPlayerID int64,
-) (bool, error) {
-	defeatedPlayerRegions, err := s.regionService.GetRegionsControlledByPlayer(
-		ctx,
-		querier,
-		defeatedPlayerID,
-	)
-	if err != nil {
-		return false, fmt.Errorf("failed to get regions controlled by player: %w", err)
-	}
-
-	return len(defeatedPlayerRegions) == 0, nil
-}
-
-func (s *service) handlePlayerEliminated(
-	ctx ctx.GameContext,
-	querier db.Querier,
-	eliminatedPlayerID int64,
-) error {
-	if err := s.cardService.TransferCardsOwnership(ctx, querier, eliminatedPlayerID); err != nil {
-		return fmt.Errorf("unable to advance phase: %w", err)
-	}
-
-	if err := s.missionService.ReassignMissions(
-		ctx,
-		querier,
-		eliminatedPlayerID,
-	); err != nil {
-		return fmt.Errorf("unable to advance phase: %w", err)
-	}
-
-	return nil
+	// The conquered region was their only one — they're eliminated.
+	return count == 1
 }

@@ -549,6 +549,24 @@ func TestCreate_StoresInitialState(t *testing.T) {
 		GetAllPrivateSnapshots(mock.Anything).
 		Return(privateSnaps, nil)
 
+	// Pool querier returns available deck (all cards unowned at creation)
+	testDeckRows := []sqlc.GetAvailableDeckRow{
+		{
+			ID:       1,
+			CardType: sqlc.GameCardTypeINFANTRY,
+			Region:   pgtype.Text{String: "netherlands", Valid: true},
+		},
+		{
+			ID:       2,
+			CardType: sqlc.GameCardTypeCAVALRY,
+			Region:   pgtype.Text{String: "italy", Valid: true},
+		},
+		{ID: 3, CardType: sqlc.GameCardTypeJOLLY, Region: pgtype.Text{}},
+	}
+	poolQuerier.EXPECT().
+		GetAvailableDeck(mock.Anything, gameID).
+		Return(testDeckRows, nil)
+
 	stateStore := handlers.NewStateStore()
 	bus := eventbus.NewTestBus()
 
@@ -582,6 +600,9 @@ func TestCreate_StoresInitialState(t *testing.T) {
 	require.Equal(t, int64(0), cached.Turn)
 	require.Equal(t, publicSnap, cached.PublicSnapshot)
 	require.Equal(t, privateSnaps, cached.PrivateSnapshots)
+	require.Len(t, cached.AvailableDeck, 3, "AvailableDeck must be populated at creation")
+	require.Equal(t, snapshot.CardInfantry, cached.AvailableDeck[0].Type)
+	require.Equal(t, "netherlands", cached.AvailableDeck[0].Region)
 
 	// Verify enriched GameCreated event was emitted
 	events := eventbus.EventsOfType[*gameevt.GameCreated](bus)

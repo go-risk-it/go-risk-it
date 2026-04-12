@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
 	moveservice "github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/validation"
@@ -27,9 +26,8 @@ const (
 
 func (s *service) Perform(
 	ctx ctx.GameContext,
-	querier db.Querier,
 	move Move,
-	_ *snapshot.CachedGameState,
+	prev *snapshot.CachedGameState,
 ) (*MoveResult, moveservice.MoveEffect, error) {
 	var zero moveservice.MoveEffect
 
@@ -39,24 +37,28 @@ func (s *service) Perform(
 		attribute.Int64("attacking_troops", move.AttackingTroops),
 	)
 
-	attackingRegion, err := s.regionService.GetRegion(ctx, querier, move.AttackingRegionID)
+	cachedAttacking, err := moveservice.FindRegion(
+		prev.PublicSnapshot.Regions, move.AttackingRegionID,
+	)
 	if err != nil {
-		return nil, zero, fmt.Errorf("unable to get attacking region: %w", err)
+		return nil, zero, fmt.Errorf("unable to find attacking region in cache: %w", err)
 	}
 
-	defendingRegion, err := s.regionService.GetRegion(ctx, querier, move.DefendingRegionID)
+	cachedDefending, err := moveservice.FindRegion(
+		prev.PublicSnapshot.Regions, move.DefendingRegionID,
+	)
 	if err != nil {
-		return nil, zero, fmt.Errorf("unable to get defending region: %w", err)
+		return nil, zero, fmt.Errorf("unable to find defending region in cache: %w", err)
 	}
+
+	attackingRegion := moveservice.ToDBRegion(cachedAttacking)
+	defendingRegion := moveservice.ToDBRegion(cachedDefending)
 
 	if err := s.validate(ctx, attackingRegion, defendingRegion, move); err != nil {
 		return nil, zero, fmt.Errorf("validation failed: %w", err)
 	}
 
-	casualties, err := s.perform(ctx, querier, attackingRegion, defendingRegion, move)
-	if err != nil {
-		return nil, zero, fmt.Errorf("unable to perform attack move: %w", err)
-	}
+	casualties := s.computeCasualties(ctx, defendingRegion, move)
 
 	result := &MoveResult{
 		AttackingRegionID: move.AttackingRegionID,
@@ -83,13 +85,11 @@ func (s *service) Perform(
 	return result, effect, nil
 }
 
-func (s *service) perform(
+func (s *service) computeCasualties(
 	ctx ctx.GameContext,
-	querier db.Querier,
-	attackingRegion *sqlc.GetRegionsByGameRow,
 	defendingRegion *sqlc.GetRegionsByGameRow,
 	move Move,
-) (*casualties, error) {
+) *casualties {
 	attackDices := s.diceService.RollAttackingDices(int(move.AttackingTroops))
 	defenseDices := s.diceService.RollDefendingDices(
 		int(min(defendingRegion.Troops, maxDefendingDice)),
@@ -100,27 +100,7 @@ func (s *service) perform(
 		attribute.IntSlice("defense_dices", defenseDices),
 	)
 
-	casualties := computeCasualties(ctx, attackDices, defenseDices)
-
-	if err := s.regionService.UpdateTroopsInRegion(
-		ctx,
-		querier,
-		attackingRegion,
-		-casualties.attacking,
-	); err != nil {
-		return nil, fmt.Errorf("failed to decrease troops in attacking region: %w", err)
-	}
-
-	if err := s.regionService.UpdateTroopsInRegion(
-		ctx,
-		querier,
-		defendingRegion,
-		-casualties.defending,
-	); err != nil {
-		return nil, fmt.Errorf("failed to decrease troops in defending region: %w", err)
-	}
-
-	return casualties, nil
+	return computeCasualtiesFromDice(ctx, attackDices, defenseDices)
 }
 
 type casualties struct {
@@ -128,7 +108,7 @@ type casualties struct {
 	defending int64
 }
 
-func computeCasualties(ctx ctx.GameContext, attackDices, defenseDices []int) *casualties {
+func computeCasualtiesFromDice(ctx ctx.GameContext, attackDices, defenseDices []int) *casualties {
 	casualties := &casualties{}
 
 	slices.SortFunc(attackDices, descending)

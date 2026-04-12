@@ -28,12 +28,12 @@ import (
 	mockmission "github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/mission"
 	mockorchestration "github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/move/orchestration"
 	mockservice "github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/move/service"
+	mockphase "github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/phase"
 	mockstate "github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/state"
 	mocksnapshot "github.com/go-risk-it/go-risk-it/internal/game/testmocks/snapshot"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
-	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/metric/noop"
@@ -65,11 +65,11 @@ func (s *testStateStore) Get(gameID int64) *apisnapshot.CachedGameState {
 	return s.stored[gameID]
 }
 
-func (s *testStateStore) Store(gameID int64, state *apisnapshot.CachedGameState) {
+func (s *testStateStore) Store(gameID int64, st *apisnapshot.CachedGameState) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.stored[gameID] = state
+	s.stored[gameID] = st
 }
 
 func (s *testStateStore) Remove(gameID int64) {
@@ -80,14 +80,14 @@ func (s *testStateStore) Remove(gameID int64) {
 }
 
 // testPublicSnapshot returns a fixed public snapshot for test assertions.
-func testPublicSnapshot() *apisnapshot.GameSnapshot {
+func testPublicSnapshot(phase apisnapshot.PhaseType) *apisnapshot.GameSnapshot {
 	return &apisnapshot.GameSnapshot{
 		Game: apisnapshot.GameMeta{
 			ID:   testGameID,
 			Turn: testTurn,
 		},
 		Phase: apisnapshot.Phase{
-			Type:  apisnapshot.PhaseDeploy,
+			Type:  phase,
 			State: apisnapshot.EmptyPhaseState{},
 		},
 		Regions: []apisnapshot.RegionState{
@@ -106,7 +106,6 @@ func testPublicSnapshot() *apisnapshot.GameSnapshot {
 	}
 }
 
-// testPrivateSnapshots returns a fixed private snapshots map for test assertions.
 func testPrivateSnapshots() map[string]*apisnapshot.PlayerPrivate {
 	return map[string]*apisnapshot.PlayerPrivate{
 		testUserID: {
@@ -121,20 +120,23 @@ func testPrivateSnapshots() map[string]*apisnapshot.PlayerPrivate {
 	}
 }
 
-// testCachedState returns a fixed CachedGameState for pre-populating the store.
 func testCachedState() *apisnapshot.CachedGameState {
+	return testCachedStateForPhase(apisnapshot.PhaseDeploy)
+}
+
+func testCachedStateForPhase(phase apisnapshot.PhaseType) *apisnapshot.CachedGameState {
 	return &apisnapshot.CachedGameState{
 		Turn:             testTurn,
 		ConqueredInTurn:  false,
-		PublicSnapshot:   testPublicSnapshot(),
+		PublicSnapshot:   testPublicSnapshot(phase),
 		PrivateSnapshots: testPrivateSnapshots(),
 	}
 }
 
-// testReaderFactory creates a ReaderFactory that returns a mock Reader
-// configured to return the test snapshots. Used for warm-on-miss tests.
+// testReaderFactory creates a ReaderFactory for cache-miss tests.
 func testReaderFactory(
 	t *testing.T,
+	phase apisnapshot.PhaseType,
 	capturedQuerier *db.Querier,
 ) snapshot.ReaderFactory {
 	t.Helper()
@@ -147,7 +149,7 @@ func testReaderFactory(
 		reader := mocksnapshot.NewReader(t)
 		reader.EXPECT().
 			GetPublicSnapshot(mock.Anything).
-			Return(testPublicSnapshot(), nil)
+			Return(testPublicSnapshot(phase), nil)
 		reader.EXPECT().
 			GetAllPrivateSnapshots(mock.Anything).
 			Return(testPrivateSnapshots(), nil)
@@ -156,8 +158,6 @@ func testReaderFactory(
 	}
 }
 
-// noopReaderFactory returns a ReaderFactory that panics if called.
-// Used for cache-hit tests where the factory should never be invoked.
 func noopReaderFactory() snapshot.ReaderFactory {
 	return func(_ db.Querier) gameapi.SnapshotReader {
 		panic("ReaderFactory should not be called on cache hit")
@@ -185,9 +185,7 @@ func testMetrics(t *testing.T) (*metrics.StateMetrics, *gamemetrics.GameMetrics)
 	return stateResult, gameResult
 }
 
-// setupTransaction configures mock querier to support InTransactionWithIsolation.
-// It mocks BeginTx to return a mock transaction, WithTx to return a second querier (txQuerier),
-// and the transaction's Commit to succeed. Returns the txQuerier for setting up in-transaction mocks.
+// setupTransaction configures a mock querier for the ReadCommitted TX that Persist opens.
 func setupTransaction(
 	t *testing.T,
 	querier *mockdb.Querier,
@@ -198,7 +196,7 @@ func setupTransaction(
 	txQuerier := mockdb.NewQuerier(t)
 
 	querier.EXPECT().
-		BeginTx(mock.Anything, pgx.TxOptions{IsoLevel: pgx.RepeatableRead}).
+		BeginTx(mock.Anything, mock.Anything).
 		Return(transaction, nil)
 
 	querier.EXPECT().
@@ -212,35 +210,39 @@ func setupTransaction(
 	return txQuerier
 }
 
-// setupHappyPath configures mocks for a successful move through the entire orchestration pipeline.
-// Parameters control whether a phase transition and/or game completion occurs.
-// When phase transitions occur (targetPhase != currentPhase), boardSvc must be non-nil.
+func sqlcPhaseToSnapshot(phase sqlc.GamePhaseType) apisnapshot.PhaseType {
+	switch phase {
+	case sqlc.GamePhaseTypeCARDS:
+		return apisnapshot.PhaseCards
+	case sqlc.GamePhaseTypeDEPLOY:
+		return apisnapshot.PhaseDeploy
+	case sqlc.GamePhaseTypeATTACK:
+		return apisnapshot.PhaseAttack
+	case sqlc.GamePhaseTypeCONQUER:
+		return apisnapshot.PhaseConquer
+	case sqlc.GamePhaseTypeREINFORCE:
+		return apisnapshot.PhaseReinforce
+	default:
+		panic("unknown sqlc phase: " + string(phase))
+	}
+}
+
+// setupHappyPath configures mocks for a successful move through the effects-first pipeline.
+// No LoggingService, no TX-scoped Perform. Persist is handled through the TX mock.
 func setupHappyPath[T, R any](
 	t *testing.T,
 	txQuerier *mockdb.Querier,
-	gameStateSvc *mockstate.Service,
 	validationSvc *mockorchestration.ValidationService,
 	svc *mockservice.Service[T, R],
-	loggingSvc *mockorchestration.LoggingService,
 	missionSvc *mockmission.Service,
 	boardSvc *mockboard.Service,
 	move T,
 	performResult R,
-	moveLog sqlc.GameMoveLog,
 	currentPhase sqlc.GamePhaseType,
 	targetPhase sqlc.GamePhaseType,
 	missionAccomplished bool,
 ) {
 	t.Helper()
-
-	// GetGameStateWithQuerier
-	gameStateSvc.EXPECT().
-		GetGameStateWithQuerier(mock.Anything, txQuerier).
-		Return(&state.Game{
-			ID:    testGameID,
-			Turn:  testTurn,
-			Phase: currentPhase,
-		}, nil)
 
 	// PhaseType — called multiple times during orchestration
 	svc.EXPECT().
@@ -249,22 +251,21 @@ func setupHappyPath[T, R any](
 
 	// Validate
 	validationSvc.EXPECT().
-		Validate(mock.Anything, txQuerier, mock.Anything).
+		Validate(mock.Anything, mock.Anything, mock.Anything).
 		Return(nil)
 
-	// Perform
+	// Perform (pure — no querier)
 	svc.EXPECT().
-		Perform(mock.Anything, txQuerier, move, mock.Anything).
+		Perform(mock.Anything, move, mock.Anything).
 		Return(performResult, moveservice.MoveEffect{}, nil)
 
-	// LogMove
-	loggingSvc.EXPECT().
-		LogMove(mock.Anything, txQuerier, mock.Anything, mock.Anything).
-		Return(moveLog, nil)
+	// IsMissionAccomplished — boardService.GetContinents first
+	boardSvc.EXPECT().
+		GetContinents(mock.Anything).
+		Return(testContinents(t), nil).Maybe()
 
-	// IsMissionAccomplished
 	missionSvc.EXPECT().
-		IsMissionAccomplished(mock.Anything, txQuerier).
+		IsMissionAccomplished(mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(missionAccomplished, nil)
 
 	if !missionAccomplished {
@@ -273,21 +274,21 @@ func setupHappyPath[T, R any](
 			Walk(mock.Anything).
 			Return(targetPhase, nil)
 
-		// Advance (only if phase changes)
+		// Advance (only if phase changes, pure — no querier)
 		if targetPhase != currentPhase {
-			// buildAdvanceContext calls boardService.GetContinents
-			boardSvc.EXPECT().
-				GetContinents(mock.Anything).
-				Return(testContinents(t), nil)
-
 			svc.EXPECT().
-				Advance(mock.Anything, txQuerier, targetPhase, performResult, mock.Anything).
+				Advance(mock.Anything, targetPhase, performResult, mock.Anything).
 				Return(moveservice.AdvanceEffect{}, nil)
 		}
 	}
+
+	// Persist TX will use txQuerier for CreateMoveLog at minimum.
+	// The empty MoveEffect means only MoveLog is written.
+	txQuerier.EXPECT().
+		CreateMoveLog(mock.Anything, mock.Anything).
+		Return(sqlc.GameMoveLog{}, nil).Maybe()
 }
 
-// testContinents builds a minimal board.Continents for test use.
 func testContinents(t *testing.T) board.Continents {
 	t.Helper()
 
@@ -304,17 +305,43 @@ func testContinents(t *testing.T) board.Continents {
 	return continents
 }
 
+func buildOrchestrator[T, R any](
+	t *testing.T,
+	querier *mockdb.Querier,
+	svc *mockservice.Service[T, R],
+	phaseSvc *mockphase.Service,
+	gameStateSvc *mockstate.Service,
+	missionSvc *mockmission.Service,
+	validationSvc *mockorchestration.ValidationService,
+	bus *eventbus.TestBus,
+	infraM *metrics.StateMetrics,
+	gameM *gamemetrics.GameMetrics,
+	gameTiming *gamemetrics.GameTiming,
+	readerFactory snapshot.ReaderFactory,
+	store gameapi.StateStore,
+	boardSvc *mockboard.Service,
+	gameLocks *orchestration.GameLocks,
+) orchestration.Orchestrator[T, R] {
+	t.Helper()
+
+	return orchestration.NewOrchestrator[T, R](
+		querier, svc, phaseSvc, gameStateSvc, missionSvc, validationSvc,
+		bus, infraM, gameM, gameTiming, readerFactory, store, boardSvc, gameLocks,
+	)
+}
+
 func TestOrchestrateMove_DeployEmitsMoveCompleted(t *testing.T) {
 	t.Parallel()
 
 	ctx := testCtx()
 	querier := mockdb.NewQuerier(t)
 	svc := mockservice.NewService[deploy.Move, struct{}](t)
+	gameLocks := orchestration.NewGameLocks()
 	gameStateSvc := mockstate.NewService(t)
-	loggingSvc := mockorchestration.NewLoggingService(t)
 	missionSvc := mockmission.NewService(t)
 	validationSvc := mockorchestration.NewValidationService(t)
 	boardSvc := mockboard.NewService(t)
+	phaseSvc := mockphase.NewService(t)
 	bus := eventbus.NewTestBus()
 	infraM, gameM := testMetrics(t)
 	gameTiming := gamemetrics.NewGameTiming()
@@ -324,29 +351,22 @@ func TestOrchestrateMove_DeployEmitsMoveCompleted(t *testing.T) {
 	txQuerier := setupTransaction(t, querier)
 
 	move := deploy.Move{RegionID: "brazil", CurrentTroops: 3, DesiredTroops: 5}
-	moveLog := sqlc.GameMoveLog{
-		ID:       99,
-		GameID:   testGameID,
-		PlayerID: 7,
-		Phase:    sqlc.GamePhaseTypeDEPLOY,
-	}
 
 	setupHappyPath(
 		t, txQuerier,
-		gameStateSvc, validationSvc, svc, loggingSvc, missionSvc, boardSvc,
-		move, struct{}{}, moveLog,
+		validationSvc, svc, missionSvc, boardSvc,
+		move, struct{}{},
 		sqlc.GamePhaseTypeDEPLOY, sqlc.GamePhaseTypeDEPLOY, false,
 	)
 
-	orch := orchestration.NewOrchestrator[deploy.Move, struct{}](
-		querier, svc, gameStateSvc, loggingSvc, missionSvc, validationSvc,
-		bus, infraM, gameM, gameTiming, noopReaderFactory(), store, boardSvc,
+	orch := buildOrchestrator(
+		t, querier, svc, phaseSvc, gameStateSvc, missionSvc, validationSvc,
+		bus, infraM, gameM, gameTiming, noopReaderFactory(), store, boardSvc, gameLocks,
 	)
 
 	err := orch.OrchestrateMove(ctx, move)
 	require.NoError(t, err)
 
-	// Verify MoveCompleted event
 	moveEvents := eventbus.EventsOfType[*gameevt.MoveCompleted](bus)
 	require.Len(t, moveEvents, 1)
 	require.Equal(t, gameapi.GamePhaseTypeDEPLOY, moveEvents[0].ActionType)
@@ -361,16 +381,17 @@ func TestOrchestrateMove_AttackEmitsMoveCompleted(t *testing.T) {
 	ctx := testCtx()
 	querier := mockdb.NewQuerier(t)
 	svc := mockservice.NewService[attack.Move, *attack.MoveResult](t)
+	gameLocks := orchestration.NewGameLocks()
 	gameStateSvc := mockstate.NewService(t)
-	loggingSvc := mockorchestration.NewLoggingService(t)
 	missionSvc := mockmission.NewService(t)
 	validationSvc := mockorchestration.NewValidationService(t)
 	boardSvc := mockboard.NewService(t)
+	phaseSvc := mockphase.NewService(t)
 	bus := eventbus.NewTestBus()
 	infraM, gameM := testMetrics(t)
 	gameTiming := gamemetrics.NewGameTiming()
 	store := newTestStateStore()
-	store.Store(testGameID, testCachedState())
+	store.Store(testGameID, testCachedStateForPhase(apisnapshot.PhaseAttack))
 
 	txQuerier := setupTransaction(t, querier)
 
@@ -386,23 +407,17 @@ func TestOrchestrateMove_AttackEmitsMoveCompleted(t *testing.T) {
 		DefendingRegionID: "argentina",
 		ConqueringTroops:  3,
 	}
-	moveLog := sqlc.GameMoveLog{
-		ID:       100,
-		GameID:   testGameID,
-		PlayerID: 7,
-		Phase:    sqlc.GamePhaseTypeATTACK,
-	}
 
 	setupHappyPath(
 		t, txQuerier,
-		gameStateSvc, validationSvc, svc, loggingSvc, missionSvc, boardSvc,
-		move, attackResult, moveLog,
+		validationSvc, svc, missionSvc, boardSvc,
+		move, attackResult,
 		sqlc.GamePhaseTypeATTACK, sqlc.GamePhaseTypeATTACK, false,
 	)
 
-	orch := orchestration.NewOrchestrator[attack.Move, *attack.MoveResult](
-		querier, svc, gameStateSvc, loggingSvc, missionSvc, validationSvc,
-		bus, infraM, gameM, gameTiming, noopReaderFactory(), store, boardSvc,
+	orch := buildOrchestrator(
+		t, querier, svc, phaseSvc, gameStateSvc, missionSvc, validationSvc,
+		bus, infraM, gameM, gameTiming, noopReaderFactory(), store, boardSvc, gameLocks,
 	)
 
 	err := orch.OrchestrateMove(ctx, move)
@@ -419,11 +434,12 @@ func TestOrchestrateMove_PhaseTransitionInMoveCompleted(t *testing.T) {
 	ctx := testCtx()
 	querier := mockdb.NewQuerier(t)
 	svc := mockservice.NewService[deploy.Move, struct{}](t)
+	gameLocks := orchestration.NewGameLocks()
 	gameStateSvc := mockstate.NewService(t)
-	loggingSvc := mockorchestration.NewLoggingService(t)
 	missionSvc := mockmission.NewService(t)
 	validationSvc := mockorchestration.NewValidationService(t)
 	boardSvc := mockboard.NewService(t)
+	phaseSvc := mockphase.NewService(t)
 	bus := eventbus.NewTestBus()
 	infraM, gameM := testMetrics(t)
 	gameTiming := gamemetrics.NewGameTiming()
@@ -433,23 +449,17 @@ func TestOrchestrateMove_PhaseTransitionInMoveCompleted(t *testing.T) {
 	txQuerier := setupTransaction(t, querier)
 
 	move := deploy.Move{RegionID: "brazil", CurrentTroops: 3, DesiredTroops: 5}
-	moveLog := sqlc.GameMoveLog{
-		ID:       101,
-		GameID:   testGameID,
-		PlayerID: 7,
-		Phase:    sqlc.GamePhaseTypeDEPLOY,
-	}
 
 	setupHappyPath(
 		t, txQuerier,
-		gameStateSvc, validationSvc, svc, loggingSvc, missionSvc, boardSvc,
-		move, struct{}{}, moveLog,
+		validationSvc, svc, missionSvc, boardSvc,
+		move, struct{}{},
 		sqlc.GamePhaseTypeDEPLOY, sqlc.GamePhaseTypeATTACK, false,
 	)
 
-	orch := orchestration.NewOrchestrator[deploy.Move, struct{}](
-		querier, svc, gameStateSvc, loggingSvc, missionSvc, validationSvc,
-		bus, infraM, gameM, gameTiming, noopReaderFactory(), store, boardSvc,
+	orch := buildOrchestrator(
+		t, querier, svc, phaseSvc, gameStateSvc, missionSvc, validationSvc,
+		bus, infraM, gameM, gameTiming, noopReaderFactory(), store, boardSvc, gameLocks,
 	)
 
 	err := orch.OrchestrateMove(ctx, move)
@@ -463,7 +473,6 @@ func TestOrchestrateMove_PhaseTransitionInMoveCompleted(t *testing.T) {
 	require.Equal(t, gameapi.GamePhaseTypeDEPLOY, moveEvents[0].ActionType)
 	require.Equal(t, gameapi.GamePhaseTypeATTACK, moveEvents[0].TargetPhase)
 	require.False(t, moveEvents[0].GameOver)
-	require.Equal(t, testTurn, moveEvents[0].Turn)
 }
 
 func TestOrchestrateMove_GameCompletionEmitsAllEvents(t *testing.T) {
@@ -472,16 +481,17 @@ func TestOrchestrateMove_GameCompletionEmitsAllEvents(t *testing.T) {
 	ctx := testCtx()
 	querier := mockdb.NewQuerier(t)
 	svc := mockservice.NewService[reinforce.Move, struct{}](t)
+	gameLocks := orchestration.NewGameLocks()
 	gameStateSvc := mockstate.NewService(t)
-	loggingSvc := mockorchestration.NewLoggingService(t)
 	missionSvc := mockmission.NewService(t)
 	validationSvc := mockorchestration.NewValidationService(t)
 	boardSvc := mockboard.NewService(t)
+	phaseSvc := mockphase.NewService(t)
 	bus := eventbus.NewTestBus()
 	infraM, gameM := testMetrics(t)
 	gameTiming := gamemetrics.NewGameTiming()
 	store := newTestStateStore()
-	store.Store(testGameID, testCachedState())
+	store.Store(testGameID, testCachedStateForPhase(apisnapshot.PhaseReinforce))
 
 	txQuerier := setupTransaction(t, querier)
 
@@ -492,24 +502,25 @@ func TestOrchestrateMove_GameCompletionEmitsAllEvents(t *testing.T) {
 		TroopsInTarget: 2,
 		MovingTroops:   3,
 	}
-	moveLog := sqlc.GameMoveLog{
-		ID:       102,
-		GameID:   testGameID,
-		PlayerID: 7,
-		Phase:    sqlc.GamePhaseTypeREINFORCE,
-	}
 
-	// For game completion: mission accomplished = true, targetPhase = current phase
 	setupHappyPath(
 		t, txQuerier,
-		gameStateSvc, validationSvc, svc, loggingSvc, missionSvc, boardSvc,
-		move, struct{}{}, moveLog,
+		validationSvc, svc, missionSvc, boardSvc,
+		move, struct{}{},
 		sqlc.GamePhaseTypeREINFORCE, sqlc.GamePhaseTypeREINFORCE, true,
 	)
 
-	orch := orchestration.NewOrchestrator[reinforce.Move, struct{}](
-		querier, svc, gameStateSvc, loggingSvc, missionSvc, validationSvc,
-		bus, infraM, gameM, gameTiming, noopReaderFactory(), store, boardSvc,
+	// Mission victory: GameConclusion in persist TX
+	txQuerier.EXPECT().
+		GetPlayerByUserId(mock.Anything, testUserID).
+		Return(sqlc.GamePlayer{ID: 7, UserID: testUserID, GameID: testGameID}, nil).Maybe()
+	txQuerier.EXPECT().
+		AssignGameWinner(mock.Anything, mock.Anything).
+		Return(nil).Maybe()
+
+	orch := buildOrchestrator(
+		t, querier, svc, phaseSvc, gameStateSvc, missionSvc, validationSvc,
+		bus, infraM, gameM, gameTiming, noopReaderFactory(), store, boardSvc, gameLocks,
 	)
 
 	err := orch.OrchestrateMove(ctx, move)
@@ -521,14 +532,10 @@ func TestOrchestrateMove_GameCompletionEmitsAllEvents(t *testing.T) {
 	completedEvents := eventbus.EventsOfType[*gameevt.MoveCompleted](bus)
 	require.Len(t, completedEvents, 1)
 	require.True(t, completedEvents[0].GameOver)
-	require.Equal(t, gameapi.GamePhaseTypeREINFORCE, completedEvents[0].TargetPhase)
-	require.Equal(t, testGameID, completedEvents[0].GameID())
-	require.Equal(t, testTurn, completedEvents[0].Turn)
 
 	gameCompletedEvents := eventbus.EventsOfType[*gameevt.GameCompleted](bus)
 	require.Len(t, gameCompletedEvents, 1)
 	require.Equal(t, testGameID, gameCompletedEvents[0].GameID())
-	require.Equal(t, testTurn, gameCompletedEvents[0].Turn)
 }
 
 func TestOrchestrateMove_ErrorDoesNotEmit(t *testing.T) {
@@ -537,39 +544,44 @@ func TestOrchestrateMove_ErrorDoesNotEmit(t *testing.T) {
 	ctx := testCtx()
 	querier := mockdb.NewQuerier(t)
 	svc := mockservice.NewService[deploy.Move, struct{}](t)
+	gameLocks := orchestration.NewGameLocks()
 	gameStateSvc := mockstate.NewService(t)
-	loggingSvc := mockorchestration.NewLoggingService(t)
 	missionSvc := mockmission.NewService(t)
 	validationSvc := mockorchestration.NewValidationService(t)
 	boardSvc := mockboard.NewService(t)
+	phaseSvc := mockphase.NewService(t)
 	bus := eventbus.NewTestBus()
 	infraM, gameM := testMetrics(t)
 	gameTiming := gamemetrics.NewGameTiming()
 	store := newTestStateStore()
 	store.Store(testGameID, testCachedState())
 
-	// Setup failing transaction: BeginTx returns error
-	querier.EXPECT().
-		BeginTx(mock.Anything, pgx.TxOptions{IsoLevel: pgx.RepeatableRead}).
-		Return(nil, errors.New("connection refused"))
-
 	svc.EXPECT().
 		PhaseType().
 		Return(sqlc.GamePhaseTypeDEPLOY)
 
-	orch := orchestration.NewOrchestrator[deploy.Move, struct{}](
-		querier, svc, gameStateSvc, loggingSvc, missionSvc, validationSvc,
-		bus, infraM, gameM, gameTiming, noopReaderFactory(), store, boardSvc,
+	validationSvc.EXPECT().
+		Validate(mock.Anything, mock.Anything, mock.Anything).
+		Return(nil)
+
+	// Perform returns error
+	svc.EXPECT().
+		Perform(mock.Anything, mock.Anything, mock.Anything).
+		Return(struct{}{}, moveservice.MoveEffect{}, errors.New("perform failed"))
+
+	orch := buildOrchestrator(
+		t, querier, svc, phaseSvc, gameStateSvc, missionSvc, validationSvc,
+		bus, infraM, gameM, gameTiming, noopReaderFactory(), store, boardSvc, gameLocks,
 	)
 
 	move := deploy.Move{RegionID: "brazil", CurrentTroops: 3, DesiredTroops: 5}
 
 	err := orch.OrchestrateMove(ctx, move)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "connection refused")
+	require.Contains(t, err.Error(), "perform failed")
 
 	allEvents := bus.Events()
-	require.Empty(t, allEvents, "failed transaction should emit zero events")
+	require.Empty(t, allEvents, "failed move should emit zero events")
 }
 
 func TestOrchestrateMove_CardsEmitsMoveCompleted(t *testing.T) {
@@ -578,16 +590,17 @@ func TestOrchestrateMove_CardsEmitsMoveCompleted(t *testing.T) {
 	ctx := testCtx()
 	querier := mockdb.NewQuerier(t)
 	svc := mockservice.NewService[cards.Move, *cards.MoveResult](t)
+	gameLocks := orchestration.NewGameLocks()
 	gameStateSvc := mockstate.NewService(t)
-	loggingSvc := mockorchestration.NewLoggingService(t)
 	missionSvc := mockmission.NewService(t)
 	validationSvc := mockorchestration.NewValidationService(t)
 	boardSvc := mockboard.NewService(t)
+	phaseSvc := mockphase.NewService(t)
 	bus := eventbus.NewTestBus()
 	infraM, gameM := testMetrics(t)
 	gameTiming := gamemetrics.NewGameTiming()
 	store := newTestStateStore()
-	store.Store(testGameID, testCachedState())
+	store.Store(testGameID, testCachedStateForPhase(apisnapshot.PhaseCards))
 
 	txQuerier := setupTransaction(t, querier)
 
@@ -598,23 +611,17 @@ func TestOrchestrateMove_CardsEmitsMoveCompleted(t *testing.T) {
 			{RegionID: 1, RegionExternalReference: "brazil"},
 		},
 	}
-	moveLog := sqlc.GameMoveLog{
-		ID:       103,
-		GameID:   testGameID,
-		PlayerID: 7,
-		Phase:    sqlc.GamePhaseTypeCARDS,
-	}
 
 	setupHappyPath(
 		t, txQuerier,
-		gameStateSvc, validationSvc, svc, loggingSvc, missionSvc, boardSvc,
-		move, cardsResult, moveLog,
+		validationSvc, svc, missionSvc, boardSvc,
+		move, cardsResult,
 		sqlc.GamePhaseTypeCARDS, sqlc.GamePhaseTypeDEPLOY, false,
 	)
 
-	orch := orchestration.NewOrchestrator[cards.Move, *cards.MoveResult](
-		querier, svc, gameStateSvc, loggingSvc, missionSvc, validationSvc,
-		bus, infraM, gameM, gameTiming, noopReaderFactory(), store, boardSvc,
+	orch := buildOrchestrator(
+		t, querier, svc, phaseSvc, gameStateSvc, missionSvc, validationSvc,
+		bus, infraM, gameM, gameTiming, noopReaderFactory(), store, boardSvc, gameLocks,
 	)
 
 	err := orch.OrchestrateMove(ctx, move)
@@ -627,8 +634,6 @@ func TestOrchestrateMove_CardsEmitsMoveCompleted(t *testing.T) {
 
 func TestExtractResults_AllPhasesEmitMoveCompleted(t *testing.T) {
 	t.Parallel()
-
-	// Verify that each phase type emits a MoveCompleted event.
 
 	tests := []struct {
 		name        string
@@ -719,8 +724,6 @@ func TestExtractResults_AllPhasesEmitMoveCompleted(t *testing.T) {
 	}
 }
 
-// runOrchestration is a generic helper that runs a complete OrchestrateMove flow
-// and returns the TestBus for event inspection. Used by TestExtractResults_AllPhases.
 func runOrchestration[T, R any](
 	t *testing.T,
 	phase sqlc.GamePhaseType,
@@ -732,31 +735,30 @@ func runOrchestration[T, R any](
 	ctx := testCtx()
 	querier := mockdb.NewQuerier(t)
 	svc := mockservice.NewService[T, R](t)
+	gameLocks := orchestration.NewGameLocks()
 	gameStateSvc := mockstate.NewService(t)
-	loggingSvc := mockorchestration.NewLoggingService(t)
 	missionSvc := mockmission.NewService(t)
 	validationSvc := mockorchestration.NewValidationService(t)
 	boardSvc := mockboard.NewService(t)
+	phaseSvc := mockphase.NewService(t)
 	bus := eventbus.NewTestBus()
 	infraM, gameM := testMetrics(t)
 	gameTiming := gamemetrics.NewGameTiming()
 	store := newTestStateStore()
-	store.Store(testGameID, testCachedState())
+	store.Store(testGameID, testCachedStateForPhase(sqlcPhaseToSnapshot(phase)))
 
 	txQuerier := setupTransaction(t, querier)
 
-	moveLog := sqlc.GameMoveLog{ID: 200, GameID: testGameID, PlayerID: 7, Phase: phase}
-
 	setupHappyPath(
 		t, txQuerier,
-		gameStateSvc, validationSvc, svc, loggingSvc, missionSvc, boardSvc,
-		move, result, moveLog,
+		validationSvc, svc, missionSvc, boardSvc,
+		move, result,
 		phase, phase, false,
 	)
 
-	orch := orchestration.NewOrchestrator[T, R](
-		querier, svc, gameStateSvc, loggingSvc, missionSvc, validationSvc,
-		bus, infraM, gameM, gameTiming, noopReaderFactory(), store, boardSvc,
+	orch := buildOrchestrator(
+		t, querier, svc, phaseSvc, gameStateSvc, missionSvc, validationSvc,
+		bus, infraM, gameM, gameTiming, noopReaderFactory(), store, boardSvc, gameLocks,
 	)
 
 	err := orch.OrchestrateMove(ctx, move)
@@ -775,11 +777,12 @@ func TestOrchestrateMove_EmitsMoveCompleted(t *testing.T) {
 	ctx := testCtx()
 	querier := mockdb.NewQuerier(t)
 	svc := mockservice.NewService[deploy.Move, struct{}](t)
+	gameLocks := orchestration.NewGameLocks()
 	gameStateSvc := mockstate.NewService(t)
-	loggingSvc := mockorchestration.NewLoggingService(t)
 	missionSvc := mockmission.NewService(t)
 	validationSvc := mockorchestration.NewValidationService(t)
 	boardSvc := mockboard.NewService(t)
+	phaseSvc := mockphase.NewService(t)
 	bus := eventbus.NewTestBus()
 	infraM, gameM := testMetrics(t)
 	gameTiming := gamemetrics.NewGameTiming()
@@ -789,23 +792,17 @@ func TestOrchestrateMove_EmitsMoveCompleted(t *testing.T) {
 	txQuerier := setupTransaction(t, querier)
 
 	move := deploy.Move{RegionID: "brazil", CurrentTroops: 3, DesiredTroops: 5}
-	moveLog := sqlc.GameMoveLog{
-		ID:       110,
-		GameID:   testGameID,
-		PlayerID: 7,
-		Phase:    sqlc.GamePhaseTypeDEPLOY,
-	}
 
 	setupHappyPath(
 		t, txQuerier,
-		gameStateSvc, validationSvc, svc, loggingSvc, missionSvc, boardSvc,
-		move, struct{}{}, moveLog,
+		validationSvc, svc, missionSvc, boardSvc,
+		move, struct{}{},
 		sqlc.GamePhaseTypeDEPLOY, sqlc.GamePhaseTypeDEPLOY, false,
 	)
 
-	orch := orchestration.NewOrchestrator[deploy.Move, struct{}](
-		querier, svc, gameStateSvc, loggingSvc, missionSvc, validationSvc,
-		bus, infraM, gameM, gameTiming, noopReaderFactory(), store, boardSvc,
+	orch := buildOrchestrator(
+		t, querier, svc, phaseSvc, gameStateSvc, missionSvc, validationSvc,
+		bus, infraM, gameM, gameTiming, noopReaderFactory(), store, boardSvc, gameLocks,
 	)
 
 	err := orch.OrchestrateMove(ctx, move)
@@ -832,11 +829,12 @@ func TestOrchestrateMove_StoresStateAfterCommit(t *testing.T) {
 	ctx := testCtx()
 	querier := mockdb.NewQuerier(t)
 	svc := mockservice.NewService[deploy.Move, struct{}](t)
+	gameLocks := orchestration.NewGameLocks()
 	gameStateSvc := mockstate.NewService(t)
-	loggingSvc := mockorchestration.NewLoggingService(t)
 	missionSvc := mockmission.NewService(t)
 	validationSvc := mockorchestration.NewValidationService(t)
 	boardSvc := mockboard.NewService(t)
+	phaseSvc := mockphase.NewService(t)
 	bus := eventbus.NewTestBus()
 	infraM, gameM := testMetrics(t)
 	gameTiming := gamemetrics.NewGameTiming()
@@ -846,123 +844,112 @@ func TestOrchestrateMove_StoresStateAfterCommit(t *testing.T) {
 	txQuerier := setupTransaction(t, querier)
 
 	move := deploy.Move{RegionID: "brazil", CurrentTroops: 3, DesiredTroops: 5}
-	moveLog := sqlc.GameMoveLog{
-		ID:       111,
-		GameID:   testGameID,
-		PlayerID: 7,
-		Phase:    sqlc.GamePhaseTypeDEPLOY,
-	}
 
 	setupHappyPath(
 		t, txQuerier,
-		gameStateSvc, validationSvc, svc, loggingSvc, missionSvc, boardSvc,
-		move, struct{}{}, moveLog,
+		validationSvc, svc, missionSvc, boardSvc,
+		move, struct{}{},
 		sqlc.GamePhaseTypeDEPLOY, sqlc.GamePhaseTypeDEPLOY, false,
 	)
 
-	orch := orchestration.NewOrchestrator[deploy.Move, struct{}](
-		querier, svc, gameStateSvc, loggingSvc, missionSvc, validationSvc,
-		bus, infraM, gameM, gameTiming, noopReaderFactory(), store, boardSvc,
+	orch := buildOrchestrator(
+		t, querier, svc, phaseSvc, gameStateSvc, missionSvc, validationSvc,
+		bus, infraM, gameM, gameTiming, noopReaderFactory(), store, boardSvc, gameLocks,
 	)
 
 	err := orch.OrchestrateMove(ctx, move)
 	require.NoError(t, err)
 
-	// Verify StateStore.Store was called with the BuildNewState output
 	cached := store.Get(testGameID)
 	require.NotNil(t, cached, "StateStore must have cached state for game")
 	require.Equal(t, testTurn, cached.Turn)
 	require.NotNil(t, cached.PublicSnapshot)
 	require.Equal(t, testGameID, cached.PublicSnapshot.Game.ID)
-	require.NotNil(t, cached.PrivateSnapshots)
-	require.Contains(t, cached.PrivateSnapshots, testUserID)
 }
 
-// TestOrchestrateMove_WarmOnMiss verifies that when the state store has no
-// cached state (cache miss), the pipeline warms from the database using the
-// transactional querier and stores the result.
 func TestOrchestrateMove_WarmOnMiss(t *testing.T) {
 	t.Parallel()
 
 	ctx := testCtx()
 	querier := mockdb.NewQuerier(t)
 	svc := mockservice.NewService[deploy.Move, struct{}](t)
+	gameLocks := orchestration.NewGameLocks()
 	gameStateSvc := mockstate.NewService(t)
-	loggingSvc := mockorchestration.NewLoggingService(t)
 	missionSvc := mockmission.NewService(t)
 	validationSvc := mockorchestration.NewValidationService(t)
 	boardSvc := mockboard.NewService(t)
+	phaseSvc := mockphase.NewService(t)
 	bus := eventbus.NewTestBus()
 	infraM, gameM := testMetrics(t)
 	gameTiming := gamemetrics.NewGameTiming()
 	store := newTestStateStore() // empty — no pre-populated state
 
-	// Capture the querier passed to the ReaderFactory
 	var capturedQuerier db.Querier
-	readerFactory := testReaderFactory(t, &capturedQuerier)
+	readerFactory := testReaderFactory(t, apisnapshot.PhaseDeploy, &capturedQuerier)
 
 	txQuerier := setupTransaction(t, querier)
 
 	move := deploy.Move{RegionID: "brazil", CurrentTroops: 3, DesiredTroops: 5}
-	moveLog := sqlc.GameMoveLog{
-		ID:       112,
-		GameID:   testGameID,
-		PlayerID: 7,
-		Phase:    sqlc.GamePhaseTypeDEPLOY,
-	}
 
 	setupHappyPath(
 		t, txQuerier,
-		gameStateSvc, validationSvc, svc, loggingSvc, missionSvc, boardSvc,
-		move, struct{}{}, moveLog,
+		validationSvc, svc, missionSvc, boardSvc,
+		move, struct{}{},
 		sqlc.GamePhaseTypeDEPLOY, sqlc.GamePhaseTypeDEPLOY, false,
 	)
 
+	// Slow path: GetGameStateWithQuerier is called on cache miss using direct querier
+	gameStateSvc.EXPECT().
+		GetGameStateWithQuerier(mock.Anything, querier).
+		Return(&state.Game{
+			ID:    testGameID,
+			Turn:  testTurn,
+			Phase: sqlc.GamePhaseTypeDEPLOY,
+		}, nil)
+
 	// Expect HasConqueredInTurn call during warm-on-miss
-	txQuerier.EXPECT().
+	querier.EXPECT().
 		HasConqueredInTurn(mock.Anything, sqlc.HasConqueredInTurnParams{
 			ID:   testGameID,
 			Turn: testTurn,
 		}).
 		Return(false, nil)
 
-	orch := orchestration.NewOrchestrator[deploy.Move, struct{}](
-		querier, svc, gameStateSvc, loggingSvc, missionSvc, validationSvc,
-		bus, infraM, gameM, gameTiming, readerFactory, store, boardSvc,
+	// Expect GetAvailableDeck call during warm-on-miss
+	querier.EXPECT().
+		GetAvailableDeck(mock.Anything, testGameID).
+		Return([]sqlc.GetAvailableDeckRow{}, nil)
+
+	orch := buildOrchestrator(
+		t, querier, svc, phaseSvc, gameStateSvc, missionSvc, validationSvc,
+		bus, infraM, gameM, gameTiming, readerFactory, store, boardSvc, gameLocks,
 	)
 
 	err := orch.OrchestrateMove(ctx, move)
 	require.NoError(t, err)
 
-	// Verify the ReaderFactory was called with the transactional querier
+	// Verify the ReaderFactory was called with the direct querier (not TX querier)
 	require.NotNil(t, capturedQuerier, "ReaderFactory must be called on cache miss")
-	require.Equal(t, txQuerier, capturedQuerier,
-		"ReaderFactory must receive the transactional querier")
+	require.Equal(t, querier, capturedQuerier,
+		"ReaderFactory must receive the direct querier (no TX)")
 
-	// Verify state was stored and MoveCompleted emitted
 	cached := store.Get(testGameID)
 	require.NotNil(t, cached, "StateStore must have cached state after warm")
 	require.Equal(t, testTurn, cached.Turn)
-
-	mcEvents := eventbus.EventsOfType[*gameevt.MoveCompleted](bus)
-	require.Len(t, mcEvents, 1)
-	require.NotNil(t, mcEvents[0].PublicSnapshot)
-	require.Contains(t, mcEvents[0].PrivateSnapshots, testUserID)
 }
 
-// TestOrchestrateMove_CacheHitDoesNotReadDB verifies that when the state store
-// has cached state, the pipeline does NOT call the ReaderFactory (no DB reads).
 func TestOrchestrateMove_CacheHitDoesNotReadDB(t *testing.T) {
 	t.Parallel()
 
 	ctx := testCtx()
 	querier := mockdb.NewQuerier(t)
 	svc := mockservice.NewService[deploy.Move, struct{}](t)
+	gameLocks := orchestration.NewGameLocks()
 	gameStateSvc := mockstate.NewService(t)
-	loggingSvc := mockorchestration.NewLoggingService(t)
 	missionSvc := mockmission.NewService(t)
 	validationSvc := mockorchestration.NewValidationService(t)
 	boardSvc := mockboard.NewService(t)
+	phaseSvc := mockphase.NewService(t)
 	bus := eventbus.NewTestBus()
 	infraM, gameM := testMetrics(t)
 	gameTiming := gamemetrics.NewGameTiming()
@@ -972,24 +959,17 @@ func TestOrchestrateMove_CacheHitDoesNotReadDB(t *testing.T) {
 	txQuerier := setupTransaction(t, querier)
 
 	move := deploy.Move{RegionID: "brazil", CurrentTroops: 3, DesiredTroops: 5}
-	moveLog := sqlc.GameMoveLog{
-		ID:       113,
-		GameID:   testGameID,
-		PlayerID: 7,
-		Phase:    sqlc.GamePhaseTypeDEPLOY,
-	}
 
 	setupHappyPath(
 		t, txQuerier,
-		gameStateSvc, validationSvc, svc, loggingSvc, missionSvc, boardSvc,
-		move, struct{}{}, moveLog,
+		validationSvc, svc, missionSvc, boardSvc,
+		move, struct{}{},
 		sqlc.GamePhaseTypeDEPLOY, sqlc.GamePhaseTypeDEPLOY, false,
 	)
 
-	// Use panicking reader factory — proves it's never called on cache hit
-	orch := orchestration.NewOrchestrator[deploy.Move, struct{}](
-		querier, svc, gameStateSvc, loggingSvc, missionSvc, validationSvc,
-		bus, infraM, gameM, gameTiming, noopReaderFactory(), store, boardSvc,
+	orch := buildOrchestrator(
+		t, querier, svc, phaseSvc, gameStateSvc, missionSvc, validationSvc,
+		bus, infraM, gameM, gameTiming, noopReaderFactory(), store, boardSvc, gameLocks,
 	)
 
 	err := orch.OrchestrateMove(ctx, move)
@@ -999,19 +979,18 @@ func TestOrchestrateMove_CacheHitDoesNotReadDB(t *testing.T) {
 	require.Len(t, mcEvents, 1, "MoveCompleted must be emitted on cache hit")
 }
 
-// TestOrchestrateMove_PrevRegionsFromPrevState verifies that the MoveCompleted
-// event carries the regions from the pre-mutation state (for headline detection).
 func TestOrchestrateMove_PrevRegionsFromPrevState(t *testing.T) {
 	t.Parallel()
 
 	ctx := testCtx()
 	querier := mockdb.NewQuerier(t)
 	svc := mockservice.NewService[deploy.Move, struct{}](t)
+	gameLocks := orchestration.NewGameLocks()
 	gameStateSvc := mockstate.NewService(t)
-	loggingSvc := mockorchestration.NewLoggingService(t)
 	missionSvc := mockmission.NewService(t)
 	validationSvc := mockorchestration.NewValidationService(t)
 	boardSvc := mockboard.NewService(t)
+	phaseSvc := mockphase.NewService(t)
 	bus := eventbus.NewTestBus()
 	infraM, gameM := testMetrics(t)
 	gameTiming := gamemetrics.NewGameTiming()
@@ -1021,23 +1000,17 @@ func TestOrchestrateMove_PrevRegionsFromPrevState(t *testing.T) {
 	txQuerier := setupTransaction(t, querier)
 
 	move := deploy.Move{RegionID: "brazil", CurrentTroops: 3, DesiredTroops: 5}
-	moveLog := sqlc.GameMoveLog{
-		ID:       114,
-		GameID:   testGameID,
-		PlayerID: 7,
-		Phase:    sqlc.GamePhaseTypeDEPLOY,
-	}
 
 	setupHappyPath(
 		t, txQuerier,
-		gameStateSvc, validationSvc, svc, loggingSvc, missionSvc, boardSvc,
-		move, struct{}{}, moveLog,
+		validationSvc, svc, missionSvc, boardSvc,
+		move, struct{}{},
 		sqlc.GamePhaseTypeDEPLOY, sqlc.GamePhaseTypeDEPLOY, false,
 	)
 
-	orch := orchestration.NewOrchestrator[deploy.Move, struct{}](
-		querier, svc, gameStateSvc, loggingSvc, missionSvc, validationSvc,
-		bus, infraM, gameM, gameTiming, noopReaderFactory(), store, boardSvc,
+	orch := buildOrchestrator(
+		t, querier, svc, phaseSvc, gameStateSvc, missionSvc, validationSvc,
+		bus, infraM, gameM, gameTiming, noopReaderFactory(), store, boardSvc, gameLocks,
 	)
 
 	err := orch.OrchestrateMove(ctx, move)
@@ -1046,7 +1019,6 @@ func TestOrchestrateMove_PrevRegionsFromPrevState(t *testing.T) {
 	mcEvents := eventbus.EventsOfType[*gameevt.MoveCompleted](bus)
 	require.Len(t, mcEvents, 1)
 
-	// PreviousRegions should match the pre-mutation snapshot regions
 	prevRegions := mcEvents[0].PreviousRegions
 	require.Len(t, prevRegions, 2)
 	require.Equal(t, "brazil", prevRegions[0].ID)

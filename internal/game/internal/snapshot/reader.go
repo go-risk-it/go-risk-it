@@ -225,9 +225,10 @@ func mapRegions(regions []sqlc.GetRegionsByGameRow) []apisnapshot.RegionState {
 	result := make([]apisnapshot.RegionState, len(regions))
 	for i, r := range regions {
 		result[i] = apisnapshot.RegionState{
-			ID:      r.ExternalReference,
-			OwnerID: r.UserID,
-			Troops:  r.Troops,
+			InternalID: r.ID,
+			ID:         r.ExternalReference,
+			OwnerID:    r.UserID,
+			Troops:     r.Troops,
 		}
 	}
 

@@ -5,11 +5,7 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
 	moveservice "github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/service"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 func (s *orchestrator[T, R]) recordGameFinished(
@@ -22,22 +18,34 @@ func (s *orchestrator[T, R]) recordGameFinished(
 	}
 }
 
+// checkMission checks whether the current player's mission is accomplished
+// using pure cached state. No DB queries — all data comes from ECST.
 func (s *orchestrator[T, R]) checkMission(
 	ctx gamectx.GameContext,
-	querier db.Querier,
+	prevState *snapshot.CachedGameState,
+	effect moveservice.MoveEffect,
 ) (bool, error) {
+	// Compute post-move regions — same pattern as IsDomination.
+	postMoveRegions := ApplyRegionUpdates(
+		prevState.PublicSnapshot.Regions,
+		effect.RegionUpdates,
+	)
+
+	continents, err := s.boardService.GetContinents(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to get continents for mission check: %w", err)
+	}
+
 	isMissionAccomplished, err := s.missionService.IsMissionAccomplished(
-		ctx, querier,
+		ctx,
+		postMoveRegions,
+		prevState.PrivateSnapshots,
+		continents,
 	)
 	if err != nil {
 		return false, fmt.Errorf(
 			"unable to check if mission is accomplished: %w", err,
 		)
-	}
-
-	if isMissionAccomplished {
-		observe.SpanEvent(ctx, "game_is_over")
-		s.recordGameFinished(ctx)
 	}
 
 	return isMissionAccomplished, nil
@@ -71,33 +79,4 @@ func IsDomination(
 	}
 
 	return true
-}
-
-// assignWinner records the domination victory in the DB and emits metrics.
-func (s *orchestrator[T, R]) assignWinner(
-	ctx gamectx.GameContext,
-	querier db.Querier,
-) error {
-	players, err := querier.GetPlayersByGame(ctx, ctx.GameID())
-	if err != nil {
-		return fmt.Errorf("failed to get players: %w", err)
-	}
-
-	for _, p := range players {
-		if p.UserID == ctx.UserID() {
-			if err := querier.AssignGameWinner(ctx, sqlc.AssignGameWinnerParams{
-				WinnerPlayerID: pgtype.Int8{Int64: p.ID, Valid: true},
-				GameID:         ctx.GameID(),
-			}); err != nil {
-				return fmt.Errorf("failed to assign game winner: %w", err)
-			}
-
-			break
-		}
-	}
-
-	observe.SpanEvent(ctx, "domination_victory")
-	s.recordGameFinished(ctx)
-
-	return nil
 }

@@ -6,19 +6,21 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/region"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
 )
 
 type Service interface {
 	GetBoardRegions(ctx context.Context) ([]string, error)
 	AreNeighbours(ctx context.Context, source string, target string) (bool, error)
-	CanPlayerReach(
+	CanPlayerReachWithRegions(
 		ctx ctx.GameContext,
-		querier db.Querier,
 		source string,
 		target string,
+		regions []snapshot.RegionState,
 	) (bool, error)
 	GetContinents(ctx ctx.GameContext) (Continents, error)
 	GetContinentsControlledByPlayer(
@@ -40,6 +42,11 @@ func NewService(regionService region.Service) Service {
 	return &service{graph: nil, regionService: regionService}
 }
 
+// NewServiceWithGraph creates a Service with an injected graph for testing.
+func NewServiceWithGraph(regionService region.Service, graph Graph) Service {
+	return &service{graph: graph, regionService: regionService}
+}
+
 func (s *service) AreNeighbours(
 	ctx context.Context,
 	source string,
@@ -53,22 +60,34 @@ func (s *service) AreNeighbours(
 	return graph.AreNeighbours(source, target), nil
 }
 
-func (s *service) CanPlayerReach(
+func (s *service) CanPlayerReachWithRegions(
 	ctx ctx.GameContext,
-	querier db.Querier,
 	source string,
 	target string,
+	regions []snapshot.RegionState,
 ) (bool, error) {
-	regions, err := s.regionService.GetRegionsWithQuerier(ctx, querier)
-	if err != nil {
-		return false, fmt.Errorf("failed to get regions: %w", err)
+	// Verify the source region exists in the cached regions.
+	sourceFound := false
+
+	for _, r := range regions {
+		if r.ID == source {
+			sourceFound = true
+
+			break
+		}
+	}
+
+	if !sourceFound {
+		return false, domainerrors.NewNotFoundError(
+			fmt.Sprintf("source region %s not found in cached regions", source),
+		)
 	}
 
 	usableRegions := make(map[string]struct{})
 
-	for _, region := range regions {
-		if region.UserID == ctx.UserID() {
-			usableRegions[region.ExternalReference] = struct{}{}
+	for _, r := range regions {
+		if r.OwnerID == ctx.UserID() {
+			usableRegions[r.ID] = struct{}{}
 		}
 	}
 

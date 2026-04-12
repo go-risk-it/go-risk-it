@@ -107,7 +107,7 @@ func (s *service) CreateGame(
 	// and store it in the StateStore for zero-query PlayerConnected cache.
 	gameCtx := ctx.WithGameID(userCtx, gameID)
 
-	publicSnap, privateSnaps, err := s.readInitialSnapshot(gameCtx)
+	publicSnap, privateSnaps, deck, err := s.readInitialSnapshot(gameCtx)
 	if err != nil {
 		// Snapshot read failure is non-fatal: the game is already committed.
 		// PlayerConnected will fall back to a fresh DB read if StateStore is empty.
@@ -123,6 +123,7 @@ func (s *service) CreateGame(
 
 	s.stateStore.Store(gameID, &snapshot.CachedGameState{
 		Turn:             0,
+		AvailableDeck:    deck,
 		PublicSnapshot:   publicSnap,
 		PrivateSnapshots: privateSnaps,
 	})
@@ -146,18 +147,29 @@ func (s *service) CreateGame(
 // Uses the pool querier (not a transactional one) since the data is committed.
 func (s *service) readInitialSnapshot(
 	gameCtx ctx.GameContext,
-) (*snapshot.GameSnapshot, map[string]*snapshot.PlayerPrivate, error) {
+) (*snapshot.GameSnapshot, map[string]*snapshot.PlayerPrivate, []snapshot.CardState, error) {
 	publicSnap, err := s.snapshotReader.GetPublicSnapshot(gameCtx)
 	if err != nil {
-		return nil, nil, fmt.Errorf("reading public snapshot: %w", err)
+		return nil, nil, nil, fmt.Errorf("reading public snapshot: %w", err)
 	}
 
 	privateSnaps, err := s.snapshotReader.GetAllPrivateSnapshots(gameCtx)
 	if err != nil {
-		return nil, nil, fmt.Errorf("reading private snapshots: %w", err)
+		return nil, nil, nil, fmt.Errorf("reading private snapshots: %w", err)
 	}
 
-	return publicSnap, privateSnaps, nil
+	// At game creation all cards are unowned, so the full deck is available.
+	deckRows, err := s.querier.GetAvailableDeck(gameCtx, gameCtx.GameID())
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("reading available deck: %w", err)
+	}
+
+	deck, err := mapDeckRows(deckRows)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("mapping available deck: %w", err)
+	}
+
+	return publicSnap, privateSnaps, deck, nil
 }
 
 func (s *service) CreateGameWithQuerier(
@@ -241,4 +253,45 @@ func (s *service) createPhase(
 	}
 
 	return nil
+}
+
+// mapDeckRows converts sqlc query rows to snapshot CardState values.
+func mapDeckRows(rows []sqlc.GetAvailableDeckRow) ([]snapshot.CardState, error) {
+	deck := make([]snapshot.CardState, 0, len(rows))
+
+	for _, row := range rows {
+		cardType, err := mapSqlcCardType(row.CardType)
+		if err != nil {
+			return nil, err
+		}
+
+		region := ""
+		if row.Region.Valid {
+			region = row.Region.String
+		}
+
+		deck = append(deck, snapshot.CardState{
+			ID:     row.ID,
+			Type:   cardType,
+			Region: region,
+		})
+	}
+
+	return deck, nil
+}
+
+// mapSqlcCardType converts a sqlc GameCardType to a snapshot CardType.
+func mapSqlcCardType(cardType sqlc.GameCardType) (snapshot.CardType, error) {
+	switch cardType {
+	case sqlc.GameCardTypeINFANTRY:
+		return snapshot.CardInfantry, nil
+	case sqlc.GameCardTypeCAVALRY:
+		return snapshot.CardCavalry, nil
+	case sqlc.GameCardTypeARTILLERY:
+		return snapshot.CardArtillery, nil
+	case sqlc.GameCardTypeJOLLY:
+		return snapshot.CardJolly, nil
+	default:
+		return "", fmt.Errorf("unknown card type: %s", cardType)
+	}
 }

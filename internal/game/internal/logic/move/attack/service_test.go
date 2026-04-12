@@ -6,40 +6,29 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/attack"
 	moveservice "github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/service"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/board"
 	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/move/attack/dice"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/phase"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/region"
 	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
 
 func setup(t *testing.T) (
-	*db.Querier,
 	*board.Service,
 	*dice.Service,
-	*region.Service,
 	attack.Service,
 ) {
 	t.Helper()
-	querier := db.NewQuerier(t)
 	boardService := board.NewService(t)
 	diceService := dice.NewService(t)
-	phaseService := phase.NewService(t)
-	regionService := region.NewService(t)
 	service, _ := attack.NewService(
 		boardService,
 		diceService,
-		phaseService,
-		regionService,
 	)
 
-	return querier, boardService, diceService, regionService, service
+	return boardService, diceService, service
 }
 
 func input() ctx.GameContext {
@@ -204,27 +193,27 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, boardService, _, regionService, service := setup(t)
+			boardService, _, service := setup(t)
 			ctx := input()
 
-			regionService.
-				EXPECT().
-				GetRegion(ctx, querier, test.attackingRegion).
-				Return(&sqlc.GetRegionsByGameRow{
-					ID:                1,
-					ExternalReference: test.attackingRegion,
-					UserID:            test.attackingRegionOwner,
-					Troops:            test.troopsInSource,
-				}, nil)
-			regionService.
-				EXPECT().
-				GetRegion(ctx, querier, test.defendingRegion).
-				Return(&sqlc.GetRegionsByGameRow{
-					ID:                2,
-					ExternalReference: test.defendingRegion,
-					UserID:            test.defendingRegionOwner,
-					Troops:            test.troopsInTarget,
-				}, nil)
+			prev := &snapshot.CachedGameState{
+				PublicSnapshot: &snapshot.GameSnapshot{
+					Regions: []snapshot.RegionState{
+						{
+							InternalID: 1,
+							ID:         test.attackingRegion,
+							OwnerID:    test.attackingRegionOwner,
+							Troops:     test.troopsInSource,
+						},
+						{
+							InternalID: 2,
+							ID:         test.defendingRegion,
+							OwnerID:    test.defendingRegionOwner,
+							Troops:     test.troopsInTarget,
+						},
+					},
+				},
+			}
 
 			if !test.regionsAreNeighboring {
 				boardService.
@@ -233,13 +222,13 @@ func TestServiceImpl_AttackShouldFail(t *testing.T) {
 					Return(false, nil)
 			}
 
-			_, _, err := service.Perform(ctx, querier, attack.Move{
+			_, _, err := service.Perform(ctx, attack.Move{
 				AttackingRegionID: test.attackingRegion,
 				DefendingRegionID: test.defendingRegion,
 				TroopsInSource:    test.declaredTroopsInSource,
 				TroopsInTarget:    test.declaredTroopsInTarget,
 				AttackingTroops:   test.attackingTroops,
-			}, nil)
+			}, prev)
 
 			require.Error(t, err)
 			require.EqualError(t, err, test.expectedError)
@@ -348,34 +337,35 @@ func TestServiceImpl_AttackShouldUpdateRegionTroops(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, boardService, diceService, regionService, service := setup(t)
+			boardService, diceService, service := setup(t)
 			ctx := input()
 
 			troopsInAttackingRegion := int64(4)
-			attackingRegion := &sqlc.GetRegionsByGameRow{
-				ID:                1,
-				ExternalReference: "greenland",
-				UserID:            "giovanni",
-				Troops:            troopsInAttackingRegion,
-			}
-			defendingRegion := &sqlc.GetRegionsByGameRow{
-				ID:                2,
-				ExternalReference: "iceland",
-				UserID:            "gabriele",
-				Troops:            test.troopsInDefendingRegion,
+			attackingRegionID := "greenland"
+			defendingRegionID := "iceland"
+
+			prev := &snapshot.CachedGameState{
+				PublicSnapshot: &snapshot.GameSnapshot{
+					Regions: []snapshot.RegionState{
+						{
+							InternalID: 1,
+							ID:         attackingRegionID,
+							OwnerID:    "giovanni",
+							Troops:     troopsInAttackingRegion,
+						},
+						{
+							InternalID: 2,
+							ID:         defendingRegionID,
+							OwnerID:    "gabriele",
+							Troops:     test.troopsInDefendingRegion,
+						},
+					},
+				},
 			}
 
-			regionService.
-				EXPECT().
-				GetRegion(ctx, querier, attackingRegion.ExternalReference).
-				Return(attackingRegion, nil)
-			regionService.
-				EXPECT().
-				GetRegion(ctx, querier, defendingRegion.ExternalReference).
-				Return(defendingRegion, nil)
 			boardService.
 				EXPECT().
-				AreNeighbours(ctx, attackingRegion.ExternalReference, defendingRegion.ExternalReference).
+				AreNeighbours(ctx, attackingRegionID, defendingRegionID).
 				Return(true, nil)
 			diceService.
 				EXPECT().
@@ -387,22 +377,14 @@ func TestServiceImpl_AttackShouldUpdateRegionTroops(t *testing.T) {
 				RollDefendingDices(len(test.defenseDices)).
 				Return(test.defenseDices).
 				Once()
-			regionService.
-				EXPECT().
-				UpdateTroopsInRegion(ctx, querier, attackingRegion, -test.expectedAttackerCasualties).
-				Return(nil)
-			regionService.
-				EXPECT().
-				UpdateTroopsInRegion(ctx, querier, defendingRegion, -test.expectedDefenderCasualties).
-				Return(nil)
 
-			result, effect, err := service.Perform(ctx, querier, attack.Move{
-				AttackingRegionID: attackingRegion.ExternalReference,
-				DefendingRegionID: defendingRegion.ExternalReference,
+			result, effect, err := service.Perform(ctx, attack.Move{
+				AttackingRegionID: attackingRegionID,
+				DefendingRegionID: defendingRegionID,
 				TroopsInSource:    troopsInAttackingRegion,
 				TroopsInTarget:    test.troopsInDefendingRegion,
 				AttackingTroops:   test.attackingTroops,
-			}, nil)
+			}, prev)
 
 			require.NoError(t, err)
 			require.NotNil(t, result)
@@ -424,69 +406,35 @@ func TestServiceImpl_AttackShouldUpdateRegionTroops(t *testing.T) {
 	}
 }
 
-func TestServiceImpl_HasConquered(t *testing.T) {
+func TestServiceImpl_AttackShouldFailWhenRegionNotInCache(t *testing.T) {
 	t.Parallel()
 
 	type inputType struct {
-		name     string
-		regions  []sqlc.GetRegionsByGameRow
-		expected bool
+		name          string
+		regions       []snapshot.RegionState
+		attackingID   string
+		defendingID   string
+		expectedError string
 	}
 
 	tests := []inputType{
 		{
-			"When nothing was conquered",
-			[]sqlc.GetRegionsByGameRow{
-				{
-					ID:                1,
-					ExternalReference: "greenland",
-					UserID:            "giovanni",
-					Troops:            4,
-				},
-				{
-					ID:                2,
-					ExternalReference: "iceland",
-					UserID:            "gabriele",
-					Troops:            5,
-				},
+			"When attacking region not found in cache",
+			[]snapshot.RegionState{
+				{InternalID: 2, ID: "iceland", OwnerID: "gabriele", Troops: 5},
 			},
-			false,
+			"greenland",
+			"iceland",
+			"unable to find attacking region in cache: region greenland not found in cached state",
 		},
 		{
-			"When a region is conquered, but it's owned by the attacker",
-			[]sqlc.GetRegionsByGameRow{
-				{
-					ID:                1,
-					ExternalReference: "greenland",
-					UserID:            "giovanni",
-					Troops:            4,
-				},
-				{
-					ID:                2,
-					ExternalReference: "iceland",
-					UserID:            "giovanni",
-					Troops:            0,
-				},
+			"When defending region not found in cache",
+			[]snapshot.RegionState{
+				{InternalID: 1, ID: "greenland", OwnerID: "giovanni", Troops: 5},
 			},
-			false,
-		},
-		{
-			"When a region is conquered, and it's not owned by the attacker",
-			[]sqlc.GetRegionsByGameRow{
-				{
-					ID:                1,
-					ExternalReference: "greenland",
-					UserID:            "giovanni",
-					Troops:            4,
-				},
-				{
-					ID:                2,
-					ExternalReference: "iceland",
-					UserID:            "gabriele",
-					Troops:            0,
-				},
-			},
-			true,
+			"greenland",
+			"iceland",
+			"unable to find defending region in cache: region iceland not found in cached state",
 		},
 	}
 
@@ -494,86 +442,25 @@ func TestServiceImpl_HasConquered(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, _, _, regionService, service := setup(t)
+			_, _, service := setup(t)
 			ctx := input()
 
-			regionService.
-				EXPECT().
-				GetRegionsWithQuerier(ctx, querier).
-				Return(test.regions, nil)
-
-			result, err := service.HasConquered(ctx, querier)
-
-			require.NoError(t, err)
-			require.Equal(t, test.expected, result)
-		})
-	}
-}
-
-func TestServiceImpl_CanContinueAttacking(t *testing.T) {
-	t.Parallel()
-
-	type inputType struct {
-		name     string
-		regions  []sqlc.GetRegionsByGameRow
-		expected bool
-	}
-
-	tests := []inputType{
-		{
-			"When player still has troops",
-			[]sqlc.GetRegionsByGameRow{
-				{
-					ID:                1,
-					ExternalReference: "greenland",
-					UserID:            "giovanni",
-					Troops:            4,
+			prev := &snapshot.CachedGameState{
+				PublicSnapshot: &snapshot.GameSnapshot{
+					Regions: test.regions,
 				},
-				{
-					ID:                2,
-					ExternalReference: "iceland",
-					UserID:            "gabriele",
-					Troops:            5,
-				},
-			},
-			true,
-		},
-		{
-			"When player doesn't have troops anymore",
-			[]sqlc.GetRegionsByGameRow{
-				{
-					ID:                1,
-					ExternalReference: "greenland",
-					UserID:            "giovanni",
-					Troops:            1,
-				},
-				{
-					ID:                2,
-					ExternalReference: "iceland",
-					UserID:            "gabriele",
-					Troops:            2,
-				},
-			},
-			false,
-		},
-	}
+			}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
+			_, _, err := service.Perform(ctx, attack.Move{
+				AttackingRegionID: test.attackingID,
+				DefendingRegionID: test.defendingID,
+				TroopsInSource:    5,
+				TroopsInTarget:    5,
+				AttackingTroops:   3,
+			}, prev)
 
-			querier, _, _, regionService, service := setup(t)
-			ctx := input()
-
-			regionService.
-				EXPECT().
-				GetRegionsWithQuerier(ctx, querier).
-				Return(test.regions, nil)
-
-			result, err := service.CanContinueAttacking(ctx, querier)
-
-			require.NoError(t, err)
-			require.Equal(t, test.expected, result)
+			require.Error(t, err)
+			require.EqualError(t, err, test.expectedError)
 		})
 	}
 }

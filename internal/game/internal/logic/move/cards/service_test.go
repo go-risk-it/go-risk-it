@@ -6,36 +6,22 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/cards"
 	moveservice "github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/service"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/data/db"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/board"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/phase"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/player"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/region"
 	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/rand"
 	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
-	"github.com/jackc/pgx/v5/pgtype"
+	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
 
-func setup(t *testing.T) (
-	*db.Querier,
-	cards.Service,
-	*region.Service,
-) {
+func setup(t *testing.T) (*rand.RNG, cards.Service) {
 	t.Helper()
-	querier := db.NewQuerier(t)
-	boardService := board.NewService(t)
-	phaseService := phase.NewService(t)
-	playerService := player.NewService(t)
-	regionService := region.NewService(t)
-	rng := rand.NewRNG(t)
-	service, _ := cards.NewService(boardService, phaseService, playerService, regionService, rng)
 
-	return querier, service, regionService
+	rng := rand.NewRNG(t)
+	service, _ := cards.NewService(rng)
+
+	return rng, service
 }
 
 func input() ctx.GameContext {
@@ -50,12 +36,39 @@ func input() ctx.GameContext {
 	return ctx.WithGameID(userContext, gameID)
 }
 
-func card(id int64, cardType sqlc.GameCardType) sqlc.GetCardsForPlayerRow {
-	return sqlc.GetCardsForPlayerRow{
-		ID:       id,
-		CardType: cardType,
-		Region: pgtype.Text{
-			Valid: false,
+func card(id int64, cardType snapshot.CardType) snapshot.CardState {
+	return snapshot.CardState{
+		ID:     id,
+		Type:   cardType,
+		Region: "",
+	}
+}
+
+func defaultCards() []snapshot.CardState {
+	return []snapshot.CardState{
+		card(1, snapshot.CardArtillery),
+		card(2, snapshot.CardArtillery),
+		card(3, snapshot.CardArtillery),
+		card(4, snapshot.CardInfantry),
+		card(5, snapshot.CardInfantry),
+		card(6, snapshot.CardInfantry),
+		card(7, snapshot.CardCavalry),
+		card(8, snapshot.CardCavalry),
+		card(9, snapshot.CardCavalry),
+		card(10, snapshot.CardJolly),
+		card(11, snapshot.CardJolly),
+	}
+}
+
+func cachedState(userID string, playerCards []snapshot.CardState) *snapshot.CachedGameState {
+	return &snapshot.CachedGameState{
+		PublicSnapshot: &snapshot.GameSnapshot{
+			Regions: []snapshot.RegionState{},
+		},
+		PrivateSnapshots: map[string]*snapshot.PlayerPrivate{
+			userID: {
+				Cards: playerCards,
+			},
 		},
 	}
 }
@@ -197,32 +210,13 @@ func TestServiceImpl_InvalidCombinations(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, service, _ := setup(t)
+			_, service := setup(t)
 			ctx := input()
+			prev := cachedState(ctx.UserID(), defaultCards())
 
-			querier.
-				EXPECT().
-				GetCardsForPlayer(ctx, sqlc.GetCardsForPlayerParams{
-					ID:     ctx.GameID(),
-					UserID: ctx.UserID(),
-				}).
-				Return([]sqlc.GetCardsForPlayerRow{
-					card(1, sqlc.GameCardTypeARTILLERY),
-					card(2, sqlc.GameCardTypeARTILLERY),
-					card(3, sqlc.GameCardTypeARTILLERY),
-					card(4, sqlc.GameCardTypeINFANTRY),
-					card(5, sqlc.GameCardTypeINFANTRY),
-					card(6, sqlc.GameCardTypeINFANTRY),
-					card(7, sqlc.GameCardTypeCAVALRY),
-					card(8, sqlc.GameCardTypeCAVALRY),
-					card(9, sqlc.GameCardTypeCAVALRY),
-					card(10, sqlc.GameCardTypeJOLLY),
-					card(11, sqlc.GameCardTypeJOLLY),
-				}, nil)
-
-			_, _, err := service.Perform(ctx, querier, cards.Move{
+			_, _, err := service.Perform(ctx, cards.Move{
 				Combinations: test.combinations,
-			}, nil)
+			}, prev)
 
 			require.Error(t, err)
 			require.EqualError(t, err, test.expectedError)
@@ -289,48 +283,18 @@ func TestServiceImpl_ValidCombinations(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, service, regionService := setup(t)
+			_, service := setup(t)
 			ctx := input()
-
-			querier.
-				EXPECT().
-				GetCardsForPlayer(ctx, sqlc.GetCardsForPlayerParams{
-					ID:     ctx.GameID(),
-					UserID: ctx.UserID(),
-				}).
-				Return([]sqlc.GetCardsForPlayerRow{
-					card(1, sqlc.GameCardTypeARTILLERY),
-					card(2, sqlc.GameCardTypeARTILLERY),
-					card(3, sqlc.GameCardTypeARTILLERY),
-					card(4, sqlc.GameCardTypeINFANTRY),
-					card(5, sqlc.GameCardTypeINFANTRY),
-					card(6, sqlc.GameCardTypeINFANTRY),
-					card(7, sqlc.GameCardTypeCAVALRY),
-					card(8, sqlc.GameCardTypeCAVALRY),
-					card(9, sqlc.GameCardTypeCAVALRY),
-					card(10, sqlc.GameCardTypeJOLLY),
-					card(11, sqlc.GameCardTypeJOLLY),
-				}, nil)
+			prev := cachedState(ctx.UserID(), defaultCards())
 
 			playedCards := make([]int64, 0)
 			for _, combination := range test.combinations {
 				playedCards = append(playedCards, combination.CardIDs...)
 			}
 
-			var regions []sqlc.GetRegionsByGameRow
-
-			querier.
-				EXPECT().
-				UnlinkCardsFromOwner(ctx, playedCards).
-				Return(nil)
-			regionService.
-				EXPECT().
-				GetRegionsWithQuerier(ctx, querier).
-				Return(regions, nil)
-
-			result, effect, err := service.Perform(ctx, querier, cards.Move{
+			result, effect, err := service.Perform(ctx, cards.Move{
 				Combinations: test.combinations,
-			}, nil)
+			}, prev)
 
 			require.NoError(t, err)
 			require.Equal(t, test.expectedExtraTroops, result.ExtraDeployableTroops)
@@ -343,6 +307,121 @@ func TestServiceImpl_ValidCombinations(t *testing.T) {
 			}, effect.CardDeltas[0])
 			require.Empty(t, effect.RegionUpdates)
 			require.Equal(t, snapshot.EmptyPhaseState{}, effect.UpdatedPhase)
+
+			// Verify DeckDelta.Returned contains the played cards' full CardState.
+			allCards := defaultCards()
+			expectedReturned := make([]snapshot.CardState, 0, len(playedCards))
+			cardsByID := make(map[int64]snapshot.CardState, len(allCards))
+			for _, c := range allCards {
+				cardsByID[c.ID] = c
+			}
+			for _, id := range playedCards {
+				expectedReturned = append(expectedReturned, cardsByID[id])
+			}
+			require.Equal(t, expectedReturned, effect.DeckDelta.Returned)
 		})
 	}
+}
+
+func TestServiceImpl_ShouldGrantRegionTroopsWhenPlayedCardMatchesOwnedRegion(t *testing.T) {
+	t.Parallel()
+
+	_, service := setup(t)
+	ctx := input()
+
+	// Player "giovanni" owns "iceland" and has a card with Region="iceland".
+	playerCards := []snapshot.CardState{
+		{ID: 1, Type: snapshot.CardArtillery, Region: "iceland"},
+		{ID: 2, Type: snapshot.CardArtillery, Region: "brazil"},
+		{ID: 3, Type: snapshot.CardArtillery, Region: ""},
+	}
+
+	prev := &snapshot.CachedGameState{
+		PublicSnapshot: &snapshot.GameSnapshot{
+			Regions: []snapshot.RegionState{
+				{InternalID: 42, ID: "iceland", OwnerID: "giovanni", Troops: 3},
+				{InternalID: 43, ID: "brazil", OwnerID: "gabriele", Troops: 5},
+			},
+		},
+		PrivateSnapshots: map[string]*snapshot.PlayerPrivate{
+			"giovanni": {
+				Cards: playerCards,
+			},
+		},
+	}
+
+	result, effect, err := service.Perform(ctx, cards.Move{
+		Combinations: []cards.CardCombination{
+			{CardIDs: []int64{1, 2, 3}},
+		},
+	}, prev)
+
+	require.NoError(t, err)
+	require.Equal(t, int64(4), result.ExtraDeployableTroops) // 3 artillery = 4 troops
+
+	// Region troop grants: only "iceland" matches (owned by giovanni + card has region)
+	require.Len(t, result.RegionTroopGrants, 1)
+	require.Equal(t, int64(42), result.RegionTroopGrants[0].RegionID)
+	require.Equal(t, "iceland", result.RegionTroopGrants[0].RegionExternalReference)
+
+	// Verify MoveEffect includes region update for the bonus
+	require.Len(t, effect.RegionUpdates, 1)
+	require.Equal(t, moveservice.RegionUpdate{
+		RegionID:  "iceland",
+		NewOwner:  "giovanni",
+		NewTroops: 3 + cards.DefaultTroopGrant, // 3 existing + 2 bonus
+	}, effect.RegionUpdates[0])
+}
+
+func TestDraw_SelectsFromDeck(t *testing.T) {
+	t.Parallel()
+
+	rng, service := setup(t)
+
+	deck := []snapshot.CardState{
+		{ID: 10, Type: snapshot.CardArtillery, Region: "brazil"},
+		{ID: 20, Type: snapshot.CardInfantry, Region: "iceland"},
+		{ID: 30, Type: snapshot.CardCavalry, Region: "siam"},
+	}
+
+	// RNG returns index 1 → expect card with ID 20.
+	rng.EXPECT().IntN(3).Return(1)
+
+	drawn, err := service.Draw(deck)
+	require.NoError(t, err)
+	require.Equal(t, snapshot.CardState{
+		ID:     20,
+		Type:   snapshot.CardInfantry,
+		Region: "iceland",
+	}, drawn)
+}
+
+func TestDraw_EmptyDeck_ReturnsError(t *testing.T) {
+	t.Parallel()
+
+	_, service := setup(t)
+
+	_, err := service.Draw(nil)
+	require.Error(t, err)
+
+	var domainErr *domainerrors.DomainError
+	require.ErrorAs(t, err, &domainErr)
+	require.Equal(t, domainerrors.CategoryValidation, domainErr.Category())
+	require.EqualError(t, err, "no cards available in deck")
+}
+
+func TestDraw_SingleCard_ReturnsThatCard(t *testing.T) {
+	t.Parallel()
+
+	rng, service := setup(t)
+
+	deck := []snapshot.CardState{
+		{ID: 42, Type: snapshot.CardJolly, Region: ""},
+	}
+
+	rng.EXPECT().IntN(1).Return(0)
+
+	drawn, err := service.Draw(deck)
+	require.NoError(t, err)
+	require.Equal(t, deck[0], drawn)
 }

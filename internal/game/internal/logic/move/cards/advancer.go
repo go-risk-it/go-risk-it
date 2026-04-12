@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
 	moveservice "github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/phase"
@@ -22,7 +21,6 @@ const (
 
 func (s *service) Advance(
 	ctx ctx.GameContext,
-	querier db.Querier,
 	targetPhase sqlc.GamePhaseType,
 	performResult *MoveResult,
 	advCtx moveservice.AdvanceContext,
@@ -31,28 +29,12 @@ func (s *service) Advance(
 		return moveservice.AdvanceEffect{}, fmt.Errorf("invalid phase transition: %w", err)
 	}
 
-	// InsertPhase advances the turn in the DB when transitioning from REINFORCE.
-	// After this call, GetCurrentPlayer returns the next player.
-	dbPhase, err := s.phaseService.InsertPhase(ctx, querier, targetPhase)
-	if err != nil {
-		return moveservice.AdvanceEffect{}, fmt.Errorf("failed to create phase: %w", err)
-	}
+	// Resolve the deploy-for player from cached state. The turn already
+	// accounts for dead-player skipping.
+	playerCount := int64(len(advCtx.Players))
+	deployForUserID := advCtx.Players[advCtx.Turn%playerCount].UserID
 
-	// Resolve the deploy-for player from the DB. After InsertPhase, the turn
-	// has been advanced, so GetCurrentPlayer returns the correct next player.
-	currentPlayer, err := s.playerService.GetCurrentPlayer(ctx, querier)
-	if err != nil {
-		return moveservice.AdvanceEffect{}, fmt.Errorf("failed to get current player: %w", err)
-	}
-
-	deployableTroops := computeDeployableTroops(ctx, advCtx, currentPlayer.UserID, performResult)
-
-	if _, err = querier.InsertDeployPhase(ctx, sqlc.InsertDeployPhaseParams{
-		PhaseID:          dbPhase.ID,
-		DeployableTroops: deployableTroops,
-	}); err != nil {
-		return moveservice.AdvanceEffect{}, fmt.Errorf("failed to create deploy phase: %w", err)
-	}
+	deployableTroops := computeDeployableTroops(ctx, advCtx, deployForUserID, performResult)
 
 	return moveservice.AdvanceEffect{
 		NewPhase: snapshot.DeployPhaseState{DeployableTroops: deployableTroops},

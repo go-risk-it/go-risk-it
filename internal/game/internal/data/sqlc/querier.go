@@ -22,6 +22,9 @@ type Querier interface {
 	// Used by SnapshotService.GetPrivateSnapshotsByUser for per-player partitioning.
 	GetAllMissionsForGame(ctx context.Context, gameID int64) ([]GameMission, error)
 	GetAvailableCards(ctx context.Context, id int64) ([]GameCard, error)
+	// Fetch all unowned cards for a game with region info, for cache warming.
+	// Used by getOrWarmPrevState to populate CachedGameState.AvailableDeck.
+	GetAvailableDeck(ctx context.Context, gameID int64) ([]GetAvailableDeckRow, error)
 	GetCardsForPlayer(ctx context.Context, arg GetCardsForPlayerParams) ([]GetCardsForPlayerRow, error)
 	GetConquerPhaseState(ctx context.Context, id int64) (GetConquerPhaseStateRow, error)
 	GetCurrentPhase(ctx context.Context, id int64) (GamePhaseType, error)

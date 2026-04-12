@@ -1,37 +1,32 @@
 package checker
 
 import (
-	"fmt"
-
-	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/region"
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 )
 
-type TwentyFourTerritoriesChecker struct {
-	regionService region.Service
+type twentyFourTerritoriesChecker struct{}
+
+var _ MissionChecker = (*twentyFourTerritoriesChecker)(nil)
+
+func NewTwentyFourTerritoriesChecker() MissionChecker {
+	return &twentyFourTerritoriesChecker{}
 }
 
-var _ MissionChecker = (*TwentyFourTerritoriesChecker)(nil)
-
-func NewTwentyFourTerritoriesChecker(regionService region.Service) *TwentyFourTerritoriesChecker {
-	return &TwentyFourTerritoriesChecker{regionService: regionService}
+func (c *twentyFourTerritoriesChecker) Type() snapshot.MissionType {
+	return snapshot.MissionTwentyFourTerritories
 }
 
-func (c *TwentyFourTerritoriesChecker) Type() sqlc.GameMissionType {
-	return sqlc.GameMissionTypeTWENTYFOURTERRITORIES
-}
-
-func (c *TwentyFourTerritoriesChecker) Check(
-	ctx ctx.GameContext,
-	querier db.Querier,
-	_ sqlc.GameMission,
+func (c *twentyFourTerritoriesChecker) Check(
+	checkCtx CheckContext,
+	_ snapshot.PlayerMission,
 ) (bool, error) {
-	regions, err := c.regionService.GetPlayerRegions(ctx, querier)
-	if err != nil {
-		return false, fmt.Errorf("failed to get player regions: %w", err)
+	count := 0
+
+	for _, r := range checkCtx.Regions {
+		if r.OwnerID == checkCtx.CurrentUserID {
+			count++
+		}
 	}
 
-	return len(regions) >= 24, nil
+	return count >= 24, nil
 }

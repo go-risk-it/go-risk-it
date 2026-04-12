@@ -12,14 +12,13 @@ type Orchestrator[T, R any] interface {
 	OrchestrateMove(ctx gamectx.GameContext, move T) error
 }
 
-// moveOutcome carries the committed transaction result for post-commit event emission.
+// moveOutcome carries the post-commit result for event emission and cache update.
 // newState is produced by BuildNewState from enrichment data (MoveEffect + AdvanceEffect).
 // prevRegions is captured from the pre-mutation state for headline detection.
 type moveOutcome[R any] struct {
 	targetPhase sqlc.GamePhaseType
 	gameOver    bool
 	result      R
-	moveLog     sqlc.GameMoveLog
 	turn        int64
 	newState    *snapshot.CachedGameState
 	prevRegions []snapshot.RegionState

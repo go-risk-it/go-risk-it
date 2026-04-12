@@ -5,9 +5,11 @@
 package mission
 
 import (
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/board"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/mission"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -302,8 +304,8 @@ func (_c *Service_GetTwoContinentsPlusOneMission_Call) RunAndReturn(run func(ctx
 }
 
 // IsMissionAccomplished provides a mock function for the type Service
-func (_mock *Service) IsMissionAccomplished(ctx1 ctx.GameContext, querier db.Querier) (bool, error) {
-	ret := _mock.Called(ctx1, querier)
+func (_mock *Service) IsMissionAccomplished(ctx1 ctx.GameContext, regions []snapshot.RegionState, privateSnapshots map[string]*snapshot.PlayerPrivate, continents board.Continents) (bool, error) {
+	ret := _mock.Called(ctx1, regions, privateSnapshots, continents)
 
 	if len(ret) == 0 {
 		panic("no return value specified for IsMissionAccomplished")
@@ -311,16 +313,16 @@ func (_mock *Service) IsMissionAccomplished(ctx1 ctx.GameContext, querier db.Que
 
 	var r0 bool
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) (bool, error)); ok {
-		return returnFunc(ctx1, querier)
+	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, []snapshot.RegionState, map[string]*snapshot.PlayerPrivate, board.Continents) (bool, error)); ok {
+		return returnFunc(ctx1, regions, privateSnapshots, continents)
 	}
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier) bool); ok {
-		r0 = returnFunc(ctx1, querier)
+	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, []snapshot.RegionState, map[string]*snapshot.PlayerPrivate, board.Continents) bool); ok {
+		r0 = returnFunc(ctx1, regions, privateSnapshots, continents)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
-	if returnFunc, ok := ret.Get(1).(func(ctx.GameContext, db.Querier) error); ok {
-		r1 = returnFunc(ctx1, querier)
+	if returnFunc, ok := ret.Get(1).(func(ctx.GameContext, []snapshot.RegionState, map[string]*snapshot.PlayerPrivate, board.Continents) error); ok {
+		r1 = returnFunc(ctx1, regions, privateSnapshots, continents)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -334,24 +336,36 @@ type Service_IsMissionAccomplished_Call struct {
 
 // IsMissionAccomplished is a helper method to define mock.On call
 //   - ctx1 ctx.GameContext
-//   - querier db.Querier
-func (_e *Service_Expecter) IsMissionAccomplished(ctx1 interface{}, querier interface{}) *Service_IsMissionAccomplished_Call {
-	return &Service_IsMissionAccomplished_Call{Call: _e.mock.On("IsMissionAccomplished", ctx1, querier)}
+//   - regions []snapshot.RegionState
+//   - privateSnapshots map[string]*snapshot.PlayerPrivate
+//   - continents board.Continents
+func (_e *Service_Expecter) IsMissionAccomplished(ctx1 interface{}, regions interface{}, privateSnapshots interface{}, continents interface{}) *Service_IsMissionAccomplished_Call {
+	return &Service_IsMissionAccomplished_Call{Call: _e.mock.On("IsMissionAccomplished", ctx1, regions, privateSnapshots, continents)}
 }
 
-func (_c *Service_IsMissionAccomplished_Call) Run(run func(ctx1 ctx.GameContext, querier db.Querier)) *Service_IsMissionAccomplished_Call {
+func (_c *Service_IsMissionAccomplished_Call) Run(run func(ctx1 ctx.GameContext, regions []snapshot.RegionState, privateSnapshots map[string]*snapshot.PlayerPrivate, continents board.Continents)) *Service_IsMissionAccomplished_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 ctx.GameContext
 		if args[0] != nil {
 			arg0 = args[0].(ctx.GameContext)
 		}
-		var arg1 db.Querier
+		var arg1 []snapshot.RegionState
 		if args[1] != nil {
-			arg1 = args[1].(db.Querier)
+			arg1 = args[1].([]snapshot.RegionState)
+		}
+		var arg2 map[string]*snapshot.PlayerPrivate
+		if args[2] != nil {
+			arg2 = args[2].(map[string]*snapshot.PlayerPrivate)
+		}
+		var arg3 board.Continents
+		if args[3] != nil {
+			arg3 = args[3].(board.Continents)
 		}
 		run(
 			arg0,
 			arg1,
+			arg2,
+			arg3,
 		)
 	})
 	return _c
@@ -362,7 +376,7 @@ func (_c *Service_IsMissionAccomplished_Call) Return(b bool, err error) *Service
 	return _c
 }
 
-func (_c *Service_IsMissionAccomplished_Call) RunAndReturn(run func(ctx1 ctx.GameContext, querier db.Querier) (bool, error)) *Service_IsMissionAccomplished_Call {
+func (_c *Service_IsMissionAccomplished_Call) RunAndReturn(run func(ctx1 ctx.GameContext, regions []snapshot.RegionState, privateSnapshots map[string]*snapshot.PlayerPrivate, continents board.Continents) (bool, error)) *Service_IsMissionAccomplished_Call {
 	_c.Call.Return(run)
 	return _c
 }

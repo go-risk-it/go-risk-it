@@ -23,4 +23,8 @@ type AdvanceContext struct {
 	UpdatedRegions  []snapshot.RegionState
 	CurrentUserID   string
 	Continents      board.Continents
+	Turn            int64                  // pre-computed from CachedGameState
+	CurrentPhase    string                 // current phase type for turn-boundary detection
+	Players         []snapshot.PlayerState // for dead-player skip in getNextTurn
+	AvailableDeck   []snapshot.CardState   // cached deck for card draw without DB query
 }

@@ -11,9 +11,8 @@
 // # Key Types
 //
 // [Service] extends [service.Service] with card-specific operations:
-// [Service.Draw] assigns a random available card to the current player, and
-// [Service.NextPlayerHasValidCombination] checks if the next player must
-// play cards before deploying.
+// [Service.Draw] selects a random card from the available deck using RNG
+// (pure computation — no DB queries or writes).
 //
 // [Move] is the input DTO containing one or more [CardCombination] entries.
 //
@@ -22,9 +21,6 @@
 //
 // # Dependencies
 //
-//   - [board.Service] for continent control bonus calculation
 //   - [phase.Service] for inserting the deploy phase on advancement
-//   - [player.Service] for looking up the current and next player
-//   - [region.Service] for region ownership and troop grants
 //   - [rand.RNG] for random card selection during draw
 package cards

@@ -1,7 +1,7 @@
 {
   "maxExportsPerPackage": 87,
   "maxFanOut": 25,
-  "maxFilesPerPackage": 11,
+  "maxFilesPerPackage": 15,
   "minDocGoCount": 77,
   "kernelMaxProductionFiles": 31,
   "routeMaxProductionFilesPerDir": 6

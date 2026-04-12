@@ -8,6 +8,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/phase"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -40,8 +41,8 @@ func (_m *Service) EXPECT() *Service_Expecter {
 }
 
 // InsertPhase provides a mock function for the type Service
-func (_mock *Service) InsertPhase(ctx1 ctx.GameContext, querier db.Querier, phaseType sqlc.GamePhaseType) (*sqlc.GamePhase, error) {
-	ret := _mock.Called(ctx1, querier, phaseType)
+func (_mock *Service) InsertPhase(ctx1 ctx.GameContext, querier db.Querier, params phase.PhaseInsertParams) (*sqlc.GamePhase, error) {
+	ret := _mock.Called(ctx1, querier, params)
 
 	if len(ret) == 0 {
 		panic("no return value specified for InsertPhase")
@@ -49,18 +50,18 @@ func (_mock *Service) InsertPhase(ctx1 ctx.GameContext, querier db.Querier, phas
 
 	var r0 *sqlc.GamePhase
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, sqlc.GamePhaseType) (*sqlc.GamePhase, error)); ok {
-		return returnFunc(ctx1, querier, phaseType)
+	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, phase.PhaseInsertParams) (*sqlc.GamePhase, error)); ok {
+		return returnFunc(ctx1, querier, params)
 	}
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, sqlc.GamePhaseType) *sqlc.GamePhase); ok {
-		r0 = returnFunc(ctx1, querier, phaseType)
+	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, phase.PhaseInsertParams) *sqlc.GamePhase); ok {
+		r0 = returnFunc(ctx1, querier, params)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*sqlc.GamePhase)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(ctx.GameContext, db.Querier, sqlc.GamePhaseType) error); ok {
-		r1 = returnFunc(ctx1, querier, phaseType)
+	if returnFunc, ok := ret.Get(1).(func(ctx.GameContext, db.Querier, phase.PhaseInsertParams) error); ok {
+		r1 = returnFunc(ctx1, querier, params)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -75,12 +76,12 @@ type Service_InsertPhase_Call struct {
 // InsertPhase is a helper method to define mock.On call
 //   - ctx1 ctx.GameContext
 //   - querier db.Querier
-//   - phaseType sqlc.GamePhaseType
-func (_e *Service_Expecter) InsertPhase(ctx1 interface{}, querier interface{}, phaseType interface{}) *Service_InsertPhase_Call {
-	return &Service_InsertPhase_Call{Call: _e.mock.On("InsertPhase", ctx1, querier, phaseType)}
+//   - params phase.PhaseInsertParams
+func (_e *Service_Expecter) InsertPhase(ctx1 interface{}, querier interface{}, params interface{}) *Service_InsertPhase_Call {
+	return &Service_InsertPhase_Call{Call: _e.mock.On("InsertPhase", ctx1, querier, params)}
 }
 
-func (_c *Service_InsertPhase_Call) Run(run func(ctx1 ctx.GameContext, querier db.Querier, phaseType sqlc.GamePhaseType)) *Service_InsertPhase_Call {
+func (_c *Service_InsertPhase_Call) Run(run func(ctx1 ctx.GameContext, querier db.Querier, params phase.PhaseInsertParams)) *Service_InsertPhase_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 ctx.GameContext
 		if args[0] != nil {
@@ -90,9 +91,9 @@ func (_c *Service_InsertPhase_Call) Run(run func(ctx1 ctx.GameContext, querier d
 		if args[1] != nil {
 			arg1 = args[1].(db.Querier)
 		}
-		var arg2 sqlc.GamePhaseType
+		var arg2 phase.PhaseInsertParams
 		if args[2] != nil {
-			arg2 = args[2].(sqlc.GamePhaseType)
+			arg2 = args[2].(phase.PhaseInsertParams)
 		}
 		run(
 			arg0,
@@ -108,7 +109,7 @@ func (_c *Service_InsertPhase_Call) Return(gamePhase *sqlc.GamePhase, err error)
 	return _c
 }
 
-func (_c *Service_InsertPhase_Call) RunAndReturn(run func(ctx1 ctx.GameContext, querier db.Querier, phaseType sqlc.GamePhaseType) (*sqlc.GamePhase, error)) *Service_InsertPhase_Call {
+func (_c *Service_InsertPhase_Call) RunAndReturn(run func(ctx1 ctx.GameContext, querier db.Querier, params phase.PhaseInsertParams) (*sqlc.GamePhase, error)) *Service_InsertPhase_Call {
 	_c.Call.Return(run)
 	return _c
 }

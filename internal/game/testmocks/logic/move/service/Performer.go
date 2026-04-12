@@ -7,7 +7,6 @@ package service
 import (
 	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/service"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -41,8 +40,8 @@ func (_m *Performer[T, R]) EXPECT() *Performer_Expecter[T, R] {
 }
 
 // Perform provides a mock function for the type Performer
-func (_mock *Performer[T, R]) Perform(ctx1 ctx.GameContext, querier db.Querier, move T, prev *snapshot.CachedGameState) (R, service.MoveEffect, error) {
-	ret := _mock.Called(ctx1, querier, move, prev)
+func (_mock *Performer[T, R]) Perform(ctx1 ctx.GameContext, move T, prev *snapshot.CachedGameState) (R, service.MoveEffect, error) {
+	ret := _mock.Called(ctx1, move, prev)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Perform")
@@ -51,23 +50,23 @@ func (_mock *Performer[T, R]) Perform(ctx1 ctx.GameContext, querier db.Querier, 
 	var r0 R
 	var r1 service.MoveEffect
 	var r2 error
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, T, *snapshot.CachedGameState) (R, service.MoveEffect, error)); ok {
-		return returnFunc(ctx1, querier, move, prev)
+	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, T, *snapshot.CachedGameState) (R, service.MoveEffect, error)); ok {
+		return returnFunc(ctx1, move, prev)
 	}
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, T, *snapshot.CachedGameState) R); ok {
-		r0 = returnFunc(ctx1, querier, move, prev)
+	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, T, *snapshot.CachedGameState) R); ok {
+		r0 = returnFunc(ctx1, move, prev)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(R)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(ctx.GameContext, db.Querier, T, *snapshot.CachedGameState) service.MoveEffect); ok {
-		r1 = returnFunc(ctx1, querier, move, prev)
+	if returnFunc, ok := ret.Get(1).(func(ctx.GameContext, T, *snapshot.CachedGameState) service.MoveEffect); ok {
+		r1 = returnFunc(ctx1, move, prev)
 	} else {
 		r1 = ret.Get(1).(service.MoveEffect)
 	}
-	if returnFunc, ok := ret.Get(2).(func(ctx.GameContext, db.Querier, T, *snapshot.CachedGameState) error); ok {
-		r2 = returnFunc(ctx1, querier, move, prev)
+	if returnFunc, ok := ret.Get(2).(func(ctx.GameContext, T, *snapshot.CachedGameState) error); ok {
+		r2 = returnFunc(ctx1, move, prev)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -81,36 +80,30 @@ type Performer_Perform_Call[T any, R any] struct {
 
 // Perform is a helper method to define mock.On call
 //   - ctx1 ctx.GameContext
-//   - querier db.Querier
 //   - move T
 //   - prev *snapshot.CachedGameState
-func (_e *Performer_Expecter[T, R]) Perform(ctx1 interface{}, querier interface{}, move interface{}, prev interface{}) *Performer_Perform_Call[T, R] {
-	return &Performer_Perform_Call[T, R]{Call: _e.mock.On("Perform", ctx1, querier, move, prev)}
+func (_e *Performer_Expecter[T, R]) Perform(ctx1 interface{}, move interface{}, prev interface{}) *Performer_Perform_Call[T, R] {
+	return &Performer_Perform_Call[T, R]{Call: _e.mock.On("Perform", ctx1, move, prev)}
 }
 
-func (_c *Performer_Perform_Call[T, R]) Run(run func(ctx1 ctx.GameContext, querier db.Querier, move T, prev *snapshot.CachedGameState)) *Performer_Perform_Call[T, R] {
+func (_c *Performer_Perform_Call[T, R]) Run(run func(ctx1 ctx.GameContext, move T, prev *snapshot.CachedGameState)) *Performer_Perform_Call[T, R] {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 ctx.GameContext
 		if args[0] != nil {
 			arg0 = args[0].(ctx.GameContext)
 		}
-		var arg1 db.Querier
+		var arg1 T
 		if args[1] != nil {
-			arg1 = args[1].(db.Querier)
+			arg1 = args[1].(T)
 		}
-		var arg2 T
+		var arg2 *snapshot.CachedGameState
 		if args[2] != nil {
-			arg2 = args[2].(T)
-		}
-		var arg3 *snapshot.CachedGameState
-		if args[3] != nil {
-			arg3 = args[3].(*snapshot.CachedGameState)
+			arg2 = args[2].(*snapshot.CachedGameState)
 		}
 		run(
 			arg0,
 			arg1,
 			arg2,
-			arg3,
 		)
 	})
 	return _c
@@ -121,7 +114,7 @@ func (_c *Performer_Perform_Call[T, R]) Return(v R, moveEffect service.MoveEffec
 	return _c
 }
 
-func (_c *Performer_Perform_Call[T, R]) RunAndReturn(run func(ctx1 ctx.GameContext, querier db.Querier, move T, prev *snapshot.CachedGameState) (R, service.MoveEffect, error)) *Performer_Perform_Call[T, R] {
+func (_c *Performer_Perform_Call[T, R]) RunAndReturn(run func(ctx1 ctx.GameContext, move T, prev *snapshot.CachedGameState) (R, service.MoveEffect, error)) *Performer_Perform_Call[T, R] {
 	_c.Call.Return(run)
 	return _c
 }

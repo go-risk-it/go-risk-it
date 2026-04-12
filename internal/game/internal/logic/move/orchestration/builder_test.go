@@ -16,6 +16,11 @@ func basePrevState() *snapshot.CachedGameState {
 	return &snapshot.CachedGameState{
 		Turn:            5,
 		ConqueredInTurn: false,
+		AvailableDeck: []snapshot.CardState{
+			{ID: 200, Type: snapshot.CardInfantry, Region: "alaska"},
+			{ID: 201, Type: snapshot.CardCavalry, Region: "kamchatka"},
+			{ID: 202, Type: snapshot.CardArtillery, Region: "congo"},
+		},
 		PublicSnapshot: &snapshot.GameSnapshot{
 			Game: snapshot.GameMeta{
 				ID:   42,
@@ -26,10 +31,10 @@ func basePrevState() *snapshot.CachedGameState {
 				State: snapshot.EmptyPhaseState{},
 			},
 			Regions: []snapshot.RegionState{
-				{ID: "western-europe", OwnerID: "player1", Troops: 3},
-				{ID: "eastern-europe", OwnerID: "player2", Troops: 2},
-				{ID: "north-africa", OwnerID: "player1", Troops: 5},
-				{ID: "brazil", OwnerID: "player3", Troops: 1},
+				{InternalID: 100, ID: "western-europe", OwnerID: "player1", Troops: 3},
+				{InternalID: 101, ID: "eastern-europe", OwnerID: "player2", Troops: 2},
+				{InternalID: 102, ID: "north-africa", OwnerID: "player1", Troops: 5},
+				{InternalID: 103, ID: "brazil", OwnerID: "player3", Troops: 1},
 			},
 			Players: []snapshot.PlayerState{
 				{
@@ -115,8 +120,10 @@ func TestBuildNewState_DeployRegionTroopIncrease(t *testing.T) {
 
 	require.Equal(t, int64(6), findRegion(t, result, "western-europe").Troops)
 	require.Equal(t, "player1", findRegion(t, result, "western-europe").OwnerID)
+	require.Equal(t, int64(100), findRegion(t, result, "western-europe").InternalID)
 	// Unchanged regions should be carried forward.
 	require.Equal(t, int64(2), findRegion(t, result, "eastern-europe").Troops)
+	require.Equal(t, int64(101), findRegion(t, result, "eastern-europe").InternalID)
 }
 
 func TestBuildNewState_AttackConquestOwnershipChange(t *testing.T) {
@@ -474,6 +481,48 @@ func TestBuildNewState_PanicsOnUnknownRegion(t *testing.T) {
 	require.Panics(t, func() {
 		orchestration.BuildNewState(prev, effect, nil, sqlc.GamePhaseTypeATTACK, "")
 	})
+}
+
+func TestApplyRegionUpdates_PreservesInternalID(t *testing.T) {
+	t.Parallel()
+
+	regions := []snapshot.RegionState{
+		{InternalID: 100, ID: "western-europe", OwnerID: "player1", Troops: 3},
+		{InternalID: 101, ID: "eastern-europe", OwnerID: "player2", Troops: 2},
+		{InternalID: 102, ID: "north-africa", OwnerID: "player1", Troops: 5},
+	}
+
+	updates := []service.RegionUpdate{
+		{RegionID: "western-europe", NewOwner: "player1", NewTroops: 6},
+		{RegionID: "eastern-europe", NewOwner: "player1", NewTroops: 3},
+	}
+
+	result := orchestration.ApplyRegionUpdates(regions, updates)
+
+	// Updated regions must preserve InternalID from the source.
+	require.Equal(t, int64(100), result[0].InternalID, "western-europe InternalID")
+	require.Equal(t, int64(6), result[0].Troops)
+	require.Equal(t, "player1", result[0].OwnerID)
+
+	require.Equal(t, int64(101), result[1].InternalID, "eastern-europe InternalID")
+	require.Equal(t, int64(3), result[1].Troops)
+	require.Equal(t, "player1", result[1].OwnerID)
+
+	// Unchanged region must also preserve InternalID.
+	require.Equal(t, int64(102), result[2].InternalID, "north-africa InternalID")
+	require.Equal(t, int64(5), result[2].Troops)
+}
+
+func TestApplyRegionUpdates_EmptyUpdatesPreservesInternalID(t *testing.T) {
+	t.Parallel()
+
+	regions := []snapshot.RegionState{
+		{InternalID: 100, ID: "western-europe", OwnerID: "player1", Troops: 3},
+	}
+
+	result := orchestration.ApplyRegionUpdates(regions, nil)
+
+	require.Equal(t, int64(100), result[0].InternalID)
 }
 
 func TestBuildNewState_PanicsOnNilPrev(t *testing.T) {
@@ -1052,6 +1101,176 @@ func TestBuildNewState_ConqueredInTurnResetTakesPriorityOverConquerPhase(t *test
 
 	// TurnEnded wins: should be false even though targetPhase is CONQUER.
 	require.False(t, result.ConqueredInTurn)
+}
+
+// --- Deck lifecycle tests ---
+
+func TestBuildNewState_CardPlayReturnsToDeck(t *testing.T) {
+	// When cards are played (cards phase), they return to the deck via
+	// MoveEffect.DeckDelta.Returned.
+	prev := basePrevState()
+	origDeckLen := len(prev.AvailableDeck)
+
+	returned := []snapshot.CardState{
+		{ID: 10, Type: snapshot.CardInfantry, Region: "western-europe"},
+		{ID: 11, Type: snapshot.CardCavalry, Region: "north-africa"},
+		{ID: 20, Type: snapshot.CardArtillery, Region: "eastern-europe"},
+	}
+
+	effect := &service.MoveEffect{
+		UpdatedPhase: snapshot.EmptyPhaseState{},
+		DeckDelta:    service.DeckDelta{Returned: returned},
+	}
+
+	result := orchestration.BuildNewState(
+		prev, effect, nil, sqlc.GamePhaseTypeATTACK, "",
+	)
+
+	require.Len(t, result.AvailableDeck, origDeckLen+3)
+	// All returned cards should be present.
+	deckIDs := make(map[int64]bool)
+	for _, c := range result.AvailableDeck {
+		deckIDs[c.ID] = true
+	}
+
+	for _, c := range returned {
+		require.True(t, deckIDs[c.ID], "returned card %d should be in deck", c.ID)
+	}
+}
+
+func TestBuildNewState_CardDrawRemovesFromDeck(t *testing.T) {
+	// When a card is drawn (advance phase), it is removed from the deck via
+	// AdvanceEffect.DeckDelta.Drawn.
+	prev := basePrevState()
+	origDeckLen := len(prev.AvailableDeck)
+
+	advEffect := &service.AdvanceEffect{
+		NewPhase:  snapshot.EmptyPhaseState{},
+		DeckDelta: service.DeckDelta{Drawn: []int64{201}},
+	}
+
+	result := orchestration.BuildNewState(
+		prev, emptyMoveEffect(), advEffect, sqlc.GamePhaseTypeATTACK, "",
+	)
+
+	require.Len(t, result.AvailableDeck, origDeckLen-1)
+	for _, c := range result.AvailableDeck {
+		require.NotEqual(t, int64(201), c.ID, "drawn card 201 should not be in deck")
+	}
+}
+
+func TestBuildNewState_EliminationDoesNotAffectDeck(t *testing.T) {
+	// Player elimination with region transfer should not change the deck.
+	prev := basePrevState()
+	origDeck := make([]snapshot.CardState, len(prev.AvailableDeck))
+	copy(origDeck, prev.AvailableDeck)
+
+	effect := &service.MoveEffect{
+		RegionUpdates: []service.RegionUpdate{
+			{RegionID: "brazil", NewOwner: "player1", NewTroops: 2},
+		},
+		CardDeltas: []service.CardDelta{
+			{PlayerUserID: "player3", Lost: []int64{}},
+			{PlayerUserID: "player1", Gained: []snapshot.CardState{}},
+		},
+		UpdatedPhase: snapshot.EmptyPhaseState{},
+		// No DeckDelta — deck should be unchanged.
+	}
+
+	result := orchestration.BuildNewState(
+		prev, effect, nil, sqlc.GamePhaseTypeCONQUER, "",
+	)
+
+	require.Equal(t, origDeck, result.AvailableDeck)
+}
+
+func TestBuildNewState_PlayThenDraw(t *testing.T) {
+	// Cards phase returns 3 cards to deck, then advance draws 1.
+	// Net effect: +2 cards in deck.
+	prev := basePrevState()
+	origDeckLen := len(prev.AvailableDeck)
+
+	effect := &service.MoveEffect{
+		UpdatedPhase: snapshot.EmptyPhaseState{},
+		DeckDelta: service.DeckDelta{
+			Returned: []snapshot.CardState{
+				{ID: 10, Type: snapshot.CardInfantry, Region: "western-europe"},
+				{ID: 11, Type: snapshot.CardCavalry, Region: "north-africa"},
+				{ID: 20, Type: snapshot.CardArtillery, Region: "eastern-europe"},
+			},
+		},
+	}
+
+	advEffect := &service.AdvanceEffect{
+		NewPhase:  snapshot.EmptyPhaseState{},
+		DeckDelta: service.DeckDelta{Drawn: []int64{200}}, // draw one of the original deck cards
+	}
+
+	result := orchestration.BuildNewState(
+		prev, effect, advEffect, sqlc.GamePhaseTypeATTACK, "",
+	)
+
+	// 3 original + 3 returned - 1 drawn = 5
+	require.Len(t, result.AvailableDeck, origDeckLen+2)
+}
+
+func TestBuildNewState_EmptyDeckNoDraw(t *testing.T) {
+	// Empty deck with no draw operations should stay empty.
+	prev := basePrevState()
+	prev.AvailableDeck = []snapshot.CardState{}
+
+	result := orchestration.BuildNewState(
+		prev, emptyMoveEffect(), nil, sqlc.GamePhaseTypeATTACK, "",
+	)
+
+	require.NotNil(t, result.AvailableDeck)
+	require.Empty(t, result.AvailableDeck)
+}
+
+func TestBuildNewState_DeckClonedNotMutated(t *testing.T) {
+	// BuildNewState must clone the deck — mutations to the result must not
+	// affect the previous state.
+	prev := basePrevState()
+	origDeck := make([]snapshot.CardState, len(prev.AvailableDeck))
+	copy(origDeck, prev.AvailableDeck)
+
+	effect := &service.MoveEffect{
+		UpdatedPhase: snapshot.EmptyPhaseState{},
+		DeckDelta: service.DeckDelta{
+			Returned: []snapshot.CardState{
+				{ID: 99, Type: snapshot.CardJolly, Region: ""},
+				{ID: 98, Type: snapshot.CardInfantry, Region: "brazil"},
+			},
+		},
+	}
+
+	advEffect := &service.AdvanceEffect{
+		NewPhase:  snapshot.EmptyPhaseState{},
+		DeckDelta: service.DeckDelta{Drawn: []int64{200}},
+	}
+
+	result := orchestration.BuildNewState(
+		prev, effect, advEffect, sqlc.GamePhaseTypeATTACK, "",
+	)
+
+	// Prev deck must be completely untouched.
+	require.Equal(t, origDeck, prev.AvailableDeck)
+	// Result deck must differ in length (3 original + 2 returned - 1 drawn = 4).
+	require.Len(t, result.AvailableDeck, 4)
+	require.Len(t, prev.AvailableDeck, 3)
+}
+
+func TestApplyDeckDelta_DrawUnknownCardPanics(t *testing.T) {
+	prev := basePrevState()
+
+	effect := &service.MoveEffect{
+		UpdatedPhase: snapshot.EmptyPhaseState{},
+		DeckDelta:    service.DeckDelta{Drawn: []int64{9999}},
+	}
+
+	require.Panics(t, func() {
+		orchestration.BuildNewState(prev, effect, nil, sqlc.GamePhaseTypeATTACK, "")
+	})
 }
 
 // --- Helpers ---

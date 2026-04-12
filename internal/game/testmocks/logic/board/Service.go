@@ -7,6 +7,7 @@ package board
 import (
 	"context"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/board"
@@ -113,63 +114,63 @@ func (_c *Service_AreNeighbours_Call) RunAndReturn(run func(ctx context.Context,
 	return _c
 }
 
-// CanPlayerReach provides a mock function for the type Service
-func (_mock *Service) CanPlayerReach(ctx1 ctx.GameContext, querier db.Querier, source string, target string) (bool, error) {
-	ret := _mock.Called(ctx1, querier, source, target)
+// CanPlayerReachWithRegions provides a mock function for the type Service
+func (_mock *Service) CanPlayerReachWithRegions(ctx1 ctx.GameContext, source string, target string, regions []snapshot.RegionState) (bool, error) {
+	ret := _mock.Called(ctx1, source, target, regions)
 
 	if len(ret) == 0 {
-		panic("no return value specified for CanPlayerReach")
+		panic("no return value specified for CanPlayerReachWithRegions")
 	}
 
 	var r0 bool
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, string, string) (bool, error)); ok {
-		return returnFunc(ctx1, querier, source, target)
+	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, string, string, []snapshot.RegionState) (bool, error)); ok {
+		return returnFunc(ctx1, source, target, regions)
 	}
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, string, string) bool); ok {
-		r0 = returnFunc(ctx1, querier, source, target)
+	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, string, string, []snapshot.RegionState) bool); ok {
+		r0 = returnFunc(ctx1, source, target, regions)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
-	if returnFunc, ok := ret.Get(1).(func(ctx.GameContext, db.Querier, string, string) error); ok {
-		r1 = returnFunc(ctx1, querier, source, target)
+	if returnFunc, ok := ret.Get(1).(func(ctx.GameContext, string, string, []snapshot.RegionState) error); ok {
+		r1 = returnFunc(ctx1, source, target, regions)
 	} else {
 		r1 = ret.Error(1)
 	}
 	return r0, r1
 }
 
-// Service_CanPlayerReach_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CanPlayerReach'
-type Service_CanPlayerReach_Call struct {
+// Service_CanPlayerReachWithRegions_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CanPlayerReachWithRegions'
+type Service_CanPlayerReachWithRegions_Call struct {
 	*mock.Call
 }
 
-// CanPlayerReach is a helper method to define mock.On call
+// CanPlayerReachWithRegions is a helper method to define mock.On call
 //   - ctx1 ctx.GameContext
-//   - querier db.Querier
 //   - source string
 //   - target string
-func (_e *Service_Expecter) CanPlayerReach(ctx1 interface{}, querier interface{}, source interface{}, target interface{}) *Service_CanPlayerReach_Call {
-	return &Service_CanPlayerReach_Call{Call: _e.mock.On("CanPlayerReach", ctx1, querier, source, target)}
+//   - regions []snapshot.RegionState
+func (_e *Service_Expecter) CanPlayerReachWithRegions(ctx1 interface{}, source interface{}, target interface{}, regions interface{}) *Service_CanPlayerReachWithRegions_Call {
+	return &Service_CanPlayerReachWithRegions_Call{Call: _e.mock.On("CanPlayerReachWithRegions", ctx1, source, target, regions)}
 }
 
-func (_c *Service_CanPlayerReach_Call) Run(run func(ctx1 ctx.GameContext, querier db.Querier, source string, target string)) *Service_CanPlayerReach_Call {
+func (_c *Service_CanPlayerReachWithRegions_Call) Run(run func(ctx1 ctx.GameContext, source string, target string, regions []snapshot.RegionState)) *Service_CanPlayerReachWithRegions_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 ctx.GameContext
 		if args[0] != nil {
 			arg0 = args[0].(ctx.GameContext)
 		}
-		var arg1 db.Querier
+		var arg1 string
 		if args[1] != nil {
-			arg1 = args[1].(db.Querier)
+			arg1 = args[1].(string)
 		}
 		var arg2 string
 		if args[2] != nil {
 			arg2 = args[2].(string)
 		}
-		var arg3 string
+		var arg3 []snapshot.RegionState
 		if args[3] != nil {
-			arg3 = args[3].(string)
+			arg3 = args[3].([]snapshot.RegionState)
 		}
 		run(
 			arg0,
@@ -181,12 +182,12 @@ func (_c *Service_CanPlayerReach_Call) Run(run func(ctx1 ctx.GameContext, querie
 	return _c
 }
 
-func (_c *Service_CanPlayerReach_Call) Return(b bool, err error) *Service_CanPlayerReach_Call {
+func (_c *Service_CanPlayerReachWithRegions_Call) Return(b bool, err error) *Service_CanPlayerReachWithRegions_Call {
 	_c.Call.Return(b, err)
 	return _c
 }
 
-func (_c *Service_CanPlayerReach_Call) RunAndReturn(run func(ctx1 ctx.GameContext, querier db.Querier, source string, target string) (bool, error)) *Service_CanPlayerReach_Call {
+func (_c *Service_CanPlayerReachWithRegions_Call) RunAndReturn(run func(ctx1 ctx.GameContext, source string, target string, regions []snapshot.RegionState) (bool, error)) *Service_CanPlayerReachWithRegions_Call {
 	_c.Call.Return(run)
 	return _c
 }

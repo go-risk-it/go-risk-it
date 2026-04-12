@@ -5,8 +5,8 @@
 package orchestration
 
 import (
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/state"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -40,16 +40,16 @@ func (_m *ValidationService) EXPECT() *ValidationService_Expecter {
 }
 
 // Validate provides a mock function for the type ValidationService
-func (_mock *ValidationService) Validate(ctx1 ctx.GameContext, querier db.Querier, game *state.Game) error {
-	ret := _mock.Called(ctx1, querier, game)
+func (_mock *ValidationService) Validate(ctx1 ctx.GameContext, game *state.Game, players []snapshot.PlayerState) error {
+	ret := _mock.Called(ctx1, game, players)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Validate")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, *state.Game) error); ok {
-		r0 = returnFunc(ctx1, querier, game)
+	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, *state.Game, []snapshot.PlayerState) error); ok {
+		r0 = returnFunc(ctx1, game, players)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -63,25 +63,25 @@ type ValidationService_Validate_Call struct {
 
 // Validate is a helper method to define mock.On call
 //   - ctx1 ctx.GameContext
-//   - querier db.Querier
 //   - game *state.Game
-func (_e *ValidationService_Expecter) Validate(ctx1 interface{}, querier interface{}, game interface{}) *ValidationService_Validate_Call {
-	return &ValidationService_Validate_Call{Call: _e.mock.On("Validate", ctx1, querier, game)}
+//   - players []snapshot.PlayerState
+func (_e *ValidationService_Expecter) Validate(ctx1 interface{}, game interface{}, players interface{}) *ValidationService_Validate_Call {
+	return &ValidationService_Validate_Call{Call: _e.mock.On("Validate", ctx1, game, players)}
 }
 
-func (_c *ValidationService_Validate_Call) Run(run func(ctx1 ctx.GameContext, querier db.Querier, game *state.Game)) *ValidationService_Validate_Call {
+func (_c *ValidationService_Validate_Call) Run(run func(ctx1 ctx.GameContext, game *state.Game, players []snapshot.PlayerState)) *ValidationService_Validate_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 ctx.GameContext
 		if args[0] != nil {
 			arg0 = args[0].(ctx.GameContext)
 		}
-		var arg1 db.Querier
+		var arg1 *state.Game
 		if args[1] != nil {
-			arg1 = args[1].(db.Querier)
+			arg1 = args[1].(*state.Game)
 		}
-		var arg2 *state.Game
+		var arg2 []snapshot.PlayerState
 		if args[2] != nil {
-			arg2 = args[2].(*state.Game)
+			arg2 = args[2].([]snapshot.PlayerState)
 		}
 		run(
 			arg0,
@@ -97,7 +97,7 @@ func (_c *ValidationService_Validate_Call) Return(err error) *ValidationService_
 	return _c
 }
 
-func (_c *ValidationService_Validate_Call) RunAndReturn(run func(ctx1 ctx.GameContext, querier db.Querier, game *state.Game) error) *ValidationService_Validate_Call {
+func (_c *ValidationService_Validate_Call) RunAndReturn(run func(ctx1 ctx.GameContext, game *state.Game, players []snapshot.PlayerState) error) *ValidationService_Validate_Call {
 	_c.Call.Return(run)
 	return _c
 }
