@@ -20,6 +20,7 @@ import (
 	game "github.com/go-risk-it/go-risk-it/internal/game/internal/logic"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/board"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/creation"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/mission"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/conquer"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/deploy"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/orchestration"
@@ -111,9 +112,9 @@ func buildFxApp(
 		fx.Provide(gamedb.New),
 		game.Module,
 		gameconfig.Module,
-		fx.Provide(newNoopStateStore),
-		fx.Provide(newNoopReaderFactory),
-		fx.Provide(newNoopSnapshotReader),
+		intsnapshot.Module,
+		fx.Provide(newMissionQuerierAdapter),
+		fx.Provide(newMemStateStore),
 		fx.Supply(testKoanf),
 		rand.Module,
 		fx.Supply(testMetrics),
@@ -299,37 +300,72 @@ game:
 	return k
 }
 
-// noopStateStore satisfies game.StateStore for invariant tests that don't need
-// the web-layer cache.
-type noopStateStore struct{}
+// memStateStore satisfies game.StateStore with an in-memory map.
+// Required because creation populates the store and the orchestrator reads it.
+type memStateStore struct {
+	m map[int64]*snapshot.CachedGameState
+}
 
-func newNoopStateStore() gameapi.StateStore { return &noopStateStore{} }
+func newMemStateStore() gameapi.StateStore {
+	return &memStateStore{m: make(map[int64]*snapshot.CachedGameState)}
+}
 
-func (n *noopStateStore) Get(_ int64) *snapshot.CachedGameState      { return nil }
-func (n *noopStateStore) Store(_ int64, _ *snapshot.CachedGameState) {}
-func (n *noopStateStore) Remove(_ int64)                             {}
+func (s *memStateStore) Get(gameID int64) *snapshot.CachedGameState { return s.m[gameID] }
 
-// noopReaderFactory satisfies snapshot.ReaderFactory for invariant tests that
-// don't exercise snapshot reads.
-func newNoopReaderFactory() intsnapshot.ReaderFactory {
-	return func(_ gamedb.Querier) intsnapshot.Reader {
-		return &noopSnapshotReader{}
+func (s *memStateStore) Store(
+	gameID int64,
+	state *snapshot.CachedGameState,
+) {
+	s.m[gameID] = state
+}
+
+func (s *memStateStore) Remove(
+	gameID int64,
+) {
+	delete(s.m, gameID)
+}
+
+// missionQuerierAdapter bridges mission.Service → snapshot.MissionQuerier.
+// Duplicated from game.go because the invariant package can't import the
+// top-level game package (circular).
+type missionQuerierAdapter struct {
+	svc mission.Service
+}
+
+func newMissionQuerierAdapter(svc mission.Service) intsnapshot.MissionQuerier {
+	return &missionQuerierAdapter{svc: svc}
+}
+
+func (a *missionQuerierAdapter) GetTwoContinentsMission(
+	ctx gamectx.GameContext,
+	missionID int64,
+) (intsnapshot.TwoContinentsResult, error) {
+	m, err := a.svc.GetTwoContinentsMission(ctx, missionID)
+	if err != nil {
+		return intsnapshot.TwoContinentsResult{}, err
 	}
+
+	return intsnapshot.TwoContinentsResult{Continent1: m.Continent1, Continent2: m.Continent2}, nil
 }
 
-// noopSnapshotReader implements snapshot.Reader as a no-op.
-type noopSnapshotReader struct{}
+func (a *missionQuerierAdapter) GetTwoContinentsPlusOneMission(
+	ctx gamectx.GameContext,
+	missionID int64,
+) (intsnapshot.TwoContinentsPlusOneResult, error) {
+	m, err := a.svc.GetTwoContinentsPlusOneMission(ctx, missionID)
+	if err != nil {
+		return intsnapshot.TwoContinentsPlusOneResult{}, err
+	}
 
-func newNoopSnapshotReader() gameapi.SnapshotReader { return &noopSnapshotReader{} }
-
-func (n *noopSnapshotReader) GetPublicSnapshot(
-	_ gamectx.GameContext,
-) (*snapshot.GameSnapshot, error) {
-	return nil, nil
+	return intsnapshot.TwoContinentsPlusOneResult{
+		Continent1: m.Continent1,
+		Continent2: m.Continent2,
+	}, nil
 }
 
-func (n *noopSnapshotReader) GetAllPrivateSnapshots(
-	_ gamectx.GameContext,
-) (map[string]*snapshot.PlayerPrivate, error) {
-	return nil, nil
+func (a *missionQuerierAdapter) GetEliminatePlayerMission(
+	ctx gamectx.GameContext,
+	missionID int64,
+) (string, error) {
+	return a.svc.GetEliminatePlayerMission(ctx, missionID)
 }

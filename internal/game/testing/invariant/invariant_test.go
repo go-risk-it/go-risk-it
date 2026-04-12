@@ -8,8 +8,7 @@ import (
 	"runtime"
 	"testing"
 
-	gameapi "github.com/go-risk-it/go-risk-it/internal/game/api"
-
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/testing/invariant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -43,7 +42,7 @@ func TestCanCreateGame(t *testing.T) {
 	handle := harness.CreateGame(t, 3)
 	snap := invariant.TakeSnapshot(t, harness, handle.GameID)
 
-	assert.Equal(t, gameapi.GamePhaseTypeDEPLOY, snap.Phase)
+	assert.Equal(t, sqlc.GamePhaseTypeDEPLOY, snap.Phase)
 	assert.Len(t, snap.Regions, 42)
 	assert.Len(t, snap.Players, 3)
 
