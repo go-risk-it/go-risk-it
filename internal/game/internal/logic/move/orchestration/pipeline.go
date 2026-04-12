@@ -93,6 +93,8 @@ func (s *orchestrator[T, R]) orchestrateMoveWithQuerier(
 		return moveOutcome[R]{}, fmt.Errorf("invalid move: %w", err)
 	}
 
+	observe.SpanEvent(ctx, "game.move.validated")
+
 	performResult, effect, moveLog, err := s.performAndLog(
 		ctx, querier, move, prevState,
 	)
@@ -170,6 +172,8 @@ func (s *orchestrator[T, R]) performAndLog(
 		)
 	}
 
+	observe.SpanEvent(ctx, "game.move.performed")
+
 	moveLog, err := s.loggingService.LogMove(ctx, querier, move, performResult)
 	if err != nil {
 		var zero R
@@ -178,6 +182,8 @@ func (s *orchestrator[T, R]) performAndLog(
 			"unable to log move: %w", err,
 		)
 	}
+
+	observe.SpanEvent(ctx, "game.move.logged")
 
 	return performResult, effect, moveLog, nil
 }

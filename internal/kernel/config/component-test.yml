@@ -22,6 +22,7 @@ game:
 
 otel:
   enabled: true
+  trace_queries: true
 
 server:
   allowed_origins:

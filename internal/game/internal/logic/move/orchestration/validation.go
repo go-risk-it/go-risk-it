@@ -9,7 +9,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/player"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/state"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 )
 
 type ValidationService interface {
@@ -31,30 +30,25 @@ func (s *validationServiceImpl) Validate(
 	querier db.Querier,
 	game *state.Game,
 ) error {
-	return observe.SpanErr(
-		gameCtx,
-		"game.move.validate",
-		func(ctx gamectx.GameContext) error {
-			if game.WinnerUserID != "" {
-				return domainerrors.NewConflictError("game is already over")
-			}
+	if game.WinnerUserID != "" {
+		return domainerrors.NewConflictError("game is already over")
+	}
 
-			players, err := s.playerService.GetPlayers(ctx, querier)
-			if err != nil {
-				return fmt.Errorf("failed to get players: %w", err)
-			}
+	players, err := s.playerService.GetPlayers(gameCtx, querier)
+	if err != nil {
+		return fmt.Errorf("failed to get players: %w", err)
+	}
 
-			thisPlayer := extractPlayerFrom(players, ctx.UserID())
-			if thisPlayer == nil {
-				return domainerrors.NewForbiddenError("player is not in game")
-			}
+	thisPlayer := extractPlayerFrom(players, gameCtx.UserID())
+	if thisPlayer == nil {
+		return domainerrors.NewForbiddenError("player is not in game")
+	}
 
-			if err := s.checkTurn(game, int64(len(players)), thisPlayer.TurnIndex); err != nil {
-				return fmt.Errorf("turn check failed: %w", err)
-			}
+	if err := s.checkTurn(game, int64(len(players)), thisPlayer.TurnIndex); err != nil {
+		return fmt.Errorf("turn check failed: %w", err)
+	}
 
-			return nil
-		})
+	return nil
 }
 
 func (s *validationServiceImpl) checkTurn(

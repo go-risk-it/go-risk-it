@@ -19,10 +19,11 @@ import (
 func NewConnectionPool(
 	lifecycle fx.Lifecycle,
 	cfg config.DatabaseConfig,
+	otelCfg config.OtelConfig,
 	schema string,
 	initSQL ...string,
 ) (*pgxpool.Pool, error) {
-	connectionPool, err := createPool(cfg, schema, initSQL...)
+	connectionPool, err := createPool(cfg, otelCfg, schema, initSQL...)
 	if err != nil {
 		return nil, err
 	}
@@ -56,6 +57,7 @@ func NewConnectionPool(
 
 func createPool(
 	cfg config.DatabaseConfig,
+	otelCfg config.OtelConfig,
 	schema string,
 	initSQL ...string,
 ) (*pgxpool.Pool, error) {
@@ -78,13 +80,19 @@ func createPool(
 		poolConfig.MaxConnIdleTime = cfg.MaxConnIdleTime
 	}
 
-	// Silence otelpgx's built-in metrics — we collect DB metrics via our own
-	// reportPoolStats gauge callbacks (db.pool.*) and spanmetrics from the
-	// "db.transaction" spans. otelpgx metrics would duplicate those and
-	// pollute the metric namespace.
-	poolConfig.ConnConfig.Tracer = otelpgx.NewTracer(
-		otelpgx.WithMeterProvider(noop.NewMeterProvider()),
-	)
+	// Install per-query tracing only when both OTel and query tracing are
+	// enabled. Disabling saves ~11 spans/move (pool.acquire, begin, commit,
+	// and all SQL queries). The db.transaction span from kernel/data is
+	// unaffected — it uses manual instrumentation, not otelpgx.
+	if otelCfg.Enabled && otelCfg.TraceQueries {
+		// Silence otelpgx's built-in metrics — we collect DB metrics via our own
+		// reportPoolStats gauge callbacks (db.pool.*) and spanmetrics from the
+		// "db.transaction" spans. otelpgx metrics would duplicate those and
+		// pollute the metric namespace.
+		poolConfig.ConnConfig.Tracer = otelpgx.NewTracer(
+			otelpgx.WithMeterProvider(noop.NewMeterProvider()),
+		)
+	}
 
 	connectionPool, err := pgxpool.NewWithConfig(ctx, poolConfig)
 	if err != nil {

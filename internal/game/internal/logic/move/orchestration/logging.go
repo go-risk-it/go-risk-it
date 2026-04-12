@@ -7,7 +7,6 @@ import (
 	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 )
 
 type LoggingService interface {
@@ -53,34 +52,28 @@ func (s *loggingServiceImpl) LogMove(
 	querier db.Querier,
 	move, result any,
 ) (sqlc.GameMoveLog, error) {
-	return observe.Span(
-		ctx,
-		"game.move.log",
-		func(ctx gamectx.GameContext) (sqlc.GameMoveLog, error) {
-			moveJSON, err := json.Marshal(move)
-			if err != nil {
-				return sqlc.GameMoveLog{}, fmt.Errorf("failed to marshal move: %w", err)
-			}
+	moveJSON, err := json.Marshal(move)
+	if err != nil {
+		return sqlc.GameMoveLog{}, fmt.Errorf("failed to marshal move: %w", err)
+	}
 
-			var resultJSON []byte
-			if result != nil {
-				resultJSON, err = json.Marshal(result)
-				if err != nil {
-					return sqlc.GameMoveLog{}, fmt.Errorf("failed to marshal result: %w", err)
-				}
-			}
+	var resultJSON []byte
+	if result != nil {
+		resultJSON, err = json.Marshal(result)
+		if err != nil {
+			return sqlc.GameMoveLog{}, fmt.Errorf("failed to marshal result: %w", err)
+		}
+	}
 
-			moveLog, err := querier.CreateMoveLog(ctx, sqlc.CreateMoveLogParams{
-				GameID:   ctx.GameID(),
-				UserID:   ctx.UserID(),
-				MoveData: moveJSON,
-				Result:   resultJSON,
-			})
-			if err != nil {
-				return sqlc.GameMoveLog{}, fmt.Errorf("failed to insert move log: %w", err)
-			}
+	moveLog, err := querier.CreateMoveLog(ctx, sqlc.CreateMoveLogParams{
+		GameID:   ctx.GameID(),
+		UserID:   ctx.UserID(),
+		MoveData: moveJSON,
+		Result:   resultJSON,
+	})
+	if err != nil {
+		return sqlc.GameMoveLog{}, fmt.Errorf("failed to insert move log: %w", err)
+	}
 
-			return moveLog, nil
-		},
-	)
+	return moveLog, nil
 }

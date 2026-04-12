@@ -123,7 +123,17 @@ func newTraceProvider(otelConfig config.OtelConfig) (*trace.TracerProvider, erro
 	}
 
 	if otelConfig.Enabled {
-		return trace.NewTracerProvider(trace.WithBatcher(exporter)), nil
+		var batchOpts []trace.BatchSpanProcessorOption
+		if otelConfig.Batch.MaxQueueSize > 0 {
+			batchOpts = append(batchOpts, trace.WithMaxQueueSize(otelConfig.Batch.MaxQueueSize))
+		}
+
+		if otelConfig.Batch.MaxExportBatchSize > 0 {
+			batchOpts = append(batchOpts,
+				trace.WithMaxExportBatchSize(otelConfig.Batch.MaxExportBatchSize))
+		}
+
+		return trace.NewTracerProvider(trace.WithBatcher(exporter, batchOpts...)), nil
 	}
 
 	return trace.NewTracerProvider(), nil
