@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Update diagram
-        uses: githubocto/repo-visualizer@main
+        uses: githubocto/repo-visualizer@a999615bdab757559bf94bda1fe6eef232765f85 # main
         with:
           excluded_paths: "component-test,docs,mocks,supabase"
           output_file: codebase-structure.svg
