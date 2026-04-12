@@ -11,7 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
+	gameapi "github.com/go-risk-it/go-risk-it/internal/game/api"
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
+	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	gamedb "github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
 	game "github.com/go-risk-it/go-risk-it/internal/game/internal/logic"
@@ -106,7 +108,8 @@ func buildFxApp(
 		fx.Provide(func() sqlc.DBTX { return dbPool }),
 		fx.Provide(gamedb.New),
 		game.Module,
-
+		fx.Provide(newNoopStateStore),
+		fx.Provide(newNoopSnapshotReader),
 		fx.Supply(testKoanf),
 		rand.Module,
 		fx.Supply(testMetrics),
@@ -169,12 +172,12 @@ func (h *Harness) CreateGame(
 func (h *Harness) GameCtx(
 	gameID int64,
 	userID string,
-) ctx.GameContext {
+) gamectx.GameContext {
 	span := noop.Span{}
 	traceCtx := kernelctx.WithSpan(context.Background(), span)
 	userCtx := kernelctx.WithUserID(traceCtx, userID)
 
-	return ctx.WithGameID(userCtx, gameID)
+	return gamectx.WithGameID(userCtx, gameID)
 }
 
 // Close shuts down the connection pool.
@@ -290,4 +293,32 @@ game:
 	}
 
 	return k
+}
+
+// noopStateStore satisfies game.StateStore for invariant tests that don't need
+// the web-layer cache.
+type noopStateStore struct{}
+
+func newNoopStateStore() gameapi.StateStore { return &noopStateStore{} }
+
+func (n *noopStateStore) Get(_ int64) *snapshot.CachedGameState      { return nil }
+func (n *noopStateStore) Store(_ int64, _ *snapshot.CachedGameState) {}
+func (n *noopStateStore) Remove(_ int64)                             {}
+
+// noopSnapshotReader satisfies game.SnapshotReader for invariant tests that
+// don't exercise snapshot reads.
+type noopSnapshotReader struct{}
+
+func newNoopSnapshotReader() gameapi.SnapshotReader { return &noopSnapshotReader{} }
+
+func (n *noopSnapshotReader) GetPublicSnapshot(
+	_ gamectx.GameContext,
+) (*snapshot.GameSnapshot, error) {
+	return nil, nil
+}
+
+func (n *noopSnapshotReader) GetAllPrivateSnapshots(
+	_ gamectx.GameContext,
+) (map[string]*snapshot.PlayerPrivate, error) {
+	return nil, nil
 }
