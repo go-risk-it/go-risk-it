@@ -14,6 +14,7 @@ import (
 	gameapi "github.com/go-risk-it/go-risk-it/internal/game/api"
 	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
+	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/internal/config"
 	gamedb "github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
 	game "github.com/go-risk-it/go-risk-it/internal/game/internal/logic"
@@ -108,6 +109,7 @@ func buildFxApp(
 		fx.Provide(func() sqlc.DBTX { return dbPool }),
 		fx.Provide(gamedb.New),
 		game.Module,
+		gameconfig.Module,
 		fx.Provide(newNoopStateStore),
 		fx.Provide(newNoopSnapshotReader),
 		fx.Supply(testKoanf),
