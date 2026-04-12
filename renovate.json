@@ -6,21 +6,40 @@
   ],
   "packageRules": [
     {
+      "description": "Disable digest and pin updates — no supply-chain value for a personal project",
       "matchUpdateTypes": [
-        "major"
+        "digest",
+        "pin"
       ],
-      "automerge": false
+      "enabled": false
     },
     {
+      "description": "Patch updates automerge silently via branch (no PR unless CI fails)",
+      "matchUpdateTypes": [
+        "patch"
+      ],
+      "automerge": true,
+      "automergeType": "branch"
+    },
+    {
+      "description": "Minor updates get individual PRs, automerge if CI passes",
       "matchUpdateTypes": [
         "minor"
       ],
       "automerge": true
+    },
+    {
+      "description": "Major updates require manual review",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "automerge": false
     }
   ],
   "automergeStrategy": "squash",
   "lockFileMaintenance": {
     "enabled": true,
-    "automerge": true
+    "automerge": true,
+    "automergeType": "branch"
   }
 }
