@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net"
+	"sync/atomic"
 	"testing"
 	"testing/synctest"
 
@@ -298,4 +299,263 @@ func TestManager_PlayerCount(t *testing.T) {
 
 	playerConns.ConnectPlayer(userCtx2, conn2)
 	assert.Equal(t, 2, playerConns.PlayerCount())
+}
+
+// --- Presence broadcast tests ---
+
+func gameContextForUser(userID string) ctx.GameContext {
+	userContext := kernelctx.WithUserID(
+		kernelctx.WithSpan(context.Background(), noop.Span{}),
+		userID,
+	)
+
+	return ctx.WithGameID(userContext, 1) // gameID constant from line 364
+}
+
+// writableWSConn creates a WS server connection backed by a net.Pipe.
+// Uses NewUpgrader() (not bare &Upgrader{}) so the Engine is initialized
+// and WriteMessage works without panicking.
+// Returns the websocket.Conn for the server side and the raw net.Conn
+// for the client/reader side.
+func writableWSConn(t *testing.T) (*websocket.Conn, net.Conn) {
+	t.Helper()
+
+	server, client := net.Pipe()
+	t.Cleanup(func() {
+		server.Close()
+		client.Close()
+	})
+
+	return websocket.NewServerConn(websocket.NewUpgrader(), server, "", false, false), client
+}
+
+// readWSMessage reads a single WS frame from the raw pipe and returns
+// the payload bytes. It reads the nbio websocket frame format directly.
+func readWSMessage(t *testing.T, reader net.Conn) []byte {
+	t.Helper()
+
+	// Read up to 4KB — more than enough for a presence message.
+	buf := make([]byte, 4096)
+	bytesRead, err := reader.Read(buf)
+	assert.NoError(t, err) //nolint:testifylint // Called from goroutines - safe with assert
+	assert.Positive(
+		t,
+		bytesRead,
+	)
+
+	// nbio writes raw WS frames. Parse the frame to extract the payload.
+	// Frame format: [opcode byte] [length byte(s)] [payload]
+	frame := buf[:bytesRead]
+
+	// Skip the first byte (FIN + opcode).
+	payloadStart := 2
+	payloadLen := int(frame[1] & 0x7F)
+
+	if payloadLen == 126 {
+		payloadLen = int(frame[2])<<8 | int(frame[3])
+		payloadStart = 4
+	}
+
+	return frame[payloadStart : payloadStart+payloadLen]
+}
+
+func TestManager_ConnectBroadcastsPresence(t *testing.T) {
+	t.Parallel()
+
+	manager, bus := connectableManager(t, testMetrics(t))
+
+	// Player A connects first — no one else to receive presence yet.
+	bus.EXPECT().Emit(mock.Anything, mock.Anything).Return()
+
+	ctxA := gameContextForUser("player-A")
+	connA, clientA := writableWSConn(t)
+	manager.ConnectPlayer(ctxA, connA)
+
+	// Player B connects — player A should receive a connected presence signal.
+	// ConnectPlayer writes to A's pipe synchronously, so we must read from
+	// clientA concurrently to avoid blocking.
+	bus.EXPECT().Emit(mock.Anything, mock.Anything).Return()
+
+	received := make(chan []byte, 1)
+
+	go func() {
+		received <- readWSMessage(t, clientA)
+	}()
+
+	ctxB := gameContextForUser("player-B")
+	connB, _ := writableWSConn(t)
+	manager.ConnectPlayer(ctxB, connB)
+
+	// Read the presence message from player A's pipe.
+	payload := <-received
+
+	var envelope struct {
+		Type string          `json:"type"`
+		Data json.RawMessage `json:"data"`
+	}
+
+	require.NoError(t, json.Unmarshal(payload, &envelope))
+	assert.Equal(t, "playerConnection", envelope.Type)
+
+	var presence struct {
+		UserID string `json:"userId"`
+		Status string `json:"status"`
+	}
+
+	require.NoError(t, json.Unmarshal(envelope.Data, &presence))
+	assert.Equal(t, "player-B", presence.UserID)
+	assert.Equal(t, "connected", presence.Status)
+}
+
+func TestManager_NoSelfPresence(t *testing.T) {
+	t.Parallel()
+
+	manager, bus := connectableManager(t, testMetrics(t))
+
+	// Player A connects.
+	bus.EXPECT().Emit(mock.Anything, mock.Anything).Return()
+
+	ctxA := gameContextForUser("player-A")
+	connA, clientA := writableWSConn(t)
+	manager.ConnectPlayer(ctxA, connA)
+
+	// Player B connects — start reading from A concurrently to unblock the
+	// synchronous net.Pipe write.
+	bus.EXPECT().Emit(mock.Anything, mock.Anything).Return()
+
+	receivedA := make(chan []byte, 1)
+
+	go func() {
+		receivedA <- readWSMessage(t, clientA)
+	}()
+
+	ctxB := gameContextForUser("player-B")
+	connB, clientB := writableWSConn(t)
+	manager.ConnectPlayer(ctxB, connB)
+
+	// Player A should have received presence for B.
+	payloadA := <-receivedA
+	require.Contains(t, string(payloadA), "player-B")
+
+	// Player B should NOT have received any message. Close the server-side
+	// connection so a read on clientB returns immediately.
+	connB.Close()
+
+	buf := make([]byte, 1)
+	_, err := clientB.Read(buf)
+
+	// Expect EOF or closed pipe — no data was written to B.
+	assert.Error(t, err)
+}
+
+// closableConn wraps a net.Conn and returns net.ErrClosed (instead of
+// io.ErrClosedPipe) after Close is called. This matches the behavior of real
+// TCP connections and triggers PlayerConnections.Broadcast's cleanup path
+// which checks errors.Is(err, net.ErrClosed).
+type closableConn struct {
+	net.Conn
+
+	closed atomic.Bool
+}
+
+func (c *closableConn) Write(b []byte) (int, error) {
+	if c.closed.Load() {
+		return 0, net.ErrClosed
+	}
+
+	return c.Conn.Write(b)
+}
+
+func (c *closableConn) Read(b []byte) (int, error) {
+	if c.closed.Load() {
+		return 0, net.ErrClosed
+	}
+
+	return c.Conn.Read(b)
+}
+
+func (c *closableConn) Close() error {
+	c.closed.Store(true)
+
+	return c.Conn.Close()
+}
+
+func TestManager_DisconnectBroadcastsPresence(t *testing.T) {
+	t.Parallel()
+
+	manager, bus := connectableManager(t, testMetrics(t))
+
+	// Connect player A with a readable pipe.
+	bus.EXPECT().Emit(mock.Anything, mock.Anything).Return()
+
+	ctxA := gameContextForUser("player-A")
+	connA, clientA := writableWSConn(t)
+	manager.ConnectPlayer(ctxA, connA)
+
+	// Connect player B. Read A's connect-presence concurrently to avoid
+	// blocking the synchronous pipe.
+	bus.EXPECT().Emit(mock.Anything, mock.Anything).Return()
+
+	drainCh := make(chan []byte, 1)
+
+	go func() {
+		drainCh <- readWSMessage(t, clientA)
+	}()
+
+	ctxB := gameContextForUser("player-B")
+
+	// Use closableConn so Close() makes writes return net.ErrClosed,
+	// matching production TCP behavior and triggering the cleanup path.
+	serverB, clientB := net.Pipe()
+	t.Cleanup(func() {
+		serverB.Close()
+		clientB.Close()
+	})
+
+	wrappedB := &closableConn{Conn: serverB}
+	connB := websocket.NewServerConn(websocket.NewUpgrader(), wrappedB, "", false, false)
+	manager.ConnectPlayer(ctxB, connB)
+
+	// Drain the connect-presence message.
+	<-drainCh
+
+	// Close player B's connection. Now writes return net.ErrClosed.
+	wrappedB.Close()
+
+	// Trigger a broadcast — this will discover B's connection is broken
+	// and clean it up, which should send a disconnect presence to A.
+	// Read concurrently: A receives the broadcast + disconnect presence.
+	messages := make(chan []byte, 2)
+
+	go func() {
+		messages <- readWSMessage(t, clientA)
+		messages <- readWSMessage(t, clientA)
+	}()
+
+	manager.Broadcast(
+		gameContextForUser("any"),
+		json.RawMessage(`{"type":"test","data":{}}`),
+	)
+
+	broadcastPayload := <-messages
+	require.Contains(t, string(broadcastPayload), "test")
+
+	disconnectPayload := <-messages
+
+	var envelope struct {
+		Type string          `json:"type"`
+		Data json.RawMessage `json:"data"`
+	}
+
+	require.NoError(t, json.Unmarshal(disconnectPayload, &envelope))
+	assert.Equal(t, "playerConnection", envelope.Type)
+
+	var presence struct {
+		UserID string `json:"userId"`
+		Status string `json:"status"`
+	}
+
+	require.NoError(t, json.Unmarshal(envelope.Data, &presence))
+	assert.Equal(t, "player-B", presence.UserID)
+	assert.Equal(t, "disconnected", presence.Status)
 }

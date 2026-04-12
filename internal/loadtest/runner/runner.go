@@ -10,9 +10,11 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/chaos"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/client"
+	"github.com/go-risk-it/go-risk-it/internal/loadtest/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/metrics"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/orchestrator"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/player"
+	"github.com/go-risk-it/go-risk-it/internal/loadtest/userpool"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -30,6 +32,7 @@ type Config struct {
 	Timeouts      Timeouts
 	ChaosInjector *chaos.Injector
 	Observer      orchestrator.GameObserver
+	UserPool      *userpool.Pool // nil = legacy per-game signup
 }
 
 // Runner wires all event handlers and exposes Run().
@@ -63,6 +66,7 @@ func (r *Runner) ToRunFunc() orchestrator.RunFunc {
 			Errors:     result.Errors,
 			Winner:     result.Winner,
 			TimedOut:   result.TimedOut,
+			Cancelled:  result.Cancelled,
 			FatalError: result.FatalError,
 		}
 	}
@@ -70,7 +74,7 @@ func (r *Runner) ToRunFunc() orchestrator.RunFunc {
 
 // Run executes a single game with the given number of players.
 //
-//nolint:funlen // sequential game lifecycle
+//nolint:funlen,cyclop // sequential game lifecycle
 func (r *Runner) Run(ctx context.Context, gameIndex, numPlayers int) GameResult {
 	ctx, cancel := context.WithTimeout(ctx, r.cfg.Timeout)
 	defer cancel()
@@ -122,14 +126,28 @@ func (r *Runner) Run(ctx context.Context, gameIndex, numPlayers int) GameResult 
 	})
 
 	if r.setupOverride != nil {
-		// Emit initial state from player 0.
+		// Test path: emit initial state directly, then enter barrier loop.
 		snap := gameCtx.Players[0].WS.View().Snapshot()
 		bus.Emit(StateReceivedEvent{Snapshot: snap, Timestamp: time.Now()})
 	} else {
+		// Production path: ProtocolHandler sets up auth, game, WS connections.
+		// No initial state emission — the barrier loop drives ALL moves,
+		// including the first one, from WS notifications.
 		bus.Emit(GameStartedEvent{GameIndex: gameIndex, NumPlayers: numPlayers})
 	}
 
-	// Cleanup: close all WS connections.
+	// Build barrier after protocol setup (needs players' WS views).
+	barrier := r.buildBarrier(ctx, gameCtx)
+	defer barrier.Stop()
+
+	// Release pooled users after WS cleanup (registered first = runs last in LIFO).
+	defer func() {
+		if r.cfg.UserPool != nil && len(gameCtx.AcquiredUsers) > 0 {
+			r.cfg.UserPool.Release(gameCtx.AcquiredUsers)
+		}
+	}()
+
+	// Cleanup: close all WS connections (registered second = runs first in LIFO).
 	defer func() {
 		for _, p := range gameCtx.Players {
 			if p.WS != nil {
@@ -142,12 +160,105 @@ func (r *Runner) Run(ctx context.Context, gameIndex, numPlayers int) GameResult 
 		}
 	}()
 
-	if !captured {
-		result.FatalError = errors.New("no result captured (event chain stalled)")
-		result.Duration = time.Since(start)
+	// If the initial state emission already completed the game (e.g., game over
+	// detected on first snapshot), skip the barrier loop.
+	if captured {
+		return *result
 	}
 
-	return *result
+	// Event-driven game loop: the UpdateBarrier waits for ALL players to
+	// receive their WS broadcast after each move, then triggers the next
+	// strategy cycle. This guarantees fresh state — no polling, no races.
+	loopResult := r.gameLoop(ctx, bus, barrier, gameCtx, result, &captured, start)
+
+	if loopResult.Cancelled {
+		r.cfg.LiveMetrics.RecordGameCancelled()
+	}
+
+	return loopResult
+}
+
+// gameLoop runs the event-driven select loop: barrier signal → emit
+// StateReceivedEvent → bus processes one move cycle → wait for next signal.
+//
+//nolint:cyclop,funlen // sequential select loop with context handling
+func (r *Runner) gameLoop(
+	ctx context.Context,
+	bus *Bus,
+	barrier *gamestate.UpdateBarrier,
+	gameCtx *GameSession,
+	result *GameResult,
+	captured *bool,
+	start time.Time,
+) GameResult {
+	barrierSeq := int64(0)
+
+	for {
+		select {
+		case _, ok := <-barrier.Signal():
+			if !ok {
+				if !*captured {
+					result.FatalError = errors.New("barrier closed unexpectedly")
+					result.Duration = time.Since(start)
+				}
+
+				return *result
+			}
+
+			barrierSeq++
+
+			now := time.Now()
+			snap := gameCtx.Players[0].WS.View().Snapshot()
+
+			observe.Info(ctx, "barrier_signal",
+				attribute.Int("game_index", gameCtx.GameIndex),
+				attribute.Int64("barrier_seq", barrierSeq),
+				attribute.Int64("turn", snap.PlayerView.Game.Turn),
+				attribute.Int64("state_seq", snap.PlayerView.Game.Seq),
+				attribute.String("phase", string(snap.CurrentPhase())),
+			)
+
+			bus.Emit(StateReceivedEvent{
+				Snapshot:     snap,
+				Timestamp:    now,
+				WSReceivedAt: now,
+			})
+
+			if *captured {
+				return *result
+			}
+		case <-ctx.Done():
+			if !*captured {
+				switch ctx.Err() {
+				case context.DeadlineExceeded:
+					result.TimedOut = true
+				case context.Canceled:
+					result.Cancelled = true
+				default:
+					result.FatalError = ctx.Err()
+				}
+
+				result.Duration = time.Since(start)
+			}
+
+			return *result
+		}
+	}
+}
+
+func (r *Runner) buildBarrier(
+	ctx context.Context,
+	gameCtx *GameSession,
+) *gamestate.UpdateBarrier {
+	notifyChannels := make([]<-chan struct{}, len(gameCtx.Players))
+	doneChannels := make([]<-chan struct{}, len(gameCtx.Players))
+
+	for i, p := range gameCtx.Players {
+		notifyChannels[i] = p.WS.View().Notify()
+		doneChannels[i] = p.WS.Done()
+	}
+
+	return gamestate.NewUpdateBarrier(ctx, notifyChannels, doneChannels)
 }
 
 func (r *Runner) wireHandlers(
@@ -180,18 +291,10 @@ func (r *Runner) wireHandlers(
 	executorH := &ExecutorHandler{gameCtx: gameCtx}
 	executorH.Register(bus)
 
-	stateWatcherH := &StateWatcherHandler{
-		gameCtx:  gameCtx,
-		timeouts: r.cfg.Timeouts,
-	}
-	stateWatcherH.Register(bus)
-
 	errorH := &ErrorHandler{
-		gameCtx:         gameCtx,
-		timeouts:        r.cfg.Timeouts,
-		result:          result,
-		maxStaleRetries: 5,
-		maxAdvanceFails: 3,
+		gameCtx:           gameCtx,
+		result:            result,
+		maxConsecutiveErr: r.cfg.Timeouts.MaxConsecutiveErr,
 	}
 	errorH.Register(bus)
 }
@@ -207,6 +310,7 @@ func (r *Runner) buildProtocolHandler(gameCtx *GameSession) *ProtocolHandler {
 		anonKey:  r.cfg.AnonKey,
 		timeouts: r.cfg.Timeouts,
 		gameCtx:  gameCtx,
+		userPool: r.cfg.UserPool,
 		newAuth: func(baseURL, anonKey string) AuthClient {
 			return client.NewAuth(baseURL, anonKey)
 		},

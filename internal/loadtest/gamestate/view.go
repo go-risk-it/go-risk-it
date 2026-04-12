@@ -3,85 +3,93 @@ package gamestate
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
+
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 )
 
 // View holds the latest game state received via WebSocket. Thread-safe.
+//
+// The push model: Apply() sends a non-blocking notification on a buffered(1)
+// channel for each playerView update. Consumers read from Notify() to detect
+// state changes without polling or version tracking.
 type View struct {
 	mu sync.RWMutex
 
-	GameState    *GameState
-	BoardState   *BoardState
-	PlayersState *PlayersState
-	CardState    *CardState
+	playerView *snapshot.PlayerView
+
+	// seq tracks the last applied sequence number for monotonicity detection.
+	seq int64
 
 	// lastUpdateTime records when the most recent Apply() was called.
 	lastUpdateTime time.Time
 
-	// updated is closed and re-created on each state update.
-	updated chan struct{}
+	// notify signals that a new playerView has been applied. Buffered to
+	// absorb bursts without dropping notifications (the barrier needs every
+	// update to count). Non-blocking send — drops only if 32 updates are
+	// unprocessed, which indicates a stalled consumer.
+	notify chan struct{}
 }
 
 func NewView() *View {
 	return &View{
-		updated: make(chan struct{}),
+		notify: make(chan struct{}, 32),
 	}
 }
 
-// Updated returns a channel that is closed when a new state update arrives.
-func (v *View) Updated() <-chan struct{} {
-	v.mu.RLock()
-	defer v.mu.RUnlock()
-
-	return v.updated
+// Notify returns a channel that receives a signal when a new playerView
+// is applied. The channel is buffered(1) — multiple rapid updates coalesce
+// into a single notification. Consumers should read from this channel and
+// then call Snapshot() to get the latest state.
+func (v *View) Notify() <-chan struct{} {
+	return v.notify
 }
 
 // Apply processes a raw WS message and updates the relevant state.
-//
-//nolint:cyclop // type-switch message dispatch
 func (v *View) Apply(msg WSMessage) error {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 
 	switch msg.Type {
-	case "gameState":
-		var gs GameState
-		if err := json.Unmarshal(msg.Payload, &gs); err != nil {
-			return fmt.Errorf("unmarshal gameState: %w", err)
+	case "playerView":
+		var pv snapshot.PlayerView
+		if err := json.Unmarshal(msg.Payload, &pv); err != nil {
+			return fmt.Errorf("unmarshal playerView: %w", err)
 		}
 
-		v.GameState = &gs
-	case "boardState":
-		var bs BoardState
-		if err := json.Unmarshal(msg.Payload, &bs); err != nil {
-			return fmt.Errorf("unmarshal boardState: %w", err)
+		incomingSeq := pv.Game.Seq
+		if incomingSeq > 0 && incomingSeq < v.seq {
+			slog.Warn("view_seq_regression",
+				"incoming_seq", incomingSeq,
+				"current_seq", v.seq,
+				"incoming_turn", pv.Game.Turn,
+				"phase", pv.Phase.Type,
+			)
 		}
 
-		v.BoardState = &bs
-	case "playerState":
-		var ps PlayersState
-		if err := json.Unmarshal(msg.Payload, &ps); err != nil {
-			return fmt.Errorf("unmarshal playerState: %w", err)
+		if incomingSeq > 0 {
+			v.seq = incomingSeq
 		}
 
-		v.PlayersState = &ps
-	case "cardState":
-		var cs CardState
-		if err := json.Unmarshal(msg.Payload, &cs); err != nil {
-			return fmt.Errorf("unmarshal cardState: %w", err)
-		}
-
-		v.CardState = &cs
-	case "moveHistory", "missionState", "lobbyState":
-		// Ignored for perf testing
+		v.playerView = &pv
+	case "playerConnection":
+		// Connection status updates don't affect game state.
+		return nil
 	default:
-		return fmt.Errorf("unknown message type: %s", msg.Type)
+		slog.Warn("unknown ws message type", "type", msg.Type)
+
+		return nil
 	}
 
-	close(v.updated)
-	v.updated = make(chan struct{})
 	v.lastUpdateTime = time.Now()
+
+	// Non-blocking send: coalesce rapid updates into one notification.
+	select {
+	case v.notify <- struct{}{}:
+	default:
+	}
 
 	return nil
 }
@@ -100,33 +108,27 @@ func (v *View) Snapshot() ViewSnapshot {
 	defer v.mu.RUnlock()
 
 	return ViewSnapshot{
-		GameState:    v.GameState,
-		BoardState:   v.BoardState,
-		PlayersState: v.PlayersState,
-		CardState:    v.CardState,
+		PlayerView: v.playerView,
 	}
 }
 
 // ViewSnapshot is an immutable snapshot for strategy decisions.
-// The snapshot shares pointer values with the View (e.g., *GameState), but
-// View.Apply() replaces pointers atomically rather than mutating the underlying
-// structs, so concurrent reads of a snapshot are safe. Do not mutate snapshot
-// fields — treat them as read-only.
+// The snapshot shares the pointer with the View, but View.Apply() replaces the
+// pointer atomically rather than mutating the underlying struct, so concurrent
+// reads of a snapshot are safe. Do not mutate snapshot fields — treat them as
+// read-only.
 type ViewSnapshot struct {
-	GameState    *GameState
-	BoardState   *BoardState
-	PlayersState *PlayersState
-	CardState    *CardState
+	PlayerView *snapshot.PlayerView
 }
 
 // MyRegions returns regions owned by the given userID.
-func (s ViewSnapshot) MyRegions(userID string) []Region {
-	if s.BoardState == nil {
+func (s ViewSnapshot) MyRegions(userID string) []snapshot.RegionState {
+	if s.PlayerView == nil {
 		return nil
 	}
 
-	var regions []Region
-	for _, r := range s.BoardState.Regions {
+	var regions []snapshot.RegionState
+	for _, r := range s.PlayerView.Regions {
 		if r.OwnerID == userID {
 			regions = append(regions, r)
 		}
@@ -136,28 +138,28 @@ func (s ViewSnapshot) MyRegions(userID string) []Region {
 }
 
 // CurrentPhase returns the current phase type.
-func (s ViewSnapshot) CurrentPhase() PhaseType {
-	if s.GameState == nil {
+func (s ViewSnapshot) CurrentPhase() snapshot.PhaseType {
+	if s.PlayerView == nil {
 		return ""
 	}
 
-	return s.GameState.Phase.Type
+	return s.PlayerView.Phase.Type
 }
 
 // IsMyTurn checks if the given userID is the current player.
 // Turn is a monotonically increasing counter; current player = Turn % numPlayers.
 func (s ViewSnapshot) IsMyTurn(userID string) bool {
-	if s.GameState == nil || s.PlayersState == nil {
+	if s.PlayerView == nil {
 		return false
 	}
 
-	numPlayers := int64(len(s.PlayersState.Players))
+	numPlayers := int64(len(s.PlayerView.Players))
 	if numPlayers == 0 {
 		return false
 	}
 
-	currentIndex := s.GameState.Turn % numPlayers
-	for _, p := range s.PlayersState.Players {
+	currentIndex := s.PlayerView.Game.Turn % numPlayers
+	for _, p := range s.PlayerView.Players {
 		if p.Index == currentIndex && p.UserID == userID {
 			return true
 		}
@@ -168,5 +170,23 @@ func (s ViewSnapshot) IsMyTurn(userID string) bool {
 
 // IsGameOver returns true if a winner has been declared.
 func (s ViewSnapshot) IsGameOver() bool {
-	return s.GameState != nil && s.GameState.WinnerUserID != ""
+	return s.PlayerView != nil && s.PlayerView.Game.WinnerUserID != ""
+}
+
+// Cards returns the player's current hand of cards.
+func (s ViewSnapshot) Cards() []snapshot.CardState {
+	if s.PlayerView == nil {
+		return nil
+	}
+
+	return s.PlayerView.Cards
+}
+
+// MyMission returns the player's assigned mission.
+func (s ViewSnapshot) MyMission() snapshot.PlayerMission {
+	if s.PlayerView == nil {
+		return snapshot.PlayerMission{}
+	}
+
+	return s.PlayerView.Mission
 }

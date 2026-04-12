@@ -1,6 +1,6 @@
 module github.com/go-risk-it/go-risk-it
 
-go 1.26.1
+go 1.26.2
 
 require (
 	github.com/HdrHistogram/hdrhistogram-go v1.2.0

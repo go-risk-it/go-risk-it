@@ -7,6 +7,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/client"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/metrics"
+	"github.com/go-risk-it/go-risk-it/internal/loadtest/userpool"
 )
 
 // GameResult holds stats from a completed game.
@@ -17,6 +18,7 @@ type GameResult struct {
 	Errors     int
 	Winner     string
 	TimedOut   bool
+	Cancelled  bool
 	FatalError error
 }
 
@@ -25,7 +27,6 @@ type Timeouts struct {
 	InitialStateWait  time.Duration
 	UpdateWait        time.Duration
 	PhaseChangeWait   time.Duration
-	PostMoveSettle    time.Duration
 	MaxConsecutiveErr int
 }
 
@@ -35,7 +36,6 @@ func DefaultTimeouts() Timeouts {
 		InitialStateWait:  1 * time.Second,
 		UpdateWait:        3 * time.Second,
 		PhaseChangeWait:   3 * time.Second,
-		PostMoveSettle:    50 * time.Millisecond,
 		MaxConsecutiveErr: 20,
 	}
 }
@@ -51,13 +51,14 @@ type PlayerInfo struct {
 
 // GameSession holds shared mutable state for a single game.
 type GameSession struct {
-	Ctx         context.Context //nolint:containedctx // game session carries context by design
-	GameIndex   int
-	GameID      int64
-	Players     []*PlayerInfo
-	UserIndex   map[string]int
-	StartTime   time.Time
-	Accumulator *metrics.StepAccumulator
+	Ctx           context.Context //nolint:containedctx // game session carries context by design
+	GameIndex     int
+	GameID        int64
+	Players       []*PlayerInfo
+	UserIndex     map[string]int
+	StartTime     time.Time
+	Accumulator   *metrics.StepAccumulator
+	AcquiredUsers []*userpool.Entry // set by protocol handler, released by runner
 }
 
 // AuthClient abstracts client.Auth for testability.

@@ -10,6 +10,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/client"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/metrics"
+	"github.com/go-risk-it/go-risk-it/internal/loadtest/userpool"
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -21,6 +22,7 @@ type ProtocolHandler struct {
 	anonKey  string
 	timeouts Timeouts
 	gameCtx  *GameSession
+	userPool *userpool.Pool // nil = legacy per-game signup
 
 	// Factories for testability.
 	newAuth func(baseURL, anonKey string) AuthClient
@@ -78,13 +80,50 @@ func (h *ProtocolHandler) handle(bus *Bus, e Event) {
 	}
 
 	h.populateSession(gameID, players)
-	h.emitInitialState(bus, players)
+	// No initial state emission — the barrier-driven game loop handles the
+	// first move via the initial playerView WS notification from game creation.
 }
 
 // signupPlayers authenticates all players and returns their info.
+// When a UserPool is configured, users are acquired from the pool instead of
+// creating fresh Supabase accounts, eliminating signup churn at high concurrency.
 func (h *ProtocolHandler) signupPlayers(
 	evt GameStartedEvent,
 ) ([]*PlayerInfo, error) {
+	if h.userPool != nil {
+		return h.acquireFromPool(evt)
+	}
+
+	return h.signupFresh(evt)
+}
+
+func (h *ProtocolHandler) acquireFromPool(evt GameStartedEvent) ([]*PlayerInfo, error) {
+	entries, err := h.userPool.Acquire(h.gameCtx.Ctx, evt.NumPlayers)
+	if err != nil {
+		return nil, fmt.Errorf("acquire users from pool: %w", err)
+	}
+
+	h.gameCtx.AcquiredUsers = entries
+	players := make([]*PlayerInfo, evt.NumPlayers)
+
+	for i, entry := range entries {
+		players[i] = &PlayerInfo{
+			UserID: entry.Auth.UserID,
+			Name:   fmt.Sprintf("bot-%d-%d", evt.GameIndex, i),
+			Auth:   entry.Auth,
+			REST:   h.newREST(h.baseURL, entry.Auth.AccessToken, h.gameCtx.Accumulator),
+		}
+	}
+
+	observe.Info(context.Background(), "players acquired from pool",
+		attribute.Int("gameIndex", evt.GameIndex),
+		attribute.Int("numPlayers", evt.NumPlayers),
+	)
+
+	return players, nil
+}
+
+func (h *ProtocolHandler) signupFresh(evt GameStartedEvent) ([]*PlayerInfo, error) {
 	auth := h.newAuth(h.baseURL, h.anonKey)
 	players := make([]*PlayerInfo, evt.NumPlayers)
 
@@ -130,7 +169,7 @@ func (h *ProtocolHandler) createGame(
 	}
 
 	gameID, err := players[0].REST.CreateGame(
-		context.Background(),
+		h.gameCtx.Ctx,
 		client.CreateGameRequest{Players: gamePlayers},
 	)
 	if err != nil {
@@ -179,13 +218,4 @@ func (h *ProtocolHandler) populateSession(gameID int64, players []*PlayerInfo) {
 	h.gameCtx.GameID = gameID
 	h.gameCtx.Players = players
 	h.gameCtx.UserIndex = userIndex
-}
-
-// emitInitialState publishes the first state snapshot to the bus.
-func (h *ProtocolHandler) emitInitialState(bus *Bus, players []*PlayerInfo) {
-	snap := players[0].WS.View().Snapshot()
-	bus.Emit(StateReceivedEvent{
-		Snapshot:  snap,
-		Timestamp: time.Now(),
-	})
 }

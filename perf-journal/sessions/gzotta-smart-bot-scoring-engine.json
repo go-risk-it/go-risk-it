@@ -1,0 +1,23 @@
+{
+  "id": "gzotta-smart-bot-scoring-engine",
+  "branch": "gzotta/smart-bot-scoring-engine",
+  "baselineEntry": "perf-journal/entries/045-staircase-light-dcdc89e1.json",
+  "startedAt": "2026-04-03T02:46:40.0759+02:00",
+  "runs": [
+    {
+      "entryPath": "perf-journal/entries/045-staircase-light-dcdc89e1.json",
+      "commitSha": "dcdc89e1",
+      "ceilingGames": 40,
+      "ceilingDelta": 40,
+      "timestamp": "2026-04-03T02:46:40.076308+02:00"
+    },
+    {
+      "entryPath": "perf-journal/entries/046-staircase-heavy-20c9dfce.json",
+      "commitSha": "20c9dfce",
+      "ceilingGames": 250,
+      "ceilingDelta": 210,
+      "timestamp": "2026-04-03T21:33:41.753783+02:00"
+    }
+  ],
+  "status": "active"
+}

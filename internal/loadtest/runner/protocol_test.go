@@ -127,27 +127,11 @@ func newFakeWS() *fakeWSForProtocol {
 // newFakeWSWithState creates a fakeWS pre-populated with game state.
 func newFakeWSWithState(snap gamestate.ViewSnapshot) *fakeWSForProtocol {
 	v := gamestate.NewView()
-	// Apply state by populating the view fields directly via Apply.
-	// We use a simpler approach: create a view that has the state already set.
-	// Since View is mutex-protected, we apply messages to set state.
-	if snap.GameState != nil {
-		data, _ := json.Marshal(snap.GameState) //nolint:errchkjson // known safe type
-		_ = v.Apply(gamestate.WSMessage{Type: "gameState", Payload: data})
-	}
 
-	if snap.PlayersState != nil {
-		data, _ := json.Marshal(snap.PlayersState) //nolint:errchkjson // known safe type
-		_ = v.Apply(gamestate.WSMessage{Type: "playerState", Payload: data})
-	}
-
-	if snap.BoardState != nil {
-		data, _ := json.Marshal(snap.BoardState) //nolint:errchkjson // known safe type
-		_ = v.Apply(gamestate.WSMessage{Type: "boardState", Payload: data})
-	}
-
-	if snap.CardState != nil {
-		data, _ := json.Marshal(snap.CardState) //nolint:errchkjson // known safe type
-		_ = v.Apply(gamestate.WSMessage{Type: "cardState", Payload: data})
+	// Apply state by marshaling the PlayerView and applying as a playerView message.
+	if snap.PlayerView != nil {
+		data, _ := json.Marshal(snap.PlayerView) //nolint:errchkjson // known safe type
+		_ = v.Apply(gamestate.WSMessage{Type: "playerView", Payload: data})
 	}
 
 	return &fakeWSForProtocol{view: v, done: make(chan struct{})}
@@ -197,7 +181,7 @@ func makeProtocolHandler(
 	return h, gameCtx
 }
 
-func TestProtocol_HappyPath_EmitsStateReceived(t *testing.T) {
+func TestProtocol_HappyPath_PopulatesSession(t *testing.T) {
 	t.Parallel()
 
 	auth := newFakeAuth(4)
@@ -209,8 +193,13 @@ func TestProtocol_HappyPath_EmitsStateReceived(t *testing.T) {
 
 	bus.Emit(GameStartedEvent{GameIndex: 1, NumPlayers: 4})
 
+	// Protocol handler no longer emits StateReceived — the barrier loop does.
 	stateEvents := bus.EmittedOfType(EventStateReceived)
-	require.Len(t, stateEvents, 1)
+	assert.Empty(t, stateEvents)
+
+	// Session should be populated.
+	assert.Equal(t, int64(42), h.gameCtx.GameID)
+	assert.Len(t, h.gameCtx.Players, 4)
 
 	completeEvents := bus.EmittedOfType(EventGameComplete)
 	assert.Empty(t, completeEvents)

@@ -95,7 +95,7 @@ func detectFatalGames(snap MetricsSnapshot) []Insight {
 }
 
 func detectGameTimeouts(snap MetricsSnapshot) []Insight {
-	total := snap.GamesCompleted + snap.GamesTimedOut + snap.GamesFatal
+	total := snap.GamesCompleted + snap.GamesTimedOut + snap.GamesFatal + snap.GamesCancelled
 	if total == 0 {
 		return nil
 	}

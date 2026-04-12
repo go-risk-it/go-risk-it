@@ -14,6 +14,7 @@ import (
 type LobbyContext interface {
 	kernelctx.UserContext
 	kernelctx.Rebaseable
+	kernelctx.Scoped
 	LobbyID() int64
 }
 
@@ -27,9 +28,14 @@ var (
 	_ LobbyContext          = (*lobbyContext)(nil)
 	_ kernelctx.LogEnricher = (*lobbyContext)(nil)
 	_ kernelctx.Rebaseable  = (*lobbyContext)(nil)
+	_ kernelctx.Scoped      = (*lobbyContext)(nil)
 )
 
 func (c *lobbyContext) LobbyID() int64 {
+	return c.lobbyID
+}
+
+func (c *lobbyContext) ScopeID() int64 {
 	return c.lobbyID
 }
 

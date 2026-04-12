@@ -3,6 +3,7 @@ package smart //nolint:testpackage // whitebox tests for unexported functions
 import (
 	"testing"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/mapgraph"
 )
@@ -50,14 +51,14 @@ func TestBestEnemyNeighborTroops(t *testing.T) {
 		name     string
 		regionID string
 		userID   string
-		regions  []gamestate.Region
+		regions  []snapshot.RegionState
 		want     int64
 	}{
 		{
 			name:     "region with one enemy neighbor returns its troops",
 			regionID: "a1",
 			userID:   "me",
-			regions: []gamestate.Region{
+			regions: []snapshot.RegionState{
 				{ID: "a1", OwnerID: "me", Troops: 5},
 				{ID: "a2", OwnerID: "enemy", Troops: 8},
 				{ID: "a3", OwnerID: "me", Troops: 3},
@@ -68,7 +69,7 @@ func TestBestEnemyNeighborTroops(t *testing.T) {
 			name:     "region with multiple enemy neighbors returns max troops",
 			regionID: "a2",
 			userID:   "enemy",
-			regions: []gamestate.Region{
+			regions: []snapshot.RegionState{
 				{ID: "a1", OwnerID: "me", Troops: 5},
 				{ID: "a2", OwnerID: "enemy", Troops: 10},
 				{ID: "b1", OwnerID: "me", Troops: 12},
@@ -80,7 +81,7 @@ func TestBestEnemyNeighborTroops(t *testing.T) {
 			name:     "interior region with all friendly neighbors returns 0",
 			regionID: "a1",
 			userID:   "me",
-			regions: []gamestate.Region{
+			regions: []snapshot.RegionState{
 				{ID: "a1", OwnerID: "me", Troops: 5},
 				{ID: "a2", OwnerID: "me", Troops: 3},
 				{ID: "a3", OwnerID: "me", Troops: 4},
@@ -92,7 +93,7 @@ func TestBestEnemyNeighborTroops(t *testing.T) {
 			name:     "region not in graph returns 0",
 			regionID: "z99",
 			userID:   "me",
-			regions: []gamestate.Region{
+			regions: []snapshot.RegionState{
 				{ID: "a1", OwnerID: "me", Troops: 5},
 			},
 			want: 0,
@@ -101,7 +102,7 @@ func TestBestEnemyNeighborTroops(t *testing.T) {
 			name:     "neighbor not in region map is skipped",
 			regionID: "a1",
 			userID:   "me",
-			regions: []gamestate.Region{
+			regions: []snapshot.RegionState{
 				// a1's neighbors are a2 and a3; only a2 present and friendly
 				{ID: "a1", OwnerID: "me", Troops: 5},
 				{ID: "a2", OwnerID: "me", Troops: 3},
@@ -116,7 +117,7 @@ func TestBestEnemyNeighborTroops(t *testing.T) {
 			t.Parallel()
 
 			bv := &BoardView{
-				RegionMap: make(map[string]*gamestate.Region),
+				RegionMap: make(map[string]*snapshot.RegionState),
 			}
 			for i := range tt.regions {
 				r := &tt.regions[i]
@@ -142,10 +143,10 @@ func TestNewBoardView(t *testing.T) {
 
 	graph := testGraphWithContinents()
 
-	t.Run("nil BoardState returns empty view", func(t *testing.T) {
+	t.Run("nil PlayerView returns empty view", func(t *testing.T) {
 		t.Parallel()
 
-		snap := gamestate.ViewSnapshot{BoardState: nil}
+		snap := gamestate.ViewSnapshot{PlayerView: nil}
 		bv := NewBoardView(snap, "me", graph)
 
 		if len(bv.RegionMap) != 0 {
@@ -160,13 +161,9 @@ func TestNewBoardView(t *testing.T) {
 	t.Run("classifies border and interior regions", func(t *testing.T) {
 		t.Parallel()
 
-		// me owns a1, a2, a3; enemy owns a4, b1, b2, b3
-		// a1 neighbours: a2(me), a3(me) -> interior
-		// a2 neighbours: a1(me), b1(enemy) -> border
-		// a3 neighbours: a1(me), a4(enemy) -> border
 		snap := gamestate.ViewSnapshot{
-			BoardState: &gamestate.BoardState{
-				Regions: []gamestate.Region{
+			PlayerView: &snapshot.PlayerView{
+				Regions: []snapshot.RegionState{
 					{ID: "a1", OwnerID: "me", Troops: 5},
 					{ID: "a2", OwnerID: "me", Troops: 3},
 					{ID: "a3", OwnerID: "me", Troops: 4},
@@ -200,11 +197,9 @@ func TestNewBoardView(t *testing.T) {
 	t.Run("computes continent progress", func(t *testing.T) {
 		t.Parallel()
 
-		// me owns 3 of 4 alpha regions (a1, a2, a3) -> 75%
-		// me owns 0 of 3 beta regions -> 0%
 		snap := gamestate.ViewSnapshot{
-			BoardState: &gamestate.BoardState{
-				Regions: []gamestate.Region{
+			PlayerView: &snapshot.PlayerView{
+				Regions: []snapshot.RegionState{
 					{ID: "a1", OwnerID: "me", Troops: 5},
 					{ID: "a2", OwnerID: "me", Troops: 3},
 					{ID: "a3", OwnerID: "me", Troops: 4},
@@ -233,8 +228,8 @@ func TestNewBoardView(t *testing.T) {
 		t.Parallel()
 
 		snap := gamestate.ViewSnapshot{
-			BoardState: &gamestate.BoardState{
-				Regions: []gamestate.Region{
+			PlayerView: &snapshot.PlayerView{
+				Regions: []snapshot.RegionState{
 					{ID: "a1", OwnerID: "me", Troops: 5},
 					{ID: "a2", OwnerID: "me", Troops: 3},
 					{ID: "a3", OwnerID: "me", Troops: 4},
@@ -268,8 +263,8 @@ func TestNewBoardView_PlayerRegionCounts(t *testing.T) {
 		{
 			name: "counts_regions_per_player",
 			snap: gamestate.ViewSnapshot{
-				BoardState: &gamestate.BoardState{
-					Regions: []gamestate.Region{
+				PlayerView: &snapshot.PlayerView{
+					Regions: []snapshot.RegionState{
 						{ID: "a1", OwnerID: "alice", Troops: 1},
 						{ID: "a2", OwnerID: "alice", Troops: 1},
 						{ID: "a3", OwnerID: "alice", Troops: 1},
@@ -285,8 +280,8 @@ func TestNewBoardView_PlayerRegionCounts(t *testing.T) {
 		{
 			name: "empty_owner_excluded",
 			snap: gamestate.ViewSnapshot{
-				BoardState: &gamestate.BoardState{
-					Regions: []gamestate.Region{
+				PlayerView: &snapshot.PlayerView{
+					Regions: []snapshot.RegionState{
 						{ID: "a1", OwnerID: "alice", Troops: 1},
 						{ID: "a2", OwnerID: "", Troops: 1},
 						{ID: "a3", OwnerID: "bob", Troops: 1},
@@ -300,9 +295,9 @@ func TestNewBoardView_PlayerRegionCounts(t *testing.T) {
 			wantCounts: map[string]int{"alice": 1, "bob": 3},
 		},
 		{
-			name: "nil_board_state",
+			name: "nil_PlayerView",
 			snap: gamestate.ViewSnapshot{
-				BoardState: nil,
+				PlayerView: nil,
 			},
 			wantCounts: map[string]int{},
 		},
@@ -345,7 +340,7 @@ func TestConnectedOwned(t *testing.T) {
 	t.Run("same region is connected", func(t *testing.T) {
 		t.Parallel()
 
-		bv := &BoardView{RegionMap: make(map[string]*gamestate.Region)}
+		bv := &BoardView{RegionMap: make(map[string]*snapshot.RegionState)}
 
 		if !bv.ConnectedOwned("a1", "a1", "me", graph) {
 			t.Fatal("expected same region to be connected")
@@ -356,7 +351,7 @@ func TestConnectedOwned(t *testing.T) {
 		t.Parallel()
 
 		bv := &BoardView{
-			RegionMap: map[string]*gamestate.Region{
+			RegionMap: map[string]*snapshot.RegionState{
 				"a1": {ID: "a1", OwnerID: "me", Troops: 5},
 				"a2": {ID: "a2", OwnerID: "me", Troops: 3},
 			},
@@ -372,7 +367,7 @@ func TestConnectedOwned(t *testing.T) {
 
 		// a1 -- a3 -- a4 but a3 is enemy
 		bv := &BoardView{
-			RegionMap: map[string]*gamestate.Region{
+			RegionMap: map[string]*snapshot.RegionState{
 				"a1": {ID: "a1", OwnerID: "me", Troops: 5},
 				"a3": {ID: "a3", OwnerID: "enemy", Troops: 4},
 				"a4": {ID: "a4", OwnerID: "me", Troops: 2},

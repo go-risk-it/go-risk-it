@@ -56,18 +56,18 @@ graph TD
         pkg_kernel_data["Data"]
         pkg_kernel_errors["Errors"]
         pkg_kernel_observability["Observability"]
+        pkg_kernel_safego["Safego"]
         pkg_kernel_utils["Utils"]
     end
 
     subgraph layer_data["Data Layer"]
         direction LR
         pkg_game_data["Game Data"]
-        pkg_lobby_data["Lobby Data"]
+        pkg_lobby_internal_data_db["Db"]
     end
 
     subgraph layer_events_domain["Events-domain Layer"]
         direction LR
-        pkg_game_events["Events"]
         pkg_lobby_events["Events"]
     end
 
@@ -84,14 +84,21 @@ graph TD
     subgraph layer_logic["Logic Layer"]
         direction LR
         pkg_game_services["Game Services"]
-        pkg_lobby_logic["Lobby Logic"]
+        pkg_lobby_internal_logic_creation["Creation"]
+        pkg_lobby_internal_logic_management["Management"]
+        pkg_lobby_internal_logic_start["Start"]
+        pkg_lobby_internal_logic_state["State"]
         pkg_move_pipeline["Move Pipeline"]
     end
 
     subgraph layer_web["Web Layer"]
         direction LR
         pkg_game_consumers["Game Consumers"]
+        pkg_game_web["Web"]
+        pkg_game_web_routes["Routes"]
         pkg_lobby_consumers["Lobby Consumers"]
+        pkg_lobby_web["Web"]
+        pkg_lobby_web_routes["Routes"]
         pkg_middleware["Middleware"]
         pkg_rest_utils["REST Utils"]
         pkg_websocket["WebSocket"]
@@ -99,34 +106,37 @@ graph TD
 
     subgraph layer_test["Test Layer"]
         direction LR
+        pkg_game_testing["Testing"]
+        pkg_game_testing_invariant["Invariant"]
         pkg_testing["Testing"]
     end
 
+    layer_api --> layer_game_domain
     layer_data --> layer_kernel
+    layer_events_domain --> layer_api
     layer_events_domain --> layer_game_domain
     layer_events_domain --> layer_kernel
     layer_events_domain --> layer_lobby_domain
-    layer_events_domain --> layer_logic
     layer_game_domain --> layer_kernel
+    layer_game_support --> layer_api
     layer_game_support --> layer_data
     layer_game_support --> layer_events_domain
     layer_game_support --> layer_game_domain
     layer_game_support --> layer_kernel
     layer_game_support --> layer_logic
     layer_lobby_domain --> layer_kernel
+    layer_logic --> layer_api
     layer_logic --> layer_data
     layer_logic --> layer_events_domain
     layer_logic --> layer_game_domain
     layer_logic --> layer_game_support
     layer_logic --> layer_kernel
     layer_logic --> layer_lobby_domain
-    layer_test --> layer_data
     layer_test --> layer_kernel
     layer_test --> layer_web
     layer_web --> layer_api
     layer_web --> layer_events_domain
     layer_web --> layer_game_domain
-    layer_web --> layer_game_support
     layer_web --> layer_kernel
     layer_web --> layer_lobby_domain
     layer_web --> layer_logic

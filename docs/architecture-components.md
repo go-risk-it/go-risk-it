@@ -17,18 +17,18 @@ graph LR
         kerneldata["Data"]
         kernelerrors["Errors"]
         kernelobservability["Observability"]
+        kernelsafego["Safego"]
         kernelutils["Utils"]
     end
 
     subgraph Data["💾 Data"]
         direction TB
         gamedata["Game Data"]
-        lobbydata["Lobby Data"]
+        lobbyinternaldatadb["Db"]
     end
 
     subgraph Eventsdomain["📡 Events-domain"]
         direction TB
-        gameevents["Events"]
         lobbyevents["Events"]
     end
 
@@ -45,14 +45,21 @@ graph LR
     subgraph Logic["⚙️ Logic"]
         direction TB
         gameservices["Game Services"]
-        lobbylogic["Lobby Logic"]
+        lobbyinternallogiccreation["Creation"]
+        lobbyinternallogicmanagement["Management"]
+        lobbyinternallogicstart["Start"]
+        lobbyinternallogicstate["State"]
         movepipeline["Move Pipeline"]
     end
 
     subgraph Web["🌐 Web"]
         direction TB
         gameconsumers["Game Consumers"]
+        gameweb["Web"]
+        gamewebroutes["Routes"]
         lobbyconsumers["Lobby Consumers"]
+        lobbyweb["Web"]
+        lobbywebroutes["Routes"]
         middleware["Middleware"]
         restutils["REST Utils"]
         websocket["WebSocket"]
@@ -60,30 +67,32 @@ graph LR
 
     subgraph Test["🧪 Test"]
         direction TB
+        gametesting["Testing"]
+        gametestinginvariant["Invariant"]
         testing["Testing"]
     end
 
     %% Cross-layer dependencies
     gamedata --> kernelbus
-    gameevents --> kernelbus
-    gameevents --> lobbyctx
-    gameevents --> gameservices
+    lobbyevents --> apidtos
+    lobbyevents --> kernelbus
+    lobbyevents --> lobbyctx
+    gamesupport --> apidtos
     gamesupport --> gamedata
-    gamesupport --> gameevents
+    gamesupport --> lobbyevents
     gamesupport --> kernelbus
     gamesupport --> gameservices
     lobbyctx --> kernelbus
+    gameservices --> apidtos
     gameservices --> gamedata
-    gameservices --> gameevents
+    gameservices --> lobbyevents
     gameservices --> gamesupport
     gameservices --> kernelbus
     gameservices --> lobbyctx
-    testing --> gamedata
-    testing --> kernelbus
-    testing --> gameconsumers
+    gametesting --> kernelbus
+    gametesting --> gameconsumers
     gameconsumers --> apidtos
-    gameconsumers --> gameevents
-    gameconsumers --> gamesupport
+    gameconsumers --> lobbyevents
     gameconsumers --> kernelbus
     gameconsumers --> lobbyctx
     gameconsumers --> gameservices

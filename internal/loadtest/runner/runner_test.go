@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/client"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/metrics"
@@ -57,18 +58,23 @@ type fakeWSForRunner struct {
 func newFakeWSForRunner(moveCount *atomic.Int32, gameOverAt int) *fakeWSForRunner {
 	v := gamestate.NewView()
 	// Initialize with valid state.
-	gs := &gamestate.GameState{Turn: 0, Phase: gamestate.Phase{Type: gamestate.Deploy}}
-	data, _ := json.Marshal(gs) //nolint:errchkjson // known safe type
-	_ = v.Apply(gamestate.WSMessage{Type: "gameState", Payload: data})
-
-	ps := &gamestate.PlayersState{
-		Players: []gamestate.Player{
+	pv := &snapshot.PlayerView{
+		Game: snapshot.GameMeta{Turn: 0},
+		Phase: snapshot.Phase{
+			Type:  snapshot.PhaseDeploy,
+			State: snapshot.DeployPhaseState{DeployableTroops: 3},
+		},
+		Players: []snapshot.PlayerState{
 			{UserID: "user-0", Index: 0},
 			{UserID: "user-1", Index: 1},
 		},
+		Mission: snapshot.PlayerMission{
+			Type:   snapshot.MissionTwentyFourTerritories,
+			Detail: snapshot.TwentyFourTerritoriesMission{},
+		},
 	}
-	psData, _ := json.Marshal(ps) //nolint:errchkjson // known safe type
-	_ = v.Apply(gamestate.WSMessage{Type: "playerState", Payload: psData})
+	data, _ := json.Marshal(pv) //nolint:errchkjson // known safe type
+	_ = v.Apply(gamestate.WSMessage{Type: "playerView", Payload: data})
 
 	return &fakeWSForRunner{
 		view:       v,
@@ -91,23 +97,47 @@ func (f *fakeWSForRunner) Close() error {
 // simulateUpdate triggers a WS update, optionally setting game-over.
 func (f *fakeWSForRunner) simulateUpdate() {
 	moves := int(f.moveCount.Load())
+
+	mission := snapshot.PlayerMission{
+		Type:   snapshot.MissionTwentyFourTerritories,
+		Detail: snapshot.TwentyFourTerritoriesMission{},
+	}
+	players := []snapshot.PlayerState{
+		{UserID: "user-0", Index: 0},
+		{UserID: "user-1", Index: 1},
+	}
+
+	var pv *snapshot.PlayerView
 	if moves >= f.gameOverAt {
 		// Set winner to trigger game over.
-		gs := &gamestate.GameState{
-			Turn:         int64(moves),
-			Phase:        gamestate.Phase{Type: gamestate.Deploy},
-			WinnerUserID: "user-0",
+		pv = &snapshot.PlayerView{
+			Game: snapshot.GameMeta{
+				Turn:         int64(moves),
+				WinnerUserID: "user-0",
+			},
+			Phase: snapshot.Phase{
+				Type:  snapshot.PhaseDeploy,
+				State: snapshot.DeployPhaseState{DeployableTroops: 3},
+			},
+			Players: players,
+			Mission: mission,
 		}
-		data, _ := json.Marshal(gs) //nolint:errchkjson // known safe type
-		_ = f.view.Apply(gamestate.WSMessage{Type: "gameState", Payload: data})
 	} else {
-		gs := &gamestate.GameState{
-			Turn:  int64(moves),
-			Phase: gamestate.Phase{Type: gamestate.Deploy},
+		pv = &snapshot.PlayerView{
+			Game: snapshot.GameMeta{
+				Turn: int64(moves),
+			},
+			Phase: snapshot.Phase{
+				Type:  snapshot.PhaseDeploy,
+				State: snapshot.DeployPhaseState{DeployableTroops: 3},
+			},
+			Players: players,
+			Mission: mission,
 		}
-		data, _ := json.Marshal(gs) //nolint:errchkjson // known safe type
-		_ = f.view.Apply(gamestate.WSMessage{Type: "gameState", Payload: data})
 	}
+
+	data, _ := json.Marshal(pv) //nolint:errchkjson // known safe type
+	_ = f.view.Apply(gamestate.WSMessage{Type: "playerView", Payload: data})
 }
 
 // fakeRESTForRunner tracks calls and simulates success.
@@ -199,7 +229,6 @@ func TestRunner_HappyPath_CompletesGame(t *testing.T) {
 			InitialStateWait:  1 * time.Millisecond,
 			UpdateWait:        50 * time.Millisecond,
 			PhaseChangeWait:   50 * time.Millisecond,
-			PostMoveSettle:    1 * time.Millisecond,
 			MaxConsecutiveErr: 20,
 		},
 	}
@@ -297,7 +326,6 @@ func TestRunner_Timeout_ReturnsTimedOut(t *testing.T) {
 			InitialStateWait:  1 * time.Millisecond,
 			UpdateWait:        10 * time.Millisecond,
 			PhaseChangeWait:   10 * time.Millisecond,
-			PostMoveSettle:    1 * time.Millisecond,
 			MaxConsecutiveErr: 20,
 		},
 	}
@@ -346,7 +374,6 @@ func TestRunner_WSConnectionsClosed(t *testing.T) {
 			InitialStateWait:  1 * time.Millisecond,
 			UpdateWait:        50 * time.Millisecond,
 			PhaseChangeWait:   50 * time.Millisecond,
-			PostMoveSettle:    1 * time.Millisecond,
 			MaxConsecutiveErr: 20,
 		},
 	}

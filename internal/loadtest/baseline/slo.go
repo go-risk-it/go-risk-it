@@ -45,6 +45,7 @@ type MetricsSnapshot struct {
 	GamesCompleted int64 `json:"gamesCompleted"`
 	GamesTimedOut  int64 `json:"gamesTimedOut"`
 	GamesFatal     int64 `json:"gamesFatal"`
+	GamesCancelled int64 `json:"gamesCancelled"`
 
 	// Resilience.
 	TotalRetries           int64 `json:"totalRetries"`

@@ -146,7 +146,8 @@ func assertHasExportedInterface(t *testing.T, pkg goPackage) {
 func isGeneratedPackage(importPath string) bool {
 	short := strings.TrimPrefix(importPath, modulePrefix)
 
-	return strings.Contains(short, "/sqlc") || strings.Contains(short, "/mocks")
+	return strings.Contains(short, "/sqlc") || strings.Contains(short, "/mocks") ||
+		strings.Contains(short, "/testmocks")
 }
 
 // isLoadtestPackage returns true for packages under internal/loadtest/.

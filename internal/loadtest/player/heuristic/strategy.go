@@ -1,10 +1,11 @@
 package heuristic
 
 import (
-	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/mapgraph"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/player"
@@ -27,15 +28,15 @@ func (s *Strategy) DecideMove(snap gamestate.ViewSnapshot, userID string) (*play
 	phase := snap.CurrentPhase()
 
 	switch phase {
-	case gamestate.Cards:
+	case snapshot.PhaseCards:
 		return s.decideCards(snap)
-	case gamestate.Deploy:
+	case snapshot.PhaseDeploy:
 		return s.decideDeploy(snap, userID, buildRegionMap(snap))
-	case gamestate.Attack:
+	case snapshot.PhaseAttack:
 		return s.decideAttack(snap, userID, buildRegionMap(snap))
-	case gamestate.Conquer:
+	case snapshot.PhaseConquer:
 		return s.decideConquer(snap)
-	case gamestate.Reinforce:
+	case snapshot.PhaseReinforce:
 		return s.decideReinforce(snap, userID, buildRegionMap(snap))
 	default:
 		return nil, fmt.Errorf("unknown phase: %s", phase)
@@ -43,13 +44,14 @@ func (s *Strategy) DecideMove(snap gamestate.ViewSnapshot, userID string) (*play
 }
 
 func (s *Strategy) decideCards(snap gamestate.ViewSnapshot) (*player.Action, error) {
-	if snap.CardState == nil || len(snap.CardState.Cards) < 3 {
-		return player.NewAdvanceAction(gamestate.Cards), nil
+	cards := snap.Cards()
+	if len(cards) < 3 {
+		return player.NewAdvanceAction(snapshot.PhaseCards), nil
 	}
 
-	combo := player.FindCardCombo(snap.CardState.Cards)
+	combo := player.FindCardCombo(cards)
 	if combo == nil {
-		return player.NewAdvanceAction(gamestate.Cards), nil
+		return player.NewAdvanceAction(snapshot.PhaseCards), nil
 	}
 
 	return &player.Action{
@@ -63,21 +65,45 @@ func (s *Strategy) decideCards(snap gamestate.ViewSnapshot) (*player.Action, err
 func (s *Strategy) decideDeploy(
 	snap gamestate.ViewSnapshot,
 	userID string,
-	regionMap map[string]*gamestate.Region,
+	regionMap map[string]*snapshot.RegionState,
 ) (*player.Action, error) {
-	var state gamestate.DeployPhaseState
+	if snap.PlayerView == nil {
+		return player.NewAdvanceAction(snapshot.PhaseDeploy), nil
+	}
 
-	if err := json.Unmarshal(snap.GameState.Phase.State, &state); err != nil {
-		return nil, fmt.Errorf("unmarshal deploy state: %w", err)
+	state, ok := snap.PlayerView.Phase.State.(snapshot.DeployPhaseState)
+	if !ok {
+		return nil, fmt.Errorf("expected DeployPhaseState, got %T", snap.PlayerView.Phase.State)
 	}
 
 	if state.DeployableTroops == 0 {
-		return player.NewAdvanceAction(gamestate.Deploy), nil
+		return player.NewAdvanceAction(snapshot.PhaseDeploy), nil
 	}
 
+	bestRegion := s.selectDeployTarget(userID, snap.MyRegions(userID), regionMap)
+	if bestRegion == nil {
+		return player.NewAdvanceAction(snapshot.PhaseDeploy), nil
+	}
+
+	return &player.Action{
+		Type: player.ActionDeploy,
+		Deploy: &player.DeployAction{
+			RegionID:      bestRegion.ID,
+			CurrentTroops: bestRegion.Troops,
+			DesiredTroops: bestRegion.Troops + state.DeployableTroops,
+		},
+	}, nil
+}
+
+// selectDeployTarget finds the best region to deploy troops to.
+// Prefers weakest border regions (adjacent to enemies), falls back to any weak region.
+func (s *Strategy) selectDeployTarget(
+	userID string,
+	myRegions []snapshot.RegionState,
+	regionMap map[string]*snapshot.RegionState,
+) *snapshot.RegionState {
 	// Find the weakest border region (lowest troops adjacent to enemy).
-	myRegions := snap.MyRegions(userID)
-	var bestRegion *gamestate.Region
+	var bestRegion *snapshot.RegionState
 	bestScore := int64(math.MaxInt64)
 
 	for i := range myRegions {
@@ -99,28 +125,17 @@ func (s *Strategy) decideDeploy(
 		}
 	}
 
-	if bestRegion == nil {
-		return player.NewAdvanceAction(gamestate.Deploy), nil
-	}
-
-	return &player.Action{
-		Type: player.ActionDeploy,
-		Deploy: &player.DeployAction{
-			RegionID:      bestRegion.ID,
-			CurrentTroops: bestRegion.Troops,
-			DesiredTroops: bestRegion.Troops + state.DeployableTroops,
-		},
-	}, nil
+	return bestRegion
 }
 
 func (s *Strategy) decideAttack(
 	snap gamestate.ViewSnapshot,
 	userID string,
-	regionMap map[string]*gamestate.Region,
+	regionMap map[string]*snapshot.RegionState,
 ) (*player.Action, error) {
 	myRegions := snap.MyRegions(userID)
 
-	var bestSource, bestTarget *gamestate.Region
+	var bestSource, bestTarget *snapshot.RegionState
 	bestRatio := 0.0
 
 	for i := range myRegions {
@@ -145,7 +160,7 @@ func (s *Strategy) decideAttack(
 	}
 
 	if bestSource == nil {
-		return player.NewAdvanceAction(gamestate.Attack), nil
+		return player.NewAdvanceAction(snapshot.PhaseAttack), nil
 	}
 
 	attackingTroops := min(bestSource.Troops-1, 3)
@@ -163,9 +178,13 @@ func (s *Strategy) decideAttack(
 }
 
 func (s *Strategy) decideConquer(snap gamestate.ViewSnapshot) (*player.Action, error) {
-	var state gamestate.ConquerPhaseState
-	if err := json.Unmarshal(snap.GameState.Phase.State, &state); err != nil {
-		return nil, fmt.Errorf("unmarshal conquer state: %w", err)
+	if snap.PlayerView == nil {
+		return nil, errors.New("nil PlayerView in conquer phase")
+	}
+
+	state, ok := snap.PlayerView.Phase.State.(snapshot.ConquerPhaseState)
+	if !ok {
+		return nil, fmt.Errorf("expected ConquerPhaseState, got %T", snap.PlayerView.Phase.State)
 	}
 
 	return &player.Action{
@@ -180,12 +199,12 @@ func (s *Strategy) decideConquer(snap gamestate.ViewSnapshot) (*player.Action, e
 func (s *Strategy) decideReinforce(
 	snap gamestate.ViewSnapshot,
 	userID string,
-	regionMap map[string]*gamestate.Region,
+	regionMap map[string]*snapshot.RegionState,
 ) (*player.Action, error) {
 	myRegions := snap.MyRegions(userID)
 
 	// Find the most interior region (fewest enemy neighbours) with the most troops.
-	var bestSource *gamestate.Region
+	var bestSource *snapshot.RegionState
 	bestInterior := -1
 	bestTroops := int64(0)
 
@@ -235,12 +254,12 @@ func (s *Strategy) decideReinforce(
 		}
 	}
 
-	return player.NewAdvanceAction(gamestate.Reinforce), nil
+	return player.NewAdvanceAction(snapshot.PhaseReinforce), nil
 }
 
 func (s *Strategy) isBorderRegion(
 	regionID, userID string,
-	regionMap map[string]*gamestate.Region,
+	regionMap map[string]*snapshot.RegionState,
 ) bool {
 	for _, neighbourID := range s.graph.NeighboursOf(regionID) {
 		if r, ok := regionMap[neighbourID]; ok && r.OwnerID != userID {
@@ -253,7 +272,7 @@ func (s *Strategy) isBorderRegion(
 
 func (s *Strategy) countEnemyNeighbours(
 	regionID, userID string,
-	regionMap map[string]*gamestate.Region,
+	regionMap map[string]*snapshot.RegionState,
 ) int {
 	count := 0
 
@@ -266,14 +285,14 @@ func (s *Strategy) countEnemyNeighbours(
 	return count
 }
 
-func buildRegionMap(snap gamestate.ViewSnapshot) map[string]*gamestate.Region {
-	m := make(map[string]*gamestate.Region)
-	if snap.BoardState == nil {
+func buildRegionMap(snap gamestate.ViewSnapshot) map[string]*snapshot.RegionState {
+	m := make(map[string]*snapshot.RegionState)
+	if snap.PlayerView == nil {
 		return m
 	}
 
-	for i := range snap.BoardState.Regions {
-		r := &snap.BoardState.Regions[i]
+	for i := range snap.PlayerView.Regions {
+		r := &snap.PlayerView.Regions[i]
 		m[r.ID] = r
 	}
 

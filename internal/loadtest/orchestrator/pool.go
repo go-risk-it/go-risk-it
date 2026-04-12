@@ -15,10 +15,11 @@ type RunFunc func(ctx context.Context, gameIndex, numPlayers int) GameResult
 
 // PoolConfig configures the game pool.
 type PoolConfig struct {
-	TargetGames  int
-	NumPlayers   int
-	StaggerDelay time.Duration // delay between initial game launches (default 100ms)
-	IndexOffset  int           // starting game index (for cross-step uniqueness)
+	TargetGames     int
+	NumPlayers      int
+	StaggerDelay    time.Duration // delay between initial game launches (default 100ms)
+	FillConcurrency int           // max parallel game launches during initial fill (default 20)
+	IndexOffset     int           // starting game index (for cross-step uniqueness)
 }
 
 // Pool maintains exactly TargetGames concurrent games via a semaphore.
@@ -40,8 +41,12 @@ type Pool struct {
 
 // NewPool creates a new game pool.
 func NewPool(cfg PoolConfig, runFunc RunFunc) *Pool {
+	if cfg.FillConcurrency <= 0 {
+		cfg.FillConcurrency = DefaultFillConcurrency
+	}
+
 	if cfg.StaggerDelay == 0 {
-		cfg.StaggerDelay = 100 * time.Millisecond
+		cfg.StaggerDelay = adaptiveStagger(cfg.TargetGames, cfg.FillConcurrency)
 	}
 
 	p := &Pool{
@@ -69,25 +74,9 @@ func (p *Pool) Run(ctx context.Context) {
 
 	sem := make(chan struct{}, p.cfg.TargetGames)
 
-	// Initial fill with stagger.
-	for i := range p.cfg.TargetGames {
-		select {
-		case <-ctx.Done():
-			p.once.Do(func() { close(p.ready) })
-
-			return
-		default:
-		}
-
-		sem <- struct{}{}
-		p.launchGame(ctx, sem)
-
-		if i < p.cfg.TargetGames-1 {
-			time.Sleep(p.cfg.StaggerDelay)
-		}
+	if !p.initialFill(ctx, sem) {
+		return
 	}
-
-	p.once.Do(func() { close(p.ready) })
 
 	// Replacement loop: keep launching until cancelled.
 	for {
@@ -100,11 +89,60 @@ func (p *Pool) Run(ctx context.Context) {
 	}
 }
 
+// initialFill launches TargetGames with bounded parallelism. Returns false
+// if the context was cancelled before the fill completed.
+func (p *Pool) initialFill(ctx context.Context, sem chan struct{}) bool {
+	fillSem := make(chan struct{}, p.cfg.FillConcurrency)
+	microStagger := p.cfg.StaggerDelay / time.Duration(p.cfg.FillConcurrency)
+
+	for i := range p.cfg.TargetGames {
+		select {
+		case <-ctx.Done():
+			p.once.Do(func() { close(p.ready) })
+
+			return false
+		default:
+		}
+
+		fillSem <- struct{}{}
+		sem <- struct{}{}
+		p.launchGameWithCallback(ctx, sem, func() { <-fillSem })
+
+		if i < p.cfg.TargetGames-1 && microStagger > 0 {
+			time.Sleep(microStagger)
+		}
+	}
+
+	// Drain fillSem — all launches are in-flight or done.
+	for range p.cfg.FillConcurrency {
+		fillSem <- struct{}{}
+	}
+
+	p.once.Do(func() { close(p.ready) })
+
+	return true
+}
+
 // launchGame starts a game goroutine that releases its semaphore slot when done.
 func (p *Pool) launchGame(ctx context.Context, sem chan struct{}) {
+	p.launchGameWithCallback(ctx, sem, nil)
+}
+
+// launchGameWithCallback starts a game goroutine. The optional onStarted callback
+// is invoked once the goroutine begins executing (before runFunc). Used by the
+// parallel fill to release the fill semaphore as soon as the goroutine is running.
+func (p *Pool) launchGameWithCallback(
+	ctx context.Context,
+	sem chan struct{},
+	onStarted func(),
+) {
 	idx := int(p.nextIndex.Add(1) - 1)
 
 	p.wg.Go(func() {
+		if onStarted != nil {
+			onStarted()
+		}
+
 		defer func() { <-sem }()
 
 		result := p.runFunc(ctx, idx, p.cfg.NumPlayers)
@@ -162,4 +200,32 @@ func (p *Pool) LogProgress(stepNum int, targetGames int) {
 		attribute.Int("completed", completed),
 		attribute.Int("target", p.cfg.TargetGames),
 	)
+}
+
+// adaptiveStagger computes a stagger delay that fills the pool in roughly
+// targetFillTime regardless of pool size. The stagger is clamped between
+// minStagger and maxStagger to avoid either hammering the server (too low)
+// or wasting the hold window (too high).
+//
+// Fill time ≈ targetGames × stagger / fillConcurrency.
+func adaptiveStagger(targetGames, fillConcurrency int) time.Duration {
+	const (
+		targetFillTime = 45 * time.Second
+		minStagger     = 10 * time.Millisecond
+		maxStagger     = 200 * time.Millisecond
+	)
+
+	if targetGames <= 0 {
+		return DefaultStaggerDelay
+	}
+
+	// stagger = targetFillTime * fillConcurrency / targetGames
+	stagger := time.Duration(
+		int64(targetFillTime) * int64(fillConcurrency) / int64(targetGames),
+	)
+
+	stagger = max(stagger, minStagger)
+	stagger = min(stagger, maxStagger)
+
+	return stagger
 }

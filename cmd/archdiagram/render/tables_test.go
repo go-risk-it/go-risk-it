@@ -19,7 +19,7 @@ func TestRenderPackageTables_Basic(t *testing.T) {
 		},
 		// Full-tier package (has service.go, >2 GoFiles).
 		{
-			ImportPath: model.ModulePrefix + "game/logic/board",
+			ImportPath: model.ModulePrefix + "game/internal/logic/board",
 			GoFiles:    []string{"service.go", "graph.go", "continents.go", "doc.go"},
 		},
 		// Lightweight package (no service.go).
@@ -31,8 +31,8 @@ func TestRenderPackageTables_Basic(t *testing.T) {
 
 	archModel := &model.ArchModel{
 		Packages: map[string]*model.PackageInfo{
-			"game/logic/board": {
-				Suffix:  "game/logic/board",
+			"game/internal/logic/board": {
+				Suffix:  "game/internal/logic/board",
 				Layer:   "Logic",
 				GoFiles: []string{"service.go", "graph.go", "continents.go", "doc.go"},
 			},
@@ -62,8 +62,8 @@ func TestRenderPackageTables_Basic(t *testing.T) {
 		t.Error("expected full-tier heading")
 	}
 
-	if !strings.Contains(result, "| `game/logic/board` | logic | 4 |") {
-		t.Error("expected game/logic/board full-tier entry")
+	if !strings.Contains(result, "| `game/internal/logic/board` | logic | 4 |") {
+		t.Error("expected game/internal/logic/board full-tier entry")
 	}
 
 	// Lightweight table.
@@ -87,7 +87,7 @@ func TestRenderPackageTables_Deterministic(t *testing.T) {
 	pkgs := []model.GoPackage{
 		{ImportPath: model.ModulePrefix + "kernel", GoFiles: []string{"kernel.go"}},
 		{
-			ImportPath: model.ModulePrefix + "game/logic/board",
+			ImportPath: model.ModulePrefix + "game/internal/logic/board",
 			GoFiles:    []string{"service.go", "graph.go", "doc.go"},
 		},
 		{
@@ -98,8 +98,8 @@ func TestRenderPackageTables_Deterministic(t *testing.T) {
 
 	archModel := &model.ArchModel{
 		Packages: map[string]*model.PackageInfo{
-			"game/logic/board": {
-				Suffix:  "game/logic/board",
+			"game/internal/logic/board": {
+				Suffix:  "game/internal/logic/board",
 				Layer:   "Logic",
 				GoFiles: []string{"service.go", "graph.go", "doc.go"},
 			},

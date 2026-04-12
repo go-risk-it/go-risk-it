@@ -62,6 +62,8 @@ func (h *MetricsHandler) handleGameComplete(_ *Bus, e Event) {
 	switch {
 	case result.FatalError != nil:
 		h.collector.RecordGameFatal()
+	case result.Cancelled:
+		h.collector.RecordGameCancelled()
 	case result.TimedOut:
 		h.collector.RecordGameTimedOut(result.Duration, result.Moves)
 	default:

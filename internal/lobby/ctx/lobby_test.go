@@ -49,3 +49,14 @@ func TestLobbyContext_Rebase_InheritsBaseDeadline(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 	require.ErrorIs(t, rebased.Err(), context.DeadlineExceeded)
 }
+
+func TestLobbyContext_ScopeID(t *testing.T) {
+	t.Parallel()
+
+	traceCtx := kernelctx.WithSpan(context.Background(), noop.Span{})
+	userCtx := kernelctx.WithUserID(traceCtx, "test-user")
+	lobbyCtx := ctx.WithLobbyID(userCtx, 42)
+
+	require.Equal(t, lobbyCtx.LobbyID(), lobbyCtx.ScopeID(),
+		"ScopeID must equal LobbyID")
+}

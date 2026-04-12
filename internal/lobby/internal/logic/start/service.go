@@ -1,0 +1,64 @@
+package start
+
+import (
+	"fmt"
+
+	"github.com/go-risk-it/go-risk-it/internal/lobby/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/internal/data/db"
+	"github.com/go-risk-it/go-risk-it/internal/lobby/internal/data/sqlc"
+	"github.com/jackc/pgx/v5/pgtype"
+)
+
+type Service interface {
+	CanStartLobby(ctx ctx.LobbyContext) (bool, error)
+	GetLobbyPlayers(ctx ctx.LobbyContext) ([]sqlc.GetLobbyPlayersRow, error)
+	MarkLobbyAsStarted(ctx ctx.LobbyContext, gameID int64) error
+}
+
+type service struct {
+	querier db.Querier
+}
+
+var _ Service = (*service)(nil)
+
+func NewService(querier db.Querier) Service {
+	return &service{
+		querier: querier,
+	}
+}
+
+func (s *service) CanStartLobby(ctx ctx.LobbyContext) (bool, error) {
+	canStartLobby, err := s.querier.CanLobbyBeStarted(ctx, sqlc.CanLobbyBeStartedParams{
+		LobbyID:             ctx.LobbyID(),
+		UserID:              ctx.UserID(),
+		MinimumParticipants: 3,
+	})
+	if err != nil {
+		return false, fmt.Errorf("failed to check if lobby can be started: %w", err)
+	}
+
+	return canStartLobby, nil
+}
+
+func (s *service) GetLobbyPlayers(ctx ctx.LobbyContext) ([]sqlc.GetLobbyPlayersRow, error) {
+	lobbyPlayers, err := s.querier.GetLobbyPlayers(ctx, ctx.LobbyID())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get lobby players: %w", err)
+	}
+
+	return lobbyPlayers, nil
+}
+
+func (s *service) MarkLobbyAsStarted(ctx ctx.LobbyContext, gameID int64) error {
+	if err := s.querier.MarkLobbyAsStarted(ctx, sqlc.MarkLobbyAsStartedParams{
+		LobbyID: ctx.LobbyID(),
+		GameID: pgtype.Int8{
+			Int64: gameID,
+			Valid: true,
+		},
+	}); err != nil {
+		return fmt.Errorf("failed to mark lobby as started: %w", err)
+	}
+
+	return nil
+}

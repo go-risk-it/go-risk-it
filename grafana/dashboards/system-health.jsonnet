@@ -32,6 +32,7 @@ dashboard.new(
   description='Consolidated system health: HTTP, DB, WS, runtime + Postgres internals, query performance. Progressive disclosure via collapsed rows.',
   tags=['risk-it', 'system-health'],
   templating={ list: [traceIdVar] },
+  annotations={ list: [dashboard.perfTestAnnotation] },
   panels=layout.ooda(
 
     // ════════════════════════════════════════════════════════════════

@@ -22,8 +22,8 @@ ENV ENVIRONMENT=prod
 
 WORKDIR /src
 COPY --from=builder /src/internal/kernel/config .
-COPY --from=builder /src/internal/game/data/sqlc/migrations ./migrations/game
-COPY --from=builder /src/internal/lobby/data/sqlc/migrations ./migrations/lobby
+COPY --from=builder /src/internal/game/internal/data/sqlc/migrations ./migrations/game
+COPY --from=builder /src/internal/lobby/internal/data/sqlc/migrations ./migrations/lobby
 COPY --from=builder /src/map.json .
 COPY --from=builder /src/risk-it-server .
 

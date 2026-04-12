@@ -19,13 +19,17 @@ var expectedLayer = map[string]string{
 	// game/api
 	"game/api":               "API",
 	"game/api/messaging":     "API",
+	"game/api/moves/attack":  "API",
+	"game/api/moves/cards":   "API",
 	"game/api/rest/request":  "API",
 	"game/api/rest/response": "API",
+	"game/api/snapshot":      "API",
 
-	// api (lobby)
+	// lobby/api
 	"lobby/api/messaging":     "API",
 	"lobby/api/rest/request":  "API",
 	"lobby/api/rest/response": "API",
+	"lobby/api/snapshot":      "API",
 
 	// kernel
 	"kernel":                    "Kernel",
@@ -36,6 +40,7 @@ var expectedLayer = map[string]string{
 	"kernel/data/migration":     "Kernel",
 	"kernel/data/pool":          "Kernel",
 	"kernel/errors":             "Kernel",
+	"kernel/logger":             "Kernel",
 	"kernel/metrics":            "Kernel",
 	"kernel/observe":            "Kernel",
 	"kernel/otelsetup":          "Kernel",
@@ -43,100 +48,98 @@ var expectedLayer = map[string]string{
 	"kernel/upgradablerw_mutex": "Kernel",
 
 	// game domain
-	"game/commands":            "API",
-	"game/ctx":                 "Game-domain",
-	"game/data/db":             "Data",
-	"game/events":              "Events-domain",
-	"game/routes":              "Web",
-	"game/ws":                  "Web",
-	"game/rand":                "Logic",
-	"game/config":              "Game-support",
-	"game/headlines":           "Game-support",
-	"game/logic/metrics":       "Logic",
-	"game/snapshot":            "Game-support",
-	"game/consumers":           "Web",
-	"game/consumers/converter": "Web",
+	"game/ctx":    "Game-domain",
+	"game/events": "Events-domain",
+	"game/ws":     "Web",
+
+	// game/internal
+	"game/internal/config":   "Game-support",
+	"game/internal/data/db":  "Data",
+	"game/internal/handlers": "Game-support",
+	"game/internal/rand":     "Logic",
+	"game/internal/snapshot": "Game-support",
+
+	// game/web
+	"game/web/routes": "Web",
 
 	// lobby domain
-	"lobby/consumers": "Web",
-	"lobby/ctx":       "Lobby-domain",
-	"lobby/routes":    "Web",
-	"lobby/ws":        "Web",
+	"lobby/ctx": "Lobby-domain",
+	"lobby/ws":  "Web",
 
-	// data (lobby)
-	"lobby/data/db": "Data",
+	// lobby/internal
+	"lobby/internal/data/db": "Data",
+
+	// lobby/web
+	"lobby/web":        "Web",
+	"lobby/web/routes": "Web",
 
 	// events
 	"lobby/events": "Events-domain",
 
 	// test
-	"testing/invariant": "Test",
-	"testonly":          "Test",
+	"game/testing":           "Test",
+	"game/testing/invariant": "Test",
+	"testonly":               "Test",
 }
 
 // layerFromPrefix derives the expected layer for a package suffix using prefix matching.
 // It first checks the explicit mapping, then falls back to prefix-based rules.
-func layerFromPrefix(suffix string) string { //nolint:gocyclo // exhaustive layer classification
+func layerFromPrefix(suffix string) string {
 	if layer, ok := expectedLayer[suffix]; ok {
 		return layer
 	}
 
 	switch {
+	// game module
 	case strings.HasPrefix(suffix, "game/api/"):
-		return "API"
-	case strings.HasPrefix(suffix, "game/commands"):
 		return "API"
 	case strings.HasPrefix(suffix, "game/ctx"):
 		return "Game-domain"
-	case strings.HasPrefix(suffix, "game/data/"):
-		return "Data"
 	case strings.HasPrefix(suffix, "game/events"):
 		return "Events-domain"
-	case strings.HasPrefix(suffix, "game/routes"):
+	case strings.HasPrefix(suffix, "game/internal/data/"):
+		return "Data"
+	case strings.HasPrefix(suffix, "game/internal/config") ||
+		strings.HasPrefix(suffix, "game/internal/handlers") ||
+		strings.HasPrefix(suffix, "game/internal/snapshot"):
+		return "Game-support"
+	case strings.HasPrefix(suffix, "game/internal/logic/") ||
+		strings.HasPrefix(suffix, "game/internal/rand"):
+		return "Logic"
+	case strings.HasPrefix(suffix, "game/web/") ||
+		suffix == "game/web":
 		return "Web"
 	case strings.HasPrefix(suffix, "game/ws"):
 		return "Web"
-	case strings.HasPrefix(suffix, "game/consumers"):
-		return "Web"
-	case strings.HasPrefix(suffix, "game/config"):
-		return "Game-support"
-	case strings.HasPrefix(suffix, "game/headlines"):
-		return "Game-support"
-	case strings.HasPrefix(suffix, "game/snapshot"):
-		return "Game-support"
-	case strings.HasPrefix(suffix, "game/logic/") ||
-		strings.HasPrefix(suffix, "game/rand"):
-		return "Logic"
+
+	// lobby module
 	case strings.HasPrefix(suffix, "lobby/api/"):
 		return "API"
 	case strings.HasPrefix(suffix, "lobby/ctx"):
 		return "Lobby-domain"
-	case strings.HasPrefix(suffix, "lobby/data/"):
-		return "Data"
 	case strings.HasPrefix(suffix, "lobby/events"):
 		return "Events-domain"
-	case strings.HasPrefix(suffix, "lobby/logic/"):
+	case strings.HasPrefix(suffix, "lobby/internal/data/"):
+		return "Data"
+	case strings.HasPrefix(suffix, "lobby/internal/logic/"):
 		return "Logic"
-	case strings.HasPrefix(suffix, "lobby/consumers"):
+	case strings.HasPrefix(suffix, "lobby/web/") ||
+		suffix == "lobby/web":
 		return "Web"
 	case strings.HasPrefix(suffix, "lobby/ws"):
 		return "Web"
-	case strings.HasPrefix(suffix, "lobby/routes"):
-		return "Web"
-	case strings.HasPrefix(suffix, "api/"):
-		return "API"
+
+	// shared infrastructure
 	case strings.HasPrefix(suffix, "kernel/"):
 		return "Kernel"
-	case strings.HasPrefix(suffix, "data/"):
-		return "Data"
+	case strings.HasPrefix(suffix, "web/"):
+		return "Web"
 	case strings.HasPrefix(suffix, "events/lobby"):
 		return "Events-domain"
 	case strings.HasPrefix(suffix, "events/"):
 		return "Events"
-	case strings.HasPrefix(suffix, "logic/"):
-		return "Logic"
-	case strings.HasPrefix(suffix, "web/"):
-		return "Web"
+
+	// test and loadtest
 	case strings.HasPrefix(suffix, "testing/") || suffix == "testonly":
 		return "Test"
 	case strings.HasPrefix(suffix, "loadtest/"):
@@ -151,17 +154,18 @@ func layerFromPrefix(suffix string) string { //nolint:gocyclo // exhaustive laye
 //
 //nolint:gochecknoglobals // test-only set used by doc.go validation rules
 var wiringRoots = map[string]bool{
-	"":                        true, // internal root
-	"kernel":                  true,
-	"game/logic":              true,
-	"game/logic/move":         true,
-	"game/logic/move/service": true,
-	"game/data":               true,
-	"lobby/logic":             true,
-	"lobby/data":              true,
-	"web":                     true,
-	"game":                    true,
-	"lobby":                   true,
+	"":                                 true, // internal root
+	"kernel":                           true,
+	"game":                             true,
+	"game/internal/data":               true,
+	"game/internal/logic":              true,
+	"game/internal/logic/move":         true,
+	"game/internal/logic/move/service": true,
+	"game/web":                         true,
+	"lobby":                            true,
+	"lobby/internal/data":              true,
+	"lobby/internal/logic":             true,
+	"web":                              true,
 }
 
 // isWiringRoot returns true for known fx.Module aggregation packages.

@@ -1,0 +1,30 @@
+{
+  "id": "worktree-modular-monolith",
+  "branch": "worktree-modular-monolith",
+  "baselineEntry": "perf-journal/entries/052-instrumented-sync-test-ba32d634.json",
+  "startedAt": "2026-04-06T14:42:38.957088+02:00",
+  "runs": [
+    {
+      "entryPath": "perf-journal/entries/052-instrumented-sync-test-ba32d634.json",
+      "commitSha": "ba32d634",
+      "ceilingGames": 200,
+      "ceilingDelta": 200,
+      "timestamp": "2026-04-06T14:42:38.957702+02:00"
+    },
+    {
+      "entryPath": "perf-journal/entries/053-instrumented-sync-v2-ba32d634.json",
+      "commitSha": "ba32d634",
+      "ceilingGames": 400,
+      "ceilingDelta": 200,
+      "timestamp": "2026-04-06T15:10:47.850136+02:00"
+    },
+    {
+      "entryPath": "perf-journal/entries/054-seq-tracing-ba32d634.json",
+      "commitSha": "ba32d634",
+      "ceilingGames": 400,
+      "ceilingDelta": 200,
+      "timestamp": "2026-04-06T15:18:56.952881+02:00"
+    }
+  ],
+  "status": "active"
+}

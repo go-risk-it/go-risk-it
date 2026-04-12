@@ -17,16 +17,15 @@ import (
 func TestArch_LogicNeverImportsWebOrAPI(t *testing.T) {
 	t.Parallel()
 
-	lobbyPkgs := loadPackages(t, "./internal/lobby/logic/...")
-	gamePkgs := loadPackages(t, "./internal/game/logic/...")
+	lobbyPkgs := loadPackages(t, "./internal/lobby/internal/logic/...")
+	gamePkgs := loadPackages(t, "./internal/game/internal/logic/...")
 	lobbyPkgs = append(lobbyPkgs, gamePkgs...)
 	pkgs := lobbyPkgs
 
+	// Logic may import api/ (domain types like MoveResult, PhaseType).
+	// Logic must NOT import web/, routes/, consumers/.
 	assertNoImports(t, pkgs,
 		modulePrefix+"web/",
-		modulePrefix+"api/",
-		modulePrefix+"game/api/",
-		modulePrefix+"lobby/api/",
 	)
 }
 
@@ -34,8 +33,8 @@ func TestArch_LogicNeverImportsWebOrAPI(t *testing.T) {
 func TestArch_LogicNeverImportsNetHTTP(t *testing.T) {
 	t.Parallel()
 
-	lobbyPkgs := loadPackages(t, "./internal/lobby/logic/...")
-	gamePkgs := loadPackages(t, "./internal/game/logic/...")
+	lobbyPkgs := loadPackages(t, "./internal/lobby/internal/logic/...")
+	gamePkgs := loadPackages(t, "./internal/game/internal/logic/...")
 	lobbyPkgs = append(lobbyPkgs, gamePkgs...)
 	pkgs := lobbyPkgs
 
@@ -46,15 +45,15 @@ func TestArch_LogicNeverImportsNetHTTP(t *testing.T) {
 func TestArch_DataNeverImportsLogicOrWeb(t *testing.T) {
 	t.Parallel()
 
-	lobbyPkgs := loadPackages(t, "./internal/lobby/data/...")
-	gamePkgs := loadPackages(t, "./internal/game/data/...")
+	lobbyPkgs := loadPackages(t, "./internal/lobby/internal/data/...")
+	gamePkgs := loadPackages(t, "./internal/game/internal/data/...")
 	lobbyPkgs = append(lobbyPkgs, gamePkgs...)
 	pkgs := lobbyPkgs
 
 	assertNoImports(t, pkgs,
 		modulePrefix+"logic/",
-		modulePrefix+"game/logic/",
-		modulePrefix+"lobby/logic/",
+		modulePrefix+"game/internal/logic/",
+		modulePrefix+"lobby/internal/logic/",
 		modulePrefix+"web/",
 	)
 }
@@ -63,15 +62,15 @@ func TestArch_DataNeverImportsLogicOrWeb(t *testing.T) {
 func TestArch_LogicGameAndLobbyIsolated(t *testing.T) {
 	t.Parallel()
 
-	gamePkgs := loadPackages(t, "./internal/game/logic/...")
+	gamePkgs := loadPackages(t, "./internal/game/internal/logic/...")
 	assertNoImports(t, gamePkgs,
-		modulePrefix+"lobby/logic/",
+		modulePrefix+"lobby/internal/logic/",
 		modulePrefix+"logic/lobby/",
 	)
 
-	lobbyPkgs := loadPackages(t, "./internal/lobby/logic/...")
+	lobbyPkgs := loadPackages(t, "./internal/lobby/internal/logic/...")
 	assertNoImports(t, lobbyPkgs,
-		modulePrefix+"game/logic/",
+		modulePrefix+"game/internal/logic/",
 		modulePrefix+"logic/game/",
 	)
 }
@@ -98,21 +97,30 @@ func TestArch_KernelNeverImportsDomain(t *testing.T) {
 
 // ─── Rules 5–5f: Module Isolation ───
 
-// Rule 5: game/** and lobby/** are fully isolated — neither module may import the other.
-// Exception: lobby/ may import game/commands/ (the cross-module command contract DTOs).
+// Rule 5: game/** and lobby/** are isolated except for cross-module event packages.
+// Each module may import the other's events/ package (the event contract DTOs).
 func TestArch_GameAndLobbyModulesIsolated(t *testing.T) {
 	t.Parallel()
 
 	gamePkgs := loadPackages(t, "./internal/game/...")
-	assertNoImports(t, gamePkgs,
-		modulePrefix+"lobby/",
-	)
+	for _, pkg := range gamePkgs {
+		for _, imp := range internalImports(pkg) {
+			// game/ may import lobby/events (cross-module event contract)
+			if strings.HasPrefix(imp, modulePrefix+"lobby/events") {
+				continue
+			}
+
+			if hasPrefix(imp, modulePrefix+"lobby/") {
+				t.Errorf("%s imports forbidden package %s", pkg.ImportPath, imp)
+			}
+		}
+	}
 
 	lobbyPkgs := loadPackages(t, "./internal/lobby/...")
 	for _, pkg := range lobbyPkgs {
 		for _, imp := range internalImports(pkg) {
-			// lobby/ may import game/commands (the command contract)
-			if strings.HasPrefix(imp, modulePrefix+"game/commands") {
+			// lobby/ may import game/events (cross-module event contract)
+			if strings.HasPrefix(imp, modulePrefix+"game/events") {
 				continue
 			}
 
@@ -139,14 +147,14 @@ func TestArch_WebNeverImportsModules(t *testing.T) {
 func TestArch_DataModulesIsolated(t *testing.T) {
 	t.Parallel()
 
-	gameDataPkgs := loadPackages(t, "./internal/game/data/...")
+	gameDataPkgs := loadPackages(t, "./internal/game/internal/data/...")
 	assertNoImports(t, gameDataPkgs,
-		modulePrefix+"lobby/data/",
+		modulePrefix+"lobby/internal/data/",
 	)
 
-	lobbyDataPkgs := loadPackages(t, "./internal/lobby/data/...")
+	lobbyDataPkgs := loadPackages(t, "./internal/lobby/internal/data/...")
 	assertNoImports(t, lobbyDataPkgs,
-		modulePrefix+"game/data/",
+		modulePrefix+"game/internal/data/",
 	)
 }
 
@@ -159,8 +167,9 @@ func TestArch_GameCtxImportIsolation(t *testing.T) {
 	for _, pkg := range pkgs {
 		short := strings.TrimPrefix(pkg.ImportPath, modulePrefix)
 
-		// Allow: game/**, testing/**
-		if strings.HasPrefix(short, "game/") || strings.HasPrefix(short, "testing/") {
+		// Allow: game, game/**, testing/**
+		if short == "game" || strings.HasPrefix(short, "game/") ||
+			strings.HasPrefix(short, "testing/") {
 			continue
 		}
 
@@ -197,14 +206,45 @@ func TestArch_LobbyCtxImportIsolation(t *testing.T) {
 	}
 }
 
+// Rule 5g: game/internal/ may only be imported within the game/ module.
+// lobby/internal/ may only be imported within the lobby/ module.
+// This enforces Go's internal package convention at the architecture test level.
+func TestArch_InternalNeverImportedFromOutsideModule(t *testing.T) {
+	t.Parallel()
+
+	pkgs := loadPackages(t, "./internal/...")
+
+	for _, pkg := range pkgs {
+		short := strings.TrimPrefix(pkg.ImportPath, modulePrefix)
+
+		for _, imp := range internalImports(pkg) {
+			impShort := strings.TrimPrefix(imp, modulePrefix)
+
+			// game/internal/ should only be imported by game/ or game/**
+			if strings.HasPrefix(impShort, "game/internal/") &&
+				short != "game" && !strings.HasPrefix(short, "game/") {
+				t.Errorf("%s imports %s (game/internal/ is private to the game module)",
+					pkg.ImportPath, imp)
+			}
+
+			// lobby/internal/ should only be imported by lobby/ or lobby/**
+			if strings.HasPrefix(impShort, "lobby/internal/") &&
+				short != "lobby" && !strings.HasPrefix(short, "lobby/") {
+				t.Errorf("%s imports %s (lobby/internal/ is private to the lobby module)",
+					pkg.ImportPath, imp)
+			}
+		}
+	}
+}
+
 // ─── Rules 6, 24: Interface Contracts ───
 
 // Rule 6: every logic service package defines at least one exported interface.
 func TestArch_LogicServicesDefineExportedInterface(t *testing.T) {
 	t.Parallel()
 
-	lobbyPkgs := loadPackages(t, "./internal/lobby/logic/...")
-	gamePkgs := loadPackages(t, "./internal/game/logic/...")
+	lobbyPkgs := loadPackages(t, "./internal/lobby/internal/logic/...")
+	gamePkgs := loadPackages(t, "./internal/game/internal/logic/...")
 	lobbyPkgs = append(lobbyPkgs, gamePkgs...)
 	pkgs := lobbyPkgs
 
@@ -221,7 +261,7 @@ func TestArch_LogicServicesDefineExportedInterface(t *testing.T) {
 func TestArch_GameSupportServicesDefineExportedInterface(t *testing.T) {
 	t.Parallel()
 
-	pkgs := loadPackages(t, "./internal/game/snapshot/...")
+	pkgs := loadPackages(t, "./internal/game/internal/snapshot/...")
 
 	for _, pkg := range pkgs {
 		if !containsFile(pkg, "service.go") {
@@ -243,8 +283,19 @@ func TestArch_APIOnlyImportsAPI(t *testing.T) {
 	lobbyPkgs = append(lobbyPkgs, gamePkgs...)
 	pkgs := lobbyPkgs
 
+	// api/ packages may also import typed context packages — port interfaces
+	// need GameContext/LobbyContext in their signatures.
+	apiAllowedNonAPI := map[string]bool{
+		modulePrefix + "game/ctx":  true, // GameContext in port signatures
+		modulePrefix + "lobby/ctx": true, // LobbyContext in port signatures
+	}
+
 	for _, pkg := range pkgs {
 		for _, imp := range internalImports(pkg) {
+			if apiAllowedNonAPI[imp] {
+				continue
+			}
+
 			short := strings.TrimPrefix(imp, modulePrefix)
 			if !strings.HasPrefix(short, "api/") &&
 				!strings.HasPrefix(short, "game/api") &&
@@ -263,7 +314,7 @@ func TestArch_InfrastructureIsolation(t *testing.T) {
 	infraPatterns := []string{
 		"./internal/kernel/config/...",
 		"./internal/kernel/metrics/...",
-		"./internal/game/rand/...",
+		"./internal/game/internal/rand/...",
 	}
 
 	for _, pattern := range infraPatterns {
@@ -299,8 +350,8 @@ func TestArch_TestOnlyNeverImportedByProduction(t *testing.T) {
 func TestArch_DataNeverImportsNetHTTP(t *testing.T) {
 	t.Parallel()
 
-	lobbyPkgs := loadPackages(t, "./internal/lobby/data/...")
-	gamePkgs := loadPackages(t, "./internal/game/data/...")
+	lobbyPkgs := loadPackages(t, "./internal/lobby/internal/data/...")
+	gamePkgs := loadPackages(t, "./internal/game/internal/data/...")
 	lobbyPkgs = append(lobbyPkgs, gamePkgs...)
 	pkgs := lobbyPkgs
 
@@ -322,13 +373,13 @@ func TestArch_WebNeverImportsDataQuerier(t *testing.T) {
 					pkg.ImportPath, imp)
 			}
 
-			gameDataPart := strings.TrimPrefix(imp, modulePrefix+"game/data/")
+			gameDataPart := strings.TrimPrefix(imp, modulePrefix+"game/internal/data/")
 			if gameDataPart != imp && strings.Contains(gameDataPart, "/db") {
 				t.Errorf("%s imports game data querier %s (web must go through logic)",
 					pkg.ImportPath, imp)
 			}
 
-			lobbyDataPart := strings.TrimPrefix(imp, modulePrefix+"lobby/data/")
+			lobbyDataPart := strings.TrimPrefix(imp, modulePrefix+"lobby/internal/data/")
 			if lobbyDataPart != imp && strings.Contains(lobbyDataPart, "/db") {
 				t.Errorf("%s imports lobby data querier %s (web must go through logic)",
 					pkg.ImportPath, imp)
@@ -362,47 +413,28 @@ func TestArch_NoOldMathRand(t *testing.T) {
 func TestArch_GameSupportNeverImportsGameLogic(t *testing.T) {
 	t.Parallel()
 
-	configPkgs := loadPackages(t, "./internal/game/config/...")
-	snapshotPkgs := loadPackages(t, "./internal/game/snapshot/...")
+	configPkgs := loadPackages(t, "./internal/game/internal/config/...")
+	snapshotPkgs := loadPackages(t, "./internal/game/internal/snapshot/...")
 	configPkgs = append(configPkgs, snapshotPkgs...)
 
-	assertNoImports(t, configPkgs, modulePrefix+"game/logic/")
+	assertNoImports(t, configPkgs, modulePrefix+"game/internal/logic/")
 }
 
 // ─── Rules N1–N6: Event System Boundaries ───
 
-// eventLogicAllowlist lists game/logic sub-packages that event types legitimately
-// depend on for move result types carried in event payloads (e.g., MoveExecuted
-// carries attack.Result and cards.Result).
-//
-//nolint:gochecknoglobals // test-only allowlist
-var eventLogicAllowlist = map[string]bool{
-	modulePrefix + "game/logic/move/attack": true, // attack.Result in MoveExecuted
-	modulePrefix + "game/logic/move/cards":  true, // cards.Result in MoveExecuted
-}
-
-// Rule N1: event type packages must never import logic (except move result types).
+// Rule N1: event type packages must never import logic.
+// Move result types live in game/api/moves/ (not logic/), so no allowlist is needed.
 func TestArch_EventsNeverImportLogic(t *testing.T) {
 	t.Parallel()
 
 	pkgs := loadPackages(t, "./internal/game/events/...")
 	pkgs = append(pkgs, loadPackages(t, "./internal/lobby/events/...")...)
 
-	for _, pkg := range pkgs {
-		for _, imp := range internalImports(pkg) {
-			if eventLogicAllowlist[imp] {
-				continue
-			}
-
-			if hasPrefix(imp,
-				modulePrefix+"logic/",
-				modulePrefix+"game/logic/",
-				modulePrefix+"lobby/logic/",
-			) {
-				t.Errorf("%s imports forbidden logic package %s", pkg.ImportPath, imp)
-			}
-		}
-	}
+	assertNoImports(t, pkgs,
+		modulePrefix+"logic/",
+		modulePrefix+"game/internal/logic/",
+		modulePrefix+"lobby/internal/logic/",
+	)
 }
 
 // Rule N2: event type packages must never import web or consumers.
@@ -414,8 +446,8 @@ func TestArch_EventsNeverImportWebOrConsumers(t *testing.T) {
 
 	assertNoImports(t, pkgs,
 		modulePrefix+"web/",
-		modulePrefix+"game/consumers/",
-		modulePrefix+"lobby/consumers/",
+		modulePrefix+"game/web/",
+		modulePrefix+"lobby/web/",
 	)
 }
 
@@ -423,8 +455,8 @@ func TestArch_EventsNeverImportWebOrConsumers(t *testing.T) {
 func TestArch_DataNeverImportsBus(t *testing.T) {
 	t.Parallel()
 
-	pkgs := loadPackages(t, "./internal/game/data/...")
-	pkgs = append(pkgs, loadPackages(t, "./internal/lobby/data/...")...)
+	pkgs := loadPackages(t, "./internal/game/internal/data/...")
+	pkgs = append(pkgs, loadPackages(t, "./internal/lobby/internal/data/...")...)
 
 	assertNoImports(t, pkgs, modulePrefix+"kernel/bus")
 }
@@ -448,23 +480,23 @@ var approvedBusImporters = map[string]bool{
 	"game/events":  true,
 	"lobby/events": true,
 	// State transition publishers (Publisher)
-	"game/logic":                    true,
-	"game/logic/advancement":        true,
-	"game/logic/creation":           true,
-	"game/logic/move/orchestration": true,
-	"lobby/logic/management":        true,
+	"game/internal/logic":                    true,
+	"game/internal/logic/creation":           true,
+	"game/internal/logic/move/orchestration": true,
+	"lobby/internal/logic/management":        true,
 	// Connection lifecycle publishers (Publisher)
 	"game/ws":  true,
 	"lobby/ws": true,
 	// Derived event publisher (Publisher)
-	"game/headlines": true,
+	"game/internal/handlers": true,
 	// Event consumers/broadcasters (Subscriber)
-	"game/consumers":  true,
-	"lobby/consumers": true,
+	"lobby/web": true,
+	// Cross-module event publisher (lobby start → game creation)
+	"lobby/web/routes": true,
 	// Event observer (Subscriber)
 	"kernel/logger": true,
 	// Game summary recorder (Subscriber)
-	"game/logic/metrics": true,
+	"game/internal/logic/metrics": true,
 }
 
 // Rule N5: only approved packages may import kernel/bus.
@@ -502,9 +534,9 @@ func TestArch_BusTypeRestrictedToWiring(t *testing.T) {
 	busTypeAllowed := map[string]bool{
 		"kernel/bus": true, // the bus package itself
 		// FX wiring roots that pass Bus to module registration
-		"game/logic": true, // game.go wiring root passes bus
-		"lobby":      true, // lobby.go wiring root
-		"game":       true, // game.go wiring root
+		"game/internal/logic": true, // game.go wiring root passes bus
+		"lobby":               true, // lobby.go wiring root
+		"game":                true, // game.go wiring root
 	}
 
 	fset := token.NewFileSet()
@@ -578,10 +610,10 @@ func TestArch_BusTypeRestrictedToWiring(t *testing.T) {
 func TestArch_BusinessLogicNoSlog(t *testing.T) {
 	t.Parallel()
 
-	pkgs := loadPackages(t, "./internal/game/logic/...")
-	pkgs = append(pkgs, loadPackages(t, "./internal/lobby/logic/...")...)
-	pkgs = append(pkgs, loadPackages(t, "./internal/game/consumers/...")...)
-	pkgs = append(pkgs, loadPackages(t, "./internal/lobby/consumers/...")...)
+	pkgs := loadPackages(t, "./internal/game/internal/logic/...")
+	pkgs = append(pkgs, loadPackages(t, "./internal/lobby/internal/logic/...")...)
+	pkgs = append(pkgs, loadPackages(t, "./internal/game/web/...")...)
+	pkgs = append(pkgs, loadPackages(t, "./internal/lobby/web/...")...)
 
 	assertNoRawImports(t, pkgs, "log/slog")
 }
@@ -594,7 +626,7 @@ func TestArch_BusinessLogicNoSlog(t *testing.T) {
 //nolint:gochecknoglobals // test-only allowlist
 var directOTelAllowlist = map[string]string{
 	// Needs otel.Meter() for custom game metrics registration.
-	"game/logic/metrics": "go.opentelemetry.io/otel",
+	"game/internal/logic/metrics": "go.opentelemetry.io/otel",
 }
 
 // Rule O2: business logic packages must not import go.opentelemetry.io/otel (root)
@@ -606,10 +638,10 @@ var directOTelAllowlist = map[string]string{
 func TestArch_BusinessLogicNoDirectOTel(t *testing.T) {
 	t.Parallel()
 
-	pkgs := loadPackages(t, "./internal/game/logic/...")
-	pkgs = append(pkgs, loadPackages(t, "./internal/lobby/logic/...")...)
-	pkgs = append(pkgs, loadPackages(t, "./internal/game/consumers/...")...)
-	pkgs = append(pkgs, loadPackages(t, "./internal/lobby/consumers/...")...)
+	pkgs := loadPackages(t, "./internal/game/internal/logic/...")
+	pkgs = append(pkgs, loadPackages(t, "./internal/lobby/internal/logic/...")...)
+	pkgs = append(pkgs, loadPackages(t, "./internal/game/web/...")...)
+	pkgs = append(pkgs, loadPackages(t, "./internal/lobby/web/...")...)
 
 	forbidden := map[string]bool{
 		"go.opentelemetry.io/otel":       true,
@@ -649,12 +681,12 @@ var rawSpanPattern = regexp.MustCompile(`observe\.RawSpan\(`)
 func TestArch_BusinessLogicNoRawSpan(t *testing.T) {
 	t.Parallel()
 
-	pkgs := loadPackages(t, "./internal/game/logic/...")
-	pkgs = append(pkgs, loadPackages(t, "./internal/lobby/logic/...")...)
-	pkgs = append(pkgs, loadPackages(t, "./internal/game/consumers/...")...)
-	pkgs = append(pkgs, loadPackages(t, "./internal/lobby/consumers/...")...)
-	pkgs = append(pkgs, loadPackages(t, "./internal/game/snapshot/...")...)
-	pkgs = append(pkgs, loadPackages(t, "./internal/game/headlines/...")...)
+	pkgs := loadPackages(t, "./internal/game/internal/logic/...")
+	pkgs = append(pkgs, loadPackages(t, "./internal/lobby/internal/logic/...")...)
+	pkgs = append(pkgs, loadPackages(t, "./internal/game/web/...")...)
+	pkgs = append(pkgs, loadPackages(t, "./internal/lobby/web/...")...)
+	pkgs = append(pkgs, loadPackages(t, "./internal/game/internal/snapshot/...")...)
+	pkgs = append(pkgs, loadPackages(t, "./internal/game/internal/handlers/...")...)
 
 	for _, pkg := range pkgs {
 		for _, goFile := range pkg.GoFiles {
@@ -680,15 +712,93 @@ func TestArch_BusinessLogicNoRawSpan(t *testing.T) {
 	}
 }
 
+// ─── Rules S1–S2: Snapshot DTO Purity ───
+
+// Rule S1: game/api/snapshot/ must be pure domain types — no logic, data, or web imports.
+func TestArch_GameAPISnapshotIsPureDTO(t *testing.T) {
+	t.Parallel()
+
+	pkgs := loadPackages(t, "./internal/game/api/snapshot/...")
+
+	for _, pkg := range pkgs {
+		for _, imp := range internalImports(pkg) {
+			if hasPrefix(imp,
+				modulePrefix+"game/internal/logic/",
+				modulePrefix+"lobby/internal/logic/",
+				modulePrefix+"game/internal/data/",
+				modulePrefix+"lobby/internal/data/",
+				modulePrefix+"game/web/",
+				modulePrefix+"lobby/web/",
+				modulePrefix+"web/",
+			) || strings.Contains(imp, "/sqlc") || strings.Contains(imp, "/route") {
+				t.Errorf(
+					"%s imports forbidden package %s (snapshot DTOs must be pure domain types)",
+					pkg.ImportPath,
+					imp,
+				)
+			}
+		}
+	}
+}
+
+// Rule S2: lobby/api/snapshot/ must be pure domain types — no logic, data, or web imports.
+func TestArch_LobbyAPISnapshotIsPureDTO(t *testing.T) {
+	t.Parallel()
+
+	pkgs := loadPackages(t, "./internal/lobby/api/snapshot/...")
+
+	for _, pkg := range pkgs {
+		for _, imp := range internalImports(pkg) {
+			if hasPrefix(imp,
+				modulePrefix+"game/internal/logic/",
+				modulePrefix+"lobby/internal/logic/",
+				modulePrefix+"game/internal/data/",
+				modulePrefix+"lobby/internal/data/",
+				modulePrefix+"game/web/",
+				modulePrefix+"lobby/web/",
+				modulePrefix+"web/",
+			) || strings.Contains(imp, "/sqlc") || strings.Contains(imp, "/route") {
+				t.Errorf(
+					"%s imports forbidden package %s (snapshot DTOs must be pure domain types)",
+					pkg.ImportPath,
+					imp,
+				)
+			}
+		}
+	}
+}
+
 // ─── Rules L1–L2: Loadtest Isolation ───
 
-// Rule L1: loadtest packages must never import game or lobby domain packages.
+// loadtestAllowedGameAPIPkgs lists game/api sub-packages that the loadtest
+// may import for shared DTO types (snapshot types, wire format constants).
+// The loadtest must NOT import game/internal/ or game/web/ — only the api layer.
+//
+//nolint:gochecknoglobals // test-only allowlist
+var loadtestAllowedGameAPIPkgs = map[string]bool{
+	modulePrefix + "game/api/snapshot":  true, // shared PlayerView, Phase, Mission DTOs
+	modulePrefix + "game/api/messaging": true, // wire format constants (PlayerViewType)
+}
+
+// Rule L1: loadtest packages must never import game or lobby domain packages,
+// except for game/api/ DTO packages explicitly allowlisted above.
 // The loadtest harness operates against the server's HTTP/WS API boundary only.
 func TestArch_LoadtestNeverImportsGameOrLobby(t *testing.T) {
 	t.Parallel()
 
 	pkgs := loadPackages(t, "./internal/loadtest/...")
-	assertNoImports(t, pkgs, modulePrefix+"game/", modulePrefix+"lobby/")
+
+	for _, pkg := range pkgs {
+		for _, imp := range internalImports(pkg) {
+			if loadtestAllowedGameAPIPkgs[imp] {
+				continue
+			}
+
+			if hasPrefix(imp, modulePrefix+"game/", modulePrefix+"lobby/") {
+				t.Errorf("%s imports forbidden package %s", pkg.ImportPath, imp)
+			}
+		}
+	}
 }
 
 // Rule L2: game and lobby domain packages must never import loadtest.

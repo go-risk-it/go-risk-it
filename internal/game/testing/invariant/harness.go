@@ -1,0 +1,371 @@
+//go:build invariant
+
+package invariant
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"path/filepath"
+	"runtime"
+	"testing"
+	"time"
+
+	gameapi "github.com/go-risk-it/go-risk-it/internal/game/api"
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
+	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
+	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/internal/config"
+	gamedb "github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
+	game "github.com/go-risk-it/go-risk-it/internal/game/internal/logic"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/board"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/creation"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/mission"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/conquer"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/deploy"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/orchestration"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/player"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/state"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/rand"
+	intsnapshot "github.com/go-risk-it/go-risk-it/internal/game/internal/snapshot"
+	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
+	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/knadh/koanf/parsers/yaml"
+	"github.com/knadh/koanf/providers/rawbytes"
+	"github.com/knadh/koanf/v2"
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/modules/postgres"
+	"github.com/testcontainers/testcontainers-go/wait"
+	"go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/trace/noop"
+	"go.uber.org/fx"
+)
+
+// GameHandle holds references for a created game.
+type GameHandle struct {
+	GameID  int64
+	Players []player.Player
+}
+
+// Harness owns the test infrastructure:
+// testcontainer, pool, fx app, and all service references.
+type Harness struct {
+	CreationService       creation.Service
+	DeployOrchestrator    orchestration.DeployOrchestrator
+	AttackOrchestrator    orchestration.AttackOrchestrator
+	ConquerOrchestrator   orchestration.ConquerOrchestrator
+	ReinforceOrchestrator orchestration.ReinforceOrchestrator
+	CardsOrchestrator     orchestration.CardsOrchestrator
+	AttackAdvancer        orchestration.AttackPhaseAdvancer
+	CardsAdvancer         orchestration.CardsPhaseAdvancer
+	ReinforceAdvancer     orchestration.ReinforcePhaseAdvancer
+	StateService          state.Service
+	DeployService         deploy.Service
+	ConquerService        conquer.Service
+	BoardService          board.Service
+	Querier               gamedb.Querier
+
+	pool *pgxpool.Pool
+}
+
+// NewHarness creates a Harness backed by a testcontainer Postgres.
+// It runs migrations, builds the fx app, and populates all
+// service references.
+func NewHarness() *Harness {
+	dbPool, err := setupDatabase()
+	if err != nil {
+		panic(fmt.Sprintf("failed to setup database: %v", err))
+	}
+
+	harness := &Harness{
+		pool: dbPool,
+	}
+
+	buildFxApp(harness, dbPool)
+
+	return harness
+}
+
+func buildFxApp(
+	harness *Harness,
+	dbPool *pgxpool.Pool,
+) {
+	reader := metric.NewManualReader()
+	provider := metric.NewMeterProvider(metric.WithReader(reader))
+	meter := provider.Meter("invariant-test")
+
+	testMetrics, err := metrics.NewStateMetrics(meter)
+	if err != nil {
+		panic(fmt.Sprintf("failed to create test metrics: %v", err))
+	}
+
+	testKoanf := buildTestKoanf()
+
+	app := fx.New(
+		fx.NopLogger,
+		fx.Provide(func() gamedb.DB { return dbPool }),
+		fx.Provide(func() sqlc.DBTX { return dbPool }),
+		fx.Provide(gamedb.New),
+		game.Module,
+		gameconfig.Module,
+		intsnapshot.Module,
+		fx.Provide(newMissionQuerierAdapter),
+		fx.Provide(newMemStateStore),
+		fx.Supply(testKoanf),
+		rand.Module,
+		fx.Supply(testMetrics),
+		fx.Populate(
+			&harness.CreationService,
+			&harness.DeployOrchestrator,
+			&harness.AttackOrchestrator,
+			&harness.ConquerOrchestrator,
+			&harness.ReinforceOrchestrator,
+			&harness.CardsOrchestrator,
+			&harness.AttackAdvancer,
+			&harness.CardsAdvancer,
+			&harness.ReinforceAdvancer,
+			&harness.StateService,
+			&harness.DeployService,
+			&harness.ConquerService,
+			&harness.BoardService,
+			&harness.Querier,
+		),
+	)
+
+	if err := app.Err(); err != nil {
+		panic(fmt.Sprintf("fx app failed: %v", err))
+	}
+}
+
+// CreateGame creates a new game with the given number of players.
+func (h *Harness) CreateGame(
+	tb testing.TB,
+	nPlayers int,
+) *GameHandle {
+	tb.Helper()
+
+	regions, err := h.BoardService.GetBoardRegions(h.logCtx())
+	if err != nil {
+		tb.Fatalf("failed to get board regions: %v", err)
+	}
+
+	players := make([]player.Player, nPlayers)
+	for i := range nPlayers {
+		players[i] = player.Player{
+			UserID: fmt.Sprintf("user-%d", i),
+			Name:   fmt.Sprintf("Player %d", i),
+		}
+	}
+
+	userCtx := h.userCtx(players[0].UserID)
+
+	gameID, err := h.CreationService.CreateGame(
+		userCtx, 0, regions, players,
+	)
+	if err != nil {
+		tb.Fatalf("failed to create game: %v", err)
+	}
+
+	return &GameHandle{GameID: gameID, Players: players}
+}
+
+// GameCtx builds a full GameContext for the given game and user.
+func (h *Harness) GameCtx(
+	gameID int64,
+	userID string,
+) gamectx.GameContext {
+	span := noop.Span{}
+	traceCtx := kernelctx.WithSpan(context.Background(), span)
+	userCtx := kernelctx.WithUserID(traceCtx, userID)
+
+	return gamectx.WithGameID(userCtx, gameID)
+}
+
+// Close shuts down the connection pool.
+func (h *Harness) Close() {
+	h.pool.Close()
+}
+
+func (h *Harness) logCtx() context.Context {
+	return context.Background()
+}
+
+func (h *Harness) userCtx(userID string) kernelctx.UserContext {
+	span := noop.Span{}
+	traceCtx := kernelctx.WithSpan(context.Background(), span)
+
+	return kernelctx.WithUserID(traceCtx, userID)
+}
+
+func setupDatabase() (*pgxpool.Pool, error) {
+	bgCtx := context.Background()
+
+	connStr, err := startPostgres(bgCtx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start postgres: %w", err)
+	}
+
+	if err := runMigrations(connStr); err != nil {
+		return nil, fmt.Errorf("failed to run migrations: %w", err)
+	}
+
+	pool, err := pgxpool.New(bgCtx, connStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create pool: %w", err)
+	}
+
+	return pool, nil
+}
+
+func startPostgres(bgCtx context.Context) (string, error) {
+	container, err := postgres.Run(bgCtx,
+		"docker.io/postgres:latest",
+		postgres.WithDatabase("risk-it"),
+		postgres.WithUsername("postgres"),
+		postgres.WithPassword("password"),
+		testcontainers.WithWaitStrategy(
+			wait.ForLog(
+				"database system is ready to accept connections",
+			).
+				WithOccurrence(2).
+				WithStartupTimeout(30*time.Second)),
+	)
+	if err != nil {
+		return "", fmt.Errorf(
+			"failed to run testcontainer: %w", err,
+		)
+	}
+
+	connStr, err := container.ConnectionString(
+		bgCtx, "sslmode=disable",
+	)
+	if err != nil {
+		return "", fmt.Errorf(
+			"failed to get connection string: %w", err,
+		)
+	}
+
+	return connStr, nil
+}
+
+func runMigrations(connStr string) error {
+	_, callerPath, _, ok := runtime.Caller(0)
+	if !ok {
+		return errors.New("failed to get caller path")
+	}
+
+	migrationDir := filepath.Join(
+		filepath.Dir(callerPath),
+		"..", "..", "internal", "data", "sqlc", "migrations",
+	)
+
+	mig, err := migrate.New("file://"+migrationDir, connStr)
+	if err != nil {
+		return fmt.Errorf(
+			"failed to create migrate instance: %w", err,
+		)
+	}
+
+	defer mig.Close()
+
+	if err := mig.Up(); err != nil &&
+		!errors.Is(err, migrate.ErrNoChange) {
+		return fmt.Errorf("failed to run migrations: %w", err)
+	}
+
+	return nil
+}
+
+func buildTestKoanf() *koanf.Koanf {
+	raw := []byte(`
+game:
+  dice:
+    roll_strategy: attacker_always_wins
+  regionassignment:
+    assignment_strategy: sequential
+  history:
+    size: 50
+`)
+
+	k := koanf.New(".")
+
+	if err := k.Load(rawbytes.Provider(raw), yaml.Parser()); err != nil {
+		panic(fmt.Sprintf("failed to load test koanf: %v", err))
+	}
+
+	return k
+}
+
+// memStateStore satisfies game.StateStore with an in-memory map.
+// Required because creation populates the store and the orchestrator reads it.
+type memStateStore struct {
+	m map[int64]*snapshot.CachedGameState
+}
+
+func newMemStateStore() gameapi.StateStore {
+	return &memStateStore{m: make(map[int64]*snapshot.CachedGameState)}
+}
+
+func (s *memStateStore) Get(gameID int64) *snapshot.CachedGameState { return s.m[gameID] }
+
+func (s *memStateStore) Store(
+	gameID int64,
+	state *snapshot.CachedGameState,
+) {
+	s.m[gameID] = state
+}
+
+func (s *memStateStore) Remove(
+	gameID int64,
+) {
+	delete(s.m, gameID)
+}
+
+// missionQuerierAdapter bridges mission.Service → snapshot.MissionQuerier.
+// Duplicated from game.go because the invariant package can't import the
+// top-level game package (circular).
+type missionQuerierAdapter struct {
+	svc mission.Service
+}
+
+func newMissionQuerierAdapter(svc mission.Service) intsnapshot.MissionQuerier {
+	return &missionQuerierAdapter{svc: svc}
+}
+
+func (a *missionQuerierAdapter) GetTwoContinentsMission(
+	ctx gamectx.GameContext,
+	missionID int64,
+) (intsnapshot.TwoContinentsResult, error) {
+	m, err := a.svc.GetTwoContinentsMission(ctx, missionID)
+	if err != nil {
+		return intsnapshot.TwoContinentsResult{}, err
+	}
+
+	return intsnapshot.TwoContinentsResult{Continent1: m.Continent1, Continent2: m.Continent2}, nil
+}
+
+func (a *missionQuerierAdapter) GetTwoContinentsPlusOneMission(
+	ctx gamectx.GameContext,
+	missionID int64,
+) (intsnapshot.TwoContinentsPlusOneResult, error) {
+	m, err := a.svc.GetTwoContinentsPlusOneMission(ctx, missionID)
+	if err != nil {
+		return intsnapshot.TwoContinentsPlusOneResult{}, err
+	}
+
+	return intsnapshot.TwoContinentsPlusOneResult{
+		Continent1: m.Continent1,
+		Continent2: m.Continent2,
+	}, nil
+}
+
+func (a *missionQuerierAdapter) GetEliminatePlayerMission(
+	ctx gamectx.GameContext,
+	missionID int64,
+) (string, error) {
+	return a.svc.GetEliminatePlayerMission(ctx, missionID)
+}

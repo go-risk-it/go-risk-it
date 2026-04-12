@@ -1,19 +1,19 @@
 package player
 
 import (
-	"github.com/go-risk-it/go-risk-it/internal/loadtest/gamestate"
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 )
 
 // FindCardCombo finds a valid 3-card combination from the given hand.
 // Returns nil if no valid combination exists.
 //
 //nolint:cyclop // card combination search across 3 strategies
-func FindCardCombo(cards []gamestate.Card) []int64 {
-	byType := make(map[gamestate.CardType][]int64)
+func FindCardCombo(cards []snapshot.CardState) []int64 {
+	byType := make(map[snapshot.CardType][]int64)
 	var jollyIDs []int64
 
 	for _, c := range cards {
-		if c.Type == gamestate.Jolly {
+		if c.Type == snapshot.CardJolly {
 			jollyIDs = append(jollyIDs, c.ID)
 		} else {
 			byType[c.Type] = append(byType[c.Type], c.ID)
@@ -28,7 +28,11 @@ func FindCardCombo(cards []gamestate.Card) []int64 {
 	}
 
 	// Try one-of-each (cavalry + infantry + artillery).
-	types := []gamestate.CardType{gamestate.Cavalry, gamestate.Infantry, gamestate.Artillery}
+	types := []snapshot.CardType{
+		snapshot.CardCavalry,
+		snapshot.CardInfantry,
+		snapshot.CardArtillery,
+	}
 	var oneOfEach []int64
 
 	for _, t := range types {
@@ -54,7 +58,7 @@ func FindCardCombo(cards []gamestate.Card) []int64 {
 }
 
 // NewAdvanceAction returns an action that advances past the given phase.
-func NewAdvanceAction(phase gamestate.PhaseType) *Action {
+func NewAdvanceAction(phase snapshot.PhaseType) *Action {
 	return &Action{
 		Type: ActionAdvance,
 		Advance: &AdvanceAction{

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-risk-it/go-risk-it/internal/game/data/sqlc"
+	gameapi "github.com/go-risk-it/go-risk-it/internal/game/api"
 	gameevt "github.com/go-risk-it/go-risk-it/internal/game/events"
 	eventbus "github.com/go-risk-it/go-risk-it/internal/kernel/bus"
 	"github.com/stretchr/testify/require"
@@ -17,9 +17,12 @@ func TestTestBus_CapturesEvents(t *testing.T) {
 	bus := eventbus.NewTestBus()
 	now := time.Date(2026, 3, 26, 12, 0, 0, 0, time.UTC)
 
-	evt1 := gameevt.NewGameCreated(1, now, 4)
+	evt1 := gameevt.NewGameCreated(1, 0, now, 4, nil, nil)
 	evt2 := gameevt.NewPlayerConnected(1, "user1", now)
-	evt3 := gameevt.NewGameCompleted(1, "user1", now, 10)
+	evt3 := gameevt.NewMoveCompleted(1, "user1", now,
+		gameapi.GamePhaseTypeDEPLOY, 10,
+		gameapi.GamePhaseTypeDEPLOY, gameapi.GamePhaseTypeDEPLOY,
+		true, nil, nil, nil)
 
 	bus.Emit(context.Background(), evt1)
 	bus.Emit(context.Background(), evt2)
@@ -38,46 +41,37 @@ func TestTestBus_EventsOfType(t *testing.T) {
 	bus := eventbus.NewTestBus()
 	now := time.Date(2026, 3, 26, 12, 0, 0, 0, time.UTC)
 
-	move1 := gameevt.NewMoveExecuted(
+	move1 := gameevt.NewMoveCompleted(
 		1, "user1", now,
-		sqlc.GamePhaseTypeDEPLOY,
-		sqlc.GameMoveLog{ID: 1},
-		sqlc.GamePhaseTypeDEPLOY,
-		false, 1,
-		nil, nil,
+		gameapi.GamePhaseTypeDEPLOY, 1,
+		gameapi.GamePhaseTypeDEPLOY, gameapi.GamePhaseTypeDEPLOY,
+		false, nil, nil, nil,
 	)
-	created := gameevt.NewGameCreated(1, now, 4)
-	move2 := gameevt.NewMoveExecuted(
+	created := gameevt.NewGameCreated(1, 0, now, 4, nil, nil)
+	move2 := gameevt.NewMoveCompleted(
 		1, "user2", now,
-		sqlc.GamePhaseTypeATTACK,
-		sqlc.GameMoveLog{ID: 2},
-		sqlc.GamePhaseTypeATTACK,
-		false, 2,
-		nil, nil,
+		gameapi.GamePhaseTypeATTACK, 2,
+		gameapi.GamePhaseTypeATTACK, gameapi.GamePhaseTypeATTACK,
+		false, nil, nil, nil,
 	)
-	phase := gameevt.NewPhaseTransitioned(
-		1, "user1", now,
-		sqlc.GamePhaseTypeDEPLOY,
-		sqlc.GamePhaseTypeATTACK,
-		1,
-	)
+	connected := gameevt.NewPlayerConnected(1, "user1", now)
 
 	bus.Emit(context.Background(), move1)
 	bus.Emit(context.Background(), created)
 	bus.Emit(context.Background(), move2)
-	bus.Emit(context.Background(), phase)
+	bus.Emit(context.Background(), connected)
 
-	moves := eventbus.EventsOfType[*gameevt.MoveExecuted](bus)
+	moves := eventbus.EventsOfType[*gameevt.MoveCompleted](bus)
 	require.Len(t, moves, 2)
 	require.Equal(t, move1, moves[0])
 	require.Equal(t, move2, moves[1])
 
-	phases := eventbus.EventsOfType[*gameevt.PhaseTransitioned](bus)
-	require.Len(t, phases, 1)
-	require.Equal(t, phase, phases[0])
+	connects := eventbus.EventsOfType[*gameevt.PlayerConnected](bus)
+	require.Len(t, connects, 1)
+	require.Equal(t, connected, connects[0])
 
-	completions := eventbus.EventsOfType[*gameevt.GameCompleted](bus)
-	require.Empty(t, completions)
+	created2 := eventbus.EventsOfType[*gameevt.GameCreated](bus)
+	require.Len(t, created2, 1)
 }
 
 func TestTestBus_Reset(t *testing.T) {
@@ -86,8 +80,8 @@ func TestTestBus_Reset(t *testing.T) {
 	bus := eventbus.NewTestBus()
 	now := time.Date(2026, 3, 26, 12, 0, 0, 0, time.UTC)
 
-	bus.Emit(context.Background(), gameevt.NewGameCreated(1, now, 4))
-	bus.Emit(context.Background(), gameevt.NewGameCreated(2, now, 4))
+	bus.Emit(context.Background(), gameevt.NewGameCreated(1, 0, now, 4, nil, nil))
+	bus.Emit(context.Background(), gameevt.NewGameCreated(2, 0, now, 4, nil, nil))
 
 	require.Len(t, bus.Events(), 2)
 
@@ -108,10 +102,8 @@ func TestTestBus_SynchronousDispatch(t *testing.T) {
 		handlerCalled = true
 	})
 
-	bus.Emit(context.Background(), gameevt.NewGameCreated(1, now, 4))
+	bus.Emit(context.Background(), gameevt.NewGameCreated(1, 0, now, 4, nil, nil))
 
-	// If dispatch were async, this assertion could race. Synchronous dispatch
-	// guarantees the flag is set by the time Emit returns.
 	require.True(t, handlerCalled, "handler must be called synchronously before Emit returns")
 }
 
@@ -131,18 +123,16 @@ func TestTestBus_HandlersCalledOnEmit(t *testing.T) {
 		typedEvents = append(typedEvents, event)
 	})
 
-	created := gameevt.NewGameCreated(1, now, 4)
+	created := gameevt.NewGameCreated(1, 0, now, 4, nil, nil)
 	connected := gameevt.NewPlayerConnected(1, "user1", now)
 
 	bus.Emit(context.Background(), created)
 	bus.Emit(context.Background(), connected)
 
-	// OnAll receives both events.
 	require.Len(t, allEvents, 2)
 	require.Equal(t, created, allEvents[0])
 	require.Equal(t, connected, allEvents[1])
 
-	// OnType(TypeGameCreated) receives only the GameCreated event.
 	require.Len(t, typedEvents, 1)
 	require.Equal(t, created, typedEvents[0])
 }

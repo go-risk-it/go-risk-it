@@ -1,0 +1,156 @@
+{
+  "commitSha": "3a70d8cb",
+  "timestamp": "2026-04-03T00:50:37.514752+02:00",
+  "branch": "main",
+  "config": {
+    "steps": [
+      40,
+      80,
+      120,
+      160,
+      200,
+      250,
+      300
+    ],
+    "holdDurationSec": 120,
+    "numPlayers": 4,
+    "gameTimeoutSec": 900,
+    "stopOnBreach": true
+  },
+  "sloCeiling": {
+    "games": 0,
+    "throughputMps": 0,
+    "completionRate": 0
+  },
+  "steps": [
+    {
+      "targetGames": 40,
+      "metrics": {
+        "e2e": {
+          "p50S": 0,
+          "p95S": 0,
+          "p99S": 0,
+          "maxS": 0
+        },
+        "wsDelivery": {
+          "p50S": 0,
+          "p95S": 0,
+          "p99S": 0,
+          "maxS": 0
+        },
+        "throughputMovesPerSec": 69.2493554518138,
+        "throughputPeakMovesPerSec": 536.2,
+        "httpErrorRate": 0,
+        "moveFailureRate": 0.15030674846625766,
+        "totalMoves": 8310,
+        "totalErrors": 0,
+        "gamesCompleted": 0,
+        "gamesTimedOut": 0,
+        "gamesFatal": 0,
+        "totalRetries": 0,
+        "totalConflicts": 1470,
+        "totalReconnects": 0,
+        "totalReconnectFailures": 0,
+        "errorBreakdown": {
+          "conflict": 1470
+        },
+        "phaseEntries": {
+          "attack": 4445,
+          "cards": 49,
+          "conquer": 4572,
+          "deploy": 377,
+          "reinforce": 337
+        },
+        "phaseMoves": {
+          "attack": 4165,
+          "cards": 49,
+          "conquer": 3102,
+          "deploy": 377,
+          "reinforce": 280
+        },
+        "durationSec": 120.001116917
+      },
+      "sloEval": {
+        "violations": [
+          {
+            "slo": {
+              "name": "Move failure rate",
+              "metric": "moveFailureRate",
+              "threshold": 0.15,
+              "unit": "ratio"
+            },
+            "actual": 0.15030674846625766
+          }
+        ]
+      },
+      "serverResources": {
+        "riskIt": {
+          "cpuPercent": 0.9,
+          "memoryMb": 59.23,
+          "memoryLimitMb": 17459.2
+        },
+        "db": {
+          "cpuPercent": 0.26,
+          "memoryMb": 265.4,
+          "memoryLimitMb": 17459.2
+        }
+      },
+      "durationSec": 120.001116917,
+      "healthDistribution": {
+        "healthy": 0,
+        "slow": 0,
+        "stalled": 40,
+        "zombie": 0,
+        "total": 40
+      }
+    }
+  ],
+  "breakingPoints": [
+    {
+      "sloName": "Move failure rate",
+      "breaksAtGames": 40,
+      "lastGoodValue": 0,
+      "breakValue": 0.15030674846625766
+    }
+  ],
+  "environment": {
+    "goVersion": "go1.26.1",
+    "goos": "darwin",
+    "goarch": "arm64",
+    "gomaxprocs": 14,
+    "numCpu": 14,
+    "dockerVersion": "Docker version 28.3.3, build 980b856"
+  },
+  "insights": [
+    {
+      "category": "bottleneck",
+      "severity": "warning",
+      "title": "Conflict storm",
+      "detail": "1470 conflicts / 8310 moves (17.7%)"
+    },
+    {
+      "category": "anomaly",
+      "severity": "warning",
+      "title": "Error dominance",
+      "detail": "\"conflict\" accounts for 100% of non-success outcomes (1470/1470)"
+    },
+    {
+      "category": "bottleneck",
+      "severity": "warning",
+      "title": "High contention rate",
+      "detail": "15% of move attempts are contention (conflicts=1470, stale_state=0, total_attempts=9780)"
+    },
+    {
+      "category": "bottleneck",
+      "severity": "info",
+      "title": "Throughput plateau",
+      "detail": "peak/avg ratio = 7.7x (avg=69.2, peak=536.2 moves/s)"
+    },
+    {
+      "category": "anomaly",
+      "severity": "info",
+      "title": "Phase flow imbalance",
+      "detail": "deploy entries (377) are 8% of attack entries (4445) — games may be getting stuck"
+    }
+  ]
+}

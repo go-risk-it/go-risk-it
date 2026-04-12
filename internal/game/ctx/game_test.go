@@ -121,3 +121,14 @@ func TestRebase_PreservesDomainFields(t *testing.T) {
 	require.Equal(t, int64(99), rebasedGame.GameID())
 	require.Equal(t, "user-abc", rebasedGame.UserID())
 }
+
+func TestGameContext_ScopeID(t *testing.T) {
+	t.Parallel()
+
+	traceCtx := kernelctx.WithSpan(context.Background(), noop.Span{})
+	userCtx := kernelctx.WithUserID(traceCtx, "test-user")
+	gameCtx := ctx.WithGameID(userCtx, 42)
+
+	require.Equal(t, gameCtx.GameID(), gameCtx.ScopeID(),
+		"ScopeID must equal GameID")
+}

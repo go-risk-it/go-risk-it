@@ -162,14 +162,14 @@ dashboard.new(
         description='Normal: > 95% (green). Watch for: dropping below 80% (yellow) means too many timeouts or fatals. Check next: Error Breakdown for error types causing failures.',
       ),
 
-      // Error Breakdown (timeseries stacked) — spanmetrics outcome!=success grouped by error_type
+      // Error Breakdown (timeseries stacked) — spanmetrics errors grouped by action
       layout.panel(
         panels.timeseriesPanel(
           title='Error Breakdown',
           targets=[
             targets.target(
-              'sum(rate(%s{%s="%s", span_name=~"%s", outcome!="success"}[1m])) by (error_type)' % [targets.spanmetricsMetric.calls, targets.serviceLabel, perfSvc, targets.perfTestSpans.move],
-              '{{error_type}}',
+              'sum(rate(%s{%s="%s", span_name=~"%s", status_code="STATUS_CODE_ERROR"}[1m])) by (action)' % [targets.spanmetricsMetric.calls, targets.serviceLabel, perfSvc, targets.perfTestSpans.move],
+              '{{action}}',
             ),
           ],
           unit='ops',
@@ -205,7 +205,7 @@ dashboard.new(
               'sum(rate(%s{%s="%s", span_name=~"%s"}[$__rate_interval])) by (le)' % [targets.spanmetricsMetric.duration, targets.serviceLabel, targets.perfTestServiceName, targets.perfTestSpans.move],
             ),
           ],
-          unit='s',
+          unit='ms',
           colorScheme='YlOrRd',
           colorFill='dark-red',
         ),
@@ -440,6 +440,11 @@ dashboard.new(
               'zombie',
               'D',
             ),
+            targets.target(
+              'rate(perftest_games_cancelled_total{service_name="%s"}[$__rate_interval])' % perfSvc,
+              'cancelled/s',
+              'E',
+            ),
           ],
           unit='short',
         )
@@ -449,6 +454,7 @@ dashboard.new(
           slow: colors.signal.warning,
           stalled: colors.signal['error'],
           zombie: colors.signal.muted,
+          'cancelled/s': colors.client,
         }) + {
           options+: {
             legend+: {
@@ -485,14 +491,14 @@ dashboard.new(
     // ACT — What's the evidence? (4 panels)
     // ================================================================
     act=[
-      // Error Rate by Type (timeseries stacked) — spanmetrics outcome!=success grouped by error_type
+      // Error Rate by Type (timeseries stacked) — spanmetrics errors grouped by action
       layout.panel(
         panels.timeseriesPanel(
           title='Error Rate by Type',
           targets=[
             targets.target(
-              'sum(rate(%s{%s="%s", span_name=~"%s", outcome!="success"}[1m])) by (error_type)' % [targets.spanmetricsMetric.calls, targets.serviceLabel, perfSvc, targets.perfTestSpans.move],
-              '{{error_type}}',
+              'sum(rate(%s{%s="%s", span_name=~"%s", status_code="STATUS_CODE_ERROR"}[1m])) by (action)' % [targets.spanmetricsMetric.calls, targets.serviceLabel, perfSvc, targets.perfTestSpans.move],
+              '{{action}}',
             ),
           ],
           unit='ops',

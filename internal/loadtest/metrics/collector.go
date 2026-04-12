@@ -80,6 +80,7 @@ type StepAccumulator struct {
 	gamesCompleted atomic.Int64
 	gamesTimedOut  atomic.Int64
 	gamesFatal     atomic.Int64
+	gamesCancelled atomic.Int64
 
 	// Resilience counters.
 	totalRetries           atomic.Int64
@@ -296,6 +297,11 @@ func (a *StepAccumulator) RecordGameFatal() {
 	a.gamesFatal.Add(1)
 }
 
+// RecordGameCancelled increments the games cancelled counter (step transition).
+func (a *StepAccumulator) RecordGameCancelled() {
+	a.gamesCancelled.Add(1)
+}
+
 // RecordRetry increments the REST retry counter.
 func (a *StepAccumulator) RecordRetry() {
 	a.totalRetries.Add(1)
@@ -396,6 +402,7 @@ func (a *StepAccumulator) Snapshot() *Snapshot {
 		GamesCompleted:         a.gamesCompleted.Load(),
 		GamesTimedOut:          a.gamesTimedOut.Load(),
 		GamesFatal:             a.gamesFatal.Load(),
+		GamesCancelled:         a.gamesCancelled.Load(),
 		TotalRetries:           a.totalRetries.Load(),
 		TotalConflicts:         a.totalConflicts.Load(),
 		TotalReconnects:        a.totalReconnects.Load(),
@@ -421,6 +428,7 @@ type Snapshot struct {
 	GamesCompleted int64
 	GamesTimedOut  int64
 	GamesFatal     int64
+	GamesCancelled int64
 
 	// Resilience counters.
 	TotalRetries           int64

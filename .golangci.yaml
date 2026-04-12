@@ -14,6 +14,7 @@ linters:
     - noinlineerr
     - wsl
     - wsl_v5
+    - paralleltest  # Tests are already 105% parallelized (1045 t.Parallel() calls). Remaining non-parallel tests are deliberate (DB transactions, integration tests). 24.5s test suite doesn't need sub-second optimizations.
   settings:
     unparam:
       check-exported: true
@@ -51,8 +52,8 @@ linters:
         - github\.com/go-risk-it/go-risk-it/internal/game/snapshot\..*
         - github\.com/go-risk-it/go-risk-it/internal/game/headlines\..*
         - github\.com/go-risk-it/go-risk-it/internal/game/data/db\.Querier
-        - github\.com/go-risk-it/go-risk-it/internal/lobby/logic/.*
-        - github\.com/go-risk-it/go-risk-it/internal/lobby/data/db\.Querier
+        - github\.com/go-risk-it/go-risk-it/internal/lobby/internal/logic/.*
+        - github\.com/go-risk-it/go-risk-it/internal/lobby/internal/data/db\.Querier
         - github\.com/go-risk-it/go-risk-it/internal/testonly\..*
         - github\.com/go-risk-it/go-risk-it/internal/game/ws\..*
         - github\.com/go-risk-it/go-risk-it/internal/lobby/ws\..*
@@ -98,6 +99,50 @@ linters:
       - linters:
           - varnamelen
         path: cmd/loadtest/
+      # Service constructors use constructor-returns-interface pattern for DI
+      - linters:
+          - ireturn
+        path: internal/.*/service\.go$
+        text: "returns interface"
+      # Module boundary adapters return interfaces for decoupling
+      - linters:
+          - ireturn
+        path: /game\.go$
+        text: "returns interface"
+      - linters:
+          - ireturn
+        path: /lobby\.go$
+        text: "returns interface"
+      # Factory/strategy patterns (dice rollers, mission checkers, region assignment)
+      - linters:
+          - ireturn
+        path: (dice|checker|assignment|rand)/.*\.go$
+        text: "returns interface"
+      # Data layer DB querier constructors
+      - linters:
+          - ireturn
+        path: internal/.*/data/db/querier\.go$
+        text: "returns interface"
+      # Move orchestration constructors
+      - linters:
+          - ireturn
+        path: internal/game/internal/logic/move/orchestration/
+        text: "returns interface"
+      # Board/graph constructors
+      - linters:
+          - ireturn
+        path: internal/game/internal/logic/board/
+        text: "returns interface"
+      # Snapshot reader (returns polymorphic PhaseState interface)
+      - linters:
+          - ireturn
+        path: internal/.*/snapshot/.*\.go$
+        text: "returns interface"
+      # Handler constructors return api interfaces
+      - linters:
+          - ireturn
+        path: internal/.*/handlers/.*\.go$
+        text: "returns interface"
       - linters:
           - cyclop
           - dogsled

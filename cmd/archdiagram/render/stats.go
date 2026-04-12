@@ -27,7 +27,7 @@ func RenderStats(ruleCount, invariantCount int) string {
 			"simulates thousands of randomized games against a real "+
 			"Postgres database, checking "+
 			"[%d game-state invariants]"+
-			"(internal/testing/invariant/doc.go) after every move. "+
+			"(internal/game/testing/invariant/doc.go) after every move. "+
 			"Failures auto-shrink to minimal reproducers via "+
 			"[rapid](https://pkg.go.dev/pgregory.net/rapid).",
 		invariantCount,
@@ -44,8 +44,8 @@ func RenderStats(ruleCount, invariantCount int) string {
 	buf.WriteString(
 		"- **Type-Safe Move Pipeline** -- Generic `Service[T, R]` interface with compile-time " +
 			"enforcement across 5 move types. The [orchestration pipeline]" +
-			"(internal/game/logic/move/orchestration/doc.go) runs validate, perform, log, " +
-			"check mission, and advance in a single transaction.",
+			"(internal/game/internal/logic/move/orchestration/doc.go) runs validate, " +
+			"perform, log, check mission, and advance in a single transaction.",
 	)
 	buf.WriteString("\n\n")
 

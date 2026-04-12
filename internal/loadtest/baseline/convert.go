@@ -89,6 +89,7 @@ func SnapshotToMetrics(snap *metrics.Snapshot, totalDurationSec float64) Metrics
 		GamesCompleted:         snap.GamesCompleted,
 		GamesTimedOut:          snap.GamesTimedOut,
 		GamesFatal:             snap.GamesFatal,
+		GamesCancelled:         snap.GamesCancelled,
 		TotalRetries:           snap.TotalRetries,
 		TotalConflicts:         snap.TotalConflicts,
 		TotalReconnects:        snap.TotalReconnects,

@@ -47,6 +47,15 @@ func (lm *LiveMetrics) RecordGameStopped() {
 	lm.gamesActive.Add(-1)
 }
 
+// RecordGameCancelled increments the cancelled games counter.
+func (lm *LiveMetrics) RecordGameCancelled() {
+	if lm == nil {
+		return
+	}
+
+	lm.exporter.RecordGameCancelled()
+}
+
 // RecordHealthDistribution delegates health classification reporting to the exporter.
 func (lm *LiveMetrics) RecordHealthDistribution(dist health.Distribution) {
 	if lm == nil {

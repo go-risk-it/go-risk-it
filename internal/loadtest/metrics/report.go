@@ -17,6 +17,7 @@ type GameResult struct {
 	Errors     int
 	Winner     string
 	TimedOut   bool
+	Cancelled  bool
 	FatalError error
 }
 
@@ -460,6 +461,8 @@ func gameStatus(r GameResult) string {
 	switch {
 	case r.FatalError != nil:
 		return "fatal: " + r.FatalError.Error()
+	case r.Cancelled:
+		return "cancelled (step ended)"
 	case r.TimedOut:
 		return "timed out"
 	case r.Winner != "":

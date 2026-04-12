@@ -81,8 +81,8 @@ func PrintStaircaseReport( //nolint:funlen,gocognit // sequential report formatt
 		fmt.Fprintln(w, "\nHealth Distribution:")
 
 		hw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(hw, "GAMES\tHEALTHY\tSLOW\tSTALLED\tZOMBIE\tEFFECTIVE")
-		fmt.Fprintln(hw, "-----\t-------\t----\t-------\t------\t---------")
+		fmt.Fprintln(hw, "GAMES\tHEALTHY\tSLOW\tSTALLED\tZOMBIE\tEFFECTIVE\tCANCEL")
+		fmt.Fprintln(hw, "-----\t-------\t----\t-------\t------\t---------\t------")
 
 		for _, step := range entry.Steps {
 			if step.HealthDistribution == nil {
@@ -92,13 +92,14 @@ func PrintStaircaseReport( //nolint:funlen,gocognit // sequential report formatt
 			d := step.HealthDistribution
 			fmt.Fprintf(
 				hw,
-				"%d\t%d\t%d\t%d\t%d\t%d\n",
+				"%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
 				step.TargetGames,
 				d.Healthy,
 				d.Slow,
 				d.Stalled,
 				d.Zombie,
 				d.EffectiveConcurrency(),
+				step.Metrics.GamesCancelled,
 			)
 		}
 

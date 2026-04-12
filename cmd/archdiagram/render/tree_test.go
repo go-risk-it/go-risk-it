@@ -14,16 +14,25 @@ func TestRenderProjectTree_Basic(t *testing.T) {
 	pkgs := []model.GoPackage{
 		{ImportPath: model.ModulePrefix + "kernel/config"},
 		{ImportPath: model.ModulePrefix + "kernel/ctx"},
-		{ImportPath: model.ModulePrefix + "game/logic/board"},
-		{ImportPath: model.ModulePrefix + "game/logic/phase"},
+		{ImportPath: model.ModulePrefix + "game/internal/logic/board"},
+		{ImportPath: model.ModulePrefix + "game/internal/logic/phase"},
 	}
 
 	archModel := &model.ArchModel{
 		Packages: map[string]*model.PackageInfo{
-			"kernel/config":    {Suffix: "kernel/config", Summary: "Configuration management"},
-			"kernel/ctx":       {Suffix: "kernel/ctx", Summary: "Typed contexts"},
-			"game/logic/board": {Suffix: "game/logic/board", Summary: "Board topology"},
-			"game/logic/phase": {Suffix: "game/logic/phase", Summary: "Phase transitions"},
+			"kernel/config": {
+				Suffix:  "kernel/config",
+				Summary: "Configuration management",
+			},
+			"kernel/ctx": {Suffix: "kernel/ctx", Summary: "Typed contexts"},
+			"game/internal/logic/board": {
+				Suffix:  "game/internal/logic/board",
+				Summary: "Board topology",
+			},
+			"game/internal/logic/phase": {
+				Suffix:  "game/internal/logic/phase",
+				Summary: "Phase transitions",
+			},
 		},
 		Subsystems: map[string]*model.SubsystemInfo{},
 		Layers:     map[string]*model.LayerInfo{},
@@ -66,15 +75,15 @@ func TestRenderProjectTree_Deterministic(t *testing.T) {
 
 	pkgs := []model.GoPackage{
 		{ImportPath: model.ModulePrefix + "web/middleware"},
-		{ImportPath: model.ModulePrefix + "game/logic/board"},
+		{ImportPath: model.ModulePrefix + "game/internal/logic/board"},
 		{ImportPath: model.ModulePrefix + "kernel/config"},
 	}
 
 	archModel := &model.ArchModel{
 		Packages: map[string]*model.PackageInfo{
-			"web/middleware":   {Suffix: "web/middleware", Summary: "Auth middleware"},
-			"game/logic/board": {Suffix: "game/logic/board", Summary: "Board"},
-			"kernel/config":    {Suffix: "kernel/config", Summary: "Config"},
+			"web/middleware":            {Suffix: "web/middleware", Summary: "Auth middleware"},
+			"game/internal/logic/board": {Suffix: "game/internal/logic/board", Summary: "Board"},
+			"kernel/config":             {Suffix: "kernel/config", Summary: "Config"},
 		},
 		Subsystems: map[string]*model.SubsystemInfo{},
 		Layers:     map[string]*model.LayerInfo{},
@@ -92,14 +101,14 @@ func TestRenderProjectTree_ExcludesSqlcAndMocks(t *testing.T) {
 	t.Parallel()
 
 	pkgs := []model.GoPackage{
-		{ImportPath: model.ModulePrefix + "game/data/db"},
-		{ImportPath: model.ModulePrefix + "game/data/sqlc"},
+		{ImportPath: model.ModulePrefix + "game/internal/data/db"},
+		{ImportPath: model.ModulePrefix + "game/internal/data/sqlc"},
 		{ImportPath: model.ModulePrefix + "game/mocks"},
 	}
 
 	archModel := &model.ArchModel{
 		Packages: map[string]*model.PackageInfo{
-			"game/data/db": {Suffix: "game/data/db", Summary: "Game DB"},
+			"game/internal/data/db": {Suffix: "game/internal/data/db", Summary: "Game DB"},
 		},
 		Subsystems: map[string]*model.SubsystemInfo{},
 		Layers:     map[string]*model.LayerInfo{},

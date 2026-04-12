@@ -1,0 +1,201 @@
+{
+  "commitSha": "54dd0353",
+  "timestamp": "2026-04-03T22:30:40.195032+02:00",
+  "branch": "main",
+  "config": {
+    "steps": [
+      40,
+      80,
+      120,
+      160,
+      200,
+      250,
+      300
+    ],
+    "holdDurationSec": 120,
+    "numPlayers": 4,
+    "gameTimeoutSec": 900,
+    "stopOnBreach": true
+  },
+  "sloCeiling": {
+    "games": 0,
+    "throughputMps": 0,
+    "completionRate": 0
+  },
+  "steps": [
+    {
+      "targetGames": 40,
+      "metrics": {
+        "e2e": {
+          "p50S": 0.055,
+          "p95S": 3.005,
+          "p99S": 3.011,
+          "maxS": 3.071
+        },
+        "wsDelivery": {
+          "p50S": 0.051,
+          "p95S": 30.015,
+          "p99S": 30.015,
+          "maxS": 30.015
+        },
+        "throughputMovesPerSec": 90.84145082359444,
+        "throughputPeakMovesPerSec": 597.2,
+        "httpErrorRate": 0,
+        "moveFailureRate": 0.1152503855206558,
+        "totalMoves": 10901,
+        "totalErrors": 0,
+        "gamesCompleted": 0,
+        "gamesTimedOut": 0,
+        "gamesFatal": 0,
+        "totalRetries": 0,
+        "totalConflicts": 1420,
+        "totalReconnects": 0,
+        "totalReconnectFailures": 0,
+        "errorBreakdown": {
+          "conflict": 1420
+        },
+        "phaseEntries": {
+          "attack": 5694,
+          "cards": 93,
+          "conquer": 5515,
+          "deploy": 547,
+          "reinforce": 472
+        },
+        "phaseMoves": {
+          "attack": 5315,
+          "cards": 93,
+          "conquer": 4130,
+          "deploy": 512,
+          "reinforce": 376
+        },
+        "durationSec": 120.000285125
+      },
+      "sloEval": {
+        "violations": [
+          {
+            "slo": {
+              "name": "E2E move latency p95",
+              "metric": "e2e_p95_s",
+              "threshold": 0.25,
+              "unit": "s"
+            },
+            "actual": 3.005
+          },
+          {
+            "slo": {
+              "name": "E2E move latency p99",
+              "metric": "e2e_p99_s",
+              "threshold": 0.5,
+              "unit": "s"
+            },
+            "actual": 3.011
+          },
+          {
+            "slo": {
+              "name": "WS delivery latency p95",
+              "metric": "ws_delivery_p95_s",
+              "threshold": 0.1,
+              "unit": "s"
+            },
+            "actual": 30.015
+          },
+          {
+            "slo": {
+              "name": "WS delivery latency p99",
+              "metric": "ws_delivery_p99_s",
+              "threshold": 0.2,
+              "unit": "s"
+            },
+            "actual": 30.015
+          }
+        ]
+      },
+      "serverResources": {
+        "riskIt": {
+          "cpuPercent": 3.81,
+          "memoryMb": 63.12,
+          "memoryLimitMb": 17459.2
+        },
+        "db": {
+          "cpuPercent": 0.87,
+          "memoryMb": 265.8,
+          "memoryLimitMb": 17459.2
+        }
+      },
+      "durationSec": 120.000285125,
+      "healthDistribution": {
+        "healthy": 0,
+        "slow": 0,
+        "stalled": 40,
+        "zombie": 0,
+        "total": 40
+      }
+    }
+  ],
+  "breakingPoints": [
+    {
+      "sloName": "E2E move latency p95",
+      "breaksAtGames": 40,
+      "lastGoodValue": 0,
+      "breakValue": 3.005
+    },
+    {
+      "sloName": "E2E move latency p99",
+      "breaksAtGames": 40,
+      "lastGoodValue": 0,
+      "breakValue": 3.011
+    },
+    {
+      "sloName": "WS delivery latency p95",
+      "breaksAtGames": 40,
+      "lastGoodValue": 0,
+      "breakValue": 30.015
+    },
+    {
+      "sloName": "WS delivery latency p99",
+      "breaksAtGames": 40,
+      "lastGoodValue": 0,
+      "breakValue": 30.015
+    }
+  ],
+  "environment": {
+    "goVersion": "go1.26.1",
+    "goos": "darwin",
+    "goarch": "arm64",
+    "gomaxprocs": 14,
+    "numCpu": 14,
+    "dockerVersion": "Docker version 28.3.3, build 980b856"
+  },
+  "insights": [
+    {
+      "category": "bottleneck",
+      "severity": "warning",
+      "title": "Conflict storm",
+      "detail": "1420 conflicts / 10901 moves (13.0%)"
+    },
+    {
+      "category": "anomaly",
+      "severity": "warning",
+      "title": "Error dominance",
+      "detail": "\"conflict\" accounts for 100% of non-success outcomes (1420/1420)"
+    },
+    {
+      "category": "bottleneck",
+      "severity": "warning",
+      "title": "High contention rate",
+      "detail": "12% of move attempts are contention (conflicts=1420, stale_state=0, total_attempts=12321)"
+    },
+    {
+      "category": "bottleneck",
+      "severity": "info",
+      "title": "Throughput plateau",
+      "detail": "peak/avg ratio = 6.6x (avg=90.8, peak=597.2 moves/s)"
+    },
+    {
+      "category": "anomaly",
+      "severity": "info",
+      "title": "Phase flow imbalance",
+      "detail": "deploy entries (547) are 10% of attack entries (5694) — games may be getting stuck"
+    }
+  ]
+}

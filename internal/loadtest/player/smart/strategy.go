@@ -2,11 +2,11 @@ package smart
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"math/rand/v2"
 	"sync"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/mapgraph"
@@ -20,7 +20,7 @@ type Strategy struct {
 	personality Personality
 
 	// conqueredTurn tracks the last turn in which a conquest occurred,
-	// keyed by GameState.ID. Enables card farming: after conquering once,
+	// keyed by GameMeta.ID. Enables card farming: after conquering once,
 	// the bot can choose to stop attacking to preserve forces.
 	conqueredTurn sync.Map // map[int64]int64
 }
@@ -45,19 +45,19 @@ func (s *Strategy) DecideMove(
 	bv := NewBoardView(snap, userID, s.graph)
 
 	switch phase {
-	case gamestate.Cards:
+	case snapshot.PhaseCards:
 		return GenerateCardPlay(snap), nil
 
-	case gamestate.Deploy:
+	case snapshot.PhaseDeploy:
 		return s.decideDeploy(snap, bv, userID)
 
-	case gamestate.Attack:
+	case snapshot.PhaseAttack:
 		return s.decideAttack(snap, bv, userID)
 
-	case gamestate.Conquer:
+	case snapshot.PhaseConquer:
 		return s.decideConquer(snap, bv)
 
-	case gamestate.Reinforce:
+	case snapshot.PhaseReinforce:
 		return s.decideReinforce(snap, bv, userID)
 
 	default:
@@ -76,13 +76,17 @@ func (s *Strategy) decideDeploy(
 	}
 
 	if len(actions) == 0 {
-		return player.NewAdvanceAction(gamestate.Deploy), nil
+		return player.NewAdvanceAction(snapshot.PhaseDeploy), nil
 	}
 
 	// Parse deployable troops from phase state.
-	var state gamestate.DeployPhaseState
-	if err := json.Unmarshal(snap.GameState.Phase.State, &state); err != nil {
-		return nil, fmt.Errorf("unmarshal deploy state: %w", err)
+	if snap.PlayerView == nil {
+		return player.NewAdvanceAction(snapshot.PhaseDeploy), nil
+	}
+
+	state, ok := snap.PlayerView.Phase.State.(snapshot.DeployPhaseState)
+	if !ok {
+		return nil, fmt.Errorf("expected DeployPhaseState, got %T", snap.PlayerView.Phase.State)
 	}
 
 	// Score border regions and pick highest.
@@ -105,7 +109,7 @@ func (s *Strategy) decideDeploy(
 	}
 
 	if best == nil {
-		return player.NewAdvanceAction(gamestate.Deploy), nil
+		return player.NewAdvanceAction(snapshot.PhaseDeploy), nil
 	}
 
 	return best, nil
@@ -118,7 +122,7 @@ func (s *Strategy) decideAttack(
 ) (*player.Action, error) {
 	actions := GenerateAttacks(snap, bv, userID, s.graph)
 	if len(actions) == 0 {
-		return player.NewAdvanceAction(gamestate.Attack), nil
+		return player.NewAdvanceAction(snapshot.PhaseAttack), nil
 	}
 
 	// Filter by shouldAttack threshold, with stricter gate after securing card.
@@ -142,7 +146,7 @@ func (s *Strategy) decideAttack(
 	}
 
 	if len(eligible) == 0 {
-		return player.NewAdvanceAction(gamestate.Attack), nil
+		return player.NewAdvanceAction(snapshot.PhaseAttack), nil
 	}
 
 	// Pick highest-scored attack.
@@ -176,14 +180,16 @@ func (s *Strategy) decideConquer(
 			"no valid conquer moves generated, this should not happen",
 		)
 
-		return player.NewAdvanceAction(gamestate.Conquer), nil
+		return player.NewAdvanceAction(snapshot.PhaseConquer), nil
 	}
 
 	// Deterministic aggression-proportional index: 0.0 -> first (min), 1.0 -> last (max).
 	idx := int(s.personality.Aggression * float64(len(actions)-1))
 
 	// Record conquest for card-farming tracking.
-	s.conqueredTurn.Store(snap.GameState.ID, snap.GameState.Turn)
+	if snap.PlayerView != nil {
+		s.conqueredTurn.Store(snap.PlayerView.Game.ID, snap.PlayerView.Game.Turn)
+	}
 
 	return actions[idx], nil
 }
@@ -195,7 +201,7 @@ func (s *Strategy) decideReinforce(
 ) (*player.Action, error) {
 	actions := GenerateReinforces(snap, bv, userID, s.graph)
 	if len(actions) == 0 {
-		return player.NewAdvanceAction(gamestate.Reinforce), nil
+		return player.NewAdvanceAction(snapshot.PhaseReinforce), nil
 	}
 
 	// Phase 1: prefer interior→border reinforcements, pick randomly.
@@ -204,7 +210,7 @@ func (s *Strategy) decideReinforce(
 		return pickRandom(borderReinforces), nil
 	}
 
-	return player.NewAdvanceAction(gamestate.Reinforce), nil
+	return player.NewAdvanceAction(snapshot.PhaseReinforce), nil
 }
 
 // shouldAttack returns true if the troop ratio meets the personality-adjusted threshold.
@@ -224,7 +230,11 @@ func shouldAttack(myTroops, targetTroops int64, p Personality) bool {
 // hasConqueredThisTurn reports whether the bot has already conquered
 // a region during the current turn for the given game.
 func (s *Strategy) hasConqueredThisTurn(snap gamestate.ViewSnapshot) bool {
-	val, ok := s.conqueredTurn.Load(snap.GameState.ID)
+	if snap.PlayerView == nil {
+		return false
+	}
+
+	val, ok := s.conqueredTurn.Load(snap.PlayerView.Game.ID)
 	if !ok {
 		return false
 	}
@@ -234,7 +244,7 @@ func (s *Strategy) hasConqueredThisTurn(snap gamestate.ViewSnapshot) bool {
 		return false
 	}
 
-	return turn == snap.GameState.Turn
+	return turn == snap.PlayerView.Game.Turn
 }
 
 // shouldAttackAfterCard applies a stricter threshold after securing the
@@ -314,7 +324,7 @@ func scoreAttack(
 // scoreDeploy scores a deploy target based on troop advantage over strongest enemy neighbor
 // and continent ownership progress.
 func scoreDeploy(
-	region *gamestate.Region,
+	region *snapshot.RegionState,
 	deployable int64,
 	userID string,
 	bv *BoardView,

@@ -102,7 +102,8 @@ func RunContinuousRamp(
 			select {
 			case <-ticker.C:
 				snap := collector.Snapshot()
-				total := snap.GamesCompleted + snap.GamesTimedOut + snap.GamesFatal
+				total := snap.GamesCompleted + snap.GamesTimedOut +
+					snap.GamesFatal + snap.GamesCancelled
 				active := int64(launched) - total
 
 				observe.Info(context.Background(), "ramp progress",
@@ -130,7 +131,8 @@ func RunContinuousRamp(
 
 		// Check error threshold.
 		snap := collector.Snapshot()
-		totalFinished := snap.GamesCompleted + snap.GamesTimedOut + snap.GamesFatal
+		totalFinished := snap.GamesCompleted + snap.GamesTimedOut +
+			snap.GamesFatal + snap.GamesCancelled
 
 		if totalFinished > 0 {
 			errorRate := float64(snap.GamesFatal+snap.GamesTimedOut) / float64(totalFinished)

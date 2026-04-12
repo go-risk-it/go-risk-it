@@ -21,7 +21,7 @@ type Presence interface {
 }
 
 // Lifecycle manages the lifetime of a game's connection tracking. Used by the
-// GameCompleted consumer to clean up after a game ends.
+// ScopeLifecycle adapter to clean up after a game ends.
 type Lifecycle interface {
 	RemoveGame(ctx ctx.GameContext)
 }
@@ -45,6 +45,27 @@ var (
 // Existing callers that need the full surface continue to depend on Manager;
 // new callers should depend on the narrowest interface they need (Writer,
 // Presence, Lifecycle, or Gateway).
+//
+// # Generic Manager[C] evaluation — DROP
+//
+// A generic Manager[C context.Context] / Publisher[C] was evaluated four times
+// to unify game and lobby WS managers. Each evaluation reached the same
+// conclusion: the structural asymmetry between modules makes generics add
+// complexity without meaningful LOC reduction.
+//
+// Game manager surface: Writer + Presence + Lifecycle + Gateway (~139 LOC),
+// with disconnect handler, presence broadcasts, and RemoveGame cleanup.
+// Lobby manager surface: Writer + Gateway (~56 LOC), no presence tracking,
+// no lifecycle cleanup, no disconnect handler.
+//
+// A generic abstraction would need to either (a) carry phantom interfaces
+// that lobby never uses (Presence, Lifecycle), or (b) split into so many
+// type parameters that the generic is harder to read than the concrete types.
+// The shared infrastructure already lives in web/ws/ScopeMap and
+// web/ws/PlayerConnections — the right abstraction layer.
+//
+// Decision: DROP. Four evaluations with the same outcome is a strong signal.
+// The narrow interfaces per module are the correct design.
 type Manager interface {
 	Writer
 	Presence

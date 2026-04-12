@@ -1,9 +1,10 @@
 package smart
 
 import (
-	"encoding/json"
+	"errors"
 	"fmt"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/gamestate"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/mapgraph"
 	"github.com/go-risk-it/go-risk-it/internal/loadtest/player"
@@ -12,13 +13,14 @@ import (
 // GenerateCardPlay returns a card play action if a valid combination exists,
 // or an advance action otherwise. Cards are deterministic (no scoring needed).
 func GenerateCardPlay(snap gamestate.ViewSnapshot) *player.Action {
-	if snap.CardState == nil || len(snap.CardState.Cards) < 3 {
-		return player.NewAdvanceAction(gamestate.Cards)
+	cards := snap.Cards()
+	if len(cards) < 3 {
+		return player.NewAdvanceAction(snapshot.PhaseCards)
 	}
 
-	combo := player.FindCardCombo(snap.CardState.Cards)
+	combo := player.FindCardCombo(cards)
 	if combo == nil {
-		return player.NewAdvanceAction(gamestate.Cards)
+		return player.NewAdvanceAction(snapshot.PhaseCards)
 	}
 
 	return &player.Action{
@@ -35,10 +37,13 @@ func GenerateDeploys(
 	snap gamestate.ViewSnapshot,
 	bv *BoardView,
 ) ([]*player.Action, error) {
-	var state gamestate.DeployPhaseState
+	if snap.PlayerView == nil {
+		return nil, nil
+	}
 
-	if err := json.Unmarshal(snap.GameState.Phase.State, &state); err != nil {
-		return nil, fmt.Errorf("unmarshal deploy state: %w", err)
+	state, ok := snap.PlayerView.Phase.State.(snapshot.DeployPhaseState)
+	if !ok {
+		return nil, fmt.Errorf("expected DeployPhaseState, got %T", snap.PlayerView.Phase.State)
 	}
 
 	if state.DeployableTroops == 0 {
@@ -113,10 +118,13 @@ func GenerateConquers(
 	snap gamestate.ViewSnapshot,
 	bv *BoardView,
 ) ([]*player.Action, error) {
-	var state gamestate.ConquerPhaseState
+	if snap.PlayerView == nil {
+		return nil, errors.New("nil PlayerView in conquer phase")
+	}
 
-	if err := json.Unmarshal(snap.GameState.Phase.State, &state); err != nil {
-		return nil, fmt.Errorf("unmarshal conquer state: %w", err)
+	state, ok := snap.PlayerView.Phase.State.(snapshot.ConquerPhaseState)
+	if !ok {
+		return nil, fmt.Errorf("expected ConquerPhaseState, got %T", snap.PlayerView.Phase.State)
 	}
 
 	// Read current source troops from the board (critical: not cached/stale).

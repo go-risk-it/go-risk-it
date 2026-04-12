@@ -50,7 +50,7 @@ var invariantEntryPattern = regexp.MustCompile(`(?m)^\s*\{`)
 // CountInvariants counts game invariants by finding entries in the AllInvariants
 // slice in invariant.go.
 func CountInvariants(repoRoot string) (int, error) {
-	path := filepath.Join(repoRoot, "internal", "testing", "invariant", "invariant.go")
+	path := filepath.Join(repoRoot, "internal", "game", "testing", "invariant", "invariant.go")
 
 	data, err := os.ReadFile(path)
 	if err != nil {

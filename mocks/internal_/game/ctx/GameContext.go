@@ -280,6 +280,50 @@ func (_c *GameContext_Rebase_Call) RunAndReturn(run func(base context.Context) c
 	return _c
 }
 
+// ScopeID provides a mock function for the type GameContext
+func (_mock *GameContext) ScopeID() int64 {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for ScopeID")
+	}
+
+	var r0 int64
+	if returnFunc, ok := ret.Get(0).(func() int64); ok {
+		r0 = returnFunc()
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+	return r0
+}
+
+// GameContext_ScopeID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ScopeID'
+type GameContext_ScopeID_Call struct {
+	*mock.Call
+}
+
+// ScopeID is a helper method to define mock.On call
+func (_e *GameContext_Expecter) ScopeID() *GameContext_ScopeID_Call {
+	return &GameContext_ScopeID_Call{Call: _e.mock.On("ScopeID")}
+}
+
+func (_c *GameContext_ScopeID_Call) Run(run func()) *GameContext_ScopeID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *GameContext_ScopeID_Call) Return(n int64) *GameContext_ScopeID_Call {
+	_c.Call.Return(n)
+	return _c
+}
+
+func (_c *GameContext_ScopeID_Call) RunAndReturn(run func() int64) *GameContext_ScopeID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // SlogAttrs provides a mock function for the type GameContext
 func (_mock *GameContext) SlogAttrs() []slog.Attr {
 	ret := _mock.Called()
