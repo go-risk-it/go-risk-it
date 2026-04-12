@@ -26,6 +26,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/player"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/state"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/rand"
+	intsnapshot "github.com/go-risk-it/go-risk-it/internal/game/internal/snapshot"
 	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/metrics"
 	"github.com/golang-migrate/migrate/v4"
@@ -111,7 +112,7 @@ func buildFxApp(
 		game.Module,
 		gameconfig.Module,
 		fx.Provide(newNoopStateStore),
-		fx.Provide(newNoopSnapshotReader),
+		fx.Provide(newNoopReaderFactory),
 		fx.Supply(testKoanf),
 		rand.Module,
 		fx.Supply(testMetrics),
@@ -307,11 +308,16 @@ func (n *noopStateStore) Get(_ int64) *snapshot.CachedGameState      { return ni
 func (n *noopStateStore) Store(_ int64, _ *snapshot.CachedGameState) {}
 func (n *noopStateStore) Remove(_ int64)                             {}
 
-// noopSnapshotReader satisfies game.SnapshotReader for invariant tests that
+// noopReaderFactory satisfies snapshot.ReaderFactory for invariant tests that
 // don't exercise snapshot reads.
-type noopSnapshotReader struct{}
+func newNoopReaderFactory() intsnapshot.ReaderFactory {
+	return func(_ gamedb.Querier) intsnapshot.Reader {
+		return &noopSnapshotReader{}
+	}
+}
 
-func newNoopSnapshotReader() gameapi.SnapshotReader { return &noopSnapshotReader{} }
+// noopSnapshotReader implements snapshot.Reader as a no-op.
+type noopSnapshotReader struct{}
 
 func (n *noopSnapshotReader) GetPublicSnapshot(
 	_ gamectx.GameContext,
