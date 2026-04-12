@@ -110,6 +110,8 @@ All other non-excluded packages. Required doc.go sections:
 | `game/internal/logic/move/validation` | logic |
 | `game/internal/logic/region/assignment` | logic |
 | `game/internal/rand` | logic |
+| `game/testing` | test |
+| `game/testing/invariant` | test |
 | `game/web` | web |
 | `game/web/routes` | web |
 | `game/ws` | web |
@@ -137,7 +139,6 @@ All other non-excluded packages. Required doc.go sections:
 | `lobby/web` | web |
 | `lobby/web/routes` | web |
 | `lobby/ws` | web |
-| `testing/invariant` | test |
 | `web/middleware` | web |
 | `web/mux` | web |
 | `web/nbio` | web |

@@ -77,8 +77,9 @@ var expectedLayer = map[string]string{
 	"lobby/events": "Events-domain",
 
 	// test
-	"testing/invariant": "Test",
-	"testonly":          "Test",
+	"game/testing":           "Test",
+	"game/testing/invariant": "Test",
+	"testonly":               "Test",
 }
 
 // layerFromPrefix derives the expected layer for a package suffix using prefix matching.

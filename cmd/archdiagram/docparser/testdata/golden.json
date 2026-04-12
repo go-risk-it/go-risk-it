@@ -119,6 +119,14 @@
     "layer": "Game-support",
     "summary": "Package snapshot provides aggregated read models for efficient game state\nretrieval. [Service.GetPublicSnapshot] returns the full public state\n(game metadata, phase, board, players) and\n[Service.GetPrivateSnapshotsByUser] returns per-player private state\n(cards, mission). All queries execute sequentially on a single connection,\navoiding the DB pool starvation caused by parallel fetcher goroutines."
   },
+  "game/testing": {
+    "layer": "Test",
+    "summary": "Package testing provides test infrastructure for the game module."
+  },
+  "game/testing/invariant": {
+    "layer": "Test",
+    "summary": "Package invariant implements a property-based testing framework for the Risk game engine."
+  },
   "game/web": {
     "layer": "Web",
     "summary": "Package webgame is a minimal FX module for the game web layer.\nEvent handling has moved to internal/game/internal/handlers/."
@@ -238,10 +246,6 @@
   "lobby/ws": {
     "layer": "Web",
     "summary": "Package ws manages per-lobby WebSocket connections."
-  },
-  "testing/invariant": {
-    "layer": "Test",
-    "summary": "Package invariant implements a property-based testing framework for the Risk game engine."
   },
   "testonly": {
     "layer": "Test",

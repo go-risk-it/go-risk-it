@@ -106,6 +106,8 @@ graph TD
 
     subgraph layer_test["Test Layer"]
         direction LR
+        pkg_game_testing["Testing"]
+        pkg_game_testing_invariant["Invariant"]
         pkg_testing["Testing"]
     end
 

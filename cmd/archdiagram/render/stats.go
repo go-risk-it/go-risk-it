@@ -27,7 +27,7 @@ func RenderStats(ruleCount, invariantCount int) string {
 			"simulates thousands of randomized games against a real "+
 			"Postgres database, checking "+
 			"[%d game-state invariants]"+
-			"(internal/testing/invariant/doc.go) after every move. "+
+			"(internal/game/testing/invariant/doc.go) after every move. "+
 			"Failures auto-shrink to minimal reproducers via "+
 			"[rapid](https://pkg.go.dev/pgregory.net/rapid).",
 		invariantCount,

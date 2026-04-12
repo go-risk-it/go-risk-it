@@ -67,6 +67,8 @@ graph LR
 
     subgraph Test["🧪 Test"]
         direction TB
+        gametesting["Testing"]
+        gametestinginvariant["Invariant"]
         testing["Testing"]
     end
 
@@ -87,8 +89,8 @@ graph LR
     gameservices --> gamesupport
     gameservices --> kernelbus
     gameservices --> lobbyctx
-    testing --> kernelbus
-    testing --> gameconsumers
+    gametesting --> kernelbus
+    gametesting --> gameconsumers
     gameconsumers --> apidtos
     gameconsumers --> lobbyevents
     gameconsumers --> kernelbus
