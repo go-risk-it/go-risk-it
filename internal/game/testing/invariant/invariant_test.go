@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 	// Change to repo root so map.json and migration paths resolve.
 	_, callerPath, _, _ := runtime.Caller(0)
 	repoRoot := filepath.Join(
-		filepath.Dir(callerPath), "..", "..", "..",
+		filepath.Dir(callerPath), "..", "..", "..", "..",
 	)
 
 	if err := os.Chdir(repoRoot); err != nil {
