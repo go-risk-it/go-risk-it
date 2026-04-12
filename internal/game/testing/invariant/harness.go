@@ -113,6 +113,7 @@ func buildFxApp(
 		gameconfig.Module,
 		fx.Provide(newNoopStateStore),
 		fx.Provide(newNoopReaderFactory),
+		fx.Provide(newNoopSnapshotReader),
 		fx.Supply(testKoanf),
 		rand.Module,
 		fx.Supply(testMetrics),
@@ -318,6 +319,8 @@ func newNoopReaderFactory() intsnapshot.ReaderFactory {
 
 // noopSnapshotReader implements snapshot.Reader as a no-op.
 type noopSnapshotReader struct{}
+
+func newNoopSnapshotReader() gameapi.SnapshotReader { return &noopSnapshotReader{} }
 
 func (n *noopSnapshotReader) GetPublicSnapshot(
 	_ gamectx.GameContext,
