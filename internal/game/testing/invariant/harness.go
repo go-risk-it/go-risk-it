@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
-	gameconfig "github.com/go-risk-it/go-risk-it/internal/game/internal/config"
 	gamedb "github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
 	game "github.com/go-risk-it/go-risk-it/internal/game/internal/logic"
@@ -107,7 +106,7 @@ func buildFxApp(
 		fx.Provide(func() sqlc.DBTX { return dbPool }),
 		fx.Provide(gamedb.New),
 		game.Module,
-		gameconfig.Module,
+
 		fx.Supply(testKoanf),
 		rand.Module,
 		fx.Supply(testMetrics),
@@ -253,7 +252,7 @@ func runMigrations(connStr string) error {
 
 	migrationDir := filepath.Join(
 		filepath.Dir(callerPath),
-		"..", "..", "game", "data", "sqlc", "migrations",
+		"..", "..", "internal", "data", "sqlc", "migrations",
 	)
 
 	mig, err := migrate.New("file://"+migrationDir, connStr)

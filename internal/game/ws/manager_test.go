@@ -337,11 +337,11 @@ func readWSMessage(t *testing.T, reader net.Conn) []byte {
 	// Read up to 4KB — more than enough for a presence message.
 	buf := make([]byte, 4096)
 	bytesRead, err := reader.Read(buf)
-	assert.NoError(t, err) // nolint:testifylint // Called from goroutines - safe with assert
+	assert.NoError(t, err) //nolint:testifylint // Called from goroutines - safe with assert
 	assert.Positive(
 		t,
 		bytesRead,
-	) // nolint:testifylint // Called from goroutines - safe with assert
+	)
 
 	// nbio writes raw WS frames. Parse the frame to extract the payload.
 	// Frame format: [opcode byte] [length byte(s)] [payload]

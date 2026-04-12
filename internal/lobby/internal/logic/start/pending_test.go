@@ -172,7 +172,7 @@ func TestConcurrent_DifferentLobbies(t *testing.T) {
 			lobbyID := int64(i)
 
 			resultChan, err := pendingStarts.Register(lobbyID)
-			assert.NoError(t, err) // nolint:testifylint // Test goroutine - safe with assert
+			assert.NoError(t, err)
 
 			go func() {
 				pendingStarts.Resolve(lobbyID, lobbyID*10, nil)
@@ -187,12 +187,12 @@ func TestConcurrent_DifferentLobbies(t *testing.T) {
 			assert.NoError(
 				t,
 				err,
-			) // nolint:testifylint // Test goroutine - safe with assert
+			)
 			assert.Equal(
 				t,
 				lobbyID*10,
 				gameID,
-			) // nolint:testifylint // Test goroutine - safe with assert
+			)
 		}()
 	}
 
@@ -224,7 +224,7 @@ func TestConcurrent_SameLobby(t *testing.T) {
 					t,
 					err,
 					start.ErrStartAlreadyPending,
-				) // nolint:testifylint // Test goroutine
+				)
 				duplicates.Add(1)
 
 				return

@@ -10,7 +10,7 @@ import (
 
 	gameapi "github.com/go-risk-it/go-risk-it/internal/game/api"
 
-	"github.com/go-risk-it/go-risk-it/internal/testing/invariant"
+	"github.com/go-risk-it/go-risk-it/internal/game/testing/invariant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"

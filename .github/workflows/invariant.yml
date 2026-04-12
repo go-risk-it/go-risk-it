@@ -23,5 +23,5 @@ jobs:
     - name: Run invariant tests
       run: >-
         go test -tags invariant -v -timeout 300s
-        ./internal/testing/invariant/
+        ./internal/game/testing/invariant/
         -args -rapid.checks="${INVARIANT_GAME_COUNT}"
