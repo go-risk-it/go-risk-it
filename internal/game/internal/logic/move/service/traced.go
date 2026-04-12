@@ -17,31 +17,16 @@ func NewTracedService[T, R any](inner Service[T, R]) Service[T, R] {
 	return &tracedService[T, R]{inner: inner}
 }
 
-// performResult bundles the two non-error return values of Perform so that
-// observe.Span (which accepts a single result type) can wrap the call.
-type performResult[R any] struct {
-	result R
-	effect MoveEffect
-}
-
 func (t *tracedService[T, R]) Perform(
 	gameCtx ctx.GameContext,
 	querier db.Querier,
 	move T,
 	prev *snapshot.CachedGameState,
 ) (R, MoveEffect, error) {
-	performResult, err := observe.Span(
-		gameCtx,
-		"game.move.perform",
-		func(gameCtx ctx.GameContext) (performResult[R], error) {
-			r, eff, err := t.inner.Perform(gameCtx, querier, move, prev)
+	observe.SpanEvent(gameCtx, "game.move.perform",
+		attribute.String("phase", string(t.inner.PhaseType())))
 
-			return performResult[R]{result: r, effect: eff}, err
-		},
-		attribute.String("phase", string(t.inner.PhaseType())),
-	)
-
-	return performResult.result, performResult.effect, err
+	return t.inner.Perform(gameCtx, querier, move, prev)
 }
 
 // Walk is a pure function (no context, no DB) — tracing is not applicable.
@@ -56,14 +41,10 @@ func (t *tracedService[T, R]) Advance(
 	performResult R,
 	advCtx AdvanceContext,
 ) (AdvanceEffect, error) {
-	return observe.Span(
-		gameCtx,
-		"game.move.advance",
-		func(gameCtx ctx.GameContext) (AdvanceEffect, error) {
-			return t.inner.Advance(gameCtx, querier, targetPhase, performResult, advCtx)
-		},
-		attribute.String("phase", string(t.inner.PhaseType())),
-	)
+	observe.SpanEvent(gameCtx, "game.move.advance",
+		attribute.String("phase", string(t.inner.PhaseType())))
+
+	return t.inner.Advance(gameCtx, querier, targetPhase, performResult, advCtx)
 }
 
 func (t *tracedService[T, R]) PhaseType() sqlc.GamePhaseType {

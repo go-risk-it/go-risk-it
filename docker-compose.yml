@@ -65,7 +65,7 @@ services:
       - ./grafana/dashboards/dashboards.yml:/otel-lgtm/grafana/conf/provisioning/dashboards/go-risk-it.yaml
       - ./grafana/dashboards:/otel-lgtm/go-risk-it-dashboards
       - ./grafana/provisioning/datasources/tempo.yaml:/otel-lgtm/grafana/conf/provisioning/datasources/tempo.yaml
-      - ./grafana/otelcol-extra.yaml:/otel-lgtm/otelcol-config.yaml
+      - ${OTELCOL_CONFIG:-./grafana/otelcol-extra.yaml}:/otel-lgtm/otelcol-config.yaml
       - ./grafana/prometheus/prometheus.yaml:/otel-lgtm/prometheus.yaml
       - ./grafana/prometheus/recording-rules.yml:/otel-lgtm/prometheus-rules/recording-rules.yml
       - ./grafana/tempo/tempo-config.yaml:/otel-lgtm/tempo-config.yaml

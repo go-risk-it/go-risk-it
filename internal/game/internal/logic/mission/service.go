@@ -9,7 +9,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/mission/checker"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/rand"
-	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -201,40 +200,34 @@ func (s *service) IsMissionAccomplished(
 	ctx gamectx.GameContext,
 	querier db.Querier,
 ) (bool, error) {
-	return observe.Span(
-		ctx,
-		"game.move.check_mission",
-		func(ctx gamectx.GameContext) (bool, error) {
-			baseMission, err := querier.GetMission(ctx, sqlc.GetMissionParams{
-				GameID: ctx.GameID(),
-				UserID: ctx.UserID(),
-			})
-			if err != nil {
-				return false, fmt.Errorf("failed to get mission: %w", err)
-			}
+	baseMission, err := querier.GetMission(ctx, sqlc.GetMissionParams{
+		GameID: ctx.GameID(),
+		UserID: ctx.UserID(),
+	})
+	if err != nil {
+		return false, fmt.Errorf("failed to get mission: %w", err)
+	}
 
-			isMissionAccomplished, err := s.isMissionAccomplished(ctx, querier, baseMission)
-			if err != nil {
-				return false, fmt.Errorf("failed to check if mission is accomplished: %w", err)
-			}
+	isMissionAccomplished, err := s.isMissionAccomplished(ctx, querier, baseMission)
+	if err != nil {
+		return false, fmt.Errorf("failed to check if mission is accomplished: %w", err)
+	}
 
-			if isMissionAccomplished {
-				if err := querier.AssignGameWinner(ctx, sqlc.AssignGameWinnerParams{
-					WinnerPlayerID: pgtype.Int8{
-						Int64: baseMission.PlayerID,
-						Valid: true,
-					},
-					GameID: ctx.GameID(),
-				}); err != nil {
-					return false, fmt.Errorf("failed to assign game winner: %w", err)
-				}
+	if isMissionAccomplished {
+		if err := querier.AssignGameWinner(ctx, sqlc.AssignGameWinnerParams{
+			WinnerPlayerID: pgtype.Int8{
+				Int64: baseMission.PlayerID,
+				Valid: true,
+			},
+			GameID: ctx.GameID(),
+		}); err != nil {
+			return false, fmt.Errorf("failed to assign game winner: %w", err)
+		}
 
-				return true, nil
-			}
+		return true, nil
+	}
 
-			return false, nil
-		},
-	)
+	return false, nil
 }
 
 func (s *service) isMissionAccomplished(

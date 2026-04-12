@@ -19,8 +19,9 @@ func executeMigrations(
 func NewConnectionPool(
 	lifecycle fx.Lifecycle,
 	cfg config.DatabaseConfig,
+	otelCfg config.OtelConfig,
 ) (*pgxpool.Pool, error) {
-	return poolfactory.NewConnectionPool(lifecycle, cfg, "game")
+	return poolfactory.NewConnectionPool(lifecycle, cfg, otelCfg, "game")
 }
 
 var Module = fx.Options(

@@ -1,0 +1,244 @@
+{
+  "commit_sha": "02b5b789",
+  "timestamp": "2026-04-08T17:49:14.031161+02:00",
+  "branch": "worktree-modular-monolith",
+  "config": {
+    "steps": [
+      5,
+      10,
+      20,
+      40
+    ],
+    "hold_duration_sec": 60,
+    "num_players": 4,
+    "game_timeout_sec": 600,
+    "stop_on_breach": true
+  },
+  "slo_ceiling": {
+    "games": 40,
+    "throughput_mps": 0,
+    "completion_rate": 0
+  },
+  "steps": [
+    {
+      "target_games": 5,
+      "metrics": {
+        "e2e": {
+          "p50_s": 0,
+          "p95_s": 0,
+          "p99_s": 0,
+          "max_s": 0
+        },
+        "ws_delivery": {
+          "p50_s": 0,
+          "p95_s": 0,
+          "p99_s": 0,
+          "max_s": 0
+        },
+        "throughput_moves_per_sec": 0,
+        "throughput_peak_moves_per_sec": 0,
+        "http_error_rate": 0,
+        "total_moves": 0,
+        "total_errors": 0,
+        "games_completed": 0,
+        "games_timed_out": 0,
+        "games_fatal": 0,
+        "total_retries": 0,
+        "total_conflicts": 0,
+        "total_reconnects": 0,
+        "total_reconnect_failures": 0,
+        "duration_sec": 60.001176
+      },
+      "slo_eval": {
+        "violations": null
+      },
+      "server_resources": {
+        "risk_it": {
+          "cpu_percent": 3.02,
+          "memory_mb": 118.5,
+          "memory_limit_mb": 17459.2
+        },
+        "db": {
+          "cpu_percent": 120.38,
+          "memory_mb": 613.9,
+          "memory_limit_mb": 17459.2
+        }
+      },
+      "duration_sec": 60.001176,
+      "health_distribution": {
+        "healthy": 0,
+        "slow": 0,
+        "stalled": 0,
+        "zombie": 0,
+        "total": 0
+      }
+    },
+    {
+      "target_games": 10,
+      "metrics": {
+        "e2e": {
+          "p50_s": 0,
+          "p95_s": 0,
+          "p99_s": 0,
+          "max_s": 0
+        },
+        "ws_delivery": {
+          "p50_s": 0,
+          "p95_s": 0,
+          "p99_s": 0,
+          "max_s": 0
+        },
+        "throughput_moves_per_sec": 0,
+        "throughput_peak_moves_per_sec": 0,
+        "http_error_rate": 0,
+        "total_moves": 0,
+        "total_errors": 0,
+        "games_completed": 0,
+        "games_timed_out": 0,
+        "games_fatal": 0,
+        "total_retries": 0,
+        "total_conflicts": 0,
+        "total_reconnects": 0,
+        "total_reconnect_failures": 0,
+        "duration_sec": 60.000338666
+      },
+      "slo_eval": {
+        "violations": null
+      },
+      "server_resources": {
+        "risk_it": {
+          "cpu_percent": 0.99,
+          "memory_mb": 127.2,
+          "memory_limit_mb": 17459.2
+        },
+        "db": {
+          "cpu_percent": 164.36,
+          "memory_mb": 644.6,
+          "memory_limit_mb": 17459.2
+        }
+      },
+      "duration_sec": 60.000338666,
+      "health_distribution": {
+        "healthy": 0,
+        "slow": 0,
+        "stalled": 0,
+        "zombie": 0,
+        "total": 0
+      }
+    },
+    {
+      "target_games": 20,
+      "metrics": {
+        "e2e": {
+          "p50_s": 0,
+          "p95_s": 0,
+          "p99_s": 0,
+          "max_s": 0
+        },
+        "ws_delivery": {
+          "p50_s": 0,
+          "p95_s": 0,
+          "p99_s": 0,
+          "max_s": 0
+        },
+        "throughput_moves_per_sec": 0,
+        "throughput_peak_moves_per_sec": 0,
+        "http_error_rate": 0,
+        "total_moves": 0,
+        "total_errors": 0,
+        "games_completed": 0,
+        "games_timed_out": 0,
+        "games_fatal": 0,
+        "total_retries": 0,
+        "total_conflicts": 0,
+        "total_reconnects": 0,
+        "total_reconnect_failures": 0,
+        "duration_sec": 60.000128166
+      },
+      "slo_eval": {
+        "violations": null
+      },
+      "server_resources": {
+        "risk_it": {
+          "cpu_percent": 1.42,
+          "memory_mb": 138.7,
+          "memory_limit_mb": 17459.2
+        },
+        "db": {
+          "cpu_percent": 344.2,
+          "memory_mb": 667.9,
+          "memory_limit_mb": 17459.2
+        }
+      },
+      "duration_sec": 60.000128166,
+      "health_distribution": {
+        "healthy": 0,
+        "slow": 0,
+        "stalled": 0,
+        "zombie": 0,
+        "total": 0
+      }
+    },
+    {
+      "target_games": 40,
+      "metrics": {
+        "e2e": {
+          "p50_s": 0,
+          "p95_s": 0,
+          "p99_s": 0,
+          "max_s": 0
+        },
+        "ws_delivery": {
+          "p50_s": 0,
+          "p95_s": 0,
+          "p99_s": 0,
+          "max_s": 0
+        },
+        "throughput_moves_per_sec": 0,
+        "throughput_peak_moves_per_sec": 0,
+        "http_error_rate": 0,
+        "total_moves": 0,
+        "total_errors": 0,
+        "games_completed": 0,
+        "games_timed_out": 0,
+        "games_fatal": 0,
+        "total_retries": 0,
+        "total_conflicts": 0,
+        "total_reconnects": 0,
+        "total_reconnect_failures": 0,
+        "duration_sec": 60.000185541
+      },
+      "slo_eval": {
+        "violations": null
+      },
+      "server_resources": {
+        "risk_it": {
+          "cpu_percent": 0.02,
+          "memory_mb": 149,
+          "memory_limit_mb": 17459.2
+        },
+        "db": {
+          "cpu_percent": 266.17,
+          "memory_mb": 700.6,
+          "memory_limit_mb": 17459.2
+        }
+      },
+      "duration_sec": 60.000185541,
+      "health_distribution": {
+        "healthy": 0,
+        "slow": 0,
+        "stalled": 0,
+        "zombie": 0,
+        "total": 0
+      }
+    }
+  ],
+  "environment": {
+    "go_version": "go1.26.1",
+    "goos": "darwin",
+    "goarch": "arm64",
+    "gomaxprocs": 14,
+    "num_cpu": 14,
+    "docker_version": "Docker version 28.3.3, build 980b856"
+  }
+}

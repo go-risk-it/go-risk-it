@@ -1,0 +1,121 @@
+# Load-test OTel Collector configuration.
+#
+# Identical to otelcol-extra.yaml EXCEPT:
+#   - No traces/storage pipeline (no tail sampling, no Tempo export)
+#   - Saves ~0.5 CPU cores and ~500 MB RAM during staircase tests
+#   - Spanmetrics pipeline is IDENTICAL — RED metrics fully preserved
+#
+# Usage:
+#   OTELCOL_CONFIG=./grafana/otelcol-loadtest.yaml docker compose up
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+        cors:
+          allowed_origins:
+            - http://*
+  prometheus/collector:
+    config:
+      scrape_configs:
+        - job_name: "opentelemetry-collector"
+          scrape_interval: 1s
+          static_configs:
+            - targets: ["127.0.0.1:8888"]
+  prometheus/postgres:
+    config:
+      scrape_configs:
+        - job_name: "postgres"
+          scrape_interval: 5s
+          static_configs:
+            - targets: ["postgres-exporter:9187"]
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+    path: "/ready"
+
+processors:
+  batch:
+
+exporters:
+  otlphttp/metrics:
+    endpoint: http://127.0.0.1:9090/api/v1/otlp
+    tls:
+      insecure: true
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+    sending_queue:
+      enabled: true
+      num_consumers: 10
+      queue_size: 1000
+  otlphttp/logs:
+    endpoint: http://127.0.0.1:3100/otlp
+    tls:
+      insecure: true
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+  otlp/profiles:
+    endpoint: http://127.0.0.1:4040
+    tls:
+      insecure: true
+
+connectors:
+  spanmetrics:
+    histogram:
+      explicit:
+        buckets: [1ms, 5ms, 10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1s, 2.5s, 5s, 10s]
+    metrics_flush_interval: 5s
+    exemplars:
+      enabled: true
+    dimensions:
+      # Server-side span dimensions (risk-it service)
+      - name: http_route
+      - name: http_method
+      - name: http_status_code
+      - name: error_category
+      - name: event_type
+      - name: handler
+      - name: isolation
+      - name: phase
+      - name: db_outcome
+      - name: ws_fanout
+      # Perf-test span dimensions (perftest service)
+      # Bounded cardinality: action ~6 values, phase ~5, error_type ~4, outcome ~3
+      # Total additional combinations: ~900 (well within 10k limit)
+      - name: action
+      - name: error_type
+      - name: outcome
+    metrics_expiration: 6h
+    aggregation_cardinality_limit: 10000
+
+service:
+  extensions: [health_check]
+  pipelines:
+    # Metrics pipeline: spanmetrics sees 100% of spans for accurate RED metrics.
+    traces/metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [spanmetrics]
+    # traces/storage: REMOVED — no tail sampling, no Tempo export during load tests.
+    # This saves ~0.5 CPU cores (93% → ~40%) and ~500 MB RAM (no 50K trace buffer).
+    metrics:
+      receivers: [otlp, prometheus/collector, prometheus/postgres, spanmetrics]
+      processors: [batch]
+      exporters: [otlphttp/metrics]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/logs]
+    profiles:
+      receivers: [otlp]
+      exporters: [otlp/profiles]
