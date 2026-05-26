@@ -4,7 +4,7 @@ go 1.26.2
 
 require (
 	github.com/HdrHistogram/hdrhistogram-go v1.2.0
-	github.com/exaring/otelpgx v0.10.0
+	github.com/exaring/otelpgx v0.11.1
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/gorilla/websocket v1.5.3
