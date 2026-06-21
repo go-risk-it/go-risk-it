@@ -9,8 +9,6 @@ import (
 	moveservice "github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/board"
 	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/move/cards"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/phase"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/region"
 	"github.com/stretchr/testify/require"
 )
 
@@ -173,8 +171,6 @@ func TestWalk(t *testing.T) {
 			svc, _ := reinforce.NewService(
 				board.NewService(t),
 				cards.NewService(t),
-				phase.NewService(t),
-				region.NewService(t),
 			)
 
 			wctx := moveservice.WalkContext{

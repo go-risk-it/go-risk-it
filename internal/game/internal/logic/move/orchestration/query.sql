@@ -6,12 +6,9 @@ INSERT INTO game.move_log (game_id,
                       result)
 VALUES ($1,
         (SELECT id FROM game.player WHERE game_id = $1 AND user_id = $2),
-        (SELECT p.type
-         FROM game.phase p
-                  join game.game g on g.current_phase_id = p.id
-         WHERE g.id = $1),
         $3,
-        $4)
+        $4,
+        $5)
 RETURNING *;
 
 -- name: GetMoveLogs :many

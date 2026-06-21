@@ -673,6 +673,74 @@ func (_c *Querier_GetAvailableCards_Call) RunAndReturn(run func(ctx context.Cont
 	return _c
 }
 
+// GetAvailableDeck provides a mock function for the type Querier
+func (_mock *Querier) GetAvailableDeck(ctx context.Context, gameID int64) ([]sqlc.GetAvailableDeckRow, error) {
+	ret := _mock.Called(ctx, gameID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetAvailableDeck")
+	}
+
+	var r0 []sqlc.GetAvailableDeckRow
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) ([]sqlc.GetAvailableDeckRow, error)); ok {
+		return returnFunc(ctx, gameID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) []sqlc.GetAvailableDeckRow); ok {
+		r0 = returnFunc(ctx, gameID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]sqlc.GetAvailableDeckRow)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = returnFunc(ctx, gameID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_GetAvailableDeck_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAvailableDeck'
+type Querier_GetAvailableDeck_Call struct {
+	*mock.Call
+}
+
+// GetAvailableDeck is a helper method to define mock.On call
+//   - ctx context.Context
+//   - gameID int64
+func (_e *Querier_Expecter) GetAvailableDeck(ctx interface{}, gameID interface{}) *Querier_GetAvailableDeck_Call {
+	return &Querier_GetAvailableDeck_Call{Call: _e.mock.On("GetAvailableDeck", ctx, gameID)}
+}
+
+func (_c *Querier_GetAvailableDeck_Call) Run(run func(ctx context.Context, gameID int64)) *Querier_GetAvailableDeck_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_GetAvailableDeck_Call) Return(getAvailableDeckRows []sqlc.GetAvailableDeckRow, err error) *Querier_GetAvailableDeck_Call {
+	_c.Call.Return(getAvailableDeckRows, err)
+	return _c
+}
+
+func (_c *Querier_GetAvailableDeck_Call) RunAndReturn(run func(ctx context.Context, gameID int64) ([]sqlc.GetAvailableDeckRow, error)) *Querier_GetAvailableDeck_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetCardsForPlayer provides a mock function for the type Querier
 func (_mock *Querier) GetCardsForPlayer(ctx context.Context, arg sqlc.GetCardsForPlayerParams) ([]sqlc.GetCardsForPlayerRow, error) {
 	ret := _mock.Called(ctx, arg)

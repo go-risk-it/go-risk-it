@@ -37,6 +37,57 @@ func (_m *Orchestrator[T, R]) EXPECT() *Orchestrator_Expecter[T, R] {
 	return &Orchestrator_Expecter[T, R]{mock: &_m.Mock}
 }
 
+// AdvancePhase provides a mock function for the type Orchestrator
+func (_mock *Orchestrator[T, R]) AdvancePhase(ctx1 ctx.GameContext) error {
+	ret := _mock.Called(ctx1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AdvancePhase")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext) error); ok {
+		r0 = returnFunc(ctx1)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// Orchestrator_AdvancePhase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AdvancePhase'
+type Orchestrator_AdvancePhase_Call[T any, R any] struct {
+	*mock.Call
+}
+
+// AdvancePhase is a helper method to define mock.On call
+//   - ctx1 ctx.GameContext
+func (_e *Orchestrator_Expecter[T, R]) AdvancePhase(ctx1 interface{}) *Orchestrator_AdvancePhase_Call[T, R] {
+	return &Orchestrator_AdvancePhase_Call[T, R]{Call: _e.mock.On("AdvancePhase", ctx1)}
+}
+
+func (_c *Orchestrator_AdvancePhase_Call[T, R]) Run(run func(ctx1 ctx.GameContext)) *Orchestrator_AdvancePhase_Call[T, R] {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 ctx.GameContext
+		if args[0] != nil {
+			arg0 = args[0].(ctx.GameContext)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *Orchestrator_AdvancePhase_Call[T, R]) Return(err error) *Orchestrator_AdvancePhase_Call[T, R] {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *Orchestrator_AdvancePhase_Call[T, R]) RunAndReturn(run func(ctx1 ctx.GameContext) error) *Orchestrator_AdvancePhase_Call[T, R] {
+	_c.Call.Return(run)
+	return _c
+}
+
 // OrchestrateMove provides a mock function for the type Orchestrator
 func (_mock *Orchestrator[T, R]) OrchestrateMove(ctx1 ctx.GameContext, move T) error {
 	ret := _mock.Called(ctx1, move)

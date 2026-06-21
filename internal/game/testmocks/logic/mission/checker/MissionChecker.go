@@ -5,9 +5,8 @@
 package checker
 
 import (
-	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/mission/checker"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -40,8 +39,8 @@ func (_m *MissionChecker) EXPECT() *MissionChecker_Expecter {
 }
 
 // Check provides a mock function for the type MissionChecker
-func (_mock *MissionChecker) Check(ctx1 ctx.GameContext, querier db.Querier, baseMission sqlc.GameMission) (bool, error) {
-	ret := _mock.Called(ctx1, querier, baseMission)
+func (_mock *MissionChecker) Check(checkCtx checker.CheckContext, mission snapshot.PlayerMission) (bool, error) {
+	ret := _mock.Called(checkCtx, mission)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Check")
@@ -49,16 +48,16 @@ func (_mock *MissionChecker) Check(ctx1 ctx.GameContext, querier db.Querier, bas
 
 	var r0 bool
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, sqlc.GameMission) (bool, error)); ok {
-		return returnFunc(ctx1, querier, baseMission)
+	if returnFunc, ok := ret.Get(0).(func(checker.CheckContext, snapshot.PlayerMission) (bool, error)); ok {
+		return returnFunc(checkCtx, mission)
 	}
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, sqlc.GameMission) bool); ok {
-		r0 = returnFunc(ctx1, querier, baseMission)
+	if returnFunc, ok := ret.Get(0).(func(checker.CheckContext, snapshot.PlayerMission) bool); ok {
+		r0 = returnFunc(checkCtx, mission)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
-	if returnFunc, ok := ret.Get(1).(func(ctx.GameContext, db.Querier, sqlc.GameMission) error); ok {
-		r1 = returnFunc(ctx1, querier, baseMission)
+	if returnFunc, ok := ret.Get(1).(func(checker.CheckContext, snapshot.PlayerMission) error); ok {
+		r1 = returnFunc(checkCtx, mission)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -71,31 +70,25 @@ type MissionChecker_Check_Call struct {
 }
 
 // Check is a helper method to define mock.On call
-//   - ctx1 ctx.GameContext
-//   - querier db.Querier
-//   - baseMission sqlc.GameMission
-func (_e *MissionChecker_Expecter) Check(ctx1 interface{}, querier interface{}, baseMission interface{}) *MissionChecker_Check_Call {
-	return &MissionChecker_Check_Call{Call: _e.mock.On("Check", ctx1, querier, baseMission)}
+//   - checkCtx checker.CheckContext
+//   - mission snapshot.PlayerMission
+func (_e *MissionChecker_Expecter) Check(checkCtx interface{}, mission interface{}) *MissionChecker_Check_Call {
+	return &MissionChecker_Check_Call{Call: _e.mock.On("Check", checkCtx, mission)}
 }
 
-func (_c *MissionChecker_Check_Call) Run(run func(ctx1 ctx.GameContext, querier db.Querier, baseMission sqlc.GameMission)) *MissionChecker_Check_Call {
+func (_c *MissionChecker_Check_Call) Run(run func(checkCtx checker.CheckContext, mission snapshot.PlayerMission)) *MissionChecker_Check_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 ctx.GameContext
+		var arg0 checker.CheckContext
 		if args[0] != nil {
-			arg0 = args[0].(ctx.GameContext)
+			arg0 = args[0].(checker.CheckContext)
 		}
-		var arg1 db.Querier
+		var arg1 snapshot.PlayerMission
 		if args[1] != nil {
-			arg1 = args[1].(db.Querier)
-		}
-		var arg2 sqlc.GameMission
-		if args[2] != nil {
-			arg2 = args[2].(sqlc.GameMission)
+			arg1 = args[1].(snapshot.PlayerMission)
 		}
 		run(
 			arg0,
 			arg1,
-			arg2,
 		)
 	})
 	return _c
@@ -106,24 +99,24 @@ func (_c *MissionChecker_Check_Call) Return(b bool, err error) *MissionChecker_C
 	return _c
 }
 
-func (_c *MissionChecker_Check_Call) RunAndReturn(run func(ctx1 ctx.GameContext, querier db.Querier, baseMission sqlc.GameMission) (bool, error)) *MissionChecker_Check_Call {
+func (_c *MissionChecker_Check_Call) RunAndReturn(run func(checkCtx checker.CheckContext, mission snapshot.PlayerMission) (bool, error)) *MissionChecker_Check_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Type provides a mock function for the type MissionChecker
-func (_mock *MissionChecker) Type() sqlc.GameMissionType {
+func (_mock *MissionChecker) Type() snapshot.MissionType {
 	ret := _mock.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Type")
 	}
 
-	var r0 sqlc.GameMissionType
-	if returnFunc, ok := ret.Get(0).(func() sqlc.GameMissionType); ok {
+	var r0 snapshot.MissionType
+	if returnFunc, ok := ret.Get(0).(func() snapshot.MissionType); ok {
 		r0 = returnFunc()
 	} else {
-		r0 = ret.Get(0).(sqlc.GameMissionType)
+		r0 = ret.Get(0).(snapshot.MissionType)
 	}
 	return r0
 }
@@ -145,12 +138,12 @@ func (_c *MissionChecker_Type_Call) Run(run func()) *MissionChecker_Type_Call {
 	return _c
 }
 
-func (_c *MissionChecker_Type_Call) Return(gameMissionType sqlc.GameMissionType) *MissionChecker_Type_Call {
-	_c.Call.Return(gameMissionType)
+func (_c *MissionChecker_Type_Call) Return(missionType snapshot.MissionType) *MissionChecker_Type_Call {
+	_c.Call.Return(missionType)
 	return _c
 }
 
-func (_c *MissionChecker_Type_Call) RunAndReturn(run func() sqlc.GameMissionType) *MissionChecker_Type_Call {
+func (_c *MissionChecker_Type_Call) RunAndReturn(run func() snapshot.MissionType) *MissionChecker_Type_Call {
 	_c.Call.Return(run)
 	return _c
 }

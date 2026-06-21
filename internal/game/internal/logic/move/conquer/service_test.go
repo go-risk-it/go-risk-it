@@ -10,41 +10,21 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/conquer"
 	moveservice "github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/data/db"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/card"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/mission"
 	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/move/attack"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/phase"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/region"
 	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
 
-func setup(t *testing.T) (
-	*db.Querier,
-	*card.Service,
-	*mission.Service,
-	*region.Service,
-	conquer.Service,
-) {
+func setup(t *testing.T) (*db.Querier, conquer.Service) {
 	t.Helper()
 
 	querier := db.NewQuerier(t)
 	attackService := attack.NewService(t)
-	cardService := card.NewService(t)
-	missionService := mission.NewService(t)
-	phaseService := phase.NewService(t)
-	regionService := region.NewService(t)
-	service, _ := conquer.NewService(
-		querier,
-		attackService,
-		cardService,
-		missionService,
-		phaseService,
-		regionService,
-	)
 
-	return querier, cardService, missionService, regionService, service
+	service, _ := conquer.NewService(querier, attackService)
+
+	return querier, service
 }
 
 func input() ctx.GameContext {
@@ -62,6 +42,7 @@ func input() ctx.GameContext {
 func prevWithConquerState(
 	source, target string,
 	minTroops int64,
+	regions []snapshot.RegionState,
 ) *snapshot.CachedGameState {
 	return &snapshot.CachedGameState{
 		PublicSnapshot: &snapshot.GameSnapshot{
@@ -73,6 +54,7 @@ func prevWithConquerState(
 					MinTroopsToMove:   minTroops,
 				},
 			},
+			Regions: regions,
 		},
 		PrivateSnapshots: map[string]*snapshot.PlayerPrivate{},
 	}
@@ -110,34 +92,26 @@ func TestServiceImpl_Perform_ShouldFailValidation(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, _, _, regionService, service := setup(t)
+			_, service := setup(t)
 			ctx := input()
 
-			prev := prevWithConquerState("greenland", "iceland", test.minimumTroops)
-
-			if test.minimumTroops <= test.moveTroops {
-				regionService.
-					EXPECT().
-					GetRegion(ctx, querier, "greenland").
-					Return(&sqlc.GetRegionsByGameRow{
-						ID:                1,
-						ExternalReference: "greenland",
-						UserID:            "giovanni",
-						Troops:            test.sourceTroops,
-					}, nil)
-
-				regionService.
-					EXPECT().
-					GetRegion(ctx, querier, "iceland").
-					Return(&sqlc.GetRegionsByGameRow{
-						ID:                2,
-						ExternalReference: "iceland",
-						UserID:            "gabriele",
-						Troops:            0,
-					}, nil)
+			regions := []snapshot.RegionState{
+				{
+					InternalID: 1,
+					ID:         "greenland",
+					OwnerID:    "giovanni",
+					Troops:     test.sourceTroops,
+				},
+				{
+					InternalID: 2,
+					ID:         "iceland",
+					OwnerID:    "gabriele",
+					Troops:     0,
+				},
 			}
+			prev := prevWithConquerState("greenland", "iceland", test.minimumTroops, regions)
 
-			_, _, err := service.Perform(ctx, querier, conquer.Move{
+			_, _, err := service.Perform(ctx, conquer.Move{
 				Troops: test.moveTroops,
 			}, prev)
 
@@ -147,56 +121,42 @@ func TestServiceImpl_Perform_ShouldFailValidation(t *testing.T) {
 	}
 }
 
+func TestServiceImpl_Perform_ShouldFailWhenSourceRegionNotInCache(t *testing.T) {
+	t.Parallel()
+
+	_, service := setup(t)
+	ctx := input()
+
+	// The conquer phase state references "greenland" as source, but it is not in the regions list.
+	regions := []snapshot.RegionState{
+		{InternalID: 2, ID: "iceland", OwnerID: "gabriele", Troops: 0},
+	}
+	prev := prevWithConquerState("greenland", "iceland", 2, regions)
+
+	_, _, err := service.Perform(ctx, conquer.Move{
+		Troops: 3,
+	}, prev)
+
+	require.Error(t, err)
+	require.ErrorContains(t, err, "unable to get attacking region")
+	require.ErrorContains(t, err, "region greenland not found in cached state")
+}
+
 func TestServiceImpl_Perform_ShouldTransferTroopsAndOwnership(t *testing.T) {
 	t.Parallel()
 
-	querier, _, _, regionService, service := setup(t)
+	_, service := setup(t)
 	ctx := input()
 
-	sourceRegion := &sqlc.GetRegionsByGameRow{
-		ID:                1,
-		ExternalReference: "greenland",
-		UserID:            "giovanni",
-		Troops:            5,
+	regions := []snapshot.RegionState{
+		{InternalID: 1, ID: "greenland", OwnerID: "giovanni", Troops: 5},
+		{InternalID: 2, ID: "iceland", OwnerID: "gabriele", Troops: 0},
+		// gabriele owns another region — not eliminated
+		{InternalID: 3, ID: "scandinavia", OwnerID: "gabriele", Troops: 2},
 	}
-	targetRegion := &sqlc.GetRegionsByGameRow{
-		ID:                2,
-		ExternalReference: "iceland",
-		UserID:            "gabriele",
-		Troops:            0,
-	}
-	defeatedPlayerID := int64(42)
+	prev := prevWithConquerState("greenland", "iceland", 2, regions)
 
-	prev := prevWithConquerState("greenland", "iceland", 2)
-
-	regionService.
-		EXPECT().
-		GetRegion(ctx, querier, "greenland").
-		Return(sourceRegion, nil)
-	regionService.
-		EXPECT().
-		GetRegion(ctx, querier, "iceland").
-		Return(targetRegion, nil)
-	regionService.
-		EXPECT().
-		UpdateTroopsInRegion(ctx, querier, sourceRegion, int64(-3)).
-		Return(nil)
-	regionService.
-		EXPECT().
-		UpdateTroopsInRegion(ctx, querier, targetRegion, int64(3)).
-		Return(nil)
-	regionService.
-		EXPECT().
-		UpdateRegionOwner(ctx, querier, targetRegion).
-		Return(defeatedPlayerID, nil)
-	regionService.
-		EXPECT().
-		GetRegionsControlledByPlayer(ctx, querier, defeatedPlayerID).
-		Return([]sqlc.GameRegion{
-			{ID: 10},
-		}, nil)
-
-	_, effect, err := service.Perform(ctx, querier, conquer.Move{
+	_, effect, err := service.Perform(ctx, conquer.Move{
 		Troops: 3,
 	}, prev)
 
@@ -222,22 +182,15 @@ func TestServiceImpl_Perform_ShouldTransferTroopsAndOwnership(t *testing.T) {
 func TestServiceImpl_Perform_ShouldHandlePlayerElimination(t *testing.T) {
 	t.Parallel()
 
-	querier, cardService, missionService, regionService, service := setup(t)
+	_, service := setup(t)
 	ctx := input()
 
-	sourceRegion := &sqlc.GetRegionsByGameRow{
-		ID:                1,
-		ExternalReference: "greenland",
-		UserID:            "giovanni",
-		Troops:            5,
+	// gabriele owns only iceland — will be eliminated
+	regions := []snapshot.RegionState{
+		{InternalID: 1, ID: "greenland", OwnerID: "giovanni", Troops: 5},
+		{InternalID: 2, ID: "iceland", OwnerID: "gabriele", Troops: 0},
+		{InternalID: 3, ID: "brazil", OwnerID: "giovanni", Troops: 3},
 	}
-	targetRegion := &sqlc.GetRegionsByGameRow{
-		ID:                2,
-		ExternalReference: "iceland",
-		UserID:            "gabriele",
-		Troops:            0,
-	}
-	defeatedPlayerID := int64(42)
 
 	prev := &snapshot.CachedGameState{
 		PublicSnapshot: &snapshot.GameSnapshot{
@@ -249,6 +202,7 @@ func TestServiceImpl_Perform_ShouldHandlePlayerElimination(t *testing.T) {
 					MinTroopsToMove:   2,
 				},
 			},
+			Regions: regions,
 		},
 		PrivateSnapshots: map[string]*snapshot.PlayerPrivate{
 			"gabriele": {
@@ -281,40 +235,7 @@ func TestServiceImpl_Perform_ShouldHandlePlayerElimination(t *testing.T) {
 		},
 	}
 
-	regionService.
-		EXPECT().
-		GetRegion(ctx, querier, "greenland").
-		Return(sourceRegion, nil)
-	regionService.
-		EXPECT().
-		GetRegion(ctx, querier, "iceland").
-		Return(targetRegion, nil)
-	regionService.
-		EXPECT().
-		UpdateTroopsInRegion(ctx, querier, sourceRegion, int64(-3)).
-		Return(nil)
-	regionService.
-		EXPECT().
-		UpdateTroopsInRegion(ctx, querier, targetRegion, int64(3)).
-		Return(nil)
-	regionService.
-		EXPECT().
-		UpdateRegionOwner(ctx, querier, targetRegion).
-		Return(defeatedPlayerID, nil)
-	regionService.
-		EXPECT().
-		GetRegionsControlledByPlayer(ctx, querier, defeatedPlayerID).
-		Return([]sqlc.GameRegion{}, nil)
-	cardService.
-		EXPECT().
-		TransferCardsOwnership(ctx, querier, defeatedPlayerID).
-		Return(nil)
-	missionService.
-		EXPECT().
-		ReassignMissions(ctx, querier, defeatedPlayerID).
-		Return(nil)
-
-	_, effect, err := service.Perform(ctx, querier, conquer.Move{
+	_, effect, err := service.Perform(ctx, conquer.Move{
 		Troops: 3,
 	}, prev)
 
@@ -341,22 +262,14 @@ func TestServiceImpl_Perform_ShouldHandlePlayerElimination(t *testing.T) {
 func TestServiceImpl_Perform_ShouldHandleEliminationWithNoCards(t *testing.T) {
 	t.Parallel()
 
-	querier, cardService, missionService, regionService, service := setup(t)
+	_, service := setup(t)
 	ctx := input()
 
-	sourceRegion := &sqlc.GetRegionsByGameRow{
-		ID:                1,
-		ExternalReference: "greenland",
-		UserID:            "giovanni",
-		Troops:            5,
+	// gabriele owns only iceland — will be eliminated (no cards)
+	regions := []snapshot.RegionState{
+		{InternalID: 1, ID: "greenland", OwnerID: "giovanni", Troops: 5},
+		{InternalID: 2, ID: "iceland", OwnerID: "gabriele", Troops: 0},
 	}
-	targetRegion := &sqlc.GetRegionsByGameRow{
-		ID:                2,
-		ExternalReference: "iceland",
-		UserID:            "gabriele",
-		Troops:            0,
-	}
-	defeatedPlayerID := int64(42)
 
 	prev := &snapshot.CachedGameState{
 		PublicSnapshot: &snapshot.GameSnapshot{
@@ -368,6 +281,7 @@ func TestServiceImpl_Perform_ShouldHandleEliminationWithNoCards(t *testing.T) {
 					MinTroopsToMove:   2,
 				},
 			},
+			Regions: regions,
 		},
 		PrivateSnapshots: map[string]*snapshot.PlayerPrivate{
 			"gabriele": {
@@ -380,40 +294,7 @@ func TestServiceImpl_Perform_ShouldHandleEliminationWithNoCards(t *testing.T) {
 		},
 	}
 
-	regionService.
-		EXPECT().
-		GetRegion(ctx, querier, "greenland").
-		Return(sourceRegion, nil)
-	regionService.
-		EXPECT().
-		GetRegion(ctx, querier, "iceland").
-		Return(targetRegion, nil)
-	regionService.
-		EXPECT().
-		UpdateTroopsInRegion(ctx, querier, sourceRegion, int64(-3)).
-		Return(nil)
-	regionService.
-		EXPECT().
-		UpdateTroopsInRegion(ctx, querier, targetRegion, int64(3)).
-		Return(nil)
-	regionService.
-		EXPECT().
-		UpdateRegionOwner(ctx, querier, targetRegion).
-		Return(defeatedPlayerID, nil)
-	regionService.
-		EXPECT().
-		GetRegionsControlledByPlayer(ctx, querier, defeatedPlayerID).
-		Return([]sqlc.GameRegion{}, nil)
-	cardService.
-		EXPECT().
-		TransferCardsOwnership(ctx, querier, defeatedPlayerID).
-		Return(nil)
-	missionService.
-		EXPECT().
-		ReassignMissions(ctx, querier, defeatedPlayerID).
-		Return(nil)
-
-	_, effect, err := service.Perform(ctx, querier, conquer.Move{
+	_, effect, err := service.Perform(ctx, conquer.Move{
 		Troops: 3,
 	}, prev)
 
@@ -425,7 +306,7 @@ func TestServiceImpl_Perform_ShouldHandleEliminationWithNoCards(t *testing.T) {
 func TestServiceImpl_GetPhaseStateWithQuerier(t *testing.T) {
 	t.Parallel()
 
-	querier, _, _, _, service := setup(t)
+	querier, service := setup(t)
 	ctx := input()
 
 	expected := sqlc.GetConquerPhaseStateRow{
@@ -448,7 +329,7 @@ func TestServiceImpl_GetPhaseStateWithQuerier(t *testing.T) {
 func TestServiceImpl_PhaseType(t *testing.T) {
 	t.Parallel()
 
-	_, _, _, _, service := setup(t)
+	_, service := setup(t)
 
 	require.Equal(t, sqlc.GamePhaseTypeCONQUER, service.PhaseType())
 }

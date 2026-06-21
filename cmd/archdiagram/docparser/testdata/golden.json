@@ -53,11 +53,11 @@
   },
   "game/internal/logic/mission": {
     "layer": "Logic",
-    "summary": "Package mission manages game missions: creation, assignment to players,\nwin-condition checking, and reassignment when a player is eliminated.\nFive mission types are supported \u2014 two continents, two continents plus one,\neighteen territories, twenty-four territories, and eliminate player."
+    "summary": "Package mission manages game missions: creation, assignment to players,\nwin-condition checking, and reassignment when a player is eliminated.\nFive mission types are supported — two continents, two continents plus one,\neighteen territories, twenty-four territories, and eliminate player."
   },
   "game/internal/logic/mission/checker": {
     "layer": "Logic",
-    "summary": "Package checker provides the mission-checking framework. Each mission type\nimplements [MissionChecker], and a [Registry] maps mission types to their\ncheckers for dispatch during win-condition evaluation."
+    "summary": "Package checker provides the mission-checking framework. Each mission type\nimplements [MissionChecker] as a pure evaluator over cached snapshot data,\nand a [Registry] maps mission types to their checkers for dispatch during\nwin-condition evaluation."
   },
   "game/internal/logic/move/attack": {
     "layer": "Logic",
@@ -81,7 +81,7 @@
   },
   "game/internal/logic/move/orchestration": {
     "layer": "Logic",
-    "summary": "Package orchestration coordinates the execution of game moves through a\ntransactional pipeline: validate, perform, log, check mission, walk phase\ngraph, and advance. Each move runs inside a RepeatableRead transaction,\nand post-commit events (MoveCompleted) are emitted through the event bus\nfor reactive consumers."
+    "summary": "Package orchestration coordinates the execution of game moves through an\neffects-first pipeline: validate, perform (pure), walk, advance (pure),\ncheck mission (pure), build state, build persistence effect, persist\n(write-only ReadCommitted TX), cache update, emit events."
   },
   "game/internal/logic/move/reinforce": {
     "layer": "Logic",
@@ -93,7 +93,7 @@
   },
   "game/internal/logic/phase": {
     "layer": "Logic",
-    "summary": "Package phase manages game phase transitions. It defines the phase state\nmachine (CARDS -> DEPLOY -> ATTACK -> CONQUER/REINFORCE and back),\nvalidates transitions, and handles turn advancement when crossing from\nREINFORCE to the next player's turn."
+    "summary": "Package phase manages game phase transitions. It defines the phase state\nmachine (CARDS -\u003e DEPLOY -\u003e ATTACK -\u003e CONQUER/REINFORCE and back),\nvalidates transitions, and handles turn advancement when crossing from\nREINFORCE to the next player's turn."
   },
   "game/internal/logic/player": {
     "layer": "Logic",
@@ -177,7 +177,7 @@
   },
   "kernel/metrics": {
     "layer": "Kernel",
-    "summary": "Package metrics registers manual OpenTelemetry instruments for resource\nstate that has no span equivalent. These are the only metrics that should\nbe created by hand \u2014 all request-scoped metrics (latency, throughput,\nerrors) are derived automatically from traces by the spanmetrics connector."
+    "summary": "Package metrics registers manual OpenTelemetry instruments for resource\nstate that has no span equivalent. These are the only metrics that should\nbe created by hand — all request-scoped metrics (latency, throughput,\nerrors) are derived automatically from traces by the spanmetrics connector."
   },
   "kernel/observe": {
     "layer": "Kernel",
@@ -237,7 +237,7 @@
   },
   "lobby/web": {
     "layer": "Web",
-    "summary": "Package weblobby contains lobby web-layer components: event consumers that\nreact to lobby bus events (LobbyStateChanged, LobbyPlayerConnected) and\npublish state updates over WebSocket connections. Consumer-local interfaces\n(Writer) decouple this package from the concrete WebSocket manager \u2014 Go duck\ntyping handles satisfaction."
+    "summary": "Package weblobby contains lobby web-layer components: event consumers that\nreact to lobby bus events (LobbyStateChanged, LobbyPlayerConnected) and\npublish state updates over WebSocket connections. Consumer-local interfaces\n(Writer) decouple this package from the concrete WebSocket manager — Go duck\ntyping handles satisfaction."
   },
   "lobby/web/routes": {
     "layer": "Web",

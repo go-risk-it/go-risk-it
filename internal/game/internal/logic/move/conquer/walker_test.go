@@ -8,11 +8,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/conquer"
 	moveservice "github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/data/db"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/card"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/mission"
 	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/move/attack"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/phase"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/region"
 	"github.com/stretchr/testify/require"
 )
 
@@ -82,10 +78,6 @@ func TestWalk(t *testing.T) {
 			svc, _ := conquer.NewService(
 				db.NewQuerier(t),
 				attack.NewService(t),
-				card.NewService(t),
-				mission.NewService(t),
-				phase.NewService(t),
-				region.NewService(t),
 			)
 
 			wctx := moveservice.WalkContext{

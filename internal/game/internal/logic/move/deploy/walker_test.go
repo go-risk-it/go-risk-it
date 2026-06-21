@@ -8,8 +8,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/deploy"
 	moveservice "github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/data/db"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/phase"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/region"
 	"github.com/stretchr/testify/require"
 )
 
@@ -51,8 +49,6 @@ func TestWalk(t *testing.T) {
 			// Construct a real service (deps unused by Walk).
 			svc, _ := deploy.NewService(
 				db.NewQuerier(t),
-				phase.NewService(t),
-				region.NewService(t),
 			)
 
 			wctx := moveservice.WalkContext{

@@ -12,6 +12,7 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/deploy"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/reinforce"
 	moveservice "github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/service"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/phase"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/state"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/bus"
@@ -24,8 +25,8 @@ type OrchestratorDeps struct {
 	fx.In
 
 	Querier               db.Querier
+	PhaseService          phase.Service
 	GameService           state.Service
-	LoggingService        LoggingService
 	MissionService        mission.Service
 	ValidationService     ValidationService
 	Bus                   bus.Publisher
@@ -35,13 +36,14 @@ type OrchestratorDeps struct {
 	SnapshotReaderFactory snapshot.ReaderFactory
 	StateStore            gameapi.StateStore
 	BoardService          board.Service
+	GameLocks             *GameLocks
 }
 
 type orchestrator[T, R any] struct {
 	querier               db.Querier
 	service               moveservice.Service[T, R]
+	phaseService          phase.Service
 	gameService           state.Service
-	loggingService        LoggingService
 	missionService        mission.Service
 	validationService     ValidationService
 	bus                   bus.Publisher
@@ -51,6 +53,7 @@ type orchestrator[T, R any] struct {
 	snapshotReaderFactory snapshot.ReaderFactory
 	stateStore            gameapi.StateStore
 	boardService          board.Service
+	gameLocks             *GameLocks
 }
 
 var _ Orchestrator[any, any] = (*orchestrator[any, any])(nil)
@@ -58,8 +61,8 @@ var _ Orchestrator[any, any] = (*orchestrator[any, any])(nil)
 func NewOrchestrator[T, R any](
 	querier db.Querier,
 	service moveservice.Service[T, R],
+	phaseService phase.Service,
 	gameService state.Service,
-	loggingService LoggingService,
 	missionService mission.Service,
 	validationService ValidationService,
 	bus bus.Publisher,
@@ -69,12 +72,13 @@ func NewOrchestrator[T, R any](
 	snapshotReaderFactory snapshot.ReaderFactory,
 	stateStore gameapi.StateStore,
 	boardService board.Service,
+	gameLocks *GameLocks,
 ) Orchestrator[T, R] {
 	return &orchestrator[T, R]{
 		querier:               querier,
 		service:               service,
+		phaseService:          phaseService,
 		gameService:           gameService,
-		loggingService:        loggingService,
 		missionService:        missionService,
 		validationService:     validationService,
 		bus:                   bus,
@@ -84,6 +88,7 @@ func NewOrchestrator[T, R any](
 		snapshotReaderFactory: snapshotReaderFactory,
 		stateStore:            stateStore,
 		boardService:          boardService,
+		gameLocks:             gameLocks,
 	}
 }
 
@@ -139,8 +144,8 @@ func newOrchestratorFromDeps[T, R any](
 	return NewOrchestrator[T, R](
 		deps.Querier,
 		service,
+		deps.PhaseService,
 		deps.GameService,
-		deps.LoggingService,
 		deps.MissionService,
 		deps.ValidationService,
 		deps.Bus,
@@ -150,11 +155,13 @@ func newOrchestratorFromDeps[T, R any](
 		deps.SnapshotReaderFactory,
 		deps.StateStore,
 		deps.BoardService,
+		deps.GameLocks,
 	)
 }
 
 var Module = fx.Options(
 	fx.Provide(
+		NewGameLocks,
 		NewDeployOrchestrator,
 		NewAttackOrchestrator,
 		NewConquerOrchestrator,
@@ -164,6 +171,5 @@ var Module = fx.Options(
 		NewReinforcePhaseAdvancer,
 		NewCardsPhaseAdvancer,
 		NewValidationService,
-		NewLoggingService,
 	),
 )

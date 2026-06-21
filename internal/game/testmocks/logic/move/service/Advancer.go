@@ -6,7 +6,6 @@ package service
 
 import (
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/service"
 	mock "github.com/stretchr/testify/mock"
@@ -41,8 +40,8 @@ func (_m *Advancer[R]) EXPECT() *Advancer_Expecter[R] {
 }
 
 // Advance provides a mock function for the type Advancer
-func (_mock *Advancer[R]) Advance(ctx1 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType, performResult R, advCtx service.AdvanceContext) (service.AdvanceEffect, error) {
-	ret := _mock.Called(ctx1, querier, targetPhase, performResult, advCtx)
+func (_mock *Advancer[R]) Advance(ctx1 ctx.GameContext, targetPhase sqlc.GamePhaseType, performResult R, advCtx service.AdvanceContext) (service.AdvanceEffect, error) {
+	ret := _mock.Called(ctx1, targetPhase, performResult, advCtx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Advance")
@@ -50,16 +49,16 @@ func (_mock *Advancer[R]) Advance(ctx1 ctx.GameContext, querier db.Querier, targ
 
 	var r0 service.AdvanceEffect
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, sqlc.GamePhaseType, R, service.AdvanceContext) (service.AdvanceEffect, error)); ok {
-		return returnFunc(ctx1, querier, targetPhase, performResult, advCtx)
+	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, sqlc.GamePhaseType, R, service.AdvanceContext) (service.AdvanceEffect, error)); ok {
+		return returnFunc(ctx1, targetPhase, performResult, advCtx)
 	}
-	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, db.Querier, sqlc.GamePhaseType, R, service.AdvanceContext) service.AdvanceEffect); ok {
-		r0 = returnFunc(ctx1, querier, targetPhase, performResult, advCtx)
+	if returnFunc, ok := ret.Get(0).(func(ctx.GameContext, sqlc.GamePhaseType, R, service.AdvanceContext) service.AdvanceEffect); ok {
+		r0 = returnFunc(ctx1, targetPhase, performResult, advCtx)
 	} else {
 		r0 = ret.Get(0).(service.AdvanceEffect)
 	}
-	if returnFunc, ok := ret.Get(1).(func(ctx.GameContext, db.Querier, sqlc.GamePhaseType, R, service.AdvanceContext) error); ok {
-		r1 = returnFunc(ctx1, querier, targetPhase, performResult, advCtx)
+	if returnFunc, ok := ret.Get(1).(func(ctx.GameContext, sqlc.GamePhaseType, R, service.AdvanceContext) error); ok {
+		r1 = returnFunc(ctx1, targetPhase, performResult, advCtx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -73,42 +72,36 @@ type Advancer_Advance_Call[R any] struct {
 
 // Advance is a helper method to define mock.On call
 //   - ctx1 ctx.GameContext
-//   - querier db.Querier
 //   - targetPhase sqlc.GamePhaseType
 //   - performResult R
 //   - advCtx service.AdvanceContext
-func (_e *Advancer_Expecter[R]) Advance(ctx1 interface{}, querier interface{}, targetPhase interface{}, performResult interface{}, advCtx interface{}) *Advancer_Advance_Call[R] {
-	return &Advancer_Advance_Call[R]{Call: _e.mock.On("Advance", ctx1, querier, targetPhase, performResult, advCtx)}
+func (_e *Advancer_Expecter[R]) Advance(ctx1 interface{}, targetPhase interface{}, performResult interface{}, advCtx interface{}) *Advancer_Advance_Call[R] {
+	return &Advancer_Advance_Call[R]{Call: _e.mock.On("Advance", ctx1, targetPhase, performResult, advCtx)}
 }
 
-func (_c *Advancer_Advance_Call[R]) Run(run func(ctx1 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType, performResult R, advCtx service.AdvanceContext)) *Advancer_Advance_Call[R] {
+func (_c *Advancer_Advance_Call[R]) Run(run func(ctx1 ctx.GameContext, targetPhase sqlc.GamePhaseType, performResult R, advCtx service.AdvanceContext)) *Advancer_Advance_Call[R] {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 ctx.GameContext
 		if args[0] != nil {
 			arg0 = args[0].(ctx.GameContext)
 		}
-		var arg1 db.Querier
+		var arg1 sqlc.GamePhaseType
 		if args[1] != nil {
-			arg1 = args[1].(db.Querier)
+			arg1 = args[1].(sqlc.GamePhaseType)
 		}
-		var arg2 sqlc.GamePhaseType
+		var arg2 R
 		if args[2] != nil {
-			arg2 = args[2].(sqlc.GamePhaseType)
+			arg2 = args[2].(R)
 		}
-		var arg3 R
+		var arg3 service.AdvanceContext
 		if args[3] != nil {
-			arg3 = args[3].(R)
-		}
-		var arg4 service.AdvanceContext
-		if args[4] != nil {
-			arg4 = args[4].(service.AdvanceContext)
+			arg3 = args[3].(service.AdvanceContext)
 		}
 		run(
 			arg0,
 			arg1,
 			arg2,
 			arg3,
-			arg4,
 		)
 	})
 	return _c
@@ -119,7 +112,7 @@ func (_c *Advancer_Advance_Call[R]) Return(advanceEffect service.AdvanceEffect, 
 	return _c
 }
 
-func (_c *Advancer_Advance_Call[R]) RunAndReturn(run func(ctx1 ctx.GameContext, querier db.Querier, targetPhase sqlc.GamePhaseType, performResult R, advCtx service.AdvanceContext) (service.AdvanceEffect, error)) *Advancer_Advance_Call[R] {
+func (_c *Advancer_Advance_Call[R]) RunAndReturn(run func(ctx1 ctx.GameContext, targetPhase sqlc.GamePhaseType, performResult R, advCtx service.AdvanceContext) (service.AdvanceEffect, error)) *Advancer_Advance_Call[R] {
 	_c.Call.Return(run)
 	return _c
 }

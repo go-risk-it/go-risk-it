@@ -4,51 +4,54 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/board"
 )
 
-type TwoContinentsChecker struct {
-	boardService board.Service
+type twoContinentsChecker struct{}
+
+var _ MissionChecker = (*twoContinentsChecker)(nil)
+
+func NewTwoContinentsChecker() MissionChecker {
+	return &twoContinentsChecker{}
 }
 
-var _ MissionChecker = (*TwoContinentsChecker)(nil)
-
-func NewTwoContinentsChecker(boardService board.Service) *TwoContinentsChecker {
-	return &TwoContinentsChecker{boardService: boardService}
+func (c *twoContinentsChecker) Type() snapshot.MissionType {
+	return snapshot.MissionTwoContinents
 }
 
-func (c *TwoContinentsChecker) Type() sqlc.GameMissionType {
-	return sqlc.GameMissionTypeTWOCONTINENTS
-}
-
-func (c *TwoContinentsChecker) Check(
-	ctx ctx.GameContext,
-	querier db.Querier,
-	baseMission sqlc.GameMission,
+func (c *twoContinentsChecker) Check(
+	checkCtx CheckContext,
+	mission snapshot.PlayerMission,
 ) (bool, error) {
-	mission, err := querier.GetTwoContinentsMission(ctx, baseMission.ID)
-	if err != nil {
-		return false, fmt.Errorf("failed to get two continents mission: %w", err)
+	detail, ok := mission.Detail.(snapshot.TwoContinentsMission)
+	if !ok {
+		return false, fmt.Errorf(
+			"expected TwoContinentsMission detail, got %T",
+			mission.Detail,
+		)
 	}
 
-	continents, err := c.boardService.GetContinentsControlledByPlayer(
-		ctx,
-		querier,
-		baseMission.PlayerID,
-	)
-	if err != nil {
-		return false, fmt.Errorf("failed to get continents controlled by player: %w", err)
-	}
+	controlled := continentsControlledByPlayer(checkCtx)
 
-	return slices.ContainsFunc(continents, continentEquals(mission.Continent1)) &&
-		slices.ContainsFunc(continents, continentEquals(mission.Continent2)), nil
+	return slices.ContainsFunc(controlled, continentEquals(detail.Continent1)) &&
+		slices.ContainsFunc(controlled, continentEquals(detail.Continent2)), nil
 }
 
 func continentEquals(cont string) func(continent *board.Continent) bool {
 	return func(continent *board.Continent) bool {
 		return continent.ExternalReference == cont
 	}
+}
+
+func continentsControlledByPlayer(checkCtx CheckContext) []*board.Continent {
+	playerRegions := make([]string, 0)
+
+	for _, r := range checkCtx.Regions {
+		if r.OwnerID == checkCtx.CurrentUserID {
+			playerRegions = append(playerRegions, r.ID)
+		}
+	}
+
+	return checkCtx.Continents.GetContinentsControlledBy(playerRegions)
 }

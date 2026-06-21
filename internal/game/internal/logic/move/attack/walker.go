@@ -45,9 +45,10 @@ func MergeRegions(
 	for _, region := range base {
 		if update, ok := updateMap[region.ID]; ok {
 			merged = append(merged, snapshot.RegionState{
-				ID:      region.ID,
-				OwnerID: update.NewOwner,
-				Troops:  update.NewTroops,
+				InternalID: region.InternalID,
+				ID:         region.ID,
+				OwnerID:    update.NewOwner,
+				Troops:     update.NewTroops,
 			})
 		} else {
 			merged = append(merged, region)

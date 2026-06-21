@@ -5,8 +5,6 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/board"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/cards"
 	moveservice "github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/service"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/phase"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/region"
 )
 
 type Move struct {
@@ -22,10 +20,8 @@ type Service interface {
 }
 
 type service struct {
-	boardService  board.Service
-	cardsService  cards.Service
-	phaseService  phase.Service
-	regionService region.Service
+	boardService board.Service
+	cardsService cards.Service
 }
 
 var _ Service = (*service)(nil)
@@ -33,14 +29,10 @@ var _ Service = (*service)(nil)
 func NewService(
 	boardService board.Service,
 	cardsService cards.Service,
-	phaseService phase.Service,
-	regionService region.Service,
 ) (Service, moveservice.Service[Move, struct{}]) {
 	svc := &service{
-		boardService:  boardService,
-		cardsService:  cardsService,
-		phaseService:  phaseService,
-		regionService: regionService,
+		boardService: boardService,
+		cardsService: cardsService,
 	}
 
 	return svc, moveservice.NewTracedService[Move, struct{}](svc)

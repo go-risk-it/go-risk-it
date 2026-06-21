@@ -5,46 +5,35 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
-	board2 "github.com/go-risk-it/go-risk-it/internal/game/internal/logic/board"
+	boardpkg "github.com/go-risk-it/go-risk-it/internal/game/internal/logic/board"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/mission"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/mission/checker"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/data/db"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/board"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/region"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/rand"
+	mockdb "github.com/go-risk-it/go-risk-it/internal/game/testmocks/data/db"
+	mockrand "github.com/go-risk-it/go-risk-it/internal/game/testmocks/rand"
 	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
-	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
 
-func setup(t *testing.T) (
-	*db.Querier,
-	*board.Service,
-	*region.Service,
-	mission.Service,
-) {
+func setup(t *testing.T) mission.Service {
 	t.Helper()
-	querier := db.NewQuerier(t)
-	boardService := board.NewService(t)
-	regionService := region.NewService(t)
-	rng := rand.NewRNG(t)
+	querier := mockdb.NewQuerier(t)
+	rng := mockrand.NewRNG(t)
 
 	registry, err := checker.NewRegistry([]checker.MissionChecker{
-		checker.NewTwoContinentsChecker(boardService),
-		checker.NewTwoContinentsPlusOneChecker(boardService),
-		checker.NewEighteenTerritoriesChecker(regionService),
-		checker.NewTwentyFourTerritoriesChecker(regionService),
-		checker.NewEliminatePlayerChecker(regionService),
+		checker.NewTwoContinentsChecker(),
+		checker.NewTwoContinentsPlusOneChecker(),
+		checker.NewEighteenTerritoriesChecker(),
+		checker.NewTwentyFourTerritoriesChecker(),
+		checker.NewEliminatePlayerChecker(),
 	})
 	require.NoError(t, err)
 
 	service := mission.New(rng, querier, registry)
 
-	return querier, boardService, regionService, service
+	return service
 }
 
 func input() ctx.GameContext {
@@ -59,123 +48,130 @@ func input() ctx.GameContext {
 	return ctx.WithGameID(userContext, gameID)
 }
 
+func testContinents() boardpkg.Continents {
+	boardDto := &boardpkg.BoardDto{
+		Regions: []boardpkg.RegionDto{
+			{ExternalReference: "na_1", Continent: "north_america"},
+			{ExternalReference: "na_2", Continent: "north_america"},
+			{ExternalReference: "na_3", Continent: "north_america"},
+			{ExternalReference: "af_1", Continent: "africa"},
+			{ExternalReference: "af_2", Continent: "africa"},
+			{ExternalReference: "sa_1", Continent: "south_america"},
+			{ExternalReference: "sa_2", Continent: "south_america"},
+		},
+		Continents: []boardpkg.ContinentDto{
+			{ExternalReference: "north_america", BonusTroops: 5},
+			{ExternalReference: "africa", BonusTroops: 3},
+			{ExternalReference: "south_america", BonusTroops: 2},
+		},
+	}
+
+	continents, err := boardpkg.NewContinents(boardDto)
+	if err != nil {
+		panic(fmt.Sprintf("failed to create test continents: %v", err))
+	}
+
+	return continents
+}
+
+func makeRegions(count int, troops int64) []snapshot.RegionState {
+	regions := make([]snapshot.RegionState, count)
+	for i := range regions {
+		regions[i] = snapshot.RegionState{
+			ID:      fmt.Sprintf("region_%d", i+1),
+			OwnerID: "giovanni",
+			Troops:  troops,
+		}
+	}
+
+	return regions
+}
+
+func regionsForContinent(
+	continents boardpkg.Continents,
+	continentName string,
+	owner string,
+	existing []snapshot.RegionState,
+) []snapshot.RegionState {
+	for _, c := range continents.All() {
+		if c.ExternalReference == continentName {
+			for _, r := range c.Regions() {
+				existing = append(existing, snapshot.RegionState{
+					ID:      r,
+					OwnerID: owner,
+					Troops:  1,
+				})
+			}
+		}
+	}
+
+	return existing
+}
+
 func TestServiceImpl_IsTwoContinentsMissionAccomplished(t *testing.T) {
 	t.Parallel()
 
+	continents := testContinents()
+
 	type inputType struct {
-		name                 string
-		controlledContinents []*board2.Continent
-		missionContinent1    string
-		missionContinent2    string
-		expectedResult       bool
+		name       string
+		regions    []snapshot.RegionState
+		continent1 string
+		continent2 string
+		expected   bool
 	}
 
 	tests := []inputType{
 		{
 			"player does not control any continent",
-			[]*board2.Continent{},
-			"asia",
-			"europe",
-			false,
-		},
-		{
-			"player controls one continent",
-			[]*board2.Continent{
-				{
-					ExternalReference: "north_america",
-					BonusTroops:       5,
-				},
-			},
-			"asia",
-			"europe",
-			false,
-		},
-		{
-			"one controlled but not the other",
-			[]*board2.Continent{
-				{
-					ExternalReference: "north_america",
-					BonusTroops:       5,
-				},
-				{
-					ExternalReference: "africa",
-					BonusTroops:       3,
-				},
-			},
+			[]snapshot.RegionState{},
 			"north_america",
-			"south_america",
+			"africa",
 			false,
 		},
 		{
-			"both controlled",
-			[]*board2.Continent{
-				{
-					ExternalReference: "north_america",
-					BonusTroops:       5,
-				},
-				{
-					ExternalReference: "africa",
-					BonusTroops:       3,
-				},
-			},
+			"controls only first continent",
+			regionsForContinent(continents, "north_america", "giovanni",
+				regionsForContinent(continents, "africa", "opponent", nil)),
+			"north_america",
+			"africa",
+			false,
+		},
+		{
+			"controls both continents",
+			regionsForContinent(continents, "north_america", "giovanni",
+				regionsForContinent(continents, "africa", "giovanni", nil)),
 			"north_america",
 			"africa",
 			true,
 		},
 	}
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, boardService, _, service := setup(t)
-			ctx := input()
+			service := setup(t)
+			gameCtx := input()
 
-			baseMission := sqlc.GameMission{
-				ID:       1,
-				PlayerID: 1,
-				Type:     sqlc.GameMissionTypeTWOCONTINENTS,
-			}
-
-			querier.
-				EXPECT().
-				GetMission(mock.Anything, sqlc.GetMissionParams{
-					GameID: ctx.GameID(),
-					UserID: ctx.UserID(),
-				}).Return(baseMission, nil)
-
-			twoContinentsMission := sqlc.GameTwoContinentsMission{
-				MissionID:  baseMission.ID,
-				Continent1: test.missionContinent1,
-				Continent2: test.missionContinent2,
-			}
-
-			querier.
-				EXPECT().
-				GetTwoContinentsMission(mock.Anything, baseMission.ID).
-				Return(twoContinentsMission, nil)
-
-			boardService.
-				EXPECT().
-				GetContinentsControlledByPlayer(mock.Anything, querier, int64(1)).
-				Return(test.controlledContinents, nil)
-
-			if test.expectedResult {
-				querier.
-					EXPECT().
-					AssignGameWinner(mock.Anything, sqlc.AssignGameWinnerParams{
-						WinnerPlayerID: pgtype.Int8{
-							Int64: 1,
-							Valid: true,
+			privateSnapshots := map[string]*snapshot.PlayerPrivate{
+				"giovanni": {
+					Mission: snapshot.PlayerMission{
+						Type: snapshot.MissionTwoContinents,
+						Detail: snapshot.TwoContinentsMission{
+							Continent1: test.continent1,
+							Continent2: test.continent2,
 						},
-						GameID: ctx.GameID(),
-					}).
-					Return(nil)
+					},
+				},
 			}
 
-			result, err := service.IsMissionAccomplished(ctx, querier)
+			result, err := service.IsMissionAccomplished(
+				gameCtx, test.regions, privateSnapshots, continents,
+			)
 
 			require.NoError(t, err)
-			require.Equal(t, test.expectedResult, result)
+			require.Equal(t, test.expected, result)
 		})
 	}
 }
@@ -183,140 +179,68 @@ func TestServiceImpl_IsTwoContinentsMissionAccomplished(t *testing.T) {
 func TestServiceImpl_IsTwoContinentsPlusOneMissionAccomplished(t *testing.T) {
 	t.Parallel()
 
+	continents := testContinents()
+
 	type inputType struct {
-		name                 string
-		controlledContinents []*board2.Continent
-		missionContinent1    string
-		missionContinent2    string
-		expectedResult       bool
+		name       string
+		regions    []snapshot.RegionState
+		continent1 string
+		continent2 string
+		expected   bool
 	}
 
 	tests := []inputType{
 		{
 			"player does not control any continent",
-			[]*board2.Continent{},
-			"asia",
-			"europe",
-			false,
-		},
-		{
-			"player controls one continent",
-			[]*board2.Continent{
-				{
-					ExternalReference: "north_america",
-					BonusTroops:       5,
-				},
-			},
-			"asia",
-			"europe",
-			false,
-		},
-		{
-			"one controlled but not the other",
-			[]*board2.Continent{
-				{
-					ExternalReference: "north_america",
-					BonusTroops:       5,
-				},
-				{
-					ExternalReference: "africa",
-					BonusTroops:       3,
-				},
-			},
-			"north_america",
-			"south_america",
-			false,
-		},
-		{
-			"both controlled, but no third continent",
-			[]*board2.Continent{
-				{
-					ExternalReference: "north_america",
-					BonusTroops:       5,
-				},
-				{
-					ExternalReference: "africa",
-					BonusTroops:       3,
-				},
-			},
+			[]snapshot.RegionState{},
 			"north_america",
 			"africa",
 			false,
 		},
 		{
-			"controls both continents and a third",
-			[]*board2.Continent{
-				{
-					ExternalReference: "north_america",
-					BonusTroops:       5,
-				},
-				{
-					ExternalReference: "africa",
-					BonusTroops:       3,
-				},
-				{
-					ExternalReference: "south_america",
-					BonusTroops:       2,
-				},
-			},
+			"controls both mandatory but no third",
+			regionsForContinent(continents, "north_america", "giovanni",
+				regionsForContinent(continents, "africa", "giovanni", nil)),
+			"north_america",
+			"africa",
+			false,
+		},
+		{
+			"controls both mandatory plus a third",
+			regionsForContinent(continents, "north_america", "giovanni",
+				regionsForContinent(continents, "africa", "giovanni",
+					regionsForContinent(continents, "south_america", "giovanni", nil))),
 			"north_america",
 			"africa",
 			true,
 		},
 	}
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, boardService, _, service := setup(t)
-			ctx := input()
+			service := setup(t)
+			gameCtx := input()
 
-			baseMission := sqlc.GameMission{
-				ID:       1,
-				PlayerID: 1,
-				Type:     sqlc.GameMissionTypeTWOCONTINENTSPLUSONE,
-			}
-
-			querier.
-				EXPECT().
-				GetMission(mock.Anything, sqlc.GetMissionParams{
-					GameID: ctx.GameID(),
-					UserID: ctx.UserID(),
-				}).Return(baseMission, nil)
-
-			twoContinentsMission := sqlc.GameTwoContinentsPlusOneMission{
-				MissionID:  baseMission.ID,
-				Continent1: test.missionContinent1,
-				Continent2: test.missionContinent2,
-			}
-
-			querier.
-				EXPECT().
-				GetTwoContinentsPlusOneMission(mock.Anything, baseMission.ID).
-				Return(twoContinentsMission, nil)
-
-			boardService.
-				EXPECT().
-				GetContinentsControlledByPlayer(mock.Anything, querier, int64(1)).
-				Return(test.controlledContinents, nil)
-
-			if test.expectedResult {
-				querier.
-					EXPECT().
-					AssignGameWinner(mock.Anything, sqlc.AssignGameWinnerParams{
-						WinnerPlayerID: pgtype.Int8{
-							Int64: 1,
-							Valid: true,
+			privateSnapshots := map[string]*snapshot.PlayerPrivate{
+				"giovanni": {
+					Mission: snapshot.PlayerMission{
+						Type: snapshot.MissionTwoContinentsPlusOne,
+						Detail: snapshot.TwoContinentsPlusOneMission{
+							Continent1: test.continent1,
+							Continent2: test.continent2,
 						},
-						GameID: ctx.GameID(),
-					}).
-					Return(nil)
+					},
+				},
 			}
 
-			result, err := service.IsMissionAccomplished(ctx, querier)
+			result, err := service.IsMissionAccomplished(
+				gameCtx, test.regions, privateSnapshots, continents,
+			)
 
 			require.NoError(t, err)
-			require.Equal(t, test.expectedResult, result)
+			require.Equal(t, test.expected, result)
 		})
 	}
 }
@@ -325,125 +249,66 @@ func TestServiceImpl_IsEighteenTerritoriesTwoTroopsMissionAccomplished(t *testin
 	t.Parallel()
 
 	type inputType struct {
-		name           string
-		playerRegions  []sqlc.GetRegionsByGameRow
-		expectedResult bool
+		name     string
+		regions  []snapshot.RegionState
+		expected bool
 	}
 
 	tests := []inputType{
 		{
 			"17 regions with 2 troops is not enough",
-			func() []sqlc.GetRegionsByGameRow {
-				regions := make([]sqlc.GetRegionsByGameRow, 17)
-				for i := range regions {
-					regions[i] = sqlc.GetRegionsByGameRow{
-						ID:                int64(i + 1),
-						ExternalReference: fmt.Sprintf("region_%d", i+1),
-						Troops:            2,
-						UserID:            "giovanni",
-					}
-				}
-
-				return regions
-			}(),
+			makeRegions(17, 2),
 			false,
 		},
 		{
 			"18 regions with 2 troops is enough",
-			func() []sqlc.GetRegionsByGameRow {
-				regions := make([]sqlc.GetRegionsByGameRow, 18)
-				for i := range regions {
-					regions[i] = sqlc.GetRegionsByGameRow{
-						ID:                int64(i + 1),
-						ExternalReference: fmt.Sprintf("region_%d", i+1),
-						Troops:            2,
-						UserID:            "giovanni",
-					}
-				}
-
-				return regions
-			}(),
+			makeRegions(18, 2),
 			true,
 		},
 		{
 			"18 regions but only 17 with 2 troops is not enough",
-			func() []sqlc.GetRegionsByGameRow {
-				regions := make([]sqlc.GetRegionsByGameRow, 18)
-				for i := range regions {
-					regions[i] = sqlc.GetRegionsByGameRow{
-						ID:                int64(i + 1),
-						ExternalReference: fmt.Sprintf("region_%d", i+1),
-						Troops:            2,
-						UserID:            "giovanni",
-					}
-				}
-				regions[0].Troops = 1
+			func() []snapshot.RegionState {
+				r := makeRegions(18, 2)
+				r[0].Troops = 1
 
-				return regions
+				return r
 			}(),
 			false,
 		},
 		{
 			"19 regions but only 18 with 2 troops is enough",
-			func() []sqlc.GetRegionsByGameRow {
-				regions := make([]sqlc.GetRegionsByGameRow, 19)
-				for i := range regions {
-					regions[i] = sqlc.GetRegionsByGameRow{
-						ID:                int64(i + 1),
-						ExternalReference: fmt.Sprintf("region_%d", i+1),
-						Troops:            2,
-						UserID:            "giovanni",
-					}
-				}
-				regions[0].Troops = 1
+			func() []snapshot.RegionState {
+				r := makeRegions(19, 2)
+				r[0].Troops = 1
 
-				return regions
+				return r
 			}(),
 			true,
 		},
 	}
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, _, regionService, service := setup(t)
-			ctx := input()
+			service := setup(t)
+			gameCtx := input()
 
-			baseMission := sqlc.GameMission{
-				ID:       1,
-				PlayerID: 1,
-				Type:     sqlc.GameMissionTypeEIGHTEENTERRITORIESTWOTROOPS,
+			privateSnapshots := map[string]*snapshot.PlayerPrivate{
+				"giovanni": {
+					Mission: snapshot.PlayerMission{
+						Type:   snapshot.MissionEighteenTerritoriesTwoTroops,
+						Detail: snapshot.EighteenTerritoriesTwoTroopsMission{},
+					},
+				},
 			}
 
-			querier.
-				EXPECT().
-				GetMission(mock.Anything, sqlc.GetMissionParams{
-					GameID: ctx.GameID(),
-					UserID: ctx.UserID(),
-				}).Return(baseMission, nil)
-
-			regionService.
-				EXPECT().
-				GetPlayerRegions(mock.Anything, querier).
-				Return(test.playerRegions, nil)
-
-			if test.expectedResult {
-				querier.
-					EXPECT().
-					AssignGameWinner(mock.Anything, sqlc.AssignGameWinnerParams{
-						WinnerPlayerID: pgtype.Int8{
-							Int64: 1,
-							Valid: true,
-						},
-						GameID: ctx.GameID(),
-					}).
-					Return(nil)
-			}
-
-			result, err := service.IsMissionAccomplished(ctx, querier)
+			result, err := service.IsMissionAccomplished(
+				gameCtx, test.regions, privateSnapshots, nil,
+			)
 
 			require.NoError(t, err)
-			require.Equal(t, test.expectedResult, result)
+			require.Equal(t, test.expected, result)
 		})
 	}
 }
@@ -452,89 +317,46 @@ func TestServiceImpl_IsTwentyFourTerritoriesMissionAccomplished(t *testing.T) {
 	t.Parallel()
 
 	type inputType struct {
-		name           string
-		playerRegions  []sqlc.GetRegionsByGameRow
-		expectedResult bool
+		name     string
+		regions  []snapshot.RegionState
+		expected bool
 	}
 
 	tests := []inputType{
 		{
 			"23 regions is not enough",
-			func() []sqlc.GetRegionsByGameRow {
-				regions := make([]sqlc.GetRegionsByGameRow, 23)
-				for i := range regions {
-					regions[i] = sqlc.GetRegionsByGameRow{
-						ID:                int64(i + 1),
-						ExternalReference: fmt.Sprintf("region_%d", i+1),
-						Troops:            1,
-						UserID:            "giovanni",
-					}
-				}
-
-				return regions
-			}(),
+			makeRegions(23, 1),
 			false,
 		},
 		{
 			"24 regions is enough",
-			func() []sqlc.GetRegionsByGameRow {
-				regions := make([]sqlc.GetRegionsByGameRow, 24)
-				for i := range regions {
-					regions[i] = sqlc.GetRegionsByGameRow{
-						ID:                int64(i + 1),
-						ExternalReference: fmt.Sprintf("region_%d", i+1),
-						Troops:            1,
-						UserID:            "giovanni",
-					}
-				}
-
-				return regions
-			}(),
+			makeRegions(24, 1),
 			true,
 		},
 	}
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, _, regionService, service := setup(t)
-			ctx := input()
+			service := setup(t)
+			gameCtx := input()
 
-			baseMission := sqlc.GameMission{
-				ID:       1,
-				PlayerID: 1,
-				Type:     sqlc.GameMissionTypeTWENTYFOURTERRITORIES,
+			privateSnapshots := map[string]*snapshot.PlayerPrivate{
+				"giovanni": {
+					Mission: snapshot.PlayerMission{
+						Type:   snapshot.MissionTwentyFourTerritories,
+						Detail: snapshot.TwentyFourTerritoriesMission{},
+					},
+				},
 			}
 
-			querier.
-				EXPECT().
-				GetMission(mock.Anything, sqlc.GetMissionParams{
-					GameID: ctx.GameID(),
-					UserID: ctx.UserID(),
-				}).Return(baseMission, nil)
-
-			regionService.
-				EXPECT().
-				GetPlayerRegions(mock.Anything, querier).
-				Return(test.playerRegions, nil)
-
-			if test.expectedResult {
-				querier.
-					EXPECT().
-					AssignGameWinner(mock.Anything, sqlc.AssignGameWinnerParams{
-						WinnerPlayerID: pgtype.Int8{
-							Int64: 1,
-							Valid: true,
-						},
-						GameID: ctx.GameID(),
-					}).
-					Return(nil)
-			}
-
-			result, err := service.IsMissionAccomplished(ctx, querier)
+			result, err := service.IsMissionAccomplished(
+				gameCtx, test.regions, privateSnapshots, nil,
+			)
 
 			require.NoError(t, err)
-			require.Equal(t, test.expectedResult, result)
+			require.Equal(t, test.expected, result)
 		})
 	}
 }
@@ -543,94 +365,106 @@ func TestServiceImpl_IsEliminatePlayerMissionAccomplished(t *testing.T) {
 	t.Parallel()
 
 	type inputType struct {
-		name                      string
-		regionsControlledByTarget []sqlc.GameRegion
-		expectedResult            bool
+		name     string
+		regions  []snapshot.RegionState
+		expected bool
 	}
 
 	tests := []inputType{
 		{
 			"target controls zero regions",
-			[]sqlc.GameRegion{},
+			makeRegions(10, 1),
 			true,
 		},
 		{
-			"player controls one continent",
-			[]sqlc.GameRegion{
-				{
-					ID:                1,
-					ExternalReference: "quebec",
-				},
-			},
+			"target controls one region",
+			append(
+				makeRegions(10, 1),
+				snapshot.RegionState{ID: "target_r1", OwnerID: "opponent", Troops: 1},
+			),
 			false,
 		},
 		{
-			"player controls two continents",
-			[]sqlc.GameRegion{
-				{
-					ID:                1,
-					ExternalReference: "quebec",
-				},
-				{
-					ID:                2,
-					ExternalReference: "ontario",
-				},
-			},
+			"target controls two regions",
+			append(
+				makeRegions(10, 1),
+				snapshot.RegionState{ID: "target_r1", OwnerID: "opponent", Troops: 1},
+				snapshot.RegionState{ID: "target_r2", OwnerID: "opponent", Troops: 2},
+			),
 			false,
 		},
 	}
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			querier, _, regionService, service := setup(t)
-			ctx := input()
+			service := setup(t)
+			gameCtx := input()
 
-			baseMission := sqlc.GameMission{
-				ID:       1,
-				PlayerID: 1,
-				Type:     sqlc.GameMissionTypeELIMINATEPLAYER,
-			}
-
-			querier.
-				EXPECT().
-				GetMission(mock.Anything, sqlc.GetMissionParams{
-					GameID: ctx.GameID(),
-					UserID: ctx.UserID(),
-				}).Return(baseMission, nil)
-
-			eliminatePlayerMission := sqlc.GameEliminatePlayerMission{
-				MissionID:      baseMission.ID,
-				TargetPlayerID: 2,
-			}
-
-			querier.
-				EXPECT().
-				GetEliminatePlayerMission(mock.Anything, baseMission.ID).
-				Return(eliminatePlayerMission, nil)
-
-			regionService.
-				EXPECT().
-				GetRegionsControlledByPlayer(mock.Anything, querier, int64(2)).
-				Return(test.regionsControlledByTarget, nil)
-
-			if test.expectedResult {
-				querier.
-					EXPECT().
-					AssignGameWinner(mock.Anything, sqlc.AssignGameWinnerParams{
-						WinnerPlayerID: pgtype.Int8{
-							Int64: 1,
-							Valid: true,
+			privateSnapshots := map[string]*snapshot.PlayerPrivate{
+				"giovanni": {
+					Mission: snapshot.PlayerMission{
+						Type: snapshot.MissionEliminatePlayer,
+						Detail: snapshot.EliminatePlayerMission{
+							TargetUserID: "opponent",
 						},
-						GameID: ctx.GameID(),
-					}).
-					Return(nil)
+					},
+				},
 			}
 
-			result, err := service.IsMissionAccomplished(ctx, querier)
+			result, err := service.IsMissionAccomplished(
+				gameCtx, test.regions, privateSnapshots, nil,
+			)
 
 			require.NoError(t, err)
-			require.Equal(t, test.expectedResult, result)
+			require.Equal(t, test.expected, result)
 		})
 	}
+}
+
+func TestServiceImpl_IsMissionAccomplished_MissingPlayer(t *testing.T) {
+	t.Parallel()
+
+	service := setup(t)
+	gameCtx := input()
+
+	privateSnapshots := map[string]*snapshot.PlayerPrivate{
+		"other_player": {
+			Mission: snapshot.PlayerMission{
+				Type:   snapshot.MissionTwentyFourTerritories,
+				Detail: snapshot.TwentyFourTerritoriesMission{},
+			},
+		},
+	}
+
+	_, err := service.IsMissionAccomplished(
+		gameCtx, []snapshot.RegionState{}, privateSnapshots, nil,
+	)
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "no private snapshot for player giovanni")
+}
+
+func TestServiceImpl_IsMissionAccomplished_UnknownMissionType(t *testing.T) {
+	t.Parallel()
+
+	service := setup(t)
+	gameCtx := input()
+
+	privateSnapshots := map[string]*snapshot.PlayerPrivate{
+		"giovanni": {
+			Mission: snapshot.PlayerMission{
+				Type:   "nonexistent_type",
+				Detail: snapshot.TwentyFourTerritoriesMission{},
+			},
+		},
+	}
+
+	_, err := service.IsMissionAccomplished(
+		gameCtx, []snapshot.RegionState{}, privateSnapshots, nil,
+	)
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "unknown mission type")
 }

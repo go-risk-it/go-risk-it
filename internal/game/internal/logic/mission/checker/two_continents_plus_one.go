@@ -4,50 +4,40 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/board"
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 )
 
-type TwoContinentsPlusOneChecker struct {
-	boardService board.Service
+type twoContinentsPlusOneChecker struct{}
+
+var _ MissionChecker = (*twoContinentsPlusOneChecker)(nil)
+
+func NewTwoContinentsPlusOneChecker() MissionChecker {
+	return &twoContinentsPlusOneChecker{}
 }
 
-var _ MissionChecker = (*TwoContinentsPlusOneChecker)(nil)
-
-func NewTwoContinentsPlusOneChecker(boardService board.Service) *TwoContinentsPlusOneChecker {
-	return &TwoContinentsPlusOneChecker{boardService: boardService}
+func (c *twoContinentsPlusOneChecker) Type() snapshot.MissionType {
+	return snapshot.MissionTwoContinentsPlusOne
 }
 
-func (c *TwoContinentsPlusOneChecker) Type() sqlc.GameMissionType {
-	return sqlc.GameMissionTypeTWOCONTINENTSPLUSONE
-}
-
-func (c *TwoContinentsPlusOneChecker) Check(
-	ctx ctx.GameContext,
-	querier db.Querier,
-	baseMission sqlc.GameMission,
+func (c *twoContinentsPlusOneChecker) Check(
+	checkCtx CheckContext,
+	mission snapshot.PlayerMission,
 ) (bool, error) {
-	mission, err := querier.GetTwoContinentsPlusOneMission(ctx, baseMission.ID)
-	if err != nil {
-		return false, fmt.Errorf("failed to get two continents plus one mission: %w", err)
+	detail, ok := mission.Detail.(snapshot.TwoContinentsPlusOneMission)
+	if !ok {
+		return false, fmt.Errorf(
+			"expected TwoContinentsPlusOneMission detail, got %T",
+			mission.Detail,
+		)
 	}
 
-	continents, err := c.boardService.GetContinentsControlledByPlayer(
-		ctx,
-		querier,
-		baseMission.PlayerID,
-	)
-	if err != nil {
-		return false, fmt.Errorf("failed to get continents controlled by player: %w", err)
-	}
+	controlled := continentsControlledByPlayer(checkCtx)
 
 	playerControlsTwoMandatoryContinents := slices.ContainsFunc(
-		continents,
-		continentEquals(mission.Continent1),
+		controlled,
+		continentEquals(detail.Continent1),
 	) &&
-		slices.ContainsFunc(continents, continentEquals(mission.Continent2))
+		slices.ContainsFunc(controlled, continentEquals(detail.Continent2))
 
-	return playerControlsTwoMandatoryContinents && len(continents) > 2, nil
+	return playerControlsTwoMandatoryContinents && len(controlled) > 2, nil
 }

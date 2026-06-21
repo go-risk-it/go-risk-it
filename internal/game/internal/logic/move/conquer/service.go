@@ -6,12 +6,8 @@ import (
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/card"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/mission"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/attack"
 	moveservice "github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/service"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/phase"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/region"
 )
 
 type Move struct {
@@ -28,29 +24,17 @@ type Service interface {
 }
 
 type service struct {
-	querier        db.Querier
-	attackService  attack.Service
-	cardService    card.Service
-	missionService mission.Service
-	phaseService   phase.Service
-	regionService  region.Service
+	querier       db.Querier
+	attackService attack.Service
 }
 
 func NewService(
 	querier db.Querier,
 	attackService attack.Service,
-	cardService card.Service,
-	missionService mission.Service,
-	phaseService phase.Service,
-	regionService region.Service,
 ) (Service, moveservice.Service[Move, struct{}]) {
 	svc := &service{
-		querier:        querier,
-		attackService:  attackService,
-		cardService:    cardService,
-		missionService: missionService,
-		phaseService:   phaseService,
-		regionService:  regionService,
+		querier:       querier,
+		attackService: attackService,
 	}
 
 	return svc, moveservice.NewTracedService[Move, struct{}](svc)

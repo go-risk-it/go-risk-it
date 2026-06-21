@@ -5,14 +5,10 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
 	moveservice "github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/service"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/state"
-	dbutil "github.com/go-risk-it/go-risk-it/internal/kernel/data"
 	domainerrors "github.com/go-risk-it/go-risk-it/internal/kernel/errors"
 	"github.com/go-risk-it/go-risk-it/internal/kernel/observe"
-	"github.com/jackc/pgx/v5"
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -21,7 +17,10 @@ func (s *orchestrator[T, R]) OrchestrateMove(
 	move T,
 ) error {
 	return observe.SpanErr(ctx, "game.orchestrate_move", func(ctx gamectx.GameContext) error {
-		outcome, err := s.executeTransaction(ctx, move)
+		unlock := s.gameLocks.Lock(ctx.GameID())
+		defer unlock()
+
+		outcome, err := s.orchestrateMovePipeline(ctx, move)
 		if err != nil {
 			return fmt.Errorf("unable to perform move: %w", err)
 		}
@@ -34,100 +33,69 @@ func (s *orchestrator[T, R]) OrchestrateMove(
 	}, attribute.String("phase", string(s.service.PhaseType())))
 }
 
-func (s *orchestrator[T, R]) executeTransaction(
+// orchestrateMovePipeline runs the effects-first pipeline:
+// cache-get → validate → perform(pure) → walk → advance(pure) → checkMission(pure)
+// → BuildNewState → buildPersistenceEffect → Persist(write-only TX).
+func (s *orchestrator[T, R]) orchestrateMovePipeline(
 	ctx gamectx.GameContext,
 	move T,
 ) (moveOutcome[R], error) {
-	return dbutil.InTransactionWithIsolation(
-		s.querier, ctx, s.stateMetrics, pgx.RepeatableRead,
-		func(querier db.Querier) (moveOutcome[R], error) {
-			phase := s.service.PhaseType()
+	phase := s.service.PhaseType()
 
-			gameState, err := s.gameService.GetGameStateWithQuerier(
-				ctx, querier,
-			)
-			if err != nil {
-				return moveOutcome[R]{}, fmt.Errorf(
-					"unable to get game state: %w", err,
-				)
-			}
-
-			if gameState.Phase != phase {
-				return moveOutcome[R]{}, domainerrors.NewConflictErrorf(
-					"game is in phase %s, expected %s",
-					gameState.Phase, phase,
-				)
-			}
-
-			outcome, err := s.orchestrateMoveWithQuerier(
-				ctx, querier, move, gameState,
-			)
-			if err != nil {
-				return moveOutcome[R]{}, err
-			}
-
-			return outcome, nil
-		},
-	)
-}
-
-func (s *orchestrator[T, R]) orchestrateMoveWithQuerier(
-	ctx gamectx.GameContext,
-	querier db.Querier,
-	move T,
-	gameState *state.Game,
-) (moveOutcome[R], error) {
-	turn := gameState.Turn
-
-	observe.SpanEvent(ctx, "orchestrating_move")
-
-	// Get or warm the previous state from the cache (warm-on-miss via DB).
-	prevState, err := s.getOrWarmPrevState(ctx, querier, turn)
+	// 1. Get cached state (or warm from DB — direct querier read, no TX).
+	prevState, err := s.getOrWarmState(ctx, phase)
 	if err != nil {
-		return moveOutcome[R]{}, fmt.Errorf("unable to get previous state: %w", err)
+		return moveOutcome[R]{}, err
 	}
 
+	gameState := GameStateFromCache(prevState)
+
+	// 2. Validate move (pure, from cache).
 	if err := s.validationService.Validate(
-		ctx, querier, gameState,
+		ctx, gameState, prevState.PublicSnapshot.Players,
 	); err != nil {
 		return moveOutcome[R]{}, fmt.Errorf("invalid move: %w", err)
 	}
 
 	observe.SpanEvent(ctx, "game.move.validated")
 
-	performResult, effect, moveLog, err := s.performAndLog(
-		ctx, querier, move, prevState,
-	)
+	// 3. Perform (pure, no querier).
+	performResult, effect, err := s.service.Perform(ctx, move, prevState)
 	if err != nil {
-		return moveOutcome[R]{}, err
+		return moveOutcome[R]{}, fmt.Errorf("unable to perform move: %w", err)
 	}
 
+	observe.SpanEvent(ctx, "game.move.performed")
+
+	// 4-5. Resolve target phase: checkMission → walk → advance (all pure).
 	targetPhase, gameOver, advEffect, err := s.resolveTargetPhase(
-		ctx, querier, performResult, prevState, effect,
+		ctx, performResult, prevState, effect,
 	)
 	if err != nil {
 		return moveOutcome[R]{}, err
 	}
 
-	return s.buildOutcome(
-		ctx, prevState, effect, advEffect,
-		targetPhase, gameOver, performResult, moveLog, turn,
-	), nil
+	// 6-8. Build state, build persistence, persist, emit.
+	return s.buildAndPersistMove(
+		ctx, prevState, gameState.Turn, phase,
+		performResult, effect, advEffect, targetPhase, gameOver, move,
+	)
 }
 
-// buildOutcome assembles the moveOutcome by computing the new state from
-// enrichment data via BuildNewState. No post-mutation DB reads occur here.
-func (s *orchestrator[T, R]) buildOutcome(
+// buildAndPersistMove handles the tail of the move pipeline:
+// BuildNewState → buildPersistenceEffect → Persist → game-over metrics.
+func (s *orchestrator[T, R]) buildAndPersistMove(
 	ctx gamectx.GameContext,
 	prevState *snapshot.CachedGameState,
+	turn int64,
+	phase sqlc.GamePhaseType,
+	performResult R,
 	effect moveservice.MoveEffect,
 	advEffect moveservice.AdvanceEffect,
 	targetPhase sqlc.GamePhaseType,
 	gameOver bool,
-	performResult R,
-	moveLog sqlc.GameMoveLog,
-	turn int64,
-) moveOutcome[R] {
+	move T,
+) (moveOutcome[R], error) {
 	winnerUserID := ""
 	if gameOver {
 		winnerUserID = ctx.UserID()
@@ -146,57 +114,97 @@ func (s *orchestrator[T, R]) buildOutcome(
 		winnerUserID,
 	)
 
+	moveCtx := MoveContext{
+		gameID:    ctx.GameID(),
+		userID:    ctx.UserID(),
+		phaseType: phase,
+		moveData:  move,
+		result:    performResult,
+	}
+
+	persistEffect := buildPersistenceEffect(
+		moveCtx, &effect, advEffectPtr, prevState, targetPhase, gameOver,
+	)
+
+	if err := Persist(ctx, s.querier, s.phaseService, persistEffect); err != nil {
+		return moveOutcome[R]{}, fmt.Errorf("unable to persist move: %w", err)
+	}
+
+	observe.SpanEvent(ctx, "game.move.persisted")
+
+	if gameOver {
+		observe.SpanEvent(ctx, "game_won")
+		s.recordGameFinished(ctx)
+	}
+
 	return moveOutcome[R]{
 		targetPhase: targetPhase,
 		gameOver:    gameOver,
 		result:      performResult,
-		moveLog:     moveLog,
 		turn:        turn,
 		newState:    newState,
 		prevRegions: prevState.PublicSnapshot.Regions,
-	}
+	}, nil
 }
 
-func (s *orchestrator[T, R]) performAndLog(
+// getOrWarmState returns the cached state or warms from DB on cache miss.
+// Under the per-game mutex, a direct querier read is safe (no TX needed).
+func (s *orchestrator[T, R]) getOrWarmState(
 	ctx gamectx.GameContext,
-	querier db.Querier,
-	move T,
-	prevState *snapshot.CachedGameState,
-) (R, moveservice.MoveEffect, sqlc.GameMoveLog, error) {
-	performResult, effect, err := s.service.Perform(ctx, querier, move, prevState)
-	if err != nil {
-		var zero R
+	expectedPhase sqlc.GamePhaseType,
+) (*snapshot.CachedGameState, error) {
+	// Fast path: cache hit.
+	if cached := s.stateStore.Get(ctx.GameID()); cached != nil {
+		gameState := GameStateFromCache(cached)
 
-		return zero, moveservice.MoveEffect{}, sqlc.GameMoveLog{}, fmt.Errorf(
-			"unable to perform move: %w", err,
+		if gameState.Phase != expectedPhase {
+			return nil, domainerrors.NewConflictErrorf(
+				"game is in phase %s, expected %s",
+				gameState.Phase, expectedPhase,
+			)
+		}
+
+		return cached, nil
+	}
+
+	// Slow path: cache miss — warm from DB using direct querier (no TX).
+	return s.warmFromDB(ctx, expectedPhase)
+}
+
+// warmFromDB reads the full game state from the database using a direct querier
+// (no transaction). This is safe because we hold the per-game mutex.
+func (s *orchestrator[T, R]) warmFromDB(
+	ctx gamectx.GameContext,
+	expectedPhase sqlc.GamePhaseType,
+) (*snapshot.CachedGameState, error) {
+	gameState, err := s.gameService.GetGameStateWithQuerier(ctx, s.querier)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get game state: %w", err)
+	}
+
+	if gameState.Phase != expectedPhase {
+		return nil, domainerrors.NewConflictErrorf(
+			"game is in phase %s, expected %s",
+			gameState.Phase, expectedPhase,
 		)
 	}
 
-	observe.SpanEvent(ctx, "game.move.performed")
-
-	moveLog, err := s.loggingService.LogMove(ctx, querier, move, performResult)
+	prevState, err := s.getOrWarmPrevState(ctx, s.querier, gameState.Turn)
 	if err != nil {
-		var zero R
-
-		return zero, moveservice.MoveEffect{}, sqlc.GameMoveLog{}, fmt.Errorf(
-			"unable to log move: %w", err,
-		)
+		return nil, fmt.Errorf("unable to warm state: %w", err)
 	}
 
-	observe.SpanEvent(ctx, "game.move.logged")
-
-	return performResult, effect, moveLog, nil
+	return prevState, nil
 }
 
 func (s *orchestrator[T, R]) resolveTargetPhase(
 	ctx gamectx.GameContext,
-	querier db.Querier,
 	performResult R,
 	prevState *snapshot.CachedGameState,
 	effect moveservice.MoveEffect,
 ) (sqlc.GamePhaseType, bool, moveservice.AdvanceEffect, error) {
 	if accomplished, err := s.checkMission(
-		ctx, querier,
+		ctx, prevState, effect,
 	); err != nil {
 		return "", false, moveservice.AdvanceEffect{}, err
 	} else if accomplished {
@@ -206,15 +214,11 @@ func (s *orchestrator[T, R]) resolveTargetPhase(
 	// Universal domination: if the player owns all regions after the move,
 	// the game is won regardless of their specific mission.
 	if IsDomination(prevState, effect, ctx.UserID()) {
-		if err := s.assignWinner(ctx, querier); err != nil {
-			return "", false, moveservice.AdvanceEffect{}, err
-		}
-
 		return s.service.PhaseType(), true, moveservice.AdvanceEffect{}, nil
 	}
 
 	targetPhase, advEffect, err := s.walkAndAdvance(
-		ctx, querier, performResult, prevState, effect,
+		ctx, performResult, prevState, effect,
 	)
 	if err != nil {
 		return "", false, moveservice.AdvanceEffect{}, err
@@ -225,7 +229,6 @@ func (s *orchestrator[T, R]) resolveTargetPhase(
 
 func (s *orchestrator[T, R]) walkAndAdvance(
 	ctx gamectx.GameContext,
-	querier db.Querier,
 	performResult R,
 	prevState *snapshot.CachedGameState,
 	effect moveservice.MoveEffect,
@@ -250,7 +253,7 @@ func (s *orchestrator[T, R]) walkAndAdvance(
 	}
 
 	advEffect, err := s.service.Advance(
-		ctx, querier, targetPhase, performResult, advCtx,
+		ctx, targetPhase, performResult, advCtx,
 	)
 	if err != nil {
 		return "", moveservice.AdvanceEffect{}, fmt.Errorf("unable to advance move: %w", err)

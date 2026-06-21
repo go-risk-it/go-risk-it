@@ -223,8 +223,9 @@ win-condition checking, and reassignment when a player is eliminated.
 Five mission types are supported — two continents, two continents plus one,
 eighteen territories, twenty-four territories, and eliminate player.
 │   │   │   │   └── checker/            # Package checker provides the mission-checking framework. Each mission type
-implements [MissionChecker], and a [Registry] maps mission types to their
-checkers for dispatch during win-condition evaluation.
+implements [MissionChecker] as a pure evaluator over cached snapshot data,
+and a [Registry] maps mission types to their checkers for dispatch during
+win-condition evaluation.
 │   │   │   ├── move/
 │   │   │   │   ├── attack/             # Package attack implements the attack move: a player sends troops from an
 owned region to an adjacent enemy region. Dice rolls determine casualties,
@@ -249,11 +250,10 @@ and mission reassignment).
 troops onto regions they own. Each move validates region ownership,
 declared troop counts, and deployable troop availability. The phase
 transitions to ATTACK once all deployable troops are placed.
-│   │   │   │   ├── orchestration/      # Package orchestration coordinates the execution of game moves through a
-transactional pipeline: validate, perform, log, check mission, walk phase
-graph, and advance. Each move runs inside a RepeatableRead transaction,
-and post-commit events (MoveCompleted) are emitted through the event bus
-for reactive consumers.
+│   │   │   │   ├── orchestration/      # Package orchestration coordinates the execution of game moves through an
+effects-first pipeline: validate, perform (pure), walk, advance (pure),
+check mission (pure), build state, build persistence effect, persist
+(write-only ReadCommitted TX), cache update, emit events.
 │   │   │   │   ├── reinforce/          # Package reinforce implements the reinforce move: a player moves troops
 between two owned regions that are connected through a path of owned
 territory. After reinforcement, the phase transitions to CARDS (if the

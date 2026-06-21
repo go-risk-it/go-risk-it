@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
-	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
 	moveservice "github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/service"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/validation"
@@ -21,9 +20,8 @@ const (
 
 func (s *service) Perform(
 	ctx ctx.GameContext,
-	querier db.Querier,
 	move Move,
-	_ *snapshot.CachedGameState,
+	prev *snapshot.CachedGameState,
 ) (struct{}, moveservice.MoveEffect, error) {
 	var zero moveservice.MoveEffect
 
@@ -33,22 +31,23 @@ func (s *service) Perform(
 		attribute.Int64("moving_troops", move.MovingTroops),
 	)
 
-	sourceRegion, err := s.regionService.GetRegion(ctx, querier, move.SourceRegionID)
+	regions := prev.PublicSnapshot.Regions
+
+	sourceRegionState, err := moveservice.FindRegion(regions, move.SourceRegionID)
 	if err != nil {
 		return struct{}{}, zero, fmt.Errorf("unable to get source region: %w", err)
 	}
 
-	targetRegion, err := s.regionService.GetRegion(ctx, querier, move.TargetRegionID)
+	targetRegionState, err := moveservice.FindRegion(regions, move.TargetRegionID)
 	if err != nil {
 		return struct{}{}, zero, fmt.Errorf("unable to get target region: %w", err)
 	}
 
-	if err := s.validate(ctx, querier, sourceRegion, targetRegion, move); err != nil {
-		return struct{}{}, zero, fmt.Errorf("validation failed: %w", err)
-	}
+	sourceRegion := moveservice.ToDBRegion(sourceRegionState)
+	targetRegion := moveservice.ToDBRegion(targetRegionState)
 
-	if err := s.perform(ctx, querier, sourceRegion, targetRegion, move.MovingTroops); err != nil {
-		return struct{}{}, zero, fmt.Errorf("unable to perform attack move: %w", err)
+	if err := s.validate(ctx, sourceRegion, targetRegion, move, regions); err != nil {
+		return struct{}{}, zero, fmt.Errorf("validation failed: %w", err)
 	}
 
 	effect := moveservice.MoveEffect{
@@ -70,40 +69,12 @@ func (s *service) Perform(
 	return struct{}{}, effect, nil
 }
 
-func (s *service) perform(
-	ctx ctx.GameContext,
-	querier db.Querier,
-	sourceRegion *sqlc.GetRegionsByGameRow,
-	targetRegion *sqlc.GetRegionsByGameRow,
-	movingTroops int64,
-) error {
-	if err := s.regionService.UpdateTroopsInRegion(
-		ctx,
-		querier,
-		sourceRegion,
-		-movingTroops,
-	); err != nil {
-		return fmt.Errorf("failed to decrease troops in attacking region: %w", err)
-	}
-
-	if err := s.regionService.UpdateTroopsInRegion(
-		ctx,
-		querier,
-		targetRegion,
-		movingTroops,
-	); err != nil {
-		return fmt.Errorf("failed to decrease troops in defending region: %w", err)
-	}
-
-	return nil
-}
-
 func (s *service) validate(
 	ctx ctx.GameContext,
-	querier db.Querier,
 	sourceRegion *sqlc.GetRegionsByGameRow,
 	targetRegion *sqlc.GetRegionsByGameRow,
 	move Move,
+	regions []snapshot.RegionState,
 ) error {
 	if err := checkRegionOwnership(ctx, sourceRegion, targetRegion); err != nil {
 		return fmt.Errorf("region ownership check failed: %w", err)
@@ -123,11 +94,11 @@ func (s *service) validate(
 		return fmt.Errorf("troops check failed: %w", err)
 	}
 
-	canReach, err := s.boardService.CanPlayerReach(
+	canReach, err := s.boardService.CanPlayerReachWithRegions(
 		ctx,
-		querier,
 		sourceRegion.ExternalReference,
 		targetRegion.ExternalReference,
+		regions,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to check if player can reach target: %w", err)

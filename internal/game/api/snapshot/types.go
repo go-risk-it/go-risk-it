@@ -19,9 +19,10 @@ type GameMeta struct {
 
 // RegionState represents a single region on the board.
 type RegionState struct {
-	ID      string `json:"id"`
-	OwnerID string `json:"ownerId"`
-	Troops  int64  `json:"troops"`
+	InternalID int64  `json:"-"`
+	ID         string `json:"id"`
+	OwnerID    string `json:"ownerId"`
+	Troops     int64  `json:"troops"`
 }
 
 // PlayerState holds publicly visible player information.

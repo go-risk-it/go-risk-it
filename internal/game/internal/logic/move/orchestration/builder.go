@@ -33,9 +33,11 @@ func BuildNewState(
 
 	regions := ApplyRegionUpdates(prev.PublicSnapshot.Regions, effect.RegionUpdates)
 	privates := ApplyPrivateDeltas(prev.PrivateSnapshots, effect.CardDeltas, effect.Missions)
+	deck := ApplyDeckDelta(prev.AvailableDeck, effect.DeckDelta)
 
 	if advEffect != nil {
 		privates = applyCardDeltas(privates, advEffect.CardDeltas)
+		deck = ApplyDeckDelta(deck, advEffect.DeckDelta)
 	}
 
 	// Recompute players first — we need alive/dead status for turn skip logic.
@@ -52,6 +54,7 @@ func BuildNewState(
 	return &snapshot.CachedGameState{
 		Turn:            turn,
 		ConqueredInTurn: conqueredInTurn,
+		AvailableDeck:   deck,
 		PublicSnapshot: &snapshot.GameSnapshot{
 			Game: snapshot.GameMeta{
 				ID:           prev.PublicSnapshot.Game.ID,
@@ -93,9 +96,10 @@ func ApplyRegionUpdates(
 		}
 
 		cloned[idx] = snapshot.RegionState{
-			ID:      update.RegionID,
-			OwnerID: update.NewOwner,
-			Troops:  update.NewTroops,
+			InternalID: cloned[idx].InternalID,
+			ID:         update.RegionID,
+			OwnerID:    update.NewOwner,
+			Troops:     update.NewTroops,
 		}
 	}
 
@@ -316,4 +320,48 @@ func applyMissions(
 	}
 
 	return privates
+}
+
+// ApplyDeckDelta returns a new deck slice with the given delta applied. The
+// input slice is never mutated. Returned cards are appended; Drawn card IDs
+// are removed. Panics if a Drawn ID is not found in the deck (invariant
+// violation — matches ApplyRegionUpdates pattern).
+func ApplyDeckDelta(
+	deck []snapshot.CardState,
+	delta service.DeckDelta,
+) []snapshot.CardState {
+	cloned := make([]snapshot.CardState, 0, len(deck)+len(delta.Returned))
+	cloned = append(cloned, deck...)
+
+	// Remove drawn cards.
+	if len(delta.Drawn) > 0 {
+		drawnSet := make(map[int64]struct{}, len(delta.Drawn))
+		for _, id := range delta.Drawn {
+			drawnSet[id] = struct{}{}
+		}
+
+		kept := make([]snapshot.CardState, 0, len(cloned))
+
+		for _, card := range cloned {
+			if _, removed := drawnSet[card.ID]; removed {
+				delete(drawnSet, card.ID)
+
+				continue
+			}
+
+			kept = append(kept, card)
+		}
+
+		// Panic on any drawn ID that was not found — invariant violation.
+		for id := range drawnSet {
+			panic(fmt.Sprintf("ApplyDeckDelta: drawn card ID %d not found in deck", id))
+		}
+
+		cloned = kept
+	}
+
+	// Append returned cards.
+	cloned = append(cloned, delta.Returned...)
+
+	return cloned
 }

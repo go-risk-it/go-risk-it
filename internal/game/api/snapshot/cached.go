@@ -10,6 +10,7 @@ type CachedGameState struct {
 	Turn             int64
 	Seq              int64
 	ConqueredInTurn  bool
+	AvailableDeck    []CardState
 	PublicSnapshot   *GameSnapshot
 	PrivateSnapshots map[string]*PlayerPrivate
 }

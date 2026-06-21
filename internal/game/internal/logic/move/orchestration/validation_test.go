@@ -4,30 +4,15 @@ import (
 	"context"
 	"testing"
 
+	apisnapshot "github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	"github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/move/orchestration"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/state"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/data/db"
-	"github.com/go-risk-it/go-risk-it/internal/game/testmocks/logic/player"
 	kernelctx "github.com/go-risk-it/go-risk-it/internal/kernel/ctx"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
-
-func validationSetup(t *testing.T) (
-	*db.Querier,
-	*player.Service,
-	orchestration.ValidationService,
-) {
-	t.Helper()
-	querier := db.NewQuerier(t)
-	playerService := player.NewService(t)
-	service := orchestration.NewValidationService(playerService)
-
-	return querier, playerService, service
-}
 
 func validationInput() ctx.GameContext {
 	gameID := int64(1)
@@ -43,26 +28,21 @@ func validationInput() ctx.GameContext {
 func TestValidationService_ShouldFailWhenPlayerNotInGame(t *testing.T) {
 	t.Parallel()
 
-	querier, playerService, service := validationSetup(t)
-	ctx := validationInput()
+	service := orchestration.NewValidationService()
+	gameCtx := validationInput()
 
-	players := []sqlc.GamePlayer{
-		{ID: 420, TurnIndex: 0, GameID: 1, UserID: "Gabriele"},
-		{ID: 69, TurnIndex: 1, GameID: 1, UserID: "Francesco"},
+	players := []apisnapshot.PlayerState{
+		{UserID: "Gabriele", Name: "Gabriele", Index: 0, Status: apisnapshot.PlayerAlive},
+		{UserID: "Francesco", Name: "Francesco", Index: 1, Status: apisnapshot.PlayerAlive},
 	}
 
 	game := &state.Game{
-		ID:    ctx.GameID(),
+		ID:    gameCtx.GameID(),
 		Phase: sqlc.GamePhaseTypeDEPLOY,
 		Turn:  1,
 	}
 
-	playerService.
-		EXPECT().
-		GetPlayers(mock.Anything, querier).
-		Return(players, nil)
-
-	err := service.Validate(ctx, querier, game)
+	err := service.Validate(gameCtx, game, players)
 
 	require.Error(t, err)
 	require.EqualError(t, err, "player is not in game")
@@ -71,14 +51,12 @@ func TestValidationService_ShouldFailWhenPlayerNotInGame(t *testing.T) {
 func TestValidationService_ShouldFailOnTurnCheck(t *testing.T) {
 	t.Parallel()
 
-	type inputType struct {
+	tests := []struct {
 		name        string
 		phase       sqlc.GamePhaseType
 		turn        int64
 		expectedErr string
-	}
-
-	tests := []inputType{
+	}{
 		{
 			"When not player's turn",
 			sqlc.GamePhaseTypeDEPLOY,
@@ -89,29 +67,74 @@ func TestValidationService_ShouldFailOnTurnCheck(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			querier, playerService, service := validationSetup(t)
-			ctx := validationInput()
 
-			players := []sqlc.GamePlayer{
-				{ID: 420, TurnIndex: 0, GameID: 1, UserID: "Gabriele"},
-				{ID: 69, TurnIndex: 1, GameID: 1, UserID: "Francesco"},
-				{ID: 42069, TurnIndex: 2, GameID: 1, UserID: "Giovanni"},
+			service := orchestration.NewValidationService()
+			gameCtx := validationInput()
+
+			players := []apisnapshot.PlayerState{
+				{UserID: "Gabriele", Name: "Gabriele", Index: 0, Status: apisnapshot.PlayerAlive},
+				{
+					UserID: "Francesco",
+					Name:   "Francesco",
+					Index:  1,
+					Status: apisnapshot.PlayerAlive,
+				},
+				{UserID: "Giovanni", Name: "Giovanni", Index: 2, Status: apisnapshot.PlayerAlive},
 			}
-			playerService.
-				EXPECT().
-				GetPlayers(mock.Anything, querier).
-				Return(players, nil)
 
 			game := &state.Game{
-				ID:    ctx.GameID(),
+				ID:    gameCtx.GameID(),
 				Phase: test.phase,
 				Turn:  test.turn,
 			}
 
-			err := service.Validate(ctx, querier, game)
+			err := service.Validate(gameCtx, game, players)
 
 			require.Error(t, err)
 			require.EqualError(t, err, test.expectedErr)
 		})
 	}
+}
+
+func TestValidationService_ShouldSucceed(t *testing.T) {
+	t.Parallel()
+
+	service := orchestration.NewValidationService()
+	gameCtx := validationInput()
+
+	players := []apisnapshot.PlayerState{
+		{UserID: "Gabriele", Name: "Gabriele", Index: 0, Status: apisnapshot.PlayerAlive},
+		{UserID: "Giovanni", Name: "Giovanni", Index: 1, Status: apisnapshot.PlayerAlive},
+	}
+
+	game := &state.Game{
+		ID:    gameCtx.GameID(),
+		Phase: sqlc.GamePhaseTypeDEPLOY,
+		Turn:  1,
+	}
+
+	err := service.Validate(gameCtx, game, players)
+	require.NoError(t, err)
+}
+
+func TestValidationService_ShouldFailWhenGameOver(t *testing.T) {
+	t.Parallel()
+
+	service := orchestration.NewValidationService()
+	gameCtx := validationInput()
+
+	players := []apisnapshot.PlayerState{
+		{UserID: "Giovanni", Name: "Giovanni", Index: 0, Status: apisnapshot.PlayerAlive},
+	}
+
+	game := &state.Game{
+		ID:           gameCtx.GameID(),
+		Phase:        sqlc.GamePhaseTypeDEPLOY,
+		Turn:         0,
+		WinnerUserID: "someone",
+	}
+
+	err := service.Validate(gameCtx, game, players)
+	require.Error(t, err)
+	require.EqualError(t, err, "game is already over")
 }

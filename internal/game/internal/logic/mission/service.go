@@ -4,12 +4,13 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/go-risk-it/go-risk-it/internal/game/api/snapshot"
 	gamectx "github.com/go-risk-it/go-risk-it/internal/game/ctx"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/db"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/data/sqlc"
+	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/board"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/logic/mission/checker"
 	"github.com/go-risk-it/go-risk-it/internal/game/internal/rand"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Service interface {
@@ -18,7 +19,12 @@ type Service interface {
 		querier db.Querier,
 		players []sqlc.GamePlayer,
 	) error
-	IsMissionAccomplished(ctx gamectx.GameContext, querier db.Querier) (bool, error)
+	IsMissionAccomplished(
+		ctx gamectx.GameContext,
+		regions []snapshot.RegionState,
+		privateSnapshots map[string]*snapshot.PlayerPrivate,
+		continents board.Continents,
+	) (bool, error)
 	ReassignMissions(ctx gamectx.GameContext, querier db.Querier, eliminatedPlayerID int64) error
 
 	GetTwoContinentsMission(
@@ -198,49 +204,34 @@ func (s *service) GetAvailableMissions(players []sqlc.GamePlayer) []BaseMission 
 
 func (s *service) IsMissionAccomplished(
 	ctx gamectx.GameContext,
-	querier db.Querier,
+	regions []snapshot.RegionState,
+	privateSnapshots map[string]*snapshot.PlayerPrivate,
+	continents board.Continents,
 ) (bool, error) {
-	baseMission, err := querier.GetMission(ctx, sqlc.GetMissionParams{
-		GameID: ctx.GameID(),
-		UserID: ctx.UserID(),
-	})
-	if err != nil {
-		return false, fmt.Errorf("failed to get mission: %w", err)
+	playerPrivate, ok := privateSnapshots[ctx.UserID()]
+	if !ok {
+		return false, fmt.Errorf("no private snapshot for player %s", ctx.UserID())
 	}
 
-	isMissionAccomplished, err := s.isMissionAccomplished(ctx, querier, baseMission)
+	mission := playerPrivate.Mission
+
+	missionChecker, err := s.checkerRegistry.GetChecker(mission.Type)
+	if err != nil {
+		return false, fmt.Errorf("failed to get checker: %w", err)
+	}
+
+	checkCtx := checker.CheckContext{
+		Regions:       regions,
+		Continents:    continents,
+		CurrentUserID: ctx.UserID(),
+	}
+
+	result, err := missionChecker.Check(checkCtx, mission)
 	if err != nil {
 		return false, fmt.Errorf("failed to check if mission is accomplished: %w", err)
 	}
 
-	if isMissionAccomplished {
-		if err := querier.AssignGameWinner(ctx, sqlc.AssignGameWinnerParams{
-			WinnerPlayerID: pgtype.Int8{
-				Int64: baseMission.PlayerID,
-				Valid: true,
-			},
-			GameID: ctx.GameID(),
-		}); err != nil {
-			return false, fmt.Errorf("failed to assign game winner: %w", err)
-		}
-
-		return true, nil
-	}
-
-	return false, nil
-}
-
-func (s *service) isMissionAccomplished(
-	ctx gamectx.GameContext,
-	querier db.Querier,
-	baseMission sqlc.GameMission,
-) (bool, error) {
-	c, err := s.checkerRegistry.GetChecker(baseMission.Type)
-	if err != nil {
-		return false, err
-	}
-
-	return c.Check(ctx, querier, baseMission)
+	return result, nil
 }
 
 func (s *service) ReassignMissions(
