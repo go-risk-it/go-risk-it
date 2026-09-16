@@ -10,7 +10,7 @@ version: "3.8"
 services:
   kong:
     container_name: supabase-kong
-    image: kong:3.9.1@sha256:7512bfa30d96709a9dede46c723b2c57b6fa61f4cbb797adf20f531d3e0266dc
+    image: kong:3.9.3@sha256:12972ce1ab6396083e56e7d46fce084836c98cc819344bef44a1f583ec3ab191
     restart: unless-stopped
     # https://unix.stackexchange.com/a/294837
     entrypoint: bash -c 'eval "echo \"$$(cat /tmp/temp.yml)\"" > /tmp/kong.yml && /docker-entrypoint.sh kong docker-start'
