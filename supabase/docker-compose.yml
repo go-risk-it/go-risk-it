@@ -98,7 +98,7 @@ services:
   # Comment out everything below this point if you are using an external Postgres database
   db:
     container_name: supabase-db
-    image: supabase/postgres:17.6.1.113@sha256:4c39816ce8d9303a3aba1161c842929c73a40c7109a9ef1b644582478e31832e
+    image: supabase/postgres:17.6.1.177@sha256:8b1dc570b774b7a21ff15542ff783e285fd68c86fbf3e703a6a15e02f340bf60
     healthcheck:
       test: pg_isready -U postgres -h localhost
       interval: 5s
