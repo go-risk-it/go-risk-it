@@ -1,6 +1,6 @@
 # === Stage 1: Build Stage ===
 # Use a Golang image as the base image for the build stage
-FROM golang:1.26.2 AS builder
+FROM golang:1.27.4@sha256:5e8afd493a7124a8586e134d9b532731161d4b9becf9dee5a5956b107426f93d AS builder
 
 WORKDIR /src
 COPY go.mod go.sum ./
@@ -16,7 +16,7 @@ RUN go build -o risk-it-server ./cmd/risk-it-server/component-test
 
 # === Stage 2: Runtime Stage ===
 # Use a lightweight Golang image as the base image for the runtime stage
-FROM golang:1.26.2-alpine
+FROM golang:1.27.4-alpine@sha256:0a5f7fe796599ff487605987432e7619ae45beeb2fba4c2ce0b907879932aebf
 
 ENV ENVIRONMENT=component-test
 
